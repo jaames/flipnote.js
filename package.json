@@ -1,0 +1,20 @@
+{
+  "name": "ugomemo.js",
+  "version": "0.0.0",
+  "repository": "https://github.com/jaames/ugomemo.js.git",
+  "author": "james <jamesdaniel2197@gmail.com>",
+  "license": "MIT",
+  "scripts": {
+    "build": "webpack --env=dev --progress --colors && webpack --env=prod --progress --colors",
+    "dev": "webpack-dev-server --env=dev --hot --progress --colors"
+  },
+  "devDependencies": {
+    "babel-core": "^6.26.0",
+    "babel-loader": "^7.1.2",
+    "babel-preset-env": "^1.6.1",
+    "babel-preset-stage-2": "^6.24.1",
+    "cross-env": "^5.1.1",
+    "webpack": "^3.8.1",
+    "webpack-dev-server": "^2.9.4"
+  }
+}
