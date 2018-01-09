@@ -59,6 +59,17 @@ export default class ppmParser extends fileReader {
     };
     this.framerate = FRAMERATES[this.frameSpeed];
     this.bgmFramerate = FRAMERATES[this.bgmSpeed];
+
+    // create image buffer
+     this.layers = [
+      new Uint8Array(256 * 192),
+      new Uint8Array(256 * 192)
+    ];
+
+    this.layers_prev = [
+      new Uint8Array(256 * 192),
+      new Uint8Array(256 * 192)
+    ];
   }
 
   _seekToFrame(index) {
@@ -80,7 +91,7 @@ export default class ppmParser extends fileReader {
     return unpacked;
   }
 
-  decodeFramePalette(index) {
+  getFramePalette(index) {
     this._seekToFrame(index);
     var header = this.readUint8();
     var paperColor = header & 0x1;
@@ -99,7 +110,7 @@ export default class ppmParser extends fileReader {
     ];
   }
 
-  decodeFrame(index, renderer) {
+  decodeFrame(index) {
     this._seekToFrame(index);
     var header = this.readUint8();
     var isNewFrame = (header >> 7) & 0x1;
@@ -108,12 +119,12 @@ export default class ppmParser extends fileReader {
       this._readLineEncoding(),
       this._readLineEncoding()
     ];
-    renderer.openFrame(isNewFrame);
-    if (isTranslated) {
-      // TODO: handle prev frame translation
-    }
+    this.layers_prev[0].set(this.layers[0]);
+    this.layers_prev[1].set(this.layers[1]);
+    this.layers[0].fill(0);
+    this.layers[1].fill(0);
     for (let layer = 0; layer < 2; layer++) {
-      var layerBitmap = renderer.layers[layer];
+      var layerBitmap = this.layers[layer];
       for (let line = 0; line < 192; line++) {
         var chunkOffset = line * 256;
         var lineType = layerEncoding[layer][line];
@@ -155,7 +166,16 @@ export default class ppmParser extends fileReader {
         }
       }
     }
-    renderer.closeFrame();
+    if (isTranslated) {
+      // TODO: handle prev frame translation
+    }
+    if (!isNewFrame) {
+      for (let i = 0; i < 256 * 192; i++) {
+        this.layers[0][i] = this.layers[0][i] ^ this.layers_prev[0][i];
+        this.layers[1][i] = this.layers[1][i] ^ this.layers_prev[1][i];
+      }
+    }
+    return this.layers;
   }
 
   decodeAudio(track) {

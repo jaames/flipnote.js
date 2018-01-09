@@ -23,9 +23,9 @@ export default class memoPlayer {
 
   setFrame(index) {
     if (this.isOpen) {
-      this.canvas.setPalette(this.ppm.decodeFramePalette(index));
-      this.ppm.decodeFrame(index, this.canvas);
-      this.canvas.redraw();
+      this.canvas.setPalette(this.ppm.getFramePalette(index));
+      this.canvas.setBitmaps(this.ppm.decodeFrame(index));
+      this.canvas.refresh();
       this.currentFrame = index;
     }
   }
