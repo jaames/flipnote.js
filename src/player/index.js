@@ -1,28 +1,28 @@
 import webglCanvas from "webgl/webglCanvas";
-import parser from "parser";
+import ppmDecoder from "decoder";
 
 export default class memoPlayer {
   constructor(el, width, height) {
     this.canvas = new webglCanvas(el, width, height);
-    this.isOpen = false;
+    this._isOpen = false;
     this.currentFrame = 0;
   }
 
   open(source) {
     var buffer = source;
-    this.ppm = new parser(buffer);
-    this.isOpen = true;
+    this.ppm = new ppmDecoder(buffer);
+    this._isOpen = true;
     this.setFrame(0);
   }
 
   close() {
     this.ppm = null;
-    this.isOpen = false;
+    this._isOpen = false;
     this.currentFrame = 0;
   }
 
   setFrame(index) {
-    if (this.isOpen) {
+    if (this._isOpen) {
       this.canvas.setPalette(this.ppm.getFramePalette(index));
       this.canvas.setBitmaps(this.ppm.decodeFrame(index));
       this.canvas.refresh();

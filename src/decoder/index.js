@@ -1,5 +1,8 @@
 import fileReader from "./fileReader";
 
+const WIDTH = 256;
+const HEIGHT = 192;
+
 const BLACK = [14, 14, 14, 255];
 const WHITE = [255, 255, 255, 255];
 const BLUE = [10, 57, 255, 255];
@@ -17,40 +20,52 @@ const FRAMERATES = {
     8: 30,
 };
 
+// utility function to help account for padding when dealing with certain offsets
 function getPadLen(i, pad=4) {
   if (i % pad != 0) return i + pad - (i % pad);
   return i;
-}
+};
 
-export default class ppmParser extends fileReader {
+export default class ppmDecoder extends fileReader {
   constructor(arrBuffer) {
     super(arrBuffer);
     this.seek(4);
-    this.frameDataLength = this.readUint32();
-    this.soundDataLength = this.readUint32();
+    this._frameDataLength = this.readUint32();
+    this._soundDataLength = this.readUint32();
     this.frameCount = Math.min(this.readUint16() + 1, 999);
     this.seek(4, 1);
     this.thumbFrameIndex = this.readUint16();
-    // calculate sound data offset -- frame data offset + frame data length + sound effect flags, rouded up to next multiple of 4
-    this.soundDataOffset = getPadLen(0x06A0 + this.frameDataLength + this.frameCount, 4)
     // jump to the start of the animation data section
     this.seek(0x06A0);
     var offsetTableLength = Math.min(this.readUint16(), this.frameCount * 4);
     this.seek(6, 1);
-    this.frameOffsets = new Uint32Array(offsetTableLength / 4);
-    for (let i = 0; i < this.frameOffsets.length; i++) {
-      this.frameOffsets[i] = this.readUint32();
-    }
-    this.frameOffsetStart = 0x06A0 + 8 + offsetTableLength;
+    this._frameOffsets = new Uint32Array(offsetTableLength / 4).map(_ => {
+      return 0x06A0 + 8 + offsetTableLength + this.readUint32();
+    });
+    this._decodeSoundHeader();
     // jump to the start of the sound data
-    this.seek(this.soundDataOffset);
+    // create image buffer
+     this._layers = [
+      new Uint8Array(WIDTH * HEIGHT),
+      new Uint8Array(WIDTH * HEIGHT)
+    ];
+
+    this._layers_prev = [
+      new Uint8Array(WIDTH * HEIGHT),
+      new Uint8Array(WIDTH * HEIGHT)
+    ];
+  }
+
+  _decodeSoundHeader() {
+    // frame data offset + frame data length + sound effect flags, rouded up to next multiple of 4
+    this.seek(getPadLen(0x06A0 + this._frameDataLength + this.frameCount, 4));
     var bgmLen = this.readUint32();
     var se1Len = this.readUint32();
     var se2Len = this.readUint32();
     var se3Len = this.readUint32();
     this.frameSpeed = 8 - this.readUint8();
     this.bgmSpeed = 8 - this.readUint8();
-    var offset = this.soundDataOffset + 32;
+    var offset = this._soundDataOffset + 32;
     this.soundMeta = {
       "bgm": {offset: offset,           length: bgmLen},
       "se1": {offset: offset += bgmLen, length: se1Len},
@@ -59,21 +74,10 @@ export default class ppmParser extends fileReader {
     };
     this.framerate = FRAMERATES[this.frameSpeed];
     this.bgmFramerate = FRAMERATES[this.bgmSpeed];
-
-    // create image buffer
-     this.layers = [
-      new Uint8Array(256 * 192),
-      new Uint8Array(256 * 192)
-    ];
-
-    this.layers_prev = [
-      new Uint8Array(256 * 192),
-      new Uint8Array(256 * 192)
-    ];
   }
 
   _seekToFrame(index) {
-    this.seek(this.frameOffsetStart + this.frameOffsets[index]);
+    this.seek(this._frameOffsets[index]);
   }
 
   _seekToAudio(track) {
@@ -81,7 +85,7 @@ export default class ppmParser extends fileReader {
   }
 
   _readLineEncoding() {
-    var unpacked = new Uint8Array(192);
+    var unpacked = new Uint8Array(HEIGHT);
     for (let byteOffset = 0; byteOffset < 48; byteOffset ++) {
       var byte = this.readUint8();
       for (let bitOffset = 0; bitOffset < 8; bitOffset += 2) {
@@ -95,8 +99,6 @@ export default class ppmParser extends fileReader {
     this._seekToFrame(index);
     var header = this.readUint8();
     var paperColor = header & 0x1;
-    var layer1Color = (header >> 1) & 0x3;
-    var layer2Color = (header >> 3) & 0x3;
     var pen = [
       null,
       paperColor == 1 ? BLACK : WHITE,
@@ -105,8 +107,8 @@ export default class ppmParser extends fileReader {
     ];
     return [
       paperColor == 1 ? WHITE : BLACK,
-      pen[layer1Color],
-      pen[layer2Color],
+      pen[(header >> 1) & 0x3], // layer 1 color
+      pen[(header >> 3) & 0x3], // layer 2 color
     ];
   }
 
@@ -119,14 +121,17 @@ export default class ppmParser extends fileReader {
       this._readLineEncoding(),
       this._readLineEncoding()
     ];
-    this.layers_prev[0].set(this.layers[0]);
-    this.layers_prev[1].set(this.layers[1]);
-    this.layers[0].fill(0);
-    this.layers[1].fill(0);
+    // copy the current layer buffers to the previous ones
+    this._layers_prev[0].set(this._layers[0]);
+    this._layers_prev[1].set(this._layers[1]);
+    // reset current layer buffers
+    this._layers[0].fill(0);
+    this._layers[1].fill(0);
+    // start decoding layer bitmaps
     for (let layer = 0; layer < 2; layer++) {
-      var layerBitmap = this.layers[layer];
-      for (let line = 0; line < 192; line++) {
-        var chunkOffset = line * 256;
+      var layerBitmap = this._layers[layer];
+      for (let line = 0; line < HEIGHT; line++) {
+        var chunkOffset = line * WIDTH;
         var lineType = layerEncoding[layer][line];
         switch(lineType) {
           // line type 0 = blank line, decode nothing
@@ -137,7 +142,7 @@ export default class ppmParser extends fileReader {
           case 2:
             var lineHeader = this.readUint32(false);
             // line type 2 starts as an inverted line
-            if (lineType == 2) layerBitmap.fill(1, chunkOffset, chunkOffset + 256);
+            if (lineType == 2) layerBitmap.fill(1, chunkOffset, chunkOffset + WIDTH);
             // loop through each bit in the line header
             while (lineHeader & 0xFFFFFFFF) {
               // if the bit is set, this 8-pix wide chunk is stored
@@ -155,7 +160,7 @@ export default class ppmParser extends fileReader {
             break;
           // line type 3 = raw bitmap line
           case 3:
-            while(chunkOffset < (line + 1) * 256) {
+            while(chunkOffset < (line + 1) * WIDTH) {
               var chunk = this.readUint8();
               for (let pixel = 0; pixel < 8; pixel++) {
                 layerBitmap[chunkOffset + pixel] = chunk >> pixel & 0x1;
@@ -170,12 +175,17 @@ export default class ppmParser extends fileReader {
       // TODO: handle prev frame translation
     }
     if (!isNewFrame) {
-      for (let i = 0; i < 256 * 192; i++) {
-        this.layers[0][i] = this.layers[0][i] ^ this.layers_prev[0][i];
-        this.layers[1][i] = this.layers[1][i] ^ this.layers_prev[1][i];
+      let i = 0;
+      for (let y = 0; y < HEIGHT; y++) {
+        for (let x = 0; x < WIDTH; x++) {
+          // if the current frame is based on changes from the preivous one, merge them by XORing their values
+          this._layers[0][i] = this._layers[0][i] ^ this._layers_prev[0][i];
+          this._layers[1][i] = this._layers[1][i] ^ this._layers_prev[1][i];
+          i++;
+        }
       }
     }
-    return this.layers;
+    return this._layers;
   }
 
   decodeAudio(track) {

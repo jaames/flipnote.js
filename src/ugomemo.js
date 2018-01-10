@@ -1,8 +1,8 @@
 import player from "./player";
-import parser from "./parser";
+import decoder from "./decoder";
 
 module.exports = {
   version: VERSION,
   player: player,
-  parser: parser,
-}
+  decoder: decoder,
+};

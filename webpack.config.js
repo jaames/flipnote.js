@@ -22,7 +22,7 @@ module.exports = function (env) {
       extensions: [".js"],
       alias: {
         "webgl": path.resolve(__dirname, "src/webgl/"),
-        "parser": path.resolve(__dirname, "src/parser/"),
+        "decoder": path.resolve(__dirname, "src/decoder/"),
         "player": path.resolve(__dirname, "src/player/"),
       }
     },
@@ -40,12 +40,12 @@ module.exports = function (env) {
     plugins: [
       new webpack.BannerPlugin({
         banner: [
-          "ugomemo.js",
+          "ugomemo.js v" + version,
           "Real-time, browser-based playback of Flipnote Studio's .ppm animation format",
           "2018 James Daniel",
-          "Released under the MIT license",
-          "Flipnote Studio and the proprietary .ppm format were created by Nintendo Co., Ltd.",
-          "More detail at github.com/jaames/ugomemo.js",
+          "github.com/jaames/ugomemo.js",
+          "---",
+          "Flipnote Studio is (c) Nintendo Co., Ltd.",
         ].join("\n")
       }),
       new webpack.DefinePlugin({
@@ -64,7 +64,15 @@ module.exports = function (env) {
 
   if (!isDevMode) {
     config.plugins = config.plugins.concat([
-      new webpack.optimize.UglifyJsPlugin()
+      new webpack.optimize.UglifyJsPlugin({
+        sourceMap: false,
+        mangle: {
+          props: {
+            // Mangle protected properties (which start with "_")
+            regex: /^_/
+          }
+        }
+      })
     ]);
   }
 
