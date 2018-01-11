@@ -45,16 +45,16 @@ export default class ppmDecoder extends fileReader {
     });
     this._decodeSoundHeader();
     // jump to the start of the sound data
-    // create image buffer
+    // create image buffers
      this._layers = [
       new Uint8Array(WIDTH * HEIGHT),
       new Uint8Array(WIDTH * HEIGHT)
     ];
-
-    this._layers_prev = [
+    this._prevLayers = [
       new Uint8Array(WIDTH * HEIGHT),
       new Uint8Array(WIDTH * HEIGHT)
     ];
+    this._prevFrameIndex = 0;
   }
 
   _decodeSoundHeader() {
@@ -114,18 +114,47 @@ export default class ppmDecoder extends fileReader {
     ];
   }
 
-  decodeFrame(index) {
+  _isFrameNew(index) {
+    this._seekToFrame(index);
+    var header = this.readUint8();
+    return (header >> 7) & 0x1;
+  }
+
+  _decodePrevFrames(index) {
+    var backTrack = 0;
+    var isNew = 0;
+    while (!isNew) {
+      backTrack += 1;
+      isNew = this._isFrameNew(index - backTrack);
+    }
+    backTrack = index - backTrack;
+    while (backTrack < index) {
+      this.decodeFrame(backTrack, false);
+      backTrack += 1;
+    }
+    // jump back to where we were
+    this._seekToFrame(index);
+    this.seek(1, 1);
+  }
+
+  decodeFrame(index, decodePrev=true) {
     this._seekToFrame(index);
     var header = this.readUint8();
     var isNewFrame = (header >> 7) & 0x1;
     var isTranslated = (header >> 5) & 0x3;
+
+    if ((decodePrev) && (!isNewFrame) && (index !== this._prevFrameIndex + 1)) {
+      this._decodePrevFrames(index);
+    }
+
     var layerEncoding = [
       this._readLineEncoding(),
       this._readLineEncoding()
     ];
     // copy the current layer buffers to the previous ones
-    this._layers_prev[0].set(this._layers[0]);
-    this._layers_prev[1].set(this._layers[1]);
+    this._prevLayers[0].set(this._layers[0]);
+    this._prevLayers[1].set(this._layers[1]);
+    this._prevFrameIndex = index;
     // reset current layer buffers
     this._layers[0].fill(0);
     this._layers[1].fill(0);
@@ -181,8 +210,8 @@ export default class ppmDecoder extends fileReader {
       for (let y = 0; y < HEIGHT; y++) {
         for (let x = 0; x < WIDTH; x++) {
           // if the current frame is based on changes from the preivous one, merge them by XORing their values
-          this._layers[0][i] = this._layers[0][i] ^ this._layers_prev[0][i];
-          this._layers[1][i] = this._layers[1][i] ^ this._layers_prev[1][i];
+          this._layers[0][i] = this._layers[0][i] ^ this._prevLayers[0][i];
+          this._layers[1][i] = this._layers[1][i] ^ this._prevLayers[1][i];
           i++;
         }
       }
@@ -192,7 +221,6 @@ export default class ppmDecoder extends fileReader {
 
   decodeAudio(track) {
     this._seekToAudio(track);
-    console.log(this.soundMeta[track])
     var buffer = new Uint8Array(this.soundMeta[track].length).map(val => {
       return this.readUint8();
     });
