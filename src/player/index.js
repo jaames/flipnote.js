@@ -1,5 +1,6 @@
 import webglCanvas from "webgl/webglCanvas";
 import ppmDecoder from "decoder";
+import memoAudio from "./audio";
 
 export default class memoPlayer {
   constructor(el, width, height) {
@@ -11,6 +12,9 @@ export default class memoPlayer {
   open(source) {
     var buffer = source;
     this.ppm = new ppmDecoder(buffer);
+    this.audio = new memoAudio(this.ppm.decodeAudio("bgm"));
+    this.audio.playbackRate = (1 / this.ppm.bgmFramerate) / (1 / this.ppm.framerate);
+    this.audio.play();
     this._isOpen = true;
     this.setFrame(0);
   }

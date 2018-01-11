@@ -1,4 +1,5 @@
 import fileReader from "./fileReader";
+import {decodeAdpcm} from "./adpcm";
 
 const WIDTH = 256;
 const HEIGHT = 192;
@@ -58,14 +59,15 @@ export default class ppmDecoder extends fileReader {
 
   _decodeSoundHeader() {
     // frame data offset + frame data length + sound effect flags, rouded up to next multiple of 4
-    this.seek(getPadLen(0x06A0 + this._frameDataLength + this.frameCount, 4));
+    var soundDataOffset = getPadLen(0x06A0 + this._frameDataLength + this.frameCount, 4);
+    this.seek(soundDataOffset);
     var bgmLen = this.readUint32();
     var se1Len = this.readUint32();
     var se2Len = this.readUint32();
     var se3Len = this.readUint32();
     this.frameSpeed = 8 - this.readUint8();
     this.bgmSpeed = 8 - this.readUint8();
-    var offset = this._soundDataOffset + 32;
+    var offset = soundDataOffset + 32;
     this.soundMeta = {
       "bgm": {offset: offset,           length: bgmLen},
       "se1": {offset: offset += bgmLen, length: se1Len},
@@ -190,13 +192,11 @@ export default class ppmDecoder extends fileReader {
 
   decodeAudio(track) {
     this._seekToAudio(track);
-    var trackLen = this.trackMeta[track].length;
-    var buffer = new Uint8Array(trackLen);
-    for (let i = 0; i < trackLen; i++) {
-      var byte = this.readUint8();
-      buffer[i] = (byte & 0xF) << 4 | (byte >> 4);
-    }
-    return buffer;
+    console.log(this.soundMeta[track])
+    var buffer = new Uint8Array(this.soundMeta[track].length).map(val => {
+      return this.readUint8();
+    });
+    return decodeAdpcm(buffer);
   }
 
 }
