@@ -215,11 +215,12 @@ export default class ppmDecoder extends fileReader {
     if (!isNewFrame) {
       for (let y = 0; y < HEIGHT; y++) {
         for (let x = 0; x < WIDTH; x++) {
-          var dest = x + (y * WIDTH);
-          var src = dest - (translateX + (translateY * WIDTH));
+          var dest = x + y * WIDTH;
+          var src = dest - (translateX + translateY * WIDTH);
+          var srcOutOfBounds = (x - translateX > WIDTH) || (x - translateX < 0);
           // if the current frame is based on changes from the preivous one, merge them by XORing their values
-          this._layers[0][dest] = this._layers[0][dest] ^ this._prevLayers[0][src];
-          this._layers[1][dest] = this._layers[1][dest] ^ this._prevLayers[1][src];
+          this._layers[0][dest] = srcOutOfBounds ? 0 : this._layers[0][dest] ^ this._prevLayers[0][src];
+          this._layers[1][dest] = srcOutOfBounds ? 0 : this._layers[1][dest] ^ this._prevLayers[1][src];
         }
       }
     }
