@@ -54,6 +54,8 @@ export default class ppmDecoder extends fileReader {
       new Uint8Array(WIDTH * HEIGHT),
       new Uint8Array(WIDTH * HEIGHT)
     ];
+    // temp array to use when handlin gprev frame translation
+    this._temp = new Uint8Array(WIDTH * HEIGHT);
     this._prevFrameIndex = 0;
   }
 
@@ -142,15 +144,12 @@ export default class ppmDecoder extends fileReader {
     var header = this.readUint8();
     var isNewFrame = (header >> 7) & 0x1;
     var isTranslated = (header >> 5) & 0x3;
+    var translateX = 0;
+    var translateY = 0;
 
     if ((decodePrev) && (!isNewFrame) && (index !== this._prevFrameIndex + 1)) {
       this._decodePrevFrames(index);
     }
-
-    var layerEncoding = [
-      this._readLineEncoding(),
-      this._readLineEncoding()
-    ];
     // copy the current layer buffers to the previous ones
     this._prevLayers[0].set(this._layers[0]);
     this._prevLayers[1].set(this._layers[1]);
@@ -158,7 +157,18 @@ export default class ppmDecoder extends fileReader {
     // reset current layer buffers
     this._layers[0].fill(0);
     this._layers[1].fill(0);
+
+    if (isTranslated) {
+      translateX = this.readInt8();
+      translateY = this.readInt8();
+    }
+
     // start decoding layer bitmaps
+    var layerEncoding = [
+      this._readLineEncoding(),
+      this._readLineEncoding()
+    ];
+
     for (let layer = 0; layer < 2; layer++) {
       var layerBitmap = this._layers[layer];
       for (let line = 0; line < HEIGHT; line++) {
@@ -202,17 +212,14 @@ export default class ppmDecoder extends fileReader {
         }
       }
     }
-    if (isTranslated) {
-      // TODO: handle prev frame translation
-    }
     if (!isNewFrame) {
-      let i = 0;
       for (let y = 0; y < HEIGHT; y++) {
         for (let x = 0; x < WIDTH; x++) {
+          var dest = x + (y * WIDTH);
+          var src = dest - (translateX + (translateY * WIDTH));
           // if the current frame is based on changes from the preivous one, merge them by XORing their values
-          this._layers[0][i] = this._layers[0][i] ^ this._prevLayers[0][i];
-          this._layers[1][i] = this._layers[1][i] ^ this._prevLayers[1][i];
-          i++;
+          this._layers[0][dest] = this._layers[0][dest] ^ this._prevLayers[0][src];
+          this._layers[1][dest] = this._layers[1][dest] ^ this._prevLayers[1][src];
         }
       }
     }
