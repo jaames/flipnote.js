@@ -43,6 +43,7 @@ export default class ppmDecoder extends fileReader {
     this._frameOffsets = new Uint32Array(offsetTableLength / 4).map(_ => {
       return 0x06A0 + 8 + offsetTableLength + this.readUint32();
     });
+    this.meta = this._decodeMeta();
     this._decodeSoundHeader();
     // jump to the start of the sound data
     // create image buffers
@@ -126,7 +127,7 @@ export default class ppmDecoder extends fileReader {
     ];
   }
 
-  decodeMeta() {
+  _decodeMeta() {
     this.seek(16);
     var lock = this.readUint16(),
         thumbIndex = this.readInt16(),
@@ -291,8 +292,8 @@ export default class ppmDecoder extends fileReader {
           var src = dest - (translateX + translateY * WIDTH);
           var srcOutOfBounds = (x - translateX > WIDTH) || (x - translateX < 0);
           // if the current frame is based on changes from the preivous one, merge them by XORing their values
-          this._layers[0][dest] = srcOutOfBounds ? 0 : this._layers[0][dest] ^ this._prevLayers[0][src];
-          this._layers[1][dest] = srcOutOfBounds ? 0 : this._layers[1][dest] ^ this._prevLayers[1][src];
+          this._layers[0][dest] = srcOutOfBounds ? this._layers[0][dest] : this._layers[0][dest] ^ this._prevLayers[0][src];
+          this._layers[1][dest] = srcOutOfBounds ? this._layers[1][dest] : this._layers[1][dest] ^ this._prevLayers[1][src];
         }
       }
     }
