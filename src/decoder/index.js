@@ -59,33 +59,43 @@ export default class ppmDecoder extends fileReader {
     this._prevFrameIndex = 0;
   }
 
-  _decodeSoundHeader() {
-    // frame data offset + frame data length + sound effect flags, rouded up to next multiple of 4
-    var soundDataOffset = getPadLen(0x06A0 + this._frameDataLength + this.frameCount, 4);
-    this.seek(soundDataOffset);
-    var bgmLen = this.readUint32();
-    var se1Len = this.readUint32();
-    var se2Len = this.readUint32();
-    var se3Len = this.readUint32();
-    this.frameSpeed = 8 - this.readUint8();
-    this.bgmSpeed = 8 - this.readUint8();
-    var offset = soundDataOffset + 32;
-    this.soundMeta = {
-      "bgm": {offset: offset,           length: bgmLen},
-      "se1": {offset: offset += bgmLen, length: se1Len},
-      "se2": {offset: offset += se1Len, length: se2Len},
-      "se3": {offset: offset += se2Len, length: se3Len},
-    };
-    this.framerate = FRAMERATES[this.frameSpeed];
-    this.bgmFramerate = FRAMERATES[this.bgmSpeed];
-  }
-
   _seekToFrame(index) {
     this.seek(this._frameOffsets[index]);
   }
 
   _seekToAudio(track) {
     this.seek(this.soundMeta[track].offset);
+  }
+
+  _readUtf16(length) {
+    var str = "";
+    for (let i = 0; i < length / 2; i++) {
+      var char = this.readUint16();
+      if (char == 0) continue;
+      str += String.fromCharCode(char);
+    }
+    return str;
+  }
+
+  _readHex(length) {
+    var str = "";
+    for (let i = 0; i < length; i++) {
+      var hex = this.readUint8().toString(16);
+      hex = (hex.length === 1) ? "0" + hex : hex;
+      str += hex;
+    }
+    return str.toUpperCase();
+  }
+
+  _readFilename() {
+    var str = "";
+    str += this._readHex(3) + "_";
+    for (let i = 0; i < 13; i++) {
+      str += String.fromCharCode(this.readUint8());
+    }
+    str += "_";
+    str += this.readUint16().toString().padStart(3, "0");
+    return str;
   }
 
   _readLineEncoding() {
@@ -114,6 +124,68 @@ export default class ppmDecoder extends fileReader {
       pen[(header >> 1) & 0x3], // layer 1 color
       pen[(header >> 3) & 0x3], // layer 2 color
     ];
+  }
+
+  decodeMeta() {
+    this.seek(16);
+    var lock = this.readUint16(),
+        thumbIndex = this.readInt16(),
+        rootAuthorName = this._readUtf16(22),
+        parentAuthorName = this._readUtf16(22),
+        currentAuthorName = this._readUtf16(22),
+        parentAuthorId = this._readHex(8),
+        currentAuthorId = this._readHex(8),
+        parentFilename = this._readFilename(),
+        currentFilename = this._readFilename(),
+        rootAuthorId = this._readHex(8);
+    this.seek(4, 1);
+    var timestamp = this.readUint32();
+    this.seek(0x6A60);
+    var flags = this.readUint16();
+    return {
+      lock: lock,
+      loop: flags >> 1 & 0x01,
+      frame_count: this.frameCount,
+      frame_speed: this.frameSpeed,
+      thumb_index: thumbIndex,
+      timestamp: timestamp,
+      unix_timestamp: timestamp + 946684800,
+      root: {
+        username: rootAuthorName,
+        fsid: rootAuthorId,
+      },
+      parent: {
+        username: parentAuthorName,
+        fsid: parentAuthorId,
+        filename: parentFilename
+      },
+      current: {
+        username: currentAuthorName,
+        fsid: currentAuthorId,
+        filename: currentFilename
+      },
+    };
+  }
+
+  _decodeSoundHeader() {
+    // frame data offset + frame data length + sound effect flags, rouded up to next multiple of 4
+    var soundDataOffset = getPadLen(0x06A0 + this._frameDataLength + this.frameCount, 4);
+    this.seek(soundDataOffset);
+    var bgmLen = this.readUint32();
+    var se1Len = this.readUint32();
+    var se2Len = this.readUint32();
+    var se3Len = this.readUint32();
+    this.frameSpeed = 8 - this.readUint8();
+    this.bgmSpeed = 8 - this.readUint8();
+    var offset = soundDataOffset + 32;
+    this.soundMeta = {
+      "bgm": {offset: offset,           length: bgmLen},
+      "se1": {offset: offset += bgmLen, length: se1Len},
+      "se2": {offset: offset += se1Len, length: se2Len},
+      "se3": {offset: offset += se2Len, length: se3Len},
+    };
+    this.framerate = FRAMERATES[this.frameSpeed];
+    this.bgmFramerate = FRAMERATES[this.bgmSpeed];
   }
 
   _isFrameNew(index) {
