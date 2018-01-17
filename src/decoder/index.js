@@ -9,18 +9,6 @@ const WHITE = [255, 255, 255, 255];
 const BLUE = [10, 57, 255, 255];
 const RED = [255, 42, 42, 255];
 
-// internal framerate value -> FPS table
-const FRAMERATES = {
-    1: 0.5,
-    2: 1,
-    3: 2,
-    4: 4,
-    5: 6,
-    6: 12,
-    7: 20,
-    8: 30,
-};
-
 // utility function to help account for padding when dealing with certain offsets
 function getPadLen(i, pad=4) {
   if (i % pad != 0) return i + pad - (i % pad);
@@ -185,8 +173,6 @@ export default class ppmDecoder extends fileReader {
       "se2": {offset: offset += se1Len, length: se2Len},
       "se3": {offset: offset += se2Len, length: se3Len},
     };
-    this.framerate = FRAMERATES[this.frameSpeed];
-    this.bgmFramerate = FRAMERATES[this.bgmSpeed];
   }
 
   _isFrameNew(index) {

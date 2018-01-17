@@ -17,8 +17,8 @@ export default class memoAudio {
     return this.source.playbackRate.value;
   }
 
-  play() {
-    this.source.start();
+  play(position) {
+    this.source.start(position);
   }
 
   plause() {

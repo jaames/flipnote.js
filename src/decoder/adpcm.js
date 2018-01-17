@@ -17,18 +17,17 @@ const stepSizeTable = [
   15289, 16818, 18500, 20350, 22385, 24623, 27086, 29794, 32767
 ];
 
-let state = {
-  prevSample: 0, // predicted sample
-  prevIndex: 0 // index into step size table
-};
+let statePrevSample = 0, // predicted sample
+    statePrevIndex = 0; // predicted sample
 
+// util to clamp a number within a given range
 function clamp(num, min, max) {
   return num <= min ? min : num >= max ? max : num;
-}
+};
 
 export function decodeAdpcm(inputBuffer) {
-  state.prevSample = 0;
-  state.prevIndex = 0;
+  statePrevSample = 0;
+  statePrevIndex = 0;
   var outputBuffer = new Float32Array(inputBuffer.length * 2);
   var outputBufferOffset = 0;
   for (let inputBufferOffset = 0; inputBufferOffset < inputBuffer.length; inputBufferOffset++) {
@@ -42,8 +41,8 @@ export function decodeAdpcm(inputBuffer) {
 };
 
 function decodeSample(sample) {
-  var predSample = state.prevSample;
-  var index = state.prevIndex;
+  var predSample = statePrevSample;
+  var index = statePrevIndex;
   var step = stepSizeTable[index];
   var difference = step >> 3;
 
@@ -60,9 +59,8 @@ function decodeSample(sample) {
 
   // clamp output value
   predSample = clamp(predSample, -32767, 32767);
-
-  state.prevSample = predSample;
-  state.prevIndex = index;
+  statePrevSample = predSample;
+  statePrevIndex = index;
   // return a value between -1.0 and 1.0, since that's what's used by JavaScript's AudioBuffer API
   return predSample / 32768;
 };
