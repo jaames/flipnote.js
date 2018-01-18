@@ -66,7 +66,9 @@ export default class memoPlayer {
     this.paused = true;
     this._animLoopFrame = 0;
     this._lastFrameTime = 0;
+    this._events = {};
     this.setFrame(0);
+    this.emit("load");
   }
 
   close() {
@@ -83,7 +85,13 @@ export default class memoPlayer {
       this._animLoopFrame = 0;
     }
     if (this.currentFrame == this.frameCount -1) {
-      (this.loop ? this.firstFrame : this.pause)();
+      if (this.loop) {
+        this.firstFrame();
+        this.emit("playback:loop");
+      } else {
+        this.pause();
+        this.emit("playback:end");
+      }
     }
     this._animLoopFrame += dt;
     this._lastFrameTime = now;
@@ -95,11 +103,13 @@ export default class memoPlayer {
     this.paused = false;
     this._lastFrameTime = performance.now();
     this._animLoopFn(this._lastFrameTime);
+    this.emit("playback:start");
   }
 
   pause() {
     if (!this._isOpen) return null;
     this.paused = true;
+    this.emit("playback:stop");
   }
 
   setFrame(index) {
@@ -133,7 +143,24 @@ export default class memoPlayer {
   }
 
   firstFrame() {
-    this.currentTime = 0;
+    this.currentFrame = 0;
+  }
+
+  on(eventType, callback) {
+    var events = this._events;
+    (events[eventType] || (events[eventType] = [])).push(callback);
+  }
+
+  off(eventType, callback) {
+    var callbackList = this._events[eventType];
+    if (callbackList) callbackList.splice(callbackList.indexOf(callback), 1);
+  }
+
+  emit(eventType, ...args) {
+    var callbackList = this._events[eventType] || [];
+    for (var i = 0; i < callbackList.length; i++) {
+      callbackList[i].apply(null, args); 
+    }
   }
 
 }
