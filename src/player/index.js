@@ -1,7 +1,6 @@
 import webglCanvas from "webgl/webglCanvas";
 import ppmDecoder from "decoder";
 import memoAudio from "./audio";
-import animLoop from "./animLoop";
 
 // internal framerate value -> FPS table
 const FRAMERATES = {
@@ -26,6 +25,14 @@ export default class memoPlayer {
     this.paused = true;
   }
 
+  get currentFrame() {
+    return this._frame;
+  }
+
+  set currentFrame(index) {
+    this.setFrame(index);
+  }
+
   get currentTime() {
     return this._isOpen ? this.currentFrame * (1 / this.ppm.framerate) : null;
   }
@@ -46,9 +53,12 @@ export default class memoPlayer {
 
   open(source) {
     var buffer = source;
-    this.ppm = new ppmDecoder(buffer);
-    this.meta = this.ppm.meta;
-    this.frameCount = this.ppm.frameCount;
+    var ppm = new ppmDecoder(buffer);
+    var meta = ppm.meta;
+    this.ppm = ppm;
+    this.meta = meta;
+    this.frameCount = ppm.frameCount;
+    this.loop = meta.loop == 1;
     // this.audio = new memoAudio(this.ppm.decodeAudio("bgm"));
     // this.audio.playbackRate = (1 / this.ppm.bgmFramerate) / (1 / this.ppm.framerate);
     // this.audio.play();
@@ -72,6 +82,9 @@ export default class memoPlayer {
       this.nextFrame();
       this._animLoopFrame = 0;
     }
+    if (this.currentFrame == this.frameCount -1) {
+      (this.loop ? this.firstFrame : this.pause)();
+    }
     this._animLoopFrame += dt;
     this._lastFrameTime = now;
     if (!this.paused) requestAnimationFrame(this._animLoopFn.bind(this));
@@ -91,28 +104,36 @@ export default class memoPlayer {
 
   setFrame(index) {
     if (!this._isOpen) return null;
-    if ((index >= 0) && (index < this.frameCount)) {
-      this.canvas.setPalette(this.ppm.getFramePalette(index));
-      this.canvas.setBitmaps(this.ppm.decodeFrame(index));
-      this.canvas.refresh();
-      this.currentFrame = index;
-    }
+    // clamp frame index
+    index = Math.max(0, Math.min(index, this.frameCount - 1));
+    this.canvas.setPalette(this.ppm.getFramePalette(index));
+    this.canvas.setBitmaps(this.ppm.decodeFrame(index));
+    this.canvas.refresh();
+    this._frame = index;
   }
 
   nextFrame() {
-    this.setFrame(this.currentFrame + 1);
+    if ((this.loop) && (this.currentFrame >= this.frameCount -1)) {
+      this.currentFrame = 0;
+    } else {
+      this.currentFrame += 1;
+    }
   }
 
   prevFrame() {
-    this.setFrame(this.currentFrame - 1);
+    if ((this.loop) && (this.currentFrame <= 0)) {
+      this.currentFrame = this.frameCount - 1;
+    } else {
+      this.currentFrame -= 1;
+    }
   }
 
   lastFrame() {
-    this.setFrame(this.frameCount - 1);
+    this.currentFrame = this.frameCount - 1;
   }
 
   firstFrame() {
-    this.setFrame(0);
+    this.currentTime = 0;
   }
 
 }
