@@ -222,12 +222,11 @@ export default class ppmDecoder extends fileReader {
       translateY = this.readInt8();
     }
 
-    // start decoding layer bitmaps
     var layerEncoding = [
       this._readLineEncoding(),
       this._readLineEncoding()
     ];
-
+     // start decoding layer bitmaps
     for (let layer = 0; layer < 2; layer++) {
       var layerBitmap = this._layers[layer];
       for (let line = 0; line < HEIGHT; line++) {
@@ -292,6 +291,17 @@ export default class ppmDecoder extends fileReader {
       return this.readUint8();
     });
     return decodeAdpcm(buffer);
+  }
+
+  decodeSoundFlags() {
+    this.seek(0x06A0 + this._frameDataLength);
+    // per msdn docs - the array map callback is only invoked for array indicies that have assigned values
+    // so when we create an array, we need to fill it with something before we can map over it
+    var arr = new Array(this.frameCount).fill([]);
+    return arr.map(value => {
+      var byte = this.readUint8();
+      return [byte & 0x1, (byte >> 1) & 0x1, (byte >> 2) & 0x1];
+    });
   }
 
 }

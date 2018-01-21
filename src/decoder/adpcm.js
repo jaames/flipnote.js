@@ -17,8 +17,8 @@ const stepSizeTable = [
   15289, 16818, 18500, 20350, 22385, 24623, 27086, 29794, 32767
 ];
 
-let statePrevSample = 0, // predicted sample
-    statePrevIndex = 0; // predicted sample
+let statePrevSample = 0,
+    statePrevIndex = 0;
 
 // util to clamp a number within a given range
 function clamp(num, min, max) {
