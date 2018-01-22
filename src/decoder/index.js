@@ -135,7 +135,6 @@ export default class ppmDecoder extends fileReader {
       lock: lock,
       loop: flags >> 1 & 0x01,
       frame_count: this.frameCount,
-      frame_speed: this.frameSpeed,
       thumb_index: thumbIndex,
       timestamp: timestamp,
       unix_timestamp: timestamp + 946684800,

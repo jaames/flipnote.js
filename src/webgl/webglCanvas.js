@@ -6,7 +6,6 @@ export default class webglCanvas {
     el.width = width || 256;
     el.height = height || 192; 
     var gl = el.getContext("webgl", {
-      alpha: false,
       antialias: false,
     });
     this.canvas = el;
@@ -65,5 +64,9 @@ export default class webglCanvas {
 
   refresh() {
     this.gl.drawArrays(this.gl.TRIANGLES, 0, 6);
+  }
+
+  clear() {
+    this.gl.clear(this.gl.COLOR_BUFFER_BIT);
   }
 }

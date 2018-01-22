@@ -48,7 +48,11 @@ export default class memoPlayer {
   }
 
   get framerate() {
-    return FRAMERATES[this.ppm.frameSpeed];
+    return FRAMERATES[this.frameSpeed];
+  }
+
+  get _audiorate() {
+    return (1 / FRAMERATES[this.ppm.bgmSpeed]) / (1 / this.framerate);
   }
 
   open(source) {
@@ -58,13 +62,19 @@ export default class memoPlayer {
     this.ppm = ppm;
     this.meta = meta;
     this.frameCount = ppm.frameCount;
+    this.frameSpeed = ppm.frameSpeed;
     this.loop = meta.loop == 1;
-    // this.audio = new memoAudio(this.ppm.decodeAudio("bgm"));
-    // this.audio.playbackRate = (1 / this.ppm.bgmFramerate) / (1 / this.ppm.framerate);
-    // this.audio.play();
+    this._bgmAudio = ppm.soundMeta.bgm.length > 0 ? new memoAudio(this.ppm.decodeAudio("bgm")) : null;
+    if (this._bgmAudio) this._bgmAudio.playbackRate = this._audiorate;
+    this._seAudio = [
+      ppm.soundMeta.se1.length > 0 ? new memoAudio(this.ppm.decodeAudio("se1")) : null,
+      ppm.soundMeta.se2.length > 0 ? new memoAudio(this.ppm.decodeAudio("se2")) : null,
+      ppm.soundMeta.se3.length > 0 ? new memoAudio(this.ppm.decodeAudio("se3")) : null,
+    ];
+    this._seFlags = this.ppm.decodeSoundFlags();
     this._isOpen = true;
     this.paused = true;
-    this._animLoopFrame = 0;
+    this._playbackFrameTime = 0;
     this._lastFrameTime = 0;
     this._events = {};
     this.setFrame(0);
@@ -74,15 +84,23 @@ export default class memoPlayer {
   close() {
     this.ppm = null;
     this._isOpen = false;
-    this.currentFrame = 0;
     this.paused = true;
+    this.loop = null;
+    this.meta = null;
+    this.frameCount = null;
+    this.frameSpeed = null;
+    this._frame = 0;
+    this._bgmAudio = null;
+    this._seAudio = new Array(3);
+    this._seFlags = null;
+    this.canvas.clear();
   }
 
-  _animLoopFn(now) {
+  _playbackLoop(now) {
     var dt = (now - this._lastFrameTime) / (1000 / 60);
-    if (this._animLoopFrame >= 60 / this.framerate) {
+    if (this._playbackFrameTime >= 60 / this.framerate) {
       this.nextFrame();
-      this._animLoopFrame = 0;
+      this._playbackFrameTime = 0;
     }
     if (this.currentFrame == this.frameCount -1) {
       if (this.loop) {
@@ -93,21 +111,23 @@ export default class memoPlayer {
         this.emit("playback:end");
       }
     }
-    this._animLoopFrame += dt;
+    this._playbackFrameTime += dt;
     this._lastFrameTime = now;
-    if (!this.paused) requestAnimationFrame(this._animLoopFn.bind(this));
+    if (!this.paused) requestAnimationFrame(this._playbackLoop.bind(this));
   }
 
   play() {
     if (!this._isOpen) return null;
     this.paused = false;
+    if ((!this.loop) && (this.currentFrame == this.frameCount - 1)) this._frame = 0;
     this._lastFrameTime = performance.now();
-    this._animLoopFn(this._lastFrameTime);
+    this._playbackLoop(this._lastFrameTime);
     this.emit("playback:start");
   }
 
   pause() {
     if (!this._isOpen) return null;
+    // break the playback loop
     this.paused = true;
     this.emit("playback:stop");
   }

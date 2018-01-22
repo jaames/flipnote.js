@@ -6,7 +6,16 @@ export default class memoAudio {
     var source = ctx.createBufferSource();
     source.buffer = audioBuffer;
     source.connect(ctx.destination);
+    this.ctx = ctx;
     this.source = source;
+  }
+
+  set loop(value) {
+    this.source.loop = value;
+  }
+
+  get loop() {
+    return this.source.loop;
   }
 
   set playbackRate(value) {
@@ -17,8 +26,12 @@ export default class memoAudio {
     return this.source.playbackRate.value;
   }
 
-  play(position) {
-    this.source.start(position);
+  get currentTime() {
+    return this.ctx.currentTime;
+  }
+
+  play(offset) {
+    this.source.start(0, offset);
   }
 
   plause() {
