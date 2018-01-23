@@ -31,20 +31,22 @@ export default class memoPlayer {
 
   set currentFrame(index) {
     this.setFrame(index);
+    this._playbackFrameTime = 0;
   }
 
   get currentTime() {
-    return this._isOpen ? this.currentFrame * (1 / this.ppm.framerate) : null;
+    return this._isOpen ? this.currentFrame * (1 / this.framerate) : null;
   }
 
   set currentTime(value) {
     if ((this._isOpen) && (value < this.duration) && (value > 0)) {
-      this.setFrame(Math.round(value / (1 / this.ppm.framerate)));
+      this.setFrame(Math.round(value / (1 / this.framerate)));
+      this._playbackFrameTime = 0;
     }
   }
 
   get duration() {
-    return this._isOpen ? this.frameCount * (1 / this.ppm.framerate) : null;
+    return this._isOpen ? this.frameCount * (1 / this.framerate) : null;
   }
 
   get framerate() {
@@ -96,15 +98,29 @@ export default class memoPlayer {
     this.canvas.clear();
   }
 
+  _playFrameSe(frameIndex) {
+    var flags = this._seFlags[frameIndex];
+    for (let i = 0; i < flags.length; i++) {
+      if (flags[i] && this._seAudio[i]) {this._seAudio[i].start(); console.log(i) };
+    }
+  }
+
+  _playBgm() {
+    if (this._bgmAudio) this._bgmAudio.start(this.currentTime);
+  }
+
   _playbackLoop(now) {
     var dt = (now - this._lastFrameTime) / (1000 / 60);
+    var frame = this.currentFrame;
     if (this._playbackFrameTime >= 60 / this.framerate) {
+      this._playFrameSe(frame);
       this.nextFrame();
       this._playbackFrameTime = 0;
     }
-    if (this.currentFrame == this.frameCount -1) {
+    if (frame == this.frameCount -1) {
       if (this.loop) {
         this.firstFrame();
+        this._playBgm();
         this.emit("playback:loop");
       } else {
         this.pause();
@@ -121,6 +137,7 @@ export default class memoPlayer {
     this.paused = false;
     if ((!this.loop) && (this.currentFrame == this.frameCount - 1)) this._frame = 0;
     this._lastFrameTime = performance.now();
+    this._playBgm();
     this._playbackLoop(this._lastFrameTime);
     this.emit("playback:start");
   }
@@ -129,6 +146,7 @@ export default class memoPlayer {
     if (!this._isOpen) return null;
     // break the playback loop
     this.paused = true;
+    if (this._bgmAudio) this._bgmAudio.stop();
     this.emit("playback:stop");
   }
 

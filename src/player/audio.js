@@ -3,38 +3,28 @@ export default class memoAudio {
     var ctx = new AudioContext();
     var audioBuffer = ctx.createBuffer(1, audioData.length, 8192);
     var channel = audioBuffer.copyToChannel(audioData, 0);
-    var source = ctx.createBufferSource();
-    source.buffer = audioBuffer;
-    source.connect(ctx.destination);
+    this.audioBuffer = audioBuffer;
+    this.source = null;
+    this.paused = true;
     this.ctx = ctx;
-    this.source = source;
+    this.playbackRate = 1;
   }
 
-  set loop(value) {
-    this.source.loop = value;
-  }
-
-  get loop() {
-    return this.source.loop;
-  }
-
-  set playbackRate(value) {
-    this.source.playbackRate.value = value;
-  }
-
-  get playbackRate() {
-    return this.source.playbackRate.value;
-  }
-
-  get currentTime() {
-    return this.ctx.currentTime;
-  }
-
-  play(offset) {
+  start(offset) {
+    this.source = this.ctx.createBufferSource();
+    this.source.buffer = this.audioBuffer;
+    this.source.connect(this.ctx.destination);
+    this.source.onended = e => {
+      this.paused = true;
+    };
+    this.source.playbackRate.value = this.playbackRate;
     this.source.start(0, offset);
+    this.paused = false;
   }
 
-  plause() {
-    this.source.stop();
+  stop() {
+    if (this.source) this.source.stop();
+    this.source = null;
+    this.paused = true;
   }
 }
