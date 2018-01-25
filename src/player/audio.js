@@ -1,4 +1,9 @@
-export default class memoAudio {
+// Wrapper around JavaScript's audio API since it's a bit of a pain to deal with
+export default class audioTrack {
+  /**
+  * Create a new audio player
+  * @param {Float32Array} audioData - mono-channel floating 32-bit PCM audio
+  */
   constructor (audioData) {
     var ctx = new AudioContext();
     var audioBuffer = ctx.createBuffer(1, audioData.length, 8192);
@@ -10,6 +15,10 @@ export default class memoAudio {
     this.playbackRate = 1;
   }
 
+  /**
+  * Start audio playback
+  * @param {number} offset - offset to begin playback at
+  */
   start(offset) {
     this.source = this.ctx.createBufferSource();
     this.source.buffer = this.audioBuffer;
@@ -22,6 +31,9 @@ export default class memoAudio {
     this.paused = false;
   }
 
+  /**
+  * Stop audio playback
+  */
   stop() {
     if (this.source) this.source.stop();
     this.source = null;

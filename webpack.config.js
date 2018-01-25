@@ -3,6 +3,7 @@
 
 const path = require("path");
 const webpack = require("webpack");
+const CopyWebpackPlugin = require("copy-webpack-plugin");
 const version = require("./package.json").version;
 
 module.exports = function (env) {
@@ -44,13 +45,15 @@ module.exports = function (env) {
           "Real-time, browser-based playback of Flipnote Studio's .ppm animation format",
           "2018 James Daniel",
           "github.com/jaames/ugomemo.js",
-          "---",
           "Flipnote Studio is (c) Nintendo Co., Ltd.",
         ].join("\n")
       }),
       new webpack.DefinePlugin({
         VERSION: JSON.stringify(version)
-      })
+      }),
+      new CopyWebpackPlugin([
+        {from: "demo/*.ppm"}
+      ])
     ],
     devtool: "source-map",
     devServer: {

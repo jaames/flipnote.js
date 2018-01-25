@@ -1,8 +1,8 @@
-import player from "./player";
-import decoder from "./decoder";
+import ppmPlayer from "./player";
+// import decoder from "./decoder";
 
 module.exports = {
   version: VERSION,
-  player: player,
-  decoder: decoder,
+  player: ppmPlayer,
+  // decoder: decoder,
 };

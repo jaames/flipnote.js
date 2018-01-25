@@ -1,4 +1,6 @@
-// ADPCM decoder implementation based on https://github.com/jwzhangjie/Adpcm_Pcm/blob/master/adpcm.c
+/** convert 4-bit adpcm to float32 pcm (as supported by the AudioBuffer API) 
+ *  implementation based on https://github.com/jwzhangjie/Adpcm_Pcm/blob/master/adpcm.c
+*/
 
 const indexTable = [
   -1, -1, -1, -1, 2, 4, 6, 8,
@@ -20,26 +22,32 @@ const stepSizeTable = [
 let statePrevSample = 0,
     statePrevIndex = 0;
 
-// util to clamp a number within a given range
-function clamp(num, min, max) {
-  return num <= min ? min : num >= max ? max : num;
-};
-
+/**
+* Convert 4-bit adpcm to 32-bit pcm
+* @param {Uint8Array} inputBuffer - adpcm buffer
+* @returns {Float32Array}
+*/
 export function decodeAdpcm(inputBuffer) {
   statePrevSample = 0;
   statePrevIndex = 0;
   var outputBuffer = new Float32Array(inputBuffer.length * 2);
-  var outputBufferOffset = 0;
-  for (let inputBufferOffset = 0; inputBufferOffset < inputBuffer.length; inputBufferOffset++) {
-    var byte = inputBuffer[inputBufferOffset];
+  var outputOffset = 0;
+  for (var inputOffset = 0; inputOffset < inputBuffer.length; inputOffset++) {
+    var byte = inputBuffer[inputOffset];
     // note - Flipnote Studio's adpcm data uses reverse nibble order
-    outputBuffer[outputBufferOffset] = decodeSample(byte & 0xF);
-    outputBuffer[outputBufferOffset + 1] = decodeSample((byte >> 4) & 0xF);
-    outputBufferOffset += 2;
+    outputBuffer[outputOffset] = decodeSample(byte & 0xF);
+    outputBuffer[outputOffset + 1] = decodeSample((byte >> 4) & 0xF);
+    outputOffset += 2;
   }
   return outputBuffer;
 };
 
+/**
+* Unpack a single adpcm 4-bit sample
+* @param {number} sample - sample value
+* @returns {number}
+* @access protected
+*/
 function decodeSample(sample) {
   var predSample = statePrevSample;
   var index = statePrevIndex;
@@ -63,4 +71,16 @@ function decodeSample(sample) {
   statePrevIndex = index;
   // return a value between -1.0 and 1.0, since that's what's used by JavaScript's AudioBuffer API
   return predSample / 32768;
+};
+
+/**
+* Util to clamp a number within a given range
+* @param {number} num - input value
+* @param {number} min - minimun value
+* @param {number} max - maximum value
+* @returns {number}
+* @access protected
+*/
+function clamp(num, min, max) {
+  return num <= min ? min : num >= max ? max : num;
 };

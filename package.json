@@ -1,6 +1,6 @@
 {
   "name": "ugomemo.js",
-  "version": "0.0.0",
+  "version": "1.0.0",
   "repository": "https://github.com/jaames/ugomemo.js.git",
   "author": "james <jamesdaniel2197@gmail.com>",
   "license": "MIT",
@@ -13,6 +13,7 @@
     "babel-loader": "^7.1.2",
     "babel-preset-env": "^1.6.1",
     "babel-preset-stage-2": "^6.24.1",
+    "copy-webpack-plugin": "^4.3.1",
     "webpack": "^3.8.1",
     "webpack-dev-server": "^2.9.4"
   }

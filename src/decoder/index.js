@@ -1,39 +1,64 @@
+/**
+ * PPM decoder
+ * Reads frames, audio, and metadata from Flipnote Studio PPM files 
+ * Based on my Python PPM decoder implementation (https://github.com/jaames/flipnote-tools)
+ *  
+ * Credits:
+ *  PPM format reverse-engineering and documentation:
+ *   - bricklife (http://ugomemo.g.hatena.ne.jp/bricklife/20090307/1236391313)
+ *   - mirai-iro (http://mirai-iro.hatenablog.jp/entry/20090116/ugomemo_ppm)
+ *   - harimau_tigris (http://ugomemo.g.hatena.ne.jp/harimau_tigris)
+ *   - steven (http://www.dsibrew.org/wiki/User:Steven)
+ *   - yellows8 (http://www.dsibrew.org/wiki/User:Yellows8)
+ *   - PBSDS (https://github.com/pbsds)
+ *   - jaames (https://github.com/jaames)
+ *  Identifying the PPM sound codec:
+ *   - Midmad from Hatena Haiku
+ *   - WDLMaster from hcs64.com
+ *  Helping me to identify issues with the Python decoder that this is based on:
+ *   - Austin Burk (https://sudomemo.net)
+ * 
+ *  Lastly, a guge thanks goes to Nintendo for creating Flipnote Studio, 
+ *  and to Hatena for providing the Flipnote Hatena online service, both of which inspired so many :)
+*/
+
 import fileReader from "./fileReader";
 import {decodeAdpcm} from "./adpcm";
 
 const WIDTH = 256;
 const HEIGHT = 192;
-
 const BLACK = [14, 14, 14, 255];
 const WHITE = [255, 255, 255, 255];
 const BLUE = [10, 57, 255, 255];
 const RED = [255, 42, 42, 255];
 
-// utility function to help account for padding when dealing with certain offsets
-function getPadLen(i, pad=4) {
-  if (i % pad != 0) return i + pad - (i % pad);
-  return i;
-};
-
 export default class ppmDecoder extends fileReader {
-  constructor(arrBuffer) {
-    super(arrBuffer);
+  /**
+  * Create a ppmDecoder instance
+  * @param {ArrayBuffer} arrayBuffer - data to read from
+  */
+  constructor(arrayBuffer) {
+    super(arrayBuffer);
     this.seek(4);
+    // decode header
+    // https://github.com/pbsds/hatena-server/wiki/PPM-format#file-header
     this._frameDataLength = this.readUint32();
     this._soundDataLength = this.readUint32();
     this.frameCount = Math.min(this.readUint16() + 1, 999);
-    this.seek(4, 1);
+    this.seek(18);
     this.thumbFrameIndex = this.readUint16();
     // jump to the start of the animation data section
+    // https://github.com/pbsds/hatena-server/wiki/PPM-format#animation-data-section
     this.seek(0x06A0);
-    var offsetTableLength = Math.min(this.readUint16(), this.frameCount * 4);
-    this.seek(6, 1);
-    this._frameOffsets = new Uint32Array(offsetTableLength / 4).map(_ => {
-      return 0x06A0 + 8 + offsetTableLength + this.readUint32();
+    var offsetTableLength = this.readUint16();
+    // skip padding + flags
+    this.seek(0x06A8);
+    // read frame offsets and build them into a table
+    this._frameOffsets = new Uint32Array(offsetTableLength / 4).map(value => {
+      return 0x06A8 + offsetTableLength + this.readUint32();
     });
     this.meta = this._decodeMeta();
     this._decodeSoundHeader();
-    // jump to the start of the sound data
     // create image buffers
      this._layers = [
       new Uint8Array(WIDTH * HEIGHT),
@@ -43,92 +68,120 @@ export default class ppmDecoder extends fileReader {
       new Uint8Array(WIDTH * HEIGHT),
       new Uint8Array(WIDTH * HEIGHT)
     ];
-    // temp array to use when handlin gprev frame translation
-    this._temp = new Uint8Array(WIDTH * HEIGHT);
     this._prevFrameIndex = 0;
   }
-
+  
+  /**
+  * Seek the buffer position to the start of a given frame
+  * @param {number} index - zero-based frame index to jump to
+  * @access protected
+  */
   _seekToFrame(index) {
     this.seek(this._frameOffsets[index]);
   }
 
+  /**
+  * Seek the buffer position to the start of a given audio track
+  * @param {string} track - track name, "bgm" | "se1" | "se2" | "se3"
+  * @access protected
+  */
   _seekToAudio(track) {
     this.seek(this.soundMeta[track].offset);
   }
 
+  /**
+  * Read an UTF-16 little-endian string (for usernames)
+  * @param {number} length - max length of the string in bytes (including padding)
+  * @returns {string}
+  * @access protected
+  */
   _readUtf16(length) {
     var str = "";
-    for (let i = 0; i < length / 2; i++) {
+    var terminated = false;
+    for (var i = 0; i < length / 2; i++) {
       var char = this.readUint16();
-      if (char == 0) continue;
+      // utf16 stings in flipnotes are terminated with null bytes (0x00) 
+      if ((terminated) || (char == 0)) { 
+        terminated = true;
+        continue;
+      }
       str += String.fromCharCode(char);
     }
     return str;
   }
 
-  _readHex(length) {
-    var str = "";
-    for (let i = 0; i < length; i++) {
-      var hex = this.readUint8().toString(16);
-      hex = (hex.length === 1) ? "0" + hex : hex;
-      str += hex;
+  /**
+  * Read a hex string (for FSIDs and filenames)
+  * @param {number} length - max length of the string in bytes
+  * @param {boolean} reverse - defaults to false, if true, the string will be read in reverse byte order
+  * @returns {string}
+  * @access protected
+  */
+  _readHex(length, reverse=false) {
+    var ret = [];
+    for (var i = 0; i < length; i++) {
+      ret.push(this.readUint8().toString(16).padStart(2, "0"));
     }
-    return str.toUpperCase();
+    if (reverse) ret.reverse();
+    return ret.join("").toUpperCase();
   }
 
+  /**
+  * Read a HEX string 
+  * @returns {string}
+  * @access protected
+  */
   _readFilename() {
     var str = "";
+    // filename starts with 3 hex bytes
     str += this._readHex(3) + "_";
-    for (let i = 0; i < 13; i++) {
+    // then 13 byte utf8 string
+    for (var i = 0; i < 13; i++) {
       str += String.fromCharCode(this.readUint8());
     }
     str += "_";
+    // then 2-byte edit count padded to 3 chars
     str += this.readUint16().toString().padStart(3, "0");
     return str;
   }
 
+  /**
+  * Unpack the line encoding flags for all 192 lines in a layer
+  * @returns {array}
+  * @access protected
+  */
   _readLineEncoding() {
     var unpacked = new Uint8Array(HEIGHT);
-    for (let byteOffset = 0; byteOffset < 48; byteOffset ++) {
+    for (var byteOffset = 0; byteOffset < 48; byteOffset ++) {
       var byte = this.readUint8();
-      for (let bitOffset = 0; bitOffset < 8; bitOffset += 2) {
+      // each line's encoding type is stored as a 2-bit value
+      for (var bitOffset = 0; bitOffset < 8; bitOffset += 2) {
         unpacked[byteOffset * 4 + bitOffset / 2] = (byte >> bitOffset) & 0x03;
       }
     }
     return unpacked;
   }
 
-  getFramePalette(index) {
-    this._seekToFrame(index);
-    var header = this.readUint8();
-    var paperColor = header & 0x1;
-    var pen = [
-      null,
-      paperColor == 1 ? BLACK : WHITE,
-      RED,
-      BLUE,
-    ];
-    return [
-      paperColor == 1 ? WHITE : BLACK,
-      pen[(header >> 1) & 0x3], // layer 1 color
-      pen[(header >> 3) & 0x3], // layer 2 color
-    ];
-  }
-
+  /**
+  * Decode the main PPM metadata, like username, timestamp, etc
+  * @returns {object}
+  * @access protected
+  */
   _decodeMeta() {
-    this.seek(16);
+    // https://github.com/pbsds/hatena-server/wiki/PPM-format#file-header
+    this.seek(0x10);
     var lock = this.readUint16(),
         thumbIndex = this.readInt16(),
         rootAuthorName = this._readUtf16(22),
         parentAuthorName = this._readUtf16(22),
         currentAuthorName = this._readUtf16(22),
-        parentAuthorId = this._readHex(8),
-        currentAuthorId = this._readHex(8),
+        parentAuthorId = this._readHex(8, true),
+        currentAuthorId = this._readHex(8, true),
         parentFilename = this._readFilename(),
         currentFilename = this._readFilename(),
-        rootAuthorId = this._readHex(8);
-    this.seek(4, 1);
-    var timestamp = this.readUint32();
+        rootAuthorId = this._readHex(8, true);
+    this.seek(0x9A);
+    var timestamp = new Date((this.readUint32() + 946684800) * 1000);
     this.seek(0x6A60);
     var flags = this.readUint16();
     return {
@@ -137,7 +190,7 @@ export default class ppmDecoder extends fileReader {
       frame_count: this.frameCount,
       thumb_index: thumbIndex,
       timestamp: timestamp,
-      unix_timestamp: timestamp + 946684800,
+      spinoff: currentAuthorId !== parentAuthorId,
       root: {
         username: rootAuthorName,
         fsid: rootAuthorId,
@@ -155,17 +208,24 @@ export default class ppmDecoder extends fileReader {
     };
   }
 
+  /**
+  * Decode the sound header to get audio track lengths and frame/bgm sppeds
+  * @access protected
+  */
   _decodeSoundHeader() {
-    // frame data offset + frame data length + sound effect flags, rouded up to next multiple of 4
-    var soundDataOffset = getPadLen(0x06A0 + this._frameDataLength + this.frameCount, 4);
-    this.seek(soundDataOffset);
+    // https://github.com/pbsds/hatena-server/wiki/PPM-format#sound-data-section
+    // offset = frame data offset + frame data length + sound effect flags
+    var offset = 0x06A0 + this._frameDataLength + this.frameCount;
+    // account for multiple-of-4 padding
+    if (offset % 4 != 0) offset += 4 - (offset % 4);
+    this.seek(offset);
     var bgmLen = this.readUint32();
     var se1Len = this.readUint32();
     var se2Len = this.readUint32();
     var se3Len = this.readUint32();
     this.frameSpeed = 8 - this.readUint8();
     this.bgmSpeed = 8 - this.readUint8();
-    var offset = soundDataOffset + 32;
+    offset += 32;
     this.soundMeta = {
       "bgm": {offset: offset,           length: bgmLen},
       "se1": {offset: offset += bgmLen, length: se1Len},
@@ -174,12 +234,21 @@ export default class ppmDecoder extends fileReader {
     };
   }
 
+  /**
+  * Check whether or not a given frame is based on the previous one
+  * @param {number} index - zero-based frame index 
+  * @returns {boolean}
+  */
   _isFrameNew(index) {
     this._seekToFrame(index);
     var header = this.readUint8();
     return (header >> 7) & 0x1;
   }
 
+  /**
+  * Helper to decode necessary previous frames if the current frame is difference-based
+  * @param {number} index - zero-based frame index 
+  */
   _decodePrevFrames(index) {
     var backTrack = 0;
     var isNew = 0;
@@ -192,12 +261,40 @@ export default class ppmDecoder extends fileReader {
       this.decodeFrame(backTrack, false);
       backTrack += 1;
     }
-    // jump back to where we were
+    // jump back to where we were and skip flag byte
     this._seekToFrame(index);
     this.seek(1, 1);
   }
 
+  /**
+  * Get the color palette for a given frame
+  * @param {number} index - zero-based frame index 
+  * @returns {array} rgba palette in order of paper, layer1, layer2
+  */
+  getFramePalette(index) {
+    this._seekToFrame(index);
+    var header = this.readUint8();
+    var paperColor = header & 0x1;
+    var pen = [
+      null,
+      paperColor == 1 ? BLACK : WHITE,
+      RED,
+      BLUE,
+    ];
+    return [
+      paperColor == 1 ? WHITE : BLACK,
+      pen[(header >> 1) & 0x3], // layer 1 color
+      pen[(header >> 3) & 0x3], // layer 2 color
+    ];
+  }
+
+  /**
+  * Decode a frame
+  * @param {number} index - zero-based frame index 
+  * @param {boolean} decodePrev - defaults to true, set to false to not bother decoding previous frames
+  */
   decodeFrame(index, decodePrev=true) {
+    // https://github.com/pbsds/hatena-server/wiki/PPM-format#animation-frame
     this._seekToFrame(index);
     var header = this.readUint8();
     var isNewFrame = (header >> 7) & 0x1;
@@ -226,9 +323,9 @@ export default class ppmDecoder extends fileReader {
       this._readLineEncoding()
     ];
      // start decoding layer bitmaps
-    for (let layer = 0; layer < 2; layer++) {
+    for (var layer = 0; layer < 2; layer++) {
       var layerBitmap = this._layers[layer];
-      for (let line = 0; line < HEIGHT; line++) {
+      for (var line = 0; line < HEIGHT; line++) {
         var chunkOffset = line * WIDTH;
         var lineType = layerEncoding[layer][line];
         switch(lineType) {
@@ -248,11 +345,12 @@ export default class ppmDecoder extends fileReader {
               if (lineHeader & 0x80000000) {
                 var chunk = this.readUint8();
                 // unpack chunk bits
-                for (let pixel = 0; pixel < 8; pixel++) {
+                for (var pixel = 0; pixel < 8; pixel++) {
                   layerBitmap[chunkOffset + pixel] = chunk >> pixel & 0x1;
                 }
               }
               chunkOffset += 8;
+              // shift lineheader to the left by 1 bit, now on the next loop cycle the next bit will be checked
               lineHeader <<= 1;
             }
             break;
@@ -260,7 +358,7 @@ export default class ppmDecoder extends fileReader {
           case 3:
             while(chunkOffset < (line + 1) * WIDTH) {
               var chunk = this.readUint8();
-              for (let pixel = 0; pixel < 8; pixel++) {
+              for (var pixel = 0; pixel < 8; pixel++) {
                 layerBitmap[chunkOffset + pixel] = chunk >> pixel & 0x1;
               }
               chunkOffset += 8;
@@ -269,12 +367,14 @@ export default class ppmDecoder extends fileReader {
         }
       }
     }
+    // Merge this frame with the previous frame if needed
     if (!isNewFrame) {
-      for (let y = 0; y < HEIGHT; y++) {
-        for (let x = 0; x < WIDTH; x++) {
-          var dest = x + y * WIDTH;
-          var src = dest - (translateX + translateY * WIDTH);
-          var srcOutOfBounds = (x - translateX > WIDTH) || (x - translateX < 0);
+      var dest, src, srcOutOfBounds;
+      for (var y = 0; y < HEIGHT; y++) {
+        for (var x = 0; x < WIDTH; x++) {
+          dest = x + y * WIDTH;
+          src = dest - (translateX + translateY * WIDTH);
+          srcOutOfBounds = (x - translateX > WIDTH) || (x - translateX < 0);
           // if the current frame is based on changes from the preivous one, merge them by XORing their values
           this._layers[0][dest] = srcOutOfBounds ? this._layers[0][dest] : this._layers[0][dest] ^ this._prevLayers[0][src];
           this._layers[1][dest] = srcOutOfBounds ? this._layers[1][dest] : this._layers[1][dest] ^ this._prevLayers[1][src];
@@ -284,14 +384,23 @@ export default class ppmDecoder extends fileReader {
     return this._layers;
   }
 
+  /**
+  * Decode an audio track to 32-bit adpcm
+  * @param {string} track - track name, "bgm" | "se1" | "se2" | "se3"
+  * @returns {Float32Array}
+  */
   decodeAudio(track) {
     this._seekToAudio(track);
-    var buffer = new Uint8Array(this.soundMeta[track].length).map(val => {
+    var buffer = new Uint8Array(this.soundMeta[track].length).map(value => {
       return this.readUint8();
     });
     return decodeAdpcm(buffer);
   }
 
+  /**
+  * Decode the sound effect usage for each frame
+  * @returns {array}
+  */
   decodeSoundFlags() {
     this.seek(0x06A0 + this._frameDataLength);
     // per msdn docs - the array map callback is only invoked for array indicies that have assigned values

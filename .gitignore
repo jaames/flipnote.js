@@ -1,6 +1,7 @@
 # Test HTML page and Flipnote PPMs
 *.ppm
 *.html
+dist/demo
 
 # Logs
 logs
