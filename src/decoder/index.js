@@ -18,8 +18,8 @@
  *  Helping me to identify issues with the Python decoder that this is based on:
  *   - Austin Burk (https://sudomemo.net)
  * 
- *  Lastly, a guge thanks goes to Nintendo for creating Flipnote Studio, 
- *  and to Hatena for providing the Flipnote Hatena online service, both of which inspired so many :)
+ *  Lastly, a huge thanks goes to Nintendo for creating Flipnote Studio, 
+ *  and to Hatena for providing the Flipnote Hatena online service, both of which inspired so many c:
 */
 
 import fileReader from "./fileReader";
@@ -411,5 +411,4 @@ export default class ppmDecoder extends fileReader {
       return [byte & 0x1, (byte >> 1) & 0x1, (byte >> 2) & 0x1];
     });
   }
-
 }
