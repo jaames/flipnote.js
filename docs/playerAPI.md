@@ -1,4 +1,4 @@
-### Constructor
+## Constructor
 
 **Arguments:**
 
@@ -8,35 +8,35 @@
 
 * `{Number} height`
 
-**See also:** The [Getting Started](https://github.com/jaames/ugomemo.js/blob/master/docs/getStarted.md) guide.
+**See also:** The [Getting Started](https://github.com/jaames/flipnote.js/blob/master/docs/getStarted.md) guide.
 
-### Properties
+## Properties
 
-#### currentFrame
+### currentFrame
 
 **Details:**
 
 Index of the current frame being shown (starts at 0). This property can be set to a new value to jump the player to a different frame.
 
-#### currentTime
+### currentTime
 
 **Details:**
 
 Current playback prosition in seconds, modelled after the [HTMLMediaElement property of the same name](https://developer.mozilla.org/en-US/docs/Web/API/HTMLMediaElement/currentTime). This property can be set to a new value to jump the player to a different time.
 
-#### loop
+### loop
 
 **Details:**
 
 If `true`, the player will loop the Flipnote back to the start when it reaches the end.
 
-#### meta
+### meta
 
 **Details:**
 
 An object containing details about the Flipnote, such as the author, timestamp, etc. TODO: document this
 
-#### duration
+### duration
 
 **Read-Only**
 
@@ -44,7 +44,7 @@ An object containing details about the Flipnote, such as the author, timestamp, 
 
 Duration of the Flipnote in seconds.
 
-#### frameCount
+### frameCount
 
 **Read-Only**
 
@@ -52,7 +52,7 @@ Duration of the Flipnote in seconds.
 
 Total number of frames in the Flipnote.
 
-#### frameSpeed
+### frameSpeed
 
 **Read-Only**
 
@@ -60,7 +60,7 @@ Total number of frames in the Flipnote.
 
 Flipnote Studio speed setting, as shown in the app. Values are documented [here](http://flipnote.wikia.com/wiki/Flipnote_Speed).
 
-#### framerate
+### framerate
 
 **Read-Only**
 
@@ -68,21 +68,21 @@ Flipnote Studio speed setting, as shown in the app. Values are documented [here]
 
 Flipnote framerate in frames-per-second.
 
-### Methods
+## Methods
 
-#### play
+### play
 
 **Details:**
 
 Begin Flipnote playback.
 
-#### pause
+### pause
 
 **Details:**
 
 Pause Flipnote playback.
 
-#### on
+### on
 
 **Arguments:**
 
@@ -93,7 +93,7 @@ Pause Flipnote playback.
 
 Register an event callback. TODO: document events
 
-#### off
+### off
 
 **Arguments:**
 
@@ -104,7 +104,7 @@ Register an event callback. TODO: document events
 
 Remove an event callback that was registered with [`on`](#on)
 
-#### setFrame
+### setFrame
 
 **Arguments:**
 
@@ -114,37 +114,37 @@ Remove an event callback that was registered with [`on`](#on)
 
 Jump to a specified frame in the Flipnote.
 
-#### nextFrame
+### nextFrame
 
 **Details:**
 
 Jump to the next frame in the Flipnote. If `loop` is `true` and the Flipnote is on its last frame, it will jump to the first frame.
 
-#### prevFrame
+### prevFrame
 
 **Details:**
 
 Jump to the previous frame in the Flipnote. If `loop` is `true` and the Flipnote is on its first frame, it will jump to the last frame.
 
-#### firstFrame
+### firstFrame
 
 **Details:**
 
 Jump to the first frame in the Flipnote.
 
-#### lastFrame
+### lastFrame
 
 **Details:**
 
 Jump to the last frame in the Flipnote.
 
-#### thumbFrame
+### thumbFrame
 
 **Details:**
 
 Jump to the frame being used as the Flipnote's thumbnail.
 
-#### resize
+### resize
 
 **Arguments:**
 

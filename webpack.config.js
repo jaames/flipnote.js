@@ -12,12 +12,12 @@ module.exports = function (env) {
 
   var config = {
     context: path.resolve(__dirname, "src"),
-    entry: "./ugomemo.js",
+    entry: "./flipnote.js",
     output: {
-      library: "ugomemo",
+      library: "flipnote",
       libraryTarget: "umd",
       path: path.resolve(__dirname, "dist"),
-      filename: isDevMode ? "ugomemo.js" : "ugomemo.min.js",
+      filename: isDevMode ? "flipnote.js" : "flipnote.min.js",
     },
     resolve: {
       extensions: [".js"],
@@ -41,10 +41,10 @@ module.exports = function (env) {
     plugins: [
       new webpack.BannerPlugin({
         banner: [
-          "ugomemo.js v" + version,
+          "flipnote.js v" + version,
           "Real-time, browser-based playback of Flipnote Studio's .ppm animation format",
           "2018 James Daniel",
-          "github.com/jaames/ugomemo.js",
+          "github.com/jaames/flipnote.js",
           "Flipnote Studio is (c) Nintendo Co., Ltd.",
         ].join("\n")
       }),

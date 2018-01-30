@@ -1,8 +1,8 @@
 /*!
- * ugomemo.js v1.0.0
+ * flipnote.js v1.0.0
  * Real-time, browser-based playback of Flipnote Studio's .ppm animation format
  * 2018 James Daniel
- * github.com/jaames/ugomemo.js
+ * github.com/jaames/flipnote.js
  * Flipnote Studio is (c) Nintendo Co., Ltd.
  */
 (function webpackUniversalModuleDefinition(root, factory) {
@@ -11,9 +11,9 @@
 	else if(typeof define === 'function' && define.amd)
 		define([], factory);
 	else if(typeof exports === 'object')
-		exports["ugomemo"] = factory();
+		exports["flipnote"] = factory();
 	else
-		root["ugomemo"] = factory();
+		root["flipnote"] = factory();
 })(this, function() {
 return /******/ (function(modules) { // webpackBootstrap
 /******/ 	// The module cache
@@ -1378,7 +1378,7 @@ Object.defineProperty(exports, "__esModule", {
 });
 exports.decodeAdpcm = decodeAdpcm;
 /** convert 4-bit adpcm to float32 pcm (as supported by the AudioBuffer API) 
- *  implementation based on https://github.com/jwzhangjie/Adpcm_Pcm/blob/master/adpcm.c
+ *  implementation based on http://www.cs.columbia.edu/~gskc/Code/AdvancedInternetServices/SoundNoiseRatio/dvi_adpcm.c
 */
 
 var indexTable = [-1, -1, -1, -1, 2, 4, 6, 8, -1, -1, -1, -1, 2, 4, 6, 8];
@@ -1528,4 +1528,4 @@ exports.default = audioTrack;
 /***/ })
 /******/ ]);
 });
-//# sourceMappingURL=ugomemo.js.map
+//# sourceMappingURL=flipnote.js.map

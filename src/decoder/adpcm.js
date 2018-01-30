@@ -1,5 +1,5 @@
 /** convert 4-bit adpcm to float32 pcm (as supported by the AudioBuffer API) 
- *  implementation based on https://github.com/jwzhangjie/Adpcm_Pcm/blob/master/adpcm.c
+ *  implementation based on http://www.cs.columbia.edu/~gskc/Code/AdvancedInternetServices/SoundNoiseRatio/dvi_adpcm.c
 */
 
 const indexTable = [

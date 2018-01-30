@@ -1,7 +1,7 @@
 {
-  "name": "ugomemo.js",
+  "name": "flipnote.js",
   "version": "1.0.0",
-  "repository": "https://github.com/jaames/ugomemo.js.git",
+  "repository": "https://github.com/jaames/flipnote.js.git",
   "author": "james <jamesdaniel2197@gmail.com>",
   "license": "MIT",
   "scripts": {
