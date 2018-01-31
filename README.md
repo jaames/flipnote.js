@@ -26,7 +26,7 @@ For now, there's an old [work-in-progress video on my twitter account](https://t
 
 #### The Flipnote format (`.ppm`)
 
-The PPM format is an entirely custom-made by Nintendo for use within Flipnote Studio. Its purpose is to store Flipnotes created within the app, which comprise of animation frames, audio, and metadata (author name, timestamp, etc).
+The PPM format is an entirely custom-made by Nintendo for use within Flipnote Studio. The file extension comes from the Japanese "パラパラマンガ" ("Para Para Manga"), which roughly translates to "flip comic". Its purpose is to store Flipnotes created within the app, which comprise of animation frames, audio, and metadata (author name, timestamp, etc).
 
 PPM animations have 2 layers per frame, each layer is a monochrome bitmap image where each pixel is represented in data by a single bit. Layers can use one of three colors; red, blue, or black/white, the latter being the inverse of the background color. As such, there is a maximum of 3 colors per frame.  
 
