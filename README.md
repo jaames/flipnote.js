@@ -11,7 +11,7 @@ I hope that maybe in the long term it will serve some use in archiving Flipnote 
 * Full browser-based Flipnote (PPM) playback, with perfect accuracy for both frames and audio
 * Metadata parsing
 * Player API based on the HTML5 Video and Audio APIs
-* 17KB minified, 5KB minified + gzipped
+* ~6KB minified + gzipped
 
 ### Demo
 

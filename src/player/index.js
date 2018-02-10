@@ -1,5 +1,6 @@
 import webglCanvas from "webgl/webglCanvas";
 import ppmDecoder from "decoder";
+import loader from "loader";
 import audioTrack from "./audio";
 
 // internal framerate value -> FPS table
@@ -87,11 +88,10 @@ export default class ppmPlayer {
 
   /**
   * Load a Flipnote into the player
-  * @param {ArrayBuffer} source - ppm data
+  * @param {ArrayBuffer} buffer - ppm data
+  * @access protected
   */
-  open(source) {
-    if (this._isOpen) this.close();
-    var buffer = source;
+  _load(buffer) {
     var ppm = new ppmDecoder(buffer);
     var meta = ppm.meta;
     this.ppm = ppm;
@@ -115,6 +115,21 @@ export default class ppmPlayer {
     this._hasPlaybackStarted = false;
     this.setFrame(this.ppm.thumbFrameIndex);
     this.emit("load");
+  }
+
+  /**
+  * Load a Flipnote into the player
+  * @param {String} source - ppm url
+  */
+  open(source) {
+    if (this._isOpen) this.close();
+    loader(source)
+      .then((buffer) => {
+        this._load(buffer);
+      })
+      .catch((err) => {
+        console.error("Error loading Flipnote:", err);
+      });
   }
 
   /**

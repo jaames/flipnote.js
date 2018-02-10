@@ -1,5 +1,5 @@
 /*!
- * flipnote.js v1.0.0
+ * flipnote.js v1.1.0
  * Real-time, browser-based playback of Flipnote Studio's .ppm animation format
  * 2018 James Daniel
  * github.com/jaames/flipnote.js
@@ -96,7 +96,7 @@ function _interopRequireDefault(obj) { return obj && obj.__esModule ? obj : { de
 // import decoder from "./decoder";
 
 module.exports = {
-  version: "1.0.0",
+  version: "1.1.0",
   player: _player2.default
   // decoder: decoder,
 };
@@ -122,7 +122,11 @@ var _decoder = __webpack_require__(5);
 
 var _decoder2 = _interopRequireDefault(_decoder);
 
-var _audio = __webpack_require__(8);
+var _loader = __webpack_require__(8);
+
+var _loader2 = _interopRequireDefault(_loader);
+
+var _audio = __webpack_require__(12);
 
 var _audio2 = _interopRequireDefault(_audio);
 
@@ -169,16 +173,15 @@ var ppmPlayer = function () {
 
 
   _createClass(ppmPlayer, [{
-    key: "open",
+    key: "_load",
 
 
     /**
     * Load a Flipnote into the player
-    * @param {ArrayBuffer} source - ppm data
+    * @param {ArrayBuffer} buffer - ppm data
+    * @access protected
     */
-    value: function open(source) {
-      if (this._isOpen) this.close();
-      var buffer = source;
+    value: function _load(buffer) {
       var ppm = new _decoder2.default(buffer);
       var meta = ppm.meta;
       this.ppm = ppm;
@@ -198,6 +201,24 @@ var ppmPlayer = function () {
       this._hasPlaybackStarted = false;
       this.setFrame(this.ppm.thumbFrameIndex);
       this.emit("load");
+    }
+
+    /**
+    * Load a Flipnote into the player
+    * @param {String} source - ppm url
+    */
+
+  }, {
+    key: "open",
+    value: function open(source) {
+      var _this = this;
+
+      if (this._isOpen) this.close();
+      (0, _loader2.default)(source).then(function (buffer) {
+        _this._load(buffer);
+      }).catch(function (err) {
+        console.error("Error loading Flipnote:", err);
+      });
     }
 
     /**
@@ -1453,6 +1474,132 @@ function clamp(num, min, max) {
 
 /***/ }),
 /* 8 */
+/***/ (function(module, exports, __webpack_require__) {
+
+"use strict";
+
+
+Object.defineProperty(exports, "__esModule", {
+  value: true
+});
+exports.default = load;
+
+var _urlLoader = __webpack_require__(9);
+
+var _urlLoader2 = _interopRequireDefault(_urlLoader);
+
+var _fileLoader = __webpack_require__(10);
+
+var _fileLoader2 = _interopRequireDefault(_fileLoader);
+
+var _arrayBufferLoader = __webpack_require__(11);
+
+var _arrayBufferLoader2 = _interopRequireDefault(_arrayBufferLoader);
+
+function _interopRequireDefault(obj) { return obj && obj.__esModule ? obj : { default: obj }; }
+
+var loaders = [_urlLoader2.default, _fileLoader2.default, _arrayBufferLoader2.default];
+
+function load(source) {
+  return new Promise(function (resolve, reject) {
+    for (var i = 0; i < loaders.length; i++) {
+      var loader = loaders[i];
+      if (loader.matches(source)) {
+        loader.load(source, resolve, reject);
+        break;
+      }
+    }
+  });
+}
+
+/***/ }),
+/* 9 */
+/***/ (function(module, exports, __webpack_require__) {
+
+"use strict";
+
+
+Object.defineProperty(exports, "__esModule", {
+  value: true
+});
+exports.default = {
+
+  matches: function matches(source) {
+    return typeof source === "string";
+  },
+
+  load: function load(source, resolve, reject) {
+    var xhr = new XMLHttpRequest();
+    xhr.open("GET", source, true);
+    xhr.responseType = "arraybuffer";
+    xhr.onreadystatechange = function (e) {
+      if (xhr.readyState === 4) {
+        if (xhr.status >= 200 && xhr.status < 300) {
+          resolve(xhr.response);
+        } else {
+          reject({
+            type: "httpError",
+            status: xhr.status,
+            statusText: xhr.statusText
+          });
+        }
+      }
+    };
+    xhr.send(null);
+  }
+
+};
+
+/***/ }),
+/* 10 */
+/***/ (function(module, exports, __webpack_require__) {
+
+"use strict";
+
+
+Object.defineProperty(exports, "__esModule", {
+  value: true
+});
+// fileloader is stubbed for now
+
+exports.default = {
+
+  matches: function matches(source) {
+    return false;
+  },
+
+  load: function load(source, resolve, reject) {
+    reject();
+  }
+
+};
+
+/***/ }),
+/* 11 */
+/***/ (function(module, exports, __webpack_require__) {
+
+"use strict";
+
+
+Object.defineProperty(exports, "__esModule", {
+  value: true
+});
+// arraybufferloader is stubbed for now
+
+exports.default = {
+
+  matches: function matches(source) {
+    return false;
+  },
+
+  load: function load(source, resolve, reject) {
+    reject();
+  }
+
+};
+
+/***/ }),
+/* 12 */
 /***/ (function(module, exports, __webpack_require__) {
 
 "use strict";

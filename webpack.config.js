@@ -24,6 +24,7 @@ module.exports = function (env) {
       alias: {
         "webgl": path.resolve(__dirname, "src/webgl/"),
         "decoder": path.resolve(__dirname, "src/decoder/"),
+        "loader": path.resolve(__dirname, "src/loader/"),
         "player": path.resolve(__dirname, "src/player/"),
       }
     },
