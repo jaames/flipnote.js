@@ -1,5 +1,5 @@
 /*!
- * flipnote.js v1.1.0
+ * flipnote.js v1.2.0
  * Real-time, browser-based playback of Flipnote Studio's .ppm animation format
  * 2018 James Daniel
  * github.com/jaames/flipnote.js
@@ -77,32 +77,11 @@ return /******/ (function(modules) { // webpackBootstrap
 /******/ 	__webpack_require__.p = "";
 /******/
 /******/ 	// Load entry module and return exports
-/******/ 	return __webpack_require__(__webpack_require__.s = 0);
+/******/ 	return __webpack_require__(__webpack_require__.s = 1);
 /******/ })
 /************************************************************************/
 /******/ ([
 /* 0 */
-/***/ (function(module, exports, __webpack_require__) {
-
-"use strict";
-
-
-var _player = __webpack_require__(1);
-
-var _player2 = _interopRequireDefault(_player);
-
-function _interopRequireDefault(obj) { return obj && obj.__esModule ? obj : { default: obj }; }
-
-// import decoder from "./decoder";
-
-module.exports = {
-  version: "1.1.0",
-  player: _player2.default
-  // decoder: decoder,
-};
-
-/***/ }),
-/* 1 */
 /***/ (function(module, exports, __webpack_require__) {
 
 "use strict";
@@ -114,19 +93,225 @@ Object.defineProperty(exports, "__esModule", {
 
 var _createClass = function () { function defineProperties(target, props) { for (var i = 0; i < props.length; i++) { var descriptor = props[i]; descriptor.enumerable = descriptor.enumerable || false; descriptor.configurable = true; if ("value" in descriptor) descriptor.writable = true; Object.defineProperty(target, descriptor.key, descriptor); } } return function (Constructor, protoProps, staticProps) { if (protoProps) defineProperties(Constructor.prototype, protoProps); if (staticProps) defineProperties(Constructor, staticProps); return Constructor; }; }();
 
-var _webglCanvas = __webpack_require__(2);
+var _vertexShaderGlsl = __webpack_require__(3);
 
-var _webglCanvas2 = _interopRequireDefault(_webglCanvas);
+var _vertexShaderGlsl2 = _interopRequireDefault(_vertexShaderGlsl);
 
-var _decoder = __webpack_require__(5);
+var _fragmentShaderGlsl = __webpack_require__(4);
+
+var _fragmentShaderGlsl2 = _interopRequireDefault(_fragmentShaderGlsl);
+
+function _interopRequireDefault(obj) { return obj && obj.__esModule ? obj : { default: obj }; }
+
+function _classCallCheck(instance, Constructor) { if (!(instance instanceof Constructor)) { throw new TypeError("Cannot call a class as a function"); } }
+
+/** webgl canvas wrapper class */
+var webglCanvas = function () {
+  /**
+  * Create a rendering canvas
+  * @param {HTMLCanvasElement} el - The HTML canvas element
+  * @param {number} width - width of the canvas in pixels
+  * @param {number} height - height of the canvas in pixels
+  * @param {Object} params - optional params to pass to web gl context
+  */
+  function webglCanvas(el, width, height, params) {
+    _classCallCheck(this, webglCanvas);
+
+    el.width = width || 256;
+    el.height = height || 192;
+    var gl = el.getContext("webgl", params || { antialias: false });
+    var program = gl.createProgram();
+    this.program = program;
+    this.el = el;
+    this.gl = gl;
+    this._createShader(gl.VERTEX_SHADER, _vertexShaderGlsl2.default);
+    this._createShader(gl.FRAGMENT_SHADER, _fragmentShaderGlsl2.default);
+    gl.linkProgram(program);
+    gl.useProgram(program);
+    // create quad that fills the screen, this will be our drawing surface
+    var vertBuffer = gl.createBuffer();
+    gl.bindBuffer(gl.ARRAY_BUFFER, vertBuffer);
+    gl.bufferData(gl.ARRAY_BUFFER, new Float32Array([1, 1, -1, 1, -1, -1, 1, 1, -1, -1, 1, -1]), gl.STATIC_DRAW);
+    gl.enableVertexAttribArray(0);
+    gl.vertexAttribPointer(0, 2, gl.FLOAT, false, 0, 0);
+    // create textures for each layer
+    this._createTexture("u_layer1Bitmap", 0, gl.TEXTURE0);
+    this._createTexture("u_layer2Bitmap", 1, gl.TEXTURE1);
+  }
+
+  /**
+  * Util to compile and attach a new shader
+  * @param {shader type} type - gl.VERTEX_SHADER | gl.FRAGMENT_SHADER
+  * @param {string} source - GLSL code for the shader
+  * @access protected 
+  */
+
+
+  _createClass(webglCanvas, [{
+    key: "_createShader",
+    value: function _createShader(type, source) {
+      var gl = this.gl;
+      var shader = gl.createShader(type);
+      gl.shaderSource(shader, source);
+      gl.compileShader(shader);
+      gl.attachShader(this.program, shader);
+    }
+
+    /**
+    * Util to set up a texture
+    * @param {string} name - name of the texture's uniform variable
+    * @param {number} index - texture index
+    * @param {texture} texture - webgl texture unit, gl.TEXTURE0, gl.TEXTURE1, etc
+    * @access protected 
+    */
+
+  }, {
+    key: "_createTexture",
+    value: function _createTexture(name, index, texture) {
+      var gl = this.gl;
+      gl.uniform1i(gl.getUniformLocation(this.program, name), index);
+      gl.activeTexture(texture);
+      gl.bindTexture(gl.TEXTURE_2D, gl.createTexture());
+      gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_S, gl.CLAMP_TO_EDGE);
+      gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_T, gl.CLAMP_TO_EDGE);
+      gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MIN_FILTER, gl.NEAREST);
+      gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MAG_FILTER, gl.NEAREST);
+    }
+
+    /**
+    * Set an palette individual color
+    * @param {string} color - name of the color's uniform variable
+    * @param {array} value - r,g,b,a color, each channel's value should be between 0.0 and 1.0
+    */
+
+  }, {
+    key: "setColor",
+    value: function setColor(color, value) {
+      this.gl.uniform4f(this.gl.getUniformLocation(this.program, color), value[0] / 255, value[1] / 255, value[2] / 255, value[3] / 255);
+    }
+
+    /**
+    * Set the palette
+    * @param {array} colors - array of r,g,b,a colors with channel values from 0.0 to 1.0, in order of paper, layer1, layer2
+    */
+
+  }, {
+    key: "setPalette",
+    value: function setPalette(colors) {
+      this.setColor("u_paperColor", colors[0]);
+      this.setColor("u_layer1Color", colors[1]);
+      this.setColor("u_layer2Color", colors[2]);
+    }
+
+    /**
+    * Set layer bitmaps
+    * @param {array} buffers - array of two uint8 buffers, one for each layer
+    */
+
+  }, {
+    key: "setBitmaps",
+    value: function setBitmaps(buffers) {
+      var gl = this.gl;
+      gl.activeTexture(gl.TEXTURE0);
+      gl.texImage2D(gl.TEXTURE_2D, 0, gl.ALPHA, 256, 192, 0, gl.ALPHA, gl.UNSIGNED_BYTE, buffers[0]);
+      gl.activeTexture(gl.TEXTURE1);
+      gl.texImage2D(gl.TEXTURE_2D, 0, gl.ALPHA, 256, 192, 0, gl.ALPHA, gl.UNSIGNED_BYTE, buffers[1]);
+    }
+
+    /**
+    * Resize canvas
+    * @param {number} width - width of the canvas in pixels
+    * @param {number} height - height of the canvas in pixels
+    */
+
+  }, {
+    key: "resize",
+    value: function resize() {
+      var width = arguments.length > 0 && arguments[0] !== undefined ? arguments[0] : 256;
+      var height = arguments.length > 1 && arguments[1] !== undefined ? arguments[1] : 192;
+
+      this.el.width = width;
+      this.el.height = height;
+      this.gl.viewport(0, 0, width, height);
+    }
+
+    /**
+    * Redraw canvas
+    */
+
+  }, {
+    key: "refresh",
+    value: function refresh() {
+      this.gl.drawArrays(this.gl.TRIANGLES, 0, 6);
+    }
+
+    /**
+    * Clear canvas
+    */
+
+  }, {
+    key: "clear",
+    value: function clear() {
+      this.gl.clear(this.gl.COLOR_BUFFER_BIT);
+    }
+  }]);
+
+  return webglCanvas;
+}();
+
+exports.default = webglCanvas;
+
+/***/ }),
+/* 1 */
+/***/ (function(module, exports, __webpack_require__) {
+
+"use strict";
+
+
+var _player = __webpack_require__(2);
+
+var _player2 = _interopRequireDefault(_player);
+
+function _interopRequireDefault(obj) { return obj && obj.__esModule ? obj : { default: obj }; }
+
+// import decoder from "./decoder";
+
+module.exports = {
+  version: "1.2.0",
+  player: _player2.default
+  // decoder: decoder,
+};
+
+/***/ }),
+/* 2 */
+/***/ (function(module, exports, __webpack_require__) {
+
+"use strict";
+
+
+Object.defineProperty(exports, "__esModule", {
+  value: true
+});
+
+var _createClass = function () { function defineProperties(target, props) { for (var i = 0; i < props.length; i++) { var descriptor = props[i]; descriptor.enumerable = descriptor.enumerable || false; descriptor.configurable = true; if ("value" in descriptor) descriptor.writable = true; Object.defineProperty(target, descriptor.key, descriptor); } } return function (Constructor, protoProps, staticProps) { if (protoProps) defineProperties(Constructor.prototype, protoProps); if (staticProps) defineProperties(Constructor, staticProps); return Constructor; }; }();
+
+var _canvas = __webpack_require__(0);
+
+var _canvas2 = _interopRequireDefault(_canvas);
+
+var _captureCanvas = __webpack_require__(5);
+
+var _captureCanvas2 = _interopRequireDefault(_captureCanvas);
+
+var _decoder = __webpack_require__(6);
 
 var _decoder2 = _interopRequireDefault(_decoder);
 
-var _loader = __webpack_require__(8);
+var _loader = __webpack_require__(9);
 
 var _loader2 = _interopRequireDefault(_loader);
 
-var _audio = __webpack_require__(12);
+var _audio = __webpack_require__(13);
 
 var _audio2 = _interopRequireDefault(_audio);
 
@@ -160,7 +345,8 @@ var ppmPlayer = function () {
 
     // if `el` is a string, use it to select an Element, else assume it's an element
     el = "string" == typeof el ? document.querySelector(el) : el;
-    this.canvas = new _webglCanvas2.default(el, width, height);
+    this.canvas = new _canvas2.default(el, width, height);
+    this._imgCanvas = new _captureCanvas2.default();
     this._isOpen = false;
     this.loop = false;
     this.currentFrame = 0;
@@ -332,6 +518,37 @@ var ppmPlayer = function () {
     }
 
     /**
+    * Get a specific frame as an image data URL
+    * @param {number} index - zero-based frame index
+    * @param {string} type - image MIME type, default is image/png
+    * @param {number} encoderOptions - number between 0 and 1 indicating image quality if type is image/jpeg or image/webp
+    */
+
+  }, {
+    key: "getFrameImage",
+    value: function getFrameImage(index, type, encoderOptions) {
+      if (!this._isOpen) return null;
+      // clamp frame index
+      index = Math.max(0, Math.min(index, this.frameCount - 1));
+      this._imgCanvas.setPalette(this.ppm.getFramePalette(index));
+      this._imgCanvas.setBitmaps(this.ppm.decodeFrame(index));
+      this._imgCanvas.refresh();
+      return this._imgCanvas.toImage(type, encoderOptions);
+    }
+
+    /**
+    * Get a Flipnote thumbnail as an image data URL
+    * @param {string} type - image MIME type, default is image/png
+    * @param {number} encoderOptions - number between 0 and 1 indicating image quality if type is image/jpeg or image/webp
+    */
+
+  }, {
+    key: "getThumbImage",
+    value: function getThumbImage(type, encoderOptions) {
+      return this.getFrameImage(this.ppm.thumbFrameIndex, type, encoderOptions);
+    }
+
+    /**
     * Jump to a specific frame
     * @param {number} index - zero-based frame index
     */
@@ -347,6 +564,16 @@ var ppmPlayer = function () {
       this.canvas.setPalette(this.ppm.getFramePalette(index));
       this.canvas.setBitmaps(this.ppm.decodeFrame(index));
       this.canvas.refresh();
+    }
+
+    /**
+    * Jump to the thumbnail frame
+    */
+
+  }, {
+    key: "thumbnailFrame",
+    value: function thumbnailFrame() {
+      this.currentFrame = this.ppm.thumbFrameIndex;
     }
 
     /**
@@ -395,16 +622,6 @@ var ppmPlayer = function () {
     key: "firstFrame",
     value: function firstFrame() {
       this.currentFrame = 0;
-    }
-
-    /**
-    * Jump to the thumbnail frame
-    */
-
-  }, {
-    key: "thumbnailFrame",
-    value: function thumbnailFrame() {
-      this.currentFrame = this.ppm.thumbFrameIndex;
     }
 
     /**
@@ -537,186 +754,6 @@ var ppmPlayer = function () {
 exports.default = ppmPlayer;
 
 /***/ }),
-/* 2 */
-/***/ (function(module, exports, __webpack_require__) {
-
-"use strict";
-
-
-Object.defineProperty(exports, "__esModule", {
-  value: true
-});
-
-var _createClass = function () { function defineProperties(target, props) { for (var i = 0; i < props.length; i++) { var descriptor = props[i]; descriptor.enumerable = descriptor.enumerable || false; descriptor.configurable = true; if ("value" in descriptor) descriptor.writable = true; Object.defineProperty(target, descriptor.key, descriptor); } } return function (Constructor, protoProps, staticProps) { if (protoProps) defineProperties(Constructor.prototype, protoProps); if (staticProps) defineProperties(Constructor, staticProps); return Constructor; }; }();
-
-var _vertexShaderGlsl = __webpack_require__(3);
-
-var _vertexShaderGlsl2 = _interopRequireDefault(_vertexShaderGlsl);
-
-var _fragmentShaderGlsl = __webpack_require__(4);
-
-var _fragmentShaderGlsl2 = _interopRequireDefault(_fragmentShaderGlsl);
-
-function _interopRequireDefault(obj) { return obj && obj.__esModule ? obj : { default: obj }; }
-
-function _classCallCheck(instance, Constructor) { if (!(instance instanceof Constructor)) { throw new TypeError("Cannot call a class as a function"); } }
-
-/** webgl canvas wrapper class */
-var webglCanvas = function () {
-  /**
-  * Create a rendering canvas
-  * @param {HTMLCanvasElement} el - The HTML canvas element
-  * @param {number} width - width of the canvas in pixels
-  * @param {number} height - height of the canvas in pixels
-  */
-  function webglCanvas(el, width, height) {
-    _classCallCheck(this, webglCanvas);
-
-    el.width = width || 256;
-    el.height = height || 192;
-    var gl = el.getContext("webgl", { antialias: false });
-    var program = gl.createProgram();
-    this.program = program;
-    this.el = el;
-    this.gl = gl;
-    this._createShader(gl.VERTEX_SHADER, _vertexShaderGlsl2.default);
-    this._createShader(gl.FRAGMENT_SHADER, _fragmentShaderGlsl2.default);
-    gl.linkProgram(program);
-    gl.useProgram(program);
-    // create quad that fills the screen, this will be our drawing surface
-    var vertBuffer = gl.createBuffer();
-    gl.bindBuffer(gl.ARRAY_BUFFER, vertBuffer);
-    gl.bufferData(gl.ARRAY_BUFFER, new Float32Array([1, 1, -1, 1, -1, -1, 1, 1, -1, -1, 1, -1]), gl.STATIC_DRAW);
-    gl.enableVertexAttribArray(0);
-    gl.vertexAttribPointer(0, 2, gl.FLOAT, false, 0, 0);
-    // create textures for each layer
-    this._createTexture("u_layer1Bitmap", 0, gl.TEXTURE0);
-    this._createTexture("u_layer2Bitmap", 1, gl.TEXTURE1);
-  }
-
-  /**
-  * Util to compile and attach a new shader
-  * @param {shader type} type - gl.VERTEX_SHADER | gl.FRAGMENT_SHADER
-  * @param {string} source - GLSL code for the shader
-  * @access protected 
-  */
-
-
-  _createClass(webglCanvas, [{
-    key: "_createShader",
-    value: function _createShader(type, source) {
-      var gl = this.gl;
-      var shader = gl.createShader(type);
-      gl.shaderSource(shader, source);
-      gl.compileShader(shader);
-      gl.attachShader(this.program, shader);
-    }
-
-    /**
-    * Util to set up a texture
-    * @param {string} name - name of the texture's uniform variable
-    * @param {number} index - texture index
-    * @param {texture} texture - webgl texture unit, gl.TEXTURE0, gl.TEXTURE1, etc
-    * @access protected 
-    */
-
-  }, {
-    key: "_createTexture",
-    value: function _createTexture(name, index, texture) {
-      var gl = this.gl;
-      gl.uniform1i(gl.getUniformLocation(this.program, name), index);
-      gl.activeTexture(texture);
-      gl.bindTexture(gl.TEXTURE_2D, gl.createTexture());
-      gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_S, gl.CLAMP_TO_EDGE);
-      gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_T, gl.CLAMP_TO_EDGE);
-      gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MIN_FILTER, gl.NEAREST);
-      gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MAG_FILTER, gl.NEAREST);
-    }
-
-    /**
-    * Set an palette individual color
-    * @param {string} color - name of the color's uniform variable
-    * @param {array} value - r,g,b,a color, each channel's value should be between 0.0 and 1.0
-    */
-
-  }, {
-    key: "setColor",
-    value: function setColor(color, value) {
-      this.gl.uniform4f(this.gl.getUniformLocation(this.program, color), value[0] / 255, value[1] / 255, value[2] / 255, value[3] / 255);
-    }
-
-    /**
-    * Set the palette
-    * @param {array} colors - array of r,g,b,a colors with channel values from 0.0 to 1.0, in order of paper, layer1, layer2
-    */
-
-  }, {
-    key: "setPalette",
-    value: function setPalette(colors) {
-      this.setColor("u_paperColor", colors[0]);
-      this.setColor("u_layer1Color", colors[1]);
-      this.setColor("u_layer2Color", colors[2]);
-    }
-
-    /**
-    * Set layer bitmaps
-    * @param {array} buffers - array of two uint8 buffers, one for each layer
-    */
-
-  }, {
-    key: "setBitmaps",
-    value: function setBitmaps(buffers) {
-      var gl = this.gl;
-      gl.activeTexture(gl.TEXTURE0);
-      gl.texImage2D(gl.TEXTURE_2D, 0, gl.ALPHA, 256, 192, 0, gl.ALPHA, gl.UNSIGNED_BYTE, buffers[0]);
-      gl.activeTexture(gl.TEXTURE1);
-      gl.texImage2D(gl.TEXTURE_2D, 0, gl.ALPHA, 256, 192, 0, gl.ALPHA, gl.UNSIGNED_BYTE, buffers[1]);
-    }
-
-    /**
-    * Resize canvas
-    * @param {number} width - width of the canvas in pixels
-    * @param {number} height - height of the canvas in pixels
-    */
-
-  }, {
-    key: "resize",
-    value: function resize() {
-      var width = arguments.length > 0 && arguments[0] !== undefined ? arguments[0] : 256;
-      var height = arguments.length > 1 && arguments[1] !== undefined ? arguments[1] : 192;
-
-      this.el.width = width;
-      this.el.height = height;
-      this.gl.viewport(0, 0, width, height);
-    }
-
-    /**
-    * Redraw canvas
-    */
-
-  }, {
-    key: "refresh",
-    value: function refresh() {
-      this.gl.drawArrays(this.gl.TRIANGLES, 0, 6);
-    }
-
-    /**
-    * Clear canvas
-    */
-
-  }, {
-    key: "clear",
-    value: function clear() {
-      this.gl.clear(this.gl.COLOR_BUFFER_BIT);
-    }
-  }]);
-
-  return webglCanvas;
-}();
-
-exports.default = webglCanvas;
-
-/***/ }),
 /* 3 */
 /***/ (function(module, exports, __webpack_require__) {
 
@@ -757,11 +794,71 @@ Object.defineProperty(exports, "__esModule", {
 
 var _createClass = function () { function defineProperties(target, props) { for (var i = 0; i < props.length; i++) { var descriptor = props[i]; descriptor.enumerable = descriptor.enumerable || false; descriptor.configurable = true; if ("value" in descriptor) descriptor.writable = true; Object.defineProperty(target, descriptor.key, descriptor); } } return function (Constructor, protoProps, staticProps) { if (protoProps) defineProperties(Constructor.prototype, protoProps); if (staticProps) defineProperties(Constructor, staticProps); return Constructor; }; }();
 
-var _fileReader2 = __webpack_require__(6);
+var _canvas2 = __webpack_require__(0);
+
+var _canvas3 = _interopRequireDefault(_canvas2);
+
+function _interopRequireDefault(obj) { return obj && obj.__esModule ? obj : { default: obj }; }
+
+function _classCallCheck(instance, Constructor) { if (!(instance instanceof Constructor)) { throw new TypeError("Cannot call a class as a function"); } }
+
+function _possibleConstructorReturn(self, call) { if (!self) { throw new ReferenceError("this hasn't been initialised - super() hasn't been called"); } return call && (typeof call === "object" || typeof call === "function") ? call : self; }
+
+function _inherits(subClass, superClass) { if (typeof superClass !== "function" && superClass !== null) { throw new TypeError("Super expression must either be null or a function, not " + typeof superClass); } subClass.prototype = Object.create(superClass && superClass.prototype, { constructor: { value: subClass, enumerable: false, writable: true, configurable: true } }); if (superClass) Object.setPrototypeOf ? Object.setPrototypeOf(subClass, superClass) : subClass.__proto__ = superClass; }
+
+/** 
+ * offscreen webgl canvas for capturing frame images
+ * this is kept seperate since preserveDrawingBuffer makes drawing slightly slower
+ */
+var captureCanvas = function (_canvas) {
+  _inherits(captureCanvas, _canvas);
+
+  function captureCanvas() {
+    _classCallCheck(this, captureCanvas);
+
+    return _possibleConstructorReturn(this, (captureCanvas.__proto__ || Object.getPrototypeOf(captureCanvas)).call(this, document.createElement("canvas"), 256, 192, {
+      antialias: false,
+      preserveDrawingBuffer: true
+    }));
+  }
+
+  /**
+  * get the canvas content as an image
+  * @param {string} type - image MIME type, default is image/png
+  * @param {number} encoderOptions - number between 0 and 1 indicating image quality if type is image/jpeg or image/webp
+  */
+
+
+  _createClass(captureCanvas, [{
+    key: "toImage",
+    value: function toImage(type, encoderOptions) {
+      return this.el.toDataURL(type, encoderOptions);
+    }
+  }]);
+
+  return captureCanvas;
+}(_canvas3.default);
+
+exports.default = captureCanvas;
+
+/***/ }),
+/* 6 */
+/***/ (function(module, exports, __webpack_require__) {
+
+"use strict";
+
+
+Object.defineProperty(exports, "__esModule", {
+  value: true
+});
+
+var _createClass = function () { function defineProperties(target, props) { for (var i = 0; i < props.length; i++) { var descriptor = props[i]; descriptor.enumerable = descriptor.enumerable || false; descriptor.configurable = true; if ("value" in descriptor) descriptor.writable = true; Object.defineProperty(target, descriptor.key, descriptor); } } return function (Constructor, protoProps, staticProps) { if (protoProps) defineProperties(Constructor.prototype, protoProps); if (staticProps) defineProperties(Constructor, staticProps); return Constructor; }; }();
+
+var _fileReader2 = __webpack_require__(7);
 
 var _fileReader3 = _interopRequireDefault(_fileReader2);
 
-var _adpcm = __webpack_require__(7);
+var _adpcm = __webpack_require__(8);
 
 function _interopRequireDefault(obj) { return obj && obj.__esModule ? obj : { default: obj }; }
 
@@ -1227,7 +1324,7 @@ var ppmDecoder = function (_fileReader) {
 exports.default = ppmDecoder;
 
 /***/ }),
-/* 6 */
+/* 7 */
 /***/ (function(module, exports, __webpack_require__) {
 
 "use strict";
@@ -1388,7 +1485,7 @@ var fileReader = function () {
 exports.default = fileReader;
 
 /***/ }),
-/* 7 */
+/* 8 */
 /***/ (function(module, exports, __webpack_require__) {
 
 "use strict";
@@ -1473,7 +1570,7 @@ function clamp(num, min, max) {
 };
 
 /***/ }),
-/* 8 */
+/* 9 */
 /***/ (function(module, exports, __webpack_require__) {
 
 "use strict";
@@ -1484,15 +1581,15 @@ Object.defineProperty(exports, "__esModule", {
 });
 exports.default = load;
 
-var _urlLoader = __webpack_require__(9);
+var _urlLoader = __webpack_require__(10);
 
 var _urlLoader2 = _interopRequireDefault(_urlLoader);
 
-var _fileLoader = __webpack_require__(10);
+var _fileLoader = __webpack_require__(11);
 
 var _fileLoader2 = _interopRequireDefault(_fileLoader);
 
-var _arrayBufferLoader = __webpack_require__(11);
+var _arrayBufferLoader = __webpack_require__(12);
 
 var _arrayBufferLoader2 = _interopRequireDefault(_arrayBufferLoader);
 
@@ -1513,7 +1610,7 @@ function load(source) {
 }
 
 /***/ }),
-/* 9 */
+/* 10 */
 /***/ (function(module, exports, __webpack_require__) {
 
 "use strict";
@@ -1551,7 +1648,7 @@ exports.default = {
 };
 
 /***/ }),
-/* 10 */
+/* 11 */
 /***/ (function(module, exports, __webpack_require__) {
 
 "use strict";
@@ -1575,7 +1672,7 @@ exports.default = {
 };
 
 /***/ }),
-/* 11 */
+/* 12 */
 /***/ (function(module, exports, __webpack_require__) {
 
 "use strict";
@@ -1584,22 +1681,20 @@ exports.default = {
 Object.defineProperty(exports, "__esModule", {
   value: true
 });
-// arraybufferloader is stubbed for now
-
 exports.default = {
 
   matches: function matches(source) {
-    return false;
+    return source instanceof ArrayBuffer;
   },
 
   load: function load(source, resolve, reject) {
-    reject();
+    resolve(source);
   }
 
 };
 
 /***/ }),
-/* 12 */
+/* 13 */
 /***/ (function(module, exports, __webpack_require__) {
 
 "use strict";

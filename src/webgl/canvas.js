@@ -8,11 +8,12 @@ export default class webglCanvas {
   * @param {HTMLCanvasElement} el - The HTML canvas element
   * @param {number} width - width of the canvas in pixels
   * @param {number} height - height of the canvas in pixels
+  * @param {Object} params - optional params to pass to web gl context
   */
-  constructor(el, width, height) {
+  constructor(el, width, height, params) {
     el.width = width || 256;
     el.height = height || 192; 
-    var gl = el.getContext("webgl", {antialias: false,});
+    var gl = el.getContext("webgl", params || {antialias: false});
     var program = gl.createProgram();
     this.program = program;
     this.el = el;

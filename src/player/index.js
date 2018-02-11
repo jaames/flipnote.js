@@ -1,4 +1,5 @@
-import webglCanvas from "webgl/webglCanvas";
+import canvas from "webgl/canvas";
+import captureCanvas from "webgl/captureCanvas";
 import ppmDecoder from "decoder";
 import loader from "loader";
 import audioTrack from "./audio";
@@ -26,7 +27,8 @@ export default class ppmPlayer {
   constructor(el, width, height) {
     // if `el` is a string, use it to select an Element, else assume it's an element
     el = ("string" == typeof el) ? document.querySelector(el) : el;
-    this.canvas = new webglCanvas(el, width, height);
+    this.canvas = new canvas(el, width, height);
+    this._imgCanvas = new captureCanvas();
     this._isOpen = false;
     this.loop = false;
     this.currentFrame = 0;
@@ -225,6 +227,31 @@ export default class ppmPlayer {
   }
 
   /**
+  * Get a specific frame as an image data URL
+  * @param {number} index - zero-based frame index
+  * @param {string} type - image MIME type, default is image/png
+  * @param {number} encoderOptions - number between 0 and 1 indicating image quality if type is image/jpeg or image/webp
+  */
+  getFrameImage(index, type, encoderOptions) {
+    if (!this._isOpen) return null;
+    // clamp frame index
+    index = Math.max(0, Math.min(index, this.frameCount - 1));
+    this._imgCanvas.setPalette(this.ppm.getFramePalette(index));
+    this._imgCanvas.setBitmaps(this.ppm.decodeFrame(index));
+    this._imgCanvas.refresh();
+    return this._imgCanvas.toImage(type, encoderOptions);
+  }
+
+  /**
+  * Get a Flipnote thumbnail as an image data URL
+  * @param {string} type - image MIME type, default is image/png
+  * @param {number} encoderOptions - number between 0 and 1 indicating image quality if type is image/jpeg or image/webp
+  */
+  getThumbImage(type, encoderOptions) {
+    return this.getFrameImage(this.ppm.thumbFrameIndex, type, encoderOptions);
+  }
+
+  /**
   * Jump to a specific frame
   * @param {number} index - zero-based frame index
   */
@@ -237,6 +264,13 @@ export default class ppmPlayer {
     this.canvas.setPalette(this.ppm.getFramePalette(index));
     this.canvas.setBitmaps(this.ppm.decodeFrame(index));
     this.canvas.refresh();
+  }
+
+  /**
+  * Jump to the thumbnail frame
+  */
+  thumbnailFrame() {
+    this.currentFrame = this.ppm.thumbFrameIndex;
   }
 
   /**
@@ -273,13 +307,6 @@ export default class ppmPlayer {
   */
   firstFrame() {
     this.currentFrame = 0;
-  }
-
-  /**
-  * Jump to the thumbnail frame
-  */
-  thumbnailFrame() {
-    this.currentFrame = this.ppm.thumbFrameIndex;
   }
 
   /**

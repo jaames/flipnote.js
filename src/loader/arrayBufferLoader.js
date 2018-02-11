@@ -1,13 +1,11 @@
-// arraybufferloader is stubbed for now
-
 export default {
 
   matches: function(source) {
-    return false
+    return (source instanceof ArrayBuffer);
   },
 
   load: function(source, resolve, reject) {
-    reject();
+    resolve(source);
   }
 
 }
