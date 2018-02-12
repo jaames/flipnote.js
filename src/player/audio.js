@@ -39,4 +39,12 @@ export default class audioTrack {
     this.source = null;
     this.paused = true;
   }
+
+  /**
+  * Destroy audio track
+  */
+  destroy() {
+    this.stop();
+    this.ctx.close();
+  }
 }

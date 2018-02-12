@@ -30,6 +30,7 @@ export default class ppmPlayer {
     this.canvas = new canvas(el, width, height);
     this._imgCanvas = new captureCanvas();
     this._isOpen = false;
+    this._events = {};
     this.loop = false;
     this.currentFrame = 0;
     this.paused = true;
@@ -101,6 +102,7 @@ export default class ppmPlayer {
     this.frameCount = ppm.frameCount;
     this.frameSpeed = ppm.frameSpeed;
     this.loop = meta.loop == 1;
+    this.paused = true;
     this._bgmAudio = ppm.soundMeta.bgm.length > 0 ? new audioTrack(this.ppm.decodeAudio("bgm")) : null;
     if (this._bgmAudio) this._bgmAudio.playbackRate = this._audiorate;
     this._seAudio = [
@@ -110,10 +112,8 @@ export default class ppmPlayer {
     ];
     this._seFlags = this.ppm.decodeSoundFlags();
     this._isOpen = true;
-    this.paused = true;
     this._playbackFrameTime = 0;
     this._lastFrameTime = 0;
-    this._events = {};
     this._hasPlaybackStarted = false;
     this.setFrame(this.ppm.thumbFrameIndex);
     this.emit("load");
@@ -125,7 +125,7 @@ export default class ppmPlayer {
   */
   open(source) {
     if (this._isOpen) this.close();
-    loader(source)
+    return loader(source)
       .then((buffer) => {
         this._load(buffer);
       })
@@ -138,6 +138,7 @@ export default class ppmPlayer {
   * Close the currently loaded Flipnote and clear the player canvas
   */
   close() {
+    this.pause();
     this.ppm = null;
     this._isOpen = false;
     this.paused = true;
@@ -146,6 +147,7 @@ export default class ppmPlayer {
     this.frameCount = null;
     this.frameSpeed = null;
     this._frame = 0;
+    this._closeAudio();
     this._bgmAudio = null;
     this._seAudio = new Array(3);
     this._seFlags = null;
@@ -185,6 +187,17 @@ export default class ppmPlayer {
   }
 
   /**
+  * Delete all audio tracks when a flipnote closes
+  * @access protected
+  */
+  _closeAudio() {
+    if (this._bgmAudio) this._bgmAudio.destroy();
+    for (let i = 0; i < this._seAudio.length; i++) {
+      if (this._seAudio[i]) this._seAudio[i].destroy();
+    }
+  }
+
+  /**
   * Internal requestAnimationFrame handler
   * @param {number} now - current time
   * @access protected
@@ -217,7 +230,7 @@ export default class ppmPlayer {
   * Begin Flipnote playback
   */
   play() {
-    if (!this._isOpen) return null;
+    if ((!this._isOpen) || (!this.paused)) return null;
     this.paused = false;
     if ((!this._hasPlaybackStarted) || ((!this.loop) && (this.currentFrame == this.frameCount - 1))) this._frame = 0;
     this._lastFrameTime = performance.now();
@@ -231,7 +244,7 @@ export default class ppmPlayer {
   * Pause Flipnote playback
   */
   pause() {
-    if (!this._isOpen) return null;
+    if ((!this._isOpen) || (this.paused)) return null;
     // break the playback loop
     this.paused = true;
     if (this._bgmAudio) this._bgmAudio.stop();
@@ -268,7 +281,7 @@ export default class ppmPlayer {
   * @param {number} index - zero-based frame index
   */
   setFrame(index) {
-    if (!this._isOpen) return null;
+    if ((!this._isOpen) || (index === this.currentFrame)) return null;
     // clamp frame index
     index = Math.max(0, Math.min(index, this.frameCount - 1));
     this._frame = index;
@@ -276,6 +289,7 @@ export default class ppmPlayer {
     this.canvas.setPalette(this.ppm.getFramePalette(index));
     this.canvas.setBitmaps(this.ppm.decodeFrame(index));
     this.canvas.refresh();
+    this.emit("frame:update", this.currentFrame);
   }
 
   /**

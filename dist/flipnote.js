@@ -348,6 +348,7 @@ var ppmPlayer = function () {
     this.canvas = new _canvas2.default(el, width, height);
     this._imgCanvas = new _captureCanvas2.default();
     this._isOpen = false;
+    this._events = {};
     this.loop = false;
     this.currentFrame = 0;
     this.paused = true;
@@ -375,15 +376,14 @@ var ppmPlayer = function () {
       this.frameCount = ppm.frameCount;
       this.frameSpeed = ppm.frameSpeed;
       this.loop = meta.loop == 1;
+      this.paused = true;
       this._bgmAudio = ppm.soundMeta.bgm.length > 0 ? new _audio2.default(this.ppm.decodeAudio("bgm")) : null;
       if (this._bgmAudio) this._bgmAudio.playbackRate = this._audiorate;
       this._seAudio = [ppm.soundMeta.se1.length > 0 ? new _audio2.default(this.ppm.decodeAudio("se1")) : null, ppm.soundMeta.se2.length > 0 ? new _audio2.default(this.ppm.decodeAudio("se2")) : null, ppm.soundMeta.se3.length > 0 ? new _audio2.default(this.ppm.decodeAudio("se3")) : null];
       this._seFlags = this.ppm.decodeSoundFlags();
       this._isOpen = true;
-      this.paused = true;
       this._playbackFrameTime = 0;
       this._lastFrameTime = 0;
-      this._events = {};
       this._hasPlaybackStarted = false;
       this.setFrame(this.ppm.thumbFrameIndex);
       this.emit("load");
@@ -400,7 +400,7 @@ var ppmPlayer = function () {
       var _this = this;
 
       if (this._isOpen) this.close();
-      (0, _loader2.default)(source).then(function (buffer) {
+      return (0, _loader2.default)(source).then(function (buffer) {
         _this._load(buffer);
       }).catch(function (err) {
         console.error("Error loading Flipnote:", err);
@@ -414,6 +414,7 @@ var ppmPlayer = function () {
   }, {
     key: "close",
     value: function close() {
+      this.pause();
       this.ppm = null;
       this._isOpen = false;
       this.paused = true;
@@ -422,6 +423,7 @@ var ppmPlayer = function () {
       this.frameCount = null;
       this.frameSpeed = null;
       this._frame = 0;
+      this._closeAudio();
       this._bgmAudio = null;
       this._seAudio = new Array(3);
       this._seFlags = null;
@@ -470,6 +472,20 @@ var ppmPlayer = function () {
     }
 
     /**
+    * Delete all audio tracks when a flipnote closes
+    * @access protected
+    */
+
+  }, {
+    key: "_closeAudio",
+    value: function _closeAudio() {
+      if (this._bgmAudio) this._bgmAudio.destroy();
+      for (var i = 0; i < this._seAudio.length; i++) {
+        if (this._seAudio[i]) this._seAudio[i].destroy();
+      }
+    }
+
+    /**
     * Internal requestAnimationFrame handler
     * @param {number} now - current time
     * @access protected
@@ -508,7 +524,7 @@ var ppmPlayer = function () {
   }, {
     key: "play",
     value: function play() {
-      if (!this._isOpen) return null;
+      if (!this._isOpen || !this.paused) return null;
       this.paused = false;
       if (!this._hasPlaybackStarted || !this.loop && this.currentFrame == this.frameCount - 1) this._frame = 0;
       this._lastFrameTime = performance.now();
@@ -525,7 +541,7 @@ var ppmPlayer = function () {
   }, {
     key: "pause",
     value: function pause() {
-      if (!this._isOpen) return null;
+      if (!this._isOpen || this.paused) return null;
       // break the playback loop
       this.paused = true;
       if (this._bgmAudio) this._bgmAudio.stop();
@@ -571,7 +587,7 @@ var ppmPlayer = function () {
   }, {
     key: "setFrame",
     value: function setFrame(index) {
-      if (!this._isOpen) return null;
+      if (!this._isOpen || index === this.currentFrame) return null;
       // clamp frame index
       index = Math.max(0, Math.min(index, this.frameCount - 1));
       this._frame = index;
@@ -579,6 +595,7 @@ var ppmPlayer = function () {
       this.canvas.setPalette(this.ppm.getFramePalette(index));
       this.canvas.setBitmaps(this.ppm.decodeFrame(index));
       this.canvas.refresh();
+      this.emit("frame:update", this.currentFrame);
     }
 
     /**
@@ -1772,6 +1789,17 @@ var audioTrack = function () {
       if (this.source) this.source.stop();
       this.source = null;
       this.paused = true;
+    }
+
+    /**
+    * Destroy audio track
+    */
+
+  }, {
+    key: "destroy",
+    value: function destroy() {
+      this.stop();
+      this.ctx.close();
     }
   }]);
 
