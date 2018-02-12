@@ -1,13 +1,34 @@
 {
   "name": "flipnote.js",
   "version": "1.2.0",
-  "repository": "https://github.com/jaames/flipnote.js.git",
-  "author": "james <jamesdaniel2197@gmail.com>",
-  "license": "MIT",
-  "main": "./dist/flipnote.js",
+  "description": "API for handling Flipnote Studio's .ppm animation format, capable of real-time playback using webGL",
+  "main": "dist/flipnote.js",
   "scripts": {
     "build": "webpack --env=dev --progress --colors && webpack --env=prod --progress --colors",
     "dev": "webpack-dev-server --env=dev --hot --progress --colors"
+  },
+  "files": [
+    "dist/flipnote.js"
+  ],
+  "keywords": [
+    "flipnote",
+    "studio",
+    "ugomemo",
+    "animation",
+    "decoder",
+    "nintendo",
+    "webGL",
+    "うごメモ",
+    "パラパラマンガ"
+  ],
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/jaames/flipnote.js.git"
+  },
+  "author": "James Daniel <james@rakujira.jp>",
+  "license": "MIT",
+  "bugs": {
+    "url": "https://github.com/jaames/flipnote.js/issues"
   },
   "devDependencies": {
     "babel-core": "^6.26.0",
