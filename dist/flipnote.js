@@ -1,5 +1,5 @@
 /*!
- * flipnote.js v1.2.0
+ * flipnote.js v1.2.1
  * Real-time, browser-based playback of Flipnote Studio's .ppm animation format
  * 2018 James Daniel
  * github.com/jaames/flipnote.js
@@ -277,7 +277,7 @@ function _interopRequireDefault(obj) { return obj && obj.__esModule ? obj : { de
 // import decoder from "./decoder";
 
 module.exports = {
-  version: "1.2.0",
+  version: "1.2.1",
   player: _player2.default
   // decoder: decoder,
 };
@@ -456,6 +456,20 @@ var ppmPlayer = function () {
     }
 
     /**
+    * Stop all audio tracks
+    * @access protected
+    */
+
+  }, {
+    key: "_stopAudio",
+    value: function _stopAudio() {
+      if (this._bgmAudio) this._bgmAudio.stop();
+      for (var i = 0; i < this._seAudio.length; i++) {
+        if (this._seAudio[i]) this._seAudio[i].stop();
+      }
+    }
+
+    /**
     * Internal requestAnimationFrame handler
     * @param {number} now - current time
     * @access protected
@@ -471,10 +485,11 @@ var ppmPlayer = function () {
         this.nextFrame();
         this._playbackFrameTime = 0;
       }
-      if (frame == this.frameCount - 1) {
+      if (frame >= this.frameCount - 1) {
+        this._stopAudio();
         if (this.loop) {
           this.firstFrame();
-          this._playBgm();
+          this._playBgm(0);
           this.emit("playback:loop");
         } else {
           this.pause();
@@ -1657,8 +1672,6 @@ exports.default = {
 Object.defineProperty(exports, "__esModule", {
   value: true
 });
-// fileloader is stubbed for now
-
 exports.default = {
 
   matches: function matches(source) {

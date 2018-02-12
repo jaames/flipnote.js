@@ -174,6 +174,17 @@ export default class ppmPlayer {
   }
 
   /**
+  * Stop all audio tracks
+  * @access protected
+  */
+  _stopAudio() {
+    if (this._bgmAudio) this._bgmAudio.stop();
+    for (let i = 0; i < this._seAudio.length; i++) {
+      if (this._seAudio[i]) this._seAudio[i].stop();
+    }
+  }
+
+  /**
   * Internal requestAnimationFrame handler
   * @param {number} now - current time
   * @access protected
@@ -186,10 +197,11 @@ export default class ppmPlayer {
       this.nextFrame();
       this._playbackFrameTime = 0;
     }
-    if (frame == this.frameCount -1) {
+    if (frame >= this.frameCount -1) {
+      this._stopAudio();
       if (this.loop) {
         this.firstFrame();
-        this._playBgm();
+        this._playBgm(0);
         this.emit("playback:loop");
       } else {
         this.pause();
