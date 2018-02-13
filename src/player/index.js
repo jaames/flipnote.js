@@ -103,15 +103,15 @@ export default class ppmPlayer {
     this.frameSpeed = ppm.frameSpeed;
     this.loop = meta.loop == 1;
     this.paused = true;
-    this._bgmAudio = ppm.soundMeta.bgm.length > 0 ? new audioTrack(this.ppm.decodeAudio("bgm")) : null;
+    this._isOpen = true;
+    this._bgmAudio = ppm.soundMeta.bgm.length > 0 ? new audioTrack(this.ppm.decodeAudio("bgm"), this.duration, this._audiorate) : null;
     if (this._bgmAudio) this._bgmAudio.playbackRate = this._audiorate;
     this._seAudio = [
-      ppm.soundMeta.se1.length > 0 ? new audioTrack(this.ppm.decodeAudio("se1")) : null,
-      ppm.soundMeta.se2.length > 0 ? new audioTrack(this.ppm.decodeAudio("se2")) : null,
-      ppm.soundMeta.se3.length > 0 ? new audioTrack(this.ppm.decodeAudio("se3")) : null,
+      ppm.soundMeta.se1.length > 0 ? new audioTrack(this.ppm.decodeAudio("se1"), 1) : null,
+      ppm.soundMeta.se2.length > 0 ? new audioTrack(this.ppm.decodeAudio("se2"), 1) : null,
+      ppm.soundMeta.se3.length > 0 ? new audioTrack(this.ppm.decodeAudio("se3"), 1) : null,
     ];
     this._seFlags = this.ppm.decodeSoundFlags();
-    this._isOpen = true;
     this._playbackFrameTime = 0;
     this._lastFrameTime = 0;
     this._hasPlaybackStarted = false;
@@ -172,7 +172,7 @@ export default class ppmPlayer {
   * @access protected
   */
   _playBgm() {
-    if (this._bgmAudio) this._bgmAudio.start(this.currentTime);
+    if (this._bgmAudio) this._bgmAudio.start(this.currentTime * this._audiorate);
   }
 
   /**

@@ -4,10 +4,11 @@ export default class audioTrack {
   * Create a new audio player
   * @param {Float32Array} audioData - mono-channel floating 32-bit PCM audio
   */
-  constructor (audioData) {
+  constructor (audioData, duration, playbackRate) {
+    playbackRate = playbackRate || 1;
     var ctx = new AudioContext();
-    var audioBuffer = ctx.createBuffer(1, audioData.length, 8192);
-    var channel = audioBuffer.copyToChannel(audioData, 0);
+    var audioBuffer = ctx.createBuffer(1, duration * playbackRate * 8192, 8192);
+    audioBuffer.copyToChannel(audioData, 0);
     this.audioBuffer = audioBuffer;
     this.source = null;
     this.paused = true;
