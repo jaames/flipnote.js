@@ -1,5 +1,5 @@
 /*!
- * flipnote.js v1.2.1
+ * flipnote.js v1.2.3
  * Real-time, browser-based playback of Flipnote Studio's .ppm animation format
  * 2018 James Daniel
  * github.com/jaames/flipnote.js
@@ -277,7 +277,7 @@ function _interopRequireDefault(obj) { return obj && obj.__esModule ? obj : { de
 // import decoder from "./decoder";
 
 module.exports = {
-  version: "1.2.1",
+  version: "1.2.3",
   player: _player2.default
   // decoder: decoder,
 };
@@ -377,11 +377,11 @@ var ppmPlayer = function () {
       this.frameSpeed = ppm.frameSpeed;
       this.loop = meta.loop == 1;
       this.paused = true;
-      this._bgmAudio = ppm.soundMeta.bgm.length > 0 ? new _audio2.default(this.ppm.decodeAudio("bgm")) : null;
-      if (this._bgmAudio) this._bgmAudio.playbackRate = this._audiorate;
-      this._seAudio = [ppm.soundMeta.se1.length > 0 ? new _audio2.default(this.ppm.decodeAudio("se1")) : null, ppm.soundMeta.se2.length > 0 ? new _audio2.default(this.ppm.decodeAudio("se2")) : null, ppm.soundMeta.se3.length > 0 ? new _audio2.default(this.ppm.decodeAudio("se3")) : null];
-      this._seFlags = this.ppm.decodeSoundFlags();
       this._isOpen = true;
+      this._bgmAudio = ppm.soundMeta.bgm.length > 0 ? new _audio2.default(this.ppm.decodeAudio("bgm"), this.duration, this._audiorate) : null;
+      if (this._bgmAudio) this._bgmAudio.playbackRate = this._audiorate;
+      this._seAudio = [ppm.soundMeta.se1.length > 0 ? new _audio2.default(this.ppm.decodeAudio("se1"), 1) : null, ppm.soundMeta.se2.length > 0 ? new _audio2.default(this.ppm.decodeAudio("se2"), 1) : null, ppm.soundMeta.se3.length > 0 ? new _audio2.default(this.ppm.decodeAudio("se3"), 1) : null];
+      this._seFlags = this.ppm.decodeSoundFlags();
       this._playbackFrameTime = 0;
       this._lastFrameTime = 0;
       this._hasPlaybackStarted = false;
@@ -454,7 +454,7 @@ var ppmPlayer = function () {
   }, {
     key: "_playBgm",
     value: function _playBgm() {
-      if (this._bgmAudio) this._bgmAudio.start(this.currentTime);
+      if (this._bgmAudio) this._bgmAudio.start(this.currentTime * this._audiorate);
     }
 
     /**
@@ -1744,12 +1744,13 @@ var audioTrack = function () {
   * Create a new audio player
   * @param {Float32Array} audioData - mono-channel floating 32-bit PCM audio
   */
-  function audioTrack(audioData) {
+  function audioTrack(audioData, duration, playbackRate) {
     _classCallCheck(this, audioTrack);
 
+    playbackRate = playbackRate || 1;
     var ctx = new AudioContext();
-    var audioBuffer = ctx.createBuffer(1, audioData.length, 8192);
-    var channel = audioBuffer.copyToChannel(audioData, 0);
+    var audioBuffer = ctx.createBuffer(1, duration * playbackRate * 8192, 8192);
+    audioBuffer.copyToChannel(audioData, 0);
     this.audioBuffer = audioBuffer;
     this.source = null;
     this.paused = true;
