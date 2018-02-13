@@ -34,6 +34,12 @@ export default class ppmPlayer {
     this.loop = false;
     this.currentFrame = 0;
     this.paused = true;
+    this.audioTracks = [
+      new audioTrack(),
+      new audioTrack(),
+      new audioTrack(),
+      new audioTrack(),
+    ];
   }
 
   /**
@@ -104,13 +110,10 @@ export default class ppmPlayer {
     this.loop = meta.loop == 1;
     this.paused = true;
     this._isOpen = true;
-    this._bgmAudio = ppm.soundMeta.bgm.length > 0 ? new audioTrack(this.ppm.decodeAudio("bgm"), this.duration, this._audiorate) : null;
-    if (this._bgmAudio) this._bgmAudio.playbackRate = this._audiorate;
-    this._seAudio = [
-      ppm.soundMeta.se1.length > 0 ? new audioTrack(this.ppm.decodeAudio("se1"), 1) : null,
-      ppm.soundMeta.se2.length > 0 ? new audioTrack(this.ppm.decodeAudio("se2"), 1) : null,
-      ppm.soundMeta.se3.length > 0 ? new audioTrack(this.ppm.decodeAudio("se3"), 1) : null,
-    ];
+    if (ppm.soundMeta.se1.length) this.audioTracks[0].set(this.ppm.decodeAudio("se1"), 1);
+    if (ppm.soundMeta.se2.length) this.audioTracks[1].set(this.ppm.decodeAudio("se2"), 1);
+    if (ppm.soundMeta.se3.length) this.audioTracks[2].set(this.ppm.decodeAudio("se3"), 1);
+    if (ppm.soundMeta.bgm.length) this.audioTracks[3].set(this.ppm.decodeAudio("bgm"), this._audiorate);
     this._seFlags = this.ppm.decodeSoundFlags();
     this._playbackFrameTime = 0;
     this._lastFrameTime = 0;
@@ -147,9 +150,9 @@ export default class ppmPlayer {
     this.frameCount = null;
     this.frameSpeed = null;
     this._frame = 0;
-    this._closeAudio();
-    this._bgmAudio = null;
-    this._seAudio = new Array(3);
+    for (let i = 0; i < this.audioTracks.length; i++) {
+      this.audioTracks[i].unset();
+    }
     this._seFlags = null;
     this._hasPlaybackStarted = null;
     this.canvas.clear();
@@ -163,7 +166,7 @@ export default class ppmPlayer {
   _playFrameSe(index) {
     var flags = this._seFlags[index];
     for (let i = 0; i < flags.length; i++) {
-      if (flags[i] && this._seAudio[i]) this._seAudio[i].start();
+      if (flags[i] && this.audioTracks[i].active) this.audioTracks[i].start();
     }
   }
 
@@ -172,7 +175,7 @@ export default class ppmPlayer {
   * @access protected
   */
   _playBgm() {
-    if (this._bgmAudio) this._bgmAudio.start(this.currentTime * this._audiorate);
+    this.audioTracks[3].start(this.currentTime);
   }
 
   /**
@@ -180,20 +183,8 @@ export default class ppmPlayer {
   * @access protected
   */
   _stopAudio() {
-    if (this._bgmAudio) this._bgmAudio.stop();
-    for (let i = 0; i < this._seAudio.length; i++) {
-      if (this._seAudio[i]) this._seAudio[i].stop();
-    }
-  }
-
-  /**
-  * Delete all audio tracks when a flipnote closes
-  * @access protected
-  */
-  _closeAudio() {
-    if (this._bgmAudio) this._bgmAudio.destroy();
-    for (let i = 0; i < this._seAudio.length; i++) {
-      if (this._seAudio[i]) this._seAudio[i].destroy();
+    for (let i = 0; i < this.audioTracks.length; i++) {
+      this.audioTracks[i].stop();
     }
   }
 
@@ -247,7 +238,7 @@ export default class ppmPlayer {
     if ((!this._isOpen) || (this.paused)) return null;
     // break the playback loop
     this.paused = true;
-    if (this._bgmAudio) this._bgmAudio.stop();
+    this._stopAudio();
     this.emit("playback:stop");
   }
 
