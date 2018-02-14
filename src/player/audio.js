@@ -2,59 +2,71 @@ export default class audioTrack {
   /**
   * Create a new audio player
   */
-  constructor () {
+  constructor (id) {
+    this.id = id;
     this.channelCount = 1;
     this.bitsPerSample = 16;
     this.sampleRate = 8192;
+    this.playbackRate = 1;
     this.audio = document.createElement("audio");
+    this.audio.preload = true;
     this.active = false;
   }
 
   /**
-  * Create a new audio player
-  * @param {Int16Array} audioData - mono-channel 16-bit PCM audio
+  * Set the audio track
+  * @param {Int16Array} pcmData - mono-channel 16-bit PCM audio
+  * @param {number} playbackRate - audio playback rate (1 = default)
   */
   set(pcmData, playbackRate) {
-    // wav header reference
-    // http://www.topherlee.com/software/pcm-tut-wavformat.html
-    var headerBuffer = new ArrayBuffer(44);
-    var data = new DataView(headerBuffer);
+    // the HTML5 audio element supports PCM audio if it's in a WAV wrapper
+    // to do this we write a WAV header and prepend it to the raw PCM data
+    // WAV header reference: http://www.topherlee.com/software/pcm-tut-wavformat.html
+    var header = new DataView(new ArrayBuffer(44));
     // "RIFF" indent
-    data.setUint32(0, 1179011410, true);
+    header.setUint32(0, 1179011410, true);
     // filesize
-    data.setUint32(4, headerBuffer.byteLength + pcmData.byteLength, true);
+    header.setUint32(4, header.byteLength + pcmData.byteLength, true);
     // "WAVE" indent
-    data.setUint32(8, 1163280727, true);
+    header.setUint32(8, 1163280727, true);
     // "fmt " section header
-    data.setUint32(12, 544501094, true);
+    header.setUint32(12, 544501094, true);
     // fmt section length
-    data.setUint32(16, 16, true);
+    header.setUint32(16, 16, true);
     // specify audio format is pcm (type 1)
-    data.setUint16(20, 1, true);
+    header.setUint16(20, 1, true);
     // number of audio channels
-    data.setUint16(22, this.channelCount, true);
+    header.setUint16(22, this.channelCount, true);
     // audio sample rate
-    data.setUint32(24, this.sampleRate * playbackRate, true);
+    header.setUint32(24, this.sampleRate * playbackRate, true);
     // byterate = (sampleRate * bitsPerSample * channelCount) / 8
-    data.setUint32(28, ((this.sampleRate * playbackRate) * this.bitsPerSample * this.channelCount) / 8, true);
+    header.setUint32(28, ((this.sampleRate * playbackRate) * this.bitsPerSample * this.channelCount) / 8, true);
     // blockalign = (bitsPerSample * channels) / 8
-    data.setUint16(32, (this.bitsPerSample * this.channelCount) / 8, true);
+    header.setUint16(32, (this.bitsPerSample * this.channelCount) / 8, true);
     // bits per sample
-    data.setUint16(34, this.bitsPerSample, true);
+    header.setUint16(34, this.bitsPerSample, true);
     // "data" section header
-    data.setUint32(36, 1635017060, true);
+    header.setUint32(36, 1635017060, true);
     // data section length
-    data.setUint32(40, pcmData.byteLength, true);
-    this.url = window.URL.createObjectURL(new Blob([headerBuffer, pcmData.buffer], {type: "audio/wav"}));
+    header.setUint32(40, pcmData.byteLength, true);
+    // create blob from joining the wav header and pcm data
+    this.url = window.URL.createObjectURL(new Blob([header.buffer, pcmData.buffer], {type: "audio/wav"}));
+    // use the blob url for the audio element
     this.audio.src = this.url;
     this.active = true;
+    this.playbackRate = playbackRate;
   }
 
+  /**
+  * Clear the audio track
+  */
   unset() {
     if (this.active) {
       window.URL.revokeObjectURL(this.url);
       this.audio.src = "";
+      this.audio.load();
       this.active = false;
+      this.playbackRate = 1;
     }
   }
 
@@ -64,7 +76,7 @@ export default class audioTrack {
   */
   start(offset) {
     if (this.active) {
-      this.audio.currentTime = offset;
+      this.audio.currentTime = offset || 0;
       this.audio.play();
     }
   }

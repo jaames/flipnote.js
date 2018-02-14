@@ -35,10 +35,10 @@ export default class ppmPlayer {
     this.currentFrame = 0;
     this.paused = true;
     this.audioTracks = [
-      new audioTrack(),
-      new audioTrack(),
-      new audioTrack(),
-      new audioTrack(),
+      new audioTrack("bgm"),
+      new audioTrack("se1"),
+      new audioTrack("se2"),
+      new audioTrack("se3"),
     ];
   }
 
@@ -70,6 +70,38 @@ export default class ppmPlayer {
     if ((this._isOpen) && (value < this.duration) && (value > 0)) {
       this.setFrame(Math.round(value / (1 / this.framerate)));
       this._playbackFrameTime = 0;
+    }
+  }
+
+  /**
+  * Get audio volume
+  */
+  get volume() {
+    return this.audioTracks[3].audio.volume;
+  }
+
+  /**
+  * Set audio volume
+  */
+  set volume(value) {
+    for (let i = 0; i < this.audioTracks.length; i++) {
+      this.audioTracks[i].audio.volume = value;
+    }
+  }
+
+  /**
+  * Get audio mute
+  */
+  get muted() {
+    return this.audioTracks[3].audio.muted;
+  }
+
+  /**
+  * Set audio mute
+  */
+  set muted(value) {
+    for (let i = 0; i < this.audioTracks.length; i++) {
+      this.audioTracks[i].audio.muted = value;
     }
   }
 
