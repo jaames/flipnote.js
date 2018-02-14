@@ -387,7 +387,7 @@ export default class ppmDecoder extends fileReader {
   /**
   * Decode an audio track to 32-bit adpcm
   * @param {string} track - track name, "bgm" | "se1" | "se2" | "se3"
-  * @returns {Float32Array}
+  * @returns {Int16Array}
   */
   decodeAudio(track) {
     this._seekToAudio(track);

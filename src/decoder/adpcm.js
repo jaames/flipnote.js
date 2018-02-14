@@ -1,4 +1,4 @@
-/** convert 4-bit adpcm to float32 pcm (as supported by the AudioBuffer API) 
+/** convert 4-bit adpcm to 16-bit pcm
  *  implementation based on http://www.cs.columbia.edu/~gskc/Code/AdvancedInternetServices/SoundNoiseRatio/dvi_adpcm.c
 */
 
@@ -23,14 +23,14 @@ let statePrevSample = 0,
     statePrevIndex = 0;
 
 /**
-* Convert 4-bit adpcm to 32-bit pcm
+* Convert 4-bit adpcm to 16-bit pcm
 * @param {Uint8Array} inputBuffer - adpcm buffer
-* @returns {Float32Array}
+* @returns {Int16Array}
 */
 export function decodeAdpcm(inputBuffer) {
   statePrevSample = 0;
   statePrevIndex = 0;
-  var outputBuffer = new Float32Array(inputBuffer.length * 2);
+  var outputBuffer = new Int16Array(inputBuffer.length * 2);
   var outputOffset = 0;
   for (var inputOffset = 0; inputOffset < inputBuffer.length; inputOffset++) {
     var byte = inputBuffer[inputOffset];
@@ -69,8 +69,7 @@ function decodeSample(sample) {
   predSample = clamp(predSample, -32767, 32767);
   statePrevSample = predSample;
   statePrevIndex = index;
-  // return a value between -1.0 and 1.0, since that's what's used by JavaScript's AudioBuffer API
-  return predSample / 32768;
+  return predSample;
 };
 
 /**

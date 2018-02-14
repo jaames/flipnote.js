@@ -1,5 +1,5 @@
 /*!
- * flipnote.js v1.2.3
+ * flipnote.js v1.3.0
  * Real-time, browser-based playback of Flipnote Studio's .ppm animation format
  * 2018 James Daniel
  * github.com/jaames/flipnote.js
@@ -277,7 +277,7 @@ function _interopRequireDefault(obj) { return obj && obj.__esModule ? obj : { de
 // import decoder from "./decoder";
 
 module.exports = {
-  version: "1.2.3",
+  version: "1.3.0",
   player: _player2.default
   // decoder: decoder,
 };
@@ -352,6 +352,7 @@ var ppmPlayer = function () {
     this.loop = false;
     this.currentFrame = 0;
     this.paused = true;
+    this.audioTracks = [new _audio2.default("bgm"), new _audio2.default("se1"), new _audio2.default("se2"), new _audio2.default("se3")];
   }
 
   /**
@@ -378,9 +379,10 @@ var ppmPlayer = function () {
       this.loop = meta.loop == 1;
       this.paused = true;
       this._isOpen = true;
-      this._bgmAudio = ppm.soundMeta.bgm.length > 0 ? new _audio2.default(this.ppm.decodeAudio("bgm"), this.duration, this._audiorate) : null;
-      if (this._bgmAudio) this._bgmAudio.playbackRate = this._audiorate;
-      this._seAudio = [ppm.soundMeta.se1.length > 0 ? new _audio2.default(this.ppm.decodeAudio("se1"), 1) : null, ppm.soundMeta.se2.length > 0 ? new _audio2.default(this.ppm.decodeAudio("se2"), 1) : null, ppm.soundMeta.se3.length > 0 ? new _audio2.default(this.ppm.decodeAudio("se3"), 1) : null];
+      if (ppm.soundMeta.se1.length) this.audioTracks[0].set(this.ppm.decodeAudio("se1"), 1);
+      if (ppm.soundMeta.se2.length) this.audioTracks[1].set(this.ppm.decodeAudio("se2"), 1);
+      if (ppm.soundMeta.se3.length) this.audioTracks[2].set(this.ppm.decodeAudio("se3"), 1);
+      if (ppm.soundMeta.bgm.length) this.audioTracks[3].set(this.ppm.decodeAudio("bgm"), this._audiorate);
       this._seFlags = this.ppm.decodeSoundFlags();
       this._playbackFrameTime = 0;
       this._lastFrameTime = 0;
@@ -423,9 +425,9 @@ var ppmPlayer = function () {
       this.frameCount = null;
       this.frameSpeed = null;
       this._frame = 0;
-      this._closeAudio();
-      this._bgmAudio = null;
-      this._seAudio = new Array(3);
+      for (var i = 0; i < this.audioTracks.length; i++) {
+        this.audioTracks[i].unset();
+      }
       this._seFlags = null;
       this._hasPlaybackStarted = null;
       this.canvas.clear();
@@ -442,7 +444,7 @@ var ppmPlayer = function () {
     value: function _playFrameSe(index) {
       var flags = this._seFlags[index];
       for (var i = 0; i < flags.length; i++) {
-        if (flags[i] && this._seAudio[i]) this._seAudio[i].start();
+        if (flags[i] && this.audioTracks[i].active) this.audioTracks[i].start();
       }
     }
 
@@ -454,7 +456,7 @@ var ppmPlayer = function () {
   }, {
     key: "_playBgm",
     value: function _playBgm() {
-      if (this._bgmAudio) this._bgmAudio.start(this.currentTime * this._audiorate);
+      this.audioTracks[3].start(this.currentTime);
     }
 
     /**
@@ -465,23 +467,8 @@ var ppmPlayer = function () {
   }, {
     key: "_stopAudio",
     value: function _stopAudio() {
-      if (this._bgmAudio) this._bgmAudio.stop();
-      for (var i = 0; i < this._seAudio.length; i++) {
-        if (this._seAudio[i]) this._seAudio[i].stop();
-      }
-    }
-
-    /**
-    * Delete all audio tracks when a flipnote closes
-    * @access protected
-    */
-
-  }, {
-    key: "_closeAudio",
-    value: function _closeAudio() {
-      if (this._bgmAudio) this._bgmAudio.destroy();
-      for (var i = 0; i < this._seAudio.length; i++) {
-        if (this._seAudio[i]) this._seAudio[i].destroy();
+      for (var i = 0; i < this.audioTracks.length; i++) {
+        this.audioTracks[i].stop();
       }
     }
 
@@ -544,7 +531,7 @@ var ppmPlayer = function () {
       if (!this._isOpen || this.paused) return null;
       // break the playback loop
       this.paused = true;
-      if (this._bgmAudio) this._bgmAudio.stop();
+      this._stopAudio();
       this.emit("playback:stop");
     }
 
@@ -745,6 +732,46 @@ var ppmPlayer = function () {
       if (this._isOpen && value < this.duration && value > 0) {
         this.setFrame(Math.round(value / (1 / this.framerate)));
         this._playbackFrameTime = 0;
+      }
+    }
+
+    /**
+    * Get audio volume
+    */
+
+  }, {
+    key: "volume",
+    get: function get() {
+      return this.audioTracks[3].audio.volume;
+    }
+
+    /**
+    * Set audio volume
+    */
+    ,
+    set: function set(value) {
+      for (var i = 0; i < this.audioTracks.length; i++) {
+        this.audioTracks[i].audio.volume = value;
+      }
+    }
+
+    /**
+    * Get audio mute
+    */
+
+  }, {
+    key: "muted",
+    get: function get() {
+      return this.audioTracks[3].audio.muted;
+    }
+
+    /**
+    * Set audio mute
+    */
+    ,
+    set: function set(value) {
+      for (var i = 0; i < this.audioTracks.length; i++) {
+        this.audioTracks[i].audio.muted = value;
       }
     }
 
@@ -1314,7 +1341,7 @@ var ppmDecoder = function (_fileReader) {
     /**
     * Decode an audio track to 32-bit adpcm
     * @param {string} track - track name, "bgm" | "se1" | "se2" | "se3"
-    * @returns {Float32Array}
+    * @returns {Int16Array}
     */
 
   }, {
@@ -1527,7 +1554,7 @@ Object.defineProperty(exports, "__esModule", {
   value: true
 });
 exports.decodeAdpcm = decodeAdpcm;
-/** convert 4-bit adpcm to float32 pcm (as supported by the AudioBuffer API) 
+/** convert 4-bit adpcm to 16-bit pcm
  *  implementation based on http://www.cs.columbia.edu/~gskc/Code/AdvancedInternetServices/SoundNoiseRatio/dvi_adpcm.c
 */
 
@@ -1539,14 +1566,14 @@ var statePrevSample = 0,
     statePrevIndex = 0;
 
 /**
-* Convert 4-bit adpcm to 32-bit pcm
+* Convert 4-bit adpcm to 16-bit pcm
 * @param {Uint8Array} inputBuffer - adpcm buffer
-* @returns {Float32Array}
+* @returns {Int16Array}
 */
 function decodeAdpcm(inputBuffer) {
   statePrevSample = 0;
   statePrevIndex = 0;
-  var outputBuffer = new Float32Array(inputBuffer.length * 2);
+  var outputBuffer = new Int16Array(inputBuffer.length * 2);
   var outputOffset = 0;
   for (var inputOffset = 0; inputOffset < inputBuffer.length; inputOffset++) {
     var byte = inputBuffer[inputOffset];
@@ -1585,8 +1612,7 @@ function decodeSample(sample) {
   predSample = clamp(predSample, -32767, 32767);
   statePrevSample = predSample;
   statePrevIndex = index;
-  // return a value between -1.0 and 1.0, since that's what's used by JavaScript's AudioBuffer API
-  return predSample / 32768;
+  return predSample;
 };
 
 /**
@@ -1689,6 +1715,8 @@ exports.default = {
 Object.defineProperty(exports, "__esModule", {
   value: true
 });
+// fileloader is stubbed for now
+
 exports.default = {
 
   matches: function matches(source) {
@@ -1738,46 +1766,99 @@ var _createClass = function () { function defineProperties(target, props) { for 
 
 function _classCallCheck(instance, Constructor) { if (!(instance instanceof Constructor)) { throw new TypeError("Cannot call a class as a function"); } }
 
-// Wrapper around JavaScript's audio API since it's a bit of a pain to deal with
 var audioTrack = function () {
   /**
   * Create a new audio player
-  * @param {Float32Array} audioData - mono-channel floating 32-bit PCM audio
   */
-  function audioTrack(audioData, duration, playbackRate) {
+  function audioTrack(id) {
     _classCallCheck(this, audioTrack);
 
-    playbackRate = playbackRate || 1;
-    var ctx = new AudioContext();
-    var audioBuffer = ctx.createBuffer(1, duration * playbackRate * 8192, 8192);
-    audioBuffer.copyToChannel(audioData, 0);
-    this.audioBuffer = audioBuffer;
-    this.source = null;
-    this.paused = true;
-    this.ctx = ctx;
+    this.id = id;
+    this.channelCount = 1;
+    this.bitsPerSample = 16;
+    this.sampleRate = 8192;
     this.playbackRate = 1;
+    this.audio = document.createElement("audio");
+    this.audio.preload = true;
+    this.active = false;
   }
 
   /**
-  * Start audio playback
-  * @param {number} offset - offset to begin playback at
+  * Set the audio track
+  * @param {Int16Array} pcmData - mono-channel 16-bit PCM audio
+  * @param {number} playbackRate - audio playback rate (1 = default)
   */
 
 
   _createClass(audioTrack, [{
+    key: "set",
+    value: function set(pcmData, playbackRate) {
+      // the HTML5 audio element supports PCM audio if it's in a WAV wrapper
+      // to do this we write a WAV header and prepend it to the raw PCM data
+      // WAV header reference: http://www.topherlee.com/software/pcm-tut-wavformat.html
+      var header = new DataView(new ArrayBuffer(44));
+      // "RIFF" indent
+      header.setUint32(0, 1179011410, true);
+      // filesize
+      header.setUint32(4, header.byteLength + pcmData.byteLength, true);
+      // "WAVE" indent
+      header.setUint32(8, 1163280727, true);
+      // "fmt " section header
+      header.setUint32(12, 544501094, true);
+      // fmt section length
+      header.setUint32(16, 16, true);
+      // specify audio format is pcm (type 1)
+      header.setUint16(20, 1, true);
+      // number of audio channels
+      header.setUint16(22, this.channelCount, true);
+      // audio sample rate
+      header.setUint32(24, this.sampleRate * playbackRate, true);
+      // byterate = (sampleRate * bitsPerSample * channelCount) / 8
+      header.setUint32(28, this.sampleRate * playbackRate * this.bitsPerSample * this.channelCount / 8, true);
+      // blockalign = (bitsPerSample * channels) / 8
+      header.setUint16(32, this.bitsPerSample * this.channelCount / 8, true);
+      // bits per sample
+      header.setUint16(34, this.bitsPerSample, true);
+      // "data" section header
+      header.setUint32(36, 1635017060, true);
+      // data section length
+      header.setUint32(40, pcmData.byteLength, true);
+      // create blob from joining the wav header and pcm data
+      this.url = window.URL.createObjectURL(new Blob([header.buffer, pcmData.buffer], { type: "audio/wav" }));
+      // use the blob url for the audio element
+      this.audio.src = this.url;
+      this.active = true;
+      this.playbackRate = playbackRate;
+    }
+
+    /**
+    * Clear the audio track
+    */
+
+  }, {
+    key: "unset",
+    value: function unset() {
+      if (this.active) {
+        window.URL.revokeObjectURL(this.url);
+        this.audio.src = "";
+        this.audio.load();
+        this.active = false;
+        this.playbackRate = 1;
+      }
+    }
+
+    /**
+    * Start audio playback
+    * @param {number} offset - offset to begin playback at
+    */
+
+  }, {
     key: "start",
     value: function start(offset) {
-      var _this = this;
-
-      this.source = this.ctx.createBufferSource();
-      this.source.buffer = this.audioBuffer;
-      this.source.connect(this.ctx.destination);
-      this.source.onended = function (e) {
-        _this.paused = true;
-      };
-      this.source.playbackRate.value = this.playbackRate;
-      this.source.start(0, offset);
-      this.paused = false;
+      if (this.active) {
+        this.audio.currentTime = offset || 0;
+        this.audio.play();
+      }
     }
 
     /**
@@ -1787,20 +1868,9 @@ var audioTrack = function () {
   }, {
     key: "stop",
     value: function stop() {
-      if (this.source) this.source.stop();
-      this.source = null;
-      this.paused = true;
-    }
-
-    /**
-    * Destroy audio track
-    */
-
-  }, {
-    key: "destroy",
-    value: function destroy() {
-      this.stop();
-      this.ctx.close();
+      if (this.active) {
+        this.audio.pause();
+      }
     }
   }]);
 
