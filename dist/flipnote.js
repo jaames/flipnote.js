@@ -1,5 +1,5 @@
 /*!
- * flipnote.js v1.3.0
+ * flipnote.js v1.3.1
  * Real-time, browser-based playback of Flipnote Studio's .ppm animation format
  * 2018 James Daniel
  * github.com/jaames/flipnote.js
@@ -174,8 +174,8 @@ var webglCanvas = function () {
       gl.bindTexture(gl.TEXTURE_2D, gl.createTexture());
       gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_S, gl.CLAMP_TO_EDGE);
       gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_T, gl.CLAMP_TO_EDGE);
-      gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MIN_FILTER, gl.NEAREST);
-      gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MAG_FILTER, gl.NEAREST);
+      gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MIN_FILTER, gl.LINEAR);
+      gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MAG_FILTER, gl.LINEAR);
     }
 
     /**
@@ -277,7 +277,7 @@ function _interopRequireDefault(obj) { return obj && obj.__esModule ? obj : { de
 // import decoder from "./decoder";
 
 module.exports = {
-  version: "1.3.0",
+  version: "1.3.1",
   player: _player2.default
   // decoder: decoder,
 };
@@ -822,7 +822,7 @@ exports.default = ppmPlayer;
 Object.defineProperty(exports, "__esModule", {
   value: true
 });
-exports.default = ["attribute vec4 a_position;", "varying vec2 v_texcoord;", "void main() {", "gl_Position = a_position;", "v_texcoord = a_position.xy * vec2(0.5, -0.5) + 0.5;", "}"].join("\n");
+exports.default = "\nattribute vec4 a_position;\nvarying vec2 v_texcoord;\nvoid main() {\n  gl_Position = a_position;\n  v_texcoord = a_position.xy * vec2(0.5, -0.5) + 0.5;\n}";
 
 /***/ }),
 /* 4 */
@@ -834,11 +834,7 @@ exports.default = ["attribute vec4 a_position;", "varying vec2 v_texcoord;", "vo
 Object.defineProperty(exports, "__esModule", {
   value: true
 });
-exports.default = ["precision lowp float;", "varying vec2 v_texcoord;", "uniform vec4 u_paperColor;", "uniform vec4 u_layer1Color;", "uniform vec4 u_layer2Color;", "uniform sampler2D u_layer1Bitmap;", "uniform sampler2D u_layer2Bitmap;", "void main() {", "float layer1 = texture2D(u_layer1Bitmap, v_texcoord).a;", "float layer2 = texture2D(u_layer2Bitmap, v_texcoord).a;",
-// combine the two layer bitmaps together
-// each pixel will either be 0.0 if it is "transparent", or (1/255) if it is used
-// layer 1 is on top of layer 2, anything else should be paper color
-"gl_FragColor = (layer1 == 0.0) ? (layer2 == 0.0) ? u_paperColor : u_layer2Color : u_layer1Color;", "}"].join("\n");
+exports.default = "\nprecision mediump float;\nvarying vec2 v_texcoord;\nuniform vec4 u_paperColor;\nuniform vec4 u_layer1Color;\nuniform vec4 u_layer2Color;\nuniform sampler2D u_layer1Bitmap;\nuniform sampler2D u_layer2Bitmap;\n\nvoid main() {\n  float layer1 = texture2D(u_layer1Bitmap, v_texcoord).a * 255.0;\n  float layer2 = texture2D(u_layer2Bitmap, v_texcoord).a * 255.0;\n  gl_FragColor = mix(mix(u_paperColor, u_layer2Color, layer2), u_layer1Color, layer1);\n}";
 
 /***/ }),
 /* 5 */
