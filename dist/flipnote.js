@@ -1,5 +1,5 @@
 /*!
- * flipnote.js v1.3.1
+ * flipnote.js v1.3.2
  * Real-time, browser-based playback of Flipnote Studio's .ppm animation format
  * 2018 James Daniel
  * github.com/jaames/flipnote.js
@@ -137,6 +137,9 @@ var webglCanvas = function () {
     // create textures for each layer
     this._createTexture("u_layer1Bitmap", 0, gl.TEXTURE0);
     this._createTexture("u_layer2Bitmap", 1, gl.TEXTURE1);
+    this.setFilter();
+    this.setLayerVisibilty(1, true);
+    this.setLayerVisibilty(2, true);
   }
 
   /**
@@ -174,8 +177,35 @@ var webglCanvas = function () {
       gl.bindTexture(gl.TEXTURE_2D, gl.createTexture());
       gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_S, gl.CLAMP_TO_EDGE);
       gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_T, gl.CLAMP_TO_EDGE);
-      gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MIN_FILTER, gl.LINEAR);
-      gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MAG_FILTER, gl.LINEAR);
+    }
+
+    /**
+    * Set the texture filter
+    * @param {string} filter - "linear" | "nearest"
+    */
+
+  }, {
+    key: "setFilter",
+    value: function setFilter(filter) {
+      var gl = this.gl;
+      filter = filter == "linear" ? gl.LINEAR : gl.NEAREST;
+      [gl.TEXTURE0, gl.TEXTURE1].map(function (texture) {
+        gl.activeTexture(texture);
+        gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MIN_FILTER, filter);
+        gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MAG_FILTER, filter);
+      });
+    }
+
+    /**
+    * Set layer visibility
+    * @param {number} layerIndex - 1 or 2
+    * @param {number} flag - 1 - show, 0 = hide
+    */
+
+  }, {
+    key: "setLayerVisibilty",
+    value: function setLayerVisibilty(layerIndex, flag) {
+      this.gl.uniform1i(this.gl.getUniformLocation(this.program, "u_layer" + layerIndex + "Visibility"), flag);
     }
 
     /**
@@ -277,7 +307,7 @@ function _interopRequireDefault(obj) { return obj && obj.__esModule ? obj : { de
 // import decoder from "./decoder";
 
 module.exports = {
-  version: "1.3.1",
+  version: "1.3.2",
   player: _player2.default
   // decoder: decoder,
 };
@@ -834,7 +864,7 @@ exports.default = "\nattribute vec4 a_position;\nvarying vec2 v_texcoord;\nvoid 
 Object.defineProperty(exports, "__esModule", {
   value: true
 });
-exports.default = "\nprecision mediump float;\nvarying vec2 v_texcoord;\nuniform vec4 u_paperColor;\nuniform vec4 u_layer1Color;\nuniform vec4 u_layer2Color;\nuniform sampler2D u_layer1Bitmap;\nuniform sampler2D u_layer2Bitmap;\n\nvoid main() {\n  float layer1 = texture2D(u_layer1Bitmap, v_texcoord).a * 255.0;\n  float layer2 = texture2D(u_layer2Bitmap, v_texcoord).a * 255.0;\n  gl_FragColor = mix(mix(u_paperColor, u_layer2Color, layer2), u_layer1Color, layer1);\n}";
+exports.default = "\nprecision mediump float;\nvarying vec2 v_texcoord;\nuniform vec4 u_paperColor;\nuniform vec4 u_layer1Color;\nuniform vec4 u_layer2Color;\nuniform bool u_layer1Visibility;\nuniform bool u_layer2Visibility;\nuniform sampler2D u_layer1Bitmap;\nuniform sampler2D u_layer2Bitmap;\nvoid main() {\n  float layer1 = u_layer1Visibility ? texture2D(u_layer1Bitmap, v_texcoord).a * 255.0 : 0.0;\n  float layer2 = u_layer2Visibility ? texture2D(u_layer2Bitmap, v_texcoord).a * 255.0 : 0.0;\n  gl_FragColor = mix(mix(u_paperColor, u_layer2Color, layer2), u_layer1Color, layer1);\n}";
 
 /***/ }),
 /* 5 */

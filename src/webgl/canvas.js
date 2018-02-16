@@ -31,6 +31,9 @@ export default class webglCanvas {
     // create textures for each layer
     this._createTexture("u_layer1Bitmap", 0, gl.TEXTURE0);
     this._createTexture("u_layer2Bitmap", 1, gl.TEXTURE1);
+    this.setFilter();
+    this.setLayerVisibilty(1, true);
+    this.setLayerVisibilty(2, true);
   }
 
   /**
@@ -61,8 +64,29 @@ export default class webglCanvas {
     gl.bindTexture(gl.TEXTURE_2D, gl.createTexture());
     gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_S, gl.CLAMP_TO_EDGE);
     gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_T, gl.CLAMP_TO_EDGE);
-    gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MIN_FILTER, gl.LINEAR);
-    gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MAG_FILTER, gl.LINEAR);
+  }
+
+  /**
+  * Set the texture filter
+  * @param {string} filter - "linear" | "nearest"
+  */
+  setFilter(filter) {
+    var gl = this.gl;
+    filter = filter == "linear" ? gl.LINEAR : gl.NEAREST;
+    [gl.TEXTURE0, gl.TEXTURE1].map(function (texture) {
+      gl.activeTexture(texture);
+      gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MIN_FILTER, filter);
+      gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MAG_FILTER, filter);
+    });
+  }
+
+  /**
+  * Set layer visibility
+  * @param {number} layerIndex - 1 or 2
+  * @param {number} flag - 1 - show, 0 = hide
+  */
+  setLayerVisibilty(layerIndex, flag) {
+    this.gl.uniform1i(this.gl.getUniformLocation(this.program, "u_layer" + layerIndex + "Visibility"), flag);
   }
 
   /**
