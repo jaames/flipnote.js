@@ -280,14 +280,16 @@ export default class ppmPlayer {
   * @param {string} type - image MIME type, default is image/png
   * @param {number} encoderOptions - number between 0 and 1 indicating image quality if type is image/jpeg or image/webp
   */
-  getFrameImage(index, type, encoderOptions) {
+  getFrameImage(index, width, height, type, encoderOptions) {
     if (!this._isOpen) return null;
+    var canvas = this._imgCanvas;
+    if (canvas.width !== width || canvas.height !== height) canvas.setSize(width, height);
     // clamp frame index
     index = Math.max(0, Math.min(index, this.frameCount - 1));
-    this._imgCanvas.setPalette(this.ppm.getFramePalette(index));
-    this._imgCanvas.setBitmaps(this.ppm.decodeFrame(index));
-    this._imgCanvas.refresh();
-    return this._imgCanvas.toImage(type, encoderOptions);
+    canvas.setPalette(this.ppm.getFramePalette(index));
+    canvas.setBitmaps(this.ppm.decodeFrame(index));
+    canvas.refresh();
+    return canvas.toImage(type, encoderOptions);
   }
 
   /**
@@ -295,8 +297,8 @@ export default class ppmPlayer {
   * @param {string} type - image MIME type, default is image/png
   * @param {number} encoderOptions - number between 0 and 1 indicating image quality if type is image/jpeg or image/webp
   */
-  getThumbImage(type, encoderOptions) {
-    return this.getFrameImage(this.ppm.thumbFrameIndex, type, encoderOptions);
+  getThumbImage(width, height, type, encoderOptions) {
+    return this.getFrameImage(this.ppm.thumbFrameIndex, width, height, type, encoderOptions);
   }
 
   /**

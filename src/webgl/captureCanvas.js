@@ -7,9 +7,23 @@ import canvas from "./canvas";
 export default class captureCanvas extends canvas {
   constructor() {
     super(document.createElement("canvas"), 256, 192, {
-      antialias: false,
+      antialias: true,
       preserveDrawingBuffer: true,
     });
+    this.setFilter("linear");
+    this.width = 256;
+    this.height = 256;
+  }
+
+  /**
+  * set the image size
+  * @param {number} width - image width in pixels 
+  * @param {number} height - image height in pixels 
+  */
+  setSize(width, height) {
+    this.resize(width, height);
+    this.width = width;
+    this.height = height;
   }
 
   /**

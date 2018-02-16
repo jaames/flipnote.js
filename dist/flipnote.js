@@ -1,5 +1,5 @@
 /*!
- * flipnote.js v1.3.2
+ * flipnote.js v1.4.0
  * Real-time, browser-based playback of Flipnote Studio's .ppm animation format
  * 2018 James Daniel
  * github.com/jaames/flipnote.js
@@ -307,7 +307,7 @@ function _interopRequireDefault(obj) { return obj && obj.__esModule ? obj : { de
 // import decoder from "./decoder";
 
 module.exports = {
-  version: "1.3.2",
+  version: "1.4.0",
   player: _player2.default
   // decoder: decoder,
 };
@@ -574,14 +574,16 @@ var ppmPlayer = function () {
 
   }, {
     key: "getFrameImage",
-    value: function getFrameImage(index, type, encoderOptions) {
+    value: function getFrameImage(index, width, height, type, encoderOptions) {
       if (!this._isOpen) return null;
+      var canvas = this._imgCanvas;
+      if (canvas.width !== width || canvas.height !== height) canvas.setSize(width, height);
       // clamp frame index
       index = Math.max(0, Math.min(index, this.frameCount - 1));
-      this._imgCanvas.setPalette(this.ppm.getFramePalette(index));
-      this._imgCanvas.setBitmaps(this.ppm.decodeFrame(index));
-      this._imgCanvas.refresh();
-      return this._imgCanvas.toImage(type, encoderOptions);
+      canvas.setPalette(this.ppm.getFramePalette(index));
+      canvas.setBitmaps(this.ppm.decodeFrame(index));
+      canvas.refresh();
+      return canvas.toImage(type, encoderOptions);
     }
 
     /**
@@ -592,8 +594,8 @@ var ppmPlayer = function () {
 
   }, {
     key: "getThumbImage",
-    value: function getThumbImage(type, encoderOptions) {
-      return this.getFrameImage(this.ppm.thumbFrameIndex, type, encoderOptions);
+    value: function getThumbImage(width, height, type, encoderOptions) {
+      return this.getFrameImage(this.ppm.thumbFrameIndex, width, height, type, encoderOptions);
     }
 
     /**
@@ -901,20 +903,39 @@ var captureCanvas = function (_canvas) {
   function captureCanvas() {
     _classCallCheck(this, captureCanvas);
 
-    return _possibleConstructorReturn(this, (captureCanvas.__proto__ || Object.getPrototypeOf(captureCanvas)).call(this, document.createElement("canvas"), 256, 192, {
-      antialias: false,
+    var _this = _possibleConstructorReturn(this, (captureCanvas.__proto__ || Object.getPrototypeOf(captureCanvas)).call(this, document.createElement("canvas"), 256, 192, {
+      antialias: true,
       preserveDrawingBuffer: true
     }));
+
+    _this.setFilter("linear");
+    _this.width = 256;
+    _this.height = 256;
+    return _this;
   }
 
   /**
-  * get the canvas content as an image
-  * @param {string} type - image MIME type, default is image/png
-  * @param {number} encoderOptions - number between 0 and 1 indicating image quality if type is image/jpeg or image/webp
+  * set the image size
+  * @param {number} width - image width in pixels 
+  * @param {number} height - image height in pixels 
   */
 
 
   _createClass(captureCanvas, [{
+    key: "setSize",
+    value: function setSize(width, height) {
+      this.resize(width, height);
+      this.width = width;
+      this.height = height;
+    }
+
+    /**
+    * get the canvas content as an image
+    * @param {string} type - image MIME type, default is image/png
+    * @param {number} encoderOptions - number between 0 and 1 indicating image quality if type is image/jpeg or image/webp
+    */
+
+  }, {
     key: "toImage",
     value: function toImage(type, encoderOptions) {
       return this.el.toDataURL(type, encoderOptions);
@@ -1021,15 +1042,15 @@ var ppmDecoder = function (_fileReader) {
     return _this;
   }
 
-  /**
-  * Seek the buffer position to the start of a given frame
-  * @param {number} index - zero-based frame index to jump to
-  * @access protected
-  */
-
-
   _createClass(ppmDecoder, [{
     key: "_seekToFrame",
+
+
+    /**
+    * Seek the buffer position to the start of a given frame
+    * @param {number} index - zero-based frame index to jump to
+    * @access protected
+    */
     value: function _seekToFrame(index) {
       this.seek(this._frameOffsets[index]);
     }
@@ -1400,6 +1421,18 @@ var ppmDecoder = function (_fileReader) {
         var byte = _this3.readUint8();
         return [byte & 0x1, byte >> 1 & 0x1, byte >> 2 & 0x1];
       });
+    }
+  }], [{
+    key: "validateFSID",
+    value: function validateFSID(fsid) {
+      return (/[0159]{1}[0-9A-F]{6}0[0-9A-F]{8}/.test(fsid)
+      );
+    }
+  }, {
+    key: "validateFilename",
+    value: function validateFilename(filename) {
+      return (/[0-9A-F]{6}_[0-9A-F]{13}_[0-9]{3}/.test(filename)
+      );
     }
   }]);
 
