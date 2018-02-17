@@ -70,6 +70,14 @@ export default class ppmDecoder extends fileReader {
     ];
     this._prevFrameIndex = 0;
   }
+
+  static validateFSID(fsid) {
+    return /[0159]{1}[0-9A-F]{6}0[0-9A-F]{8}/.test(fsid);
+  }
+
+  static validateFilename(filename) {
+    return /[0-9A-F]{6}_[0-9A-F]{13}_[0-9]{3}/.test(filename);
+  }
   
   /**
   * Seek the buffer position to the start of a given frame
@@ -190,7 +198,7 @@ export default class ppmDecoder extends fileReader {
       frame_count: this.frameCount,
       thumb_index: thumbIndex,
       timestamp: timestamp,
-      spinoff: currentAuthorId !== parentAuthorId,
+      spinoff: (currentAuthorId !== parentAuthorId) || (currentAuthorId !== rootAuthorId),
       root: {
         username: rootAuthorName,
         fsid: rootAuthorId,
