@@ -190,7 +190,7 @@ export default class ppmDecoder extends fileReader {
         rootAuthorId = this._readHex(8, true);
     this.seek(0x9A);
     var timestamp = new Date((this.readUint32() + 946684800) * 1000);
-    this.seek(0x6A60);
+    this.seek(0x06A6);
     var flags = this.readUint16();
     return {
       lock: lock,

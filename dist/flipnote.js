@@ -1,5 +1,5 @@
 /*!
- * flipnote.js v1.4.1
+ * flipnote.js v1.4.2
  * Real-time, browser-based playback of Flipnote Studio's .ppm animation format
  * 2018 James Daniel
  * github.com/jaames/flipnote.js
@@ -307,7 +307,7 @@ function _interopRequireDefault(obj) { return obj && obj.__esModule ? obj : { de
 // import decoder from "./decoder";
 
 module.exports = {
-  version: "1.4.1",
+  version: "1.4.2",
   player: _player2.default
   // decoder: decoder,
 };
@@ -1177,7 +1177,7 @@ var ppmDecoder = function (_fileReader) {
           rootAuthorId = this._readHex(8, true);
       this.seek(0x9A);
       var timestamp = new Date((this.readUint32() + 946684800) * 1000);
-      this.seek(0x6A60);
+      this.seek(0x06A6);
       var flags = this.readUint16();
       return {
         lock: lock,
