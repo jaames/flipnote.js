@@ -18,9 +18,19 @@ export default class webglCanvas {
     this.program = program;
     this.el = el;
     this.gl = gl;
-    this._createShader(gl.VERTEX_SHADER, vertexShader);
-    this._createShader(gl.FRAGMENT_SHADER, fragmentShader);
+    // set up shaders
+    var vShader = this._createShader(gl.VERTEX_SHADER, vertexShader);
+    var fShader = this._createShader(gl.FRAGMENT_SHADER, fragmentShader);
+    gl.attachShader(program, vShader);
+    gl.attachShader(program, fShader);
+    // link program
     gl.linkProgram(program);
+    if (!gl.getProgramParameter(program, gl.LINK_STATUS)) {
+      throw new Error(gl.getProgramInfoLog(program));
+      gl.deleteProgram(program);
+      return null;
+    }
+    // activate the program
     gl.useProgram(program);
     // create quad that fills the screen, this will be our drawing surface
     var vertBuffer = gl.createBuffer();
@@ -40,6 +50,7 @@ export default class webglCanvas {
   * Util to compile and attach a new shader
   * @param {shader type} type - gl.VERTEX_SHADER | gl.FRAGMENT_SHADER
   * @param {string} source - GLSL code for the shader
+  * @returns {shader} compiled webgl shader
   * @access protected 
   */
   _createShader(type, source) {
@@ -47,7 +58,13 @@ export default class webglCanvas {
     var shader = gl.createShader(type);
     gl.shaderSource(shader, source);
     gl.compileShader(shader);
-    gl.attachShader(this.program, shader);
+    // test if shader compilation was successful
+    if (!gl.getShaderParameter(shader, gl.COMPILE_STATUS)) {
+      throw new Error(gl.getShaderInfoLog(shader));
+      gl.deleteShader(shader);
+      return null;
+    }
+    return shader;
   }
 
   /**

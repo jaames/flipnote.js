@@ -1,5 +1,5 @@
 /*!
- * flipnote.js v1.4.2
+ * flipnote.js v1.4.3
  * Real-time, browser-based playback of Flipnote Studio's .ppm animation format
  * 2018 James Daniel
  * github.com/jaames/flipnote.js
@@ -124,9 +124,19 @@ var webglCanvas = function () {
     this.program = program;
     this.el = el;
     this.gl = gl;
-    this._createShader(gl.VERTEX_SHADER, _vertexShaderGlsl2.default);
-    this._createShader(gl.FRAGMENT_SHADER, _fragmentShaderGlsl2.default);
+    // set up shaders
+    var vShader = this._createShader(gl.VERTEX_SHADER, _vertexShaderGlsl2.default);
+    var fShader = this._createShader(gl.FRAGMENT_SHADER, _fragmentShaderGlsl2.default);
+    gl.attachShader(program, vShader);
+    gl.attachShader(program, fShader);
+    // link program
     gl.linkProgram(program);
+    if (!gl.getProgramParameter(program, gl.LINK_STATUS)) {
+      throw new Error(gl.getProgramInfoLog(program));
+      gl.deleteProgram(program);
+      return null;
+    }
+    // activate the program
     gl.useProgram(program);
     // create quad that fills the screen, this will be our drawing surface
     var vertBuffer = gl.createBuffer();
@@ -146,6 +156,7 @@ var webglCanvas = function () {
   * Util to compile and attach a new shader
   * @param {shader type} type - gl.VERTEX_SHADER | gl.FRAGMENT_SHADER
   * @param {string} source - GLSL code for the shader
+  * @returns {shader} compiled webgl shader
   * @access protected 
   */
 
@@ -157,7 +168,13 @@ var webglCanvas = function () {
       var shader = gl.createShader(type);
       gl.shaderSource(shader, source);
       gl.compileShader(shader);
-      gl.attachShader(this.program, shader);
+      // test if shader compilation was successful
+      if (!gl.getShaderParameter(shader, gl.COMPILE_STATUS)) {
+        throw new Error(gl.getShaderInfoLog(shader));
+        gl.deleteShader(shader);
+        return null;
+      }
+      return shader;
     }
 
     /**
@@ -307,7 +324,7 @@ function _interopRequireDefault(obj) { return obj && obj.__esModule ? obj : { de
 // import decoder from "./decoder";
 
 module.exports = {
-  version: "1.4.2",
+  version: "1.4.3",
   player: _player2.default
   // decoder: decoder,
 };
