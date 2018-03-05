@@ -375,17 +375,17 @@ export default class ppmDecoder extends fileReader {
         }
       }
     }
-    // Merge this frame with the previous frame if needed
+    // if the current frame is based on changes from the preivous one, merge them by XORing their values
     if (!isNewFrame) {
-      var dest, src, srcOutOfBounds;
+      var dest, src;
       for (var y = 0; y < HEIGHT; y++) {
         for (var x = 0; x < WIDTH; x++) {
           dest = x + y * WIDTH;
           src = dest - (translateX + translateY * WIDTH);
-          srcOutOfBounds = (x - translateX > WIDTH) || (x - translateX < 0);
-          // if the current frame is based on changes from the preivous one, merge them by XORing their values
-          this._layers[0][dest] = srcOutOfBounds ? this._layers[0][dest] : this._layers[0][dest] ^ this._prevLayers[0][src];
-          this._layers[1][dest] = srcOutOfBounds ? this._layers[1][dest] : this._layers[1][dest] ^ this._prevLayers[1][src];
+          if (!((x - translateX > WIDTH) || (x - translateX < 0))) {
+            this._layers[0][dest] ^= this._prevLayers[0][src];
+            this._layers[1][dest] ^= this._prevLayers[1][src];
+          }
         }
       }
     }
