@@ -1,5 +1,5 @@
 /*!
- * flipnote.js v1.4.3
+ * flipnote.js v1.4.5
  * Real-time, browser-based playback of Flipnote Studio's .ppm animation format
  * 2018 James Daniel
  * github.com/jaames/flipnote.js
@@ -324,7 +324,7 @@ function _interopRequireDefault(obj) { return obj && obj.__esModule ? obj : { de
 // import decoder from "./decoder";
 
 module.exports = {
-  version: "1.4.3",
+  version: "1.4.5",
   player: _player2.default
   // decoder: decoder,
 };
@@ -625,7 +625,7 @@ var ppmPlayer = function () {
     value: function setFrame(index) {
       if (!this._isOpen || index === this.currentFrame) return null;
       // clamp frame index
-      index = Math.max(0, Math.min(index, this.frameCount - 1));
+      index = Math.max(0, Math.min(Math.floor(index), this.frameCount - 1));
       this._frame = index;
       this._playbackFrameTime = 0;
       this.canvas.setPalette(this.ppm.getFramePalette(index));
@@ -1385,17 +1385,17 @@ var ppmDecoder = function (_fileReader) {
           }
         }
       }
-      // Merge this frame with the previous frame if needed
+      // if the current frame is based on changes from the preivous one, merge them by XORing their values
       if (!isNewFrame) {
-        var dest, src, srcOutOfBounds;
+        var dest, src;
         for (var y = 0; y < HEIGHT; y++) {
           for (var x = 0; x < WIDTH; x++) {
             dest = x + y * WIDTH;
             src = dest - (translateX + translateY * WIDTH);
-            srcOutOfBounds = x - translateX > WIDTH || x - translateX < 0;
-            // if the current frame is based on changes from the preivous one, merge them by XORing their values
-            this._layers[0][dest] = srcOutOfBounds ? this._layers[0][dest] : this._layers[0][dest] ^ this._prevLayers[0][src];
-            this._layers[1][dest] = srcOutOfBounds ? this._layers[1][dest] : this._layers[1][dest] ^ this._prevLayers[1][src];
+            if (!(x - translateX > WIDTH || x - translateX < 0)) {
+              this._layers[0][dest] ^= this._prevLayers[0][src];
+              this._layers[1][dest] ^= this._prevLayers[1][src];
+            }
           }
         }
       }

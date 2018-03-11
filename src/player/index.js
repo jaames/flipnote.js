@@ -308,7 +308,7 @@ export default class ppmPlayer {
   setFrame(index) {
     if ((!this._isOpen) || (index === this.currentFrame)) return null;
     // clamp frame index
-    index = Math.max(0, Math.min(index, this.frameCount - 1));
+    index = Math.max(0, Math.min(Math.floor(index), this.frameCount - 1));
     this._frame = index;
     this._playbackFrameTime = 0;
     this.canvas.setPalette(this.ppm.getFramePalette(index));
