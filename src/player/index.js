@@ -35,10 +35,10 @@ export default class ppmPlayer {
     this.currentFrame = 0;
     this.paused = true;
     this.audioTracks = [
-      new audioTrack("bgm"),
       new audioTrack("se1"),
       new audioTrack("se2"),
       new audioTrack("se3"),
+      new audioTrack("bgm"),
     ];
   }
 
@@ -139,6 +139,7 @@ export default class ppmPlayer {
     this.meta = meta;
     this.frameCount = ppm.frameCount;
     this.frameSpeed = ppm.frameSpeed;
+    this.fileLength = ppm.fileLength;
     this.loop = meta.loop == 1;
     this.paused = true;
     this._isOpen = true;

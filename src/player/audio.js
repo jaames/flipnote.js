@@ -55,6 +55,7 @@ export default class audioTrack {
     this.audio.src = this.url;
     this.active = true;
     this.playbackRate = playbackRate;
+    this.length = pcmData.length;
   }
 
   /**
@@ -67,6 +68,7 @@ export default class audioTrack {
       this.audio.load();
       this.active = false;
       this.playbackRate = 1;
+      this.length = null;
     }
   }
 

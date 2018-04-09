@@ -1,5 +1,5 @@
 /*!
- * flipnote.js v1.4.5
+ * flipnote.js v1.4.6
  * Real-time, browser-based playback of Flipnote Studio's .ppm animation format
  * 2018 James Daniel
  * github.com/jaames/flipnote.js
@@ -324,7 +324,7 @@ function _interopRequireDefault(obj) { return obj && obj.__esModule ? obj : { de
 // import decoder from "./decoder";
 
 module.exports = {
-  version: "1.4.5",
+  version: "1.4.6",
   player: _player2.default
   // decoder: decoder,
 };
@@ -399,7 +399,7 @@ var ppmPlayer = function () {
     this.loop = false;
     this.currentFrame = 0;
     this.paused = true;
-    this.audioTracks = [new _audio2.default("bgm"), new _audio2.default("se1"), new _audio2.default("se2"), new _audio2.default("se3")];
+    this.audioTracks = [new _audio2.default("se1"), new _audio2.default("se2"), new _audio2.default("se3"), new _audio2.default("bgm")];
   }
 
   /**
@@ -423,6 +423,7 @@ var ppmPlayer = function () {
       this.meta = meta;
       this.frameCount = ppm.frameCount;
       this.frameSpeed = ppm.frameSpeed;
+      this.fileLength = ppm.fileLength;
       this.loop = meta.loop == 1;
       this.paused = true;
       this._isOpen = true;
@@ -1200,6 +1201,8 @@ var ppmDecoder = function (_fileReader) {
         lock: lock,
         loop: flags >> 1 & 0x01,
         frame_count: this.frameCount,
+        frame_speed: this.frameSpeed,
+        bgm_speed: this.bgmSpeed,
         thumb_index: thumbIndex,
         timestamp: timestamp,
         spinoff: currentAuthorId !== parentAuthorId || currentAuthorId !== rootAuthorId,
@@ -1905,6 +1908,7 @@ var audioTrack = function () {
       this.audio.src = this.url;
       this.active = true;
       this.playbackRate = playbackRate;
+      this.length = pcmData.length;
     }
 
     /**
@@ -1920,6 +1924,7 @@ var audioTrack = function () {
         this.audio.load();
         this.active = false;
         this.playbackRate = 1;
+        this.length = null;
       }
     }
 

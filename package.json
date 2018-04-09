@@ -1,6 +1,6 @@
 {
   "name": "flipnote.js",
-  "version": "1.4.5",
+  "version": "1.4.6",
   "description": "API for handling Flipnote Studio's .ppm animation format, capable of real-time playback using webGL",
   "main": "dist/flipnote.js",
   "scripts": {
