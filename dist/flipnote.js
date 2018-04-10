@@ -1,5 +1,5 @@
 /*!
- * flipnote.js v1.4.6
+ * flipnote.js v1.4.7
  * Real-time, browser-based playback of Flipnote Studio's .ppm animation format
  * 2018 James Daniel
  * github.com/jaames/flipnote.js
@@ -324,7 +324,7 @@ function _interopRequireDefault(obj) { return obj && obj.__esModule ? obj : { de
 // import decoder from "./decoder";
 
 module.exports = {
-  version: "1.4.6",
+  version: "1.4.7",
   player: _player2.default
   // decoder: decoder,
 };
@@ -1051,8 +1051,8 @@ var ppmDecoder = function (_fileReader) {
     _this._frameOffsets = new Uint32Array(offsetTableLength / 4).map(function (value) {
       return 0x06A8 + offsetTableLength + _this.readUint32();
     });
-    _this.meta = _this._decodeMeta();
     _this._decodeSoundHeader();
+    _this.meta = _this._decodeMeta();
     // create image buffers
     _this._layers = [new Uint8Array(WIDTH * HEIGHT), new Uint8Array(WIDTH * HEIGHT)];
     _this._prevLayers = [new Uint8Array(WIDTH * HEIGHT), new Uint8Array(WIDTH * HEIGHT)];
@@ -1910,13 +1910,13 @@ var audioTrack = function () {
       this.playbackRate = playbackRate;
       this.length = pcmData.length;
     }
+  }, {
+    key: "unset",
+
 
     /**
     * Clear the audio track
     */
-
-  }, {
-    key: "unset",
     value: function unset() {
       if (this.active) {
         window.URL.revokeObjectURL(this.url);
@@ -1952,6 +1952,11 @@ var audioTrack = function () {
       if (this.active) {
         this.audio.pause();
       }
+    }
+  }, {
+    key: "duration",
+    get: function get() {
+      return this.audio.duration;
     }
   }]);
 

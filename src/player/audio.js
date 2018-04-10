@@ -58,6 +58,10 @@ export default class audioTrack {
     this.length = pcmData.length;
   }
 
+  get duration() {
+    return this.audio.duration;
+  }
+
   /**
   * Clear the audio track
   */

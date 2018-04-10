@@ -57,8 +57,8 @@ export default class ppmDecoder extends fileReader {
     this._frameOffsets = new Uint32Array(offsetTableLength / 4).map(value => {
       return 0x06A8 + offsetTableLength + this.readUint32();
     });
-    this.meta = this._decodeMeta();
     this._decodeSoundHeader();
+    this.meta = this._decodeMeta();
     // create image buffers
      this._layers = [
       new Uint8Array(WIDTH * HEIGHT),
