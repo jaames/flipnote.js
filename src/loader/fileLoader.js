@@ -1,13 +1,18 @@
-// fileloader is stubbed for now
-
 export default {
 
   matches: function(source) {
-    return false
+    return (source instanceof File);
   },
 
   load: function(source, resolve, reject) {
-    reject();
+    var reader = new FileReader();
+    reader.onload = (event) => {
+      resolve(event.target.result)
+    };
+    reader.onerror = (event) => {
+      reject({type: "fileReadError"});
+    };
+    reader.readAsArrayBuffer(source);
   }
 
 }

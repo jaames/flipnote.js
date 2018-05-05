@@ -189,6 +189,16 @@ export default class ppmPlayer {
     this._seFlags = null;
     this._hasPlaybackStarted = null;
     this.canvas.clear();
+    this._imgCanvas.clear();
+  }
+
+  /**
+  * Destroy this player instance cleanly
+  */
+  destory() {
+    this.close();
+    this.canvas.destroy();
+    this._imgCanvas.destroy();
   }
 
   /**

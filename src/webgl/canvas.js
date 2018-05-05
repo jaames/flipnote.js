@@ -18,6 +18,11 @@ export default class webglCanvas {
     this.program = program;
     this.el = el;
     this.gl = gl;
+    this.refs = {
+      shaders:[],
+      textures:[],
+      buffers: []
+    };
     // set up shaders
     var vShader = this._createShader(gl.VERTEX_SHADER, vertexShader);
     var fShader = this._createShader(gl.FRAGMENT_SHADER, fragmentShader);
@@ -34,6 +39,7 @@ export default class webglCanvas {
     gl.useProgram(program);
     // create quad that fills the screen, this will be our drawing surface
     var vertBuffer = gl.createBuffer();
+    this.refs.buffers.push(vertBuffer);
     gl.bindBuffer(gl.ARRAY_BUFFER, vertBuffer);
     gl.bufferData(gl.ARRAY_BUFFER, new Float32Array([1,  1, -1, 1, -1, -1, 1, 1, -1, -1, 1, -1]), gl.STATIC_DRAW);
     gl.enableVertexAttribArray(0);
@@ -64,6 +70,7 @@ export default class webglCanvas {
       gl.deleteShader(shader);
       return null;
     }
+    this.refs.shaders.push(shader);
     return shader;
   }
 
@@ -78,9 +85,11 @@ export default class webglCanvas {
     var gl = this.gl;
     gl.uniform1i(gl.getUniformLocation(this.program, name), index);
     gl.activeTexture(texture);
-    gl.bindTexture(gl.TEXTURE_2D, gl.createTexture());
+    var tex = gl.createTexture();
+    gl.bindTexture(gl.TEXTURE_2D, tex);
     gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_S, gl.CLAMP_TO_EDGE);
     gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_T, gl.CLAMP_TO_EDGE);
+    this.refs.textures.push(tex);
   }
 
   /**
@@ -160,5 +169,30 @@ export default class webglCanvas {
   */
   clear() {
     this.gl.clear(this.gl.COLOR_BUFFER_BIT);
+  }
+
+  /** 
+  * Destroy this canvas instance
+  */
+  destroy() {
+    // free resources
+    var refs = this.refs;
+    var gl = this.gl;
+    refs.shaders.forEach((shader) => {
+      gl.deleteShader(shader);
+    });
+    refs.shaders = [];
+    refs.textures.forEach((texture) => {
+      gl.deleteTexture(texture);
+    });
+    refs.textures = [];
+    refs.buffers.forEach((buffer) => {
+      gl.deleteBuffer(buffer);
+    });
+    refs.buffers = [];
+    gl.deleteProgram(this.program);
+    // shrink the canvas to reduce memory usage until its garbage collected
+    gl.canvas.width = 1;
+    gl.canvas.height = 1;
   }
 }

@@ -1,5 +1,5 @@
 /*!
- * flipnote.js v1.4.7
+ * flipnote.js v1.5.0
  * Real-time, browser-based playback of Flipnote Studio's .ppm animation format
  * 2018 James Daniel
  * github.com/jaames/flipnote.js
@@ -124,6 +124,11 @@ var webglCanvas = function () {
     this.program = program;
     this.el = el;
     this.gl = gl;
+    this.refs = {
+      shaders: [],
+      textures: [],
+      buffers: []
+    };
     // set up shaders
     var vShader = this._createShader(gl.VERTEX_SHADER, _vertexShaderGlsl2.default);
     var fShader = this._createShader(gl.FRAGMENT_SHADER, _fragmentShaderGlsl2.default);
@@ -140,6 +145,7 @@ var webglCanvas = function () {
     gl.useProgram(program);
     // create quad that fills the screen, this will be our drawing surface
     var vertBuffer = gl.createBuffer();
+    this.refs.buffers.push(vertBuffer);
     gl.bindBuffer(gl.ARRAY_BUFFER, vertBuffer);
     gl.bufferData(gl.ARRAY_BUFFER, new Float32Array([1, 1, -1, 1, -1, -1, 1, 1, -1, -1, 1, -1]), gl.STATIC_DRAW);
     gl.enableVertexAttribArray(0);
@@ -174,6 +180,7 @@ var webglCanvas = function () {
         gl.deleteShader(shader);
         return null;
       }
+      this.refs.shaders.push(shader);
       return shader;
     }
 
@@ -191,9 +198,11 @@ var webglCanvas = function () {
       var gl = this.gl;
       gl.uniform1i(gl.getUniformLocation(this.program, name), index);
       gl.activeTexture(texture);
-      gl.bindTexture(gl.TEXTURE_2D, gl.createTexture());
+      var tex = gl.createTexture();
+      gl.bindTexture(gl.TEXTURE_2D, tex);
       gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_S, gl.CLAMP_TO_EDGE);
       gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_T, gl.CLAMP_TO_EDGE);
+      this.refs.textures.push(tex);
     }
 
     /**
@@ -301,6 +310,34 @@ var webglCanvas = function () {
     value: function clear() {
       this.gl.clear(this.gl.COLOR_BUFFER_BIT);
     }
+
+    /** 
+    * Destroy this canvas instance
+    */
+
+  }, {
+    key: "destroy",
+    value: function destroy() {
+      // free resources
+      var refs = this.refs;
+      var gl = this.gl;
+      refs.shaders.forEach(function (shader) {
+        gl.deleteShader(shader);
+      });
+      refs.shaders = [];
+      refs.textures.forEach(function (texture) {
+        gl.deleteTexture(texture);
+      });
+      refs.textures = [];
+      refs.buffers.forEach(function (buffer) {
+        gl.deleteBuffer(buffer);
+      });
+      refs.buffers = [];
+      gl.deleteProgram(this.program);
+      // shrink the canvas to reduce memory usage until its garbage collected
+      gl.canvas.width = 1;
+      gl.canvas.height = 1;
+    }
   }]);
 
   return webglCanvas;
@@ -324,7 +361,7 @@ function _interopRequireDefault(obj) { return obj && obj.__esModule ? obj : { de
 // import decoder from "./decoder";
 
 module.exports = {
-  version: "1.4.7",
+  version: "1.5.0",
   player: _player2.default
   // decoder: decoder,
 };
@@ -479,6 +516,19 @@ var ppmPlayer = function () {
       this._seFlags = null;
       this._hasPlaybackStarted = null;
       this.canvas.clear();
+      this._imgCanvas.clear();
+    }
+
+    /**
+    * Destroy this player instance cleanly
+    */
+
+  }, {
+    key: "destory",
+    value: function destory() {
+      this.close();
+      this.canvas.destroy();
+      this._imgCanvas.destroy();
     }
 
     /**
@@ -1794,16 +1844,21 @@ exports.default = {
 Object.defineProperty(exports, "__esModule", {
   value: true
 });
-// fileloader is stubbed for now
-
 exports.default = {
 
   matches: function matches(source) {
-    return false;
+    return source instanceof File;
   },
 
   load: function load(source, resolve, reject) {
-    reject();
+    var reader = new FileReader();
+    reader.onload = function (event) {
+      resolve(event.target.result);
+    };
+    reader.onerror = function (event) {
+      reject({ type: "fileReadError" });
+    };
+    reader.readAsArrayBuffer(source);
   }
 
 };
