@@ -1,5 +1,5 @@
 /*!
- * flipnote.js v1.5.0
+ * flipnote.js v1.5.1
  * Real-time, browser-based playback of Flipnote Studio's .ppm animation format
  * 2018 James Daniel
  * github.com/jaames/flipnote.js
@@ -361,7 +361,7 @@ function _interopRequireDefault(obj) { return obj && obj.__esModule ? obj : { de
 // import decoder from "./decoder";
 
 module.exports = {
-  version: "1.5.0",
+  version: "1.5.1",
   player: _player2.default
   // decoder: decoder,
 };
@@ -524,8 +524,8 @@ var ppmPlayer = function () {
     */
 
   }, {
-    key: "destory",
-    value: function destory() {
+    key: "destroy",
+    value: function destroy() {
       this.close();
       this.canvas.destroy();
       this._imgCanvas.destroy();

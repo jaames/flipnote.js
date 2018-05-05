@@ -195,7 +195,7 @@ export default class ppmPlayer {
   /**
   * Destroy this player instance cleanly
   */
-  destory() {
+  destroy() {
     this.close();
     this.canvas.destroy();
     this._imgCanvas.destroy();
