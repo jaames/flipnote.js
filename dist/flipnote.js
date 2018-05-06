@@ -1,5 +1,5 @@
 /*!
- * flipnote.js v1.5.1
+ * flipnote.js v1.5.2
  * Real-time, browser-based playback of Flipnote Studio's .ppm animation format
  * 2018 James Daniel
  * github.com/jaames/flipnote.js
@@ -361,7 +361,7 @@ function _interopRequireDefault(obj) { return obj && obj.__esModule ? obj : { de
 // import decoder from "./decoder";
 
 module.exports = {
-  version: "1.5.1",
+  version: "1.5.2",
   player: _player2.default
   // decoder: decoder,
 };
@@ -469,8 +469,7 @@ var ppmPlayer = function () {
       if (ppm.soundMeta.se3.length) this.audioTracks[2].set(this.ppm.decodeAudio("se3"), 1);
       if (ppm.soundMeta.bgm.length) this.audioTracks[3].set(this.ppm.decodeAudio("bgm"), this._audiorate);
       this._seFlags = this.ppm.decodeSoundFlags();
-      this._playbackFrameTime = 0;
-      this._lastFrameTime = 0;
+      this._playbackLoop = null;
       this._hasPlaybackStarted = false;
       this.setFrame(this.ppm.thumbFrameIndex);
       this.emit("load");
@@ -571,50 +570,35 @@ var ppmPlayer = function () {
     }
 
     /**
-    * Internal requestAnimationFrame handler
-    * @param {number} now - current time
-    * @access protected
-    */
-
-  }, {
-    key: "_playbackLoop",
-    value: function _playbackLoop(now) {
-      var dt = (now - this._lastFrameTime) / (1000 / 60);
-      var frame = this.currentFrame;
-      if (this._playbackFrameTime >= 60 / this.framerate) {
-        this._playFrameSe(frame);
-        this.nextFrame();
-        this._playbackFrameTime = 0;
-      }
-      if (frame >= this.frameCount - 1) {
-        this._stopAudio();
-        if (this.loop) {
-          this.firstFrame();
-          this._playBgm(0);
-          this.emit("playback:loop");
-        } else {
-          this.pause();
-          this.emit("playback:end");
-        }
-      }
-      this._playbackFrameTime += dt;
-      this._lastFrameTime = now;
-      if (!this.paused) requestAnimationFrame(this._playbackLoop.bind(this));
-    }
-
-    /**
     * Begin Flipnote playback
     */
 
   }, {
     key: "play",
     value: function play() {
+      var _this2 = this;
+
       if (!this._isOpen || !this.paused) return null;
       this.paused = false;
       if (!this._hasPlaybackStarted || !this.loop && this.currentFrame == this.frameCount - 1) this._frame = 0;
-      this._lastFrameTime = performance.now();
       this._playBgm();
-      this._playbackLoop(this._lastFrameTime);
+      this._playbackLoop = setInterval(function () {
+        if (_this2.paused) clearInterval(_this2._playbackLoop);
+        // if the end of the flipnote has been reached
+        if (_this2.currentFrame >= _this2.frameCount - 1) {
+          _this2._stopAudio();
+          if (_this2.loop) {
+            _this2.firstFrame();
+            _this2._playBgm(0);
+            _this2.emit("playback:loop");
+          } else {
+            _this2.pause();
+            _this2.emit("playback:end");
+          }
+        } else {
+          _this2.nextFrame();
+        }
+      }, 1000 / this.framerate);
       this._hasPlaybackStarted = true;
       this.emit("playback:start");
     }
@@ -628,6 +612,7 @@ var ppmPlayer = function () {
     value: function pause() {
       if (!this._isOpen || this.paused) return null;
       // break the playback loop
+      clearInterval(this._playbackLoop);
       this.paused = true;
       this._stopAudio();
       this.emit("playback:stop");
@@ -831,7 +816,6 @@ var ppmPlayer = function () {
     set: function set(value) {
       if (this._isOpen && value < this.duration && value > 0) {
         this.setFrame(Math.round(value / (1 / this.framerate)));
-        this._playbackFrameTime = 0;
       }
     }
 

@@ -69,7 +69,6 @@ export default class ppmPlayer {
   set currentTime(value) {
     if ((this._isOpen) && (value < this.duration) && (value > 0)) {
       this.setFrame(Math.round(value / (1 / this.framerate)));
-      this._playbackFrameTime = 0;
     }
   }
 
@@ -148,8 +147,7 @@ export default class ppmPlayer {
     if (ppm.soundMeta.se3.length) this.audioTracks[2].set(this.ppm.decodeAudio("se3"), 1);
     if (ppm.soundMeta.bgm.length) this.audioTracks[3].set(this.ppm.decodeAudio("bgm"), this._audiorate);
     this._seFlags = this.ppm.decodeSoundFlags();
-    this._playbackFrameTime = 0;
-    this._lastFrameTime = 0;
+    this._playbackLoop = null;
     this._hasPlaybackStarted = false;
     this.setFrame(this.ppm.thumbFrameIndex);
     this.emit("load");
@@ -232,44 +230,30 @@ export default class ppmPlayer {
   }
 
   /**
-  * Internal requestAnimationFrame handler
-  * @param {number} now - current time
-  * @access protected
-  */
-  _playbackLoop(now) {
-    var dt = (now - this._lastFrameTime) / (1000 / 60);
-    var frame = this.currentFrame;
-    if (this._playbackFrameTime >= 60 / this.framerate) {
-      this._playFrameSe(frame);
-      this.nextFrame();
-      this._playbackFrameTime = 0;
-    }
-    if (frame >= this.frameCount -1) {
-      this._stopAudio();
-      if (this.loop) {
-        this.firstFrame();
-        this._playBgm(0);
-        this.emit("playback:loop");
-      } else {
-        this.pause();
-        this.emit("playback:end");
-      }
-    }
-    this._playbackFrameTime += dt;
-    this._lastFrameTime = now;
-    if (!this.paused) requestAnimationFrame(this._playbackLoop.bind(this));
-  }
-
-  /**
   * Begin Flipnote playback
   */
   play() {
     if ((!this._isOpen) || (!this.paused)) return null;
     this.paused = false;
     if ((!this._hasPlaybackStarted) || ((!this.loop) && (this.currentFrame == this.frameCount - 1))) this._frame = 0;
-    this._lastFrameTime = performance.now();
     this._playBgm();
-    this._playbackLoop(this._lastFrameTime);
+    this._playbackLoop = setInterval(() => {
+      if (this.paused) clearInterval(this._playbackLoop);
+      // if the end of the flipnote has been reached
+      if (this.currentFrame >= this.frameCount -1) {
+        this._stopAudio();
+        if (this.loop) {
+          this.firstFrame();
+          this._playBgm(0);
+          this.emit("playback:loop");
+        } else {
+          this.pause();
+          this.emit("playback:end");
+        }
+      } else {
+        this.nextFrame();
+      }
+    }, 1000 / this.framerate);
     this._hasPlaybackStarted = true;
     this.emit("playback:start");
   }
@@ -280,6 +264,7 @@ export default class ppmPlayer {
   pause() {
     if ((!this._isOpen) || (this.paused)) return null;
     // break the playback loop
+    clearInterval(this._playbackLoop);
     this.paused = true;
     this._stopAudio();
     this.emit("playback:stop");
