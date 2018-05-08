@@ -251,6 +251,7 @@ export default class ppmPlayer {
           this.emit("playback:end");
         }
       } else {
+        this._playFrameSe(this.currentFrame);
         this.nextFrame();
       }
     }, 1000 / this.framerate);
