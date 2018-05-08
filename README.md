@@ -15,7 +15,7 @@ I hope that maybe in the long term it will serve some use in archiving Flipnote 
 
 ### Demo
 
-For now, there's an old [work-in-progress video on my twitter account](https://twitter.com/rakujira/status/950364766031306753) (any glitchyness shown has been fixed since). I'm currently working on implementing this project into a Flipnote player web app to further demonstrate it, so please bear with me! 
+Check out [Flipnote Player](https://github.com/jaames/flipnote-player) for a live demo. :)
 
 ### Documentation
 
