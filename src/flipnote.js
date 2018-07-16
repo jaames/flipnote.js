@@ -1,8 +1,20 @@
 import ppmPlayer from "./player";
+import kwzTest from "./player/kwzTest";
 // import decoder from "./decoder";
+
+const PALETTE = [
+  [0xff, 0xff, 0xff],
+  [0x10, 0x10, 0x10],
+  [0xff, 0x10, 0x10],
+  [0xff, 0xe7, 0x00],
+  [0x00, 0x86, 0x31],
+  [0x00, 0x38, 0xce],
+  [0xff, 0xff, 0xff],
+];
 
 module.exports = {
   version: VERSION,
   player: ppmPlayer,
+  kwzTest: kwzTest,
   // decoder: decoder,
 };
