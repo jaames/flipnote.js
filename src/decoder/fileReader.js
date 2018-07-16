@@ -102,4 +102,14 @@ export default class fileReader {
     this._offset += 4;
     return val;
   }
+
+  readUtf8(length) {
+    var chars = new Uint8Array(this._data.buffer, this._offset, length);
+    var val = "";
+    for (let i = 0; i < chars.length; i++) {
+      val += String.fromCharCode(chars[i]);
+    }
+    this._offset += chars.length;
+    return val;
+  }
 }
