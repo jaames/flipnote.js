@@ -121,6 +121,8 @@ export default class kwzParser extends fileReader {
       this.frameOffsets.push(offset);
       offset += frame.layerSize[0] + frame.layerSize[1] + frame.layerSize[2];
     }
+
+    this._prevDecodedFrame = -1;
   }
 
   readBits(num) {
@@ -136,7 +138,18 @@ export default class kwzParser extends fileReader {
     return result;
   }
 
-  decodeFrame(frameIndex) {
+  getDiffingFlag(frameIndex) {
+    return ~(this.frameMeta[frameIndex].flags >> 4) & 0x07;
+  }
+
+  decodeFrame(frameIndex, diffingFlag=0x7, isPrevFrame=false) {
+    // if this frame is being decoded as a prev frame, then we only want to decode the layers necessary
+    if (isPrevFrame)
+      diffingFlag &= this.getDiffingFlag(frameIndex + 1);
+    // the prevDecodedFrame check is an optimisation for decoding frames in full sequence
+    if ((this._prevDecodedFrame !== frameIndex - 1) && (diffingFlag))
+      this.decodeFrame(frameIndex - 1, diffingFlag=diffingFlag, isPrevFrame=true);
+
     let meta = this.frameMeta[frameIndex];
     let offset = this.frameOffsets[frameIndex];
 
@@ -145,9 +158,10 @@ export default class kwzParser extends fileReader {
       let layerSize = meta.layerSize[layerIndex];
       offset += layerSize;
 
-      if (layerSize === 38) {
-        continue;
-      }
+      // if the layer is 38 bytes then it hasn't changed at all since the previous frame, so we can skip it
+      if (layerSize === 38) continue;
+
+      if ((diffingFlag >> layerIndex) & 0x1 === 0) continue;
 
       this._bitIndex = 16;
       this._bitValue = 0;
@@ -318,8 +332,8 @@ export default class kwzParser extends fileReader {
       }
     }
 
+    this._prevDecodedFrame = frameIndex;
     return this._layers;
-
   }
 
   getFramePalette(frameIndex) {
