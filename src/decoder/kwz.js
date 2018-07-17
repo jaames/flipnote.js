@@ -18,12 +18,10 @@ const PALETTE = [
   0xffffffff,
   0xff101010,
   0xffff1010,
-
-  // todo:
-  0xffe700ff,
-  0x008631ff,
-  0x0038ceff,
-  0xffffffff,
+  0xff00e7ff,
+0xff318600,
+0xffce3800,
+0xffffffff
 ];
 
 export default class kwzParser extends fileReader {
@@ -337,7 +335,7 @@ export default class kwzParser extends fileReader {
   getFramePalette(frameIndex) {
     let flags = this.frameMeta[frameIndex].flags;
     let result = new Uint32Array(256);
-    result[0] = PALETTE[flags & 0xF] // paper color
+    // result[0] = PALETTE[flags & 0xF] // paper color
     result[1] = PALETTE[(flags >> 8) & 0xF] // layer A color 1
     result[2] = PALETTE[(flags >> 12) & 0xF] // layer A color 2
     result[3] = PALETTE[(flags >> 16) & 0xF] // layer B color 1

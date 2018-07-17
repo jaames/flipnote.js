@@ -40,8 +40,8 @@ export default class kwzTest {
 
   renderFrame(index) {
     this.canvas.setPaletteTexture(this.kwz.getFramePalette(index));
-    this.canvas.setBitmaps(this.kwz.decodeFrame(index));
-    this.canvas.refresh();
+    this.canvas.drawLayers(this.kwz.decodeFrame(index));
+    // this.canvas.refresh();
   }
 
   createFrameBitmap(index) {

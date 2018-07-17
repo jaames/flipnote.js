@@ -47,13 +47,17 @@ export default class webglCanvas {
     // create textures for each layer
     this._createTexture("u_layer1Bitmap", 0, gl.TEXTURE0);
     this._createTexture("u_layer2Bitmap", 1, gl.TEXTURE1);
-    this._createTexture("u_palette", 2, gl.TEXTURE2);
-    gl.activeTexture(gl.TEXTURE2);
+    this._createTexture("u_layer2Bitmap", 2, gl.TEXTURE2);
+    this._createTexture("u_palette", 3, gl.TEXTURE3);
+    gl.activeTexture(gl.TEXTURE3);
     gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MIN_FILTER, gl.NEAREST);
     gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MAG_FILTER, gl.NEAREST);
-    this.setFilter();
-    this.setLayerVisibilty(1, true);
-    this.setLayerVisibilty(2, true);
+    this.setFilter("nearest");
+    // this.setLayerVisibilty(1, true);
+    // this.setLayerVisibilty(2, true);
+    // gl.pixelStorei(gl.UNPACK_PREMULTIPLY_ALPHA_WEBGL, true);
+    gl.enable(gl.BLEND);
+    gl.blendFunc(gl.SRC_ALPHA, gl.ONE_MINUS_SRC_ALPHA);
   }
 
   /**
@@ -103,7 +107,7 @@ export default class webglCanvas {
   setFilter(filter) {
     var gl = this.gl;
     filter = filter == "linear" ? gl.LINEAR : gl.NEAREST;
-    [gl.TEXTURE0, gl.TEXTURE1].map(function (texture) {
+    [gl.TEXTURE0, gl.TEXTURE1, gl.TEXTURE2].map(function (texture) {
       gl.activeTexture(texture);
       gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MIN_FILTER, filter);
       gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MAG_FILTER, filter);
@@ -133,16 +137,35 @@ export default class webglCanvas {
   * @param {array} colors - array of r,g,b,a colors with channel values from 0.0 to 1.0, in order of paper, layer1, layer2
   */
   setPalette(colors) {
-    this.setColor("u_paperColor", colors[0]);
-    this.setColor("u_layer1Color", colors[1]);
-    this.setColor("u_layer2Color", colors[2]);
+    // this.setColor("u_paperColor", colors[0]);
+    // this.setColor("u_layer1Color", colors[1]);
+    // this.setColor("u_layer2Color", colors[2]);
   }
 
   setPaletteTexture(colors) {
     var gl = this.gl;
     let buffer = new Uint8Array(colors.buffer);
-    gl.activeTexture(gl.TEXTURE2);
+    gl.activeTexture(gl.TEXTURE3);
     gl.texImage2D(gl.TEXTURE_2D, 0, gl.RGBA, 256, 1, 0, gl.RGBA, gl.UNSIGNED_BYTE, buffer);
+  }
+
+  drawLayers(layers) {
+    var gl = this.gl;
+    gl.activeTexture(gl.TEXTURE0);
+    gl.texImage2D(gl.TEXTURE_2D, 0, gl.ALPHA, this.width, this.height, 0, gl.ALPHA, gl.UNSIGNED_BYTE, layers[0]);
+    gl.activeTexture(gl.TEXTURE1);
+    gl.texImage2D(gl.TEXTURE_2D, 0, gl.ALPHA, this.width, this.height, 0, gl.ALPHA, gl.UNSIGNED_BYTE, layers[1]);
+    gl.activeTexture(gl.TEXTURE2);
+    gl.texImage2D(gl.TEXTURE_2D, 0, gl.ALPHA, this.width, this.height, 0, gl.ALPHA, gl.UNSIGNED_BYTE, layers[2]);
+    gl.uniform1i(gl.getUniformLocation(this.program, "u_bitmap"), 2);
+    gl.uniform1f(gl.getUniformLocation(this.program, "u_layerIndex"), 2);
+    gl.drawArrays(gl.TRIANGLES, 0, 6);
+    gl.uniform1i(gl.getUniformLocation(this.program, "u_bitmap"), 1);
+    gl.uniform1f(gl.getUniformLocation(this.program, "u_layerIndex"), 1);
+    gl.drawArrays(gl.TRIANGLES, 0, 6);
+    gl.uniform1i(gl.getUniformLocation(this.program, "u_bitmap"), 0);
+    gl.uniform1f(gl.getUniformLocation(this.program, "u_layerIndex"), 0);
+    gl.drawArrays(gl.TRIANGLES, 0, 6);
   }
 
   /**
