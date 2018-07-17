@@ -1,6 +1,7 @@
 import kwzParser from "decoder/kwz";
 import load from "loader";
 import bmp from "encoder/bmp";
+import canvas from "webgl/canvas";
 
 const PALETTE = [
   [0xff, 0xff, 0xff],
@@ -18,6 +19,15 @@ export default class kwzTest {
     load(src).then(arrayBuffer => {
       this.kwz = new kwzParser(arrayBuffer);
     });
+    let canv = document.createElement("canvas");
+    document.body.appendChild(canv);
+    this.canvas = new canvas(canv, 320, 240);
+  }
+
+  renderFrame(index) {
+    this.canvas.setPalette(this.kwz.getFramePalette(index));
+    this.canvas.setBitmaps(this.kwz.decodeFrame(index));
+    this.canvas.refresh();
   }
 
   createFrameBitmap(index) {
@@ -27,7 +37,7 @@ export default class kwzTest {
     let colors = [];
 
     for (const color in palette) {
-      var [r, g, b] = PALETTE[palette[color]];
+      var [r, g, b, a] = palette[color];
       var val = (0xFF << 24) | (r << 16) | (g << 8) | (b);
       colors.push(val);
     }

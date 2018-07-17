@@ -11,8 +11,8 @@ export default class webglCanvas {
   * @param {Object} params - optional params to pass to web gl context
   */
   constructor(el, width, height, params) {
-    el.width = width || 256;
-    el.height = height || 192; 
+    this.width = el.width = width || 256;
+    this.height= el.height = height || 192; 
     var gl = el.getContext("webgl", params || {antialias: false});
     var program = gl.createProgram();
     this.program = program;
@@ -141,9 +141,9 @@ export default class webglCanvas {
   setBitmaps(buffers) {
     var gl = this.gl;
     gl.activeTexture(gl.TEXTURE0);
-    gl.texImage2D(gl.TEXTURE_2D, 0, gl.ALPHA, 256, 192, 0, gl.ALPHA, gl.UNSIGNED_BYTE, buffers[0]);
+    gl.texImage2D(gl.TEXTURE_2D, 0, gl.ALPHA, this.width, this.height, 0, gl.ALPHA, gl.UNSIGNED_BYTE, buffers[0]);
     gl.activeTexture(gl.TEXTURE1);
-    gl.texImage2D(gl.TEXTURE_2D, 0, gl.ALPHA, 256, 192, 0, gl.ALPHA, gl.UNSIGNED_BYTE, buffers[1]);
+    gl.texImage2D(gl.TEXTURE_2D, 0, gl.ALPHA, this.width, this.height, 0, gl.ALPHA, gl.UNSIGNED_BYTE, buffers[1]);
   }
 
   /**

@@ -15,13 +15,13 @@ const FRAMERATES = [
 ];
 
 const PALETTE = [
-  [0xff, 0xff, 0xff],
-  [0x10, 0x10, 0x10],
-  [0xff, 0x10, 0x10],
-  [0xff, 0xe7, 0x00],
-  [0x00, 0x86, 0x31],
-  [0x00, 0x38, 0xce],
-  [0xff, 0xff, 0xff],
+  [0xff, 0xff, 0xff, 0xff],
+  [0x10, 0x10, 0x10, 0xff],
+  [0xff, 0x10, 0x10, 0xff],
+  [0xff, 0xe7, 0x00, 0xff],
+  [0x00, 0x86, 0x31, 0xff],
+  [0x00, 0x38, 0xce, 0xff],
+  [0xff, 0xff, 0xff, 0xff],
 ];
 
 export default class kwzParser extends fileReader {
@@ -338,7 +338,7 @@ export default class kwzParser extends fileReader {
 
   getFramePalette(frameIndex) {
     let flags = this.frameMeta[frameIndex].flags;
-    return [
+    let indexes = [
       flags & 0xF,         // paper color
       (flags >> 8) & 0xF,  // layer A color 1
       (flags >> 12) & 0xF, // layer A color 2
@@ -346,6 +346,15 @@ export default class kwzParser extends fileReader {
       (flags >> 20) & 0xF, // layer B color 2
       (flags >> 24) & 0xF, // layer C color 1
       (flags >> 28) & 0xF, // layer C color 2
+    ];
+    return [
+      PALETTE[indexes[0]],
+      PALETTE[indexes[1]],
+      PALETTE[indexes[2]],
+      PALETTE[indexes[3]],
+      PALETTE[indexes[4]],
+      PALETTE[indexes[5]],
+      PALETTE[indexes[6]],
     ];
   }
 
