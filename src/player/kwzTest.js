@@ -24,6 +24,20 @@ export default class kwzTest {
     this.canvas = new canvas(canv, 320, 240);
   }
 
+  renderLoop() {
+
+    let index = 0;
+
+    let loop = () => {
+      if (index == this.kwz.frameCount) index = 0;
+      this.renderFrame(index);
+      index += 1;
+      requestAnimationFrame(loop);
+    }
+
+    requestAnimationFrame(loop);
+  }
+
   renderFrame(index) {
     this.canvas.setPalette(this.kwz.getFramePalette(index));
     this.canvas.setBitmaps(this.kwz.decodeFrame(index));

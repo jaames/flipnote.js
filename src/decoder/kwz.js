@@ -73,7 +73,6 @@ export default class kwzParser extends fileReader {
       new Uint8Array(320 * 240),
       new Uint8Array(320 * 240),
     ];
-    this._tileBuffer = new Uint8Array(8 * 8);
     this._bitIndex = 0;
     this._bitValue = 0;
     this.load();
@@ -121,7 +120,7 @@ export default class kwzParser extends fileReader {
       this.frameOffsets.push(offset);
       offset += frame.layerSize[0] + frame.layerSize[1] + frame.layerSize[2];
     }
-
+    this.frameCount = frameCount;
     this._prevDecodedFrame = -1;
   }
 
@@ -143,11 +142,13 @@ export default class kwzParser extends fileReader {
   }
 
   decodeFrame(frameIndex, diffingFlag=0x7, isPrevFrame=false) {
+
+    console.log(frameIndex);
     // if this frame is being decoded as a prev frame, then we only want to decode the layers necessary
     if (isPrevFrame)
       diffingFlag &= this.getDiffingFlag(frameIndex + 1);
     // the prevDecodedFrame check is an optimisation for decoding frames in full sequence
-    if ((this._prevDecodedFrame !== frameIndex - 1) && (diffingFlag))
+    if ((frameIndex !== 0) && (this._prevDecodedFrame !== frameIndex - 1) && (diffingFlag))
       this.decodeFrame(frameIndex - 1, diffingFlag=diffingFlag, isPrevFrame=true);
 
     let meta = this.frameMeta[frameIndex];
@@ -182,32 +183,35 @@ export default class kwzParser extends fileReader {
                 continue;
               }
 
+              let pixelOffset = y * 320 + x;
+              let pixelBuffer = this._layers[layerIndex];
+
               let type = this.readBits(3);
 
               if (type == 0) {
                 let lineIndex = this._table1[this.readBits(5)];
                 let pixels = this._linetable.subarray(lineIndex * 8, lineIndex * 8 + 8);
-                this._tileBuffer.set(pixels, 0);
-                this._tileBuffer.set(pixels, 8);
-                this._tileBuffer.set(pixels, 16);
-                this._tileBuffer.set(pixels, 24);
-                this._tileBuffer.set(pixels, 32);
-                this._tileBuffer.set(pixels, 40);
-                this._tileBuffer.set(pixels, 48);
-                this._tileBuffer.set(pixels, 56);
+                pixelBuffer.set(pixels, pixelOffset);
+                pixelBuffer.set(pixels, pixelOffset + 320);
+                pixelBuffer.set(pixels, pixelOffset + 640);
+                pixelBuffer.set(pixels, pixelOffset + 960);
+                pixelBuffer.set(pixels, pixelOffset + 1280);
+                pixelBuffer.set(pixels, pixelOffset + 1600);
+                pixelBuffer.set(pixels, pixelOffset + 1920);
+                pixelBuffer.set(pixels, pixelOffset + 2240);
               } 
 
               else if (type == 1) {
                 let lineIndex = this.readBits(13);
                 let pixels = this._linetable.subarray(lineIndex * 8, lineIndex * 8 + 8);
-                this._tileBuffer.set(pixels, 0);
-                this._tileBuffer.set(pixels, 8);
-                this._tileBuffer.set(pixels, 16);
-                this._tileBuffer.set(pixels, 24);
-                this._tileBuffer.set(pixels, 32);
-                this._tileBuffer.set(pixels, 40);
-                this._tileBuffer.set(pixels, 48);
-                this._tileBuffer.set(pixels, 56);
+                pixelBuffer.set(pixels, pixelOffset);
+                pixelBuffer.set(pixels, pixelOffset + 320);
+                pixelBuffer.set(pixels, pixelOffset + 640);
+                pixelBuffer.set(pixels, pixelOffset + 960);
+                pixelBuffer.set(pixels, pixelOffset + 1280);
+                pixelBuffer.set(pixels, pixelOffset + 1600);
+                pixelBuffer.set(pixels, pixelOffset + 1920);
+                pixelBuffer.set(pixels, pixelOffset + 2240);
               } 
               
               else if (type == 2) {
@@ -216,14 +220,14 @@ export default class kwzParser extends fileReader {
                 let lineIndexB = this._table2[lineValue];
                 let a = this._linetable.subarray(lineIndexA * 8, lineIndexA * 8 + 8);
                 let b = this._linetable.subarray(lineIndexB * 8, lineIndexB * 8 + 8);
-                this._tileBuffer.set(a, 0);
-                this._tileBuffer.set(b, 8);
-                this._tileBuffer.set(a, 16);
-                this._tileBuffer.set(b, 24);
-                this._tileBuffer.set(a, 32);
-                this._tileBuffer.set(b, 40);
-                this._tileBuffer.set(a, 48);
-                this._tileBuffer.set(b, 56);
+                pixelBuffer.set(a, pixelOffset);
+                pixelBuffer.set(b, pixelOffset + 320);
+                pixelBuffer.set(a, pixelOffset + 640);
+                pixelBuffer.set(b, pixelOffset + 960);
+                pixelBuffer.set(a, pixelOffset + 1280);
+                pixelBuffer.set(b, pixelOffset + 1600);
+                pixelBuffer.set(a, pixelOffset + 1920);
+                pixelBuffer.set(b, pixelOffset + 2240);
               } 
               
               else if (type == 3) {
@@ -231,14 +235,14 @@ export default class kwzParser extends fileReader {
                 let lineIndexB = this._table3[lineIndexA];
                 let a = this._linetable.subarray(lineIndexA * 8, lineIndexA * 8 + 8);
                 let b = this._linetable.subarray(lineIndexB * 8, lineIndexB * 8 + 8);
-                this._tileBuffer.set(a, 0);
-                this._tileBuffer.set(b, 8);
-                this._tileBuffer.set(a, 16);
-                this._tileBuffer.set(b, 24);
-                this._tileBuffer.set(a, 32);
-                this._tileBuffer.set(b, 40);
-                this._tileBuffer.set(a, 48);
-                this._tileBuffer.set(b, 56);
+                pixelBuffer.set(a, pixelOffset);
+                pixelBuffer.set(b, pixelOffset + 320);
+                pixelBuffer.set(a, pixelOffset + 640);
+                pixelBuffer.set(b, pixelOffset + 960);
+                pixelBuffer.set(a, pixelOffset + 1280);
+                pixelBuffer.set(b, pixelOffset + 1600);
+                pixelBuffer.set(a, pixelOffset + 1920);
+                pixelBuffer.set(b, pixelOffset + 2240);
               }
 
               else if (type == 4) {
@@ -251,7 +255,7 @@ export default class kwzParser extends fileReader {
                     lineIndex = this.readBits(13);
                   }
                   let pixels = this._linetable.subarray(lineIndex * 8, lineIndex * 8 + 8);
-                  this._tileBuffer.set(pixels, line * 8);
+                  pixelBuffer.set(pixels, pixelOffset + line * 320);
                 }
               }
 
@@ -283,48 +287,42 @@ export default class kwzParser extends fileReader {
                 let b = this._linetable.subarray(lineIndexB * 8, lineIndexB * 8 + 8);
 
                 if (pattern == 0) {
-                  this._tileBuffer.set(a, 0);
-                  this._tileBuffer.set(b, 8);
-                  this._tileBuffer.set(a, 16);
-                  this._tileBuffer.set(b, 24);
-                  this._tileBuffer.set(a, 32);
-                  this._tileBuffer.set(b, 40);
-                  this._tileBuffer.set(a, 48);
-                  this._tileBuffer.set(b, 56);
+                  pixelBuffer.set(a, pixelOffset);
+                  pixelBuffer.set(b, pixelOffset + 320);
+                  pixelBuffer.set(a, pixelOffset + 640);
+                  pixelBuffer.set(b, pixelOffset + 960);
+                  pixelBuffer.set(a, pixelOffset + 1280);
+                  pixelBuffer.set(b, pixelOffset + 1600);
+                  pixelBuffer.set(a, pixelOffset + 1920);
+                  pixelBuffer.set(b, pixelOffset + 2240);
                 } else if (pattern == 1) {
-                  this._tileBuffer.set(a, 0);
-                  this._tileBuffer.set(a, 8);
-                  this._tileBuffer.set(b, 16);
-                  this._tileBuffer.set(a, 24);
-                  this._tileBuffer.set(a, 32);
-                  this._tileBuffer.set(b, 40);
-                  this._tileBuffer.set(a, 48);
-                  this._tileBuffer.set(a, 56);
+                  pixelBuffer.set(a, pixelOffset);
+                  pixelBuffer.set(a, pixelOffset + 320);
+                  pixelBuffer.set(b, pixelOffset + 640);
+                  pixelBuffer.set(a, pixelOffset + 960);
+                  pixelBuffer.set(a, pixelOffset + 1280);
+                  pixelBuffer.set(b, pixelOffset + 1600);
+                  pixelBuffer.set(a, pixelOffset + 1920);
+                  pixelBuffer.set(a, pixelOffset + 2240);
                 } else if (pattern == 2) {
-                  this._tileBuffer.set(a, 0);
-                  this._tileBuffer.set(b, 8);
-                  this._tileBuffer.set(a, 16);
-                  this._tileBuffer.set(a, 24);
-                  this._tileBuffer.set(b, 32);
-                  this._tileBuffer.set(a, 40);
-                  this._tileBuffer.set(a, 48);
-                  this._tileBuffer.set(b, 56);
+                  pixelBuffer.set(a, pixelOffset);
+                  pixelBuffer.set(b, pixelOffset + 320);
+                  pixelBuffer.set(a, pixelOffset + 640);
+                  pixelBuffer.set(a, pixelOffset + 960);
+                  pixelBuffer.set(b, pixelOffset + 1280);
+                  pixelBuffer.set(a, pixelOffset + 1600);
+                  pixelBuffer.set(a, pixelOffset + 1920);
+                  pixelBuffer.set(b, pixelOffset + 2240);
                 } else if (pattern == 3) {
-                  this._tileBuffer.set(a, 0);
-                  this._tileBuffer.set(b, 8);
-                  this._tileBuffer.set(b, 16);
-                  this._tileBuffer.set(a, 24);
-                  this._tileBuffer.set(b, 32);
-                  this._tileBuffer.set(b, 40);
-                  this._tileBuffer.set(a, 48);
-                  this._tileBuffer.set(b, 56);
+                  pixelBuffer.set(a, pixelOffset);
+                  pixelBuffer.set(b, pixelOffset + 320);
+                  pixelBuffer.set(b, pixelOffset + 640);
+                  pixelBuffer.set(a, pixelOffset + 960);
+                  pixelBuffer.set(b, pixelOffset + 1280);
+                  pixelBuffer.set(b, pixelOffset + 1600);
+                  pixelBuffer.set(a, pixelOffset + 1920);
+                  pixelBuffer.set(b, pixelOffset + 2240);
                 }
-              }
-
-              let pixels = this._layers[layerIndex];
-              for (let line = 0; line < 8; line++) {
-                let offset = ((y + line) * 320) + x;
-                pixels.set(this._tileBuffer.subarray(line * 8, line * 8 + 8), offset);
               }
             }
           }
