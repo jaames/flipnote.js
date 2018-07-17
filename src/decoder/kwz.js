@@ -15,13 +15,15 @@ const FRAMERATES = [
 ];
 
 const PALETTE = [
-  [0xff, 0xff, 0xff, 0xff],
-  [0x10, 0x10, 0x10, 0xff],
-  [0xff, 0x10, 0x10, 0xff],
-  [0xff, 0xe7, 0x00, 0xff],
-  [0x00, 0x86, 0x31, 0xff],
-  [0x00, 0x38, 0xce, 0xff],
-  [0xff, 0xff, 0xff, 0xff],
+  0xffffffff,
+  0xff101010,
+  0xffff1010,
+
+  // todo:
+  0xffe700ff,
+  0x008631ff,
+  0x0038ceff,
+  0xffffffff,
 ];
 
 export default class kwzParser extends fileReader {
@@ -142,8 +144,6 @@ export default class kwzParser extends fileReader {
   }
 
   decodeFrame(frameIndex, diffingFlag=0x7, isPrevFrame=false) {
-
-    console.log(frameIndex);
     // if this frame is being decoded as a prev frame, then we only want to decode the layers necessary
     if (isPrevFrame)
       diffingFlag &= this.getDiffingFlag(frameIndex + 1);
@@ -336,24 +336,15 @@ export default class kwzParser extends fileReader {
 
   getFramePalette(frameIndex) {
     let flags = this.frameMeta[frameIndex].flags;
-    let indexes = [
-      flags & 0xF,         // paper color
-      (flags >> 8) & 0xF,  // layer A color 1
-      (flags >> 12) & 0xF, // layer A color 2
-      (flags >> 16) & 0xF, // layer B color 1
-      (flags >> 20) & 0xF, // layer B color 2
-      (flags >> 24) & 0xF, // layer C color 1
-      (flags >> 28) & 0xF, // layer C color 2
-    ];
-    return [
-      PALETTE[indexes[0]],
-      PALETTE[indexes[1]],
-      PALETTE[indexes[2]],
-      PALETTE[indexes[3]],
-      PALETTE[indexes[4]],
-      PALETTE[indexes[5]],
-      PALETTE[indexes[6]],
-    ];
+    let result = new Uint32Array(256);
+    result[0] = PALETTE[flags & 0xF] // paper color
+    result[1] = PALETTE[(flags >> 8) & 0xF] // layer A color 1
+    result[2] = PALETTE[(flags >> 12) & 0xF] // layer A color 2
+    result[3] = PALETTE[(flags >> 16) & 0xF] // layer B color 1
+    result[4] = PALETTE[(flags >> 20) & 0xF] // layer B color 2
+    result[5] = PALETTE[(flags >> 24) & 0xF] // layer C color 1
+    result[6] = PALETTE[(flags >> 28) & 0xF] // layer C color 2
+    return result;
   }
 
   getFrameImage(frameIndex) {
