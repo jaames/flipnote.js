@@ -17,11 +17,11 @@ const FRAMERATES = [
 const PALETTE = [
   0xffffffff,
   0xff101010,
-  0xffff1010,
+  0xff1010ff,
   0xff00e7ff,
-0xff318600,
-0xffce3800,
-0xffffffff
+  0xff318600,
+  0xffce3800,
+  0xffffffff
 ];
 
 export default class kwzParser extends fileReader {

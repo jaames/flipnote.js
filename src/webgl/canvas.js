@@ -52,7 +52,7 @@ export default class webglCanvas {
     gl.activeTexture(gl.TEXTURE3);
     gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MIN_FILTER, gl.NEAREST);
     gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MAG_FILTER, gl.NEAREST);
-    this.setFilter("nearest");
+    this.setFilter("linear");
     // this.setLayerVisibilty(1, true);
     // this.setLayerVisibilty(2, true);
     // gl.pixelStorei(gl.UNPACK_PREMULTIPLY_ALPHA_WEBGL, true);
@@ -152,11 +152,11 @@ export default class webglCanvas {
   drawLayers(layers) {
     var gl = this.gl;
     gl.activeTexture(gl.TEXTURE0);
-    gl.texImage2D(gl.TEXTURE_2D, 0, gl.ALPHA, this.width, this.height, 0, gl.ALPHA, gl.UNSIGNED_BYTE, layers[0]);
+    gl.texImage2D(gl.TEXTURE_2D, 0, gl.ALPHA, 320, 240, 0, gl.ALPHA, gl.UNSIGNED_BYTE, layers[0]);
     gl.activeTexture(gl.TEXTURE1);
-    gl.texImage2D(gl.TEXTURE_2D, 0, gl.ALPHA, this.width, this.height, 0, gl.ALPHA, gl.UNSIGNED_BYTE, layers[1]);
+    gl.texImage2D(gl.TEXTURE_2D, 0, gl.ALPHA, 320, 240, 0, gl.ALPHA, gl.UNSIGNED_BYTE, layers[1]);
     gl.activeTexture(gl.TEXTURE2);
-    gl.texImage2D(gl.TEXTURE_2D, 0, gl.ALPHA, this.width, this.height, 0, gl.ALPHA, gl.UNSIGNED_BYTE, layers[2]);
+    gl.texImage2D(gl.TEXTURE_2D, 0, gl.ALPHA, 320, 240, 0, gl.ALPHA, gl.UNSIGNED_BYTE, layers[2]);
     gl.uniform1i(gl.getUniformLocation(this.program, "u_bitmap"), 2);
     gl.uniform1f(gl.getUniformLocation(this.program, "u_layerIndex"), 2);
     gl.drawArrays(gl.TRIANGLES, 0, 6);
@@ -175,9 +175,9 @@ export default class webglCanvas {
   setBitmaps(buffers) {
     var gl = this.gl;
     gl.activeTexture(gl.TEXTURE0);
-    gl.texImage2D(gl.TEXTURE_2D, 0, gl.ALPHA, this.width, this.height, 0, gl.ALPHA, gl.UNSIGNED_BYTE, buffers[0]);
+    gl.texImage2D(gl.TEXTURE_2D, 0, gl.ALPHA, 320, 240, 0, gl.ALPHA, gl.UNSIGNED_BYTE, buffers[0]);
     gl.activeTexture(gl.TEXTURE1);
-    gl.texImage2D(gl.TEXTURE_2D, 0, gl.ALPHA, this.width, this.height, 0, gl.ALPHA, gl.UNSIGNED_BYTE, buffers[1]);
+    gl.texImage2D(gl.TEXTURE_2D, 0, gl.ALPHA, 320, 240, 0, gl.ALPHA, gl.UNSIGNED_BYTE, buffers[1]);
   }
 
   /**
