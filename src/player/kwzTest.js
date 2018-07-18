@@ -2,6 +2,7 @@ import kwzParser from "decoder/kwz";
 import load from "loader";
 import bmp from "encoder/bmp";
 import canvas from "webgl/canvas";
+import { setInterval } from "timers";
 
 const PALETTE = [
   [0xff, 0xff, 0xff],
@@ -21,7 +22,7 @@ export default class kwzTest {
     });
     let canv = document.createElement("canvas");
     document.body.appendChild(canv);
-    this.canvas = new canvas(canv, 320, 240);
+    this.canvas = new canvas(canv, 320*2, 240*2);
   }
 
   renderLoop() {
@@ -32,15 +33,14 @@ export default class kwzTest {
       if (index == this.kwz.frameCount) index = 0;
       this.renderFrame(index);
       index += 1;
-      requestAnimationFrame(loop);
     }
 
-    requestAnimationFrame(loop);
+    setInterval(loop, 1000/8);
   }
 
   renderFrame(index) {
-    this.canvas.setPaletteTexture(this.kwz.getFramePalette(index));
-    this.canvas.drawLayers(this.kwz.decodeFrame(index));
+    let colors = this.kwz.getFramePalette(index);
+    this.canvas.drawLayers(this.kwz.decodeFrame(index), colors);
     // this.canvas.refresh();
   }
 

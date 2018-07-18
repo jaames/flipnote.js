@@ -48,11 +48,7 @@ export default class webglCanvas {
     this._createTexture("u_layer1Bitmap", 0, gl.TEXTURE0);
     this._createTexture("u_layer2Bitmap", 1, gl.TEXTURE1);
     this._createTexture("u_layer2Bitmap", 2, gl.TEXTURE2);
-    this._createTexture("u_palette", 3, gl.TEXTURE3);
-    gl.activeTexture(gl.TEXTURE3);
-    gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MIN_FILTER, gl.NEAREST);
-    gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MAG_FILTER, gl.NEAREST);
-    this.setFilter("linear");
+    this.setFilter("nearest");
     // this.setLayerVisibilty(1, true);
     // this.setLayerVisibilty(2, true);
     // gl.pixelStorei(gl.UNPACK_PREMULTIPLY_ALPHA_WEBGL, true);
@@ -129,7 +125,7 @@ export default class webglCanvas {
   * @param {array} value - r,g,b,a color, each channel's value should be between 0.0 and 1.0
   */
   setColor(color, value) {
-    this.gl.uniform4f(this.gl.getUniformLocation(this.program, color), value[0]/255, value[1]/255, value[2]/255, value[3]/255);
+    this.gl.uniform4f(this.gl.getUniformLocation(this.program, color), value[0]/255, value[1]/255, value[2]/255, 1);
   }
 
   /**
@@ -141,15 +137,7 @@ export default class webglCanvas {
     // this.setColor("u_layer1Color", colors[1]);
     // this.setColor("u_layer2Color", colors[2]);
   }
-
-  setPaletteTexture(colors) {
-    var gl = this.gl;
-    let buffer = new Uint8Array(colors.buffer);
-    gl.activeTexture(gl.TEXTURE3);
-    gl.texImage2D(gl.TEXTURE_2D, 0, gl.RGBA, 256, 1, 0, gl.RGBA, gl.UNSIGNED_BYTE, buffer);
-  }
-
-  drawLayers(layers) {
+  drawLayers(layers, colors) {
     var gl = this.gl;
     gl.activeTexture(gl.TEXTURE0);
     gl.texImage2D(gl.TEXTURE_2D, 0, gl.ALPHA, 320, 240, 0, gl.ALPHA, gl.UNSIGNED_BYTE, layers[0]);
@@ -158,13 +146,16 @@ export default class webglCanvas {
     gl.activeTexture(gl.TEXTURE2);
     gl.texImage2D(gl.TEXTURE_2D, 0, gl.ALPHA, 320, 240, 0, gl.ALPHA, gl.UNSIGNED_BYTE, layers[2]);
     gl.uniform1i(gl.getUniformLocation(this.program, "u_bitmap"), 2);
-    gl.uniform1f(gl.getUniformLocation(this.program, "u_layerIndex"), 2);
+    this.setColor("u_color1", colors[5]);
+    this.setColor("u_color2", colors[6]);
     gl.drawArrays(gl.TRIANGLES, 0, 6);
     gl.uniform1i(gl.getUniformLocation(this.program, "u_bitmap"), 1);
-    gl.uniform1f(gl.getUniformLocation(this.program, "u_layerIndex"), 1);
+    this.setColor("u_color1", colors[3]);
+    this.setColor("u_color2", colors[4]);
     gl.drawArrays(gl.TRIANGLES, 0, 6);
     gl.uniform1i(gl.getUniformLocation(this.program, "u_bitmap"), 0);
-    gl.uniform1f(gl.getUniformLocation(this.program, "u_layerIndex"), 0);
+    this.setColor("u_color1", colors[1]);
+    this.setColor("u_color2", colors[2]);
     gl.drawArrays(gl.TRIANGLES, 0, 6);
   }
 
