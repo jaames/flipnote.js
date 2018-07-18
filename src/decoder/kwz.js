@@ -28,6 +28,8 @@ export default class kwzParser extends fileReader {
 
   constructor(arrayBuffer) {
     super(arrayBuffer);
+    this.TYPE = "3DS";
+    this.AUDIO_TRACK_COUNT = 4;
     // table1 - commonly occuring line offsets
     this._table1 = new Uint16Array([
       0x0000, 0x0CD0, 0x19A0, 0x02D9, 0x088B, 0x0051, 0x00F3, 0x0009,
@@ -83,7 +85,9 @@ export default class kwzParser extends fileReader {
     this.sections = {};
     let size = this.fileLength - 256;
     let offset = 0;
-    while (offset < size) {
+    let sectionCount = 0;
+    // counting sections should mitigate against one of mrnbayoh's notehax exploits
+    while ((offset < size) && (sectionCount < 6)) {
       this.seek(offset);
       let sectionMagic = this.readUtf8(4).substring(0, 3);
       let sectionLength = this.readUint32();
@@ -92,14 +96,16 @@ export default class kwzParser extends fileReader {
         length: sectionLength
       };
       offset += sectionLength + 8;
+      sectionCount += 1;
     }
+
+    this.meta = this._decodeMeta();
 
     this.frameMeta = [];
     this.frameOffsets = [];
     this.seek(this.sections["KMI"].offset + 8);
     offset = this.sections["KMC"].offset + 12;
-    let frameCount = this.sections["KMI"].length / 28;
-    for (let i = 0; i < frameCount; i++) {
+    for (let i = 0; i < this.frameCount; i++) {
       let frame = {
         flags: this.readUint32(),
         layerSize: [
@@ -120,7 +126,6 @@ export default class kwzParser extends fileReader {
       this.frameOffsets.push(offset);
       offset += frame.layerSize[0] + frame.layerSize[1] + frame.layerSize[2];
     }
-    this.frameCount = frameCount;
     this._prevDecodedFrame = -1;
   }
 
@@ -137,8 +142,60 @@ export default class kwzParser extends fileReader {
     return result;
   }
 
+  _decodeMeta() {
+    this.seek(this.sections["KFH"].offset + 12);
+    let creationTimestamp = new Date((this.readUint32() + 946684800) * 1000),
+        modifiedTimestamp = new Date((this.readUint32() + 946684800) * 1000),
+        appVersion = this.readUint32(),
+        rootAuthorId = this.readHex(10),
+        parentAuthorId = this.readHex(10),
+        currentAuthorId = this.readHex(10),
+        rootAuthorName = this.readUtf16(11),
+        parentAuthorName = this.readUtf16(11),
+        currentAuthorName = this.readUtf16(11),
+        rootFilename = this.readUtf8(28),
+        parentFilename = this.readUtf8(28),
+        currentFilename = this.readUtf8(28),
+        frameCount = this.readUint16(),
+        thumbIndex = this.readUint16(),
+        flags = this.readUint16(),
+        frameSpeed = this.readUint8(),
+        layerFlags = this.readUint8();
+    this.frameCount = frameCount;
+    this.frameSpeed = frameSpeed;
+    this.framerate = FRAMERATES[frameSpeed];
+    return {
+      lock: flags & 0x1,
+      loop: (flags >> 1) & 0x01,
+      frame_count: frameCount,
+      frame_speed: frameSpeed,
+      thumb_index: thumbIndex,
+      timestamp: modifiedTimestamp,
+      creation_timestamp: creationTimestamp,
+      root: {
+        username: rootAuthorName,
+        fsid: rootAuthorId,
+        filename: rootFilename,
+      },
+      parent: {
+        username: parentAuthorName,
+        fsid: parentAuthorId,
+        filename: parentFilename,
+      },
+      current: {
+        username: currentAuthorName,
+        fsid: currentAuthorId,
+        filename: currentFilename,
+      },
+    };
+  }
+
   getDiffingFlag(frameIndex) {
     return ~(this.frameMeta[frameIndex].flags >> 4) & 0x07;
+  }
+
+  getLayerDepths(frameIndex) {
+    return this.frameMeta[frameIndex].layerDepth;
   }
 
   decodeFrame(frameIndex, diffingFlag=0x7, isPrevFrame=false) {

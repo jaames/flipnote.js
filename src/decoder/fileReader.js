@@ -103,13 +103,54 @@ export default class fileReader {
     return val;
   }
 
-  readUtf8(length) {
-    var chars = new Uint8Array(this._data.buffer, this._offset, length);
-    var val = "";
-    for (let i = 0; i < chars.length; i++) {
-      val += String.fromCharCode(chars[i]);
+  /**
+  * Read bytes and return a hex string
+  * @param {number} count - number of bytes to read
+  * @param {bool} reverse - pass true to reverse byte order
+  * @returns {string}
+  */
+  readHex(count, reverse=false) {
+    var bytes = new Uint8Array(this._data.buffer, this._offset, count);
+    this._offset += bytes.byteLength;
+    let hex = [];
+    for (let i = 0; i < bytes.length; i++) {
+      hex.push(bytes[i].toString(16).padStart(2, "0"));
     }
-    this._offset += chars.length;
-    return val;
+    if (reverse) hex.reverse();
+    return hex.join("").toUpperCase();
+  }
+
+  /**
+  * Read (simple) utf8 string
+  * @param {number} count - number of characters to read
+  * @returns {string}
+  */
+  readUtf8(count) {
+    var chars = new Uint8Array(this._data.buffer, this._offset, count);
+    this._offset += chars.byteLength;
+    var str = "";
+    for (let i = 0; i < chars.length; i++) {
+      let char = chars[i];
+      if (char == 0) break;
+      str += String.fromCharCode(char);
+    }
+    return str;
+  }
+
+  /**
+  * Read (simple) utf16 string
+  * @param {number} count - number of characters to read
+  * @returns {string}
+  */
+  readUtf16(count) {
+    var chars = new Uint16Array(this._data.buffer, this._offset, count);
+    this._offset += chars.byteLength;
+    var str = "";
+    for (let i = 0; i < chars.length; i++) {
+      let char = chars[i];
+      if (char == 0) break;
+      str += String.fromCharCode(char);
+    }
+    return str;
   }
 }
