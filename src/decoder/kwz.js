@@ -28,8 +28,7 @@ export default class kwzParser extends fileReader {
 
   constructor(arrayBuffer) {
     super(arrayBuffer);
-    this.TYPE = "3DS";
-    this.AUDIO_TRACK_COUNT = 4;
+    this.type = "KWZ";
     // table1 - commonly occuring line offsets
     this._table1 = new Uint16Array([
       0x0000, 0x0CD0, 0x19A0, 0x02D9, 0x088B, 0x0051, 0x00F3, 0x0009,

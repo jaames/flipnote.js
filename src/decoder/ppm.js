@@ -51,6 +51,7 @@ export default class ppmParser extends fileReader {
   */
   constructor(arrayBuffer) {
     super(arrayBuffer);
+    this.type = "PPM";
     this.seek(4);
     // decode header
     // https://github.com/pbsds/hatena-server/wiki/PPM-format#file-header
@@ -408,8 +409,9 @@ export default class ppmParser extends fileReader {
     return this._layers;
   }
 
-  hasAudioTrack(track) {
-    return this.soundMeta[track].length > 0;
+  hasAudioTrack(trackIndex) {
+    let id = ["bgm", "se1", "se2", "se3"][trackIndex];
+    return this.soundMeta[id].length > 0;
   }
 
   /**

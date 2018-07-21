@@ -1,7 +1,6 @@
 import canvas from "webgl/canvas";
 import captureCanvas from "webgl/captureCanvas";
-// import ppmDecoder from "decoder";
-import kwzParser from "decoder/kwz";
+import parser from "decoder";
 import loader from "loader";
 import audioTrack from "./audio";
 
@@ -121,7 +120,7 @@ export default class flipnotePlayer {
   * @access protected
   */
   _load(buffer) {
-    var note = new kwzParser(buffer);
+    var note = new parser(buffer);
     var meta = note.meta;
     this.note = note;
     this.meta = meta;
@@ -304,9 +303,15 @@ export default class flipnotePlayer {
     let layerBuffers = this.note.decodeFrame(frameIndex);
     canvas.setPaperColor(colors[0]);
     canvas.clear();
-    canvas.drawLayer(layerBuffers[2], 320, 240, colors[5], colors[6]);
-    canvas.drawLayer(layerBuffers[1], 320, 240, colors[3], colors[4]);
-    canvas.drawLayer(layerBuffers[0], 320, 240, colors[1], colors[2]);
+    if (this.note.type == "PPM") {
+      canvas.drawLayer(layerBuffers[1], 256, 192, colors[2], [0,0,0,1]);
+      canvas.drawLayer(layerBuffers[0], 256, 192, colors[1], [0,0,0,1]);
+    } else if (this.note.type == "KWZ") {
+      canvas.drawLayer(layerBuffers[2], 320, 240, colors[5], colors[6]);
+      canvas.drawLayer(layerBuffers[1], 320, 240, colors[3], colors[4]);
+      canvas.drawLayer(layerBuffers[0], 320, 240, colors[1], colors[2]);
+    }
+    
   }
 
   /**
