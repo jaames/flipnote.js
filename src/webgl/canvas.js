@@ -45,7 +45,7 @@ export default class webglCanvas {
     gl.vertexAttribPointer(0, 2, gl.FLOAT, false, 0, 0);
     this.refs.buffers.push(vertBuffer);
     // create texture to use as the layer bitmap
-    gl.activeTexture(texture);
+    gl.activeTexture(gl.TEXTURE0);
     var tex = gl.createTexture();
     gl.bindTexture(gl.TEXTURE_2D, tex);
     gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_S, gl.CLAMP_TO_EDGE);

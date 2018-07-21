@@ -162,6 +162,7 @@ export default class kwzParser extends fileReader {
         frameSpeed = this.readUint8(),
         layerFlags = this.readUint8();
     this.frameCount = frameCount;
+    this.thumbFrameIndex = thumbIndex;
     this.frameSpeed = frameSpeed;
     this.framerate = FRAMERATES[frameSpeed];
     return {
@@ -414,6 +415,15 @@ export default class kwzParser extends fileReader {
       if (a) image[pixel] = a;
     }
     return image;
+  }
+
+  decodeSoundFlags() {
+    var arr = new Array(this.frameCount).fill([]);
+    return arr.map(_ => [false, false, false]);
+  }
+
+  hasAudioTrack(trackIndex) {
+    return false;
   }
 
 }
