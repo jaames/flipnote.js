@@ -1,28 +1,29 @@
-/** file reader serves as a wrapper around the DataView API to help keep track of the offset into the file */
-export default class fileReader {
+/** datastream serves as a wrapper around the DataView API to help keep track of the offset into the stream */
+export default class dataStream {
   /**
   * Create a fileReader instance
   * @param {ArrayBuffer} arrayBuffer - data to read from
   */
   constructor(arrayBuffer) {
+    this.buffer = arrayBuffer;
     this._data = new DataView(arrayBuffer);
     this._offset = 0;
   }
 
   /**
-  * Get the length of the file
+  * Get the length of the stream
   * @returns {number}
   */
-  get fileLength() {
+  get byteLength() {
     return this._data.byteLength;
   }
 
   /**
   * based on the seek method from Python's file objects - https://www.tutorialspoint.com/python/file_seek.htm
-  * @param {number} offset - position of the read pointer within the file
+  * @param {number} offset - position of the read pointer within the stream
   * @param {number} whence - (optional) defaults to absolute file positioning,
   *                          1 = offset is relative to the current position
-  *                          2 = offset is relative to the file's end
+  *                          2 = offset is relative to the stream's end
   */
   seek(offset, whence) {
     switch (whence) {
@@ -40,7 +41,7 @@ export default class fileReader {
   }
 
   /**
-  * Read an unsigned 8-bit integer from the file, and automatically increment the offset
+  * Read an unsigned 8-bit integer from the stream, and automatically increment the offset
   * @returns {number}
   */
   readUint8() {
@@ -50,7 +51,16 @@ export default class fileReader {
   }
 
   /**
-  * Read a signed 8-bit integer from the file, and automatically increment the offset
+  * Write an unsigned 8-bit integer to the stream, and automatically increment the offset
+  * @param {number} value - value to write
+  */
+  writeUint8(value) {
+    this._data.setUint8(this._offset, value);
+    this._offset += 1;
+  }
+
+  /**
+  * Read a signed 8-bit integer from the stream, and automatically increment the offset
   * @returns {number}
   */
   readInt8() {
@@ -60,7 +70,16 @@ export default class fileReader {
   }
 
   /**
-  * Read an unsigned 16-bit integer from the file, and automatically increment the offset
+  * Write a signed 8-bit integer to the stream, and automatically increment the offset
+  * @param {number} value - value to write
+  */
+  writeInt8(value) {
+    this._data.setInt8(this._offset, value);
+    this._offset += 1;
+  }
+
+  /**
+  * Read an unsigned 16-bit integer from the stream, and automatically increment the offset
   * @param {boolean} littleEndian - defaults to true, set to false to read data in big endian byte order
   * @returns {number}
   */
@@ -71,7 +90,17 @@ export default class fileReader {
   }
 
   /**
-  * Read a signed 16-bit integer from the file, and automatically increment the offset
+  * Write an unsigned 16-bit integer to the stream, and automatically increment the offset
+  * @param {number} value - value to write
+  * @param {boolean} littleEndian - defaults to true, set to false to write data in big endian byte order
+  */
+  writeUint16(value, littleEndian) {
+    this._data.setUint16(this._offset, value, littleEndian);
+    this._offset += 2;
+  }
+
+  /**
+  * Read a signed 16-bit integer from the stream, and automatically increment the offset
   * @param {boolean} littleEndian - defaults to true, set to false to read data in big endian byte order
   * @returns {number}
   */
@@ -82,7 +111,17 @@ export default class fileReader {
   }
 
   /**
-  * Read an unsigned 32-bit integer from the file, and automatically increment the offset
+  * Write a signed 16-bit integer to the stream, and automatically increment the offset
+  * @param {number} value - value to write
+  * @param {boolean} littleEndian - defaults to true, set to false to write data in big endian byte order
+  */
+  writeInt16(value, littleEndian) {
+    this._data.setInt16(this._offset, value, littleEndian);
+    this._offset += 2;
+  }
+
+  /**
+  * Read an unsigned 32-bit integer from the stream, and automatically increment the offset
   * @param {boolean} littleEndian - defaults to true, set to false to read data in big endian byte order
   * @returns {number}
   */
@@ -93,7 +132,17 @@ export default class fileReader {
   }
 
   /**
-  * Read a signed 32-bit integer from the file, and automatically increment the offset
+  * Write an unsigned 32-bit integer to the stream, and automatically increment the offset
+  * @param {number} value - value to write
+  * @param {boolean} littleEndian - defaults to true, set to false to write data in big endian byte order
+  */
+  writeUint32(value, littleEndian) {
+    this._data.setUint32(this._offset, value, littleEndian);
+    this._offset += 4;
+  }
+
+  /**
+  * Read a signed 32-bit integer from the stream, and automatically increment the offset
   * @param {boolean} littleEndian - defaults to true, set to false to read data in big endian byte order
   * @returns {number}
   */
@@ -102,6 +151,17 @@ export default class fileReader {
     this._offset += 4;
     return val;
   }
+
+  /**
+  * Write a signed 32-bit integer to the stream, and automatically increment the offset
+  * @param {number} value - value to write
+  * @param {boolean} littleEndian - defaults to true, set to false to write data in big endian byte order
+  */
+  writeInt32(value, littleEndian) {
+    this._data.setInt32(this._offset, value, littleEndian);
+    this._offset += 4;
+  }
+
 
   /**
   * Read bytes and return a hex string
@@ -135,6 +195,17 @@ export default class fileReader {
       str += String.fromCharCode(char);
     }
     return str;
+  }
+
+  /**
+  * Write (simple) utf8 string
+  * @param {string} string - string to write
+  */
+  writeUtf8(string) {
+    for (let i = 0; i < string.length; i++) {
+      let char = string.charCodeAt(i);
+      this.writeUint8(char);
+    }
   }
 
   /**

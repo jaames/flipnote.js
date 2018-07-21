@@ -1,6 +1,6 @@
 import canvas from "webgl/canvas";
 import captureCanvas from "webgl/captureCanvas";
-import parser from "decoder";
+import parser from "parser";
 import loader from "loader";
 import audioTrack from "./audio";
 
@@ -126,7 +126,7 @@ export default class flipnotePlayer {
     this.meta = meta;
     this.frameCount = note.frameCount;
     this.frameSpeed = note.frameSpeed;
-    this.fileLength = note.fileLength;
+    this.fileLength = note.byteLength;
     this.loop = meta.loop == 1;
     this.paused = true;
     this._isOpen = true;
@@ -304,8 +304,8 @@ export default class flipnotePlayer {
     canvas.setPaperColor(colors[0]);
     canvas.clear();
     if (this.note.type == "PPM") {
-      canvas.drawLayer(layerBuffers[1], 256, 192, colors[2], [0,0,0,1]);
-      canvas.drawLayer(layerBuffers[0], 256, 192, colors[1], [0,0,0,1]);
+      canvas.drawLayer(layerBuffers[1], 256, 192, colors[2], [0,0,0,0]);
+      canvas.drawLayer(layerBuffers[0], 256, 192, colors[1], [0,0,0,0]);
     } else if (this.note.type == "KWZ") {
       canvas.drawLayer(layerBuffers[2], 320, 240, colors[5], colors[6]);
       canvas.drawLayer(layerBuffers[1], 320, 240, colors[3], colors[4]);

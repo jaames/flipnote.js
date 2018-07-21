@@ -1,4 +1,4 @@
-import fileReader from "./fileReader";
+import dataStream from "utils/dataStream";
 
 const FRAMERATES = [
   0.2,
@@ -24,7 +24,7 @@ const PALETTE = [
   [0xff, 0xff, 0xff]
 ];
 
-export default class kwzParser extends fileReader {
+export default class kwzParser extends dataStream {
 
   constructor(arrayBuffer) {
     super(arrayBuffer);
@@ -82,7 +82,7 @@ export default class kwzParser extends fileReader {
   load() {
     this.seek(0);
     this.sections = {};
-    let size = this.fileLength - 256;
+    let size = this.byteLength - 256;
     let offset = 0;
     let sectionCount = 0;
     // counting sections should mitigate against one of mrnbayoh's notehax exploits

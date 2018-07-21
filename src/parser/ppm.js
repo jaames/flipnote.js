@@ -22,8 +22,8 @@
  *  and to Hatena for providing the Flipnote Hatena online service, both of which inspired so many c:
 */
 
-import fileReader from "./fileReader";
-import {decodeAdpcm} from "./adpcm";
+import dataStream from "utils/dataStream";
+import {decodeAdpcm} from "utils/adpcm";
 
 // internal framerate value -> FPS table
 const FRAMERATES = {
@@ -44,7 +44,7 @@ const WHITE = [255, 255, 255, 255];
 const BLUE = [10, 57, 255, 255];
 const RED = [255, 42, 42, 255];
 
-export default class ppmParser extends fileReader {
+export default class ppmParser extends dataStream {
   /**
   * Create a ppmDecoder instance
   * @param {ArrayBuffer} arrayBuffer - data to read from

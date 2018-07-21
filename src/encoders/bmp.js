@@ -1,3 +1,5 @@
+import dataStream from "utils/dataStream";
+
 // round number to nearest multiple of n
 export function roundToNearest(value, n) {
   return Math.ceil(value / n) * n;
@@ -14,43 +16,47 @@ export default class BitmapRenderer {
     this.vWidth = roundToNearest(width, 4);
     this.vHeight = roundToNearest(height, 4);
     this.bpp = bpp;
-    this.fileHeader = new DataView(new ArrayBuffer(14));
-    this.fileHeader.setUint16(0, 0x424D); // "BM" file magic
+    this.fileHeader = new dataStream(new ArrayBuffer(14));
+    this.fileHeader.writeUtf8("BM"); // "BM" file magic
     // using BITMAPV4HEADER dib header variant:
-    this.dibHeader = new DataView(new ArrayBuffer(108));
-    this.dibHeader.setUint32(0, 108, true); // DIB header length
-    this.dibHeader.setInt32(4, width, true); // width
-    this.dibHeader.setInt32(8, height, true); // height
-    this.dibHeader.setUint16(12, 1, true); // color panes (always 1)
-    this.dibHeader.setUint16(14, bpp, true); // bits per pixel
-    this.dibHeader.setUint32(16, 3, true); // compression method (3 = BI_BITFIELDS for rgba, 0 = no compression for 8 bit)
-    this.dibHeader.setUint32(20, (this.vWidth * this.height) / (bpp / 8), true); // image data size, (width * height) / bits per pixel
-    this.dibHeader.setUint32(24, 3780, true); // x res, pixel per meter
-    this.dibHeader.setUint32(28, 3780, true); // y res, pixel per meter
-    this.dibHeader.setUint32(32, 0, true); // the number of colors in the color palette, set by setPalette() method
-    this.dibHeader.setUint32(36, 0, true); // the number of important colors used, or 0 when every color is important; generally ignored
-    this.dibHeader.setUint32(40, 0x00FF0000, true); // red channel bitmask
-    this.dibHeader.setUint32(44, 0x0000FF00, true); // green channel bitmask
-    this.dibHeader.setUint32(48, 0x000000FF, true); // blue channel bitmask
-    this.dibHeader.setUint32(52, 0xFF000000, true); // alpha channel bitmask
-    this.dibHeader.setUint32(56, 0x206E6957, true); // LCS_WINDOWS_COLOR_SPACE, little-endian "Win "
+    this.dibHeader = new dataStream(new ArrayBuffer(108))
+    this.dibHeader.writeUint32(108); // DIB header length
+    this.dibHeader.writeInt32(width); // width
+    this.dibHeader.writeInt32(height); // height
+    this.dibHeader.writeUint16(1); // color panes (always 1)
+    this.dibHeader.writeUint16(bpp); // bits per pixel
+    this.dibHeader.writeUint32(3); // compression method (3 = BI_BITFIELDS for rgba, 0 = no compression for 8 bit)
+    this.dibHeader.writeUint32((this.vWidth * this.height) / (bpp / 8)); // image data size, (width * height) / bits per pixel
+    this.dibHeader.writeUint32(3780); // x res, pixel per meter
+    this.dibHeader.writeUint32(3780); // y res, pixel per meter
+    this.dibHeader.writeUint32(0); // the number of colors in the color palette, set by setPalette() method
+    this.dibHeader.writeUint32(0); // the number of important colors used, or 0 when every color is important; generally ignored
+    this.dibHeader.writeUint32(0x00FF0000); // red channel bitmask
+    this.dibHeader.writeUint32(0x0000FF00); // green channel bitmask
+    this.dibHeader.writeUint32(0x000000FF); // blue channel bitmask
+    this.dibHeader.writeUint32(0xFF000000); // alpha channel bitmask
+    this.dibHeader.writeUtf8("Win "); // LCS_WINDOWS_COLOR_SPACE "Win "
     /// rest can be left as nulls
   }
 
   setFilelength(value) {
-    this.fileHeader.setUint32(2, value, true);
+    this.fileHeader.seek(2);
+    this.fileHeader.writeUint32(value);
   }
 
   setPixelOffset(value) {
-    this.fileHeader.setUint32(10, value, true);
+    this.fileHeader.seek(10);
+    this.fileHeader.writeUint32(value);
   }
 
   setCompression(value) {
-    this.dibHeader.setUint32(16, value, true);
+    this.fileHeader.seek(16);
+    this.dibHeader.writeUint32(value);
   }
 
   setPaletteCount(value) {
-    this.dibHeader.setUint32(32, value, true);
+    this.fileHeader.seek(32);
+    this.dibHeader.writeUint32(value);
   }
 
   setPalette(paletteData) {
