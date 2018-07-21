@@ -5,14 +5,14 @@ import canvas from "./canvas";
  * this is kept seperate since preserveDrawingBuffer makes drawing slightly slower
  */
 export default class captureCanvas extends canvas {
-  constructor() {
-    super(document.createElement("canvas"), 256, 192, {
+  constructor(width, height) {
+    super(document.createElement("canvas"), width, height, {
       antialias: true,
       preserveDrawingBuffer: true,
     });
     this.setFilter("linear");
-    this.width = 256;
-    this.height = 256;
+    this.width = width;
+    this.height = height;
   }
 
   /**
