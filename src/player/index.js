@@ -1,23 +1,10 @@
 import canvas from "webgl/canvas";
-import captureCanvas from "webgl/captureCanvas";
-import ppmDecoder from "decoder";
+import parser from "parser";
 import loader from "loader";
 import audioTrack from "./audio";
 
-// internal framerate value -> FPS table
-const FRAMERATES = {
-  1: 0.5,
-  2: 1,
-  3: 2,
-  4: 4,
-  5: 6,
-  6: 12,
-  7: 20,
-  8: 30,
-};
-
 /** flipnote player API, based on HTMLMediaElement (https://developer.mozilla.org/en-US/docs/Web/API/HTMLMediaElement) */ 
-export default class ppmPlayer {
+export default class flipnotePlayer {
   /**
   * Create new flipnote player
   * @param {string | HTMLCanvasElement} el - HTML Canvas Element to use, or CSS selector for one
@@ -28,7 +15,10 @@ export default class ppmPlayer {
     // if `el` is a string, use it to select an Element, else assume it's an element
     el = ("string" == typeof el) ? document.querySelector(el) : el;
     this.canvas = new canvas(el, width, height);
-    this._imgCanvas = new captureCanvas();
+    this._imgCanvas = new canvas(document.createElement("canvas"), width, height, {
+      antialias: true,
+      preserveDrawingBuffer: true,
+    });
     this._isOpen = false;
     this._events = {};
     this.loop = false;
@@ -115,7 +105,7 @@ export default class ppmPlayer {
   * Get the Flipnote framerate in frames-per-second
   */
   get framerate() {
-    return FRAMERATES[this.frameSpeed];
+    return this.note.framerate;
   }
 
   /**
@@ -123,7 +113,7 @@ export default class ppmPlayer {
   * @access protected
   */
   get _audiorate() {
-    return (1 / FRAMERATES[this.ppm.bgmSpeed]) / (1 / FRAMERATES[this.frameSpeed]);
+    return (1 / this.note.bgmrate) / (1 / this.note.framerate);
   }
 
   /**
@@ -132,24 +122,24 @@ export default class ppmPlayer {
   * @access protected
   */
   _load(buffer) {
-    var ppm = new ppmDecoder(buffer);
-    var meta = ppm.meta;
-    this.ppm = ppm;
+    var note = new parser(buffer);
+    var meta = note.meta;
+    this.note = note;
     this.meta = meta;
-    this.frameCount = ppm.frameCount;
-    this.frameSpeed = ppm.frameSpeed;
-    this.fileLength = ppm.fileLength;
+    this.frameCount = note.frameCount;
+    this.frameSpeed = note.frameSpeed;
+    this.fileLength = note.byteLength;
     this.loop = meta.loop == 1;
     this.paused = true;
     this._isOpen = true;
-    if (ppm.soundMeta.se1.length) this.audioTracks[0].set(this.ppm.decodeAudio("se1"), 1);
-    if (ppm.soundMeta.se2.length) this.audioTracks[1].set(this.ppm.decodeAudio("se2"), 1);
-    if (ppm.soundMeta.se3.length) this.audioTracks[2].set(this.ppm.decodeAudio("se3"), 1);
-    if (ppm.soundMeta.bgm.length) this.audioTracks[3].set(this.ppm.decodeAudio("bgm"), this._audiorate);
-    this._seFlags = this.ppm.decodeSoundFlags();
+    if (this.note.hasAudioTrack(1)) this.audioTracks[0].set(this.note.decodeAudio("se1"), 1);
+    if (this.note.hasAudioTrack(2)) this.audioTracks[1].set(this.note.decodeAudio("se2"), 1);
+    if (this.note.hasAudioTrack(3)) this.audioTracks[2].set(this.note.decodeAudio("se3"), 1);
+    if (this.note.hasAudioTrack(0)) this.audioTracks[3].set(this.note.decodeAudio("bgm"), this._audiorate);
+    this._seFlags = this.note.decodeSoundFlags();
     this._playbackLoop = null;
     this._hasPlaybackStarted = false;
-    this.setFrame(this.ppm.thumbFrameIndex);
+    this.setFrame(this.note.thumbFrameIndex);
     this.emit("load");
   }
 
@@ -173,7 +163,7 @@ export default class ppmPlayer {
   */
   close() {
     this.pause();
-    this.ppm = null;
+    this.note = null;
     this._isOpen = false;
     this.paused = true;
     this.loop = null;
@@ -283,9 +273,7 @@ export default class ppmPlayer {
     if (canvas.width !== width || canvas.height !== height) canvas.setSize(width, height);
     // clamp frame index
     index = Math.max(0, Math.min(index, this.frameCount - 1));
-    canvas.setPalette(this.ppm.getFramePalette(index));
-    canvas.setBitmaps(this.ppm.decodeFrame(index));
-    canvas.refresh();
+    this.drawFrame(index, canvas);
     return canvas.toImage(type, encoderOptions);
   }
 
@@ -295,7 +283,7 @@ export default class ppmPlayer {
   * @param {number} encoderOptions - number between 0 and 1 indicating image quality if type is image/jpeg or image/webp
   */
   getThumbImage(width, height, type, encoderOptions) {
-    return this.getFrameImage(this.ppm.thumbFrameIndex, width, height, type, encoderOptions);
+    return this.getFrameImage(this.note.thumbFrameIndex, width, height, type, encoderOptions);
   }
 
   /**
@@ -308,17 +296,31 @@ export default class ppmPlayer {
     index = Math.max(0, Math.min(Math.floor(index), this.frameCount - 1));
     this._frame = index;
     this._playbackFrameTime = 0;
-    this.canvas.setPalette(this.ppm.getFramePalette(index));
-    this.canvas.setBitmaps(this.ppm.decodeFrame(index));
-    this.canvas.refresh();
+    this.drawFrame(index, this.canvas);
     this.emit("frame:update", this.currentFrame);
+  }
+
+  drawFrame(frameIndex, canvas) {
+    let colors = this.note.getFramePalette(frameIndex);
+    let layerBuffers = this.note.decodeFrame(frameIndex);
+    canvas.setPaperColor(colors[0]);
+    canvas.clear();
+    if (this.note.type == "PPM") {
+      canvas.drawLayer(layerBuffers[1], 256, 192, colors[2], [0,0,0,0]);
+      canvas.drawLayer(layerBuffers[0], 256, 192, colors[1], [0,0,0,0]);
+    } else if (this.note.type == "KWZ") {
+      canvas.drawLayer(layerBuffers[2], 320, 240, colors[5], colors[6]);
+      canvas.drawLayer(layerBuffers[1], 320, 240, colors[3], colors[4]);
+      canvas.drawLayer(layerBuffers[0], 320, 240, colors[1], colors[2]);
+    }
+    
   }
 
   /**
   * Jump to the thumbnail frame
   */
   thumbnailFrame() {
-    this.currentFrame = this.ppm.thumbFrameIndex;
+    this.currentFrame = this.note.thumbFrameIndex;
   }
 
   /**

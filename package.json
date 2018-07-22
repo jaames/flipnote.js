@@ -1,6 +1,6 @@
 {
   "name": "flipnote.js",
-  "version": "1.5.3",
+  "version": "2.0.0",
   "description": "API for handling Flipnote Studio's .ppm animation format, capable of real-time playback using webGL",
   "main": "dist/flipnote.js",
   "scripts": {
@@ -13,7 +13,10 @@
   "keywords": [
     "flipnote",
     "studio",
+    "3D",
     "ugomemo",
+    "ppm",
+    "kwz",
     "animation",
     "decoder",
     "nintendo",

@@ -1,15 +1,12 @@
 export default `
 precision mediump float;
 varying vec2 v_texcoord;
-uniform vec4 u_paperColor;
-uniform vec4 u_layer1Color;
-uniform vec4 u_layer2Color;
-uniform bool u_layer1Visibility;
-uniform bool u_layer2Visibility;
-uniform sampler2D u_layer1Bitmap;
-uniform sampler2D u_layer2Bitmap;
+uniform vec4 u_color1;
+uniform vec4 u_color2;
+uniform sampler2D u_bitmap;
 void main() {
-  float layer1 = u_layer1Visibility ? texture2D(u_layer1Bitmap, v_texcoord).a * 255.0 : 0.0;
-  float layer2 = u_layer2Visibility ? texture2D(u_layer2Bitmap, v_texcoord).a * 255.0 : 0.0;
-  gl_FragColor = mix(mix(u_paperColor, u_layer2Color, layer2), u_layer1Color, layer1);
+  float index = texture2D(u_bitmap, v_texcoord).a * 255.0;
+  float weightColor1 = smoothstep(0.0, 1.0, index);
+  float weightColor2 = smoothstep(1.0, 2.0, index);
+  gl_FragColor = mix(vec4(0, 0, 0, 0), mix(u_color1, u_color2, weightColor2), weightColor1);
 }`
