@@ -39,10 +39,10 @@ const FRAMERATES = {
 
 const WIDTH = 256;
 const HEIGHT = 192;
-const BLACK = [14, 14, 14, 255];
-const WHITE = [255, 255, 255, 255];
-const BLUE = [10, 57, 255, 255];
-const RED = [255, 42, 42, 255];
+const BLACK = [0x0E, 0x0E, 0x0E];
+const WHITE = [0xFF, 0xFF, 0xff];
+const BLUE = [0x0A, 0x39, 0xFF];
+const RED = [0xFF, 0x2A, 0x2A];
 
 export default class ppmParser extends dataStream {
   /**
@@ -91,79 +91,18 @@ export default class ppmParser extends dataStream {
   static validateFilename(filename) {
     return /[0-9A-F]{6}_[0-9A-F]{13}_[0-9]{3}/.test(filename);
   }
-  
-  /**
-  * Seek the buffer position to the start of a given frame
-  * @param {number} index - zero-based frame index to jump to
-  * @access protected
-  */
-  _seekToFrame(index) {
-    this.seek(this._frameOffsets[index]);
-  }
 
   /**
-  * Seek the buffer position to the start of a given audio track
-  * @param {string} track - track name, "bgm" | "se1" | "se2" | "se3"
-  * @access protected
-  */
-  _seekToAudio(track) {
-    this.seek(this.soundMeta[track].offset);
-  }
-
-  /**
-  * Read an UTF-16 little-endian string (for usernames)
-  * @param {number} length - max length of the string in bytes (including padding)
+  * Read a packed filename
   * @returns {string}
   * @access protected
   */
-  _readUtf16(length) {
-    var str = "";
-    var terminated = false;
-    for (var i = 0; i < length / 2; i++) {
-      var char = this.readUint16();
-      // utf16 stings in flipnotes are terminated with null bytes (0x00) 
-      if ((terminated) || (char == 0)) { 
-        terminated = true;
-        continue;
-      }
-      str += String.fromCharCode(char);
-    }
-    return str;
-  }
-
-  /**
-  * Read a hex string (for FSIDs and filenames)
-  * @param {number} length - max length of the string in bytes
-  * @param {boolean} reverse - defaults to false, if true, the string will be read in reverse byte order
-  * @returns {string}
-  * @access protected
-  */
-  _readHex(length, reverse=false) {
-    var ret = [];
-    for (var i = 0; i < length; i++) {
-      ret.push(this.readUint8().toString(16).padStart(2, "0"));
-    }
-    if (reverse) ret.reverse();
-    return ret.join("").toUpperCase();
-  }
-
-  /**
-  * Read a HEX string 
-  * @returns {string}
-  * @access protected
-  */
-  _readFilename() {
-    var str = "";
-    // filename starts with 3 hex bytes
-    str += this._readHex(3) + "_";
-    // then 13 byte utf8 string
-    for (var i = 0; i < 13; i++) {
-      str += String.fromCharCode(this.readUint8());
-    }
-    str += "_";
-    // then 2-byte edit count padded to 3 chars
-    str += this.readUint16().toString().padStart(3, "0");
-    return str;
+  readFilename() {
+    return [
+      this.readHex(3),
+      this.readUtf8(13),
+      this.readUint16().toString().padStart(3, "0")
+    ].join("_");
   }
 
   /**
@@ -171,7 +110,7 @@ export default class ppmParser extends dataStream {
   * @returns {array}
   * @access protected
   */
-  _readLineEncoding() {
+  readLineEncoding() {
     var unpacked = new Uint8Array(HEIGHT);
     for (var byteOffset = 0; byteOffset < 48; byteOffset ++) {
       var byte = this.readUint8();
@@ -193,14 +132,14 @@ export default class ppmParser extends dataStream {
     this.seek(0x10);
     var lock = this.readUint16(),
         thumbIndex = this.readInt16(),
-        rootAuthorName = this._readUtf16(22),
-        parentAuthorName = this._readUtf16(22),
-        currentAuthorName = this._readUtf16(22),
-        parentAuthorId = this._readHex(8, true),
-        currentAuthorId = this._readHex(8, true),
-        parentFilename = this._readFilename(),
-        currentFilename = this._readFilename(),
-        rootAuthorId = this._readHex(8, true);
+        rootAuthorName = this.readUtf16(11),
+        parentAuthorName = this.readUtf16(11),
+        currentAuthorName = this.readUtf16(11),
+        parentAuthorId = this.readHex(8, true),
+        currentAuthorId = this.readHex(8, true),
+        parentFilename = this.readFilename(),
+        currentFilename = this.readFilename(),
+        rootAuthorId = this.readHex(8, true);
     this.seek(0x9A);
     var timestamp = new Date((this.readUint32() + 946684800) * 1000);
     this.seek(0x06A6);
@@ -215,6 +154,7 @@ export default class ppmParser extends dataStream {
       timestamp: timestamp,
       spinoff: (currentAuthorId !== parentAuthorId) || (currentAuthorId !== rootAuthorId),
       root: {
+        filename: null,
         username: rootAuthorName,
         fsid: rootAuthorId,
       },
@@ -264,31 +204,10 @@ export default class ppmParser extends dataStream {
   * @param {number} index - zero-based frame index 
   * @returns {boolean}
   */
-  _isFrameNew(index) {
-    this._seekToFrame(index);
+  isNewFrame(index) {
+    this.seek(this._frameOffsets[index]);
     var header = this.readUint8();
     return (header >> 7) & 0x1;
-  }
-
-  /**
-  * Helper to decode necessary previous frames if the current frame is difference-based
-  * @param {number} index - zero-based frame index 
-  */
-  _decodePrevFrames(index) {
-    var backTrack = 0;
-    var isNew = 0;
-    while (!isNew) {
-      backTrack += 1;
-      isNew = this._isFrameNew(index - backTrack);
-    }
-    backTrack = index - backTrack;
-    while (backTrack < index) {
-      this.decodeFrame(backTrack, false);
-      backTrack += 1;
-    }
-    // jump back to where we were and skip flag byte
-    this._seekToFrame(index);
-    this.seek(1, 1);
   }
 
   /**
@@ -297,7 +216,7 @@ export default class ppmParser extends dataStream {
   * @returns {array} rgba palette in order of paper, layer1, layer2
   */
   getFramePalette(index) {
-    this._seekToFrame(index);
+    this.seek(this._frameOffsets[index]);
     var header = this.readUint8();
     var paperColor = header & 0x1;
     var pen = [
@@ -316,20 +235,18 @@ export default class ppmParser extends dataStream {
   /**
   * Decode a frame
   * @param {number} index - zero-based frame index 
-  * @param {boolean} decodePrev - defaults to true, set to false to not bother decoding previous frames
-  */
-  decodeFrame(index, decodePrev=true) {
+  * @returns {array} - 2 uint8 arrays representing each layer
+  * */
+  decodeFrame(index) {
+    if ((index !== 0) && (this._prevFrameIndex !== index - 1) && (!this.isNewFrame(index)))
+      this.decodeFrame(index - 1);
     // https://github.com/pbsds/hatena-server/wiki/PPM-format#animation-frame
-    this._seekToFrame(index);
+    this.seek(this._frameOffsets[index]);
     var header = this.readUint8();
     var isNewFrame = (header >> 7) & 0x1;
     var isTranslated = (header >> 5) & 0x3;
     var translateX = 0;
     var translateY = 0;
-
-    if ((decodePrev) && (!isNewFrame) && (index !== this._prevFrameIndex + 1)) {
-      this._decodePrevFrames(index);
-    }
     // copy the current layer buffers to the previous ones
     this._prevLayers[0].set(this._layers[0]);
     this._prevLayers[1].set(this._layers[1]);
@@ -344,8 +261,8 @@ export default class ppmParser extends dataStream {
     }
 
     var layerEncoding = [
-      this._readLineEncoding(),
-      this._readLineEncoding()
+      this.readLineEncoding(),
+      this.readLineEncoding()
     ];
      // start decoding layer bitmaps
     for (var layer = 0; layer < 2; layer++) {
@@ -420,10 +337,8 @@ export default class ppmParser extends dataStream {
   * @returns {Int16Array}
   */
   decodeAudio(track) {
-    this._seekToAudio(track);
-    var buffer = new Uint8Array(this.soundMeta[track].length).map(value => {
-      return this.readUint8();
-    });
+    let meta = this.soundMeta[track];
+    let buffer = new Uint8Array(this.buffer, meta.offset, meta.length);
     return decodeAdpcm(buffer);
   }
 

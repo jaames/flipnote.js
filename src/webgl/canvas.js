@@ -10,10 +10,10 @@ export default class webglCanvas {
   * @param {number} height - height of the canvas in pixels
   * @param {Object} params - optional params to pass to web gl context
   */
-  constructor(el, width, height, params) {
-    this.width = el.width = width || 256;
-    this.height= el.height = height || 192; 
-    var gl = el.getContext("webgl", params || {antialias: false});
+  constructor(el, width=640, height=480, params={antialias: false}) {
+    this.width = el.width = width;
+    this.height = el.height = height; 
+    var gl = el.getContext("webgl", params);
     var program = gl.createProgram();
     this.program = program;
     this.el = el;
@@ -82,6 +82,16 @@ export default class webglCanvas {
   }
 
   /**
+  * get the canvas content as an image
+  * @param {string} type - image MIME type, default is image/png
+  * @param {number} encoderOptions - number between 0 and 1 indicating image quality if type is image/jpeg or image/webp
+  * @returns {DataUrl}
+  */
+  toImage(type, encoderOptions) {
+    return this.el.toDataURL(type, encoderOptions);
+  }
+
+  /**
   * Set the texture filter
   * @param {string} filter - "linear" | "nearest"
   */
@@ -134,9 +144,11 @@ export default class webglCanvas {
   * @param {number} width - width of the canvas in pixels
   * @param {number} height - height of the canvas in pixels
   */
-  resize(width=256, height=192) {
+  resize(width=640, height=480) {
     this.el.width = width;
     this.el.height = height; 
+    this.width = width;
+    this.height = height;
     this.gl.viewport(0, 0, width, height);
   }
 

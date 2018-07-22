@@ -1,5 +1,4 @@
 import canvas from "webgl/canvas";
-import captureCanvas from "webgl/captureCanvas";
 import parser from "parser";
 import loader from "loader";
 import audioTrack from "./audio";
@@ -16,7 +15,10 @@ export default class flipnotePlayer {
     // if `el` is a string, use it to select an Element, else assume it's an element
     el = ("string" == typeof el) ? document.querySelector(el) : el;
     this.canvas = new canvas(el, width, height);
-    this._imgCanvas = new captureCanvas();
+    this._imgCanvas = new canvas(document.createElement("canvas"), width, height, {
+      antialias: true,
+      preserveDrawingBuffer: true,
+    });
     this._isOpen = false;
     this._events = {};
     this.loop = false;

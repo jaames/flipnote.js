@@ -2,6 +2,7 @@ import ppmParser from "./ppm";
 import kwzParser from "./kwz";
 
 export default function parser(arrayBuffer) {
+  // check the buffer's magic to identify which format it uses
   let data = new DataView(arrayBuffer, 0, 4);
   let magic = data.getUint32(0);
   // check if magic is PARA (ppm magic)

@@ -22,13 +22,13 @@ export default class wavEncoder {
     // specify audio format is pcm (type 1)
     header.writeUint16(1);
     // number of audio channels
-    header.writeUint16(this.channelCount);
+    header.writeUint16(this.channels);
     // audio sample rate
     header.writeUint32(this.sampleRate);
     // byterate = (sampleRate * bitsPerSample * channelCount) / 8
-    header.writeUint32((this.sampleRate * this.bitsPerSample * this.channelCount) / 8);
+    header.writeUint32((this.sampleRate * this.bitsPerSample * this.channels) / 8);
     // blockalign = (bitsPerSample * channels) / 8
-    header.writeUint16((this.bitsPerSample * this.channelCount) / 8);
+    header.writeUint16((this.bitsPerSample * this.channels) / 8);
     // bits per sample
     header.writeUint16(this.bitsPerSample);
     // "data" section header

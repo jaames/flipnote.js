@@ -94,7 +94,7 @@ export default class dataStream {
   * @param {number} value - value to write
   * @param {boolean} littleEndian - defaults to true, set to false to write data in big endian byte order
   */
-  writeUint16(value, littleEndian) {
+  writeUint16(value, littleEndian=true) {
     this._data.setUint16(this._offset, value, littleEndian);
     this._offset += 2;
   }
@@ -115,7 +115,7 @@ export default class dataStream {
   * @param {number} value - value to write
   * @param {boolean} littleEndian - defaults to true, set to false to write data in big endian byte order
   */
-  writeInt16(value, littleEndian) {
+  writeInt16(value, littleEndian=true) {
     this._data.setInt16(this._offset, value, littleEndian);
     this._offset += 2;
   }
@@ -136,7 +136,7 @@ export default class dataStream {
   * @param {number} value - value to write
   * @param {boolean} littleEndian - defaults to true, set to false to write data in big endian byte order
   */
-  writeUint32(value, littleEndian) {
+  writeUint32(value, littleEndian=true) {
     this._data.setUint32(this._offset, value, littleEndian);
     this._offset += 4;
   }
@@ -157,7 +157,7 @@ export default class dataStream {
   * @param {number} value - value to write
   * @param {boolean} littleEndian - defaults to true, set to false to write data in big endian byte order
   */
-  writeInt32(value, littleEndian) {
+  writeInt32(value, littleEndian=true) {
     this._data.setInt32(this._offset, value, littleEndian);
     this._offset += 4;
   }
