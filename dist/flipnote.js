@@ -1,5 +1,5 @@
 /*!
- * flipnote.js v1.5.3
+ * flipnote.js v2.0.1
  * Real-time, browser-based playback of Flipnote Studio's .ppm animation format
  * 2018 James Daniel
  * github.com/jaames/flipnote.js
@@ -14,7 +14,7 @@
 		exports["flipnote"] = factory();
 	else
 		root["flipnote"] = factory();
-})(this, function() {
+})(typeof self !== 'undefined' ? self : this, function() {
 return /******/ (function(modules) { // webpackBootstrap
 /******/ 	// The module cache
 /******/ 	var installedModules = {};
@@ -77,7 +77,7 @@ return /******/ (function(modules) { // webpackBootstrap
 /******/ 	__webpack_require__.p = "";
 /******/
 /******/ 	// Load entry module and return exports
-/******/ 	return __webpack_require__(__webpack_require__.s = 1);
+/******/ 	return __webpack_require__(__webpack_require__.s = 2);
 /******/ })
 /************************************************************************/
 /******/ ([
@@ -93,11 +93,333 @@ Object.defineProperty(exports, "__esModule", {
 
 var _createClass = function () { function defineProperties(target, props) { for (var i = 0; i < props.length; i++) { var descriptor = props[i]; descriptor.enumerable = descriptor.enumerable || false; descriptor.configurable = true; if ("value" in descriptor) descriptor.writable = true; Object.defineProperty(target, descriptor.key, descriptor); } } return function (Constructor, protoProps, staticProps) { if (protoProps) defineProperties(Constructor.prototype, protoProps); if (staticProps) defineProperties(Constructor, staticProps); return Constructor; }; }();
 
-var _vertexShaderGlsl = __webpack_require__(3);
+function _classCallCheck(instance, Constructor) { if (!(instance instanceof Constructor)) { throw new TypeError("Cannot call a class as a function"); } }
+
+/** datastream serves as a wrapper around the DataView API to help keep track of the offset into the stream */
+var dataStream = function () {
+  /**
+  * Create a fileReader instance
+  * @param {ArrayBuffer} arrayBuffer - data to read from
+  */
+  function dataStream(arrayBuffer) {
+    _classCallCheck(this, dataStream);
+
+    this.buffer = arrayBuffer;
+    this._data = new DataView(arrayBuffer);
+    this._offset = 0;
+  }
+
+  /**
+  * Get the length of the stream
+  * @returns {number}
+  */
+
+
+  _createClass(dataStream, [{
+    key: "seek",
+
+
+    /**
+    * based on the seek method from Python's file objects - https://www.tutorialspoint.com/python/file_seek.htm
+    * @param {number} offset - position of the read pointer within the stream
+    * @param {number} whence - (optional) defaults to absolute file positioning,
+    *                          1 = offset is relative to the current position
+    *                          2 = offset is relative to the stream's end
+    */
+    value: function seek(offset, whence) {
+      switch (whence) {
+        case 2:
+          this._offset = this._data.byteLength + offset;
+          break;
+        case 1:
+          this._offset += offset;
+          break;
+        case 0:
+        default:
+          this._offset = offset;
+          break;
+      }
+    }
+
+    /**
+    * Read an unsigned 8-bit integer from the stream, and automatically increment the offset
+    * @returns {number}
+    */
+
+  }, {
+    key: "readUint8",
+    value: function readUint8() {
+      var val = this._data.getUint8(this._offset);
+      this._offset += 1;
+      return val;
+    }
+
+    /**
+    * Write an unsigned 8-bit integer to the stream, and automatically increment the offset
+    * @param {number} value - value to write
+    */
+
+  }, {
+    key: "writeUint8",
+    value: function writeUint8(value) {
+      this._data.setUint8(this._offset, value);
+      this._offset += 1;
+    }
+
+    /**
+    * Read a signed 8-bit integer from the stream, and automatically increment the offset
+    * @returns {number}
+    */
+
+  }, {
+    key: "readInt8",
+    value: function readInt8() {
+      var val = this._data.getInt8(this._offset);
+      this._offset += 1;
+      return val;
+    }
+
+    /**
+    * Write a signed 8-bit integer to the stream, and automatically increment the offset
+    * @param {number} value - value to write
+    */
+
+  }, {
+    key: "writeInt8",
+    value: function writeInt8(value) {
+      this._data.setInt8(this._offset, value);
+      this._offset += 1;
+    }
+
+    /**
+    * Read an unsigned 16-bit integer from the stream, and automatically increment the offset
+    * @param {boolean} littleEndian - defaults to true, set to false to read data in big endian byte order
+    * @returns {number}
+    */
+
+  }, {
+    key: "readUint16",
+    value: function readUint16() {
+      var littleEndian = arguments.length > 0 && arguments[0] !== undefined ? arguments[0] : true;
+
+      var val = this._data.getUint16(this._offset, littleEndian);
+      this._offset += 2;
+      return val;
+    }
+
+    /**
+    * Write an unsigned 16-bit integer to the stream, and automatically increment the offset
+    * @param {number} value - value to write
+    * @param {boolean} littleEndian - defaults to true, set to false to write data in big endian byte order
+    */
+
+  }, {
+    key: "writeUint16",
+    value: function writeUint16(value) {
+      var littleEndian = arguments.length > 1 && arguments[1] !== undefined ? arguments[1] : true;
+
+      this._data.setUint16(this._offset, value, littleEndian);
+      this._offset += 2;
+    }
+
+    /**
+    * Read a signed 16-bit integer from the stream, and automatically increment the offset
+    * @param {boolean} littleEndian - defaults to true, set to false to read data in big endian byte order
+    * @returns {number}
+    */
+
+  }, {
+    key: "readInt16",
+    value: function readInt16() {
+      var littleEndian = arguments.length > 0 && arguments[0] !== undefined ? arguments[0] : true;
+
+      var val = this._data.getInt16(this._offset, littleEndian);
+      this._offset += 2;
+      return val;
+    }
+
+    /**
+    * Write a signed 16-bit integer to the stream, and automatically increment the offset
+    * @param {number} value - value to write
+    * @param {boolean} littleEndian - defaults to true, set to false to write data in big endian byte order
+    */
+
+  }, {
+    key: "writeInt16",
+    value: function writeInt16(value) {
+      var littleEndian = arguments.length > 1 && arguments[1] !== undefined ? arguments[1] : true;
+
+      this._data.setInt16(this._offset, value, littleEndian);
+      this._offset += 2;
+    }
+
+    /**
+    * Read an unsigned 32-bit integer from the stream, and automatically increment the offset
+    * @param {boolean} littleEndian - defaults to true, set to false to read data in big endian byte order
+    * @returns {number}
+    */
+
+  }, {
+    key: "readUint32",
+    value: function readUint32() {
+      var littleEndian = arguments.length > 0 && arguments[0] !== undefined ? arguments[0] : true;
+
+      var val = this._data.getUint32(this._offset, littleEndian);
+      this._offset += 4;
+      return val;
+    }
+
+    /**
+    * Write an unsigned 32-bit integer to the stream, and automatically increment the offset
+    * @param {number} value - value to write
+    * @param {boolean} littleEndian - defaults to true, set to false to write data in big endian byte order
+    */
+
+  }, {
+    key: "writeUint32",
+    value: function writeUint32(value) {
+      var littleEndian = arguments.length > 1 && arguments[1] !== undefined ? arguments[1] : true;
+
+      this._data.setUint32(this._offset, value, littleEndian);
+      this._offset += 4;
+    }
+
+    /**
+    * Read a signed 32-bit integer from the stream, and automatically increment the offset
+    * @param {boolean} littleEndian - defaults to true, set to false to read data in big endian byte order
+    * @returns {number}
+    */
+
+  }, {
+    key: "readInt32",
+    value: function readInt32() {
+      var littleEndian = arguments.length > 0 && arguments[0] !== undefined ? arguments[0] : true;
+
+      var val = this._data.getInt32(this._offset, littleEndian);
+      this._offset += 4;
+      return val;
+    }
+
+    /**
+    * Write a signed 32-bit integer to the stream, and automatically increment the offset
+    * @param {number} value - value to write
+    * @param {boolean} littleEndian - defaults to true, set to false to write data in big endian byte order
+    */
+
+  }, {
+    key: "writeInt32",
+    value: function writeInt32(value) {
+      var littleEndian = arguments.length > 1 && arguments[1] !== undefined ? arguments[1] : true;
+
+      this._data.setInt32(this._offset, value, littleEndian);
+      this._offset += 4;
+    }
+
+    /**
+    * Read bytes and return a hex string
+    * @param {number} count - number of bytes to read
+    * @param {bool} reverse - pass true to reverse byte order
+    * @returns {string}
+    */
+
+  }, {
+    key: "readHex",
+    value: function readHex(count) {
+      var reverse = arguments.length > 1 && arguments[1] !== undefined ? arguments[1] : false;
+
+      var bytes = new Uint8Array(this._data.buffer, this._offset, count);
+      this._offset += bytes.byteLength;
+      var hex = [];
+      for (var i = 0; i < bytes.length; i++) {
+        hex.push(bytes[i].toString(16).padStart(2, "0"));
+      }
+      if (reverse) hex.reverse();
+      return hex.join("").toUpperCase();
+    }
+
+    /**
+    * Read (simple) utf8 string
+    * @param {number} count - number of characters to read
+    * @returns {string}
+    */
+
+  }, {
+    key: "readUtf8",
+    value: function readUtf8(count) {
+      var chars = new Uint8Array(this._data.buffer, this._offset, count);
+      this._offset += chars.byteLength;
+      var str = "";
+      for (var i = 0; i < chars.length; i++) {
+        var char = chars[i];
+        if (char == 0) break;
+        str += String.fromCharCode(char);
+      }
+      return str;
+    }
+
+    /**
+    * Write (simple) utf8 string
+    * @param {string} string - string to write
+    */
+
+  }, {
+    key: "writeUtf8",
+    value: function writeUtf8(string) {
+      for (var i = 0; i < string.length; i++) {
+        var char = string.charCodeAt(i);
+        this.writeUint8(char);
+      }
+    }
+
+    /**
+    * Read (simple) utf16 string
+    * @param {number} count - number of characters to read
+    * @returns {string}
+    */
+
+  }, {
+    key: "readUtf16",
+    value: function readUtf16(count) {
+      var chars = new Uint16Array(this._data.buffer, this._offset, count);
+      this._offset += chars.byteLength;
+      var str = "";
+      for (var i = 0; i < chars.length; i++) {
+        var char = chars[i];
+        if (char == 0) break;
+        str += String.fromCharCode(char);
+      }
+      return str;
+    }
+  }, {
+    key: "byteLength",
+    get: function get() {
+      return this._data.byteLength;
+    }
+  }]);
+
+  return dataStream;
+}();
+
+exports.default = dataStream;
+
+/***/ }),
+/* 1 */
+/***/ (function(module, exports, __webpack_require__) {
+
+"use strict";
+
+
+Object.defineProperty(exports, "__esModule", {
+  value: true
+});
+
+var _createClass = function () { function defineProperties(target, props) { for (var i = 0; i < props.length; i++) { var descriptor = props[i]; descriptor.enumerable = descriptor.enumerable || false; descriptor.configurable = true; if ("value" in descriptor) descriptor.writable = true; Object.defineProperty(target, descriptor.key, descriptor); } } return function (Constructor, protoProps, staticProps) { if (protoProps) defineProperties(Constructor.prototype, protoProps); if (staticProps) defineProperties(Constructor, staticProps); return Constructor; }; }();
+
+var _vertexShaderGlsl = __webpack_require__(4);
 
 var _vertexShaderGlsl2 = _interopRequireDefault(_vertexShaderGlsl);
 
-var _fragmentShaderGlsl = __webpack_require__(4);
+var _fragmentShaderGlsl = __webpack_require__(5);
 
 var _fragmentShaderGlsl2 = _interopRequireDefault(_fragmentShaderGlsl);
 
@@ -114,12 +436,16 @@ var webglCanvas = function () {
   * @param {number} height - height of the canvas in pixels
   * @param {Object} params - optional params to pass to web gl context
   */
-  function webglCanvas(el, width, height, params) {
+  function webglCanvas(el) {
+    var width = arguments.length > 1 && arguments[1] !== undefined ? arguments[1] : 640;
+    var height = arguments.length > 2 && arguments[2] !== undefined ? arguments[2] : 480;
+    var params = arguments.length > 3 && arguments[3] !== undefined ? arguments[3] : { antialias: false };
+
     _classCallCheck(this, webglCanvas);
 
-    el.width = width || 256;
-    el.height = height || 192;
-    var gl = el.getContext("webgl", params || { antialias: false });
+    this.width = el.width = width;
+    this.height = el.height = height;
+    var gl = el.getContext("webgl", params);
     var program = gl.createProgram();
     this.program = program;
     this.el = el;
@@ -145,17 +471,22 @@ var webglCanvas = function () {
     gl.useProgram(program);
     // create quad that fills the screen, this will be our drawing surface
     var vertBuffer = gl.createBuffer();
-    this.refs.buffers.push(vertBuffer);
     gl.bindBuffer(gl.ARRAY_BUFFER, vertBuffer);
     gl.bufferData(gl.ARRAY_BUFFER, new Float32Array([1, 1, -1, 1, -1, -1, 1, 1, -1, -1, 1, -1]), gl.STATIC_DRAW);
     gl.enableVertexAttribArray(0);
     gl.vertexAttribPointer(0, 2, gl.FLOAT, false, 0, 0);
-    // create textures for each layer
-    this._createTexture("u_layer1Bitmap", 0, gl.TEXTURE0);
-    this._createTexture("u_layer2Bitmap", 1, gl.TEXTURE1);
-    this.setFilter();
-    this.setLayerVisibilty(1, true);
-    this.setLayerVisibilty(2, true);
+    this.refs.buffers.push(vertBuffer);
+    // create texture to use as the layer bitmap
+    gl.activeTexture(gl.TEXTURE0);
+    var tex = gl.createTexture();
+    gl.bindTexture(gl.TEXTURE_2D, tex);
+    gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_S, gl.CLAMP_TO_EDGE);
+    gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_T, gl.CLAMP_TO_EDGE);
+    gl.uniform1i(gl.getUniformLocation(this.program, "u_bitmap"), 0);
+    this.setFilter("nearest");
+    this.refs.textures.push(tex);
+    gl.enable(gl.BLEND);
+    gl.blendFunc(gl.ONE, gl.ONE_MINUS_SRC_ALPHA);
   }
 
   /**
@@ -185,24 +516,16 @@ var webglCanvas = function () {
     }
 
     /**
-    * Util to set up a texture
-    * @param {string} name - name of the texture's uniform variable
-    * @param {number} index - texture index
-    * @param {texture} texture - webgl texture unit, gl.TEXTURE0, gl.TEXTURE1, etc
-    * @access protected 
+    * get the canvas content as an image
+    * @param {string} type - image MIME type, default is image/png
+    * @param {number} encoderOptions - number between 0 and 1 indicating image quality if type is image/jpeg or image/webp
+    * @returns {DataUrl}
     */
 
   }, {
-    key: "_createTexture",
-    value: function _createTexture(name, index, texture) {
-      var gl = this.gl;
-      gl.uniform1i(gl.getUniformLocation(this.program, name), index);
-      gl.activeTexture(texture);
-      var tex = gl.createTexture();
-      gl.bindTexture(gl.TEXTURE_2D, tex);
-      gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_S, gl.CLAMP_TO_EDGE);
-      gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_T, gl.CLAMP_TO_EDGE);
-      this.refs.textures.push(tex);
+    key: "toImage",
+    value: function toImage(type, encoderOptions) {
+      return this.el.toDataURL(type, encoderOptions);
     }
 
     /**
@@ -215,63 +538,54 @@ var webglCanvas = function () {
     value: function setFilter(filter) {
       var gl = this.gl;
       filter = filter == "linear" ? gl.LINEAR : gl.NEAREST;
-      [gl.TEXTURE0, gl.TEXTURE1].map(function (texture) {
-        gl.activeTexture(texture);
-        gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MIN_FILTER, filter);
-        gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MAG_FILTER, filter);
-      });
+      gl.activeTexture(gl.TEXTURE0);
+      gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MIN_FILTER, filter);
+      gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MAG_FILTER, filter);
     }
 
     /**
-    * Set layer visibility
-    * @param {number} layerIndex - 1 or 2
-    * @param {number} flag - 1 - show, 0 = hide
-    */
-
-  }, {
-    key: "setLayerVisibilty",
-    value: function setLayerVisibilty(layerIndex, flag) {
-      this.gl.uniform1i(this.gl.getUniformLocation(this.program, "u_layer" + layerIndex + "Visibility"), flag);
-    }
-
-    /**
-    * Set an palette individual color
+    * Set a color
     * @param {string} color - name of the color's uniform variable
-    * @param {array} value - r,g,b,a color, each channel's value should be between 0.0 and 1.0
+    * @param {array} value - r,g,b color, each channel's value should be between 0 and 255
     */
 
   }, {
     key: "setColor",
     value: function setColor(color, value) {
-      this.gl.uniform4f(this.gl.getUniformLocation(this.program, color), value[0] / 255, value[1] / 255, value[2] / 255, value[3] / 255);
+      this.gl.uniform4f(this.gl.getUniformLocation(this.program, color), value[0] / 255, value[1] / 255, value[2] / 255, 1);
     }
 
     /**
-    * Set the palette
-    * @param {array} colors - array of r,g,b,a colors with channel values from 0.0 to 1.0, in order of paper, layer1, layer2
+    * Set an palette individual color
+    * @param {array} value - r,g,b,a color, each channel's value should be between 0 and 255
     */
 
   }, {
-    key: "setPalette",
-    value: function setPalette(colors) {
-      this.setColor("u_paperColor", colors[0]);
-      this.setColor("u_layer1Color", colors[1]);
-      this.setColor("u_layer2Color", colors[2]);
+    key: "setPaperColor",
+    value: function setPaperColor(value) {
+      this.gl.clearColor(value[0] / 255, value[1] / 255, value[2] / 255, value[3] / 255);
     }
 
     /**
-    * Set layer bitmaps
-    * @param {array} buffers - array of two uint8 buffers, one for each layer
+    * Draw a single frame layer
+    * @param {Uint16Array} buffer - layer pixels
+    * @param {number} width - layer width
+    * @param {number} height - layer height
+    * @param {array} color1 - r,g,b for layer color 1, each channel's value should be between 0 and 255
+    * @param {array} color2 - r,g,b for layer color 2, each channel's value should be between 0 and 255
+    * @param {number} depth - layer depth (kwz only, but currently unused)
     */
 
   }, {
-    key: "setBitmaps",
-    value: function setBitmaps(buffers) {
+    key: "drawLayer",
+    value: function drawLayer(buffer, width, height, color1, color2, depth) {
       var gl = this.gl;
       gl.activeTexture(gl.TEXTURE0);
-      gl.texImage2D(gl.TEXTURE_2D, 0, gl.ALPHA, 256, 192, 0, gl.ALPHA, gl.UNSIGNED_BYTE, buffers[0]);
-      gl.activeTexture(gl.TEXTURE1);
-      gl.texImage2D(gl.TEXTURE_2D, 0, gl.ALPHA, 256, 192, 0, gl.ALPHA, gl.UNSIGNED_BYTE, buffers[1]);
+      gl.texImage2D(gl.TEXTURE_2D, 0, gl.ALPHA, width, height, 0, gl.ALPHA, gl.UNSIGNED_BYTE, buffer);
+      // gl.uniform1f(gl.getUniformLocation(this.program, "u_layerDepth"), -depth/6);
+      this.setColor("u_color1", color1);
+      this.setColor("u_color2", color2);
+      gl.drawArrays(gl.TRIANGLES, 0, 6);
     }
 
     /**
@@ -283,22 +597,14 @@ var webglCanvas = function () {
   }, {
     key: "resize",
     value: function resize() {
-      var width = arguments.length > 0 && arguments[0] !== undefined ? arguments[0] : 256;
-      var height = arguments.length > 1 && arguments[1] !== undefined ? arguments[1] : 192;
+      var width = arguments.length > 0 && arguments[0] !== undefined ? arguments[0] : 640;
+      var height = arguments.length > 1 && arguments[1] !== undefined ? arguments[1] : 480;
 
       this.el.width = width;
       this.el.height = height;
+      this.width = width;
+      this.height = height;
       this.gl.viewport(0, 0, width, height);
-    }
-
-    /**
-    * Redraw canvas
-    */
-
-  }, {
-    key: "refresh",
-    value: function refresh() {
-      this.gl.drawArrays(this.gl.TRIANGLES, 0, 6);
     }
 
     /**
@@ -334,7 +640,7 @@ var webglCanvas = function () {
       });
       refs.buffers = [];
       gl.deleteProgram(this.program);
-      // shrink the canvas to reduce memory usage until its garbage collected
+      // shrink the canvas to reduce memory usage until it is garbage collected
       gl.canvas.width = 1;
       gl.canvas.height = 1;
     }
@@ -346,13 +652,13 @@ var webglCanvas = function () {
 exports.default = webglCanvas;
 
 /***/ }),
-/* 1 */
+/* 2 */
 /***/ (function(module, exports, __webpack_require__) {
 
 "use strict";
 
 
-var _player = __webpack_require__(2);
+var _player = __webpack_require__(3);
 
 var _player2 = _interopRequireDefault(_player);
 
@@ -361,13 +667,13 @@ function _interopRequireDefault(obj) { return obj && obj.__esModule ? obj : { de
 // import decoder from "./decoder";
 
 module.exports = {
-  version: "1.5.3",
+  version: "2.0.1",
   player: _player2.default
   // decoder: decoder,
 };
 
 /***/ }),
-/* 2 */
+/* 3 */
 /***/ (function(module, exports, __webpack_require__) {
 
 "use strict";
@@ -379,64 +685,55 @@ Object.defineProperty(exports, "__esModule", {
 
 var _createClass = function () { function defineProperties(target, props) { for (var i = 0; i < props.length; i++) { var descriptor = props[i]; descriptor.enumerable = descriptor.enumerable || false; descriptor.configurable = true; if ("value" in descriptor) descriptor.writable = true; Object.defineProperty(target, descriptor.key, descriptor); } } return function (Constructor, protoProps, staticProps) { if (protoProps) defineProperties(Constructor.prototype, protoProps); if (staticProps) defineProperties(Constructor, staticProps); return Constructor; }; }();
 
-var _canvas = __webpack_require__(0);
+var _canvas = __webpack_require__(1);
 
 var _canvas2 = _interopRequireDefault(_canvas);
 
-var _captureCanvas = __webpack_require__(5);
+var _parser = __webpack_require__(6);
 
-var _captureCanvas2 = _interopRequireDefault(_captureCanvas);
+var _parser2 = _interopRequireDefault(_parser);
 
-var _decoder = __webpack_require__(6);
-
-var _decoder2 = _interopRequireDefault(_decoder);
-
-var _loader = __webpack_require__(9);
+var _loader = __webpack_require__(10);
 
 var _loader2 = _interopRequireDefault(_loader);
 
-var _audio = __webpack_require__(13);
+var _audio = __webpack_require__(14);
 
 var _audio2 = _interopRequireDefault(_audio);
+
+var _canvas3 = __webpack_require__(1);
+
+var _canvas4 = _interopRequireDefault(_canvas3);
 
 function _interopRequireDefault(obj) { return obj && obj.__esModule ? obj : { default: obj }; }
 
 function _classCallCheck(instance, Constructor) { if (!(instance instanceof Constructor)) { throw new TypeError("Cannot call a class as a function"); } }
 
-// internal framerate value -> FPS table
-var FRAMERATES = {
-  1: 0.5,
-  2: 1,
-  3: 2,
-  4: 4,
-  5: 6,
-  6: 12,
-  7: 20,
-  8: 30
-};
-
 /** flipnote player API, based on HTMLMediaElement (https://developer.mozilla.org/en-US/docs/Web/API/HTMLMediaElement) */
-
-var ppmPlayer = function () {
+var flipnotePlayer = function () {
   /**
   * Create new flipnote player
   * @param {string | HTMLCanvasElement} el - HTML Canvas Element to use, or CSS selector for one
   * @param {number} width - canvas width in pixels
   * @param {number} height - canvas height in pixels
   */
-  function ppmPlayer(el, width, height) {
-    _classCallCheck(this, ppmPlayer);
+  function flipnotePlayer(el, width, height) {
+    _classCallCheck(this, flipnotePlayer);
 
     // if `el` is a string, use it to select an Element, else assume it's an element
     el = "string" == typeof el ? document.querySelector(el) : el;
     this.canvas = new _canvas2.default(el, width, height);
-    this._imgCanvas = new _captureCanvas2.default();
+    this._imgCanvas = new _canvas2.default(document.createElement("canvas"), width, height, {
+      antialias: true,
+      preserveDrawingBuffer: true
+    });
     this._isOpen = false;
     this._events = {};
     this.loop = false;
     this.currentFrame = 0;
     this.paused = true;
     this.audioTracks = [new _audio2.default("se1"), new _audio2.default("se2"), new _audio2.default("se3"), new _audio2.default("bgm")];
+    this.smoothRendering = false;
   }
 
   /**
@@ -444,7 +741,7 @@ var ppmPlayer = function () {
   */
 
 
-  _createClass(ppmPlayer, [{
+  _createClass(flipnotePlayer, [{
     key: "_load",
 
 
@@ -454,24 +751,29 @@ var ppmPlayer = function () {
     * @access protected
     */
     value: function _load(buffer) {
-      var ppm = new _decoder2.default(buffer);
-      var meta = ppm.meta;
-      this.ppm = ppm;
-      this.meta = meta;
-      this.frameCount = ppm.frameCount;
-      this.frameSpeed = ppm.frameSpeed;
-      this.fileLength = ppm.fileLength;
-      this.loop = meta.loop == 1;
+      var note = new _parser2.default(buffer);
+      this.note = note;
+      this.meta = note.meta;
+      this.type = note.type;
+      this.frameCount = note.frameCount;
+      this.frameSpeed = note.frameSpeed;
+      this.fileLength = note.byteLength;
+      this.loop = note.meta.loop == 1;
       this.paused = true;
       this._isOpen = true;
-      if (ppm.soundMeta.se1.length) this.audioTracks[0].set(this.ppm.decodeAudio("se1"), 1);
-      if (ppm.soundMeta.se2.length) this.audioTracks[1].set(this.ppm.decodeAudio("se2"), 1);
-      if (ppm.soundMeta.se3.length) this.audioTracks[2].set(this.ppm.decodeAudio("se3"), 1);
-      if (ppm.soundMeta.bgm.length) this.audioTracks[3].set(this.ppm.decodeAudio("bgm"), this._audiorate);
-      this._seFlags = this.ppm.decodeSoundFlags();
+      if (this.note.hasAudioTrack(1)) this.audioTracks[0].set(this.note.decodeAudio("se1"), 1);
+      if (this.note.hasAudioTrack(2)) this.audioTracks[1].set(this.note.decodeAudio("se2"), 1);
+      if (this.note.hasAudioTrack(3)) this.audioTracks[2].set(this.note.decodeAudio("se3"), 1);
+      if (this.note.hasAudioTrack(0)) this.audioTracks[3].set(this.note.decodeAudio("bgm"), this._audiorate);
+      this._seFlags = this.note.decodeSoundFlags();
       this._playbackLoop = null;
       this._hasPlaybackStarted = false;
-      this.setFrame(this.ppm.thumbFrameIndex);
+      this.layerVisiblity = {
+        1: true,
+        2: true,
+        3: true
+      };
+      this.setFrame(this.note.thumbFrameIndex);
       this.emit("load");
     }
 
@@ -501,7 +803,7 @@ var ppmPlayer = function () {
     key: "close",
     value: function close() {
       this.pause();
-      this.ppm = null;
+      this.note = null;
       this._isOpen = false;
       this.paused = true;
       this.loop = null;
@@ -621,7 +923,7 @@ var ppmPlayer = function () {
 
     /**
     * Get a specific frame as an image data URL
-    * @param {number} index - zero-based frame index
+    * @param {number|string} index - zero-based frame index, or pass "thumb" to get the thumbnail frame
     * @param {string} type - image MIME type, default is image/png
     * @param {number} encoderOptions - number between 0 and 1 indicating image quality if type is image/jpeg or image/webp
     */
@@ -633,23 +935,9 @@ var ppmPlayer = function () {
       var canvas = this._imgCanvas;
       if (canvas.width !== width || canvas.height !== height) canvas.setSize(width, height);
       // clamp frame index
-      index = Math.max(0, Math.min(index, this.frameCount - 1));
-      canvas.setPalette(this.ppm.getFramePalette(index));
-      canvas.setBitmaps(this.ppm.decodeFrame(index));
-      canvas.refresh();
+      index = index == "thumb" ? this.note.thumbFrameIndex : Math.max(0, Math.min(index, this.frameCount - 1));
+      this.drawFrame(index, canvas);
       return canvas.toImage(type, encoderOptions);
-    }
-
-    /**
-    * Get a Flipnote thumbnail as an image data URL
-    * @param {string} type - image MIME type, default is image/png
-    * @param {number} encoderOptions - number between 0 and 1 indicating image quality if type is image/jpeg or image/webp
-    */
-
-  }, {
-    key: "getThumbImage",
-    value: function getThumbImage(width, height, type, encoderOptions) {
-      return this.getFrameImage(this.ppm.thumbFrameIndex, width, height, type, encoderOptions);
     }
 
     /**
@@ -665,10 +953,31 @@ var ppmPlayer = function () {
       index = Math.max(0, Math.min(Math.floor(index), this.frameCount - 1));
       this._frame = index;
       this._playbackFrameTime = 0;
-      this.canvas.setPalette(this.ppm.getFramePalette(index));
-      this.canvas.setBitmaps(this.ppm.decodeFrame(index));
-      this.canvas.refresh();
+      this.drawFrame(index, this.canvas);
       this.emit("frame:update", this.currentFrame);
+    }
+
+    /**
+    * Draw a frame to a given canvas
+    * @param {number} index - zero-based frame index
+    * @param {webglCanvas} canvas - webgl frame canvas
+    */
+
+  }, {
+    key: "drawFrame",
+    value: function drawFrame(frameIndex, canvas) {
+      var colors = this.note.getFramePalette(frameIndex);
+      var layerBuffers = this.note.decodeFrame(frameIndex);
+      canvas.setPaperColor(colors[0]);
+      canvas.clear();
+      if (this.note.type == "PPM") {
+        if (this.layerVisiblity[2]) canvas.drawLayer(layerBuffers[1], 256, 192, colors[2], [0, 0, 0, 0]);
+        if (this.layerVisiblity[1]) canvas.drawLayer(layerBuffers[0], 256, 192, colors[1], [0, 0, 0, 0]);
+      } else if (this.note.type == "KWZ") {
+        if (this.layerVisiblity[3]) canvas.drawLayer(layerBuffers[2], 320, 240, colors[5], colors[6]);
+        if (this.layerVisiblity[2]) canvas.drawLayer(layerBuffers[1], 320, 240, colors[3], colors[4]);
+        if (this.layerVisiblity[1]) canvas.drawLayer(layerBuffers[0], 320, 240, colors[1], colors[2]);
+      }
     }
 
     /**
@@ -678,7 +987,7 @@ var ppmPlayer = function () {
   }, {
     key: "thumbnailFrame",
     value: function thumbnailFrame() {
-      this.currentFrame = this.ppm.thumbFrameIndex;
+      this.currentFrame = this.note.thumbFrameIndex;
     }
 
     /**
@@ -739,6 +1048,38 @@ var ppmPlayer = function () {
     key: "resize",
     value: function resize(width, height) {
       this.canvas.resize(width, height);
+    }
+
+    /**
+    * Set layer visibility
+    * @param {number} index - layer number = 1, 2, 3
+    * @param {boolean} value
+    */
+
+  }, {
+    key: "setLayerVisibility",
+    value: function setLayerVisibility(index, value) {
+      this.layerVisiblity[index] = value;
+      this.drawFrame(this.currentFrame, this.canvas);
+    }
+
+    /**
+    * Set smooth rendering
+    * @param {boolean} value
+    */
+
+  }, {
+    key: "setSmoothRendering",
+    value: function setSmoothRendering(value) {
+      if (this.type == "KWZ") {
+        // kwz doesn't supper linear fltering yet
+        var filter = "nearest";
+      } else {
+        var filter = value ? "linear" : "nearest";
+      }
+      this.canvas.setFilter(filter);
+      this.drawFrame(this.currentFrame, this.canvas);
+      this.smoothRendering = value;
     }
 
     /**
@@ -877,7 +1218,7 @@ var ppmPlayer = function () {
   }, {
     key: "framerate",
     get: function get() {
-      return FRAMERATES[this.frameSpeed];
+      return this.note.framerate;
     }
 
     /**
@@ -888,26 +1229,14 @@ var ppmPlayer = function () {
   }, {
     key: "_audiorate",
     get: function get() {
-      return 1 / FRAMERATES[this.ppm.bgmSpeed] / (1 / FRAMERATES[this.frameSpeed]);
+      return 1 / this.note.bgmrate / (1 / this.note.framerate);
     }
   }]);
 
-  return ppmPlayer;
+  return flipnotePlayer;
 }();
 
-exports.default = ppmPlayer;
-
-/***/ }),
-/* 3 */
-/***/ (function(module, exports, __webpack_require__) {
-
-"use strict";
-
-
-Object.defineProperty(exports, "__esModule", {
-  value: true
-});
-exports.default = "\nattribute vec4 a_position;\nvarying vec2 v_texcoord;\nvoid main() {\n  gl_Position = a_position;\n  v_texcoord = a_position.xy * vec2(0.5, -0.5) + 0.5;\n}";
+exports.default = flipnotePlayer;
 
 /***/ }),
 /* 4 */
@@ -919,7 +1248,7 @@ exports.default = "\nattribute vec4 a_position;\nvarying vec2 v_texcoord;\nvoid 
 Object.defineProperty(exports, "__esModule", {
   value: true
 });
-exports.default = "\nprecision mediump float;\nvarying vec2 v_texcoord;\nuniform vec4 u_paperColor;\nuniform vec4 u_layer1Color;\nuniform vec4 u_layer2Color;\nuniform bool u_layer1Visibility;\nuniform bool u_layer2Visibility;\nuniform sampler2D u_layer1Bitmap;\nuniform sampler2D u_layer2Bitmap;\nvoid main() {\n  float layer1 = u_layer1Visibility ? texture2D(u_layer1Bitmap, v_texcoord).a * 255.0 : 0.0;\n  float layer2 = u_layer2Visibility ? texture2D(u_layer2Bitmap, v_texcoord).a * 255.0 : 0.0;\n  gl_FragColor = mix(mix(u_paperColor, u_layer2Color, layer2), u_layer1Color, layer1);\n}";
+exports.default = "\nattribute vec4 a_position;\nvarying vec2 v_texcoord;\nvoid main() {\n  gl_Position = a_position;\n  v_texcoord = a_position.xy * vec2(0.5, -0.5) + 0.5;\n}";
 
 /***/ }),
 /* 5 */
@@ -931,74 +1260,7 @@ exports.default = "\nprecision mediump float;\nvarying vec2 v_texcoord;\nuniform
 Object.defineProperty(exports, "__esModule", {
   value: true
 });
-
-var _createClass = function () { function defineProperties(target, props) { for (var i = 0; i < props.length; i++) { var descriptor = props[i]; descriptor.enumerable = descriptor.enumerable || false; descriptor.configurable = true; if ("value" in descriptor) descriptor.writable = true; Object.defineProperty(target, descriptor.key, descriptor); } } return function (Constructor, protoProps, staticProps) { if (protoProps) defineProperties(Constructor.prototype, protoProps); if (staticProps) defineProperties(Constructor, staticProps); return Constructor; }; }();
-
-var _canvas2 = __webpack_require__(0);
-
-var _canvas3 = _interopRequireDefault(_canvas2);
-
-function _interopRequireDefault(obj) { return obj && obj.__esModule ? obj : { default: obj }; }
-
-function _classCallCheck(instance, Constructor) { if (!(instance instanceof Constructor)) { throw new TypeError("Cannot call a class as a function"); } }
-
-function _possibleConstructorReturn(self, call) { if (!self) { throw new ReferenceError("this hasn't been initialised - super() hasn't been called"); } return call && (typeof call === "object" || typeof call === "function") ? call : self; }
-
-function _inherits(subClass, superClass) { if (typeof superClass !== "function" && superClass !== null) { throw new TypeError("Super expression must either be null or a function, not " + typeof superClass); } subClass.prototype = Object.create(superClass && superClass.prototype, { constructor: { value: subClass, enumerable: false, writable: true, configurable: true } }); if (superClass) Object.setPrototypeOf ? Object.setPrototypeOf(subClass, superClass) : subClass.__proto__ = superClass; }
-
-/** 
- * offscreen webgl canvas for capturing frame images
- * this is kept seperate since preserveDrawingBuffer makes drawing slightly slower
- */
-var captureCanvas = function (_canvas) {
-  _inherits(captureCanvas, _canvas);
-
-  function captureCanvas() {
-    _classCallCheck(this, captureCanvas);
-
-    var _this = _possibleConstructorReturn(this, (captureCanvas.__proto__ || Object.getPrototypeOf(captureCanvas)).call(this, document.createElement("canvas"), 256, 192, {
-      antialias: true,
-      preserveDrawingBuffer: true
-    }));
-
-    _this.setFilter("linear");
-    _this.width = 256;
-    _this.height = 256;
-    return _this;
-  }
-
-  /**
-  * set the image size
-  * @param {number} width - image width in pixels 
-  * @param {number} height - image height in pixels 
-  */
-
-
-  _createClass(captureCanvas, [{
-    key: "setSize",
-    value: function setSize(width, height) {
-      this.resize(width, height);
-      this.width = width;
-      this.height = height;
-    }
-
-    /**
-    * get the canvas content as an image
-    * @param {string} type - image MIME type, default is image/png
-    * @param {number} encoderOptions - number between 0 and 1 indicating image quality if type is image/jpeg or image/webp
-    */
-
-  }, {
-    key: "toImage",
-    value: function toImage(type, encoderOptions) {
-      return this.el.toDataURL(type, encoderOptions);
-    }
-  }]);
-
-  return captureCanvas;
-}(_canvas3.default);
-
-exports.default = captureCanvas;
+exports.default = "\nprecision mediump float;\nvarying vec2 v_texcoord;\nuniform vec4 u_color1;\nuniform vec4 u_color2;\nuniform sampler2D u_bitmap;\nvoid main() {\n  float index = texture2D(u_bitmap, v_texcoord).a * 255.0;\n  float weightColor1 = smoothstep(0.0, 1.0, index);\n  float weightColor2 = smoothstep(1.0, 2.0, index);\n  gl_FragColor = mix(vec4(0, 0, 0, 0), mix(u_color1, u_color2, weightColor2), weightColor1);\n}";
 
 /***/ }),
 /* 6 */
@@ -1010,12 +1272,48 @@ exports.default = captureCanvas;
 Object.defineProperty(exports, "__esModule", {
   value: true
 });
+exports.default = parser;
+
+var _ppm = __webpack_require__(7);
+
+var _ppm2 = _interopRequireDefault(_ppm);
+
+var _kwz = __webpack_require__(9);
+
+var _kwz2 = _interopRequireDefault(_kwz);
+
+function _interopRequireDefault(obj) { return obj && obj.__esModule ? obj : { default: obj }; }
+
+function parser(arrayBuffer) {
+  // check the buffer's magic to identify which format it uses
+  var data = new DataView(arrayBuffer, 0, 4);
+  var magic = data.getUint32(0);
+  // check if magic is PARA (ppm magic)
+  if (magic == 0x50415241) {
+    return new _ppm2.default(arrayBuffer);
+  }
+  // check if magic is KFH (kwz magic)
+  else if ((magic & 0xFFFFFF00) == 0x4B464800) {
+      return new _kwz2.default(arrayBuffer);
+    }
+}
+
+/***/ }),
+/* 7 */
+/***/ (function(module, exports, __webpack_require__) {
+
+"use strict";
+
+
+Object.defineProperty(exports, "__esModule", {
+  value: true
+});
 
 var _createClass = function () { function defineProperties(target, props) { for (var i = 0; i < props.length; i++) { var descriptor = props[i]; descriptor.enumerable = descriptor.enumerable || false; descriptor.configurable = true; if ("value" in descriptor) descriptor.writable = true; Object.defineProperty(target, descriptor.key, descriptor); } } return function (Constructor, protoProps, staticProps) { if (protoProps) defineProperties(Constructor.prototype, protoProps); if (staticProps) defineProperties(Constructor, staticProps); return Constructor; }; }();
 
-var _fileReader2 = __webpack_require__(7);
+var _dataStream2 = __webpack_require__(0);
 
-var _fileReader3 = _interopRequireDefault(_fileReader2);
+var _dataStream3 = _interopRequireDefault(_dataStream2);
 
 var _adpcm = __webpack_require__(8);
 
@@ -1049,25 +1347,38 @@ function _inherits(subClass, superClass) { if (typeof superClass !== "function" 
                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                 *  and to Hatena for providing the Flipnote Hatena online service, both of which inspired so many c:
                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                */
 
+// internal framerate value -> FPS table
+var FRAMERATES = {
+  1: 0.5,
+  2: 1,
+  3: 2,
+  4: 4,
+  5: 6,
+  6: 12,
+  7: 20,
+  8: 30
+};
+
 var WIDTH = 256;
 var HEIGHT = 192;
-var BLACK = [14, 14, 14, 255];
-var WHITE = [255, 255, 255, 255];
-var BLUE = [10, 57, 255, 255];
-var RED = [255, 42, 42, 255];
+var BLACK = [0x0E, 0x0E, 0x0E];
+var WHITE = [0xFF, 0xFF, 0xff];
+var BLUE = [0x0A, 0x39, 0xFF];
+var RED = [0xFF, 0x2A, 0x2A];
 
-var ppmDecoder = function (_fileReader) {
-  _inherits(ppmDecoder, _fileReader);
+var ppmParser = function (_dataStream) {
+  _inherits(ppmParser, _dataStream);
 
   /**
   * Create a ppmDecoder instance
   * @param {ArrayBuffer} arrayBuffer - data to read from
   */
-  function ppmDecoder(arrayBuffer) {
-    _classCallCheck(this, ppmDecoder);
+  function ppmParser(arrayBuffer) {
+    _classCallCheck(this, ppmParser);
 
-    var _this = _possibleConstructorReturn(this, (ppmDecoder.__proto__ || Object.getPrototypeOf(ppmDecoder)).call(this, arrayBuffer));
+    var _this = _possibleConstructorReturn(this, (ppmParser.__proto__ || Object.getPrototypeOf(ppmParser)).call(this, arrayBuffer));
 
+    _this.type = "PPM";
     _this.seek(4);
     // decode header
     // https://github.com/pbsds/hatena-server/wiki/PPM-format#file-header
@@ -1095,96 +1406,17 @@ var ppmDecoder = function (_fileReader) {
     return _this;
   }
 
-  _createClass(ppmDecoder, [{
-    key: "_seekToFrame",
+  _createClass(ppmParser, [{
+    key: "readFilename",
 
 
     /**
-    * Seek the buffer position to the start of a given frame
-    * @param {number} index - zero-based frame index to jump to
-    * @access protected
-    */
-    value: function _seekToFrame(index) {
-      this.seek(this._frameOffsets[index]);
-    }
-
-    /**
-    * Seek the buffer position to the start of a given audio track
-    * @param {string} track - track name, "bgm" | "se1" | "se2" | "se3"
-    * @access protected
-    */
-
-  }, {
-    key: "_seekToAudio",
-    value: function _seekToAudio(track) {
-      this.seek(this.soundMeta[track].offset);
-    }
-
-    /**
-    * Read an UTF-16 little-endian string (for usernames)
-    * @param {number} length - max length of the string in bytes (including padding)
+    * Read a packed filename
     * @returns {string}
     * @access protected
     */
-
-  }, {
-    key: "_readUtf16",
-    value: function _readUtf16(length) {
-      var str = "";
-      var terminated = false;
-      for (var i = 0; i < length / 2; i++) {
-        var char = this.readUint16();
-        // utf16 stings in flipnotes are terminated with null bytes (0x00) 
-        if (terminated || char == 0) {
-          terminated = true;
-          continue;
-        }
-        str += String.fromCharCode(char);
-      }
-      return str;
-    }
-
-    /**
-    * Read a hex string (for FSIDs and filenames)
-    * @param {number} length - max length of the string in bytes
-    * @param {boolean} reverse - defaults to false, if true, the string will be read in reverse byte order
-    * @returns {string}
-    * @access protected
-    */
-
-  }, {
-    key: "_readHex",
-    value: function _readHex(length) {
-      var reverse = arguments.length > 1 && arguments[1] !== undefined ? arguments[1] : false;
-
-      var ret = [];
-      for (var i = 0; i < length; i++) {
-        ret.push(this.readUint8().toString(16).padStart(2, "0"));
-      }
-      if (reverse) ret.reverse();
-      return ret.join("").toUpperCase();
-    }
-
-    /**
-    * Read a HEX string 
-    * @returns {string}
-    * @access protected
-    */
-
-  }, {
-    key: "_readFilename",
-    value: function _readFilename() {
-      var str = "";
-      // filename starts with 3 hex bytes
-      str += this._readHex(3) + "_";
-      // then 13 byte utf8 string
-      for (var i = 0; i < 13; i++) {
-        str += String.fromCharCode(this.readUint8());
-      }
-      str += "_";
-      // then 2-byte edit count padded to 3 chars
-      str += this.readUint16().toString().padStart(3, "0");
-      return str;
+    value: function readFilename() {
+      return [this.readHex(3), this.readUtf8(13), this.readUint16().toString().padStart(3, "0")].join("_");
     }
 
     /**
@@ -1194,8 +1426,8 @@ var ppmDecoder = function (_fileReader) {
     */
 
   }, {
-    key: "_readLineEncoding",
-    value: function _readLineEncoding() {
+    key: "readLineEncoding",
+    value: function readLineEncoding() {
       var unpacked = new Uint8Array(HEIGHT);
       for (var byteOffset = 0; byteOffset < 48; byteOffset++) {
         var byte = this.readUint8();
@@ -1220,14 +1452,14 @@ var ppmDecoder = function (_fileReader) {
       this.seek(0x10);
       var lock = this.readUint16(),
           thumbIndex = this.readInt16(),
-          rootAuthorName = this._readUtf16(22),
-          parentAuthorName = this._readUtf16(22),
-          currentAuthorName = this._readUtf16(22),
-          parentAuthorId = this._readHex(8, true),
-          currentAuthorId = this._readHex(8, true),
-          parentFilename = this._readFilename(),
-          currentFilename = this._readFilename(),
-          rootAuthorId = this._readHex(8, true);
+          rootAuthorName = this.readUtf16(11),
+          parentAuthorName = this.readUtf16(11),
+          currentAuthorName = this.readUtf16(11),
+          parentAuthorId = this.readHex(8, true),
+          currentAuthorId = this.readHex(8, true),
+          parentFilename = this.readFilename(),
+          currentFilename = this.readFilename(),
+          rootAuthorId = this.readHex(8, true);
       this.seek(0x9A);
       var timestamp = new Date((this.readUint32() + 946684800) * 1000);
       this.seek(0x06A6);
@@ -1242,6 +1474,7 @@ var ppmDecoder = function (_fileReader) {
         timestamp: timestamp,
         spinoff: currentAuthorId !== parentAuthorId || currentAuthorId !== rootAuthorId,
         root: {
+          filename: null,
           username: rootAuthorName,
           fsid: rootAuthorId
         },
@@ -1279,6 +1512,8 @@ var ppmDecoder = function (_fileReader) {
       this.frameSpeed = 8 - this.readUint8();
       this.bgmSpeed = 8 - this.readUint8();
       offset += 32;
+      this.framerate = FRAMERATES[this.frameSpeed];
+      this.bgmrate = FRAMERATES[this.bgmSpeed];
       this.soundMeta = {
         "bgm": { offset: offset, length: bgmLen },
         "se1": { offset: offset += bgmLen, length: se1Len },
@@ -1294,35 +1529,11 @@ var ppmDecoder = function (_fileReader) {
     */
 
   }, {
-    key: "_isFrameNew",
-    value: function _isFrameNew(index) {
-      this._seekToFrame(index);
+    key: "isNewFrame",
+    value: function isNewFrame(index) {
+      this.seek(this._frameOffsets[index]);
       var header = this.readUint8();
       return header >> 7 & 0x1;
-    }
-
-    /**
-    * Helper to decode necessary previous frames if the current frame is difference-based
-    * @param {number} index - zero-based frame index 
-    */
-
-  }, {
-    key: "_decodePrevFrames",
-    value: function _decodePrevFrames(index) {
-      var backTrack = 0;
-      var isNew = 0;
-      while (!isNew) {
-        backTrack += 1;
-        isNew = this._isFrameNew(index - backTrack);
-      }
-      backTrack = index - backTrack;
-      while (backTrack < index) {
-        this.decodeFrame(backTrack, false);
-        backTrack += 1;
-      }
-      // jump back to where we were and skip flag byte
-      this._seekToFrame(index);
-      this.seek(1, 1);
     }
 
     /**
@@ -1334,7 +1545,7 @@ var ppmDecoder = function (_fileReader) {
   }, {
     key: "getFramePalette",
     value: function getFramePalette(index) {
-      this._seekToFrame(index);
+      this.seek(this._frameOffsets[index]);
       var header = this.readUint8();
       var paperColor = header & 0x1;
       var pen = [null, paperColor == 1 ? BLACK : WHITE, RED, BLUE];
@@ -1345,25 +1556,20 @@ var ppmDecoder = function (_fileReader) {
     /**
     * Decode a frame
     * @param {number} index - zero-based frame index 
-    * @param {boolean} decodePrev - defaults to true, set to false to not bother decoding previous frames
-    */
+    * @returns {array} - 2 uint8 arrays representing each layer
+    * */
 
   }, {
     key: "decodeFrame",
     value: function decodeFrame(index) {
-      var decodePrev = arguments.length > 1 && arguments[1] !== undefined ? arguments[1] : true;
-
+      if (index !== 0 && this._prevFrameIndex !== index - 1 && !this.isNewFrame(index)) this.decodeFrame(index - 1);
       // https://github.com/pbsds/hatena-server/wiki/PPM-format#animation-frame
-      this._seekToFrame(index);
+      this.seek(this._frameOffsets[index]);
       var header = this.readUint8();
       var isNewFrame = header >> 7 & 0x1;
       var isTranslated = header >> 5 & 0x3;
       var translateX = 0;
       var translateY = 0;
-
-      if (decodePrev && !isNewFrame && index !== this._prevFrameIndex + 1) {
-        this._decodePrevFrames(index);
-      }
       // copy the current layer buffers to the previous ones
       this._prevLayers[0].set(this._layers[0]);
       this._prevLayers[1].set(this._layers[1]);
@@ -1377,7 +1583,7 @@ var ppmDecoder = function (_fileReader) {
         translateY = this.readInt8();
       }
 
-      var layerEncoding = [this._readLineEncoding(), this._readLineEncoding()];
+      var layerEncoding = [this.readLineEncoding(), this.readLineEncoding()];
       // start decoding layer bitmaps
       for (var layer = 0; layer < 2; layer++) {
         var layerBitmap = this._layers[layer];
@@ -1439,6 +1645,12 @@ var ppmDecoder = function (_fileReader) {
       }
       return this._layers;
     }
+  }, {
+    key: "hasAudioTrack",
+    value: function hasAudioTrack(trackIndex) {
+      var id = ["bgm", "se1", "se2", "se3"][trackIndex];
+      return this.soundMeta[id].length > 0;
+    }
 
     /**
     * Decode an audio track to 32-bit adpcm
@@ -1449,12 +1661,8 @@ var ppmDecoder = function (_fileReader) {
   }, {
     key: "decodeAudio",
     value: function decodeAudio(track) {
-      var _this2 = this;
-
-      this._seekToAudio(track);
-      var buffer = new Uint8Array(this.soundMeta[track].length).map(function (value) {
-        return _this2.readUint8();
-      });
+      var meta = this.soundMeta[track];
+      var buffer = new Uint8Array(this.buffer, meta.offset, meta.length);
       return (0, _adpcm.decodeAdpcm)(buffer);
     }
 
@@ -1466,14 +1674,14 @@ var ppmDecoder = function (_fileReader) {
   }, {
     key: "decodeSoundFlags",
     value: function decodeSoundFlags() {
-      var _this3 = this;
+      var _this2 = this;
 
       this.seek(0x06A0 + this._frameDataLength);
       // per msdn docs - the array map callback is only invoked for array indicies that have assigned values
       // so when we create an array, we need to fill it with something before we can map over it
       var arr = new Array(this.frameCount).fill([]);
       return arr.map(function (value) {
-        var byte = _this3.readUint8();
+        var byte = _this2.readUint8();
         return [byte & 0x1, byte >> 1 & 0x1, byte >> 2 & 0x1];
       });
     }
@@ -1491,171 +1699,10 @@ var ppmDecoder = function (_fileReader) {
     }
   }]);
 
-  return ppmDecoder;
-}(_fileReader3.default);
+  return ppmParser;
+}(_dataStream3.default);
 
-exports.default = ppmDecoder;
-
-/***/ }),
-/* 7 */
-/***/ (function(module, exports, __webpack_require__) {
-
-"use strict";
-
-
-Object.defineProperty(exports, "__esModule", {
-  value: true
-});
-
-var _createClass = function () { function defineProperties(target, props) { for (var i = 0; i < props.length; i++) { var descriptor = props[i]; descriptor.enumerable = descriptor.enumerable || false; descriptor.configurable = true; if ("value" in descriptor) descriptor.writable = true; Object.defineProperty(target, descriptor.key, descriptor); } } return function (Constructor, protoProps, staticProps) { if (protoProps) defineProperties(Constructor.prototype, protoProps); if (staticProps) defineProperties(Constructor, staticProps); return Constructor; }; }();
-
-function _classCallCheck(instance, Constructor) { if (!(instance instanceof Constructor)) { throw new TypeError("Cannot call a class as a function"); } }
-
-/** file reader serves as a wrapper around the DataView API to help keep track of the offset into the file */
-var fileReader = function () {
-  /**
-  * Create a fileReader instance
-  * @param {ArrayBuffer} arrayBuffer - data to read from
-  */
-  function fileReader(arrayBuffer) {
-    _classCallCheck(this, fileReader);
-
-    this._data = new DataView(arrayBuffer);
-    this._offset = 0;
-  }
-
-  /**
-  * Get the length of the file
-  * @returns {number}
-  */
-
-
-  _createClass(fileReader, [{
-    key: "seek",
-
-
-    /**
-    * based on the seek method from Python's file objects - https://www.tutorialspoint.com/python/file_seek.htm
-    * @param {number} offset - position of the read pointer within the file
-    * @param {number} whence - (optional) defaults to absolute file positioning,
-    *                          1 = offset is relative to the current position
-    *                          2 = offset is relative to the file's end
-    */
-    value: function seek(offset, whence) {
-      switch (whence) {
-        case 2:
-          this._offset = this._data.byteLength + offset;
-          break;
-        case 1:
-          this._offset += offset;
-          break;
-        case 0:
-        default:
-          this._offset = offset;
-          break;
-      }
-    }
-
-    /**
-    * Read an unsigned 8-bit integer from the file, and automatically increment the offset
-    * @returns {number}
-    */
-
-  }, {
-    key: "readUint8",
-    value: function readUint8() {
-      var val = this._data.getUint8(this._offset);
-      this._offset += 1;
-      return val;
-    }
-
-    /**
-    * Read a signed 8-bit integer from the file, and automatically increment the offset
-    * @returns {number}
-    */
-
-  }, {
-    key: "readInt8",
-    value: function readInt8() {
-      var val = this._data.getInt8(this._offset);
-      this._offset += 1;
-      return val;
-    }
-
-    /**
-    * Read an unsigned 16-bit integer from the file, and automatically increment the offset
-    * @param {boolean} littleEndian - defaults to true, set to false to read data in big endian byte order
-    * @returns {number}
-    */
-
-  }, {
-    key: "readUint16",
-    value: function readUint16() {
-      var littleEndian = arguments.length > 0 && arguments[0] !== undefined ? arguments[0] : true;
-
-      var val = this._data.getUint16(this._offset, littleEndian);
-      this._offset += 2;
-      return val;
-    }
-
-    /**
-    * Read a signed 16-bit integer from the file, and automatically increment the offset
-    * @param {boolean} littleEndian - defaults to true, set to false to read data in big endian byte order
-    * @returns {number}
-    */
-
-  }, {
-    key: "readInt16",
-    value: function readInt16() {
-      var littleEndian = arguments.length > 0 && arguments[0] !== undefined ? arguments[0] : true;
-
-      var val = this._data.getInt16(this._offset, littleEndian);
-      this._offset += 2;
-      return val;
-    }
-
-    /**
-    * Read an unsigned 32-bit integer from the file, and automatically increment the offset
-    * @param {boolean} littleEndian - defaults to true, set to false to read data in big endian byte order
-    * @returns {number}
-    */
-
-  }, {
-    key: "readUint32",
-    value: function readUint32() {
-      var littleEndian = arguments.length > 0 && arguments[0] !== undefined ? arguments[0] : true;
-
-      var val = this._data.getUint32(this._offset, littleEndian);
-      this._offset += 4;
-      return val;
-    }
-
-    /**
-    * Read a signed 32-bit integer from the file, and automatically increment the offset
-    * @param {boolean} littleEndian - defaults to true, set to false to read data in big endian byte order
-    * @returns {number}
-    */
-
-  }, {
-    key: "readInt32",
-    value: function readInt32() {
-      var littleEndian = arguments.length > 0 && arguments[0] !== undefined ? arguments[0] : true;
-
-      var val = this._data.getInt32(this._offset, littleEndian);
-      this._offset += 4;
-      return val;
-    }
-  }, {
-    key: "fileLength",
-    get: function get() {
-      return this._data.byteLength;
-    }
-  }]);
-
-  return fileReader;
-}();
-
-exports.default = fileReader;
+exports.default = ppmParser;
 
 /***/ }),
 /* 8 */
@@ -1751,17 +1798,441 @@ function clamp(num, min, max) {
 Object.defineProperty(exports, "__esModule", {
   value: true
 });
+
+var _createClass = function () { function defineProperties(target, props) { for (var i = 0; i < props.length; i++) { var descriptor = props[i]; descriptor.enumerable = descriptor.enumerable || false; descriptor.configurable = true; if ("value" in descriptor) descriptor.writable = true; Object.defineProperty(target, descriptor.key, descriptor); } } return function (Constructor, protoProps, staticProps) { if (protoProps) defineProperties(Constructor.prototype, protoProps); if (staticProps) defineProperties(Constructor, staticProps); return Constructor; }; }();
+
+var _dataStream2 = __webpack_require__(0);
+
+var _dataStream3 = _interopRequireDefault(_dataStream2);
+
+function _interopRequireDefault(obj) { return obj && obj.__esModule ? obj : { default: obj }; }
+
+function _classCallCheck(instance, Constructor) { if (!(instance instanceof Constructor)) { throw new TypeError("Cannot call a class as a function"); } }
+
+function _possibleConstructorReturn(self, call) { if (!self) { throw new ReferenceError("this hasn't been initialised - super() hasn't been called"); } return call && (typeof call === "object" || typeof call === "function") ? call : self; }
+
+function _inherits(subClass, superClass) { if (typeof superClass !== "function" && superClass !== null) { throw new TypeError("Super expression must either be null or a function, not " + typeof superClass); } subClass.prototype = Object.create(superClass && superClass.prototype, { constructor: { value: subClass, enumerable: false, writable: true, configurable: true } }); if (superClass) Object.setPrototypeOf ? Object.setPrototypeOf(subClass, superClass) : subClass.__proto__ = superClass; }
+
+var FRAMERATES = [0.2, 0.5, 1, 2, 4, 6, 8, 12, 20, 24, 30];
+
+var PALETTE = [[0xff, 0xff, 0xff], [0x10, 0x10, 0x10], [0xff, 0x10, 0x10], [0xff, 0xe7, 0x00], [0x00, 0x86, 0x31], [0x00, 0x38, 0xce], [0xff, 0xff, 0xff]];
+
+var kwzParser = function (_dataStream) {
+  _inherits(kwzParser, _dataStream);
+
+  function kwzParser(arrayBuffer) {
+    _classCallCheck(this, kwzParser);
+
+    var _this = _possibleConstructorReturn(this, (kwzParser.__proto__ || Object.getPrototypeOf(kwzParser)).call(this, arrayBuffer));
+
+    _this.type = "KWZ";
+    // table1 - commonly occuring line offsets
+    _this._table1 = new Uint16Array([0x0000, 0x0CD0, 0x19A0, 0x02D9, 0x088B, 0x0051, 0x00F3, 0x0009, 0x001B, 0x0001, 0x0003, 0x05B2, 0x1116, 0x00A2, 0x01E6, 0x0012, 0x0036, 0x0002, 0x0006, 0x0B64, 0x08DC, 0x0144, 0x00FC, 0x0024, 0x001C, 0x0004, 0x0334, 0x099C, 0x0668, 0x1338, 0x1004, 0x166C]);
+    // table2 - commonly occuring line offsets, but the lines are shifted to the left by one pixel
+    _this._table2 = new Uint16Array([0x0000, 0x0CD0, 0x19A0, 0x0003, 0x02D9, 0x088B, 0x0051, 0x00F3, 0x0009, 0x001B, 0x0001, 0x0006, 0x05B2, 0x1116, 0x00A2, 0x01E6, 0x0012, 0x0036, 0x0002, 0x02DC, 0x0B64, 0x08DC, 0x0144, 0x00FC, 0x0024, 0x001C, 0x099C, 0x0334, 0x1338, 0x0668, 0x166C, 0x1004]);
+    // table3 - line offsets, but the lines are shifted to the left by one pixel
+    _this._table3 = new Uint16Array(6561);
+    var values = [0, 3, 7, 1, 4, 8, 2, 5, 6];
+    var index = 0;
+    for (var a = 0; a < 9; a++) {
+      for (var b = 0; b < 9; b++) {
+        for (var c = 0; c < 9; c++) {
+          for (var d = 0; d < 9; d++) {
+            _this._table3[index] = ((values[a] * 9 + values[b]) * 9 + values[c]) * 9 + values[d];
+            index++;
+          }
+        }
+      }
+    } // linetable - contains every possible sequence of pixels for each tile line
+    _this._linetable = new Uint8Array(6561 * 8);
+    var offset = 0;
+    for (var _a = 0; _a < 3; _a++) {
+      for (var _b = 0; _b < 3; _b++) {
+        for (var _c = 0; _c < 3; _c++) {
+          for (var _d = 0; _d < 3; _d++) {
+            for (var e = 0; e < 3; e++) {
+              for (var f = 0; f < 3; f++) {
+                for (var g = 0; g < 3; g++) {
+                  for (var h = 0; h < 3; h++) {
+                    _this._linetable.set([_b, _a, _d, _c, f, e, h, g], offset);
+                    offset += 8;
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    }_this._layers = [new Uint8Array(320 * 240), new Uint8Array(320 * 240), new Uint8Array(320 * 240)];
+    _this._bitIndex = 0;
+    _this._bitValue = 0;
+    _this.load();
+    return _this;
+  }
+
+  _createClass(kwzParser, [{
+    key: "load",
+    value: function load() {
+      this.seek(0);
+      this.sections = {};
+      var size = this.byteLength - 256;
+      var offset = 0;
+      var sectionCount = 0;
+      // counting sections should mitigate against one of mrnbayoh's notehax exploits
+      while (offset < size && sectionCount < 6) {
+        this.seek(offset);
+        var sectionMagic = this.readUtf8(4).substring(0, 3);
+        var sectionLength = this.readUint32();
+        this.sections[sectionMagic] = {
+          offset: offset,
+          length: sectionLength
+        };
+        offset += sectionLength + 8;
+        sectionCount += 1;
+      }
+
+      this.meta = this._decodeMeta();
+
+      this.frameMeta = [];
+      this.frameOffsets = [];
+      this.seek(this.sections["KMI"].offset + 8);
+      offset = this.sections["KMC"].offset + 12;
+      for (var i = 0; i < this.frameCount; i++) {
+        var frame = {
+          flags: this.readUint32(),
+          layerSize: [this.readUint16(), this.readUint16(), this.readUint16()],
+          frameAuthor: this.readUtf8(10),
+          layerDepth: [this.readUint8(), this.readUint8(), this.readUint8()],
+          soundFlags: this.readUint8(),
+          cameraFlag: this.readUint32()
+        };
+        this.frameMeta.push(frame);
+        this.frameOffsets.push(offset);
+        offset += frame.layerSize[0] + frame.layerSize[1] + frame.layerSize[2];
+      }
+      this._prevDecodedFrame = -1;
+    }
+  }, {
+    key: "readBits",
+    value: function readBits(num) {
+      if (this._bitIndex + num > 16) {
+        var nextBits = this.readUint16();
+        this._bitValue |= nextBits << 16 - this._bitIndex;
+        this._bitIndex -= 16;
+      }
+      var mask = (1 << num) - 1;
+      var result = this._bitValue & mask;
+      this._bitValue >>= num;
+      this._bitIndex += num;
+      return result;
+    }
+  }, {
+    key: "_decodeMeta",
+    value: function _decodeMeta() {
+      this.seek(this.sections["KFH"].offset + 12);
+      var creationTimestamp = new Date((this.readUint32() + 946684800) * 1000),
+          modifiedTimestamp = new Date((this.readUint32() + 946684800) * 1000),
+          appVersion = this.readUint32(),
+          rootAuthorId = this.readHex(10),
+          parentAuthorId = this.readHex(10),
+          currentAuthorId = this.readHex(10),
+          rootAuthorName = this.readUtf16(11),
+          parentAuthorName = this.readUtf16(11),
+          currentAuthorName = this.readUtf16(11),
+          rootFilename = this.readUtf8(28),
+          parentFilename = this.readUtf8(28),
+          currentFilename = this.readUtf8(28),
+          frameCount = this.readUint16(),
+          thumbIndex = this.readUint16(),
+          flags = this.readUint16(),
+          frameSpeed = this.readUint8(),
+          layerFlags = this.readUint8();
+      this.frameCount = frameCount;
+      this.thumbFrameIndex = thumbIndex;
+      this.frameSpeed = frameSpeed;
+      this.framerate = FRAMERATES[frameSpeed];
+      return {
+        lock: flags & 0x1,
+        loop: flags >> 1 & 0x01,
+        frame_count: frameCount,
+        frame_speed: frameSpeed,
+        thumb_index: thumbIndex,
+        timestamp: modifiedTimestamp,
+        creation_timestamp: creationTimestamp,
+        root: {
+          username: rootAuthorName,
+          fsid: rootAuthorId,
+          filename: rootFilename
+        },
+        parent: {
+          username: parentAuthorName,
+          fsid: parentAuthorId,
+          filename: parentFilename
+        },
+        current: {
+          username: currentAuthorName,
+          fsid: currentAuthorId,
+          filename: currentFilename
+        }
+      };
+    }
+  }, {
+    key: "getDiffingFlag",
+    value: function getDiffingFlag(frameIndex) {
+      return ~(this.frameMeta[frameIndex].flags >> 4) & 0x07;
+    }
+  }, {
+    key: "getLayerDepths",
+    value: function getLayerDepths(frameIndex) {
+      return this.frameMeta[frameIndex].layerDepth;
+    }
+  }, {
+    key: "decodeFrame",
+    value: function decodeFrame(frameIndex) {
+      var diffingFlag = arguments.length > 1 && arguments[1] !== undefined ? arguments[1] : 0x7;
+      var isPrevFrame = arguments.length > 2 && arguments[2] !== undefined ? arguments[2] : false;
+
+      // if this frame is being decoded as a prev frame, then we only want to decode the layers necessary
+      if (isPrevFrame) diffingFlag &= this.getDiffingFlag(frameIndex + 1);
+      // the prevDecodedFrame check is an optimisation for decoding frames in full sequence
+      if (frameIndex !== 0 && this._prevDecodedFrame !== frameIndex - 1 && diffingFlag) this.decodeFrame(frameIndex - 1, diffingFlag = diffingFlag, isPrevFrame = true);
+
+      var meta = this.frameMeta[frameIndex];
+      var offset = this.frameOffsets[frameIndex];
+
+      for (var layerIndex = 0; layerIndex < 3; layerIndex++) {
+        this.seek(offset);
+        var layerSize = meta.layerSize[layerIndex];
+        offset += layerSize;
+
+        // if the layer is 38 bytes then it hasn't changed at all since the previous frame, so we can skip it
+        if (layerSize === 38) continue;
+
+        if (diffingFlag >> layerIndex & 0x1 === 0) continue;
+
+        this._bitIndex = 16;
+        this._bitValue = 0;
+        var skip = 0;
+
+        for (var tileOffsetY = 0; tileOffsetY < 240; tileOffsetY += 128) {
+          for (var tileOffsetX = 0; tileOffsetX < 320; tileOffsetX += 128) {
+            for (var subTileOffsetY = 0; subTileOffsetY < 128; subTileOffsetY += 8) {
+              var y = tileOffsetY + subTileOffsetY;
+              if (y >= 240) break;
+
+              for (var subTileOffsetX = 0; subTileOffsetX < 128; subTileOffsetX += 8) {
+                var x = tileOffsetX + subTileOffsetX;
+                if (x >= 320) break;
+
+                if (skip) {
+                  skip -= 1;
+                  continue;
+                }
+
+                var pixelOffset = y * 320 + x;
+                var pixelBuffer = this._layers[layerIndex];
+
+                var type = this.readBits(3);
+
+                if (type == 0) {
+                  var lineIndex = this._table1[this.readBits(5)];
+                  var pixels = this._linetable.subarray(lineIndex * 8, lineIndex * 8 + 8);
+                  pixelBuffer.set(pixels, pixelOffset);
+                  pixelBuffer.set(pixels, pixelOffset + 320);
+                  pixelBuffer.set(pixels, pixelOffset + 640);
+                  pixelBuffer.set(pixels, pixelOffset + 960);
+                  pixelBuffer.set(pixels, pixelOffset + 1280);
+                  pixelBuffer.set(pixels, pixelOffset + 1600);
+                  pixelBuffer.set(pixels, pixelOffset + 1920);
+                  pixelBuffer.set(pixels, pixelOffset + 2240);
+                } else if (type == 1) {
+                  var _lineIndex = this.readBits(13);
+                  var _pixels = this._linetable.subarray(_lineIndex * 8, _lineIndex * 8 + 8);
+                  pixelBuffer.set(_pixels, pixelOffset);
+                  pixelBuffer.set(_pixels, pixelOffset + 320);
+                  pixelBuffer.set(_pixels, pixelOffset + 640);
+                  pixelBuffer.set(_pixels, pixelOffset + 960);
+                  pixelBuffer.set(_pixels, pixelOffset + 1280);
+                  pixelBuffer.set(_pixels, pixelOffset + 1600);
+                  pixelBuffer.set(_pixels, pixelOffset + 1920);
+                  pixelBuffer.set(_pixels, pixelOffset + 2240);
+                } else if (type == 2) {
+                  var lineValue = this.readBits(5);
+                  var lineIndexA = this._table1[lineValue];
+                  var lineIndexB = this._table2[lineValue];
+                  var a = this._linetable.subarray(lineIndexA * 8, lineIndexA * 8 + 8);
+                  var b = this._linetable.subarray(lineIndexB * 8, lineIndexB * 8 + 8);
+                  pixelBuffer.set(a, pixelOffset);
+                  pixelBuffer.set(b, pixelOffset + 320);
+                  pixelBuffer.set(a, pixelOffset + 640);
+                  pixelBuffer.set(b, pixelOffset + 960);
+                  pixelBuffer.set(a, pixelOffset + 1280);
+                  pixelBuffer.set(b, pixelOffset + 1600);
+                  pixelBuffer.set(a, pixelOffset + 1920);
+                  pixelBuffer.set(b, pixelOffset + 2240);
+                } else if (type == 3) {
+                  var _lineIndexA = this.readBits(13);
+                  var _lineIndexB = this._table3[_lineIndexA];
+                  var _a2 = this._linetable.subarray(_lineIndexA * 8, _lineIndexA * 8 + 8);
+                  var _b2 = this._linetable.subarray(_lineIndexB * 8, _lineIndexB * 8 + 8);
+                  pixelBuffer.set(_a2, pixelOffset);
+                  pixelBuffer.set(_b2, pixelOffset + 320);
+                  pixelBuffer.set(_a2, pixelOffset + 640);
+                  pixelBuffer.set(_b2, pixelOffset + 960);
+                  pixelBuffer.set(_a2, pixelOffset + 1280);
+                  pixelBuffer.set(_b2, pixelOffset + 1600);
+                  pixelBuffer.set(_a2, pixelOffset + 1920);
+                  pixelBuffer.set(_b2, pixelOffset + 2240);
+                } else if (type == 4) {
+                  var mask = this.readBits(8);
+                  for (var line = 0; line < 8; line++) {
+                    var _lineIndex2 = 0;
+                    if (mask & 1 << line) {
+                      _lineIndex2 = this._table1[this.readBits(5)];
+                    } else {
+                      _lineIndex2 = this.readBits(13);
+                    }
+                    var _pixels2 = this._linetable.subarray(_lineIndex2 * 8, _lineIndex2 * 8 + 8);
+                    pixelBuffer.set(_pixels2, pixelOffset + line * 320);
+                  }
+                } else if (type == 5) {
+                  skip = this.readBits(5);
+                  continue;
+                } else if (type == 6) {
+                  console.warn("type 6??? nah m8");
+                } else if (type == 7) {
+                  var pattern = this.readBits(2);
+                  var useTable = this.readBits(1);
+                  var _lineIndexA2 = 0;
+                  var _lineIndexB2 = 0;
+
+                  if (useTable) {
+                    _lineIndexA2 = this._table1[this.readBits(5)];
+                    _lineIndexB2 = this._table1[this.readBits(5)];
+                    pattern = (pattern + 1) % 4;
+                  } else {
+                    _lineIndexA2 = this.readBits(13);
+                    _lineIndexB2 = this.readBits(13);
+                  }
+
+                  var _a3 = this._linetable.subarray(_lineIndexA2 * 8, _lineIndexA2 * 8 + 8);
+                  var _b3 = this._linetable.subarray(_lineIndexB2 * 8, _lineIndexB2 * 8 + 8);
+
+                  if (pattern == 0) {
+                    pixelBuffer.set(_a3, pixelOffset);
+                    pixelBuffer.set(_b3, pixelOffset + 320);
+                    pixelBuffer.set(_a3, pixelOffset + 640);
+                    pixelBuffer.set(_b3, pixelOffset + 960);
+                    pixelBuffer.set(_a3, pixelOffset + 1280);
+                    pixelBuffer.set(_b3, pixelOffset + 1600);
+                    pixelBuffer.set(_a3, pixelOffset + 1920);
+                    pixelBuffer.set(_b3, pixelOffset + 2240);
+                  } else if (pattern == 1) {
+                    pixelBuffer.set(_a3, pixelOffset);
+                    pixelBuffer.set(_a3, pixelOffset + 320);
+                    pixelBuffer.set(_b3, pixelOffset + 640);
+                    pixelBuffer.set(_a3, pixelOffset + 960);
+                    pixelBuffer.set(_a3, pixelOffset + 1280);
+                    pixelBuffer.set(_b3, pixelOffset + 1600);
+                    pixelBuffer.set(_a3, pixelOffset + 1920);
+                    pixelBuffer.set(_a3, pixelOffset + 2240);
+                  } else if (pattern == 2) {
+                    pixelBuffer.set(_a3, pixelOffset);
+                    pixelBuffer.set(_b3, pixelOffset + 320);
+                    pixelBuffer.set(_a3, pixelOffset + 640);
+                    pixelBuffer.set(_a3, pixelOffset + 960);
+                    pixelBuffer.set(_b3, pixelOffset + 1280);
+                    pixelBuffer.set(_a3, pixelOffset + 1600);
+                    pixelBuffer.set(_a3, pixelOffset + 1920);
+                    pixelBuffer.set(_b3, pixelOffset + 2240);
+                  } else if (pattern == 3) {
+                    pixelBuffer.set(_a3, pixelOffset);
+                    pixelBuffer.set(_b3, pixelOffset + 320);
+                    pixelBuffer.set(_b3, pixelOffset + 640);
+                    pixelBuffer.set(_a3, pixelOffset + 960);
+                    pixelBuffer.set(_b3, pixelOffset + 1280);
+                    pixelBuffer.set(_b3, pixelOffset + 1600);
+                    pixelBuffer.set(_a3, pixelOffset + 1920);
+                    pixelBuffer.set(_b3, pixelOffset + 2240);
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+
+      this._prevDecodedFrame = frameIndex;
+      return this._layers;
+    }
+  }, {
+    key: "getFramePalette",
+    value: function getFramePalette(frameIndex) {
+      var flags = this.frameMeta[frameIndex].flags;
+      return [PALETTE[flags & 0xF], // paper color
+      PALETTE[flags >> 8 & 0xF], // layer A color 1
+      PALETTE[flags >> 12 & 0xF], // layer A color 2
+      PALETTE[flags >> 16 & 0xF], // layer B color 1
+      PALETTE[flags >> 20 & 0xF], // layer B color 2
+      PALETTE[flags >> 24 & 0xF], // layer C color 1
+      PALETTE[flags >> 28 & 0xF]];
+    }
+  }, {
+    key: "getFrameImage",
+    value: function getFrameImage(frameIndex) {
+      var layers = this.decodeFrame(frameIndex);
+      var image = new Uint8Array(320 * 240);
+      for (var pixel = 0; pixel < 320 * 240; pixel++) {
+        var a = layers[0][pixel];
+        var b = layers[1][pixel];
+        var c = layers[2][pixel];
+        if (c) image[pixel] = c + 4;
+        if (b) image[pixel] = b + 2;
+        if (a) image[pixel] = a;
+      }
+      return image;
+    }
+  }, {
+    key: "decodeSoundFlags",
+    value: function decodeSoundFlags() {
+      var arr = new Array(this.frameCount).fill([]);
+      return arr.map(function (_) {
+        return [false, false, false];
+      });
+    }
+  }, {
+    key: "hasAudioTrack",
+    value: function hasAudioTrack(trackIndex) {
+      return false;
+    }
+  }]);
+
+  return kwzParser;
+}(_dataStream3.default);
+
+exports.default = kwzParser;
+
+/***/ }),
+/* 10 */
+/***/ (function(module, exports, __webpack_require__) {
+
+"use strict";
+
+
+Object.defineProperty(exports, "__esModule", {
+  value: true
+});
 exports.default = load;
 
-var _urlLoader = __webpack_require__(10);
+var _urlLoader = __webpack_require__(11);
 
 var _urlLoader2 = _interopRequireDefault(_urlLoader);
 
-var _fileLoader = __webpack_require__(11);
+var _fileLoader = __webpack_require__(12);
 
 var _fileLoader2 = _interopRequireDefault(_fileLoader);
 
-var _arrayBufferLoader = __webpack_require__(12);
+var _arrayBufferLoader = __webpack_require__(13);
 
 var _arrayBufferLoader2 = _interopRequireDefault(_arrayBufferLoader);
 
@@ -1782,7 +2253,7 @@ function load(source) {
 }
 
 /***/ }),
-/* 10 */
+/* 11 */
 /***/ (function(module, exports, __webpack_require__) {
 
 "use strict";
@@ -1820,7 +2291,7 @@ exports.default = {
 };
 
 /***/ }),
-/* 11 */
+/* 12 */
 /***/ (function(module, exports, __webpack_require__) {
 
 "use strict";
@@ -1849,7 +2320,7 @@ exports.default = {
 };
 
 /***/ }),
-/* 12 */
+/* 13 */
 /***/ (function(module, exports, __webpack_require__) {
 
 "use strict";
@@ -1871,7 +2342,7 @@ exports.default = {
 };
 
 /***/ }),
-/* 13 */
+/* 14 */
 /***/ (function(module, exports, __webpack_require__) {
 
 "use strict";
@@ -1882,6 +2353,12 @@ Object.defineProperty(exports, "__esModule", {
 });
 
 var _createClass = function () { function defineProperties(target, props) { for (var i = 0; i < props.length; i++) { var descriptor = props[i]; descriptor.enumerable = descriptor.enumerable || false; descriptor.configurable = true; if ("value" in descriptor) descriptor.writable = true; Object.defineProperty(target, descriptor.key, descriptor); } } return function (Constructor, protoProps, staticProps) { if (protoProps) defineProperties(Constructor.prototype, protoProps); if (staticProps) defineProperties(Constructor, staticProps); return Constructor; }; }();
+
+var _wav = __webpack_require__(15);
+
+var _wav2 = _interopRequireDefault(_wav);
+
+function _interopRequireDefault(obj) { return obj && obj.__esModule ? obj : { default: obj }; }
 
 function _classCallCheck(instance, Constructor) { if (!(instance instanceof Constructor)) { throw new TypeError("Cannot call a class as a function"); } }
 
@@ -1913,37 +2390,9 @@ var audioTrack = function () {
     key: "set",
     value: function set(pcmData, playbackRate) {
       // the HTML5 audio element supports PCM audio if it's in a WAV wrapper
-      // to do this we write a WAV header and prepend it to the raw PCM data
-      // WAV header reference: http://www.topherlee.com/software/pcm-tut-wavformat.html
-      var header = new DataView(new ArrayBuffer(44));
-      // "RIFF" indent
-      header.setUint32(0, 1179011410, true);
-      // filesize
-      header.setUint32(4, header.byteLength + pcmData.byteLength, true);
-      // "WAVE" indent
-      header.setUint32(8, 1163280727, true);
-      // "fmt " section header
-      header.setUint32(12, 544501094, true);
-      // fmt section length
-      header.setUint32(16, 16, true);
-      // specify audio format is pcm (type 1)
-      header.setUint16(20, 1, true);
-      // number of audio channels
-      header.setUint16(22, this.channelCount, true);
-      // audio sample rate
-      header.setUint32(24, this.sampleRate * playbackRate, true);
-      // byterate = (sampleRate * bitsPerSample * channelCount) / 8
-      header.setUint32(28, this.sampleRate * playbackRate * this.bitsPerSample * this.channelCount / 8, true);
-      // blockalign = (bitsPerSample * channels) / 8
-      header.setUint16(32, this.bitsPerSample * this.channelCount / 8, true);
-      // bits per sample
-      header.setUint16(34, this.bitsPerSample, true);
-      // "data" section header
-      header.setUint32(36, 1635017060, true);
-      // data section length
-      header.setUint32(40, pcmData.byteLength, true);
-      // create blob from joining the wav header and pcm data
-      this.url = window.URL.createObjectURL(new Blob([header.buffer, pcmData.buffer], { type: "audio/wav" }));
+      var wav = new _wav2.default(this.sampleRate * playbackRate, this.channelCount, this.bitsPerSample);
+      wav.writeFrames(pcmData);
+      this.url = window.URL.createObjectURL(wav.getBlob());
       // use the blob url for the audio element
       this.audio.src = this.url;
       this.active = true;
@@ -2004,6 +2453,95 @@ var audioTrack = function () {
 }();
 
 exports.default = audioTrack;
+
+/***/ }),
+/* 15 */
+/***/ (function(module, exports, __webpack_require__) {
+
+"use strict";
+
+
+Object.defineProperty(exports, "__esModule", {
+  value: true
+});
+
+var _createClass = function () { function defineProperties(target, props) { for (var i = 0; i < props.length; i++) { var descriptor = props[i]; descriptor.enumerable = descriptor.enumerable || false; descriptor.configurable = true; if ("value" in descriptor) descriptor.writable = true; Object.defineProperty(target, descriptor.key, descriptor); } } return function (Constructor, protoProps, staticProps) { if (protoProps) defineProperties(Constructor.prototype, protoProps); if (staticProps) defineProperties(Constructor, staticProps); return Constructor; }; }();
+
+var _dataStream = __webpack_require__(0);
+
+var _dataStream2 = _interopRequireDefault(_dataStream);
+
+function _interopRequireDefault(obj) { return obj && obj.__esModule ? obj : { default: obj }; }
+
+function _classCallCheck(instance, Constructor) { if (!(instance instanceof Constructor)) { throw new TypeError("Cannot call a class as a function"); } }
+
+var wavEncoder = function () {
+  function wavEncoder(sampleRate) {
+    var channels = arguments.length > 1 && arguments[1] !== undefined ? arguments[1] : 1;
+    var bitsPerSample = arguments.length > 2 && arguments[2] !== undefined ? arguments[2] : 16;
+
+    _classCallCheck(this, wavEncoder);
+
+    this.sampleRate = sampleRate;
+    this.channels = channels;
+    this.bitsPerSample = bitsPerSample;
+    // Write WAV file header
+    // Reference: http://www.topherlee.com/software/pcm-tut-wavformat.html
+    var headerBuffer = new ArrayBuffer(44);
+    var header = new _dataStream2.default(headerBuffer);
+    // "RIFF" indent
+    header.writeUtf8("RIFF");
+    // filesize (set later)
+    header.writeUint32(0);
+    // "WAVE" indent
+    header.writeUtf8("WAVE");
+    // "fmt " section header
+    header.writeUtf8("fmt ");
+    // fmt section length
+    header.writeUint32(16);
+    // specify audio format is pcm (type 1)
+    header.writeUint16(1);
+    // number of audio channels
+    header.writeUint16(this.channels);
+    // audio sample rate
+    header.writeUint32(this.sampleRate);
+    // byterate = (sampleRate * bitsPerSample * channelCount) / 8
+    header.writeUint32(this.sampleRate * this.bitsPerSample * this.channels / 8);
+    // blockalign = (bitsPerSample * channels) / 8
+    header.writeUint16(this.bitsPerSample * this.channels / 8);
+    // bits per sample
+    header.writeUint16(this.bitsPerSample);
+    // "data" section header
+    header.writeUtf8("data");
+    // data section length (set later)
+    header.writeUint32(0);
+    this.header = header;
+    this.pcmData = null;
+  }
+
+  _createClass(wavEncoder, [{
+    key: "writeFrames",
+    value: function writeFrames(pcmData) {
+      var header = this.header;
+      // fill in filesize
+      header.seek(4);
+      header.writeUint32(header.byteLength + pcmData.byteLength);
+      // fill in data section length
+      header.seek(40);
+      header.writeUint32(pcmData.byteLength);
+      this.pcmData = pcmData;
+    }
+  }, {
+    key: "getBlob",
+    value: function getBlob() {
+      return new Blob([this.header.buffer, this.pcmData.buffer], { type: "audio/wav" });
+    }
+  }]);
+
+  return wavEncoder;
+}();
+
+exports.default = wavEncoder;
 
 /***/ })
 /******/ ]);

@@ -2,6 +2,7 @@ import canvas from "webgl/canvas";
 import parser from "parser";
 import loader from "loader";
 import audioTrack from "./audio";
+import webglCanvas from "../webgl/canvas";
 
 /** flipnote player API, based on HTMLMediaElement (https://developer.mozilla.org/en-US/docs/Web/API/HTMLMediaElement) */ 
 export default class flipnotePlayer {
@@ -30,6 +31,7 @@ export default class flipnotePlayer {
       new audioTrack("se3"),
       new audioTrack("bgm"),
     ];
+    this.smoothRendering = false;
   }
 
   /**
@@ -123,13 +125,13 @@ export default class flipnotePlayer {
   */
   _load(buffer) {
     var note = new parser(buffer);
-    var meta = note.meta;
     this.note = note;
-    this.meta = meta;
+    this.meta = note.meta;
+    this.type = note.type;
     this.frameCount = note.frameCount;
     this.frameSpeed = note.frameSpeed;
     this.fileLength = note.byteLength;
-    this.loop = meta.loop == 1;
+    this.loop = note.meta.loop == 1;
     this.paused = true;
     this._isOpen = true;
     if (this.note.hasAudioTrack(1)) this.audioTracks[0].set(this.note.decodeAudio("se1"), 1);
@@ -139,6 +141,11 @@ export default class flipnotePlayer {
     this._seFlags = this.note.decodeSoundFlags();
     this._playbackLoop = null;
     this._hasPlaybackStarted = false;
+    this.layerVisiblity = {
+      1: true,
+      2: true,
+      3: true
+    };
     this.setFrame(this.note.thumbFrameIndex);
     this.emit("load");
   }
@@ -263,7 +270,7 @@ export default class flipnotePlayer {
 
   /**
   * Get a specific frame as an image data URL
-  * @param {number} index - zero-based frame index
+  * @param {number|string} index - zero-based frame index, or pass "thumb" to get the thumbnail frame
   * @param {string} type - image MIME type, default is image/png
   * @param {number} encoderOptions - number between 0 and 1 indicating image quality if type is image/jpeg or image/webp
   */
@@ -272,18 +279,9 @@ export default class flipnotePlayer {
     var canvas = this._imgCanvas;
     if (canvas.width !== width || canvas.height !== height) canvas.setSize(width, height);
     // clamp frame index
-    index = Math.max(0, Math.min(index, this.frameCount - 1));
+    index = (index == "thumb") ? (this.note.thumbFrameIndex) : (Math.max(0, Math.min(index, this.frameCount - 1)));
     this.drawFrame(index, canvas);
     return canvas.toImage(type, encoderOptions);
-  }
-
-  /**
-  * Get a Flipnote thumbnail as an image data URL
-  * @param {string} type - image MIME type, default is image/png
-  * @param {number} encoderOptions - number between 0 and 1 indicating image quality if type is image/jpeg or image/webp
-  */
-  getThumbImage(width, height, type, encoderOptions) {
-    return this.getFrameImage(this.note.thumbFrameIndex, width, height, type, encoderOptions);
   }
 
   /**
@@ -300,18 +298,23 @@ export default class flipnotePlayer {
     this.emit("frame:update", this.currentFrame);
   }
 
+  /**
+  * Draw a frame to a given canvas
+  * @param {number} index - zero-based frame index
+  * @param {webglCanvas} canvas - webgl frame canvas
+  */
   drawFrame(frameIndex, canvas) {
     let colors = this.note.getFramePalette(frameIndex);
     let layerBuffers = this.note.decodeFrame(frameIndex);
     canvas.setPaperColor(colors[0]);
     canvas.clear();
     if (this.note.type == "PPM") {
-      canvas.drawLayer(layerBuffers[1], 256, 192, colors[2], [0,0,0,0]);
-      canvas.drawLayer(layerBuffers[0], 256, 192, colors[1], [0,0,0,0]);
+      if (this.layerVisiblity[2]) canvas.drawLayer(layerBuffers[1], 256, 192, colors[2], [0,0,0,0]);
+      if (this.layerVisiblity[1]) canvas.drawLayer(layerBuffers[0], 256, 192, colors[1], [0,0,0,0]);
     } else if (this.note.type == "KWZ") {
-      canvas.drawLayer(layerBuffers[2], 320, 240, colors[5], colors[6]);
-      canvas.drawLayer(layerBuffers[1], 320, 240, colors[3], colors[4]);
-      canvas.drawLayer(layerBuffers[0], 320, 240, colors[1], colors[2]);
+      if (this.layerVisiblity[3]) canvas.drawLayer(layerBuffers[2], 320, 240, colors[5], colors[6]);
+      if (this.layerVisiblity[2]) canvas.drawLayer(layerBuffers[1], 320, 240, colors[3], colors[4]);
+      if (this.layerVisiblity[1]) canvas.drawLayer(layerBuffers[0], 320, 240, colors[1], colors[2]);
     }
     
   }
@@ -366,6 +369,31 @@ export default class flipnotePlayer {
   */
   resize(width, height) {
     this.canvas.resize(width, height);
+  }
+
+  /**
+  * Set layer visibility
+  * @param {number} index - layer number = 1, 2, 3
+  * @param {boolean} value
+  */
+  setLayerVisibility(index, value) {
+    this.layerVisiblity[index] = value;
+    this.drawFrame(this.currentFrame, this.canvas);
+  }
+
+  /**
+  * Set smooth rendering
+  * @param {boolean} value
+  */
+  setSmoothRendering(value) {
+    if (this.type == "KWZ") { // kwz doesn't supper linear fltering yet
+      var filter = "nearest";
+    } else {
+      var filter = value ? "linear" : "nearest";
+    }
+    this.canvas.setFilter(filter);
+    this.drawFrame(this.currentFrame, this.canvas);
+    this.smoothRendering = value;
   }
 
   /**
