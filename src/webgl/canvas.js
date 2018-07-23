@@ -53,8 +53,6 @@ export default class webglCanvas {
     gl.uniform1i(gl.getUniformLocation(this.program, "u_bitmap"), 0);
     this.setFilter("nearest");
     this.refs.textures.push(tex);
-    // this.setLayerVisibilty(1, true);
-    // this.setLayerVisibilty(2, true);
     gl.enable(gl.BLEND);
     gl.blendFunc(gl.ONE, gl.ONE_MINUS_SRC_ALPHA);
   }
