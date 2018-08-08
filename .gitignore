@@ -1,5 +1,6 @@
-# Test HTML page and Flipnote PPMs
+# Test HTML page and Flipnote samples
 *.ppm
+*.kwz
 *.html
 dist/demo
 

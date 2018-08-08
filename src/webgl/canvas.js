@@ -31,9 +31,9 @@ export default class webglCanvas {
     // link program
     gl.linkProgram(program);
     if (!gl.getProgramParameter(program, gl.LINK_STATUS)) {
-      throw new Error(gl.getProgramInfoLog(program));
+      let log = gl.getProgramInfoLog(program);
       gl.deleteProgram(program);
-      return null;
+      throw new Error(log);
     }
     // activate the program
     gl.useProgram(program);
@@ -50,7 +50,14 @@ export default class webglCanvas {
     gl.bindTexture(gl.TEXTURE_2D, tex);
     gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_S, gl.CLAMP_TO_EDGE);
     gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_T, gl.CLAMP_TO_EDGE);
-    gl.uniform1i(gl.getUniformLocation(this.program, "u_bitmap"), 0);
+    // get uniform locations
+    this.uniforms = {};
+    let uniformCount = gl.getProgramParameter(program, gl.ACTIVE_UNIFORMS);
+    for (let i = 0; i < uniformCount; i++) {
+      let name = gl.getActiveUniform(program, i).name;
+      this.uniforms[name] = gl.getUniformLocation(program, name);
+    }
+    gl.uniform1i(this.uniforms.u_bitmap, 0);
     this.setFilter("nearest");
     this.refs.textures.push(tex);
     gl.enable(gl.BLEND);
@@ -71,9 +78,9 @@ export default class webglCanvas {
     gl.compileShader(shader);
     // test if shader compilation was successful
     if (!gl.getShaderParameter(shader, gl.COMPILE_STATUS)) {
-      throw new Error(gl.getShaderInfoLog(shader));
+      let log = gl.getShaderInfoLog(shader);
       gl.deleteShader(shader);
-      return null;
+      throw new Error(log);
     }
     this.refs.shaders.push(shader);
     return shader;
@@ -107,7 +114,7 @@ export default class webglCanvas {
   * @param {array} value - r,g,b color, each channel's value should be between 0 and 255
   */
   setColor(color, value) {
-    this.gl.uniform4f(this.gl.getUniformLocation(this.program, color), value[0]/255, value[1]/255, value[2]/255, 1);
+    this.gl.uniform4f(this.uniforms[color], value[0]/255, value[1]/255, value[2]/255, 1);
   }
 
   /**

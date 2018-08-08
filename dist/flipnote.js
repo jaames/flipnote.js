@@ -1,5 +1,5 @@
 /*!
- * flipnote.js v2.0.1
+ * flipnote.js v2.0.2
  * Real-time, browser-based playback of Flipnote Studio's .ppm animation format
  * 2018 James Daniel
  * github.com/jaames/flipnote.js
@@ -463,9 +463,9 @@ var webglCanvas = function () {
     // link program
     gl.linkProgram(program);
     if (!gl.getProgramParameter(program, gl.LINK_STATUS)) {
-      throw new Error(gl.getProgramInfoLog(program));
+      var log = gl.getProgramInfoLog(program);
       gl.deleteProgram(program);
-      return null;
+      throw new Error(log);
     }
     // activate the program
     gl.useProgram(program);
@@ -482,7 +482,14 @@ var webglCanvas = function () {
     gl.bindTexture(gl.TEXTURE_2D, tex);
     gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_S, gl.CLAMP_TO_EDGE);
     gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_T, gl.CLAMP_TO_EDGE);
-    gl.uniform1i(gl.getUniformLocation(this.program, "u_bitmap"), 0);
+    // get uniform locations
+    this.uniforms = {};
+    var uniformCount = gl.getProgramParameter(program, gl.ACTIVE_UNIFORMS);
+    for (var i = 0; i < uniformCount; i++) {
+      var name = gl.getActiveUniform(program, i).name;
+      this.uniforms[name] = gl.getUniformLocation(program, name);
+    }
+    gl.uniform1i(this.uniforms.u_bitmap, 0);
     this.setFilter("nearest");
     this.refs.textures.push(tex);
     gl.enable(gl.BLEND);
@@ -507,9 +514,9 @@ var webglCanvas = function () {
       gl.compileShader(shader);
       // test if shader compilation was successful
       if (!gl.getShaderParameter(shader, gl.COMPILE_STATUS)) {
-        throw new Error(gl.getShaderInfoLog(shader));
+        var log = gl.getShaderInfoLog(shader);
         gl.deleteShader(shader);
-        return null;
+        throw new Error(log);
       }
       this.refs.shaders.push(shader);
       return shader;
@@ -552,7 +559,7 @@ var webglCanvas = function () {
   }, {
     key: "setColor",
     value: function setColor(color, value) {
-      this.gl.uniform4f(this.gl.getUniformLocation(this.program, color), value[0] / 255, value[1] / 255, value[2] / 255, 1);
+      this.gl.uniform4f(this.uniforms[color], value[0] / 255, value[1] / 255, value[2] / 255, 1);
     }
 
     /**
@@ -667,7 +674,7 @@ function _interopRequireDefault(obj) { return obj && obj.__esModule ? obj : { de
 // import decoder from "./decoder";
 
 module.exports = {
-  version: "2.0.1",
+  version: "2.0.2",
   player: _player2.default
   // decoder: decoder,
 };
