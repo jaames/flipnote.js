@@ -146,6 +146,7 @@ export default class flipnotePlayer {
       2: true,
       3: true
     };
+    this.setMode(this.type);
     this.setFrame(this.note.thumbFrameIndex);
     this.emit("load");
   }
@@ -394,6 +395,15 @@ export default class flipnotePlayer {
     this.canvas.setFilter(filter);
     this.drawFrame(this.currentFrame, this.canvas);
     this.smoothRendering = value;
+  }
+
+  /**
+  * Set the mode depending on format
+  * @param {string} mode - "KWZ" | "PPM"
+  */
+  setMode(mode) {
+    this.canvas.setMode(mode);
+    this._imgCanvas.setMode(mode);
   }
 
   /**

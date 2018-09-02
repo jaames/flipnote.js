@@ -1,5 +1,5 @@
 /*!
- * flipnote.js v2.0.2
+ * flipnote.js v2.1.0
  * Real-time, browser-based playback of Flipnote Studio's .ppm animation format
  * 2018 James Daniel
  * github.com/jaames/flipnote.js
@@ -415,13 +415,13 @@ Object.defineProperty(exports, "__esModule", {
 
 var _createClass = function () { function defineProperties(target, props) { for (var i = 0; i < props.length; i++) { var descriptor = props[i]; descriptor.enumerable = descriptor.enumerable || false; descriptor.configurable = true; if ("value" in descriptor) descriptor.writable = true; Object.defineProperty(target, descriptor.key, descriptor); } } return function (Constructor, protoProps, staticProps) { if (protoProps) defineProperties(Constructor.prototype, protoProps); if (staticProps) defineProperties(Constructor, staticProps); return Constructor; }; }();
 
-var _vertexShaderGlsl = __webpack_require__(4);
+var _vsh = __webpack_require__(4);
 
-var _vertexShaderGlsl2 = _interopRequireDefault(_vertexShaderGlsl);
+var _vsh2 = _interopRequireDefault(_vsh);
 
-var _fragmentShaderGlsl = __webpack_require__(5);
+var _fsh = __webpack_require__(5);
 
-var _fragmentShaderGlsl2 = _interopRequireDefault(_fragmentShaderGlsl);
+var _fsh2 = _interopRequireDefault(_fsh);
 
 function _interopRequireDefault(obj) { return obj && obj.__esModule ? obj : { default: obj }; }
 
@@ -456,8 +456,8 @@ var webglCanvas = function () {
       buffers: []
     };
     // set up shaders
-    var vShader = this._createShader(gl.VERTEX_SHADER, _vertexShaderGlsl2.default);
-    var fShader = this._createShader(gl.FRAGMENT_SHADER, _fragmentShaderGlsl2.default);
+    var vShader = this._createShader(gl.VERTEX_SHADER, _vsh2.default);
+    var fShader = this._createShader(gl.FRAGMENT_SHADER, _fsh2.default);
     gl.attachShader(program, vShader);
     gl.attachShader(program, fShader);
     // link program
@@ -490,10 +490,12 @@ var webglCanvas = function () {
       this.uniforms[name] = gl.getUniformLocation(program, name);
     }
     gl.uniform1i(this.uniforms.u_bitmap, 0);
-    this.setFilter("nearest");
+    this.setFilter("linear");
+    this.setMode("PPM");
     this.refs.textures.push(tex);
     gl.enable(gl.BLEND);
-    gl.blendFunc(gl.ONE, gl.ONE_MINUS_SRC_ALPHA);
+    // gl.blendFunc(gl.ONE, gl.ONE_MINUS_SRC_ALPHA);
+    gl.blendFuncSeparate(gl.SRC_ALPHA, gl.ONE_MINUS_SRC_ALPHA, gl.ONE, gl.ONE_MINUS_SRC_ALPHA);
   }
 
   /**
@@ -545,9 +547,27 @@ var webglCanvas = function () {
     value: function setFilter(filter) {
       var gl = this.gl;
       filter = filter == "linear" ? gl.LINEAR : gl.NEAREST;
+      gl.uniform1i(this.uniforms.u_isSmooth, filter == "linear" ? 0 : 1);
       gl.activeTexture(gl.TEXTURE0);
       gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MIN_FILTER, filter);
       gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MAG_FILTER, filter);
+    }
+
+    /**
+    * Set the canvas mode depending on format
+    * @param {string} mode - "KWZ" | "PPM"
+    */
+
+  }, {
+    key: "setMode",
+    value: function setMode(mode) {
+      var gl = this.gl;
+
+      if (mode === "PPM") {
+        this.textureType = gl.ALPHA;
+      } else if (mode === "KWZ") {
+        this.textureType = gl.LUMINANCE_ALPHA;
+      }
     }
 
     /**
@@ -588,7 +608,7 @@ var webglCanvas = function () {
     value: function drawLayer(buffer, width, height, color1, color2, depth) {
       var gl = this.gl;
       gl.activeTexture(gl.TEXTURE0);
-      gl.texImage2D(gl.TEXTURE_2D, 0, gl.ALPHA, width, height, 0, gl.ALPHA, gl.UNSIGNED_BYTE, buffer);
+      gl.texImage2D(gl.TEXTURE_2D, 0, this.textureType, width, height, 0, this.textureType, gl.UNSIGNED_BYTE, buffer);
       // gl.uniform1f(gl.getUniformLocation(this.program, "u_layerDepth"), -depth/6);
       this.setColor("u_color1", color1);
       this.setColor("u_color2", color2);
@@ -674,7 +694,7 @@ function _interopRequireDefault(obj) { return obj && obj.__esModule ? obj : { de
 // import decoder from "./decoder";
 
 module.exports = {
-  version: "2.0.2",
+  version: "2.1.0",
   player: _player2.default
   // decoder: decoder,
 };
@@ -780,6 +800,7 @@ var flipnotePlayer = function () {
         2: true,
         3: true
       };
+      this.setMode(this.type);
       this.setFrame(this.note.thumbFrameIndex);
       this.emit("load");
     }
@@ -1090,6 +1111,18 @@ var flipnotePlayer = function () {
     }
 
     /**
+    * Set the mode depending on format
+    * @param {string} mode - "KWZ" | "PPM"
+    */
+
+  }, {
+    key: "setMode",
+    value: function setMode(mode) {
+      this.canvas.setMode(mode);
+      this._imgCanvas.setMode(mode);
+    }
+
+    /**
     * Register an event callback
     * @param {string} eventType - event type
     * @param {function} callback - event callback function
@@ -1267,7 +1300,7 @@ exports.default = "\nattribute vec4 a_position;\nvarying vec2 v_texcoord;\nvoid 
 Object.defineProperty(exports, "__esModule", {
   value: true
 });
-exports.default = "\nprecision mediump float;\nvarying vec2 v_texcoord;\nuniform vec4 u_color1;\nuniform vec4 u_color2;\nuniform sampler2D u_bitmap;\nvoid main() {\n  float index = texture2D(u_bitmap, v_texcoord).a * 255.0;\n  float weightColor1 = smoothstep(0.0, 1.0, index);\n  float weightColor2 = smoothstep(1.0, 2.0, index);\n  gl_FragColor = mix(vec4(0, 0, 0, 0), mix(u_color1, u_color2, weightColor2), weightColor1);\n}";
+exports.default = "\nprecision mediump float;\nvarying vec2 v_texcoord;\nuniform vec4 u_color1;\nuniform vec4 u_color2;\nuniform sampler2D u_bitmap;\nuniform bool u_isSmooth;\nvoid main() {\n  float weightColor1 = texture2D(u_bitmap, v_texcoord).a;\n  float weightColor2 = texture2D(u_bitmap, v_texcoord).r;\n  float alpha = 1.0;\n  if (u_isSmooth) {\n    weightColor1 = smoothstep(0.0, .8, weightColor1);\n    weightColor2 = smoothstep(0.0, .8, weightColor2);\n    float alpha = weightColor1 + weightColor2;\n  }\n  gl_FragColor = vec4(u_color1.rgb, alpha) * weightColor1 + vec4(u_color2.rgb, alpha) * weightColor2;\n}";
 
 /***/ }),
 /* 6 */
@@ -1606,7 +1639,7 @@ var ppmParser = function (_dataStream) {
             case 2:
               var lineHeader = this.readUint32(false);
               // line type 2 starts as an inverted line
-              if (lineType == 2) layerBitmap.fill(1, chunkOffset, chunkOffset + WIDTH);
+              if (lineType == 2) layerBitmap.fill(0xFF, chunkOffset, chunkOffset + WIDTH);
               // loop through each bit in the line header
               while (lineHeader & 0xFFFFFFFF) {
                 // if the bit is set, this 8-pix wide chunk is stored
@@ -1615,7 +1648,7 @@ var ppmParser = function (_dataStream) {
                   var chunk = this.readUint8();
                   // unpack chunk bits
                   for (var pixel = 0; pixel < 8; pixel++) {
-                    layerBitmap[chunkOffset + pixel] = chunk >> pixel & 0x1;
+                    layerBitmap[chunkOffset + pixel] = chunk >> pixel & 0x1 ? 0xFF : 0x00;
                   }
                 }
                 chunkOffset += 8;
@@ -1628,7 +1661,7 @@ var ppmParser = function (_dataStream) {
               while (chunkOffset < (line + 1) * WIDTH) {
                 var chunk = this.readUint8();
                 for (var pixel = 0; pixel < 8; pixel++) {
-                  layerBitmap[chunkOffset + pixel] = chunk >> pixel & 0x1;
+                  layerBitmap[chunkOffset + pixel] = chunk >> pixel & 0x1 ? 0xFF : 0x00;
                 }
                 chunkOffset += 8;
               }
@@ -1851,7 +1884,8 @@ var kwzParser = function (_dataStream) {
         }
       }
     } // linetable - contains every possible sequence of pixels for each tile line
-    _this._linetable = new Uint8Array(6561 * 8);
+    _this._linetable = new Uint16Array(6561 * 8);
+    var values = [0x0000, 0xFF00, 0x00FF];
     var offset = 0;
     for (var _a = 0; _a < 3; _a++) {
       for (var _b = 0; _b < 3; _b++) {
@@ -1861,7 +1895,7 @@ var kwzParser = function (_dataStream) {
               for (var f = 0; f < 3; f++) {
                 for (var g = 0; g < 3; g++) {
                   for (var h = 0; h < 3; h++) {
-                    _this._linetable.set([_b, _a, _d, _c, f, e, h, g], offset);
+                    _this._linetable.set([values[_b], values[_a], values[_d], values[_c], values[f], values[e], values[h], values[g]], offset);
                     offset += 8;
                   }
                 }
@@ -1870,7 +1904,10 @@ var kwzParser = function (_dataStream) {
           }
         }
       }
-    }_this._layers = [new Uint8Array(320 * 240), new Uint8Array(320 * 240), new Uint8Array(320 * 240)];
+    } // convert to uint8 array
+    // this._linetable = new Uint8Array(this._linetable.buffer);
+
+    _this._layers = [new Uint16Array(320 * 240), new Uint16Array(320 * 240), new Uint16Array(320 * 240)];
     _this._bitIndex = 0;
     _this._bitValue = 0;
     _this.load();
@@ -2170,7 +2207,8 @@ var kwzParser = function (_dataStream) {
       }
 
       this._prevDecodedFrame = frameIndex;
-      return this._layers;
+      // return this._layers;
+      return [new Uint8Array(this._layers[0].buffer), new Uint8Array(this._layers[1].buffer), new Uint8Array(this._layers[2].buffer)];
     }
   }, {
     key: "getFramePalette",

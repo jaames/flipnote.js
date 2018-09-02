@@ -45,7 +45,7 @@ export default class kwzParser extends dataStream {
     ]);
     // table3 - line offsets, but the lines are shifted to the left by one pixel
     this._table3 = new Uint16Array(6561);
-    const values = [0, 3, 7, 1, 4, 8, 2, 5, 6];
+    var values = [0, 3, 7, 1, 4, 8, 2, 5, 6];
     let index = 0;
     for (let a = 0; a < 9; a++)
       for (let b = 0; b < 9; b++)
@@ -55,7 +55,8 @@ export default class kwzParser extends dataStream {
             index++;
           }
     // linetable - contains every possible sequence of pixels for each tile line
-    this._linetable = new Uint8Array(6561 * 8);
+    this._linetable = new Uint16Array(6561 * 8);
+    var values = [0x0000, 0xFF00, 0x00FF];
     let offset = 0;
     for (let a = 0; a < 3; a++)
       for (let b = 0; b < 3; b++)
@@ -65,14 +66,26 @@ export default class kwzParser extends dataStream {
               for (let f = 0; f < 3; f++)
                 for (let g = 0; g < 3; g++)
                   for (let h = 0; h < 3; h++) {
-                    this._linetable.set([b, a, d, c, f, e, h, g], offset);
+                    this._linetable.set([
+                      values[b], 
+                      values[a], 
+                      values[d], 
+                      values[c], 
+                      values[f], 
+                      values[e], 
+                      values[h], 
+                      values[g]
+                    ], offset);
                     offset += 8;
                   }
 
+    // convert to uint8 array
+    // this._linetable = new Uint8Array(this._linetable.buffer);
+
     this._layers = [
-      new Uint8Array(320 * 240),
-      new Uint8Array(320 * 240),
-      new Uint8Array(320 * 240),
+      new Uint16Array(320 * 240),
+      new Uint16Array(320 * 240),
+      new Uint16Array(320 * 240),
     ];
     this._bitIndex = 0;
     this._bitValue = 0;
@@ -386,7 +399,12 @@ export default class kwzParser extends dataStream {
     }
 
     this._prevDecodedFrame = frameIndex;
-    return this._layers;
+    // return this._layers;
+    return [
+      new Uint8Array(this._layers[0].buffer),
+      new Uint8Array(this._layers[1].buffer),
+      new Uint8Array(this._layers[2].buffer),
+    ];
   }
 
   getFramePalette(frameIndex) {

@@ -1,5 +1,5 @@
-import vertexShader from "./vertexShader.glsl.js";
-import fragmentShader from "./fragmentShader.glsl.js";
+import vertexShader from "./vsh.js";
+import fragmentShader from "./fsh.js";
 
 /** webgl canvas wrapper class */
 export default class webglCanvas {
@@ -58,12 +58,14 @@ export default class webglCanvas {
       this.uniforms[name] = gl.getUniformLocation(program, name);
     }
     gl.uniform1i(this.uniforms.u_bitmap, 0);
-    this.setFilter("nearest");
+    this.setFilter("linear");
+    this.setMode("PPM");
     this.refs.textures.push(tex);
     gl.enable(gl.BLEND);
-    gl.blendFunc(gl.ONE, gl.ONE_MINUS_SRC_ALPHA);
+    // gl.blendFunc(gl.ONE, gl.ONE_MINUS_SRC_ALPHA);
+    gl.blendFuncSeparate(gl.SRC_ALPHA, gl.ONE_MINUS_SRC_ALPHA, gl.ONE, gl.ONE_MINUS_SRC_ALPHA);
   }
-
+  
   /**
   * Util to compile and attach a new shader
   * @param {shader type} type - gl.VERTEX_SHADER | gl.FRAGMENT_SHADER
@@ -103,9 +105,23 @@ export default class webglCanvas {
   setFilter(filter) {
     var gl = this.gl;
     filter = filter == "linear" ? gl.LINEAR : gl.NEAREST;
+    gl.uniform1i(this.uniforms.u_isSmooth, filter == "linear" ? 0 : 1);
     gl.activeTexture(gl.TEXTURE0);
     gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MIN_FILTER, filter);
     gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MAG_FILTER, filter);
+  }
+
+  /**
+  * Set the canvas mode depending on format
+  * @param {string} mode - "KWZ" | "PPM"
+  */
+  setMode(mode) {
+    const { gl } = this;
+    if (mode === "PPM") {
+      this.textureType = gl.ALPHA;
+    } else if (mode === "KWZ") {
+      this.textureType = gl.LUMINANCE_ALPHA;
+    }
   }
 
   /**
@@ -137,7 +153,7 @@ export default class webglCanvas {
   drawLayer(buffer, width, height, color1, color2, depth) {
     let gl = this.gl;
     gl.activeTexture(gl.TEXTURE0);
-    gl.texImage2D(gl.TEXTURE_2D, 0, gl.ALPHA, width, height, 0, gl.ALPHA, gl.UNSIGNED_BYTE, buffer);
+    gl.texImage2D(gl.TEXTURE_2D, 0, this.textureType, width, height, 0, this.textureType, gl.UNSIGNED_BYTE, buffer);
     // gl.uniform1f(gl.getUniformLocation(this.program, "u_layerDepth"), -depth/6);
     this.setColor("u_color1", color1);
     this.setColor("u_color2", color2);

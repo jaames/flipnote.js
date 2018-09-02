@@ -279,7 +279,7 @@ export default class ppmParser extends dataStream {
           case 2:
             var lineHeader = this.readUint32(false);
             // line type 2 starts as an inverted line
-            if (lineType == 2) layerBitmap.fill(1, chunkOffset, chunkOffset + WIDTH);
+            if (lineType == 2) layerBitmap.fill(0xFF, chunkOffset, chunkOffset + WIDTH);
             // loop through each bit in the line header
             while (lineHeader & 0xFFFFFFFF) {
               // if the bit is set, this 8-pix wide chunk is stored
@@ -288,7 +288,7 @@ export default class ppmParser extends dataStream {
                 var chunk = this.readUint8();
                 // unpack chunk bits
                 for (var pixel = 0; pixel < 8; pixel++) {
-                  layerBitmap[chunkOffset + pixel] = chunk >> pixel & 0x1;
+                  layerBitmap[chunkOffset + pixel] = (chunk >> pixel & 0x1) ? 0xFF : 0x00;
                 }
               }
               chunkOffset += 8;
@@ -301,7 +301,7 @@ export default class ppmParser extends dataStream {
             while(chunkOffset < (line + 1) * WIDTH) {
               var chunk = this.readUint8();
               for (var pixel = 0; pixel < 8; pixel++) {
-                layerBitmap[chunkOffset + pixel] = chunk >> pixel & 0x1;
+                layerBitmap[chunkOffset + pixel] = (chunk >> pixel & 0x1) ? 0xFF : 0x00
               }
               chunkOffset += 8;
             }
