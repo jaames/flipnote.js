@@ -317,7 +317,6 @@ export default class flipnotePlayer {
       if (this.layerVisiblity[2]) canvas.drawLayer(layerBuffers[1], 320, 240, colors[3], colors[4]);
       if (this.layerVisiblity[1]) canvas.drawLayer(layerBuffers[0], 320, 240, colors[1], colors[2]);
     }
-    
   }
 
   /**
@@ -370,6 +369,7 @@ export default class flipnotePlayer {
   */
   resize(width, height) {
     this.canvas.resize(width, height);
+    this.forceUpdate();
   }
 
   /**
@@ -379,7 +379,7 @@ export default class flipnotePlayer {
   */
   setLayerVisibility(index, value) {
     this.layerVisiblity[index] = value;
-    this.drawFrame(this.currentFrame, this.canvas);
+    this.forceUpdate();
   }
 
   /**
@@ -393,7 +393,7 @@ export default class flipnotePlayer {
       var filter = value ? "linear" : "nearest";
     }
     this.canvas.setFilter(filter);
-    this.drawFrame(this.currentFrame, this.canvas);
+    this.forceUpdate();
     this.smoothRendering = value;
   }
 
@@ -404,6 +404,15 @@ export default class flipnotePlayer {
   setMode(mode) {
     this.canvas.setMode(mode);
     this._imgCanvas.setMode(mode);
+  }
+
+  /**
+  * Force the player to redraw
+  */
+  forceUpdate() {
+    if (this._isOpen) {
+      this.drawFrame(this.currentFrame, this.canvas);
+    }
   }
 
   /**

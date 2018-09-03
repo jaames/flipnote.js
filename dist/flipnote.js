@@ -1,5 +1,5 @@
 /*!
- * flipnote.js v2.1.0
+ * flipnote.js v2.1.1
  * Real-time, browser-based playback of Flipnote Studio's .ppm animation format
  * 2018 James Daniel
  * github.com/jaames/flipnote.js
@@ -694,7 +694,7 @@ function _interopRequireDefault(obj) { return obj && obj.__esModule ? obj : { de
 // import decoder from "./decoder";
 
 module.exports = {
-  version: "2.1.0",
+  version: "2.1.1",
   player: _player2.default
   // decoder: decoder,
 };
@@ -1076,6 +1076,7 @@ var flipnotePlayer = function () {
     key: "resize",
     value: function resize(width, height) {
       this.canvas.resize(width, height);
+      this.forceUpdate();
     }
 
     /**
@@ -1088,7 +1089,7 @@ var flipnotePlayer = function () {
     key: "setLayerVisibility",
     value: function setLayerVisibility(index, value) {
       this.layerVisiblity[index] = value;
-      this.drawFrame(this.currentFrame, this.canvas);
+      this.forceUpdate();
     }
 
     /**
@@ -1106,7 +1107,7 @@ var flipnotePlayer = function () {
         var filter = value ? "linear" : "nearest";
       }
       this.canvas.setFilter(filter);
-      this.drawFrame(this.currentFrame, this.canvas);
+      this.forceUpdate();
       this.smoothRendering = value;
     }
 
@@ -1120,6 +1121,18 @@ var flipnotePlayer = function () {
     value: function setMode(mode) {
       this.canvas.setMode(mode);
       this._imgCanvas.setMode(mode);
+    }
+
+    /**
+    * Force the player to redraw
+    */
+
+  }, {
+    key: "forceUpdate",
+    value: function forceUpdate() {
+      if (this._isOpen) {
+        this.drawFrame(this.currentFrame, this.canvas);
+      }
     }
 
     /**
