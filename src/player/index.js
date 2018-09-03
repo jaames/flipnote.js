@@ -387,11 +387,7 @@ export default class flipnotePlayer {
   * @param {boolean} value
   */
   setSmoothRendering(value) {
-    if (this.type == "KWZ") { // kwz doesn't supper linear fltering yet
-      var filter = "nearest";
-    } else {
-      var filter = value ? "linear" : "nearest";
-    }
+    var filter = value ? "linear" : "nearest";
     this.canvas.setFilter(filter);
     this.forceUpdate();
     this.smoothRendering = value;

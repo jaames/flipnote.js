@@ -1,5 +1,5 @@
 /*!
- * flipnote.js v2.1.1
+ * flipnote.js v2.1.2
  * Real-time, browser-based playback of Flipnote Studio's .ppm animation format
  * 2018 James Daniel
  * github.com/jaames/flipnote.js
@@ -494,8 +494,7 @@ var webglCanvas = function () {
     this.setMode("PPM");
     this.refs.textures.push(tex);
     gl.enable(gl.BLEND);
-    // gl.blendFunc(gl.ONE, gl.ONE_MINUS_SRC_ALPHA);
-    gl.blendFuncSeparate(gl.SRC_ALPHA, gl.ONE_MINUS_SRC_ALPHA, gl.ONE, gl.ONE_MINUS_SRC_ALPHA);
+    gl.blendFunc(gl.ONE, gl.ONE_MINUS_SRC_ALPHA);
   }
 
   /**
@@ -694,7 +693,7 @@ function _interopRequireDefault(obj) { return obj && obj.__esModule ? obj : { de
 // import decoder from "./decoder";
 
 module.exports = {
-  version: "2.1.1",
+  version: "2.1.2",
   player: _player2.default
   // decoder: decoder,
 };
@@ -1100,12 +1099,7 @@ var flipnotePlayer = function () {
   }, {
     key: "setSmoothRendering",
     value: function setSmoothRendering(value) {
-      if (this.type == "KWZ") {
-        // kwz doesn't supper linear fltering yet
-        var filter = "nearest";
-      } else {
-        var filter = value ? "linear" : "nearest";
-      }
+      var filter = value ? "linear" : "nearest";
       this.canvas.setFilter(filter);
       this.forceUpdate();
       this.smoothRendering = value;
@@ -1313,7 +1307,7 @@ exports.default = "\nattribute vec4 a_position;\nvarying vec2 v_texcoord;\nvoid 
 Object.defineProperty(exports, "__esModule", {
   value: true
 });
-exports.default = "\nprecision mediump float;\nvarying vec2 v_texcoord;\nuniform vec4 u_color1;\nuniform vec4 u_color2;\nuniform sampler2D u_bitmap;\nuniform bool u_isSmooth;\nvoid main() {\n  float weightColor1 = texture2D(u_bitmap, v_texcoord).a;\n  float weightColor2 = texture2D(u_bitmap, v_texcoord).r;\n  float alpha = 1.0;\n  if (u_isSmooth) {\n    weightColor1 = smoothstep(0.0, .8, weightColor1);\n    weightColor2 = smoothstep(0.0, .8, weightColor2);\n    float alpha = weightColor1 + weightColor2;\n  }\n  gl_FragColor = vec4(u_color1.rgb, alpha) * weightColor1 + vec4(u_color2.rgb, alpha) * weightColor2;\n}";
+exports.default = "\nprecision mediump float;\nvarying vec2 v_texcoord;\nuniform vec4 u_color1;\nuniform vec4 u_color2;\nuniform sampler2D u_bitmap;\nuniform bool u_isSmooth;\nvoid main() {\n  float weightColor1 = texture2D(u_bitmap, v_texcoord).a;\n  float weightColor2 = texture2D(u_bitmap, v_texcoord).r;\n  float alpha = 1.0;\n  if (u_isSmooth) {\n    weightColor1 = smoothstep(0.0, .9, weightColor1);\n    weightColor2 = smoothstep(0.0, .9, weightColor2);\n    float alpha = weightColor1 + weightColor2;\n  }\n  gl_FragColor = vec4(u_color1.rgb, alpha) * weightColor1 + vec4(u_color2.rgb, alpha) * weightColor2;\n}";
 
 /***/ }),
 /* 6 */

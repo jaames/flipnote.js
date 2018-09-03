@@ -62,8 +62,7 @@ export default class webglCanvas {
     this.setMode("PPM");
     this.refs.textures.push(tex);
     gl.enable(gl.BLEND);
-    // gl.blendFunc(gl.ONE, gl.ONE_MINUS_SRC_ALPHA);
-    gl.blendFuncSeparate(gl.SRC_ALPHA, gl.ONE_MINUS_SRC_ALPHA, gl.ONE, gl.ONE_MINUS_SRC_ALPHA);
+    gl.blendFunc(gl.ONE, gl.ONE_MINUS_SRC_ALPHA);
   }
   
   /**
