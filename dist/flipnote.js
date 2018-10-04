@@ -1,5 +1,5 @@
 /*!
- * flipnote.js v2.1.2
+ * flipnote.js v2.1.3
  * Real-time, browser-based playback of Flipnote Studio's .ppm animation format
  * 2018 James Daniel
  * github.com/jaames/flipnote.js
@@ -439,7 +439,7 @@ var webglCanvas = function () {
   function webglCanvas(el) {
     var width = arguments.length > 1 && arguments[1] !== undefined ? arguments[1] : 640;
     var height = arguments.length > 2 && arguments[2] !== undefined ? arguments[2] : 480;
-    var params = arguments.length > 3 && arguments[3] !== undefined ? arguments[3] : { antialias: false };
+    var params = arguments.length > 3 && arguments[3] !== undefined ? arguments[3] : { antialias: false, alpha: false };
 
     _classCallCheck(this, webglCanvas);
 
@@ -583,13 +583,13 @@ var webglCanvas = function () {
 
     /**
     * Set an palette individual color
-    * @param {array} value - r,g,b,a color, each channel's value should be between 0 and 255
+    * @param {array} value - r,g,b color, each channel's value should be between 0 and 255
     */
 
   }, {
     key: "setPaperColor",
     value: function setPaperColor(value) {
-      this.gl.clearColor(value[0] / 255, value[1] / 255, value[2] / 255, value[3] / 255);
+      this.gl.clearColor(value[0] / 255, value[1] / 255, value[2] / 255, 1);
     }
 
     /**
@@ -693,7 +693,7 @@ function _interopRequireDefault(obj) { return obj && obj.__esModule ? obj : { de
 // import decoder from "./decoder";
 
 module.exports = {
-  version: "2.1.2",
+  version: "2.1.3",
   player: _player2.default
   // decoder: decoder,
 };

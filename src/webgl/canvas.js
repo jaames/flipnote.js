@@ -10,7 +10,7 @@ export default class webglCanvas {
   * @param {number} height - height of the canvas in pixels
   * @param {Object} params - optional params to pass to web gl context
   */
-  constructor(el, width=640, height=480, params={antialias: false}) {
+  constructor(el, width=640, height=480, params={antialias: false, alpha: false}) {
     this.width = el.width = width;
     this.height = el.height = height; 
     var gl = el.getContext("webgl", params);
@@ -134,10 +134,10 @@ export default class webglCanvas {
 
   /**
   * Set an palette individual color
-  * @param {array} value - r,g,b,a color, each channel's value should be between 0 and 255
+  * @param {array} value - r,g,b color, each channel's value should be between 0 and 255
   */
   setPaperColor(value) {
-    this.gl.clearColor(value[0]/255, value[1]/255, value[2]/255, value[3]/255);
+    this.gl.clearColor(value[0] / 255, value[1] / 255, value[2] / 255, 1);
   }
 
   /**
