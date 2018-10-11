@@ -1,86 +1,74 @@
-
-"use strict";
-
 const path = require("path");
 const webpack = require("webpack");
 const CopyWebpackPlugin = require("copy-webpack-plugin");
+const HtmlWebpackPlugin = require("html-webpack-plugin");
 const version = require("./package.json").version;
 
-module.exports = function (env) {
+const mode = process.env.NODE_ENV || "development";
+const prod = mode === "production";
+const devserver = process.env.DEV_SERVER || false;
 
-  var isDevMode = (env == "dev");
-
-  var config = {
-    context: path.resolve(__dirname, "src"),
-    entry: "./flipnote.js",
-    output: {
-      library: "flipnote",
-      libraryTarget: "umd",
-      path: path.resolve(__dirname, "dist"),
-      filename: isDevMode ? "flipnote.js" : "flipnote.min.js",
-    },
-    resolve: {
-      extensions: [".js"],
-      alias: {
-        "webgl": path.resolve(__dirname, "src/webgl/"),
-        "parser": path.resolve(__dirname, "src/parser/"),
-        "encoders": path.resolve(__dirname, "src/encoders/"),
-        "utils": path.resolve(__dirname, "src/utils/"),
-        "loader": path.resolve(__dirname, "src/loader/"),
-        "player": path.resolve(__dirname, "src/player/"),
-      }
-    },
-    module: {
-      rules: [
-        {
-          test: /\.js?$/,
-          exclude: /node_modules/,
-          use: {
-            loader: "babel-loader"
-          }
-        }
-      ]
-    },
-    plugins: [
-      new webpack.BannerPlugin({
-        banner: [
-          "flipnote.js v" + version,
-          "Real-time, browser-based playback of Flipnote Studio's .ppm animation format",
-          "2018 James Daniel",
-          "github.com/jaames/flipnote.js",
-          "Flipnote Studio is (c) Nintendo Co., Ltd.",
-        ].join("\n")
-      }),
-      new webpack.DefinePlugin({
-        VERSION: JSON.stringify(version)
-      }),
-      new CopyWebpackPlugin([
-        {from: "demo/*.ppm"}
-      ])
-    ],
-    devtool: "source-map",
-    devServer: {
-      port: process.env.PORT || 8080,
-      host: "localhost",
-      publicPath: "http://localhost:8080",
-      contentBase: path.join(__dirname, "./"),
-      watchContentBase: true,
+module.exports = {
+  mode,
+  context: path.resolve(__dirname, "src"),
+  entry: [
+    "./flipnote.js",
+    devserver ? "./test.js" : false,
+  ].filter(Boolean),
+  output: {
+    path: path.resolve(__dirname, "dist"),
+    filename: prod ? "flipnote.min.js" : "flipnote.js",
+    library: "flipnote",
+    libraryExport: "default",
+    libraryTarget: "umd",
+  },
+  resolve: {
+    extensions: [".js"],
+    alias: {
+      "webgl": path.resolve(__dirname, "src/webgl/"),
+      "parser": path.resolve(__dirname, "src/parser/"),
+      "encoders": path.resolve(__dirname, "src/encoders/"),
+      "utils": path.resolve(__dirname, "src/utils/"),
+      "loader": path.resolve(__dirname, "src/loader/"),
+      "player": path.resolve(__dirname, "src/player/"),
     }
-  }
-
-  if (!isDevMode) {
-    config.plugins = config.plugins.concat([
-      new webpack.optimize.UglifyJsPlugin({
-        sourceMap: false,
-        mangle: {
-          props: {
-            // Mangle protected properties (which start with "_")
-            regex: /^_/
-          }
+  },
+  module: {
+    rules: [
+      {
+        test: /\.js?$/,
+        exclude: /node_modules/,
+        use: {
+          loader: "babel-loader"
         }
-      })
-    ]);
-  }
-
-  return config;
-};
+      },
+      {
+        test: /\.(glsl|frag|vert)?$/,
+        exclude: /node_modules/,
+        use: [
+          { loader: "raw-loader" },
+          { loader: "glslify-loader" },
+        ]
+      }
+    ]
+  },
+  plugins: [
+    new webpack.BannerPlugin({
+      banner: [
+        "flipnote.js v" + version,
+        "Browser-based playback of .ppm and .kwz animations from Flipnote Studio and Flipnote Studio 3D",
+        "2018 James Daniel",
+        "github.com/jaames/flipnote.js",
+        "Flipnote Studio is (c) Nintendo Co., Ltd.",
+      ].join("\n")
+    }),
+    new webpack.DefinePlugin({
+      VERSION: JSON.stringify(version),
+      IS_PROD: prod,
+      IS_DEV_SERVER: devserver,
+    }),
+    devserver ? new CopyWebpackPlugin([{from: "demo/*"}]) : false,
+    devserver ? new HtmlWebpackPlugin() : false
+  ].filter(Boolean),
+  devtool: "source-map",
+}

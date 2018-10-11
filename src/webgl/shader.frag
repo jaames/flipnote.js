@@ -1,4 +1,3 @@
-export default `
 precision mediump float;
 varying vec2 v_texcoord;
 uniform vec4 u_color1;
@@ -15,4 +14,4 @@ void main() {
     float alpha = weightColor1 + weightColor2;
   }
   gl_FragColor = vec4(u_color1.rgb, alpha) * weightColor1 + vec4(u_color2.rgb, alpha) * weightColor2;
-}`
+}

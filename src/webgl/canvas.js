@@ -1,5 +1,5 @@
-import vertexShader from "./vsh.js";
-import fragmentShader from "./fsh.js";
+import vertexShader from "./shader.vert";
+import fragmentShader from "./shader.frag";
 
 /** webgl canvas wrapper class */
 export default class webglCanvas {

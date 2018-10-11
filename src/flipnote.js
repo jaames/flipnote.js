@@ -1,8 +1,20 @@
-import ppmPlayer from "./player";
-// import decoder from "./decoder";
+import player from "./player";
+import parser from "./parser";
+import ppmParser from "./parser/ppm";
+import kwzParser from "./parser/kwz";
 
-module.exports = {
+const module = {
   version: VERSION,
-  player: ppmPlayer,
-  // decoder: decoder,
+  player,
+  parser,
+  ppmParser,
+  kwzParser,
 };
+
+export {
+  module as default,
+  parser,
+  ppmParser,
+  kwzParser
+}
+

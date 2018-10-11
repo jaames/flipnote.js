@@ -11,7 +11,6 @@ I hope that maybe in the long term it will serve some use in archiving Flipnote 
 * Dynamic upscaling/downscaling
 * Metadata parsing
 * Player API based on the HTML5 Video and Audio APIs
-* Lightweight; the code is smaller than most Flipnote files :P
 
 ### Demo
 
@@ -24,6 +23,23 @@ Check out [Flipnote Player](https://github.com/jaames/flipnote-player) for a liv
 ### License
 
 This project is licensed under the MIT License - see the LICENSE.md file for details.
+
+### Building
+
+Install dependencies:
+```
+npm install
+```
+
+Build:
+```
+npm run build
+```
+
+Run development server:
+```
+npm start
+```
 
 ### Acknowledgments
 
