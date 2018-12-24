@@ -14,143 +14,162 @@
 
 ### currentFrame
 
-**Details:**
-
-Index of the current frame being shown (starts at 0). This property can be set to a new value to jump the player to a different frame.
+Get/set the index of the current frame being shown. When set to a new value the player will automatically jump to that frame.
 
 ### currentTime
 
-**Details:**
-
-Current playback prosition in seconds, modelled after the [HTMLMediaElement property of the same name](https://developer.mozilla.org/en-US/docs/Web/API/HTMLMediaElement/currentTime). This property can be set to a new value to jump the player to a different time.
-
-### loop
-
-**Details:**
-
-If `true`, the player will loop the Flipnote back to the start when it reaches the end.
-
-### meta
-
-**Details:**
-
-An object containing details about the Flipnote, such as the author, timestamp, etc. TODO: document this
+Get/set the current playback prosition in seconds, modelled after the [HTMLMediaElement property of the same name](https://developer.mozilla.org/en-US/docs/Web/API/HTMLMediaElement/currentTime). When set to a new value the player will automatically jump to that time.
 
 ### duration
 
-**Read-Only**
-
-**Details:**
-
-Duration of the Flipnote in seconds.
-
-### frameCount
-
-**Read-Only**
-
-**Details:**
-
-Total number of frames in the Flipnote.
-
-### frameSpeed
-
-**Read-Only**
-
-**Details:**
-
-Flipnote Studio speed setting, as shown in the app. Values are documented [here](http://flipnote.wikia.com/wiki/Flipnote_Speed).
+Get the Flipnote duration in seconds.
 
 ### framerate
 
-**Read-Only**
+Get the Flipnote framerate as frames per second.
 
-**Details:**
+### loop
 
-Flipnote framerate in frames-per-second.
+If set to `true`, the player will loop the Flipnote back to the start when it reaches the end.
+
+### volume
+
+Get/set the Flipnote audio volume. This should be a value between 0 and 1.
+
+### mute
+
+If set to `true`, audio will be muted.
+
+### meta
+
+An object containing details about the Flipnote, such as the author, timestamp, etc. TODO: document this
 
 ## Methods
 
 ### play
 
-**Details:**
-
 Begin Flipnote playback.
 
 ### pause
-
-**Details:**
 
 Pause Flipnote playback.
 
 ### on
 
+Register an event callback. See [Events](#Events) for all event types.
+
 **Arguments:**
 
 * `{String} eventType`
 * `{Function} callback`
 
-**Details:**
+**Example:**
 
-Register an event callback. TODO: document events
+```js
+player.on("playback:start", function() {
+  // do something...
+})
+```
 
 ### off
 
+Remove an event callback that was registered with [`on`](#on)
+
 **Arguments:**
 
 * `{String} eventType`
 * `{Function} callback`
 
-**Details:**
-
-Remove an event callback that was registered with [`on`](#on)
-
 ### setFrame
+
+Jump to a specified frame in the Flipnote.
 
 **Arguments:**
 
 * `{Number} index - zero-based frame index`
 
-**Details:**
-
-Jump to a specified frame in the Flipnote.
-
 ### nextFrame
-
-**Details:**
 
 Jump to the next frame in the Flipnote. If `loop` is `true` and the Flipnote is on its last frame, it will jump to the first frame.
 
 ### prevFrame
 
-**Details:**
-
 Jump to the previous frame in the Flipnote. If `loop` is `true` and the Flipnote is on its first frame, it will jump to the last frame.
 
 ### firstFrame
-
-**Details:**
 
 Jump to the first frame in the Flipnote.
 
 ### lastFrame
 
-**Details:**
-
 Jump to the last frame in the Flipnote.
 
-### thumbFrame
-
-**Details:**
+### thumbnailFrame
 
 Jump to the frame being used as the Flipnote's thumbnail.
 
-### resize
+### setSmoothRendering
+
+Enable/disable frame smoothing.
 
 **Arguments:**
 
-* `{Number} width - new player width in pixels`
-* `{Number} height - new player height in pixels`
+* `{Boolean} isSmooth`
 
-**Details:**
+### setLayerVisibility
+
+Enable/disable layer visibility.
+
+**Arguments**
+
+* `{Number} layer` - Layer (either 1, 2, or 3)
+* `{Boolean} isVisible` - Set to `false` to hide layer
+
+### resize
 
 Resize the player canvas.
+
+**Arguments:**
+
+* `{Number} width` - New player width in pixels
+* `{Number} height` - New player height in pixels
+
+### getFrameImage
+
+Render a specifc frame to an image -- returns an image data string.
+
+**Arguments:**
+
+* `{Number | String} index` - Zero-based frame index, or pass "thumb" to get the thumbnail frame
+* `{String} type` - Image MIME type, default is `image/png`
+* `{Number} encoderOptions` - Number between 0 and 1 indicating image quality if type is image/jpeg or image/webp
+
+### forceUpdate
+
+Force the player to refresh.
+
+## Events
+
+### load
+
+Emitted when the player has finished loading a KWZ / PPM file.
+
+### frame:update
+
+Emitted whenever the current frame changes.
+
+### playback:start
+
+Emitted whenever playback begins.
+
+### playback:stop
+
+Emitted whenever playback is paused/stopped.
+
+### playback:end
+
+Emitted whenever the Flipnote playback has finished (and loop=false).
+
+### playback:loop
+
+Emitted whenever the Flipnote is about to enter another playback loop (and loop=true).
