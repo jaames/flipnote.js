@@ -21,6 +21,10 @@ module.exports = {
     library: "flipnote",
     libraryExport: "default",
     libraryTarget: "umd",
+    // for some reason webpack 4's umd implementation uses window as a global object
+    // this means that these modules won't work in node js environments unless you manually change this
+    // see https://github.com/webpack/webpack/issues/6522#issuecomment-371120689
+    globalObject: "typeof self !== 'undefined' ? self : this",
   },
   resolve: {
     extensions: [".js"],
