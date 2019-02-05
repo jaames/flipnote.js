@@ -332,9 +332,7 @@ export default class kwzParser extends dataStream {
                 continue;
               }
 
-              else if (type == 6) {
-                console.warn("type 6??? nah m8")
-              }
+              // type 6 doesnt exist
 
               else if (type == 7) {
                 let pattern = this.readBits(2);

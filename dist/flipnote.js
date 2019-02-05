@@ -1,5 +1,5 @@
 /*!
- * flipnote.js v2.1.5
+ * flipnote.js v2.1.6
  * Browser-based playback of .ppm and .kwz animations from Flipnote Studio and Flipnote Studio 3D
  * 2018 James Daniel
  * github.com/jaames/flipnote.js
@@ -231,7 +231,7 @@ var _kwz2 = _interopRequireDefault(_kwz);
 function _interopRequireDefault(obj) { return obj && obj.__esModule ? obj : { default: obj }; }
 
 var _module = {
-  version: "2.1.5",
+  version: "2.1.6",
   player: _player2.default,
   parser: _parser2.default,
   ppmParser: _ppm2.default,
@@ -752,64 +752,66 @@ var kwzParser = function (_dataStream) {
                 } else if (type == 5) {
                   skip = this.readBits(5);
                   continue;
-                } else if (type == 6) {
-                  console.warn("type 6??? nah m8");
-                } else if (type == 7) {
-                  var pattern = this.readBits(2);
-                  var useTable = this.readBits(1);
-                  var _lineIndexA2 = 0;
-                  var _lineIndexB2 = 0;
-
-                  if (useTable) {
-                    _lineIndexA2 = this._table1[this.readBits(5)];
-                    _lineIndexB2 = this._table1[this.readBits(5)];
-                    pattern = (pattern + 1) % 4;
-                  } else {
-                    _lineIndexA2 = this.readBits(13);
-                    _lineIndexB2 = this.readBits(13);
-                  }
-
-                  var _a3 = this._linetable.subarray(_lineIndexA2 * 8, _lineIndexA2 * 8 + 8);
-                  var _b3 = this._linetable.subarray(_lineIndexB2 * 8, _lineIndexB2 * 8 + 8);
-
-                  if (pattern == 0) {
-                    pixelBuffer.set(_a3, pixelOffset);
-                    pixelBuffer.set(_b3, pixelOffset + 320);
-                    pixelBuffer.set(_a3, pixelOffset + 640);
-                    pixelBuffer.set(_b3, pixelOffset + 960);
-                    pixelBuffer.set(_a3, pixelOffset + 1280);
-                    pixelBuffer.set(_b3, pixelOffset + 1600);
-                    pixelBuffer.set(_a3, pixelOffset + 1920);
-                    pixelBuffer.set(_b3, pixelOffset + 2240);
-                  } else if (pattern == 1) {
-                    pixelBuffer.set(_a3, pixelOffset);
-                    pixelBuffer.set(_a3, pixelOffset + 320);
-                    pixelBuffer.set(_b3, pixelOffset + 640);
-                    pixelBuffer.set(_a3, pixelOffset + 960);
-                    pixelBuffer.set(_a3, pixelOffset + 1280);
-                    pixelBuffer.set(_b3, pixelOffset + 1600);
-                    pixelBuffer.set(_a3, pixelOffset + 1920);
-                    pixelBuffer.set(_a3, pixelOffset + 2240);
-                  } else if (pattern == 2) {
-                    pixelBuffer.set(_a3, pixelOffset);
-                    pixelBuffer.set(_b3, pixelOffset + 320);
-                    pixelBuffer.set(_a3, pixelOffset + 640);
-                    pixelBuffer.set(_a3, pixelOffset + 960);
-                    pixelBuffer.set(_b3, pixelOffset + 1280);
-                    pixelBuffer.set(_a3, pixelOffset + 1600);
-                    pixelBuffer.set(_a3, pixelOffset + 1920);
-                    pixelBuffer.set(_b3, pixelOffset + 2240);
-                  } else if (pattern == 3) {
-                    pixelBuffer.set(_a3, pixelOffset);
-                    pixelBuffer.set(_b3, pixelOffset + 320);
-                    pixelBuffer.set(_b3, pixelOffset + 640);
-                    pixelBuffer.set(_a3, pixelOffset + 960);
-                    pixelBuffer.set(_b3, pixelOffset + 1280);
-                    pixelBuffer.set(_b3, pixelOffset + 1600);
-                    pixelBuffer.set(_a3, pixelOffset + 1920);
-                    pixelBuffer.set(_b3, pixelOffset + 2240);
-                  }
                 }
+
+                // type 6 doesnt exist
+
+                else if (type == 7) {
+                    var pattern = this.readBits(2);
+                    var useTable = this.readBits(1);
+                    var _lineIndexA2 = 0;
+                    var _lineIndexB2 = 0;
+
+                    if (useTable) {
+                      _lineIndexA2 = this._table1[this.readBits(5)];
+                      _lineIndexB2 = this._table1[this.readBits(5)];
+                      pattern = (pattern + 1) % 4;
+                    } else {
+                      _lineIndexA2 = this.readBits(13);
+                      _lineIndexB2 = this.readBits(13);
+                    }
+
+                    var _a3 = this._linetable.subarray(_lineIndexA2 * 8, _lineIndexA2 * 8 + 8);
+                    var _b3 = this._linetable.subarray(_lineIndexB2 * 8, _lineIndexB2 * 8 + 8);
+
+                    if (pattern == 0) {
+                      pixelBuffer.set(_a3, pixelOffset);
+                      pixelBuffer.set(_b3, pixelOffset + 320);
+                      pixelBuffer.set(_a3, pixelOffset + 640);
+                      pixelBuffer.set(_b3, pixelOffset + 960);
+                      pixelBuffer.set(_a3, pixelOffset + 1280);
+                      pixelBuffer.set(_b3, pixelOffset + 1600);
+                      pixelBuffer.set(_a3, pixelOffset + 1920);
+                      pixelBuffer.set(_b3, pixelOffset + 2240);
+                    } else if (pattern == 1) {
+                      pixelBuffer.set(_a3, pixelOffset);
+                      pixelBuffer.set(_a3, pixelOffset + 320);
+                      pixelBuffer.set(_b3, pixelOffset + 640);
+                      pixelBuffer.set(_a3, pixelOffset + 960);
+                      pixelBuffer.set(_a3, pixelOffset + 1280);
+                      pixelBuffer.set(_b3, pixelOffset + 1600);
+                      pixelBuffer.set(_a3, pixelOffset + 1920);
+                      pixelBuffer.set(_a3, pixelOffset + 2240);
+                    } else if (pattern == 2) {
+                      pixelBuffer.set(_a3, pixelOffset);
+                      pixelBuffer.set(_b3, pixelOffset + 320);
+                      pixelBuffer.set(_a3, pixelOffset + 640);
+                      pixelBuffer.set(_a3, pixelOffset + 960);
+                      pixelBuffer.set(_b3, pixelOffset + 1280);
+                      pixelBuffer.set(_a3, pixelOffset + 1600);
+                      pixelBuffer.set(_a3, pixelOffset + 1920);
+                      pixelBuffer.set(_b3, pixelOffset + 2240);
+                    } else if (pattern == 3) {
+                      pixelBuffer.set(_a3, pixelOffset);
+                      pixelBuffer.set(_b3, pixelOffset + 320);
+                      pixelBuffer.set(_b3, pixelOffset + 640);
+                      pixelBuffer.set(_a3, pixelOffset + 960);
+                      pixelBuffer.set(_b3, pixelOffset + 1280);
+                      pixelBuffer.set(_b3, pixelOffset + 1600);
+                      pixelBuffer.set(_a3, pixelOffset + 1920);
+                      pixelBuffer.set(_b3, pixelOffset + 2240);
+                    }
+                  }
               }
             }
           }
@@ -958,7 +960,7 @@ var ppmParser = function (_dataStream) {
     // https://github.com/pbsds/hatena-server/wiki/PPM-format#file-header
     _this._frameDataLength = _this.readUint32();
     _this._soundDataLength = _this.readUint32();
-    _this.frameCount = Math.min(_this.readUint16() + 1, 999);
+    _this.frameCount = _this.readUint16() + 1;
     _this.seek(18);
     _this.thumbFrameIndex = _this.readUint16();
     // jump to the start of the animation data section

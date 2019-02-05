@@ -57,7 +57,7 @@ export default class ppmParser extends dataStream {
     // https://github.com/pbsds/hatena-server/wiki/PPM-format#file-header
     this._frameDataLength = this.readUint32();
     this._soundDataLength = this.readUint32();
-    this.frameCount = Math.min(this.readUint16() + 1, 999);
+    this.frameCount = this.readUint16() + 1;
     this.seek(18);
     this.thumbFrameIndex = this.readUint16();
     // jump to the start of the animation data section
