@@ -549,6 +549,7 @@ var kwzParser = function (_dataStream) {
 
       this._decodeMeta();
       this._decodeSoundHeader();
+      this.sampleRate = 16364;
 
       this.frameMeta = [];
       this.frameOffsets = [];
@@ -1041,6 +1042,7 @@ var ppmParser = function (_dataStream) {
       return 0x06A8 + offsetTableLength + _this.readUint32();
     });
     _this._decodeSoundHeader();
+    _this.sampleRate = 8192;
     _this.meta = _this._decodeMeta();
     // create image buffers
     _this._layers = [new Uint8Array(WIDTH * HEIGHT), new Uint8Array(WIDTH * HEIGHT)];
@@ -1413,7 +1415,7 @@ var audioTrack = function () {
     this.id = id;
     this.channelCount = 1;
     this.bitsPerSample = 16;
-    this.sampleRate = type === "KWZ" ? 16364 : 8192;
+    this.sampleRate = 0;
     this.playbackRate = 1;
     this.audio = document.createElement("audio");
     this.audio.preload = true;
@@ -1589,6 +1591,9 @@ var flipnotePlayer = function () {
       this.loop = note.meta.loop == 1;
       this.paused = true;
       this._isOpen = true;
+      this.audioTracks.forEach(function (track) {
+        track.sampleRate = note.sampleRate;
+      });
       if (this.note.hasAudioTrack(1)) this.audioTracks[0].set(this.note.decodeAudio("se1"), 1);
       if (this.note.hasAudioTrack(2)) this.audioTracks[1].set(this.note.decodeAudio("se2"), 1);
       if (this.note.hasAudioTrack(3)) this.audioTracks[2].set(this.note.decodeAudio("se3"), 1);
