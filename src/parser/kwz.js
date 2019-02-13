@@ -119,6 +119,7 @@ export default class kwzParser extends dataStream {
 
     this._decodeMeta();
     this._decodeSoundHeader();
+    this.sampleRate = 16364;
 
     this.frameMeta = [];
     this.frameOffsets = [];

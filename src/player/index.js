@@ -135,6 +135,9 @@ export default class flipnotePlayer {
     this.loop = note.meta.loop == 1;
     this.paused = true;
     this._isOpen = true;
+    this.audioTracks.forEach(track => {
+      track.sampleRate = note.sampleRate;
+    });
     if (this.note.hasAudioTrack(1)) this.audioTracks[0].set(this.note.decodeAudio("se1"), 1);
     if (this.note.hasAudioTrack(2)) this.audioTracks[1].set(this.note.decodeAudio("se2"), 1);
     if (this.note.hasAudioTrack(3)) this.audioTracks[2].set(this.note.decodeAudio("se3"), 1);

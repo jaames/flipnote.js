@@ -74,6 +74,7 @@ export default class ppmParser extends dataStream {
       return 0x06A8 + offsetTableLength + this.readUint32();
     });
     this._decodeSoundHeader();
+    this.sampleRate = 8192;
     this.meta = this._decodeMeta();
     // create image buffers
      this._layers = [
