@@ -4,11 +4,11 @@ export default class audioTrack {
   /**
   * Create a new audio player
   */
-  constructor (id) {
+  constructor (id, type) {
     this.id = id;
     this.channelCount = 1;
     this.bitsPerSample = 16;
-    this.sampleRate = 8192;
+    this.sampleRate = type === "KWZ" ? 16364 : 8192;
     this.playbackRate = 1;
     this.audio = document.createElement("audio");
     this.audio.preload = true;

@@ -1,5 +1,5 @@
 /*!
- * flipnote.js v2.1.6
+ * flipnote.js v2.2.0
  * Browser-based playback of .ppm and .kwz animations from Flipnote Studio and Flipnote Studio 3D
  * 2018 James Daniel
  * github.com/jaames/flipnote.js
@@ -231,7 +231,7 @@ var _kwz2 = _interopRequireDefault(_kwz);
 function _interopRequireDefault(obj) { return obj && obj.__esModule ? obj : { default: obj }; }
 
 var _module = {
-  version: "2.1.6",
+  version: "2.2.0",
   player: _player2.default,
   parser: _parser2.default,
   ppmParser: _ppm2.default,
@@ -455,6 +455,8 @@ var _dataStream2 = __webpack_require__(/*! utils/dataStream */ "./utils/dataStre
 
 var _dataStream3 = _interopRequireDefault(_dataStream2);
 
+var _adpcm = __webpack_require__(/*! utils/adpcm */ "./utils/adpcm.js");
+
 function _interopRequireDefault(obj) { return obj && obj.__esModule ? obj : { default: obj }; }
 
 function _classCallCheck(instance, Constructor) { if (!(instance instanceof Constructor)) { throw new TypeError("Cannot call a class as a function"); } }
@@ -545,7 +547,8 @@ var kwzParser = function (_dataStream) {
         sectionCount += 1;
       }
 
-      this.meta = this._decodeMeta();
+      this._decodeMeta();
+      this._decodeSoundHeader();
 
       this.frameMeta = [];
       this.frameOffsets = [];
@@ -605,7 +608,7 @@ var kwzParser = function (_dataStream) {
       this.thumbFrameIndex = thumbIndex;
       this.frameSpeed = frameSpeed;
       this.framerate = FRAMERATES[frameSpeed];
-      return {
+      this.meta = {
         lock: flags & 0x1,
         loop: flags >> 1 & 0x01,
         frame_count: frameCount,
@@ -628,6 +631,23 @@ var kwzParser = function (_dataStream) {
           fsid: currentAuthorId,
           filename: currentFilename
         }
+      };
+    }
+  }, {
+    key: "_decodeSoundHeader",
+    value: function _decodeSoundHeader() {
+      var offset = this.sections["KSN"].offset + 8;
+      this.seek(offset);
+      var bgmSpeed = this.readUint32();
+      this.bgmSpeed = bgmSpeed;
+      this.bgmrate = FRAMERATES[bgmSpeed];
+      var trackSizes = new Uint32Array(this.buffer, offset + 4, 20);
+      this.soundMeta = {
+        "bgm": { offset: offset += 28, length: trackSizes[0] },
+        "se1": { offset: offset += trackSizes[0], length: trackSizes[1] },
+        "se2": { offset: offset += trackSizes[1], length: trackSizes[2] },
+        "se3": { offset: offset += trackSizes[2], length: trackSizes[3] },
+        "se4": { offset: offset += trackSizes[3], length: trackSizes[4] }
       };
     }
   }, {
@@ -852,15 +872,62 @@ var kwzParser = function (_dataStream) {
   }, {
     key: "decodeSoundFlags",
     value: function decodeSoundFlags() {
-      var arr = new Array(this.frameCount).fill([]);
-      return arr.map(function (_) {
-        return [false, false, false];
+      return this.frameMeta.map(function (frame) {
+        var soundFlags = frame.soundFlags;
+        return [soundFlags & 0x1, soundFlags >> 1 & 0x1, soundFlags >> 2 & 0x1, soundFlags >> 3 & 0x1];
       });
     }
   }, {
     key: "hasAudioTrack",
     value: function hasAudioTrack(trackIndex) {
-      return false;
+      var id = ["bgm", "se1", "se2", "se3", "se4"][trackIndex];
+      return this.soundMeta[id].length > 0;
+    }
+  }, {
+    key: "decodeAudio",
+    value: function decodeAudio(track) {
+      var meta = this.soundMeta[track];
+      var output = new Int16Array(16364 * 60);
+      var outputOffset = 0;
+      var adpcm = new Uint8Array(this.buffer, meta.offset, meta.length);
+      // initial decoder state
+      var prevDiff = 0;
+      var prevStepIndex = 40;
+      var sample, diff, stepIndex;
+      // loop through each byte in the raw adpcm data
+      for (var _index = 0; _index < adpcm.length; _index++) {
+        var byte = adpcm[_index];
+        var bitPos = 0;
+        while (bitPos < 8) {
+          if (prevStepIndex < 18 || bitPos == 6) {
+            // isolate 2-bit sample
+            sample = byte >> bitPos & 0x3;
+            // get diff
+            diff = prevDiff + _adpcm.ADPCM_SAMPLE_TABLE_2[sample + 4 * prevStepIndex];
+            // get step index
+            stepIndex = prevStepIndex + _adpcm.ADPCM_INDEX_TABLE_2[sample];
+            bitPos += 2;
+          } else {
+            // isolate 4-bit sample
+            sample = byte >> bitPos & 0xF;
+            // get diff
+            diff = prevDiff + _adpcm.ADPCM_SAMPLE_TABLE_4[sample + 16 * prevStepIndex];
+            // get step index
+            stepIndex = prevStepIndex + _adpcm.ADPCM_INDEX_TABLE_4[sample];
+            bitPos += 4;
+          }
+          // clamp step index and diff
+          stepIndex = Math.max(0, Math.min(stepIndex, 79));
+          diff = Math.max(-2048, Math.min(diff, 2048));
+          // add result to output buffer
+          output[outputOffset] = diff * 16;
+          outputOffset += 1;
+          // set prev decoder state
+          prevStepIndex = stepIndex;
+          prevDiff = diff;
+        }
+      }
+      return output.slice(0, outputOffset);
     }
   }]);
 
@@ -1238,8 +1305,38 @@ var ppmParser = function (_dataStream) {
     key: "decodeAudio",
     value: function decodeAudio(track) {
       var meta = this.soundMeta[track];
-      var buffer = new Uint8Array(this.buffer, meta.offset, meta.length);
-      return (0, _adpcm.decodeAdpcm)(buffer);
+      var adpcm = new Uint8Array(this.buffer, meta.offset, meta.length);
+      var output = new Int16Array(adpcm.length * 2);
+      var outputOffset = 0;
+      // initial decoder state
+      var prevDiff = 0;
+      var prevStepIndex = 0;
+      var sample, diff, stepIndex;
+      // loop through each byte in the raw adpcm data
+      for (var index = 0; index < adpcm.length; index++) {
+        var byte = adpcm[index];
+        var bitPos = 0;
+        while (bitPos < 8) {
+          // isolate 4-bit sample
+          sample = byte >> bitPos & 0xF;
+          // get diff
+          diff = prevDiff + _adpcm.ADPCM_SAMPLE_TABLE_4[sample + 16 * prevStepIndex];
+          // get step index
+          stepIndex = prevStepIndex + _adpcm.ADPCM_INDEX_TABLE_4[sample];
+          // clamp step index and diff
+          stepIndex = Math.max(0, Math.min(stepIndex, 79));
+          diff = Math.max(-32767, Math.min(diff, 32767));
+          // add result to output buffer
+          output[outputOffset] = diff;
+          outputOffset += 1;
+          // set prev decoder state
+          prevStepIndex = stepIndex;
+          prevDiff = diff;
+          // move to next sample
+          bitPos += 4;
+        }
+      }
+      return output;
     }
 
     /**
@@ -1310,13 +1407,13 @@ var audioTrack = function () {
   /**
   * Create a new audio player
   */
-  function audioTrack(id) {
+  function audioTrack(id, type) {
     _classCallCheck(this, audioTrack);
 
     this.id = id;
     this.channelCount = 1;
     this.bitsPerSample = 16;
-    this.sampleRate = 8192;
+    this.sampleRate = type === "KWZ" ? 16364 : 8192;
     this.playbackRate = 1;
     this.audio = document.createElement("audio");
     this.audio.preload = true;
@@ -1463,7 +1560,7 @@ var flipnotePlayer = function () {
     this.loop = false;
     this.currentFrame = 0;
     this.paused = true;
-    this.audioTracks = [new _audio2.default("se1"), new _audio2.default("se2"), new _audio2.default("se3"), new _audio2.default("bgm")];
+    this.audioTracks = [new _audio2.default("se1"), new _audio2.default("se2"), new _audio2.default("se3"), new _audio2.default("se4"), new _audio2.default("bgm")];
     this.smoothRendering = false;
   }
 
@@ -1495,7 +1592,8 @@ var flipnotePlayer = function () {
       if (this.note.hasAudioTrack(1)) this.audioTracks[0].set(this.note.decodeAudio("se1"), 1);
       if (this.note.hasAudioTrack(2)) this.audioTracks[1].set(this.note.decodeAudio("se2"), 1);
       if (this.note.hasAudioTrack(3)) this.audioTracks[2].set(this.note.decodeAudio("se3"), 1);
-      if (this.note.hasAudioTrack(0)) this.audioTracks[3].set(this.note.decodeAudio("bgm"), this._audiorate);
+      if (this.type === "KWZ" && this.note.hasAudioTrack(4)) this.audioTracks[3].set(this.note.decodeAudio("se4"), 1);
+      if (this.note.hasAudioTrack(0)) this.audioTracks[4].set(this.note.decodeAudio("bgm"), this._audiorate);
       this._seFlags = this.note.decodeSoundFlags();
       this._playbackLoop = null;
       this._hasPlaybackStarted = false;
@@ -1587,7 +1685,7 @@ var flipnotePlayer = function () {
   }, {
     key: "_playBgm",
     value: function _playBgm() {
-      this.audioTracks[3].start(this.currentTime);
+      this.audioTracks[4].start(this.currentTime);
     }
 
     /**
@@ -2005,79 +2103,36 @@ exports.default = flipnotePlayer;
 Object.defineProperty(exports, "__esModule", {
   value: true
 });
-exports.decodeAdpcm = decodeAdpcm;
-/** convert 4-bit adpcm to 16-bit pcm
- *  implementation based on http://www.cs.columbia.edu/~gskc/Code/AdvancedInternetServices/SoundNoiseRatio/dvi_adpcm.c
-*/
+var ADPCM_INDEX_TABLE_2 = exports.ADPCM_INDEX_TABLE_2 = new Int8Array([-1, 2, -1, 2]);
 
-var indexTable = [-1, -1, -1, -1, 2, 4, 6, 8, -1, -1, -1, -1, 2, 4, 6, 8];
+var ADPCM_INDEX_TABLE_4 = exports.ADPCM_INDEX_TABLE_4 = new Int8Array([-1, -1, -1, -1, 2, 4, 6, 8, -1, -1, -1, -1, 2, 4, 6, 8]);
 
-var stepSizeTable = [7, 8, 9, 10, 11, 12, 13, 14, 16, 17, 19, 21, 23, 25, 28, 31, 34, 37, 41, 45, 50, 55, 60, 66, 73, 80, 88, 97, 107, 118, 130, 143, 157, 173, 190, 209, 230, 253, 279, 307, 337, 371, 408, 449, 494, 544, 598, 658, 724, 796, 876, 963, 1060, 1166, 1282, 1411, 1552, 1707, 1878, 2066, 2272, 2499, 2749, 3024, 3327, 3660, 4026, 4428, 4871, 5358, 5894, 6484, 7132, 7845, 8630, 9493, 10442, 11487, 12635, 13899, 15289, 16818, 18500, 20350, 22385, 24623, 27086, 29794, 32767];
+// note that this is a slight deviation from the normal adpcm table
+var ADPCM_STEP_TABLE = exports.ADPCM_STEP_TABLE = new Int16Array([7, 8, 9, 10, 11, 12, 13, 14, 16, 17, 19, 21, 23, 25, 28, 31, 34, 37, 41, 45, 50, 55, 60, 66, 73, 80, 88, 97, 107, 118, 130, 143, 157, 173, 190, 209, 230, 253, 279, 307, 337, 371, 408, 449, 494, 544, 598, 658, 724, 796, 876, 963, 1060, 1166, 1282, 1411, 1552, 1707, 1878, 2066, 2272, 2499, 2749, 3024, 3327, 3660, 4026, 4428, 4871, 5358, 5894, 6484, 7132, 7845, 8630, 9493, 10442, 11487, 12635, 13899, 15289, 16818, 18500, 20350, 22385, 24623, 27086, 29794, 32767, 0]);
 
-var statePrevSample = 0,
-    statePrevIndex = 0;
-
-/**
-* Convert 4-bit adpcm to 16-bit pcm
-* @param {Uint8Array} inputBuffer - adpcm buffer
-* @returns {Int16Array}
-*/
-function decodeAdpcm(inputBuffer) {
-  statePrevSample = 0;
-  statePrevIndex = 0;
-  var outputBuffer = new Int16Array(inputBuffer.length * 2);
-  var outputOffset = 0;
-  for (var inputOffset = 0; inputOffset < inputBuffer.length; inputOffset++) {
-    var byte = inputBuffer[inputOffset];
-    // note - Flipnote Studio's adpcm data uses reverse nibble order
-    outputBuffer[outputOffset] = decodeSample(byte & 0xF);
-    outputBuffer[outputOffset + 1] = decodeSample(byte >> 4 & 0xF);
-    outputOffset += 2;
+var ADPCM_SAMPLE_TABLE_2 = exports.ADPCM_SAMPLE_TABLE_2 = new Int16Array(90 * 4);
+for (var sample = 0; sample < 4; sample++) {
+  for (var stepIndex = 0; stepIndex < 90; stepIndex++) {
+    var step = ADPCM_STEP_TABLE[stepIndex];
+    var diff = step >> 3;
+    if (sample & 1) diff += step;
+    if (sample & 2) diff = -diff;
+    ADPCM_SAMPLE_TABLE_2[sample + 4 * stepIndex] = diff;
   }
-  return outputBuffer;
-};
+}
 
-/**
-* Unpack a single adpcm 4-bit sample
-* @param {number} sample - sample value
-* @returns {number}
-* @access protected
-*/
-function decodeSample(sample) {
-  var predSample = statePrevSample;
-  var index = statePrevIndex;
-  var step = stepSizeTable[index];
-  var difference = step >> 3;
-
-  // compute difference and new predicted value
-  if (sample & 0x4) difference += step;
-  if (sample & 0x2) difference += step >> 1;
-  if (sample & 0x1) difference += step >> 2;
-  // handle sign bit
-  predSample += sample & 0x8 ? -difference : difference;
-
-  // find new index value
-  index += indexTable[sample];
-  index = clamp(index, 0, 88);
-
-  // clamp output value
-  predSample = clamp(predSample, -32767, 32767);
-  statePrevSample = predSample;
-  statePrevIndex = index;
-  return predSample;
-};
-
-/**
-* Util to clamp a number within a given range
-* @param {number} num - input value
-* @param {number} min - minimun value
-* @param {number} max - maximum value
-* @returns {number}
-* @access protected
-*/
-function clamp(num, min, max) {
-  return num <= min ? min : num >= max ? max : num;
-};
+var ADPCM_SAMPLE_TABLE_4 = exports.ADPCM_SAMPLE_TABLE_4 = new Int16Array(90 * 16);
+for (var _sample = 0; _sample < 16; _sample++) {
+  for (var _stepIndex = 0; _stepIndex < 90; _stepIndex++) {
+    var _step = ADPCM_STEP_TABLE[_stepIndex];
+    var _diff = _step >> 3;
+    if (_sample & 4) _diff += _step;
+    if (_sample & 2) _diff += _step >> 1;
+    if (_sample & 1) _diff += _step >> 2;
+    if (_sample & 8) _diff = -_diff;
+    ADPCM_SAMPLE_TABLE_4[_sample + 16 * _stepIndex] = _diff;
+  }
+}
 
 /***/ }),
 

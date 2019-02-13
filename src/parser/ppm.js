@@ -23,7 +23,10 @@
 */
 
 import dataStream from "utils/dataStream";
-import {decodeAdpcm} from "utils/adpcm";
+import {
+  ADPCM_INDEX_TABLE_4,
+  ADPCM_SAMPLE_TABLE_4
+} from "utils/adpcm";
 
 // internal framerate value -> FPS table
 const FRAMERATES = {
@@ -338,8 +341,38 @@ export default class ppmParser extends dataStream {
   */
   decodeAudio(track) {
     let meta = this.soundMeta[track];
-    let buffer = new Uint8Array(this.buffer, meta.offset, meta.length);
-    return decodeAdpcm(buffer);
+    let adpcm = new Uint8Array(this.buffer, meta.offset, meta.length);
+    let output = new Int16Array(adpcm.length * 2);
+    let outputOffset = 0;
+    // initial decoder state
+    var prevDiff = 0;
+    var prevStepIndex = 0;
+    var sample, diff, stepIndex;
+    // loop through each byte in the raw adpcm data
+    for (let index = 0; index < adpcm.length; index++) {
+      let byte = adpcm[index];
+      var bitPos = 0;
+      while (bitPos < 8) {
+        // isolate 4-bit sample
+        sample = (byte >> bitPos) & 0xF;
+        // get diff
+        diff = prevDiff + ADPCM_SAMPLE_TABLE_4[sample + 16 * prevStepIndex];
+        // get step index
+        stepIndex = prevStepIndex + ADPCM_INDEX_TABLE_4[sample];
+        // clamp step index and diff
+        stepIndex = Math.max(0, Math.min(stepIndex, 79));
+        diff = Math.max(-32767, Math.min(diff, 32767));
+        // add result to output buffer
+        output[outputOffset] = (diff);
+        outputOffset += 1;
+        // set prev decoder state
+        prevStepIndex = stepIndex;
+        prevDiff = diff;
+        // move to next sample
+        bitPos += 4;
+      }
+    }
+    return output;
   }
 
   /**
