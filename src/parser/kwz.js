@@ -1,4 +1,10 @@
 import dataStream from "utils/dataStream";
+import {
+  ADPCM_INDEX_TABLE_2,
+  ADPCM_INDEX_TABLE_4,
+  ADPCM_SAMPLE_TABLE_2,
+  ADPCM_SAMPLE_TABLE_4
+} from "utils/adpcm";
 
 const FRAMERATES = [
   0.2,
@@ -111,7 +117,9 @@ export default class kwzParser extends dataStream {
       sectionCount += 1;
     }
 
-    this.meta = this._decodeMeta();
+    this._decodeMeta();
+    this._decodeSoundHeader();
+    this.sampleRate = 16364;
 
     this.frameMeta = [];
     this.frameOffsets = [];
@@ -177,7 +185,7 @@ export default class kwzParser extends dataStream {
     this.thumbFrameIndex = thumbIndex;
     this.frameSpeed = frameSpeed;
     this.framerate = FRAMERATES[frameSpeed];
-    return {
+    this.meta = {
       lock: flags & 0x1,
       loop: (flags >> 1) & 0x01,
       frame_count: frameCount,
@@ -200,6 +208,22 @@ export default class kwzParser extends dataStream {
         fsid: currentAuthorId,
         filename: currentFilename,
       },
+    };
+  }
+
+  _decodeSoundHeader() {
+    let offset = this.sections["KSN"].offset + 8;
+    this.seek(offset);
+    let bgmSpeed = this.readUint32();
+    this.bgmSpeed = bgmSpeed;
+    this.bgmrate = FRAMERATES[bgmSpeed];
+    let trackSizes = new Uint32Array(this.buffer, offset + 4, 20);
+    this.soundMeta = {
+      "bgm": {offset: offset += 28,            length: trackSizes[0]},
+      "se1": {offset: offset += trackSizes[0], length: trackSizes[1]},
+      "se2": {offset: offset += trackSizes[1], length: trackSizes[2]},
+      "se3": {offset: offset += trackSizes[2], length: trackSizes[3]},
+      "se4": {offset: offset += trackSizes[3], length: trackSizes[4]},
     };
   }
 
@@ -433,12 +457,67 @@ export default class kwzParser extends dataStream {
   }
 
   decodeSoundFlags() {
-    var arr = new Array(this.frameCount).fill([]);
-    return arr.map(_ => [false, false, false]);
+    return this.frameMeta.map(frame => {
+      let soundFlags = frame.soundFlags;
+      return [
+        soundFlags & 0x1,
+        (soundFlags >> 1) & 0x1,
+        (soundFlags >> 2) & 0x1,
+        (soundFlags >> 3) & 0x1,
+      ];
+    });
   }
 
   hasAudioTrack(trackIndex) {
-    return false;
+    let id = ["bgm", "se1", "se2", "se3", "se4"][trackIndex];
+    return this.soundMeta[id].length > 0
+  }
+
+  decodeAudio(track) {
+    let meta = this.soundMeta[track];
+    let output = new Int16Array(16364 * 60);
+    let outputOffset = 0;
+    let adpcm = new Uint8Array(this.buffer, meta.offset, meta.length);
+    // initial decoder state
+    var prevDiff = 0;
+    var prevStepIndex = 40;
+    var sample, diff, stepIndex;
+    // loop through each byte in the raw adpcm data
+    for (let index = 0; index < adpcm.length; index++) {
+      var byte = adpcm[index];
+      var bitPos = 0;
+      while (bitPos < 8) {
+        if (prevStepIndex < 18 || bitPos == 6) {
+          // isolate 2-bit sample
+          sample = (byte >> bitPos) & 0x3;
+          // get diff
+          diff = prevDiff + ADPCM_SAMPLE_TABLE_2[sample + 4 * prevStepIndex];
+          // get step index
+          stepIndex = prevStepIndex + ADPCM_INDEX_TABLE_2[sample];
+          bitPos += 2;
+        }
+        else {
+          // isolate 4-bit sample
+          sample = (byte >> bitPos) & 0xF;
+          // get diff
+          diff = prevDiff + ADPCM_SAMPLE_TABLE_4[sample + 16 * prevStepIndex];
+          // get step index
+          stepIndex = prevStepIndex + ADPCM_INDEX_TABLE_4[sample];
+          bitPos += 4;
+        }
+        // clamp step index and diff
+        stepIndex = Math.max(0, Math.min(stepIndex, 79));
+        diff = Math.max(-2048, Math.min(diff, 2048));
+        // add result to output buffer
+        output[outputOffset] = (diff * 16);
+        outputOffset += 1;
+        // set prev decoder state
+        prevStepIndex = stepIndex;
+        prevDiff = diff;
+      }
+
+    }
+    return output.slice(0, outputOffset);
   }
 
 }

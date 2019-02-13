@@ -4,17 +4,17 @@ export default class audioTrack {
   /**
   * Create a new audio player
   */
-  constructor (id) {
+  constructor (id, type) {
     this.id = id;
     this.channelCount = 1;
     this.bitsPerSample = 16;
-    this.sampleRate = 8192;
+    this.sampleRate = 0;
     this.playbackRate = 1;
     this.audio = document.createElement("audio");
     this.audio.preload = true;
     this.active = false;
   }
-
+  
   /**
   * Set the audio track
   * @param {Int16Array} pcmData - mono-channel 16-bit PCM audio

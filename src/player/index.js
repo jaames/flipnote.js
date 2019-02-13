@@ -29,6 +29,7 @@ export default class flipnotePlayer {
       new audioTrack("se1"),
       new audioTrack("se2"),
       new audioTrack("se3"),
+      new audioTrack("se4"),
       new audioTrack("bgm"),
     ];
     this.smoothRendering = false;
@@ -134,10 +135,14 @@ export default class flipnotePlayer {
     this.loop = note.meta.loop == 1;
     this.paused = true;
     this._isOpen = true;
+    this.audioTracks.forEach(track => {
+      track.sampleRate = note.sampleRate;
+    });
     if (this.note.hasAudioTrack(1)) this.audioTracks[0].set(this.note.decodeAudio("se1"), 1);
     if (this.note.hasAudioTrack(2)) this.audioTracks[1].set(this.note.decodeAudio("se2"), 1);
     if (this.note.hasAudioTrack(3)) this.audioTracks[2].set(this.note.decodeAudio("se3"), 1);
-    if (this.note.hasAudioTrack(0)) this.audioTracks[3].set(this.note.decodeAudio("bgm"), this._audiorate);
+    if (this.type === "KWZ" && this.note.hasAudioTrack(4)) this.audioTracks[3].set(this.note.decodeAudio("se4"), 1);
+    if (this.note.hasAudioTrack(0)) this.audioTracks[4].set(this.note.decodeAudio("bgm"), this._audiorate);
     this._seFlags = this.note.decodeSoundFlags();
     this._playbackLoop = null;
     this._hasPlaybackStarted = false;
@@ -214,7 +219,7 @@ export default class flipnotePlayer {
   * @access protected
   */
   _playBgm() {
-    this.audioTracks[3].start(this.currentTime);
+    this.audioTracks[4].start(this.currentTime);
   }
 
   /**
