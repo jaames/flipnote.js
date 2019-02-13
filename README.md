@@ -6,8 +6,7 @@ I hope that maybe in the long term it will serve some use in archiving Flipnote 
 
 ### Features
 
-* Full playback support for Flipnote Studio files (`.ppm`) with full accuracy for both frames and audio
-* Partial support for Flipnote Studio 3D files (`.kwz`) -- frames work perfectly but audio isn't done yet
+* Perfect image and audio playback for animation files from Flipnote Studio (`.ppm`) *and* Flipnote Studio 3D (`.kwz`)
 * Dynamic upscaling/downscaling
 * Metadata parsing
 * Player API based on the HTML5 Video and Audio APIs
@@ -43,7 +42,7 @@ npm start
 
 ### Acknowledgments
 
-* KWZ reverse-engineeing: [Kinnay](https://github.com/Kinnay), [MrNbaYoh](https://github.com/MrNbaYoh), [Shutterbug](https://github.com/shutterbug2000).
+* KWZ reverse-engineeing: [Kinnay](https://github.com/Kinnay), [Khangaroo](https://github.com/khang06), [MrNbaYoh](https://github.com/MrNbaYoh), [Shutterbug](https://github.com/shutterbug2000).
 * PPM format reverse-engineering & documentaion: [bricklife](http://ugomemo.g.hatena.ne.jp/bricklife/20090307/1236391313), [mirai-iro](http://mirai-iro.hatenablog.jp/entry/20090116/ugomemo_ppm), [harimau_tigris](http://ugomemo.g.hatena.ne.jp/harimau_tigris), [steven](http://www.dsibrew.org/wiki/User:Steven), [yellows8](http://www.dsibrew.org/wiki/User:Yellows8) and [PBSDS](https://github.com/pbsds).
 * Identifying the PPM sound codec: Midmad from Hatena Haiku (no longer active) and WDLMaster from the [HCS forum](https://hcs64.com/mboard/forum.php).
 * [PBSDS](https://github.com/pbsds) for creating [Hatena Tools](https://github.com/pbsds/Hatenatools), and for giving me some notes regarding areas where the documentation fell short. 
