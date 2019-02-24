@@ -308,7 +308,7 @@ export default class ppmParser extends dataStream {
             while(chunkOffset < (line + 1) * WIDTH) {
               var chunk = this.readUint8();
               for (var pixel = 0; pixel < 8; pixel++) {
-                layerBitmap[chunkOffset + pixel] = (chunk >> pixel & 0x1) ? 0xFF : 0x00
+                layerBitmap[chunkOffset + pixel] = (chunk >> pixel & 0x1) ? 0xFF : 0x00;
               }
               chunkOffset += 8;
             }

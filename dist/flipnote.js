@@ -1,5 +1,5 @@
 /*!
- * flipnote.js v2.2.0
+ * flipnote.js v2.3.0
  * Browser-based playback of .ppm and .kwz animations from Flipnote Studio and Flipnote Studio 3D
  * 2018 James Daniel
  * github.com/jaames/flipnote.js
@@ -102,6 +102,173 @@ return /******/ (function(modules) { // webpackBootstrap
 /******/ })
 /************************************************************************/
 /******/ ({
+
+/***/ "./encoders/bmp.js":
+/*!*************************!*\
+  !*** ./encoders/bmp.js ***!
+  \*************************/
+/*! no static exports found */
+/***/ (function(module, exports, __webpack_require__) {
+
+"use strict";
+
+
+Object.defineProperty(exports, "__esModule", {
+  value: true
+});
+exports.BitmapEncoder = undefined;
+
+var _createClass = function () { function defineProperties(target, props) { for (var i = 0; i < props.length; i++) { var descriptor = props[i]; descriptor.enumerable = descriptor.enumerable || false; descriptor.configurable = true; if ("value" in descriptor) descriptor.writable = true; Object.defineProperty(target, descriptor.key, descriptor); } } return function (Constructor, protoProps, staticProps) { if (protoProps) defineProperties(Constructor.prototype, protoProps); if (staticProps) defineProperties(Constructor, staticProps); return Constructor; }; }();
+
+exports.roundToNearest = roundToNearest;
+
+var _dataStream = __webpack_require__(/*! utils/dataStream */ "./utils/dataStream.js");
+
+var _dataStream2 = _interopRequireDefault(_dataStream);
+
+function _interopRequireDefault(obj) { return obj && obj.__esModule ? obj : { default: obj }; }
+
+function _classCallCheck(instance, Constructor) { if (!(instance instanceof Constructor)) { throw new TypeError("Cannot call a class as a function"); } }
+
+// round number to nearest multiple of n
+function roundToNearest(value, n) {
+  return Math.ceil(value / n) * n;
+}
+
+// simple bitmap class for rendering images
+// https://en.wikipedia.org/wiki/BMP_file_format
+
+var BitmapEncoder = exports.BitmapEncoder = function () {
+  function BitmapEncoder(width, height, bpp) {
+    _classCallCheck(this, BitmapEncoder);
+
+    this.width = width;
+    this.height = height;
+    this.vWidth = roundToNearest(width, 4);
+    this.vHeight = roundToNearest(height, 4);
+    this.bpp = bpp;
+    this.fileHeader = new _dataStream2.default(new ArrayBuffer(14));
+    this.fileHeader.writeUtf8("BM"); // "BM" file magic
+    // using BITMAPV4HEADER dib header variant:
+    this.dibHeader = new _dataStream2.default(new ArrayBuffer(108));
+    this.dibHeader.writeUint32(108); // DIB header length
+    this.dibHeader.writeInt32(width); // width
+    this.dibHeader.writeInt32(height); // height
+    this.dibHeader.writeUint16(1); // color panes (always 1)
+    this.dibHeader.writeUint16(bpp); // bits per pixel
+    this.dibHeader.writeUint32(3); // compression method (3 = BI_BITFIELDS for rgba, 0 = no compression for 8 bit)
+    this.dibHeader.writeUint32(this.vWidth * this.height / (bpp / 8)); // image data size, (width * height) / bits per pixel
+    this.dibHeader.writeUint32(3780); // x res, pixel per meter
+    this.dibHeader.writeUint32(3780); // y res, pixel per meter
+    this.dibHeader.writeUint32(0); // the number of colors in the color palette, set by setPalette() method
+    this.dibHeader.writeUint32(0); // the number of important colors used, or 0 when every color is important; generally ignored
+    this.dibHeader.writeUint32(0x00FF0000); // red channel bitmask
+    this.dibHeader.writeUint32(0x0000FF00); // green channel bitmask
+    this.dibHeader.writeUint32(0x000000FF); // blue channel bitmask
+    this.dibHeader.writeUint32(0xFF000000); // alpha channel bitmask
+    this.dibHeader.writeUtf8("Win "); // LCS_WINDOWS_COLOR_SPACE "Win "
+    /// rest can be left as nulls
+  }
+
+  _createClass(BitmapEncoder, [{
+    key: "setFilelength",
+    value: function setFilelength(value) {
+      this.fileHeader.seek(2);
+      this.fileHeader.writeUint32(value);
+    }
+  }, {
+    key: "setPixelOffset",
+    value: function setPixelOffset(value) {
+      this.fileHeader.seek(10);
+      this.fileHeader.writeUint32(value);
+    }
+  }, {
+    key: "setCompression",
+    value: function setCompression(value) {
+      this.dibHeader.seek(16);
+      this.dibHeader.writeUint32(value);
+    }
+  }, {
+    key: "setPaletteCount",
+    value: function setPaletteCount(value) {
+      this.dibHeader.seek(32);
+      this.dibHeader.writeUint32(value);
+    }
+  }, {
+    key: "setPalette",
+    value: function setPalette(colors) {
+      var palette = new Uint32Array(Math.pow(2, this.bpp));
+      for (var index = 0; index < colors.length; index++) {
+        var color = colors[index % colors.length];
+        // bmp color order is ARGB
+        palette[index] = 0xFF000000 | color[0] << 16 | color[1] << 8 | color[2];
+      }
+      this.setPaletteCount(palette.length); // set number of colors in DIB header
+      this.setCompression(0); // set compression to 0 so we're not using 32 bit
+      this.palette = palette;
+    }
+  }, {
+    key: "setPixels",
+    value: function setPixels(pixelData) {
+      var pixels = void 0;
+      var pixelsLength = this.vWidth * this.height;
+      switch (this.bpp) {
+        case 8:
+          pixels = new Uint8Array(pixelsLength);
+          break;
+        case 32:
+          pixels = new Uint32Array(pixelsLength);
+          break;
+      }
+      // pixel rows are stored "upside down" in bmps
+      var w = this.width;
+      for (var y = 0; y < this.height; y++) {
+        var srcOffset = w * this.height - (y + 1) * w;
+        var destOffset = y * this.width;
+        pixels.set(pixelData.slice(srcOffset, srcOffset + this.width), destOffset);
+      }
+      this.pixels = pixels;
+    }
+  }, {
+    key: "getBlob",
+    value: function getBlob() {
+      var sections = [this.fileHeader.buffer, this.dibHeader.buffer];
+      var headerByteLength = this.fileHeader.byteLength + this.dibHeader.byteLength;
+      switch (this.bpp) {
+        case 1:
+        case 4:
+        case 8:
+          this.setFilelength(headerByteLength + this.pixels.byteLength + this.palette.byteLength);
+          this.setPixelOffset(headerByteLength + this.palette.byteLength);
+          sections = sections.concat([this.palette.buffer, this.pixels.buffer]);
+          break;
+        case 16:
+        case 32:
+          this.setFilelength(headerByteLength + this.pixels.byteLength);
+          this.setPixelOffset(headerByteLength);
+          sections = sections.concat([this.pixels.buffer]);
+          break;
+      }
+      return new Blob(sections, { type: "image/bitmap" });
+    }
+  }, {
+    key: "getUrl",
+    value: function getUrl() {
+      return window.URL.createObjectURL(this.getBlob());
+    }
+  }, {
+    key: "getImage",
+    value: function getImage() {
+      var img = new Image(this.width, this.height);
+      img.src = this.getUrl();
+      return img;
+    }
+  }]);
+
+  return BitmapEncoder;
+}();
+
+/***/ }),
 
 /***/ "./encoders/wav.js":
 /*!*************************!*\
@@ -231,7 +398,7 @@ var _kwz2 = _interopRequireDefault(_kwz);
 function _interopRequireDefault(obj) { return obj && obj.__esModule ? obj : { default: obj }; }
 
 var _module = {
-  version: "2.2.0",
+  version: "2.3.0",
   player: _player2.default,
   parser: _parser2.default,
   ppmParser: _ppm2.default,
@@ -456,6 +623,8 @@ var _dataStream2 = __webpack_require__(/*! utils/dataStream */ "./utils/dataStre
 var _dataStream3 = _interopRequireDefault(_dataStream2);
 
 var _adpcm = __webpack_require__(/*! utils/adpcm */ "./utils/adpcm.js");
+
+var _bmp = __webpack_require__(/*! encoders/bmp */ "./encoders/bmp.js");
 
 function _interopRequireDefault(obj) { return obj && obj.__esModule ? obj : { default: obj }; }
 
@@ -858,19 +1027,30 @@ var kwzParser = function (_dataStream) {
       PALETTE[flags >> 28 & 0xF]];
     }
   }, {
-    key: "getFrameImage",
-    value: function getFrameImage(frameIndex) {
+    key: "getFramePixels",
+    value: function getFramePixels(frameIndex) {
       var layers = this.decodeFrame(frameIndex);
       var image = new Uint8Array(320 * 240);
       for (var pixel = 0; pixel < 320 * 240; pixel++) {
-        var _a5 = layers[0][pixel];
-        var _b5 = layers[1][pixel];
-        var _c2 = layers[2][pixel];
-        if (_c2) image[pixel] = _c2 + 4;
-        if (_b5) image[pixel] = _b5 + 2;
-        if (_a5) image[pixel] = _a5;
+        // because kwz layers use 2 items per pixel, one for color 1, one for color 2
+        var pixelOffset = pixel * 2;
+        if (layers[0][pixelOffset]) image[pixel] = 2;
+        if (layers[0][pixelOffset + 1]) image[pixel] = 1;
+        if (layers[1][pixelOffset]) image[pixel] = 4;
+        if (layers[1][pixelOffset + 1]) image[pixel] = 3;
+        if (layers[2][pixelOffset]) image[pixel] = 6;
+        if (layers[2][pixelOffset + 1]) image[pixel] = 5;
       }
       return image;
+    }
+  }, {
+    key: "getFrameBitmap",
+    value: function getFrameBitmap(frameIndex) {
+      var bmp = new _bmp.BitmapEncoder(320, 240, 8);
+      bmp.setPixels(this.getFramePixels(frameIndex));
+      bmp.setPalette(this.getFramePalette(frameIndex));
+      document.body.appendChild(bmp.getImage());
+      return bmp;
     }
   }, {
     key: "decodeSoundFlags",
@@ -963,6 +1143,8 @@ var _dataStream3 = _interopRequireDefault(_dataStream2);
 
 var _adpcm = __webpack_require__(/*! utils/adpcm */ "./utils/adpcm.js");
 
+var _bmp = __webpack_require__(/*! encoders/bmp */ "./encoders/bmp.js");
+
 function _interopRequireDefault(obj) { return obj && obj.__esModule ? obj : { default: obj }; }
 
 function _classCallCheck(instance, Constructor) { if (!(instance instanceof Constructor)) { throw new TypeError("Cannot call a class as a function"); } }
@@ -1011,13 +1193,6 @@ var BLACK = [0x0E, 0x0E, 0x0E];
 var WHITE = [0xFF, 0xFF, 0xff];
 var BLUE = [0x0A, 0x39, 0xFF];
 var RED = [0xFF, 0x2A, 0x2A];
-
-var CHUNK_TABLE = new Uint8Array(256 * 8);
-for (var chunk = 0; chunk < 256; chunk++) {
-  for (var bit = 0; bit < 8; bit++) {
-    CHUNK_TABLE[chunk * 8 + bit] = chunk >> bit & 0x1 ? 0xFF : 0x00;
-  }
-}
 
 var ppmParser = function (_dataStream) {
   _inherits(ppmParser, _dataStream);
@@ -1237,14 +1412,14 @@ var ppmParser = function (_dataStream) {
         translateY = this.readInt8();
       }
 
-      var layerEncoding = [this.readBytes(48), this.readBytes(48)];
+      var layerEncoding = [this.readLineEncoding(), this.readLineEncoding()];
       // start decoding layer bitmaps
       for (var layer = 0; layer < 2; layer++) {
         var layerBitmap = this._layers[layer];
         for (var line = 0; line < HEIGHT; line++) {
           var chunkOffset = line * WIDTH;
-          var lineType = layerEncoding[layer][Math.floor(line / 4)] >> line % 4 * 2;
-          switch (lineType & 0x03) {
+          var lineType = layerEncoding[layer][line];
+          switch (lineType) {
             // line type 0 = blank line, decode nothing
             case 0:
               break;
@@ -1260,7 +1435,10 @@ var ppmParser = function (_dataStream) {
                 // else we can just leave it blank and move on to the next chunk
                 if (lineHeader & 0x80000000) {
                   var chunk = this.readUint8();
-                  layerBitmap.set(CHUNK_TABLE.subarray(chunk * 8, chunk * 8 + 8), chunkOffset);
+                  // unpack chunk bits
+                  for (var pixel = 0; pixel < 8; pixel++) {
+                    layerBitmap[chunkOffset + pixel] = chunk >> pixel & 0x1 ? 0xFF : 0x00;
+                  }
                 }
                 chunkOffset += 8;
                 // shift lineheader to the left by 1 bit, now on the next loop cycle the next bit will be checked
@@ -1271,7 +1449,9 @@ var ppmParser = function (_dataStream) {
             case 3:
               while (chunkOffset < (line + 1) * WIDTH) {
                 var chunk = this.readUint8();
-                layerBitmap.set(CHUNK_TABLE.subarray(chunk * 8, chunk * 8 + 8), chunkOffset);
+                for (var pixel = 0; pixel < 8; pixel++) {
+                  layerBitmap[chunkOffset + pixel] = chunk >> pixel & 0x1 ? 0xFF : 0x00;
+                }
                 chunkOffset += 8;
               }
               break;
@@ -1293,6 +1473,28 @@ var ppmParser = function (_dataStream) {
         }
       }
       return this._layers;
+    }
+  }, {
+    key: "getFramePixels",
+    value: function getFramePixels(frameIndex) {
+      var layers = this.decodeFrame(frameIndex);
+      var image = new Uint8Array(256 * 192);
+      for (var pixel = 0; pixel < image.length; pixel++) {
+        var a = layers[0][pixel];
+        var b = layers[1][pixel];
+        if (b) image[pixel] = 2;
+        if (a) image[pixel] = 1;
+      }
+      return image;
+    }
+  }, {
+    key: "getFrameBitmap",
+    value: function getFrameBitmap(frameIndex) {
+      var bmp = new _bmp.BitmapEncoder(256, 192, 8);
+      bmp.setPixels(this.getFramePixels(frameIndex));
+      bmp.setPalette(this.getFramePalette(frameIndex));
+      document.body.appendChild(bmp.getImage());
+      return bmp;
     }
   }, {
     key: "hasAudioTrack",
@@ -2686,7 +2888,7 @@ var webglCanvas = function () {
       var gl = this.gl;
       gl.activeTexture(gl.TEXTURE0);
       gl.texImage2D(gl.TEXTURE_2D, 0, this.textureType, width, height, 0, this.textureType, gl.UNSIGNED_BYTE, buffer);
-      // gl.uniform1f(gl.getUniformLocation(this.program, "u_layerDepth"), depth/6);
+      // gl.uniform1f(gl.getUniformLocation(this.program, "u_layerDepth"), -depth/6);
       this.setColor("u_color1", color1);
       this.setColor("u_color2", color2);
       gl.drawArrays(gl.TRIANGLES, 0, 6);
@@ -2764,7 +2966,7 @@ exports.default = webglCanvas;
 /*! no static exports found */
 /***/ (function(module, exports) {
 
-module.exports = "precision mediump float;\n#define GLSLIFY 1\nvarying vec2 v_texcoord;\nuniform vec4 u_color1;\nuniform vec4 u_color2;\nuniform sampler2D u_bitmap;\nuniform bool u_isSmooth;\nvoid main() {\n  float weightColor1 = texture2D(u_bitmap, v_texcoord).a;\n  float weightColor2 = texture2D(u_bitmap, v_texcoord).r;\n  float alpha = 1.0;\n  if (u_isSmooth) {\n    weightColor1 = smoothstep(0.0, .75, weightColor1);\n    weightColor2 = smoothstep(0.0, .75, weightColor2);\n    float alpha = weightColor1 + weightColor2;\n  }\n  gl_FragColor = vec4(u_color1.rgb, alpha) * weightColor1 + vec4(u_color2.rgb, alpha) * weightColor2;\n}\n"
+module.exports = "precision mediump float;\n#define GLSLIFY 1\nvarying vec2 v_texcoord;\nuniform vec4 u_color1;\nuniform vec4 u_color2;\nuniform sampler2D u_bitmap;\nuniform bool u_isSmooth;\nvoid main() {\n  float weightColor1 = texture2D(u_bitmap, v_texcoord).a;\n  float weightColor2 = texture2D(u_bitmap, v_texcoord).r;\n  float alpha = 1.0;\n  if (u_isSmooth) {\n    weightColor1 = smoothstep(0.0, .9, weightColor1);\n    weightColor2 = smoothstep(0.0, .9, weightColor2);\n    float alpha = weightColor1 + weightColor2;\n  }\n  gl_FragColor = vec4(u_color1.rgb, alpha) * weightColor1 + vec4(u_color2.rgb, alpha) * weightColor2;\n}\n"
 
 /***/ }),
 
