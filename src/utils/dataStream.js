@@ -162,6 +162,11 @@ export default class dataStream {
     this._offset += 4;
   }
 
+  readBytes(count) {
+    var bytes = new Uint8Array(this._data.buffer, this._offset, count);
+    this._offset += bytes.byteLength;
+    return bytes;
+  }
 
   /**
   * Read bytes and return a hex string
@@ -170,8 +175,7 @@ export default class dataStream {
   * @returns {string}
   */
   readHex(count, reverse=false) {
-    var bytes = new Uint8Array(this._data.buffer, this._offset, count);
-    this._offset += bytes.byteLength;
+    var bytes = this.readBytes(count);
     let hex = [];
     for (let i = 0; i < bytes.length; i++) {
       hex.push(bytes[i].toString(16).padStart(2, "0"));
@@ -186,8 +190,7 @@ export default class dataStream {
   * @returns {string}
   */
   readUtf8(count) {
-    var chars = new Uint8Array(this._data.buffer, this._offset, count);
-    this._offset += chars.byteLength;
+    var chars = this.readBytes(count);
     var str = "";
     for (let i = 0; i < chars.length; i++) {
       let char = chars[i];

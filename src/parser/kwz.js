@@ -1,10 +1,13 @@
 import dataStream from "utils/dataStream";
+
 import {
   ADPCM_INDEX_TABLE_2,
   ADPCM_INDEX_TABLE_4,
   ADPCM_SAMPLE_TABLE_2,
   ADPCM_SAMPLE_TABLE_4
 } from "utils/adpcm";
+
+import { BitmapEncoder } from "encoders/bmp";
 
 const FRAMERATES = [
   0.2,
@@ -30,64 +33,62 @@ const PALETTE = [
   [0xff, 0xff, 0xff]
 ];
 
+// table1 - commonly occuring line offsets
+const TABLE_1 = new Uint16Array([
+  0x0000, 0x0CD0, 0x19A0, 0x02D9, 0x088B, 0x0051, 0x00F3, 0x0009,
+  0x001B, 0x0001, 0x0003, 0x05B2, 0x1116, 0x00A2, 0x01E6, 0x0012,
+  0x0036, 0x0002, 0x0006, 0x0B64, 0x08DC, 0x0144, 0x00FC, 0x0024,
+  0x001C, 0x0004, 0x0334, 0x099C, 0x0668, 0x1338, 0x1004, 0x166C
+]);
+// table2 - commonly occuring line offsets, but the lines are shifted to the left by one pixel
+const TABLE_2 = new Uint16Array([
+  0x0000, 0x0CD0, 0x19A0, 0x0003, 0x02D9, 0x088B, 0x0051, 0x00F3, 
+  0x0009, 0x001B, 0x0001, 0x0006, 0x05B2, 0x1116, 0x00A2, 0x01E6, 
+  0x0012, 0x0036, 0x0002, 0x02DC, 0x0B64, 0x08DC, 0x0144, 0x00FC, 
+  0x0024, 0x001C, 0x099C, 0x0334, 0x1338, 0x0668, 0x166C, 0x1004
+]);
+// table3 - line offsets, but the lines are shifted to the left by one pixel
+const TABLE_3 = new Uint16Array(6561);
+var values = [0, 3, 7, 1, 4, 8, 2, 5, 6];
+let index = 0;
+for (let a = 0; a < 9; a++)
+  for (let b = 0; b < 9; b++)
+    for (let c = 0; c < 9; c++)
+      for (let d = 0; d < 9; d++) {
+        TABLE_3[index] = ((values[a] * 9 + values[b]) * 9 + values[c]) * 9 + values[d];
+        index++;
+      }
+
+// linetable - contains every possible sequence of pixels for each tile line
+const LINE_TABLE = new Uint16Array(6561 * 8);
+var values = [0x0000, 0xFF00, 0x00FF];
+let offset = 0;
+for (let a = 0; a < 3; a++)
+  for (let b = 0; b < 3; b++)
+    for (let c = 0; c < 3; c++)
+      for (let d = 0; d < 3; d++)
+        for (let e = 0; e < 3; e++)
+          for (let f = 0; f < 3; f++)
+            for (let g = 0; g < 3; g++)
+              for (let h = 0; h < 3; h++) {
+                LINE_TABLE.set([
+                  values[b], 
+                  values[a], 
+                  values[d], 
+                  values[c], 
+                  values[f], 
+                  values[e], 
+                  values[h], 
+                  values[g]
+                ], offset);
+                offset += 8;
+              }
+
 export default class kwzParser extends dataStream {
 
   constructor(arrayBuffer) {
     super(arrayBuffer);
     this.type = "KWZ";
-    // table1 - commonly occuring line offsets
-    this._table1 = new Uint16Array([
-      0x0000, 0x0CD0, 0x19A0, 0x02D9, 0x088B, 0x0051, 0x00F3, 0x0009,
-      0x001B, 0x0001, 0x0003, 0x05B2, 0x1116, 0x00A2, 0x01E6, 0x0012,
-      0x0036, 0x0002, 0x0006, 0x0B64, 0x08DC, 0x0144, 0x00FC, 0x0024,
-      0x001C, 0x0004, 0x0334, 0x099C, 0x0668, 0x1338, 0x1004, 0x166C
-    ]);
-    // table2 - commonly occuring line offsets, but the lines are shifted to the left by one pixel
-    this._table2 = new Uint16Array([
-      0x0000, 0x0CD0, 0x19A0, 0x0003, 0x02D9, 0x088B, 0x0051, 0x00F3, 
-      0x0009, 0x001B, 0x0001, 0x0006, 0x05B2, 0x1116, 0x00A2, 0x01E6, 
-      0x0012, 0x0036, 0x0002, 0x02DC, 0x0B64, 0x08DC, 0x0144, 0x00FC, 
-      0x0024, 0x001C, 0x099C, 0x0334, 0x1338, 0x0668, 0x166C, 0x1004
-    ]);
-    // table3 - line offsets, but the lines are shifted to the left by one pixel
-    this._table3 = new Uint16Array(6561);
-    var values = [0, 3, 7, 1, 4, 8, 2, 5, 6];
-    let index = 0;
-    for (let a = 0; a < 9; a++)
-      for (let b = 0; b < 9; b++)
-        for (let c = 0; c < 9; c++)
-          for (let d = 0; d < 9; d++) {
-            this._table3[index] = ((values[a] * 9 + values[b]) * 9 + values[c]) * 9 + values[d];
-            index++;
-          }
-    // linetable - contains every possible sequence of pixels for each tile line
-    this._linetable = new Uint16Array(6561 * 8);
-    var values = [0x0000, 0xFF00, 0x00FF];
-    let offset = 0;
-    for (let a = 0; a < 3; a++)
-      for (let b = 0; b < 3; b++)
-        for (let c = 0; c < 3; c++)
-          for (let d = 0; d < 3; d++)
-            for (let e = 0; e < 3; e++)
-              for (let f = 0; f < 3; f++)
-                for (let g = 0; g < 3; g++)
-                  for (let h = 0; h < 3; h++) {
-                    this._linetable.set([
-                      values[b], 
-                      values[a], 
-                      values[d], 
-                      values[c], 
-                      values[f], 
-                      values[e], 
-                      values[h], 
-                      values[g]
-                    ], offset);
-                    offset += 8;
-                  }
-
-    // convert to uint8 array
-    // this._linetable = new Uint8Array(this._linetable.buffer);
-
     this._layers = [
       new Uint16Array(320 * 240),
       new Uint16Array(320 * 240),
@@ -118,34 +119,9 @@ export default class kwzParser extends dataStream {
     }
 
     this._decodeMeta();
+    this._decodeFrameMeta();
     this._decodeSoundHeader();
     this.sampleRate = 16364;
-
-    this.frameMeta = [];
-    this.frameOffsets = [];
-    this.seek(this.sections["KMI"].offset + 8);
-    offset = this.sections["KMC"].offset + 12;
-    for (let i = 0; i < this.frameCount; i++) {
-      let frame = {
-        flags: this.readUint32(),
-        layerSize: [
-          this.readUint16(),
-          this.readUint16(),
-          this.readUint16()
-        ],
-        frameAuthor: this.readUtf8(10),
-        layerDepth: [
-          this.readUint8(),
-          this.readUint8(),
-          this.readUint8(),
-        ],
-        soundFlags: this.readUint8(),
-        cameraFlag: this.readUint32(),
-      };
-      this.frameMeta.push(frame);
-      this.frameOffsets.push(offset);
-      offset += frame.layerSize[0] + frame.layerSize[1] + frame.layerSize[2];
-    }
     this._prevDecodedFrame = -1;
   }
 
@@ -209,6 +185,34 @@ export default class kwzParser extends dataStream {
         filename: currentFilename,
       },
     };
+  }
+
+  _decodeFrameMeta() {
+    this.frameMeta = [];
+    this.frameOffsets = [];
+    this.seek(this.sections["KMI"].offset + 8);
+    offset = this.sections["KMC"].offset + 12;
+    for (let i = 0; i < this.frameCount; i++) {
+      let frame = {
+        flags: this.readUint32(),
+        layerSize: [
+          this.readUint16(),
+          this.readUint16(),
+          this.readUint16()
+        ],
+        frameAuthor: this.readUtf8(10),
+        layerDepth: [
+          this.readUint8(),
+          this.readUint8(),
+          this.readUint8(),
+        ],
+        soundFlags: this.readUint8(),
+        cameraFlag: this.readUint32(),
+      };
+      this.frameMeta.push(frame);
+      this.frameOffsets.push(offset);
+      offset += frame.layerSize[0] + frame.layerSize[1] + frame.layerSize[2];
+    }
   }
 
   _decodeSoundHeader() {
@@ -281,8 +285,8 @@ export default class kwzParser extends dataStream {
               let type = this.readBits(3);
 
               if (type == 0) {
-                let lineIndex = this._table1[this.readBits(5)];
-                let pixels = this._linetable.subarray(lineIndex * 8, lineIndex * 8 + 8);
+                let lineIndex = TABLE_1[this.readBits(5)];
+                let pixels = LINE_TABLE.subarray(lineIndex * 8, lineIndex * 8 + 8);
                 pixelBuffer.set(pixels, pixelOffset);
                 pixelBuffer.set(pixels, pixelOffset + 320);
                 pixelBuffer.set(pixels, pixelOffset + 640);
@@ -295,7 +299,7 @@ export default class kwzParser extends dataStream {
 
               else if (type == 1) {
                 let lineIndex = this.readBits(13);
-                let pixels = this._linetable.subarray(lineIndex * 8, lineIndex * 8 + 8);
+                let pixels = LINE_TABLE.subarray(lineIndex * 8, lineIndex * 8 + 8);
                 pixelBuffer.set(pixels, pixelOffset);
                 pixelBuffer.set(pixels, pixelOffset + 320);
                 pixelBuffer.set(pixels, pixelOffset + 640);
@@ -308,10 +312,10 @@ export default class kwzParser extends dataStream {
               
               else if (type == 2) {
                 let lineValue = this.readBits(5);
-                let lineIndexA = this._table1[lineValue];
-                let lineIndexB = this._table2[lineValue];
-                let a = this._linetable.subarray(lineIndexA * 8, lineIndexA * 8 + 8);
-                let b = this._linetable.subarray(lineIndexB * 8, lineIndexB * 8 + 8);
+                let lineIndexA = TABLE_1[lineValue];
+                let lineIndexB = TABLE_2[lineValue];
+                let a = LINE_TABLE.subarray(lineIndexA * 8, lineIndexA * 8 + 8);
+                let b = LINE_TABLE.subarray(lineIndexB * 8, lineIndexB * 8 + 8);
                 pixelBuffer.set(a, pixelOffset);
                 pixelBuffer.set(b, pixelOffset + 320);
                 pixelBuffer.set(a, pixelOffset + 640);
@@ -324,9 +328,9 @@ export default class kwzParser extends dataStream {
               
               else if (type == 3) {
                 let lineIndexA = this.readBits(13);
-                let lineIndexB = this._table3[lineIndexA];
-                let a = this._linetable.subarray(lineIndexA * 8, lineIndexA * 8 + 8);
-                let b = this._linetable.subarray(lineIndexB * 8, lineIndexB * 8 + 8);
+                let lineIndexB = TABLE_3[lineIndexA];
+                let a = LINE_TABLE.subarray(lineIndexA * 8, lineIndexA * 8 + 8);
+                let b = LINE_TABLE.subarray(lineIndexB * 8, lineIndexB * 8 + 8);
                 pixelBuffer.set(a, pixelOffset);
                 pixelBuffer.set(b, pixelOffset + 320);
                 pixelBuffer.set(a, pixelOffset + 640);
@@ -342,11 +346,11 @@ export default class kwzParser extends dataStream {
                 for (let line = 0; line < 8; line++) {
                   let lineIndex = 0;
                   if (mask & (1 << line)) {
-                    lineIndex = this._table1[this.readBits(5)];
+                    lineIndex = TABLE_1[this.readBits(5)];
                   } else {
                     lineIndex = this.readBits(13);
                   }
-                  let pixels = this._linetable.subarray(lineIndex * 8, lineIndex * 8 + 8);
+                  let pixels = LINE_TABLE.subarray(lineIndex * 8, lineIndex * 8 + 8);
                   pixelBuffer.set(pixels, pixelOffset + line * 320);
                 }
               }
@@ -365,16 +369,16 @@ export default class kwzParser extends dataStream {
                 let lineIndexB = 0;
 
                 if (useTable) {
-                  lineIndexA = this._table1[this.readBits(5)];
-                  lineIndexB = this._table1[this.readBits(5)];
+                  lineIndexA = TABLE_1[this.readBits(5)];
+                  lineIndexB = TABLE_1[this.readBits(5)];
                   pattern = (pattern + 1) % 4;
                 } else {
                   lineIndexA = this.readBits(13);
                   lineIndexB = this.readBits(13);
                 }
 
-                let a = this._linetable.subarray(lineIndexA * 8, lineIndexA * 8 + 8);
-                let b = this._linetable.subarray(lineIndexB * 8, lineIndexB * 8 + 8);
+                let a = LINE_TABLE.subarray(lineIndexA * 8, lineIndexA * 8 + 8);
+                let b = LINE_TABLE.subarray(lineIndexB * 8, lineIndexB * 8 + 8);
 
                 if (pattern == 0) {
                   pixelBuffer.set(a, pixelOffset);
@@ -442,18 +446,28 @@ export default class kwzParser extends dataStream {
     ];
   }
 
-  getFrameImage(frameIndex) {
+  getFramePixels(frameIndex) {
     let layers = this.decodeFrame(frameIndex);
     let image = new Uint8Array((320 * 240));
     for (let pixel = 0; pixel < (320 * 240); pixel++) {
-      let a = layers[0][pixel];
-      let b = layers[1][pixel];
-      let c = layers[2][pixel];
-      if (c) image[pixel] = c + 4;
-      if (b) image[pixel] = b + 2;
-      if (a) image[pixel] = a;
+      // because kwz layers use 2 items per pixel, one for color 1, one for color 2
+      let pixelOffset = pixel * 2;
+      if (layers[0][pixelOffset]) image[pixel] = 2;
+      if (layers[0][pixelOffset + 1]) image[pixel] = 1;
+      if (layers[1][pixelOffset]) image[pixel] = 4;
+      if (layers[1][pixelOffset + 1]) image[pixel] = 3;
+      if (layers[2][pixelOffset]) image[pixel] = 6;
+      if (layers[2][pixelOffset + 1]) image[pixel] = 5;
     }
     return image;
+  }
+
+  getFrameBitmap(frameIndex) {
+    let bmp = new BitmapEncoder(320, 240, 8);
+    bmp.setPixels(this.getFramePixels(frameIndex));
+    bmp.setPalette(this.getFramePalette(frameIndex));
+    document.body.appendChild(bmp.getImage());
+    return bmp;
   }
 
   decodeSoundFlags() {

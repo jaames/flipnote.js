@@ -469,6 +469,45 @@ var FRAMERATES = [0.2, 0.5, 1, 2, 4, 6, 8, 12, 20, 24, 30];
 
 var PALETTE = [[0xff, 0xff, 0xff], [0x10, 0x10, 0x10], [0xff, 0x10, 0x10], [0xff, 0xe7, 0x00], [0x00, 0x86, 0x31], [0x00, 0x38, 0xce], [0xff, 0xff, 0xff]];
 
+// table1 - commonly occuring line offsets
+var TABLE_1 = new Uint16Array([0x0000, 0x0CD0, 0x19A0, 0x02D9, 0x088B, 0x0051, 0x00F3, 0x0009, 0x001B, 0x0001, 0x0003, 0x05B2, 0x1116, 0x00A2, 0x01E6, 0x0012, 0x0036, 0x0002, 0x0006, 0x0B64, 0x08DC, 0x0144, 0x00FC, 0x0024, 0x001C, 0x0004, 0x0334, 0x099C, 0x0668, 0x1338, 0x1004, 0x166C]);
+// table2 - commonly occuring line offsets, but the lines are shifted to the left by one pixel
+var TABLE_2 = new Uint16Array([0x0000, 0x0CD0, 0x19A0, 0x0003, 0x02D9, 0x088B, 0x0051, 0x00F3, 0x0009, 0x001B, 0x0001, 0x0006, 0x05B2, 0x1116, 0x00A2, 0x01E6, 0x0012, 0x0036, 0x0002, 0x02DC, 0x0B64, 0x08DC, 0x0144, 0x00FC, 0x0024, 0x001C, 0x099C, 0x0334, 0x1338, 0x0668, 0x166C, 0x1004]);
+// table3 - line offsets, but the lines are shifted to the left by one pixel
+var TABLE_3 = new Uint16Array(6561);
+var values = [0, 3, 7, 1, 4, 8, 2, 5, 6];
+var index = 0;
+for (var a = 0; a < 9; a++) {
+  for (var b = 0; b < 9; b++) {
+    for (var c = 0; c < 9; c++) {
+      for (var d = 0; d < 9; d++) {
+        TABLE_3[index] = ((values[a] * 9 + values[b]) * 9 + values[c]) * 9 + values[d];
+        index++;
+      }
+    }
+  }
+} // linetable - contains every possible sequence of pixels for each tile line
+var LINE_TABLE = new Uint16Array(6561 * 8);
+var values = [0x0000, 0xFF00, 0x00FF];
+var offset = 0;
+for (var _a = 0; _a < 3; _a++) {
+  for (var _b = 0; _b < 3; _b++) {
+    for (var _c = 0; _c < 3; _c++) {
+      for (var _d = 0; _d < 3; _d++) {
+        for (var e = 0; e < 3; e++) {
+          for (var f = 0; f < 3; f++) {
+            for (var g = 0; g < 3; g++) {
+              for (var h = 0; h < 3; h++) {
+                LINE_TABLE.set([values[_b], values[_a], values[_d], values[_c], values[f], values[e], values[h], values[g]], offset);
+                offset += 8;
+              }
+            }
+          }
+        }
+      }
+    }
+  }
+}
 var kwzParser = function (_dataStream) {
   _inherits(kwzParser, _dataStream);
 
@@ -478,47 +517,6 @@ var kwzParser = function (_dataStream) {
     var _this = _possibleConstructorReturn(this, (kwzParser.__proto__ || Object.getPrototypeOf(kwzParser)).call(this, arrayBuffer));
 
     _this.type = "KWZ";
-    // table1 - commonly occuring line offsets
-    _this._table1 = new Uint16Array([0x0000, 0x0CD0, 0x19A0, 0x02D9, 0x088B, 0x0051, 0x00F3, 0x0009, 0x001B, 0x0001, 0x0003, 0x05B2, 0x1116, 0x00A2, 0x01E6, 0x0012, 0x0036, 0x0002, 0x0006, 0x0B64, 0x08DC, 0x0144, 0x00FC, 0x0024, 0x001C, 0x0004, 0x0334, 0x099C, 0x0668, 0x1338, 0x1004, 0x166C]);
-    // table2 - commonly occuring line offsets, but the lines are shifted to the left by one pixel
-    _this._table2 = new Uint16Array([0x0000, 0x0CD0, 0x19A0, 0x0003, 0x02D9, 0x088B, 0x0051, 0x00F3, 0x0009, 0x001B, 0x0001, 0x0006, 0x05B2, 0x1116, 0x00A2, 0x01E6, 0x0012, 0x0036, 0x0002, 0x02DC, 0x0B64, 0x08DC, 0x0144, 0x00FC, 0x0024, 0x001C, 0x099C, 0x0334, 0x1338, 0x0668, 0x166C, 0x1004]);
-    // table3 - line offsets, but the lines are shifted to the left by one pixel
-    _this._table3 = new Uint16Array(6561);
-    var values = [0, 3, 7, 1, 4, 8, 2, 5, 6];
-    var index = 0;
-    for (var a = 0; a < 9; a++) {
-      for (var b = 0; b < 9; b++) {
-        for (var c = 0; c < 9; c++) {
-          for (var d = 0; d < 9; d++) {
-            _this._table3[index] = ((values[a] * 9 + values[b]) * 9 + values[c]) * 9 + values[d];
-            index++;
-          }
-        }
-      }
-    } // linetable - contains every possible sequence of pixels for each tile line
-    _this._linetable = new Uint16Array(6561 * 8);
-    var values = [0x0000, 0xFF00, 0x00FF];
-    var offset = 0;
-    for (var _a = 0; _a < 3; _a++) {
-      for (var _b = 0; _b < 3; _b++) {
-        for (var _c = 0; _c < 3; _c++) {
-          for (var _d = 0; _d < 3; _d++) {
-            for (var e = 0; e < 3; e++) {
-              for (var f = 0; f < 3; f++) {
-                for (var g = 0; g < 3; g++) {
-                  for (var h = 0; h < 3; h++) {
-                    _this._linetable.set([values[_b], values[_a], values[_d], values[_c], values[f], values[e], values[h], values[g]], offset);
-                    offset += 8;
-                  }
-                }
-              }
-            }
-          }
-        }
-      }
-    } // convert to uint8 array
-    // this._linetable = new Uint8Array(this._linetable.buffer);
-
     _this._layers = [new Uint16Array(320 * 240), new Uint16Array(320 * 240), new Uint16Array(320 * 240)];
     _this._bitIndex = 0;
     _this._bitValue = 0;
@@ -548,26 +546,9 @@ var kwzParser = function (_dataStream) {
       }
 
       this._decodeMeta();
+      this._decodeFrameMeta();
       this._decodeSoundHeader();
       this.sampleRate = 16364;
-
-      this.frameMeta = [];
-      this.frameOffsets = [];
-      this.seek(this.sections["KMI"].offset + 8);
-      offset = this.sections["KMC"].offset + 12;
-      for (var i = 0; i < this.frameCount; i++) {
-        var frame = {
-          flags: this.readUint32(),
-          layerSize: [this.readUint16(), this.readUint16(), this.readUint16()],
-          frameAuthor: this.readUtf8(10),
-          layerDepth: [this.readUint8(), this.readUint8(), this.readUint8()],
-          soundFlags: this.readUint8(),
-          cameraFlag: this.readUint32()
-        };
-        this.frameMeta.push(frame);
-        this.frameOffsets.push(offset);
-        offset += frame.layerSize[0] + frame.layerSize[1] + frame.layerSize[2];
-      }
       this._prevDecodedFrame = -1;
     }
   }, {
@@ -633,6 +614,27 @@ var kwzParser = function (_dataStream) {
           filename: currentFilename
         }
       };
+    }
+  }, {
+    key: "_decodeFrameMeta",
+    value: function _decodeFrameMeta() {
+      this.frameMeta = [];
+      this.frameOffsets = [];
+      this.seek(this.sections["KMI"].offset + 8);
+      offset = this.sections["KMC"].offset + 12;
+      for (var i = 0; i < this.frameCount; i++) {
+        var frame = {
+          flags: this.readUint32(),
+          layerSize: [this.readUint16(), this.readUint16(), this.readUint16()],
+          frameAuthor: this.readUtf8(10),
+          layerDepth: [this.readUint8(), this.readUint8(), this.readUint8()],
+          soundFlags: this.readUint8(),
+          cameraFlag: this.readUint32()
+        };
+        this.frameMeta.push(frame);
+        this.frameOffsets.push(offset);
+        offset += frame.layerSize[0] + frame.layerSize[1] + frame.layerSize[2];
+      }
     }
   }, {
     key: "_decodeSoundHeader",
@@ -710,8 +712,8 @@ var kwzParser = function (_dataStream) {
                 var type = this.readBits(3);
 
                 if (type == 0) {
-                  var lineIndex = this._table1[this.readBits(5)];
-                  var pixels = this._linetable.subarray(lineIndex * 8, lineIndex * 8 + 8);
+                  var lineIndex = TABLE_1[this.readBits(5)];
+                  var pixels = LINE_TABLE.subarray(lineIndex * 8, lineIndex * 8 + 8);
                   pixelBuffer.set(pixels, pixelOffset);
                   pixelBuffer.set(pixels, pixelOffset + 320);
                   pixelBuffer.set(pixels, pixelOffset + 640);
@@ -722,7 +724,7 @@ var kwzParser = function (_dataStream) {
                   pixelBuffer.set(pixels, pixelOffset + 2240);
                 } else if (type == 1) {
                   var _lineIndex = this.readBits(13);
-                  var _pixels = this._linetable.subarray(_lineIndex * 8, _lineIndex * 8 + 8);
+                  var _pixels = LINE_TABLE.subarray(_lineIndex * 8, _lineIndex * 8 + 8);
                   pixelBuffer.set(_pixels, pixelOffset);
                   pixelBuffer.set(_pixels, pixelOffset + 320);
                   pixelBuffer.set(_pixels, pixelOffset + 640);
@@ -733,23 +735,10 @@ var kwzParser = function (_dataStream) {
                   pixelBuffer.set(_pixels, pixelOffset + 2240);
                 } else if (type == 2) {
                   var lineValue = this.readBits(5);
-                  var lineIndexA = this._table1[lineValue];
-                  var lineIndexB = this._table2[lineValue];
-                  var a = this._linetable.subarray(lineIndexA * 8, lineIndexA * 8 + 8);
-                  var b = this._linetable.subarray(lineIndexB * 8, lineIndexB * 8 + 8);
-                  pixelBuffer.set(a, pixelOffset);
-                  pixelBuffer.set(b, pixelOffset + 320);
-                  pixelBuffer.set(a, pixelOffset + 640);
-                  pixelBuffer.set(b, pixelOffset + 960);
-                  pixelBuffer.set(a, pixelOffset + 1280);
-                  pixelBuffer.set(b, pixelOffset + 1600);
-                  pixelBuffer.set(a, pixelOffset + 1920);
-                  pixelBuffer.set(b, pixelOffset + 2240);
-                } else if (type == 3) {
-                  var _lineIndexA = this.readBits(13);
-                  var _lineIndexB = this._table3[_lineIndexA];
-                  var _a2 = this._linetable.subarray(_lineIndexA * 8, _lineIndexA * 8 + 8);
-                  var _b2 = this._linetable.subarray(_lineIndexB * 8, _lineIndexB * 8 + 8);
+                  var lineIndexA = TABLE_1[lineValue];
+                  var lineIndexB = TABLE_2[lineValue];
+                  var _a2 = LINE_TABLE.subarray(lineIndexA * 8, lineIndexA * 8 + 8);
+                  var _b2 = LINE_TABLE.subarray(lineIndexB * 8, lineIndexB * 8 + 8);
                   pixelBuffer.set(_a2, pixelOffset);
                   pixelBuffer.set(_b2, pixelOffset + 320);
                   pixelBuffer.set(_a2, pixelOffset + 640);
@@ -758,16 +747,29 @@ var kwzParser = function (_dataStream) {
                   pixelBuffer.set(_b2, pixelOffset + 1600);
                   pixelBuffer.set(_a2, pixelOffset + 1920);
                   pixelBuffer.set(_b2, pixelOffset + 2240);
+                } else if (type == 3) {
+                  var _lineIndexA = this.readBits(13);
+                  var _lineIndexB = TABLE_3[_lineIndexA];
+                  var _a3 = LINE_TABLE.subarray(_lineIndexA * 8, _lineIndexA * 8 + 8);
+                  var _b3 = LINE_TABLE.subarray(_lineIndexB * 8, _lineIndexB * 8 + 8);
+                  pixelBuffer.set(_a3, pixelOffset);
+                  pixelBuffer.set(_b3, pixelOffset + 320);
+                  pixelBuffer.set(_a3, pixelOffset + 640);
+                  pixelBuffer.set(_b3, pixelOffset + 960);
+                  pixelBuffer.set(_a3, pixelOffset + 1280);
+                  pixelBuffer.set(_b3, pixelOffset + 1600);
+                  pixelBuffer.set(_a3, pixelOffset + 1920);
+                  pixelBuffer.set(_b3, pixelOffset + 2240);
                 } else if (type == 4) {
                   var mask = this.readBits(8);
                   for (var line = 0; line < 8; line++) {
                     var _lineIndex2 = 0;
                     if (mask & 1 << line) {
-                      _lineIndex2 = this._table1[this.readBits(5)];
+                      _lineIndex2 = TABLE_1[this.readBits(5)];
                     } else {
                       _lineIndex2 = this.readBits(13);
                     }
-                    var _pixels2 = this._linetable.subarray(_lineIndex2 * 8, _lineIndex2 * 8 + 8);
+                    var _pixels2 = LINE_TABLE.subarray(_lineIndex2 * 8, _lineIndex2 * 8 + 8);
                     pixelBuffer.set(_pixels2, pixelOffset + line * 320);
                   }
                 } else if (type == 5) {
@@ -784,53 +786,53 @@ var kwzParser = function (_dataStream) {
                     var _lineIndexB2 = 0;
 
                     if (useTable) {
-                      _lineIndexA2 = this._table1[this.readBits(5)];
-                      _lineIndexB2 = this._table1[this.readBits(5)];
+                      _lineIndexA2 = TABLE_1[this.readBits(5)];
+                      _lineIndexB2 = TABLE_1[this.readBits(5)];
                       pattern = (pattern + 1) % 4;
                     } else {
                       _lineIndexA2 = this.readBits(13);
                       _lineIndexB2 = this.readBits(13);
                     }
 
-                    var _a3 = this._linetable.subarray(_lineIndexA2 * 8, _lineIndexA2 * 8 + 8);
-                    var _b3 = this._linetable.subarray(_lineIndexB2 * 8, _lineIndexB2 * 8 + 8);
+                    var _a4 = LINE_TABLE.subarray(_lineIndexA2 * 8, _lineIndexA2 * 8 + 8);
+                    var _b4 = LINE_TABLE.subarray(_lineIndexB2 * 8, _lineIndexB2 * 8 + 8);
 
                     if (pattern == 0) {
-                      pixelBuffer.set(_a3, pixelOffset);
-                      pixelBuffer.set(_b3, pixelOffset + 320);
-                      pixelBuffer.set(_a3, pixelOffset + 640);
-                      pixelBuffer.set(_b3, pixelOffset + 960);
-                      pixelBuffer.set(_a3, pixelOffset + 1280);
-                      pixelBuffer.set(_b3, pixelOffset + 1600);
-                      pixelBuffer.set(_a3, pixelOffset + 1920);
-                      pixelBuffer.set(_b3, pixelOffset + 2240);
+                      pixelBuffer.set(_a4, pixelOffset);
+                      pixelBuffer.set(_b4, pixelOffset + 320);
+                      pixelBuffer.set(_a4, pixelOffset + 640);
+                      pixelBuffer.set(_b4, pixelOffset + 960);
+                      pixelBuffer.set(_a4, pixelOffset + 1280);
+                      pixelBuffer.set(_b4, pixelOffset + 1600);
+                      pixelBuffer.set(_a4, pixelOffset + 1920);
+                      pixelBuffer.set(_b4, pixelOffset + 2240);
                     } else if (pattern == 1) {
-                      pixelBuffer.set(_a3, pixelOffset);
-                      pixelBuffer.set(_a3, pixelOffset + 320);
-                      pixelBuffer.set(_b3, pixelOffset + 640);
-                      pixelBuffer.set(_a3, pixelOffset + 960);
-                      pixelBuffer.set(_a3, pixelOffset + 1280);
-                      pixelBuffer.set(_b3, pixelOffset + 1600);
-                      pixelBuffer.set(_a3, pixelOffset + 1920);
-                      pixelBuffer.set(_a3, pixelOffset + 2240);
+                      pixelBuffer.set(_a4, pixelOffset);
+                      pixelBuffer.set(_a4, pixelOffset + 320);
+                      pixelBuffer.set(_b4, pixelOffset + 640);
+                      pixelBuffer.set(_a4, pixelOffset + 960);
+                      pixelBuffer.set(_a4, pixelOffset + 1280);
+                      pixelBuffer.set(_b4, pixelOffset + 1600);
+                      pixelBuffer.set(_a4, pixelOffset + 1920);
+                      pixelBuffer.set(_a4, pixelOffset + 2240);
                     } else if (pattern == 2) {
-                      pixelBuffer.set(_a3, pixelOffset);
-                      pixelBuffer.set(_b3, pixelOffset + 320);
-                      pixelBuffer.set(_a3, pixelOffset + 640);
-                      pixelBuffer.set(_a3, pixelOffset + 960);
-                      pixelBuffer.set(_b3, pixelOffset + 1280);
-                      pixelBuffer.set(_a3, pixelOffset + 1600);
-                      pixelBuffer.set(_a3, pixelOffset + 1920);
-                      pixelBuffer.set(_b3, pixelOffset + 2240);
+                      pixelBuffer.set(_a4, pixelOffset);
+                      pixelBuffer.set(_b4, pixelOffset + 320);
+                      pixelBuffer.set(_a4, pixelOffset + 640);
+                      pixelBuffer.set(_a4, pixelOffset + 960);
+                      pixelBuffer.set(_b4, pixelOffset + 1280);
+                      pixelBuffer.set(_a4, pixelOffset + 1600);
+                      pixelBuffer.set(_a4, pixelOffset + 1920);
+                      pixelBuffer.set(_b4, pixelOffset + 2240);
                     } else if (pattern == 3) {
-                      pixelBuffer.set(_a3, pixelOffset);
-                      pixelBuffer.set(_b3, pixelOffset + 320);
-                      pixelBuffer.set(_b3, pixelOffset + 640);
-                      pixelBuffer.set(_a3, pixelOffset + 960);
-                      pixelBuffer.set(_b3, pixelOffset + 1280);
-                      pixelBuffer.set(_b3, pixelOffset + 1600);
-                      pixelBuffer.set(_a3, pixelOffset + 1920);
-                      pixelBuffer.set(_b3, pixelOffset + 2240);
+                      pixelBuffer.set(_a4, pixelOffset);
+                      pixelBuffer.set(_b4, pixelOffset + 320);
+                      pixelBuffer.set(_b4, pixelOffset + 640);
+                      pixelBuffer.set(_a4, pixelOffset + 960);
+                      pixelBuffer.set(_b4, pixelOffset + 1280);
+                      pixelBuffer.set(_b4, pixelOffset + 1600);
+                      pixelBuffer.set(_a4, pixelOffset + 1920);
+                      pixelBuffer.set(_b4, pixelOffset + 2240);
                     }
                   }
               }
@@ -861,12 +863,12 @@ var kwzParser = function (_dataStream) {
       var layers = this.decodeFrame(frameIndex);
       var image = new Uint8Array(320 * 240);
       for (var pixel = 0; pixel < 320 * 240; pixel++) {
-        var a = layers[0][pixel];
-        var b = layers[1][pixel];
-        var c = layers[2][pixel];
-        if (c) image[pixel] = c + 4;
-        if (b) image[pixel] = b + 2;
-        if (a) image[pixel] = a;
+        var _a5 = layers[0][pixel];
+        var _b5 = layers[1][pixel];
+        var _c2 = layers[2][pixel];
+        if (_c2) image[pixel] = _c2 + 4;
+        if (_b5) image[pixel] = _b5 + 2;
+        if (_a5) image[pixel] = _a5;
       }
       return image;
     }
@@ -1010,6 +1012,13 @@ var WHITE = [0xFF, 0xFF, 0xff];
 var BLUE = [0x0A, 0x39, 0xFF];
 var RED = [0xFF, 0x2A, 0x2A];
 
+var CHUNK_TABLE = new Uint8Array(256 * 8);
+for (var chunk = 0; chunk < 256; chunk++) {
+  for (var bit = 0; bit < 8; bit++) {
+    CHUNK_TABLE[chunk * 8 + bit] = chunk >> bit & 0x1 ? 0xFF : 0x00;
+  }
+}
+
 var ppmParser = function (_dataStream) {
   _inherits(ppmParser, _dataStream);
 
@@ -1023,27 +1032,11 @@ var ppmParser = function (_dataStream) {
     var _this = _possibleConstructorReturn(this, (ppmParser.__proto__ || Object.getPrototypeOf(ppmParser)).call(this, arrayBuffer));
 
     _this.type = "PPM";
-    _this.seek(4);
-    // decode header
-    // https://github.com/pbsds/hatena-server/wiki/PPM-format#file-header
-    _this._frameDataLength = _this.readUint32();
-    _this._soundDataLength = _this.readUint32();
-    _this.frameCount = _this.readUint16() + 1;
-    _this.seek(18);
-    _this.thumbFrameIndex = _this.readUint16();
-    // jump to the start of the animation data section
-    // https://github.com/pbsds/hatena-server/wiki/PPM-format#animation-data-section
-    _this.seek(0x06A0);
-    var offsetTableLength = _this.readUint16();
-    // skip padding + flags
-    _this.seek(0x06A8);
-    // read frame offsets and build them into a table
-    _this._frameOffsets = new Uint32Array(offsetTableLength / 4).map(function (value) {
-      return 0x06A8 + offsetTableLength + _this.readUint32();
-    });
+    _this._decodeHeader();
+    _this._decodeAnimationHeader();
     _this._decodeSoundHeader();
+    _this._decodeMeta();
     _this.sampleRate = 8192;
-    _this.meta = _this._decodeMeta();
     // create image buffers
     _this._layers = [new Uint8Array(WIDTH * HEIGHT), new Uint8Array(WIDTH * HEIGHT)];
     _this._prevLayers = [new Uint8Array(WIDTH * HEIGHT), new Uint8Array(WIDTH * HEIGHT)];
@@ -1083,13 +1076,18 @@ var ppmParser = function (_dataStream) {
       }
       return unpacked;
     }
-
-    /**
-    * Decode the main PPM metadata, like username, timestamp, etc
-    * @returns {object}
-    * @access protected
-    */
-
+  }, {
+    key: "_decodeHeader",
+    value: function _decodeHeader() {
+      this.seek(0);
+      // decode header
+      // https://github.com/pbsds/hatena-server/wiki/PPM-format#file-header
+      var magic = this.readUint32();
+      this._frameDataLength = this.readUint32();
+      this._soundDataLength = this.readUint32();
+      this.frameCount = this.readUint16() + 1;
+      this.version = this.readUint16();
+    }
   }, {
     key: "_decodeMeta",
     value: function _decodeMeta() {
@@ -1109,7 +1107,8 @@ var ppmParser = function (_dataStream) {
       var timestamp = new Date((this.readUint32() + 946684800) * 1000);
       this.seek(0x06A6);
       var flags = this.readUint16();
-      return {
+      this.thumbFrameIndex = thumbIndex;
+      this.meta = {
         lock: lock,
         loop: flags >> 1 & 0x01,
         frame_count: this.frameCount,
@@ -1135,12 +1134,22 @@ var ppmParser = function (_dataStream) {
         }
       };
     }
+  }, {
+    key: "_decodeAnimationHeader",
+    value: function _decodeAnimationHeader() {
+      var _this2 = this;
 
-    /**
-    * Decode the sound header to get audio track lengths and frame/bgm sppeds
-    * @access protected
-    */
-
+      // jump to the start of the animation data section
+      // https://github.com/pbsds/hatena-server/wiki/PPM-format#animation-data-section
+      this.seek(0x06A0);
+      var offsetTableLength = this.readUint16();
+      // skip padding + flags
+      this.seek(0x06A8);
+      // read frame offsets and build them into a table
+      this._frameOffsets = new Uint32Array(offsetTableLength / 4).map(function (value) {
+        return 0x06A8 + offsetTableLength + _this2.readUint32();
+      });
+    }
   }, {
     key: "_decodeSoundHeader",
     value: function _decodeSoundHeader() {
@@ -1228,14 +1237,14 @@ var ppmParser = function (_dataStream) {
         translateY = this.readInt8();
       }
 
-      var layerEncoding = [this.readLineEncoding(), this.readLineEncoding()];
+      var layerEncoding = [this.readBytes(48), this.readBytes(48)];
       // start decoding layer bitmaps
       for (var layer = 0; layer < 2; layer++) {
         var layerBitmap = this._layers[layer];
         for (var line = 0; line < HEIGHT; line++) {
           var chunkOffset = line * WIDTH;
-          var lineType = layerEncoding[layer][line];
-          switch (lineType) {
+          var lineType = layerEncoding[layer][Math.floor(line / 4)] >> line % 4 * 2;
+          switch (lineType & 0x03) {
             // line type 0 = blank line, decode nothing
             case 0:
               break;
@@ -1251,10 +1260,7 @@ var ppmParser = function (_dataStream) {
                 // else we can just leave it blank and move on to the next chunk
                 if (lineHeader & 0x80000000) {
                   var chunk = this.readUint8();
-                  // unpack chunk bits
-                  for (var pixel = 0; pixel < 8; pixel++) {
-                    layerBitmap[chunkOffset + pixel] = chunk >> pixel & 0x1 ? 0xFF : 0x00;
-                  }
+                  layerBitmap.set(CHUNK_TABLE.subarray(chunk * 8, chunk * 8 + 8), chunkOffset);
                 }
                 chunkOffset += 8;
                 // shift lineheader to the left by 1 bit, now on the next loop cycle the next bit will be checked
@@ -1265,9 +1271,7 @@ var ppmParser = function (_dataStream) {
             case 3:
               while (chunkOffset < (line + 1) * WIDTH) {
                 var chunk = this.readUint8();
-                for (var pixel = 0; pixel < 8; pixel++) {
-                  layerBitmap[chunkOffset + pixel] = chunk >> pixel & 0x1 ? 0xFF : 0x00;
-                }
+                layerBitmap.set(CHUNK_TABLE.subarray(chunk * 8, chunk * 8 + 8), chunkOffset);
                 chunkOffset += 8;
               }
               break;
@@ -1349,14 +1353,14 @@ var ppmParser = function (_dataStream) {
   }, {
     key: "decodeSoundFlags",
     value: function decodeSoundFlags() {
-      var _this2 = this;
+      var _this3 = this;
 
       this.seek(0x06A0 + this._frameDataLength);
       // per msdn docs - the array map callback is only invoked for array indicies that have assigned values
       // so when we create an array, we need to fill it with something before we can map over it
       var arr = new Array(this.frameCount).fill([]);
       return arr.map(function (value) {
-        var byte = _this2.readUint8();
+        var byte = _this3.readUint8();
         return [byte & 0x1, byte >> 1 & 0x1, byte >> 2 & 0x1];
       });
     }
@@ -2378,6 +2382,13 @@ var dataStream = function () {
       this._data.setInt32(this._offset, value, littleEndian);
       this._offset += 4;
     }
+  }, {
+    key: "readBytes",
+    value: function readBytes(count) {
+      var bytes = new Uint8Array(this._data.buffer, this._offset, count);
+      this._offset += bytes.byteLength;
+      return bytes;
+    }
 
     /**
     * Read bytes and return a hex string
@@ -2391,8 +2402,7 @@ var dataStream = function () {
     value: function readHex(count) {
       var reverse = arguments.length > 1 && arguments[1] !== undefined ? arguments[1] : false;
 
-      var bytes = new Uint8Array(this._data.buffer, this._offset, count);
-      this._offset += bytes.byteLength;
+      var bytes = this.readBytes(count);
       var hex = [];
       for (var i = 0; i < bytes.length; i++) {
         hex.push(bytes[i].toString(16).padStart(2, "0"));
@@ -2410,8 +2420,7 @@ var dataStream = function () {
   }, {
     key: "readUtf8",
     value: function readUtf8(count) {
-      var chars = new Uint8Array(this._data.buffer, this._offset, count);
-      this._offset += chars.byteLength;
+      var chars = this.readBytes(count);
       var str = "";
       for (var i = 0; i < chars.length; i++) {
         var char = chars[i];
@@ -2677,7 +2686,7 @@ var webglCanvas = function () {
       var gl = this.gl;
       gl.activeTexture(gl.TEXTURE0);
       gl.texImage2D(gl.TEXTURE_2D, 0, this.textureType, width, height, 0, this.textureType, gl.UNSIGNED_BYTE, buffer);
-      // gl.uniform1f(gl.getUniformLocation(this.program, "u_layerDepth"), -depth/6);
+      // gl.uniform1f(gl.getUniformLocation(this.program, "u_layerDepth"), depth/6);
       this.setColor("u_color1", color1);
       this.setColor("u_color2", color2);
       gl.drawArrays(gl.TRIANGLES, 0, 6);
@@ -2755,7 +2764,7 @@ exports.default = webglCanvas;
 /*! no static exports found */
 /***/ (function(module, exports) {
 
-module.exports = "precision mediump float;\n#define GLSLIFY 1\nvarying vec2 v_texcoord;\nuniform vec4 u_color1;\nuniform vec4 u_color2;\nuniform sampler2D u_bitmap;\nuniform bool u_isSmooth;\nvoid main() {\n  float weightColor1 = texture2D(u_bitmap, v_texcoord).a;\n  float weightColor2 = texture2D(u_bitmap, v_texcoord).r;\n  float alpha = 1.0;\n  if (u_isSmooth) {\n    weightColor1 = smoothstep(0.0, .9, weightColor1);\n    weightColor2 = smoothstep(0.0, .9, weightColor2);\n    float alpha = weightColor1 + weightColor2;\n  }\n  gl_FragColor = vec4(u_color1.rgb, alpha) * weightColor1 + vec4(u_color2.rgb, alpha) * weightColor2;\n}\n"
+module.exports = "precision mediump float;\n#define GLSLIFY 1\nvarying vec2 v_texcoord;\nuniform vec4 u_color1;\nuniform vec4 u_color2;\nuniform sampler2D u_bitmap;\nuniform bool u_isSmooth;\nvoid main() {\n  float weightColor1 = texture2D(u_bitmap, v_texcoord).a;\n  float weightColor2 = texture2D(u_bitmap, v_texcoord).r;\n  float alpha = 1.0;\n  if (u_isSmooth) {\n    weightColor1 = smoothstep(0.0, .75, weightColor1);\n    weightColor2 = smoothstep(0.0, .75, weightColor2);\n    float alpha = weightColor1 + weightColor2;\n  }\n  gl_FragColor = vec4(u_color1.rgb, alpha) * weightColor1 + vec4(u_color2.rgb, alpha) * weightColor2;\n}\n"
 
 /***/ }),
 

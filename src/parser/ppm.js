@@ -23,10 +23,13 @@
 */
 
 import dataStream from "utils/dataStream";
+
 import {
   ADPCM_INDEX_TABLE_4,
   ADPCM_SAMPLE_TABLE_4
 } from "utils/adpcm";
+
+import { BitmapEncoder } from "encoders/bmp";
 
 // internal framerate value -> FPS table
 const FRAMERATES = {
@@ -55,27 +58,11 @@ export default class ppmParser extends dataStream {
   constructor(arrayBuffer) {
     super(arrayBuffer);
     this.type = "PPM";
-    this.seek(4);
-    // decode header
-    // https://github.com/pbsds/hatena-server/wiki/PPM-format#file-header
-    this._frameDataLength = this.readUint32();
-    this._soundDataLength = this.readUint32();
-    this.frameCount = this.readUint16() + 1;
-    this.seek(18);
-    this.thumbFrameIndex = this.readUint16();
-    // jump to the start of the animation data section
-    // https://github.com/pbsds/hatena-server/wiki/PPM-format#animation-data-section
-    this.seek(0x06A0);
-    var offsetTableLength = this.readUint16();
-    // skip padding + flags
-    this.seek(0x06A8);
-    // read frame offsets and build them into a table
-    this._frameOffsets = new Uint32Array(offsetTableLength / 4).map(value => {
-      return 0x06A8 + offsetTableLength + this.readUint32();
-    });
+    this._decodeHeader();
+    this._decodeAnimationHeader();
     this._decodeSoundHeader();
+    this._decodeMeta();
     this.sampleRate = 8192;
-    this.meta = this._decodeMeta();
     // create image buffers
      this._layers = [
       new Uint8Array(WIDTH * HEIGHT),
@@ -126,11 +113,17 @@ export default class ppmParser extends dataStream {
     return unpacked;
   }
 
-  /**
-  * Decode the main PPM metadata, like username, timestamp, etc
-  * @returns {object}
-  * @access protected
-  */
+  _decodeHeader() {
+    this.seek(0);
+    // decode header
+    // https://github.com/pbsds/hatena-server/wiki/PPM-format#file-header
+    let magic = this.readUint32();
+    this._frameDataLength = this.readUint32();
+    this._soundDataLength = this.readUint32();
+    this.frameCount = this.readUint16() + 1;
+    this.version = this.readUint16();
+  }
+
   _decodeMeta() {
     // https://github.com/pbsds/hatena-server/wiki/PPM-format#file-header
     this.seek(0x10);
@@ -148,7 +141,8 @@ export default class ppmParser extends dataStream {
     var timestamp = new Date((this.readUint32() + 946684800) * 1000);
     this.seek(0x06A6);
     var flags = this.readUint16();
-    return {
+    this.thumbFrameIndex = thumbIndex;
+    this.meta = {
       lock: lock,
       loop: flags >> 1 & 0x01,
       frame_count: this.frameCount,
@@ -175,10 +169,19 @@ export default class ppmParser extends dataStream {
     };
   }
 
-  /**
-  * Decode the sound header to get audio track lengths and frame/bgm sppeds
-  * @access protected
-  */
+  _decodeAnimationHeader() {
+    // jump to the start of the animation data section
+    // https://github.com/pbsds/hatena-server/wiki/PPM-format#animation-data-section
+    this.seek(0x06A0);
+    var offsetTableLength = this.readUint16();
+    // skip padding + flags
+    this.seek(0x06A8);
+    // read frame offsets and build them into a table
+    this._frameOffsets = new Uint32Array(offsetTableLength / 4).map(value => {
+      return 0x06A8 + offsetTableLength + this.readUint32();
+    });
+  }
+
   _decodeSoundHeader() {
     // https://github.com/pbsds/hatena-server/wiki/PPM-format#sound-data-section
     // offset = frame data offset + frame data length + sound effect flags
@@ -266,7 +269,7 @@ export default class ppmParser extends dataStream {
 
     var layerEncoding = [
       this.readLineEncoding(),
-      this.readLineEncoding()
+      this.readLineEncoding(),
     ];
      // start decoding layer bitmaps
     for (var layer = 0; layer < 2; layer++) {
@@ -328,6 +331,26 @@ export default class ppmParser extends dataStream {
       }
     }
     return this._layers;
+  }
+
+  getFramePixels(frameIndex) {
+    let layers = this.decodeFrame(frameIndex);
+    let image = new Uint8Array((256 * 192));
+    for (let pixel = 0; pixel < image.length; pixel++) {
+      let a = layers[0][pixel];
+      let b = layers[1][pixel];
+      if (b) image[pixel] = 2;
+      if (a) image[pixel] = 1;
+    }
+    return image;
+  }
+
+  getFrameBitmap(frameIndex) {
+    let bmp = new BitmapEncoder(256, 192, 8);
+    bmp.setPixels(this.getFramePixels(frameIndex));
+    bmp.setPalette(this.getFramePalette(frameIndex));
+    document.body.appendChild(bmp.getImage());
+    return bmp;
   }
 
   hasAudioTrack(trackIndex) {

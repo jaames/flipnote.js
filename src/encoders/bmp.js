@@ -8,7 +8,7 @@ export function roundToNearest(value, n) {
 // simple bitmap class for rendering images
 // https://en.wikipedia.org/wiki/BMP_file_format
 
-export default class BitmapRenderer {
+export class BitmapEncoder {
 
   constructor(width, height, bpp) {
     this.width = width;
@@ -50,22 +50,23 @@ export default class BitmapRenderer {
   }
 
   setCompression(value) {
-    this.fileHeader.seek(16);
+    this.dibHeader.seek(16);
     this.dibHeader.writeUint32(value);
   }
 
   setPaletteCount(value) {
-    this.fileHeader.seek(32);
+    this.dibHeader.seek(32);
     this.dibHeader.writeUint32(value);
   }
 
-  setPalette(paletteData) {
-    let paletteLength = Math.pow(2, this.bpp);
-    let palette = new Uint32Array(paletteLength);
-    for (let index = 0; index < palette.length; index++) {
-      palette[index] = paletteData[index % paletteData.length];
+  setPalette(colors) {
+    let palette = new Uint32Array(Math.pow(2, this.bpp));
+    for (let index = 0; index < colors.length; index++) {
+      let color = colors[index % colors.length];
+      // bmp color order is ARGB
+      palette[index] = 0xFF000000 | (color[0] << 16) | (color[1] << 8) | (color[2]);
     }
-    this.setPaletteCount(paletteLength); // set number of colors in DIB header
+    this.setPaletteCount(palette.length); // set number of colors in DIB header
     this.setCompression(0); // set compression to 0 so we're not using 32 bit
     this.palette = palette;
   }
