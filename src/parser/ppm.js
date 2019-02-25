@@ -72,7 +72,7 @@ export default class ppmParser extends dataStream {
       new Uint8Array(WIDTH * HEIGHT),
       new Uint8Array(WIDTH * HEIGHT)
     ];
-    this._prevFrameIndex = 0;
+    this._prevFrameIndex = null;
   }
 
   static validateFSID(fsid) {
@@ -349,7 +349,6 @@ export default class ppmParser extends dataStream {
     let bmp = new BitmapEncoder(256, 192, 8);
     bmp.setPixels(this.getFramePixels(frameIndex));
     bmp.setPalette(this.getFramePalette(frameIndex));
-    document.body.appendChild(bmp.getImage());
     return bmp;
   }
 

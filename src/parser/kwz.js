@@ -122,7 +122,7 @@ export default class kwzParser extends dataStream {
     this._decodeFrameMeta();
     this._decodeSoundHeader();
     this.sampleRate = 16364;
-    this._prevDecodedFrame = -1;
+    this._prevDecodedFrame = null;
   }
 
   readBits(num) {
@@ -466,7 +466,6 @@ export default class kwzParser extends dataStream {
     let bmp = new BitmapEncoder(320, 240, 8);
     bmp.setPixels(this.getFramePixels(frameIndex));
     bmp.setPalette(this.getFramePalette(frameIndex));
-    document.body.appendChild(bmp.getImage());
     return bmp;
   }
 

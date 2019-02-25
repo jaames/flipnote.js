@@ -1,5 +1,5 @@
 /*!
- * flipnote.js v2.3.0
+ * flipnote.js v2.3.2
  * Browser-based playback of .ppm and .kwz animations from Flipnote Studio and Flipnote Studio 3D
  * 2018 James Daniel
  * github.com/jaames/flipnote.js
@@ -398,7 +398,7 @@ var _kwz2 = _interopRequireDefault(_kwz);
 function _interopRequireDefault(obj) { return obj && obj.__esModule ? obj : { default: obj }; }
 
 var _module = {
-  version: "2.3.0",
+  version: "2.3.2",
   player: _player2.default,
   parser: _parser2.default,
   ppmParser: _ppm2.default,
@@ -718,7 +718,7 @@ var kwzParser = function (_dataStream) {
       this._decodeFrameMeta();
       this._decodeSoundHeader();
       this.sampleRate = 16364;
-      this._prevDecodedFrame = -1;
+      this._prevDecodedFrame = null;
     }
   }, {
     key: "readBits",
@@ -1049,7 +1049,6 @@ var kwzParser = function (_dataStream) {
       var bmp = new _bmp.BitmapEncoder(320, 240, 8);
       bmp.setPixels(this.getFramePixels(frameIndex));
       bmp.setPalette(this.getFramePalette(frameIndex));
-      document.body.appendChild(bmp.getImage());
       return bmp;
     }
   }, {
@@ -1215,7 +1214,7 @@ var ppmParser = function (_dataStream) {
     // create image buffers
     _this._layers = [new Uint8Array(WIDTH * HEIGHT), new Uint8Array(WIDTH * HEIGHT)];
     _this._prevLayers = [new Uint8Array(WIDTH * HEIGHT), new Uint8Array(WIDTH * HEIGHT)];
-    _this._prevFrameIndex = 0;
+    _this._prevFrameIndex = null;
     return _this;
   }
 
@@ -1493,7 +1492,6 @@ var ppmParser = function (_dataStream) {
       var bmp = new _bmp.BitmapEncoder(256, 192, 8);
       bmp.setPixels(this.getFramePixels(frameIndex));
       bmp.setPalette(this.getFramePalette(frameIndex));
-      document.body.appendChild(bmp.getImage());
       return bmp;
     }
   }, {
