@@ -1,5 +1,5 @@
 /*!
- * flipnote.js v2.3.2
+ * flipnote.js v2.3.3
  * Browser-based playback of .ppm and .kwz animations from Flipnote Studio and Flipnote Studio 3D
  * 2018 James Daniel
  * github.com/jaames/flipnote.js
@@ -398,7 +398,7 @@ var _kwz2 = _interopRequireDefault(_kwz);
 function _interopRequireDefault(obj) { return obj && obj.__esModule ? obj : { default: obj }; }
 
 var _module = {
-  version: "2.3.2",
+  version: "2.3.3",
   player: _player2.default,
   parser: _parser2.default,
   ppmParser: _ppm2.default,
@@ -1460,14 +1460,23 @@ var ppmParser = function (_dataStream) {
       // if the current frame is based on changes from the preivous one, merge them by XORing their values
       if (!isNewFrame) {
         var dest, src;
+        // loop through each line
         for (var y = 0; y < HEIGHT; y++) {
+          // skip to next line if this one falls off the top edge of the screen
+          if (y - translateY < 0) continue;
+          // stop once the bottom screen edge has been reached
+          if (y - translateY >= HEIGHT) break;
+          // loop through each pixel in the line
           for (var x = 0; x < WIDTH; x++) {
+            // skip to the next pixel if this one falls off the left edge of the screen
+            if (x - translateX < 0) continue;
+            // stop diffing this line once the right screen edge has been reached
+            if (x - translateX >= WIDTH) break;
             dest = x + y * WIDTH;
             src = dest - (translateX + translateY * WIDTH);
-            if (!(x - translateX > WIDTH || x - translateX < 0)) {
-              this._layers[0][dest] ^= this._prevLayers[0][src];
-              this._layers[1][dest] ^= this._prevLayers[1][src];
-            }
+            // diff pixels with a binary XOR
+            this._layers[0][dest] ^= this._prevLayers[0][src];
+            this._layers[1][dest] ^= this._prevLayers[1][src];
           }
         }
       }

@@ -319,14 +319,23 @@ export default class ppmParser extends dataStream {
     // if the current frame is based on changes from the preivous one, merge them by XORing their values
     if (!isNewFrame) {
       var dest, src;
+      // loop through each line
       for (var y = 0; y < HEIGHT; y++) {
+        // skip to next line if this one falls off the top edge of the screen
+        if (y - translateY < 0) continue;
+        // stop once the bottom screen edge has been reached
+        if (y - translateY >= HEIGHT) break;
+        // loop through each pixel in the line
         for (var x = 0; x < WIDTH; x++) {
+          // skip to the next pixel if this one falls off the left edge of the screen
+          if (x - translateX < 0) continue;
+          // stop diffing this line once the right screen edge has been reached
+          if (x - translateX >= WIDTH) break;
           dest = x + y * WIDTH;
           src = dest - (translateX + translateY * WIDTH);
-          if (!((x - translateX > WIDTH) || (x - translateX < 0))) {
-            this._layers[0][dest] ^= this._prevLayers[0][src];
-            this._layers[1][dest] ^= this._prevLayers[1][src];
-          }
+          // diff pixels with a binary XOR
+          this._layers[0][dest] ^= this._prevLayers[0][src];
+          this._layers[1][dest] ^= this._prevLayers[1][src];
         }
       }
     }
