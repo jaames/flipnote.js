@@ -13,4 +13,5 @@ export default function parser(arrayBuffer) {
   else if ((magic & 0xFFFFFF00) == 0x4B464800) {
     return new kwzParser(arrayBuffer);
   }
+  return null;
 }
