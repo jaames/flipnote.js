@@ -4,9 +4,9 @@
   "description": "API for handling Flipnote Studio's .ppm animation format, capable of real-time playback using webGL",
   "main": "dist/flipnote.js",
   "scripts": {
-    "start": "cross-env DEV_SERVER=true webpack-dev-server --content ./",
-    "dev": "cross-env NODE_ENV=development webpack",
-    "build": "npm run dev && cross-env NODE_ENV=production webpack",
+    "start": "webpack-dev-server --mode=development --content ./",
+    "dev": "webpack --mode=development",
+    "build": "npm run dev && webpack --mode=production",
     "test": "echo \"Error: no test specified\" && exit 1"
   },
   "files": [
@@ -41,7 +41,6 @@
     "babel-preset-env": "^1.6.1",
     "babel-preset-stage-2": "^6.24.1",
     "copy-webpack-plugin": "^4.3.1",
-    "cross-env": "^5.2.0",
     "glslify-loader": "^1.0.2",
     "html-webpack-plugin": "^3.2.0",
     "raw-loader": "^0.5.1",

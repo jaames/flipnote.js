@@ -283,7 +283,7 @@ export default class flipnotePlayer {
   getFrameImage(index, width, height, type, encoderOptions) {
     if (!this._isOpen) return null;
     var canvas = this._imgCanvas;
-    if (canvas.width !== width || canvas.height !== height) canvas.setSize(width, height);
+    if (canvas.width !== width || canvas.height !== height) canvas.resize(width, height);
     // clamp frame index
     index = (index == "thumb") ? (this.note.thumbFrameIndex) : (Math.max(0, Math.min(index, this.frameCount - 1)));
     this.drawFrame(index, canvas);
