@@ -45,10 +45,13 @@ const FRAMERATES = {
 
 const WIDTH = 256;
 const HEIGHT = 192;
-const BLACK = [0x0E, 0x0E, 0x0E];
-const WHITE = [0xFF, 0xFF, 0xff];
-const BLUE = [0x0A, 0x39, 0xFF];
-const RED = [0xFF, 0x2A, 0x2A];
+
+const PALETTE = {
+  WHITE: [0xff, 0xff, 0xff],
+  BLACK: [0x0e, 0x0e, 0x0e],
+  RED:   [0xff, 0x2a, 0x2a],
+  BLUE:  [0x0a, 0x39, 0xff],
+};
 
 export default class ppmParser extends dataStream {
   /**
@@ -63,6 +66,7 @@ export default class ppmParser extends dataStream {
     this._decodeSoundHeader();
     this._decodeMeta();
     this.sampleRate = 8192;
+    this.palette = PALETTE;
     // create image buffers
      this._layers = [
       new Uint8Array(WIDTH * HEIGHT),
@@ -224,16 +228,17 @@ export default class ppmParser extends dataStream {
   */
   getFramePalette(index) {
     this.seek(this._frameOffsets[index]);
+    const palette = this.palette;
     var header = this.readUint8();
     var paperColor = header & 0x1;
     var pen = [
-      null,
-      paperColor == 1 ? BLACK : WHITE,
-      RED,
-      BLUE,
+      palette.BLACK,
+      paperColor == 1 ? palette.BLACK : palette.WHITE,
+      palette.RED,
+      palette.BLUE,
     ];
     return [
-      paperColor == 1 ? WHITE : BLACK,
+      paperColor == 1 ? palette.WHITE : palette.BLACK,
       pen[(header >> 1) & 0x3], // layer 1 color
       pen[(header >> 3) & 0x3], // layer 2 color
     ];

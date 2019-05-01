@@ -1,5 +1,5 @@
 /*!
- * flipnote.js v2.3.4
+ * flipnote.js v2.4.0
  * Browser-based playback of .ppm and .kwz animations from Flipnote Studio and Flipnote Studio 3D
  * 2018 James Daniel
  * github.com/jaames/flipnote.js
@@ -398,7 +398,7 @@ var _kwz2 = _interopRequireDefault(_kwz);
 function _interopRequireDefault(obj) { return obj && obj.__esModule ? obj : { default: obj }; }
 
 var _module = {
-  version: "2.3.4",
+  version: "2.4.0",
   player: _player2.default,
   parser: _parser2.default,
   ppmParser: _ppm2.default,
@@ -637,7 +637,17 @@ function _inherits(subClass, superClass) { if (typeof superClass !== "function" 
 
 var FRAMERATES = [0.2, 0.5, 1, 2, 4, 6, 8, 12, 20, 24, 30];
 
-var PALETTE = [[0xff, 0xff, 0xff], [0x10, 0x10, 0x10], [0xff, 0x10, 0x10], [0xff, 0xe7, 0x00], [0x00, 0x86, 0x31], [0x00, 0x38, 0xce], [0xff, 0xff, 0xff]];
+var PALETTE = {
+  WHITE: [0xff, 0xff, 0xff],
+  BLACK: [0x10, 0x10, 0x10],
+  RED: [0xff, 0x10, 0x10],
+  YELLOW: [0xff, 0xe7, 0x00],
+  GREEN: [0x00, 0x86, 0x31],
+  BLUE: [0x00, 0x38, 0xce],
+  NONE: [0xff, 0xff, 0xff]
+};
+
+var PALETTE_INDEX_MAP = ['WHITE', 'BLACK', 'RED', 'YELLOW', 'GREEN', 'BLUE', 'NONE'];
 
 // table1 - commonly occuring line offsets
 var TABLE_1 = new Uint16Array([0x0000, 0x0CD0, 0x19A0, 0x02D9, 0x088B, 0x0051, 0x00F3, 0x0009, 0x001B, 0x0001, 0x0003, 0x05B2, 0x1116, 0x00A2, 0x01E6, 0x0012, 0x0036, 0x0002, 0x0006, 0x0B64, 0x08DC, 0x0144, 0x00FC, 0x0024, 0x001C, 0x0004, 0x0334, 0x099C, 0x0668, 0x1338, 0x1004, 0x166C]);
@@ -719,6 +729,7 @@ var kwzParser = function (_dataStream) {
       this._decodeFrameMeta();
       this._decodeSoundHeader();
       this.sampleRate = 16364;
+      this.palette = PALETTE;
       this._prevDecodedFrame = null;
     }
   }, {
@@ -1019,13 +1030,13 @@ var kwzParser = function (_dataStream) {
     key: "getFramePalette",
     value: function getFramePalette(frameIndex) {
       var flags = this.frameMeta[frameIndex].flags;
-      return [PALETTE[flags & 0xF], // paper color
-      PALETTE[flags >> 8 & 0xF], // layer A color 1
-      PALETTE[flags >> 12 & 0xF], // layer A color 2
-      PALETTE[flags >> 16 & 0xF], // layer B color 1
-      PALETTE[flags >> 20 & 0xF], // layer B color 2
-      PALETTE[flags >> 24 & 0xF], // layer C color 1
-      PALETTE[flags >> 28 & 0xF]];
+      return [this.palette[PALETTE_INDEX_MAP[flags & 0xF]], // paper color
+      this.palette[PALETTE_INDEX_MAP[flags >> 8 & 0xF]], // layer A color 1
+      this.palette[PALETTE_INDEX_MAP[flags >> 12 & 0xF]], // layer A color 2
+      this.palette[PALETTE_INDEX_MAP[flags >> 16 & 0xF]], // layer B color 1
+      this.palette[PALETTE_INDEX_MAP[flags >> 20 & 0xF]], // layer B color 2
+      this.palette[PALETTE_INDEX_MAP[flags >> 24 & 0xF]], // layer C color 1
+      this.palette[PALETTE_INDEX_MAP[flags >> 28 & 0xF]]];
     }
   }, {
     key: "getFramePixels",
@@ -1189,10 +1200,13 @@ var FRAMERATES = {
 
 var WIDTH = 256;
 var HEIGHT = 192;
-var BLACK = [0x0E, 0x0E, 0x0E];
-var WHITE = [0xFF, 0xFF, 0xff];
-var BLUE = [0x0A, 0x39, 0xFF];
-var RED = [0xFF, 0x2A, 0x2A];
+
+var PALETTE = {
+  WHITE: [0xff, 0xff, 0xff],
+  BLACK: [0x0e, 0x0e, 0x0e],
+  RED: [0xff, 0x2a, 0x2a],
+  BLUE: [0x0a, 0x39, 0xff]
+};
 
 var ppmParser = function (_dataStream) {
   _inherits(ppmParser, _dataStream);
@@ -1212,6 +1226,7 @@ var ppmParser = function (_dataStream) {
     _this._decodeSoundHeader();
     _this._decodeMeta();
     _this.sampleRate = 8192;
+    _this.palette = PALETTE;
     // create image buffers
     _this._layers = [new Uint8Array(WIDTH * HEIGHT), new Uint8Array(WIDTH * HEIGHT)];
     _this._prevLayers = [new Uint8Array(WIDTH * HEIGHT), new Uint8Array(WIDTH * HEIGHT)];
@@ -1375,10 +1390,11 @@ var ppmParser = function (_dataStream) {
     key: "getFramePalette",
     value: function getFramePalette(index) {
       this.seek(this._frameOffsets[index]);
+      var palette = this.palette;
       var header = this.readUint8();
       var paperColor = header & 0x1;
-      var pen = [null, paperColor == 1 ? BLACK : WHITE, RED, BLUE];
-      return [paperColor == 1 ? WHITE : BLACK, pen[header >> 1 & 0x3], // layer 1 color
+      var pen = [palette.BLACK, paperColor == 1 ? palette.BLACK : palette.WHITE, palette.RED, palette.BLUE];
+      return [paperColor == 1 ? palette.WHITE : palette.BLACK, pen[header >> 1 & 0x3], // layer 1 color
       pen[header >> 3 & 0x3]];
     }
 
@@ -1776,6 +1792,7 @@ var flipnotePlayer = function () {
     this.loop = false;
     this.currentFrame = 0;
     this.paused = true;
+    this.customPalette = null;
     this.audioTracks = [new _audio2.default("se1"), new _audio2.default("se2"), new _audio2.default("se3"), new _audio2.default("se4"), new _audio2.default("bgm")];
     this.smoothRendering = false;
   }
@@ -1808,6 +1825,9 @@ var flipnotePlayer = function () {
       this.audioTracks.forEach(function (track) {
         track.sampleRate = note.sampleRate;
       });
+      if (this.customPalette) {
+        this.setPalette(this.customPalette);
+      }
       if (this.note.hasAudioTrack(1)) this.audioTracks[0].set(this.note.decodeAudio("se1"), 1);
       if (this.note.hasAudioTrack(2)) this.audioTracks[1].set(this.note.decodeAudio("se2"), 1);
       if (this.note.hasAudioTrack(3)) this.audioTracks[2].set(this.note.decodeAudio("se3"), 1);
@@ -1982,11 +2002,18 @@ var flipnotePlayer = function () {
     value: function getFrameImage(index, width, height, type, encoderOptions) {
       if (!this._isOpen) return null;
       var canvas = this._imgCanvas;
-      if (canvas.width !== width || canvas.height !== height) canvas.setSize(width, height);
+      if (canvas.width !== width || canvas.height !== height) canvas.resize(width, height);
       // clamp frame index
       index = index == "thumb" ? this.note.thumbFrameIndex : Math.max(0, Math.min(index, this.frameCount - 1));
       this.drawFrame(index, canvas);
       return canvas.toImage(type, encoderOptions);
+    }
+  }, {
+    key: "setPalette",
+    value: function setPalette(palette) {
+      this.customPalette = palette;
+      this.note.palette = palette;
+      this.forceUpdate();
     }
 
     /**

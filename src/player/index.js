@@ -25,6 +25,7 @@ export default class flipnotePlayer {
     this.loop = false;
     this.currentFrame = 0;
     this.paused = true;
+    this.customPalette = null;
     this.audioTracks = [
       new audioTrack("se1"),
       new audioTrack("se2"),
@@ -138,6 +139,9 @@ export default class flipnotePlayer {
     this.audioTracks.forEach(track => {
       track.sampleRate = note.sampleRate;
     });
+    if (this.customPalette) {
+      this.setPalette(this.customPalette);
+    }
     if (this.note.hasAudioTrack(1)) this.audioTracks[0].set(this.note.decodeAudio("se1"), 1);
     if (this.note.hasAudioTrack(2)) this.audioTracks[1].set(this.note.decodeAudio("se2"), 1);
     if (this.note.hasAudioTrack(3)) this.audioTracks[2].set(this.note.decodeAudio("se3"), 1);
@@ -288,6 +292,12 @@ export default class flipnotePlayer {
     index = (index == "thumb") ? (this.note.thumbFrameIndex) : (Math.max(0, Math.min(index, this.frameCount - 1)));
     this.drawFrame(index, canvas);
     return canvas.toImage(type, encoderOptions);
+  }
+
+  setPalette(palette) {
+    this.customPalette = palette;
+    this.note.palette = palette;
+    this.forceUpdate();
   }
 
   /**

@@ -23,14 +23,24 @@ const FRAMERATES = [
   30
 ];
 
-const PALETTE = [
-  [0xff, 0xff, 0xff],
-  [0x10, 0x10, 0x10],
-  [0xff, 0x10, 0x10],
-  [0xff, 0xe7, 0x00],
-  [0x00, 0x86, 0x31],
-  [0x00, 0x38, 0xce],
-  [0xff, 0xff, 0xff]
+const PALETTE = {
+  WHITE:  [0xff, 0xff, 0xff],
+  BLACK:  [0x10, 0x10, 0x10],
+  RED:    [0xff, 0x10, 0x10],
+  YELLOW: [0xff, 0xe7, 0x00],
+  GREEN:  [0x00, 0x86, 0x31],
+  BLUE:   [0x00, 0x38, 0xce],
+  NONE:   [0xff, 0xff, 0xff]
+};
+
+const PALETTE_INDEX_MAP = [
+  'WHITE',
+  'BLACK',
+  'RED',
+  'YELLOW',
+  'GREEN',
+  'BLUE',
+  'NONE'
 ];
 
 // table1 - commonly occuring line offsets
@@ -122,6 +132,7 @@ export default class kwzParser extends dataStream {
     this._decodeFrameMeta();
     this._decodeSoundHeader();
     this.sampleRate = 16364;
+    this.palette = PALETTE;
     this._prevDecodedFrame = null;
   }
 
@@ -436,13 +447,13 @@ export default class kwzParser extends dataStream {
   getFramePalette(frameIndex) {
     let flags = this.frameMeta[frameIndex].flags;
     return [
-      PALETTE[flags & 0xF], // paper color
-      PALETTE[(flags >> 8) & 0xF], // layer A color 1
-      PALETTE[(flags >> 12) & 0xF], // layer A color 2
-      PALETTE[(flags >> 16) & 0xF], // layer B color 1
-      PALETTE[(flags >> 20) & 0xF], // layer B color 2
-      PALETTE[(flags >> 24) & 0xF], // layer C color 1
-      PALETTE[(flags >> 28) & 0xF], // layer C color 2
+      this.palette[PALETTE_INDEX_MAP[flags & 0xF]], // paper color
+      this.palette[PALETTE_INDEX_MAP[(flags >> 8) & 0xF]], // layer A color 1
+      this.palette[PALETTE_INDEX_MAP[(flags >> 12) & 0xF]], // layer A color 2
+      this.palette[PALETTE_INDEX_MAP[(flags >> 16) & 0xF]], // layer B color 1
+      this.palette[PALETTE_INDEX_MAP[(flags >> 20) & 0xF]], // layer B color 2
+      this.palette[PALETTE_INDEX_MAP[(flags >> 24) & 0xF]], // layer C color 1
+      this.palette[PALETTE_INDEX_MAP[(flags >> 28) & 0xF]], // layer C color 2
     ];
   }
 
