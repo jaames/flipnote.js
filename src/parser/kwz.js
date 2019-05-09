@@ -211,7 +211,7 @@ export default class kwzParser extends dataStream {
           this.readUint16(),
           this.readUint16()
         ],
-        frameAuthor: this.readUtf8(10),
+        frameAuthor: this.readHex(10),
         layerDepth: [
           this.readUint8(),
           this.readUint8(),
@@ -250,9 +250,10 @@ export default class kwzParser extends dataStream {
     return this.frameMeta[frameIndex].layerDepth;
   }
 
+  // sort layer indices sorted by depth, drom bottom to top
   getLayerOrder(frameIndex) {
     const depths = this.getLayerDepths(frameIndex);
-    return [0, 1, 2].sort((a, b) => depths[b] - depths[a]);
+    return [2, 1, 0].sort((a, b) => depths[b] - depths[a]);
   }
 
   decodeFrame(frameIndex, diffingFlag=0x7, isPrevFrame=false) {
@@ -462,19 +463,39 @@ export default class kwzParser extends dataStream {
     ];
   }
 
-  getFramePixels(frameIndex) {
-    let layers = this.decodeFrame(frameIndex);
-    let image = new Uint8Array((320 * 240));
-    for (let pixel = 0; pixel < (320 * 240); pixel++) {
-      // because kwz layers use 2 items per pixel, one for color 1, one for color 2
-      let pixelOffset = pixel * 2;
-      if (layers[0][pixelOffset]) image[pixel] = 2;
-      if (layers[0][pixelOffset + 1]) image[pixel] = 1;
-      if (layers[1][pixelOffset]) image[pixel] = 4;
-      if (layers[1][pixelOffset + 1]) image[pixel] = 3;
-      if (layers[2][pixelOffset]) image[pixel] = 6;
-      if (layers[2][pixelOffset + 1]) image[pixel] = 5;
+  // retuns an uint8 array where each item is a pixel's palette index
+  getLayerPixels(frameIndex, layerIndex) {
+    if (this._prevDecodedFrame !== frameIndex) {
+      this.decodeFrame(frameIndex);
     }
+    const layer = this._layers[layerIndex];
+    const image = new Uint8Array((320 * 240));
+    const paletteOffset = layerIndex * 2 + 1;
+    for (let index = 0; index < layer.length; index++) {
+      let pixel = layer[index];
+      if (pixel & 0xff00) {
+        image[index] = paletteOffset;
+      } else if (pixel & 0x00ff) {
+        image[index] = paletteOffset + 1;
+      }
+    }
+    return image;
+  }
+
+  // retuns an uint8 array where each item is a pixel's palette index
+  getFramePixels(frameIndex) {
+    const image = new Uint8Array((320 * 240));
+    const layerOrder = this.getLayerOrder(frameIndex);
+    layerOrder.forEach(layerIndex => {
+      const layer = this.getLayerPixels(frameIndex, layerIndex);
+      // merge layer into image result
+      for (let index = 0; index < layer.length; index++) {
+        let pixel = layer[index];
+        if (pixel !== 0) {
+          image[index] = pixel;
+        }
+      }
+    });
     return image;
   }
 

@@ -1,5 +1,5 @@
 /*!
- * flipnote.js v2.5.0
+ * flipnote.js v2.6.0
  * Browser-based playback of .ppm and .kwz animations from Flipnote Studio and Flipnote Studio 3D
  * 2018 James Daniel
  * github.com/jaames/flipnote.js
@@ -398,7 +398,7 @@ var _kwz2 = _interopRequireDefault(_kwz);
 function _interopRequireDefault(obj) { return obj && obj.__esModule ? obj : { default: obj }; }
 
 var _module = {
-  version: "2.5.0",
+  version: "2.6.0",
   player: _player2.default,
   parser: _parser2.default,
   ppmParser: _ppm2.default,
@@ -807,7 +807,7 @@ var kwzParser = function (_dataStream) {
         var frame = {
           flags: this.readUint32(),
           layerSize: [this.readUint16(), this.readUint16(), this.readUint16()],
-          frameAuthor: this.readUtf8(10),
+          frameAuthor: this.readHex(10),
           layerDepth: [this.readUint8(), this.readUint8(), this.readUint8()],
           soundFlags: this.readUint8(),
           cameraFlag: this.readUint32()
@@ -844,11 +844,14 @@ var kwzParser = function (_dataStream) {
     value: function getLayerDepths(frameIndex) {
       return this.frameMeta[frameIndex].layerDepth;
     }
+
+    // sort layer indices sorted by depth, drom bottom to top
+
   }, {
     key: "getLayerOrder",
     value: function getLayerOrder(frameIndex) {
       var depths = this.getLayerDepths(frameIndex);
-      return [0, 1, 2].sort(function (a, b) {
+      return [2, 1, 0].sort(function (a, b) {
         return depths[b] - depths[a];
       });
     }
@@ -1046,21 +1049,48 @@ var kwzParser = function (_dataStream) {
       this.palette[PALETTE_INDEX_MAP[flags >> 24 & 0xF]], // layer C color 1
       this.palette[PALETTE_INDEX_MAP[flags >> 28 & 0xF]]];
     }
+
+    // retuns an uint8 array where each item is a pixel's palette index
+
+  }, {
+    key: "getLayerPixels",
+    value: function getLayerPixels(frameIndex, layerIndex) {
+      if (this._prevDecodedFrame !== frameIndex) {
+        this.decodeFrame(frameIndex);
+      }
+      var layer = this._layers[layerIndex];
+      var image = new Uint8Array(320 * 240);
+      var paletteOffset = layerIndex * 2 + 1;
+      for (var _index = 0; _index < layer.length; _index++) {
+        var pixel = layer[_index];
+        if (pixel & 0xff00) {
+          image[_index] = paletteOffset;
+        } else if (pixel & 0x00ff) {
+          image[_index] = paletteOffset + 1;
+        }
+      }
+      return image;
+    }
+
+    // retuns an uint8 array where each item is a pixel's palette index
+
   }, {
     key: "getFramePixels",
     value: function getFramePixels(frameIndex) {
-      var layers = this.decodeFrame(frameIndex);
+      var _this2 = this;
+
       var image = new Uint8Array(320 * 240);
-      for (var pixel = 0; pixel < 320 * 240; pixel++) {
-        // because kwz layers use 2 items per pixel, one for color 1, one for color 2
-        var pixelOffset = pixel * 2;
-        if (layers[0][pixelOffset]) image[pixel] = 2;
-        if (layers[0][pixelOffset + 1]) image[pixel] = 1;
-        if (layers[1][pixelOffset]) image[pixel] = 4;
-        if (layers[1][pixelOffset + 1]) image[pixel] = 3;
-        if (layers[2][pixelOffset]) image[pixel] = 6;
-        if (layers[2][pixelOffset + 1]) image[pixel] = 5;
-      }
+      var layerOrder = this.getLayerOrder(frameIndex);
+      layerOrder.forEach(function (layerIndex) {
+        var layer = _this2.getLayerPixels(frameIndex, layerIndex);
+        // merge layer into image result
+        for (var _index2 = 0; _index2 < layer.length; _index2++) {
+          var pixel = layer[_index2];
+          if (pixel !== 0) {
+            image[_index2] = pixel;
+          }
+        }
+      });
       return image;
     }
   }, {
@@ -1097,8 +1127,8 @@ var kwzParser = function (_dataStream) {
       var prevStepIndex = 40;
       var sample, diff, stepIndex;
       // loop through each byte in the raw adpcm data
-      for (var _index = 0; _index < adpcm.length; _index++) {
-        var byte = adpcm[_index];
+      for (var _index3 = 0; _index3 < adpcm.length; _index3++) {
+        var byte = adpcm[_index3];
         var bitPos = 0;
         while (bitPos < 8) {
           if (prevStepIndex < 18 || bitPos == 6) {
@@ -1238,7 +1268,7 @@ var ppmParser = function (_dataStream) {
     // create image buffers
     _this._layers = [new Uint8Array(WIDTH * HEIGHT), new Uint8Array(WIDTH * HEIGHT)];
     _this._prevLayers = [new Uint8Array(WIDTH * HEIGHT), new Uint8Array(WIDTH * HEIGHT)];
-    _this._prevFrameIndex = null;
+    _this._prevDecodedFrame = null;
     return _this;
   }
 
@@ -1415,7 +1445,7 @@ var ppmParser = function (_dataStream) {
   }, {
     key: "decodeFrame",
     value: function decodeFrame(index) {
-      if (index !== 0 && this._prevFrameIndex !== index - 1 && !this.isNewFrame(index)) this.decodeFrame(index - 1);
+      if (index !== 0 && this._prevDecodedFrame !== index - 1 && !this.isNewFrame(index)) this.decodeFrame(index - 1);
       // https://github.com/pbsds/hatena-server/wiki/PPM-format#animation-frame
       this.seek(this._frameOffsets[index]);
       var header = this.readUint8();
@@ -1426,7 +1456,7 @@ var ppmParser = function (_dataStream) {
       // copy the current layer buffers to the previous ones
       this._prevLayers[0].set(this._layers[0]);
       this._prevLayers[1].set(this._layers[1]);
-      this._prevFrameIndex = index;
+      this._prevDecodedFrame = index;
       // reset current layer buffers
       this._layers[0].fill(0);
       this._layers[1].fill(0);
@@ -1507,6 +1537,28 @@ var ppmParser = function (_dataStream) {
       }
       return this._layers;
     }
+
+    // retuns an uint8 array where each item is a pixel's palette index
+
+  }, {
+    key: "getLayerPixels",
+    value: function getLayerPixels(frameIndex, layerIndex) {
+      if (this._prevDecodedFrame !== frameIndex) {
+        this.decodeFrame(frameIndex);
+      }
+      var layer = this._layers[layerIndex];
+      var image = new Uint8Array(256 * 192);
+      var layerColor = layerIndex + 1;
+      for (var pixel = 0; pixel < image.length; pixel++) {
+        if (layer[pixel] !== 0) {
+          image[pixel] = layerColor;
+        }
+      }
+      return image;
+    }
+
+    // retuns an uint8 array where each item is a pixel's palette index
+
   }, {
     key: "getFramePixels",
     value: function getFramePixels(frameIndex) {

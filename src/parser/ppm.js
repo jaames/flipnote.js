@@ -76,7 +76,7 @@ export default class ppmParser extends dataStream {
       new Uint8Array(WIDTH * HEIGHT),
       new Uint8Array(WIDTH * HEIGHT)
     ];
-    this._prevFrameIndex = null;
+    this._prevDecodedFrame = null;
   }
 
   static validateFSID(fsid) {
@@ -250,7 +250,7 @@ export default class ppmParser extends dataStream {
   * @returns {array} - 2 uint8 arrays representing each layer
   * */
   decodeFrame(index) {
-    if ((index !== 0) && (this._prevFrameIndex !== index - 1) && (!this.isNewFrame(index)))
+    if ((index !== 0) && (this._prevDecodedFrame !== index - 1) && (!this.isNewFrame(index)))
       this.decodeFrame(index - 1);
     // https://github.com/pbsds/hatena-server/wiki/PPM-format#animation-frame
     this.seek(this._frameOffsets[index]);
@@ -262,7 +262,7 @@ export default class ppmParser extends dataStream {
     // copy the current layer buffers to the previous ones
     this._prevLayers[0].set(this._layers[0]);
     this._prevLayers[1].set(this._layers[1]);
-    this._prevFrameIndex = index;
+    this._prevDecodedFrame = index;
     // reset current layer buffers
     this._layers[0].fill(0);
     this._layers[1].fill(0);
@@ -347,9 +347,26 @@ export default class ppmParser extends dataStream {
     return this._layers;
   }
 
+  // retuns an uint8 array where each item is a pixel's palette index
+  getLayerPixels(frameIndex, layerIndex) {
+    if (this._prevDecodedFrame !== frameIndex) {
+      this.decodeFrame(frameIndex);
+    }
+    const layer = this._layers[layerIndex];
+    const image = new Uint8Array((256 * 192));
+    const layerColor = layerIndex + 1
+    for (let pixel = 0; pixel < image.length; pixel++) {
+      if (layer[pixel] !== 0) {
+        image[pixel] = layerColor;
+      }
+    }
+    return image;
+  }
+
+  // retuns an uint8 array where each item is a pixel's palette index
   getFramePixels(frameIndex) {
-    let layers = this.decodeFrame(frameIndex);
-    let image = new Uint8Array((256 * 192));
+    const layers = this.decodeFrame(frameIndex);
+    const image = new Uint8Array((256 * 192));
     for (let pixel = 0; pixel < image.length; pixel++) {
       let a = layers[0][pixel];
       let b = layers[1][pixel];
