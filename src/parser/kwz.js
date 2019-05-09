@@ -250,6 +250,11 @@ export default class kwzParser extends dataStream {
     return this.frameMeta[frameIndex].layerDepth;
   }
 
+  getLayerOrder(frameIndex) {
+    const depths = this.getLayerDepths(frameIndex);
+    return [0, 1, 2].sort((a, b) => depths[b] - depths[a]);
+  }
+
   decodeFrame(frameIndex, diffingFlag=0x7, isPrevFrame=false) {
     // if this frame is being decoded as a prev frame, then we only want to decode the layers necessary
     if (isPrevFrame)

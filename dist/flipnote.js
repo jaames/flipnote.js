@@ -1,5 +1,5 @@
 /*!
- * flipnote.js v2.4.0
+ * flipnote.js v2.5.0
  * Browser-based playback of .ppm and .kwz animations from Flipnote Studio and Flipnote Studio 3D
  * 2018 James Daniel
  * github.com/jaames/flipnote.js
@@ -398,7 +398,7 @@ var _kwz2 = _interopRequireDefault(_kwz);
 function _interopRequireDefault(obj) { return obj && obj.__esModule ? obj : { default: obj }; }
 
 var _module = {
-  version: "2.4.0",
+  version: "2.5.0",
   player: _player2.default,
   parser: _parser2.default,
   ppmParser: _ppm2.default,
@@ -843,6 +843,14 @@ var kwzParser = function (_dataStream) {
     key: "getLayerDepths",
     value: function getLayerDepths(frameIndex) {
       return this.frameMeta[frameIndex].layerDepth;
+    }
+  }, {
+    key: "getLayerOrder",
+    value: function getLayerOrder(frameIndex) {
+      var depths = this.getLayerDepths(frameIndex);
+      return [0, 1, 2].sort(function (a, b) {
+        return depths[b] - depths[a];
+      });
     }
   }, {
     key: "decodeFrame",
@@ -2042,6 +2050,8 @@ var flipnotePlayer = function () {
   }, {
     key: "drawFrame",
     value: function drawFrame(frameIndex, canvas) {
+      var _this3 = this;
+
       var colors = this.note.getFramePalette(frameIndex);
       var layerBuffers = this.note.decodeFrame(frameIndex);
       canvas.setPaperColor(colors[0]);
@@ -2050,9 +2060,13 @@ var flipnotePlayer = function () {
         if (this.layerVisiblity[2]) canvas.drawLayer(layerBuffers[1], 256, 192, colors[2], [0, 0, 0, 0]);
         if (this.layerVisiblity[1]) canvas.drawLayer(layerBuffers[0], 256, 192, colors[1], [0, 0, 0, 0]);
       } else if (this.note.type == "KWZ") {
-        if (this.layerVisiblity[3]) canvas.drawLayer(layerBuffers[2], 320, 240, colors[5], colors[6]);
-        if (this.layerVisiblity[2]) canvas.drawLayer(layerBuffers[1], 320, 240, colors[3], colors[4]);
-        if (this.layerVisiblity[1]) canvas.drawLayer(layerBuffers[0], 320, 240, colors[1], colors[2]);
+        // loop through each layer
+        this.note.getLayerOrder(frameIndex).forEach(function (layerIndex) {
+          // only draw layer if it's visible
+          if (_this3.layerVisiblity[layerIndex + 1]) {
+            canvas.drawLayer(layerBuffers[layerIndex], 320, 240, colors[layerIndex * 2 + 1], colors[layerIndex * 2 + 2]);
+          }
+        });
       }
     }
 

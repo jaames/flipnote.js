@@ -328,9 +328,13 @@ export default class flipnotePlayer {
       if (this.layerVisiblity[2]) canvas.drawLayer(layerBuffers[1], 256, 192, colors[2], [0,0,0,0]);
       if (this.layerVisiblity[1]) canvas.drawLayer(layerBuffers[0], 256, 192, colors[1], [0,0,0,0]);
     } else if (this.note.type == "KWZ") {
-      if (this.layerVisiblity[3]) canvas.drawLayer(layerBuffers[2], 320, 240, colors[5], colors[6]);
-      if (this.layerVisiblity[2]) canvas.drawLayer(layerBuffers[1], 320, 240, colors[3], colors[4]);
-      if (this.layerVisiblity[1]) canvas.drawLayer(layerBuffers[0], 320, 240, colors[1], colors[2]);
+      // loop through each layer
+      this.note.getLayerOrder(frameIndex).forEach(layerIndex => {
+        // only draw layer if it's visible
+        if (this.layerVisiblity[layerIndex + 1]) {
+          canvas.drawLayer(layerBuffers[layerIndex], 320, 240, colors[layerIndex * 2 + 1], colors[layerIndex * 2 + 2]);
+        }
+      });
     }
   }
 
