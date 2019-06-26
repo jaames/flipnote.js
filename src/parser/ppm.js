@@ -191,7 +191,7 @@ export default class ppmParser extends dataStream {
     // offset = frame data offset + frame data length + sound effect flags
     var offset = 0x06A0 + this._frameDataLength + this.frameCount;
     // account for multiple-of-4 padding
-    if (offset % 4 != 0) offset += 4 - (offset % 4);
+    if (offset % 2 != 0) offset += 4 - (offset % 4);
     this.seek(offset);
     var bgmLen = this.readUint32();
     var se1Len = this.readUint32();
