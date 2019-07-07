@@ -1,5 +1,5 @@
 /*!
- * flipnote.js v2.6.1
+ * flipnote.js v2.6.2
  * Browser-based playback of .ppm and .kwz animations from Flipnote Studio and Flipnote Studio 3D
  * 2018 James Daniel
  * github.com/jaames/flipnote.js
@@ -377,7 +377,7 @@ exports.default = wavEncoder;
 Object.defineProperty(exports, "__esModule", {
   value: true
 });
-exports.kwzParser = exports.ppmParser = exports.parser = exports.default = undefined;
+exports.dataStream = exports.wavEncoder = exports.bitmapEncoder = exports.kwzParser = exports.ppmParser = exports.parser = exports.default = undefined;
 
 var _player = __webpack_require__(/*! ./player */ "./player/index.js");
 
@@ -395,10 +395,22 @@ var _kwz = __webpack_require__(/*! ./parser/kwz */ "./parser/kwz.js");
 
 var _kwz2 = _interopRequireDefault(_kwz);
 
+var _bmp = __webpack_require__(/*! ./encoders/bmp */ "./encoders/bmp.js");
+
+var _bmp2 = _interopRequireDefault(_bmp);
+
+var _wav = __webpack_require__(/*! ./encoders/wav */ "./encoders/wav.js");
+
+var _wav2 = _interopRequireDefault(_wav);
+
+var _dataStream = __webpack_require__(/*! ./utils/dataStream */ "./utils/dataStream.js");
+
+var _dataStream2 = _interopRequireDefault(_dataStream);
+
 function _interopRequireDefault(obj) { return obj && obj.__esModule ? obj : { default: obj }; }
 
 var _module = {
-  version: "2.6.1",
+  version: "2.6.2",
   player: _player2.default,
   parser: _parser2.default,
   ppmParser: _ppm2.default,
@@ -409,6 +421,9 @@ exports.default = _module;
 exports.parser = _parser2.default;
 exports.ppmParser = _ppm2.default;
 exports.kwzParser = _kwz2.default;
+exports.bitmapEncoder = _bmp2.default;
+exports.wavEncoder = _wav2.default;
+exports.dataStream = _dataStream2.default;
 
 /***/ }),
 
