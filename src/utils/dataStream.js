@@ -10,6 +10,10 @@ export default class dataStream {
     this._offset = 0;
   }
 
+  get bytes() {
+    return new Uint8Array(this.buffer);
+  }
+
   /**
   * Get the length of the stream
   * @returns {number}
@@ -162,10 +166,24 @@ export default class dataStream {
     this._offset += 4;
   }
 
+  /**
+  * Read bytes and return an array
+  * @param {number} count - number of bytes to read
+  * @returns {Uint8Array}
+  */
   readBytes(count) {
     var bytes = new Uint8Array(this._data.buffer, this._offset, count);
     this._offset += bytes.byteLength;
     return bytes;
+  }
+
+  /**
+  * Write bytes from an array
+  * @param {Array} bytes - array of byte values
+  * @returns {Uint8Array}
+  */
+  writeBytes(bytes) {
+    bytes.forEach(byte => this.writeUint8(byte));
   }
 
   /**

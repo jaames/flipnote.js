@@ -1,4 +1,4 @@
-import dataStream from "utils/dataStream";
+import dataStream from "../utils/dataStream";
 
 // round number to nearest multiple of n
 export function roundToNearest(value, n) {
@@ -8,7 +8,7 @@ export function roundToNearest(value, n) {
 // simple bitmap class for rendering images
 // https://en.wikipedia.org/wiki/BMP_file_format
 
-export class BitmapEncoder {
+export default class BitmapEncoder {
 
   constructor(width, height, bpp) {
     this.width = width;
@@ -37,6 +37,14 @@ export class BitmapEncoder {
     this.dibHeader.writeUint32(0xFF000000); // alpha channel bitmask
     this.dibHeader.writeUtf8("Win "); // LCS_WINDOWS_COLOR_SPACE "Win "
     /// rest can be left as nulls
+  }
+
+  static fromFlipnoteFrame(flipnote, frameIndex) {
+    const format = flipnote.constructor;
+    const bmp = new BitmapEncoder(format.width, format.height, 8);
+    bmp.setPixels(flipnote.getFramePixels(frameIndex));
+    bmp.setPalette(flipnote.getFramePalette(frameIndex));
+    return bmp;
   }
 
   setFilelength(value) {

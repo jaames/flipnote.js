@@ -7,8 +7,6 @@ import {
   ADPCM_SAMPLE_TABLE_4
 } from "utils/adpcm";
 
-import { BitmapEncoder } from "encoders/bmp";
-
 const FRAMERATES = [
   0.2,
   0.5,
@@ -483,8 +481,16 @@ export default class kwzParser extends dataStream {
   }
 
   // retuns an uint8 array where each item is a pixel's palette index
-  getFramePixels(frameIndex) {
+  getFramePixels(frameIndex, useGlobalPalette = false) {
+    let paletteMap;
+    if (useGlobalPalette) {
+      const framePalette = this.getFramePalette(frameIndex);
+      paletteMap = framePalette.map(color => kwzParser.globalPalette.indexOf(color));
+    } else {
+      paletteMap = [0, 1, 2, 3, 4, 5, 6];
+    }
     const image = new Uint8Array((320 * 240));
+    image.fill(paletteMap[0]);
     const layerOrder = this.getLayerOrder(frameIndex);
     layerOrder.forEach(layerIndex => {
       const layer = this.getLayerPixels(frameIndex, layerIndex);
@@ -492,20 +498,13 @@ export default class kwzParser extends dataStream {
       for (let index = 0; index < layer.length; index++) {
         let pixel = layer[index];
         if (pixel !== 0) {
-          image[index] = pixel;
+          image[index] = paletteMap[pixel];
         }
       }
     });
     return image;
   }
-
-  getFrameBitmap(frameIndex) {
-    let bmp = new BitmapEncoder(320, 240, 8);
-    bmp.setPixels(this.getFramePixels(frameIndex));
-    bmp.setPalette(this.getFramePalette(frameIndex));
-    return bmp;
-  }
-
+  
   decodeSoundFlags() {
     return this.frameMeta.map(frame => {
       let soundFlags = frame.soundFlags;
@@ -569,5 +568,16 @@ export default class kwzParser extends dataStream {
     }
     return output.slice(0, outputOffset);
   }
-
 }
+
+kwzParser.width = 320;
+kwzParser.height = 240;
+kwzParser.globalPalette = [
+  PALETTE.BLACK,
+  PALETTE.WHITE,
+  PALETTE.RED,
+  PALETTE.YELLOW,
+  PALETTE.GREEN,
+  PALETTE.BLUE,
+  PALETTE.NONE,
+];

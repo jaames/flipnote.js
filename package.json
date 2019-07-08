@@ -1,8 +1,9 @@
 {
   "name": "flipnote.js",
-  "version": "2.6.2",
+  "version": "2.7.0",
   "description": "API for handling Flipnote Studio's animation formats, capable of real-time playback using webGL",
   "main": "dist/flipnote.js",
+  "module": "src/flipnote.js",
   "scripts": {
     "start": "webpack-dev-server --mode=development --content ./",
     "dev": "webpack --mode=development",
@@ -10,7 +11,8 @@
     "test": "echo \"Error: no test specified\" && exit 1"
   },
   "files": [
-    "dist/flipnote.js"
+    "dist/flipnote.js",
+    "src/*"
   ],
   "keywords": [
     "flipnote",

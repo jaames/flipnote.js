@@ -1,6 +1,6 @@
-import canvas from "webgl/canvas";
-import parser from "parser";
-import loader from "loader";
+import canvas from "../webgl/canvas";
+import parser from "../parser";
+import loader from "../loader";
 import audioTrack from "./audio";
 import webglCanvas from "../webgl/canvas";
 

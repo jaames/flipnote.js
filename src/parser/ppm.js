@@ -29,8 +29,6 @@ import {
   ADPCM_SAMPLE_TABLE_4
 } from "utils/adpcm";
 
-import { BitmapEncoder } from "encoders/bmp";
-
 // internal framerate value -> FPS table
 const FRAMERATES = {
   1: 0.5,
@@ -364,23 +362,24 @@ export default class ppmParser extends dataStream {
   }
 
   // retuns an uint8 array where each item is a pixel's palette index
-  getFramePixels(frameIndex) {
+  getFramePixels(frameIndex, useGlobalPalette = false) {
+    let paletteMap;
+    if (useGlobalPalette) {
+      const framePalette = this.getFramePalette(frameIndex);
+      paletteMap = framePalette.map(color => ppmParser.globalPalette.indexOf(color));
+    } else {
+      paletteMap = [0, 1, 2];
+    }
     const layers = this.decodeFrame(frameIndex);
     const image = new Uint8Array((256 * 192));
+    image.fill(paletteMap[0]);
     for (let pixel = 0; pixel < image.length; pixel++) {
       let a = layers[0][pixel];
       let b = layers[1][pixel];
-      if (b) image[pixel] = 2;
-      if (a) image[pixel] = 1;
+      if (b) image[pixel] = paletteMap[2];
+      if (a) image[pixel] = paletteMap[1];
     }
     return image;
-  }
-
-  getFrameBitmap(frameIndex) {
-    let bmp = new BitmapEncoder(256, 192, 8);
-    bmp.setPixels(this.getFramePixels(frameIndex));
-    bmp.setPalette(this.getFramePalette(frameIndex));
-    return bmp;
   }
 
   hasAudioTrack(trackIndex) {
@@ -444,3 +443,12 @@ export default class ppmParser extends dataStream {
     });
   }
 }
+
+ppmParser.width = WIDTH;
+ppmParser.height = HEIGHT;
+ppmParser.globalPalette = [
+  PALETTE.BLACK,
+  PALETTE.WHITE,
+  PALETTE.RED,
+  PALETTE.BLUE
+];

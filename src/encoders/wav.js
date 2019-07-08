@@ -1,6 +1,6 @@
-import dataStream from "utils/dataStream";
+import dataStream from "../utils/dataStream";
 
-export default class wavEncoder {
+export default class WavEncoder {
   constructor(sampleRate, channels=1, bitsPerSample=16) {
     this.sampleRate = sampleRate;
     this.channels = channels;

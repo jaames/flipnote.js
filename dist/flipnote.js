@@ -1,5 +1,5 @@
 /*!
- * flipnote.js v2.6.2
+ * flipnote.js v2.7.0
  * Browser-based playback of .ppm and .kwz animations from Flipnote Studio and Flipnote Studio 3D
  * 2018 James Daniel
  * github.com/jaames/flipnote.js
@@ -116,13 +116,12 @@ return /******/ (function(modules) { // webpackBootstrap
 Object.defineProperty(exports, "__esModule", {
   value: true
 });
-exports.BitmapEncoder = undefined;
 
 var _createClass = function () { function defineProperties(target, props) { for (var i = 0; i < props.length; i++) { var descriptor = props[i]; descriptor.enumerable = descriptor.enumerable || false; descriptor.configurable = true; if ("value" in descriptor) descriptor.writable = true; Object.defineProperty(target, descriptor.key, descriptor); } } return function (Constructor, protoProps, staticProps) { if (protoProps) defineProperties(Constructor.prototype, protoProps); if (staticProps) defineProperties(Constructor, staticProps); return Constructor; }; }();
 
 exports.roundToNearest = roundToNearest;
 
-var _dataStream = __webpack_require__(/*! utils/dataStream */ "./utils/dataStream.js");
+var _dataStream = __webpack_require__(/*! ../utils/dataStream */ "./utils/dataStream.js");
 
 var _dataStream2 = _interopRequireDefault(_dataStream);
 
@@ -138,7 +137,7 @@ function roundToNearest(value, n) {
 // simple bitmap class for rendering images
 // https://en.wikipedia.org/wiki/BMP_file_format
 
-var BitmapEncoder = exports.BitmapEncoder = function () {
+var BitmapEncoder = function () {
   function BitmapEncoder(width, height, bpp) {
     _classCallCheck(this, BitmapEncoder);
 
@@ -263,9 +262,460 @@ var BitmapEncoder = exports.BitmapEncoder = function () {
       img.src = this.getUrl();
       return img;
     }
+  }], [{
+    key: "fromFlipnoteFrame",
+    value: function fromFlipnoteFrame(flipnote, frameIndex) {
+      var format = flipnote.constructor;
+      var bmp = new BitmapEncoder(format.width, format.height, 8);
+      bmp.setPixels(flipnote.getFramePixels(frameIndex));
+      bmp.setPalette(flipnote.getFramePalette(frameIndex));
+      return bmp;
+    }
   }]);
 
   return BitmapEncoder;
+}();
+
+exports.default = BitmapEncoder;
+
+/***/ }),
+
+/***/ "./encoders/gif.js":
+/*!*************************!*\
+  !*** ./encoders/gif.js ***!
+  \*************************/
+/*! no static exports found */
+/***/ (function(module, exports, __webpack_require__) {
+
+"use strict";
+
+
+Object.defineProperty(exports, "__esModule", {
+  value: true
+});
+
+var _createClass = function () { function defineProperties(target, props) { for (var i = 0; i < props.length; i++) { var descriptor = props[i]; descriptor.enumerable = descriptor.enumerable || false; descriptor.configurable = true; if ("value" in descriptor) descriptor.writable = true; Object.defineProperty(target, descriptor.key, descriptor); } } return function (Constructor, protoProps, staticProps) { if (protoProps) defineProperties(Constructor.prototype, protoProps); if (staticProps) defineProperties(Constructor, staticProps); return Constructor; }; }();
+
+var _flipnote = __webpack_require__(/*! ../flipnote */ "./flipnote.js");
+
+var _byteArray = __webpack_require__(/*! ../utils/byteArray */ "./utils/byteArray.js");
+
+var _lzw = __webpack_require__(/*! ./lzw */ "./encoders/lzw.js");
+
+function _classCallCheck(instance, Constructor) { if (!(instance instanceof Constructor)) { throw new TypeError("Cannot call a class as a function"); } }
+
+var GifEncoder = function () {
+  function GifEncoder(width, height) {
+    _classCallCheck(this, GifEncoder);
+
+    this.width = width;
+    this.height = height;
+    this.delay = 100;
+    // -1 = no repeat, 0 = forever. anything else is repeat count
+    this.repeat = -1;
+    this.colorDepth = 8;
+    this.palette = [];
+    this.data = new _byteArray.ByteArray();
+  }
+
+  _createClass(GifEncoder, [{
+    key: "init",
+    value: function init() {
+      var paletteSize = this.palette.length / 3;
+      for (var p = 1; 1 << p < paletteSize; p += 1) {
+        continue;
+      }
+      this.colorDepth = p;
+      this.writeHeader();
+      this.writeColorTable();
+      this.writeNetscapeExt();
+    }
+  }, {
+    key: "writeHeader",
+    value: function writeHeader() {
+      var header = new _flipnote.dataStream(new ArrayBuffer(13));
+      header.writeUtf8("GIF89a");
+      // Logical Screen Descriptor
+      header.writeUint16(this.width);
+      header.writeUint16(this.height);
+      header.writeUint8(0x80 | // 1 : global color table flag = 1 (gct used)
+      this.colorDepth - 1 // 6-8 : gct size
+      );
+      header.writeUint8(0);
+      header.writeUint8(0);
+      this.data.writeBytes(new Uint8Array(header.buffer));
+    }
+  }, {
+    key: "writeColorTable",
+    value: function writeColorTable() {
+      var palette = new Uint8Array(3 * Math.pow(2, this.colorDepth));
+      palette.set(this.palette, 0);
+      this.data.writeBytes(palette);
+    }
+  }, {
+    key: "writeGraphicsControlExt",
+    value: function writeGraphicsControlExt() {
+      var graphicsControlExt = new _flipnote.dataStream(new ArrayBuffer(8));
+      graphicsControlExt.writeBytes([0x21, // extension introducer
+      0xF9, // graphic control label
+      4, // block size
+      0 // bitfield
+      ]);
+      graphicsControlExt.writeUint16(this.delay); // loop flag
+      graphicsControlExt.writeBytes([0, 0]);
+      this.data.writeBytes(new Uint8Array(graphicsControlExt.buffer));
+    }
+  }, {
+    key: "writeNetscapeExt",
+    value: function writeNetscapeExt() {
+      var netscapeExt = new _flipnote.dataStream(new ArrayBuffer(19));
+      netscapeExt.writeBytes([0x21, // extension introducer
+      0xFF, // app extension label
+      11] // block size
+      );
+      netscapeExt.writeUtf8('NETSCAPE2.0');
+      netscapeExt.writeUint8(3); // subblock size
+      netscapeExt.writeUint8(1); // loop subblock id
+      netscapeExt.writeUint16(this.repeat); // loop flag
+      this.data.writeBytes(new Uint8Array(netscapeExt.buffer));
+    }
+  }, {
+    key: "writeImageDesc",
+    value: function writeImageDesc() {
+      var desc = new _flipnote.dataStream(new ArrayBuffer(10));
+      desc.writeUint8(0x2C);
+      desc.writeUint16(0); // image left
+      desc.writeUint16(0); // image top
+      desc.writeUint16(this.width);
+      desc.writeUint16(this.height);
+      desc.writeUint8(0);
+      this.data.writeBytes(new Uint8Array(desc.buffer));
+    }
+  }, {
+    key: "writePixels",
+    value: function writePixels(pixels) {
+      var lzw = new _lzw.LZWEncoder(this.width, this.height, pixels, this.colorDepth);
+      lzw.encode(this.data);
+    }
+  }, {
+    key: "writeFrame",
+    value: function writeFrame(pixels) {
+      this.writeGraphicsControlExt();
+      this.writeImageDesc();
+      this.writePixels(pixels);
+    }
+  }, {
+    key: "getBuffer",
+    value: function getBuffer() {
+      return this.data.getBuffer();
+    }
+  }, {
+    key: "getBlob",
+    value: function getBlob() {
+      return new Blob([this.getBuffer()], { type: "image/gif" });
+    }
+  }, {
+    key: "getUrl",
+    value: function getUrl() {
+      return window.URL.createObjectURL(this.getBlob());
+    }
+  }, {
+    key: "getImage",
+    value: function getImage() {
+      var img = new Image(this.width, this.height);
+      img.src = this.getUrl();
+      return img;
+    }
+  }], [{
+    key: "fromFlipnote",
+    value: function fromFlipnote(flipnote) {
+      var format = flipnote.constructor;
+      var gif = new GifEncoder(format.width, format.height);
+      gif.palette = format.globalPalette.flat();
+      gif.delay = 100 / flipnote.framerate;
+      gif.repeat = flipnote.meta.loop ? -1 : 0;
+      gif.init();
+      for (var frameIndex = 0; frameIndex < flipnote.frameCount; frameIndex++) {
+        gif.writeFrame(flipnote.getFramePixels(frameIndex, true));
+      }
+      return gif;
+    }
+  }, {
+    key: "fromFlipnoteFrame",
+    value: function fromFlipnoteFrame(flipnote, frameIndex) {
+      var format = flipnote.constructor;
+      var gif = new GifEncoder(format.width, format.height);
+      gif.palette = format.globalPalette.flat();
+      gif.delay = 100 / flipnote.framerate;
+      gif.repeat = flipnote.meta.loop ? -1 : 0;
+      gif.init();
+      gif.writeFrame(flipnote.getFramePixels(frameIndex, true));
+      return gif;
+    }
+  }]);
+
+  return GifEncoder;
+}();
+
+exports.default = GifEncoder;
+
+/***/ }),
+
+/***/ "./encoders/lzw.js":
+/*!*************************!*\
+  !*** ./encoders/lzw.js ***!
+  \*************************/
+/*! no static exports found */
+/***/ (function(module, exports, __webpack_require__) {
+
+"use strict";
+
+
+Object.defineProperty(exports, "__esModule", {
+  value: true
+});
+
+var _createClass = function () { function defineProperties(target, props) { for (var i = 0; i < props.length; i++) { var descriptor = props[i]; descriptor.enumerable = descriptor.enumerable || false; descriptor.configurable = true; if ("value" in descriptor) descriptor.writable = true; Object.defineProperty(target, descriptor.key, descriptor); } } return function (Constructor, protoProps, staticProps) { if (protoProps) defineProperties(Constructor.prototype, protoProps); if (staticProps) defineProperties(Constructor, staticProps); return Constructor; }; }();
+
+function _classCallCheck(instance, Constructor) { if (!(instance instanceof Constructor)) { throw new TypeError("Cannot call a class as a function"); } }
+
+/*
+  LZWEncoder.js
+
+  Authors
+  Kevin Weiner (original Java version - kweiner@fmsware.com)
+  Thibault Imbert (AS3 version - bytearray.org)
+  Johan Nordberg (JS version - code@johan-nordberg.com)
+  James Daniel (ES6 version)
+
+  Acknowledgements
+  GIFCOMPR.C - GIF Image compression routines
+  Lempel-Ziv compression based on 'compress'. GIF modifications by
+  David Rowley (mgardi@watdcsu.waterloo.edu)
+  GIF Image compression - modified 'compress'
+  Based on: compress.c - File compression ala IEEE Computer, June 1984.
+  By Authors: Spencer W. Thomas (decvax!harpo!utah-cs!utah-gr!thomas)
+  Jim McKie (decvax!mcvax!jim)
+  Steve Davies (decvax!vax135!petsd!peora!srd)
+  Ken Turkowski (decvax!decwrl!turtlevax!ken)
+  James A. Woods (decvax!ihnp4!ames!jaw)
+  Joe Orost (decvax!vax135!petsd!joe)
+*/
+
+var EOF = -1;
+var BITS = 12;
+var HSIZE = 5003; // 80% occupancy
+var masks = [0x0000, 0x0001, 0x0003, 0x0007, 0x000F, 0x001F, 0x003F, 0x007F, 0x00FF, 0x01FF, 0x03FF, 0x07FF, 0x0FFF, 0x1FFF, 0x3FFF, 0x7FFF, 0xFFFF];
+
+var LZWEncoder = exports.LZWEncoder = function () {
+  function LZWEncoder(width, height, pixels, colorDepth) {
+    _classCallCheck(this, LZWEncoder);
+
+    this.width = width;
+    this.height = height;
+    this.pixels = pixels;
+    this.colorDepth = colorDepth;
+    this.initCodeSize = Math.max(2, this.colorDepth);
+    this.accum = new Uint8Array(256);
+    this.htab = new Int32Array(HSIZE);
+    this.codetab = new Int32Array(HSIZE);
+    this.cur_accum = 0;
+    this.cur_bits = 0;
+    this.a_count;
+    this.remaining;
+    this.curPixel = 0;
+    this.free_ent = 0; // first unused entry
+    this.maxcode;
+    // block compression parameters -- after all codes are used up,
+    // and compression rate changes, start over.
+    this.clear_flg = false;
+    // Algorithm: use open addressing double hashing (no chaining) on the
+    // prefix code / next character combination. We do a variant of Knuth's
+    // algorithm D (vol. 3, sec. 6.4) along with G. Knott's relatively-prime
+    // secondary probe. Here, the modular division first probe is gives way
+    // to a faster exclusive-or manipulation. Also do block compression with
+    // an adaptive reset, whereby the code table is cleared when the compression
+    // ratio decreases, but after the table fills. The variable-length output
+    // codes are re-sized at this point, and a special CLEAR code is generated
+    // for the decompressor. Late addition: construct the table according to
+    // file size for noticeable speed improvement on small files. Please direct
+    // questions about this implementation to ames!jaw.
+    this.g_init_bits = undefined;
+    this.ClearCode = undefined;
+    this.EOFCode = undefined;
+  }
+
+  // Add a character to the end of the current packet, and if it is 254
+  // characters, flush the packet to disk.
+
+
+  _createClass(LZWEncoder, [{
+    key: "char_out",
+    value: function char_out(c, outs) {
+      this.accum[this.a_count++] = c;
+      if (this.a_count >= 254) this.flush_char(outs);
+    }
+
+    // Clear out the hash table
+    // table clear for block compress
+
+  }, {
+    key: "cl_block",
+    value: function cl_block(outs) {
+      cl_hash(HSIZE);
+      this.free_ent = this.ClearCode + 2;
+      this.clear_flg = true;
+      output(this.ClearCode, outs);
+    }
+
+    // Reset code table
+
+  }, {
+    key: "cl_hash",
+    value: function cl_hash(hsize) {
+      for (var i = 0; i < hsize; ++i) {
+        this.htab[i] = -1;
+      }
+    }
+  }, {
+    key: "compress",
+    value: function compress(init_bits, outs) {
+      var fcode, c, i, ent, disp, hsize_reg, hshift;
+
+      // Set up the globals: this.g_init_bits - initial number of bits
+      this.g_init_bits = init_bits;
+
+      // Set up the necessary values
+      this.clear_flg = false;
+      this.n_bits = this.g_init_bits;
+      this.maxcode = this.get_maxcode(this.n_bits);
+
+      this.ClearCode = 1 << init_bits - 1;
+      this.EOFCode = this.ClearCode + 1;
+      this.free_ent = this.ClearCode + 2;
+
+      this.a_count = 0; // clear packet
+
+      ent = this.nextPixel();
+
+      hshift = 0;
+      for (fcode = HSIZE; fcode < 65536; fcode *= 2) {
+        ++hshift;
+      }hshift = 8 - hshift; // set hash code range bound
+      hsize_reg = HSIZE;
+      this.cl_hash(hsize_reg); // clear hash table
+
+      this.output(this.ClearCode, outs);
+
+      outer_loop: while ((c = this.nextPixel()) != EOF) {
+        fcode = (c << BITS) + ent;
+        i = c << hshift ^ ent; // xor hashing
+        if (this.htab[i] === fcode) {
+          ent = this.codetab[i];
+          continue;
+        } else if (this.htab[i] >= 0) {
+          // non-empty slot
+          disp = hsize_reg - i; // secondary hash (after G. Knott)
+          if (i === 0) disp = 1;
+          do {
+            if ((i -= disp) < 0) i += hsize_reg;
+            if (this.htab[i] === fcode) {
+              ent = this.codetab[i];
+              continue outer_loop;
+            }
+          } while (this.htab[i] >= 0);
+        }
+        this.output(ent, outs);
+        ent = c;
+        if (this.free_ent < 1 << BITS) {
+          this.codetab[i] = this.free_ent++; // code -> hasthis.htable
+          this.htab[i] = fcode;
+        } else {
+          this.cl_block(outs);
+        }
+      }
+
+      // Put out the final code.
+      this.output(ent, outs);
+      this.output(this.EOFCode, outs);
+    }
+  }, {
+    key: "encode",
+    value: function encode(outs) {
+      outs.writeByte(this.initCodeSize); // write "initial code size" byte
+      this.remaining = this.width * this.height; // reset navigation variables
+      this.curPixel = 0;
+      this.compress(this.initCodeSize + 1, outs); // compress and write the pixel data
+      outs.writeByte(0); // write block terminator
+    }
+
+    // Flush the packet to disk, and reset the this.accumulator
+
+  }, {
+    key: "flush_char",
+    value: function flush_char(outs) {
+      if (this.a_count > 0) {
+        outs.writeByte(this.a_count);
+        outs.writeBytes(this.accum, 0, this.a_count);
+        this.a_count = 0;
+      }
+    }
+  }, {
+    key: "get_maxcode",
+    value: function get_maxcode(n_bits) {
+      return (1 << n_bits) - 1;
+    }
+
+    // Return the next pixel from the image
+
+  }, {
+    key: "nextPixel",
+    value: function nextPixel() {
+      if (this.remaining === 0) return EOF;
+      --this.remaining;
+      var pix = this.pixels[this.curPixel++];
+      return pix & 0xff;
+    }
+  }, {
+    key: "output",
+    value: function output(code, outs) {
+      this.cur_accum &= masks[this.cur_bits];
+
+      if (this.cur_bits > 0) this.cur_accum |= code << this.cur_bits;else this.cur_accum = code;
+
+      this.cur_bits += this.n_bits;
+
+      while (this.cur_bits >= 8) {
+        this.char_out(this.cur_accum & 0xff, outs);
+        this.cur_accum >>= 8;
+        this.cur_bits -= 8;
+      }
+
+      // If the next entry is going to be too big for the code size,
+      // then increase it, if possible.
+      if (this.free_ent > this.maxcode || this.clear_flg) {
+        if (this.clear_flg) {
+          this.maxcode = this.get_maxcode(this.n_bits = this.g_init_bits);
+          this.clear_flg = false;
+        } else {
+          ++this.n_bits;
+          if (this.n_bits == BITS) this.maxcode = 1 << BITS;else this.maxcode = this.get_maxcode(this.n_bits);
+        }
+      }
+
+      if (code == this.EOFCode) {
+        // At EOF, write the rest of the buffer.
+        while (this.cur_bits > 0) {
+          this.char_out(this.cur_accum & 0xff, outs);
+          this.cur_accum >>= 8;
+          this.cur_bits -= 8;
+        }
+        this.flush_char(outs);
+      }
+    }
+  }]);
+
+  return LZWEncoder;
 }();
 
 /***/ }),
@@ -286,7 +736,7 @@ Object.defineProperty(exports, "__esModule", {
 
 var _createClass = function () { function defineProperties(target, props) { for (var i = 0; i < props.length; i++) { var descriptor = props[i]; descriptor.enumerable = descriptor.enumerable || false; descriptor.configurable = true; if ("value" in descriptor) descriptor.writable = true; Object.defineProperty(target, descriptor.key, descriptor); } } return function (Constructor, protoProps, staticProps) { if (protoProps) defineProperties(Constructor.prototype, protoProps); if (staticProps) defineProperties(Constructor, staticProps); return Constructor; }; }();
 
-var _dataStream = __webpack_require__(/*! utils/dataStream */ "./utils/dataStream.js");
+var _dataStream = __webpack_require__(/*! ../utils/dataStream */ "./utils/dataStream.js");
 
 var _dataStream2 = _interopRequireDefault(_dataStream);
 
@@ -294,12 +744,12 @@ function _interopRequireDefault(obj) { return obj && obj.__esModule ? obj : { de
 
 function _classCallCheck(instance, Constructor) { if (!(instance instanceof Constructor)) { throw new TypeError("Cannot call a class as a function"); } }
 
-var wavEncoder = function () {
-  function wavEncoder(sampleRate) {
+var WavEncoder = function () {
+  function WavEncoder(sampleRate) {
     var channels = arguments.length > 1 && arguments[1] !== undefined ? arguments[1] : 1;
     var bitsPerSample = arguments.length > 2 && arguments[2] !== undefined ? arguments[2] : 16;
 
-    _classCallCheck(this, wavEncoder);
+    _classCallCheck(this, WavEncoder);
 
     this.sampleRate = sampleRate;
     this.channels = channels;
@@ -338,7 +788,7 @@ var wavEncoder = function () {
     this.pcmData = null;
   }
 
-  _createClass(wavEncoder, [{
+  _createClass(WavEncoder, [{
     key: "writeFrames",
     value: function writeFrames(pcmData) {
       var header = this.header;
@@ -357,10 +807,10 @@ var wavEncoder = function () {
     }
   }]);
 
-  return wavEncoder;
+  return WavEncoder;
 }();
 
-exports.default = wavEncoder;
+exports.default = WavEncoder;
 
 /***/ }),
 
@@ -377,7 +827,7 @@ exports.default = wavEncoder;
 Object.defineProperty(exports, "__esModule", {
   value: true
 });
-exports.dataStream = exports.wavEncoder = exports.bitmapEncoder = exports.kwzParser = exports.ppmParser = exports.parser = exports.default = undefined;
+exports.dataStream = exports.wavEncoder = exports.gifEncoder = exports.bitmapEncoder = exports.kwzParser = exports.ppmParser = exports.parser = exports.default = undefined;
 
 var _player = __webpack_require__(/*! ./player */ "./player/index.js");
 
@@ -403,6 +853,10 @@ var _wav = __webpack_require__(/*! ./encoders/wav */ "./encoders/wav.js");
 
 var _wav2 = _interopRequireDefault(_wav);
 
+var _gif = __webpack_require__(/*! ./encoders/gif */ "./encoders/gif.js");
+
+var _gif2 = _interopRequireDefault(_gif);
+
 var _dataStream = __webpack_require__(/*! ./utils/dataStream */ "./utils/dataStream.js");
 
 var _dataStream2 = _interopRequireDefault(_dataStream);
@@ -410,7 +864,7 @@ var _dataStream2 = _interopRequireDefault(_dataStream);
 function _interopRequireDefault(obj) { return obj && obj.__esModule ? obj : { default: obj }; }
 
 var _module = {
-  version: "2.6.2",
+  version: "2.7.0",
   player: _player2.default,
   parser: _parser2.default,
   ppmParser: _ppm2.default,
@@ -422,6 +876,7 @@ exports.parser = _parser2.default;
 exports.ppmParser = _ppm2.default;
 exports.kwzParser = _kwz2.default;
 exports.bitmapEncoder = _bmp2.default;
+exports.gifEncoder = _gif2.default;
 exports.wavEncoder = _wav2.default;
 exports.dataStream = _dataStream2.default;
 
@@ -639,8 +1094,6 @@ var _dataStream2 = __webpack_require__(/*! utils/dataStream */ "./utils/dataStre
 var _dataStream3 = _interopRequireDefault(_dataStream2);
 
 var _adpcm = __webpack_require__(/*! utils/adpcm */ "./utils/adpcm.js");
-
-var _bmp = __webpack_require__(/*! encoders/bmp */ "./encoders/bmp.js");
 
 function _interopRequireDefault(obj) { return obj && obj.__esModule ? obj : { default: obj }; }
 
@@ -1094,7 +1547,19 @@ var kwzParser = function (_dataStream) {
     value: function getFramePixels(frameIndex) {
       var _this2 = this;
 
+      var useGlobalPalette = arguments.length > 1 && arguments[1] !== undefined ? arguments[1] : false;
+
+      var paletteMap = void 0;
+      if (useGlobalPalette) {
+        var framePalette = this.getFramePalette(frameIndex);
+        paletteMap = framePalette.map(function (color) {
+          return kwzParser.globalPalette.indexOf(color);
+        });
+      } else {
+        paletteMap = [0, 1, 2, 3, 4, 5, 6];
+      }
       var image = new Uint8Array(320 * 240);
+      image.fill(paletteMap[0]);
       var layerOrder = this.getLayerOrder(frameIndex);
       layerOrder.forEach(function (layerIndex) {
         var layer = _this2.getLayerPixels(frameIndex, layerIndex);
@@ -1102,19 +1567,11 @@ var kwzParser = function (_dataStream) {
         for (var _index2 = 0; _index2 < layer.length; _index2++) {
           var pixel = layer[_index2];
           if (pixel !== 0) {
-            image[_index2] = pixel;
+            image[_index2] = paletteMap[pixel];
           }
         }
       });
       return image;
-    }
-  }, {
-    key: "getFrameBitmap",
-    value: function getFrameBitmap(frameIndex) {
-      var bmp = new _bmp.BitmapEncoder(320, 240, 8);
-      bmp.setPixels(this.getFramePixels(frameIndex));
-      bmp.setPalette(this.getFramePalette(frameIndex));
-      return bmp;
     }
   }, {
     key: "decodeSoundFlags",
@@ -1183,6 +1640,11 @@ var kwzParser = function (_dataStream) {
 
 exports.default = kwzParser;
 
+
+kwzParser.width = 320;
+kwzParser.height = 240;
+kwzParser.globalPalette = [PALETTE.BLACK, PALETTE.WHITE, PALETTE.RED, PALETTE.YELLOW, PALETTE.GREEN, PALETTE.BLUE, PALETTE.NONE];
+
 /***/ }),
 
 /***/ "./parser/ppm.js":
@@ -1206,8 +1668,6 @@ var _dataStream2 = __webpack_require__(/*! utils/dataStream */ "./utils/dataStre
 var _dataStream3 = _interopRequireDefault(_dataStream2);
 
 var _adpcm = __webpack_require__(/*! utils/adpcm */ "./utils/adpcm.js");
-
-var _bmp = __webpack_require__(/*! encoders/bmp */ "./encoders/bmp.js");
 
 function _interopRequireDefault(obj) { return obj && obj.__esModule ? obj : { default: obj }; }
 
@@ -1577,23 +2037,27 @@ var ppmParser = function (_dataStream) {
   }, {
     key: "getFramePixels",
     value: function getFramePixels(frameIndex) {
+      var useGlobalPalette = arguments.length > 1 && arguments[1] !== undefined ? arguments[1] : false;
+
+      var paletteMap = void 0;
+      if (useGlobalPalette) {
+        var framePalette = this.getFramePalette(frameIndex);
+        paletteMap = framePalette.map(function (color) {
+          return ppmParser.globalPalette.indexOf(color);
+        });
+      } else {
+        paletteMap = [0, 1, 2];
+      }
       var layers = this.decodeFrame(frameIndex);
       var image = new Uint8Array(256 * 192);
+      image.fill(paletteMap[0]);
       for (var pixel = 0; pixel < image.length; pixel++) {
         var a = layers[0][pixel];
         var b = layers[1][pixel];
-        if (b) image[pixel] = 2;
-        if (a) image[pixel] = 1;
+        if (b) image[pixel] = paletteMap[2];
+        if (a) image[pixel] = paletteMap[1];
       }
       return image;
-    }
-  }, {
-    key: "getFrameBitmap",
-    value: function getFrameBitmap(frameIndex) {
-      var bmp = new _bmp.BitmapEncoder(256, 192, 8);
-      bmp.setPixels(this.getFramePixels(frameIndex));
-      bmp.setPalette(this.getFramePalette(frameIndex));
-      return bmp;
     }
   }, {
     key: "hasAudioTrack",
@@ -1683,6 +2147,11 @@ var ppmParser = function (_dataStream) {
 }(_dataStream3.default);
 
 exports.default = ppmParser;
+
+
+ppmParser.width = WIDTH;
+ppmParser.height = HEIGHT;
+ppmParser.globalPalette = [PALETTE.BLACK, PALETTE.WHITE, PALETTE.RED, PALETTE.BLUE];
 
 /***/ }),
 
@@ -1820,25 +2289,21 @@ Object.defineProperty(exports, "__esModule", {
 
 var _createClass = function () { function defineProperties(target, props) { for (var i = 0; i < props.length; i++) { var descriptor = props[i]; descriptor.enumerable = descriptor.enumerable || false; descriptor.configurable = true; if ("value" in descriptor) descriptor.writable = true; Object.defineProperty(target, descriptor.key, descriptor); } } return function (Constructor, protoProps, staticProps) { if (protoProps) defineProperties(Constructor.prototype, protoProps); if (staticProps) defineProperties(Constructor, staticProps); return Constructor; }; }();
 
-var _canvas = __webpack_require__(/*! webgl/canvas */ "./webgl/canvas.js");
+var _canvas = __webpack_require__(/*! ../webgl/canvas */ "./webgl/canvas.js");
 
 var _canvas2 = _interopRequireDefault(_canvas);
 
-var _parser = __webpack_require__(/*! parser */ "./parser/index.js");
+var _parser = __webpack_require__(/*! ../parser */ "./parser/index.js");
 
 var _parser2 = _interopRequireDefault(_parser);
 
-var _loader = __webpack_require__(/*! loader */ "./loader/index.js");
+var _loader = __webpack_require__(/*! ../loader */ "./loader/index.js");
 
 var _loader2 = _interopRequireDefault(_loader);
 
 var _audio = __webpack_require__(/*! ./audio */ "./player/audio.js");
 
 var _audio2 = _interopRequireDefault(_audio);
-
-var _canvas3 = __webpack_require__(/*! ../webgl/canvas */ "./webgl/canvas.js");
-
-var _canvas4 = _interopRequireDefault(_canvas3);
 
 function _interopRequireDefault(obj) { return obj && obj.__esModule ? obj : { default: obj }; }
 
@@ -2463,6 +2928,82 @@ for (var _sample = 0; _sample < 16; _sample++) {
 
 /***/ }),
 
+/***/ "./utils/byteArray.js":
+/*!****************************!*\
+  !*** ./utils/byteArray.js ***!
+  \****************************/
+/*! no static exports found */
+/***/ (function(module, exports, __webpack_require__) {
+
+"use strict";
+
+
+Object.defineProperty(exports, "__esModule", {
+  value: true
+});
+
+var _createClass = function () { function defineProperties(target, props) { for (var i = 0; i < props.length; i++) { var descriptor = props[i]; descriptor.enumerable = descriptor.enumerable || false; descriptor.configurable = true; if ("value" in descriptor) descriptor.writable = true; Object.defineProperty(target, descriptor.key, descriptor); } } return function (Constructor, protoProps, staticProps) { if (protoProps) defineProperties(Constructor.prototype, protoProps); if (staticProps) defineProperties(Constructor, staticProps); return Constructor; }; }();
+
+function _classCallCheck(instance, Constructor) { if (!(instance instanceof Constructor)) { throw new TypeError("Cannot call a class as a function"); } }
+
+var ByteArray = exports.ByteArray = function () {
+  function ByteArray() {
+    _classCallCheck(this, ByteArray);
+
+    this.page = -1;
+    this.pages = [];
+    this.newPage();
+  }
+
+  _createClass(ByteArray, [{
+    key: "newPage",
+    value: function newPage() {
+      this.pages[++this.page] = new Uint8Array(ByteArray.pageSize);
+      this.cursor = 0;
+    }
+  }, {
+    key: "getData",
+    value: function getData() {
+      var _this = this;
+
+      var data = new Uint8Array(this.page * ByteArray.pageSize + this.cursor);
+      this.pages.map(function (page, index) {
+        if (index === _this.page) {
+          data.set(page.slice(0, _this.cursor), index * ByteArray.pageSize);
+        } else {
+          data.set(page, index * ByteArray.pageSize);
+        }
+      });
+      return data;
+    }
+  }, {
+    key: "getBuffer",
+    value: function getBuffer() {
+      var data = this.getData();
+      return data.buffer;
+    }
+  }, {
+    key: "writeByte",
+    value: function writeByte(val) {
+      if (this.cursor >= ByteArray.pageSize) this.newPage();
+      this.pages[this.page][this.cursor++] = val;
+    }
+  }, {
+    key: "writeBytes",
+    value: function writeBytes(array, offset, length) {
+      for (var l = length || array.length, i = offset || 0; i < l; i++) {
+        this.writeByte(array[i]);
+      }
+    }
+  }]);
+
+  return ByteArray;
+}();
+
+ByteArray.pageSize = 4096;
+
+/***/ }),
+
 /***/ "./utils/dataStream.js":
 /*!*****************************!*\
   !*** ./utils/dataStream.js ***!
@@ -2494,12 +3035,6 @@ var dataStream = function () {
     this._data = new DataView(arrayBuffer);
     this._offset = 0;
   }
-
-  /**
-  * Get the length of the stream
-  * @returns {number}
-  */
-
 
   _createClass(dataStream, [{
     key: "seek",
@@ -2700,12 +3235,35 @@ var dataStream = function () {
       this._data.setInt32(this._offset, value, littleEndian);
       this._offset += 4;
     }
+
+    /**
+    * Read bytes and return an array
+    * @param {number} count - number of bytes to read
+    * @returns {Uint8Array}
+    */
+
   }, {
     key: "readBytes",
     value: function readBytes(count) {
       var bytes = new Uint8Array(this._data.buffer, this._offset, count);
       this._offset += bytes.byteLength;
       return bytes;
+    }
+
+    /**
+    * Write bytes from an array
+    * @param {Array} bytes - array of byte values
+    * @returns {Uint8Array}
+    */
+
+  }, {
+    key: "writeBytes",
+    value: function writeBytes(bytes) {
+      var _this = this;
+
+      bytes.forEach(function (byte) {
+        return _this.writeUint8(byte);
+      });
     }
 
     /**
@@ -2781,6 +3339,17 @@ var dataStream = function () {
       }
       return str;
     }
+  }, {
+    key: "bytes",
+    get: function get() {
+      return new Uint8Array(this.buffer);
+    }
+
+    /**
+    * Get the length of the stream
+    * @returns {number}
+    */
+
   }, {
     key: "byteLength",
     get: function get() {
