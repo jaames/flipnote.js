@@ -1,5 +1,5 @@
 /*!
- * flipnote.js v2.7.3
+ * flipnote.js v2.7.4
  * Browser-based playback of .ppm and .kwz animations from Flipnote Studio and Flipnote Studio 3D
  * 2018 James Daniel
  * github.com/jaames/flipnote.js
@@ -864,7 +864,7 @@ var _dataStream2 = _interopRequireDefault(_dataStream);
 function _interopRequireDefault(obj) { return obj && obj.__esModule ? obj : { default: obj }; }
 
 var _module = {
-  version: "2.7.3",
+  version: "2.7.4",
   player: _player2.default,
   parser: _parser2.default,
   ppmParser: _ppm2.default,
@@ -1089,11 +1089,11 @@ Object.defineProperty(exports, "__esModule", {
 
 var _createClass = function () { function defineProperties(target, props) { for (var i = 0; i < props.length; i++) { var descriptor = props[i]; descriptor.enumerable = descriptor.enumerable || false; descriptor.configurable = true; if ("value" in descriptor) descriptor.writable = true; Object.defineProperty(target, descriptor.key, descriptor); } } return function (Constructor, protoProps, staticProps) { if (protoProps) defineProperties(Constructor.prototype, protoProps); if (staticProps) defineProperties(Constructor, staticProps); return Constructor; }; }();
 
-var _dataStream2 = __webpack_require__(/*! utils/dataStream */ "./utils/dataStream.js");
+var _dataStream2 = __webpack_require__(/*! ../utils/dataStream */ "./utils/dataStream.js");
 
 var _dataStream3 = _interopRequireDefault(_dataStream2);
 
-var _adpcm = __webpack_require__(/*! utils/adpcm */ "./utils/adpcm.js");
+var _adpcm = __webpack_require__(/*! ../utils/adpcm */ "./utils/adpcm.js");
 
 function _interopRequireDefault(obj) { return obj && obj.__esModule ? obj : { default: obj }; }
 
@@ -1663,11 +1663,11 @@ Object.defineProperty(exports, "__esModule", {
 
 var _createClass = function () { function defineProperties(target, props) { for (var i = 0; i < props.length; i++) { var descriptor = props[i]; descriptor.enumerable = descriptor.enumerable || false; descriptor.configurable = true; if ("value" in descriptor) descriptor.writable = true; Object.defineProperty(target, descriptor.key, descriptor); } } return function (Constructor, protoProps, staticProps) { if (protoProps) defineProperties(Constructor.prototype, protoProps); if (staticProps) defineProperties(Constructor, staticProps); return Constructor; }; }();
 
-var _dataStream2 = __webpack_require__(/*! utils/dataStream */ "./utils/dataStream.js");
+var _dataStream2 = __webpack_require__(/*! ../utils/dataStream */ "./utils/dataStream.js");
 
 var _dataStream3 = _interopRequireDefault(_dataStream2);
 
-var _adpcm = __webpack_require__(/*! utils/adpcm */ "./utils/adpcm.js");
+var _adpcm = __webpack_require__(/*! ../utils/adpcm */ "./utils/adpcm.js");
 
 function _interopRequireDefault(obj) { return obj && obj.__esModule ? obj : { default: obj }; }
 
@@ -2171,7 +2171,7 @@ Object.defineProperty(exports, "__esModule", {
 
 var _createClass = function () { function defineProperties(target, props) { for (var i = 0; i < props.length; i++) { var descriptor = props[i]; descriptor.enumerable = descriptor.enumerable || false; descriptor.configurable = true; if ("value" in descriptor) descriptor.writable = true; Object.defineProperty(target, descriptor.key, descriptor); } } return function (Constructor, protoProps, staticProps) { if (protoProps) defineProperties(Constructor.prototype, protoProps); if (staticProps) defineProperties(Constructor, staticProps); return Constructor; }; }();
 
-var _wav = __webpack_require__(/*! encoders/wav */ "./encoders/wav.js");
+var _wav = __webpack_require__(/*! ../encoders/wav */ "./encoders/wav.js");
 
 var _wav2 = _interopRequireDefault(_wav);
 

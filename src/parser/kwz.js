@@ -1,11 +1,11 @@
-import dataStream from "utils/dataStream";
+import dataStream from "../utils/dataStream";
 
 import {
   ADPCM_INDEX_TABLE_2,
   ADPCM_INDEX_TABLE_4,
   ADPCM_SAMPLE_TABLE_2,
   ADPCM_SAMPLE_TABLE_4
-} from "utils/adpcm";
+} from "../utils/adpcm";
 
 const FRAMERATES = [
   0.2,

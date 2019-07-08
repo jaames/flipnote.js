@@ -1,4 +1,4 @@
-import wavEncoder from "encoders/wav";
+import wavEncoder from "../encoders/wav";
 
 export default class audioTrack {
   /**
