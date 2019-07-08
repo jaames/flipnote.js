@@ -1,5 +1,5 @@
 /*!
- * flipnote.js v2.7.0
+ * flipnote.js v2.7.3
  * Browser-based playback of .ppm and .kwz animations from Flipnote Studio and Flipnote Studio 3D
  * 2018 James Daniel
  * github.com/jaames/flipnote.js
@@ -864,7 +864,7 @@ var _dataStream2 = _interopRequireDefault(_dataStream);
 function _interopRequireDefault(obj) { return obj && obj.__esModule ? obj : { default: obj }; }
 
 var _module = {
-  version: "2.7.0",
+  version: "2.7.3",
   player: _player2.default,
   parser: _parser2.default,
   ppmParser: _ppm2.default,
