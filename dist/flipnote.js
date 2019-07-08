@@ -1,5 +1,5 @@
 /*!
- * flipnote.js v2.7.4
+ * flipnote.js v2.7.6
  * Browser-based playback of .ppm and .kwz animations from Flipnote Studio and Flipnote Studio 3D
  * 2018 James Daniel
  * github.com/jaames/flipnote.js
@@ -296,11 +296,15 @@ Object.defineProperty(exports, "__esModule", {
 
 var _createClass = function () { function defineProperties(target, props) { for (var i = 0; i < props.length; i++) { var descriptor = props[i]; descriptor.enumerable = descriptor.enumerable || false; descriptor.configurable = true; if ("value" in descriptor) descriptor.writable = true; Object.defineProperty(target, descriptor.key, descriptor); } } return function (Constructor, protoProps, staticProps) { if (protoProps) defineProperties(Constructor.prototype, protoProps); if (staticProps) defineProperties(Constructor, staticProps); return Constructor; }; }();
 
-var _flipnote = __webpack_require__(/*! ../flipnote */ "./flipnote.js");
+var _dataStream = __webpack_require__(/*! ../utils/dataStream */ "./utils/dataStream.js");
+
+var _dataStream2 = _interopRequireDefault(_dataStream);
 
 var _byteArray = __webpack_require__(/*! ../utils/byteArray */ "./utils/byteArray.js");
 
 var _lzw = __webpack_require__(/*! ./lzw */ "./encoders/lzw.js");
+
+function _interopRequireDefault(obj) { return obj && obj.__esModule ? obj : { default: obj }; }
 
 function _classCallCheck(instance, Constructor) { if (!(instance instanceof Constructor)) { throw new TypeError("Cannot call a class as a function"); } }
 
@@ -333,7 +337,7 @@ var GifEncoder = function () {
   }, {
     key: "writeHeader",
     value: function writeHeader() {
-      var header = new _flipnote.dataStream(new ArrayBuffer(13));
+      var header = new _dataStream2.default(new ArrayBuffer(13));
       header.writeUtf8("GIF89a");
       // Logical Screen Descriptor
       header.writeUint16(this.width);
@@ -355,7 +359,7 @@ var GifEncoder = function () {
   }, {
     key: "writeGraphicsControlExt",
     value: function writeGraphicsControlExt() {
-      var graphicsControlExt = new _flipnote.dataStream(new ArrayBuffer(8));
+      var graphicsControlExt = new _dataStream2.default(new ArrayBuffer(8));
       graphicsControlExt.writeBytes([0x21, // extension introducer
       0xF9, // graphic control label
       4, // block size
@@ -368,7 +372,7 @@ var GifEncoder = function () {
   }, {
     key: "writeNetscapeExt",
     value: function writeNetscapeExt() {
-      var netscapeExt = new _flipnote.dataStream(new ArrayBuffer(19));
+      var netscapeExt = new _dataStream2.default(new ArrayBuffer(19));
       netscapeExt.writeBytes([0x21, // extension introducer
       0xFF, // app extension label
       11] // block size
@@ -382,7 +386,7 @@ var GifEncoder = function () {
   }, {
     key: "writeImageDesc",
     value: function writeImageDesc() {
-      var desc = new _flipnote.dataStream(new ArrayBuffer(10));
+      var desc = new _dataStream2.default(new ArrayBuffer(10));
       desc.writeUint8(0x2C);
       desc.writeUint16(0); // image left
       desc.writeUint16(0); // image top
@@ -827,7 +831,6 @@ exports.default = WavEncoder;
 Object.defineProperty(exports, "__esModule", {
   value: true
 });
-exports.dataStream = exports.wavEncoder = exports.gifEncoder = exports.bitmapEncoder = exports.kwzParser = exports.ppmParser = exports.parser = exports.default = undefined;
 
 var _player = __webpack_require__(/*! ./player */ "./player/index.js");
 
@@ -863,22 +866,17 @@ var _dataStream2 = _interopRequireDefault(_dataStream);
 
 function _interopRequireDefault(obj) { return obj && obj.__esModule ? obj : { default: obj }; }
 
-var _module = {
-  version: "2.7.4",
+exports.default = {
+  version: "2.7.6",
   player: _player2.default,
   parser: _parser2.default,
   ppmParser: _ppm2.default,
-  kwzParser: _kwz2.default
+  kwzParser: _kwz2.default,
+  bitmapEncoder: _bmp2.default,
+  gifEncoder: _gif2.default,
+  wavEncoder: _wav2.default,
+  dataStream: _dataStream2.default
 };
-
-exports.default = _module;
-exports.parser = _parser2.default;
-exports.ppmParser = _ppm2.default;
-exports.kwzParser = _kwz2.default;
-exports.bitmapEncoder = _bmp2.default;
-exports.gifEncoder = _gif2.default;
-exports.wavEncoder = _wav2.default;
-exports.dataStream = _dataStream2.default;
 
 /***/ }),
 

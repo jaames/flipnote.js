@@ -7,16 +7,9 @@ import wavEncoder from "./encoders/wav";
 import gifEncoder from "./encoders/gif";
 import dataStream from "./utils/dataStream";
 
-const module = {
+export default {
   version: VERSION,
   player,
-  parser,
-  ppmParser,
-  kwzParser,
-};
-
-export {
-  module as default,
   parser,
   ppmParser,
   kwzParser,
@@ -24,5 +17,5 @@ export {
   gifEncoder,
   wavEncoder,
   dataStream,
-}
+};
 

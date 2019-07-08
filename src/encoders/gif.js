@@ -1,4 +1,4 @@
-import { dataStream } from "../flipnote";
+import dataStream from "../utils/dataStream";
 import { ByteArray } from "../utils/byteArray";
 import { LZWEncoder } from "./lzw";
 
