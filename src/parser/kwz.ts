@@ -1,11 +1,18 @@
-import dataStream from "../utils/dataStream";
+import { DataStream } from '../utils/dataStream';
 
 import {
   ADPCM_INDEX_TABLE_2,
   ADPCM_INDEX_TABLE_4,
   ADPCM_SAMPLE_TABLE_2,
   ADPCM_SAMPLE_TABLE_4
-} from "../utils/adpcm";
+} from './adpcm';
+
+import {
+  KWZ_TABLE_1,
+  KWZ_TABLE_2,
+  KWZ_TABLE_3,
+  KWZ_LINE_TABLE
+} from './kwzTables';
 
 const FRAMERATES = [
   0.2,
@@ -31,92 +38,111 @@ const PALETTE = {
   NONE:   [0xff, 0xff, 0xff]
 };
 
-const PALETTE_INDEX_MAP = [
-  'WHITE',
-  'BLACK',
-  'RED',
-  'YELLOW',
-  'GREEN',
-  'BLUE',
-  'NONE'
-];
+export type KwzSectionMagic = 'KFH' | 'KTN' | 'KMC' | 'KMI' | 'KSN' | 'ICO';
 
-// table1 - commonly occuring line offsets
-const TABLE_1 = new Uint16Array([
-  0x0000, 0x0CD0, 0x19A0, 0x02D9, 0x088B, 0x0051, 0x00F3, 0x0009,
-  0x001B, 0x0001, 0x0003, 0x05B2, 0x1116, 0x00A2, 0x01E6, 0x0012,
-  0x0036, 0x0002, 0x0006, 0x0B64, 0x08DC, 0x0144, 0x00FC, 0x0024,
-  0x001C, 0x0004, 0x0334, 0x099C, 0x0668, 0x1338, 0x1004, 0x166C
-]);
-// table2 - commonly occuring line offsets, but the lines are shifted to the left by one pixel
-const TABLE_2 = new Uint16Array([
-  0x0000, 0x0CD0, 0x19A0, 0x0003, 0x02D9, 0x088B, 0x0051, 0x00F3, 
-  0x0009, 0x001B, 0x0001, 0x0006, 0x05B2, 0x1116, 0x00A2, 0x01E6, 
-  0x0012, 0x0036, 0x0002, 0x02DC, 0x0B64, 0x08DC, 0x0144, 0x00FC, 
-  0x0024, 0x001C, 0x099C, 0x0334, 0x1338, 0x0668, 0x166C, 0x1004
-]);
-// table3 - line offsets, but the lines are shifted to the left by one pixel
-const TABLE_3 = new Uint16Array(6561);
-var values = [0, 3, 7, 1, 4, 8, 2, 5, 6];
-let index = 0;
-for (let a = 0; a < 9; a++)
-  for (let b = 0; b < 9; b++)
-    for (let c = 0; c < 9; c++)
-      for (let d = 0; d < 9; d++) {
-        TABLE_3[index] = ((values[a] * 9 + values[b]) * 9 + values[c]) * 9 + values[d];
-        index++;
-      }
+export type KwzSectionMap = {
+  [k in KwzSectionMagic]?: {
+    offset: number, length: number
+  }
+};
 
-// linetable - contains every possible sequence of pixels for each tile line
-const LINE_TABLE = new Uint16Array(6561 * 8);
-var values = [0x0000, 0xFF00, 0x00FF];
-let offset = 0;
-for (let a = 0; a < 3; a++)
-  for (let b = 0; b < 3; b++)
-    for (let c = 0; c < 3; c++)
-      for (let d = 0; d < 3; d++)
-        for (let e = 0; e < 3; e++)
-          for (let f = 0; f < 3; f++)
-            for (let g = 0; g < 3; g++)
-              for (let h = 0; h < 3; h++) {
-                LINE_TABLE.set([
-                  values[b], 
-                  values[a], 
-                  values[d], 
-                  values[c], 
-                  values[f], 
-                  values[e], 
-                  values[h], 
-                  values[g]
-                ], offset);
-                offset += 8;
-              }
+export interface KwzMeta {
+  lock: boolean;
+  loop: boolean;
+  frame_count: number;
+  frame_speed: number;
+  thumb_index: number;
+  timestamp: Date;
+  creation_timestamp: Date;
+  root: {
+    filename: string;
+    username: string;
+    fsid: string;
+  },
+  parent: {
+    filename: string;
+    username: string;
+    fsid: string;
+  },
+  current: {
+    filename: string;
+    username: string;
+    fsid: string;
+  },
+};
 
-export default class kwzParser extends dataStream {
+export interface KwzFrameMeta {
+  flags: number;
+  layerSize: number[];
+  frameAuthor: string;
+  layerDepth: number[];
+  soundFlags: number;
+  cameraFlag: number;
+};
 
-  constructor(arrayBuffer) {
+export type KwzSoundTrack = 'bgm' | 'se1' | 'se2' | 'se3' | 'se4';
+
+export type KwzSoundMeta = {
+  [k in KwzSoundTrack]?: {
+    offset: number, length: number
+  }
+};
+
+export class KwzParser extends DataStream {
+
+  static type: string = 'KWZ';
+  static sampleRate: number = 16364;
+  static width: number = 320;
+  static height: number = 240;
+  static globalPalette = [
+    PALETTE.BLACK,
+    PALETTE.WHITE,
+    PALETTE.RED,
+    PALETTE.YELLOW,
+    PALETTE.GREEN,
+    PALETTE.BLUE,
+    PALETTE.NONE,
+  ];
+
+  private sections: KwzSectionMap;
+  private layers: Uint16Array[];
+  private prevDecodedFrame: number = null;
+  private frameMeta: KwzFrameMeta[];
+  private frameOffsets: Uint32Array;
+  private bitIndex: number = 0;
+  private bitValue: number = 0;
+
+  public palette = PALETTE;
+  public meta: KwzMeta;
+  public soundMeta: KwzSoundMeta;
+  public frameCount: number;
+  public frameSpeed: number;
+  public bgmSpeed: number;
+  public framerate: number;
+  public bgmrate: number;
+  public thumbFrameIndex: number;
+
+  constructor(arrayBuffer: ArrayBuffer) {
     super(arrayBuffer);
-    this.type = "KWZ";
-    this._layers = [
+    this.layers = [
       new Uint16Array(320 * 240),
       new Uint16Array(320 * 240),
       new Uint16Array(320 * 240),
     ];
-    this._bitIndex = 0;
-    this._bitValue = 0;
+    this.bitIndex = 0;
+    this.bitValue = 0;
     this.load();
   }
 
   load() {
     this.seek(0);
-    this.sections = {};
     let size = this.byteLength - 256;
     let offset = 0;
     let sectionCount = 0;
     // counting sections should mitigate against one of mrnbayoh's notehax exploits
     while ((offset < size) && (sectionCount < 6)) {
       this.seek(offset);
-      let sectionMagic = this.readUtf8(4).substring(0, 3);
+      let sectionMagic = <KwzSectionMagic>this.readUtf8(4).substring(0, 3);
       let sectionLength = this.readUint32();
       this.sections[sectionMagic] = {
         offset: offset,
@@ -126,29 +152,26 @@ export default class kwzParser extends dataStream {
       sectionCount += 1;
     }
 
-    this._decodeMeta();
-    this._decodeFrameMeta();
-    this._decodeSoundHeader();
-    this.sampleRate = 16364;
-    this.palette = PALETTE;
-    this._prevDecodedFrame = null;
+    this.decodeMeta();
+    this.decodeFrameMeta();
+    this.decodeSoundHeader();
   }
 
-  readBits(num) {
-    if (this._bitIndex + num > 16) {
+  private readBits(num: number) {
+    if (this.bitIndex + num > 16) {
       let nextBits = this.readUint16();
-      this._bitValue |= nextBits << (16 - this._bitIndex);
-      this._bitIndex -= 16;
+      this.bitValue |= nextBits << (16 - this.bitIndex);
+      this.bitIndex -= 16;
     }
     let mask = (1 << num) - 1;
-    let result = this._bitValue & mask;
-    this._bitValue >>= num;
-    this._bitIndex += num;
+    let result = this.bitValue & mask;
+    this.bitValue >>= num;
+    this.bitIndex += num;
     return result;
   }
 
-  _decodeMeta() {
-    this.seek(this.sections["KFH"].offset + 12);
+  private decodeMeta() {
+    this.seek(this.sections['KFH'].offset + 12);
     let creationTimestamp = new Date((this.readUint32() + 946684800) * 1000),
         modifiedTimestamp = new Date((this.readUint32() + 946684800) * 1000),
         appVersion = this.readUint32(),
@@ -171,8 +194,8 @@ export default class kwzParser extends dataStream {
     this.frameSpeed = frameSpeed;
     this.framerate = FRAMERATES[frameSpeed];
     this.meta = {
-      lock: flags & 0x1,
-      loop: (flags >> 1) & 0x01,
+      lock: (flags & 0x1) === 1,
+      loop: ((flags >> 1) & 0x01) === 1,
       frame_count: frameCount,
       frame_speed: frameSpeed,
       thumb_index: thumbIndex,
@@ -196,11 +219,10 @@ export default class kwzParser extends dataStream {
     };
   }
 
-  _decodeFrameMeta() {
-    this.frameMeta = [];
-    this.frameOffsets = [];
+  private decodeFrameMeta() {
+    this.frameOffsets = new Uint32Array(this.frameCount);
     this.seek(this.sections["KMI"].offset + 8);
-    offset = this.sections["KMC"].offset + 12;
+    let offset = this.sections["KMC"].offset + 12;
     for (let i = 0; i < this.frameCount; i++) {
       let frame = {
         flags: this.readUint32(),
@@ -219,12 +241,12 @@ export default class kwzParser extends dataStream {
         cameraFlag: this.readUint32(),
       };
       this.frameMeta.push(frame);
-      this.frameOffsets.push(offset);
+      this.frameOffsets[i] = offset;
       offset += frame.layerSize[0] + frame.layerSize[1] + frame.layerSize[2];
     }
   }
 
-  _decodeSoundHeader() {
+  private decodeSoundHeader() {
     let offset = this.sections["KSN"].offset + 8;
     this.seek(offset);
     let bgmSpeed = this.readUint32();
@@ -240,29 +262,29 @@ export default class kwzParser extends dataStream {
     };
   }
 
-  getDiffingFlag(frameIndex) {
+  private getDiffingFlag(frameIndex: number) {
     return ~(this.frameMeta[frameIndex].flags >> 4) & 0x07;
   }
 
-  getLayerDepths(frameIndex) {
+  public getLayerDepths(frameIndex: number) {
     return this.frameMeta[frameIndex].layerDepth;
   }
 
   // sort layer indices sorted by depth, drom bottom to top
-  getLayerOrder(frameIndex) {
+  public getLayerOrder(frameIndex: number) {
     const depths = this.getLayerDepths(frameIndex);
     return [2, 1, 0].sort((a, b) => depths[b] - depths[a]);
   }
 
-  decodeFrame(frameIndex, diffingFlag=0x7, isPrevFrame=false) {
+  public decodeFrame(frameIndex: number, diffingFlag: number=0x7, isPrevFrame: boolean=false) {
     // if this frame is being decoded as a prev frame, then we only want to decode the layers necessary
     if (isPrevFrame)
       diffingFlag &= this.getDiffingFlag(frameIndex + 1);
     // the prevDecodedFrame check is an optimisation for decoding frames in full sequence
-    if ((frameIndex !== 0) && (this._prevDecodedFrame !== frameIndex - 1) && (diffingFlag))
+    if ((frameIndex !== 0) && (this.prevDecodedFrame !== frameIndex - 1) && (diffingFlag))
       this.decodeFrame(frameIndex - 1, diffingFlag=diffingFlag, isPrevFrame=true);
 
-    let meta = this.frameMeta[frameIndex];
+    const meta = this.frameMeta[frameIndex];
     let offset = this.frameOffsets[frameIndex];
 
     for (let layerIndex = 0; layerIndex < 3; layerIndex++) {
@@ -273,10 +295,10 @@ export default class kwzParser extends dataStream {
       // if the layer is 38 bytes then it hasn't changed at all since the previous frame, so we can skip it
       if (layerSize === 38) continue;
 
-      if ((diffingFlag >> layerIndex) & 0x1 === 0) continue;
+      if (((diffingFlag >> layerIndex) & 0x1) === 0) continue;
 
-      this._bitIndex = 16;
-      this._bitValue = 0;
+      this.bitIndex = 16;
+      this.bitValue = 0;
       let skip = 0;
 
       for (let tileOffsetY = 0; tileOffsetY < 240; tileOffsetY += 128) {
@@ -295,13 +317,13 @@ export default class kwzParser extends dataStream {
               }
 
               let pixelOffset = y * 320 + x;
-              let pixelBuffer = this._layers[layerIndex];
+              let pixelBuffer = this.layers[layerIndex];
 
               let type = this.readBits(3);
 
               if (type == 0) {
-                let lineIndex = TABLE_1[this.readBits(5)];
-                let pixels = LINE_TABLE.subarray(lineIndex * 8, lineIndex * 8 + 8);
+                let lineIndex = KWZ_TABLE_1[this.readBits(5)];
+                let pixels = KWZ_LINE_TABLE.subarray(lineIndex * 8, lineIndex * 8 + 8);
                 pixelBuffer.set(pixels, pixelOffset);
                 pixelBuffer.set(pixels, pixelOffset + 320);
                 pixelBuffer.set(pixels, pixelOffset + 640);
@@ -314,7 +336,7 @@ export default class kwzParser extends dataStream {
 
               else if (type == 1) {
                 let lineIndex = this.readBits(13);
-                let pixels = LINE_TABLE.subarray(lineIndex * 8, lineIndex * 8 + 8);
+                let pixels = KWZ_LINE_TABLE.subarray(lineIndex * 8, lineIndex * 8 + 8);
                 pixelBuffer.set(pixels, pixelOffset);
                 pixelBuffer.set(pixels, pixelOffset + 320);
                 pixelBuffer.set(pixels, pixelOffset + 640);
@@ -327,10 +349,10 @@ export default class kwzParser extends dataStream {
               
               else if (type == 2) {
                 let lineValue = this.readBits(5);
-                let lineIndexA = TABLE_1[lineValue];
-                let lineIndexB = TABLE_2[lineValue];
-                let a = LINE_TABLE.subarray(lineIndexA * 8, lineIndexA * 8 + 8);
-                let b = LINE_TABLE.subarray(lineIndexB * 8, lineIndexB * 8 + 8);
+                let lineIndexA = KWZ_TABLE_1[lineValue];
+                let lineIndexB = KWZ_TABLE_2[lineValue];
+                let a = KWZ_LINE_TABLE.subarray(lineIndexA * 8, lineIndexA * 8 + 8);
+                let b = KWZ_LINE_TABLE.subarray(lineIndexB * 8, lineIndexB * 8 + 8);
                 pixelBuffer.set(a, pixelOffset);
                 pixelBuffer.set(b, pixelOffset + 320);
                 pixelBuffer.set(a, pixelOffset + 640);
@@ -343,9 +365,9 @@ export default class kwzParser extends dataStream {
               
               else if (type == 3) {
                 let lineIndexA = this.readBits(13);
-                let lineIndexB = TABLE_3[lineIndexA];
-                let a = LINE_TABLE.subarray(lineIndexA * 8, lineIndexA * 8 + 8);
-                let b = LINE_TABLE.subarray(lineIndexB * 8, lineIndexB * 8 + 8);
+                let lineIndexB = KWZ_TABLE_3[lineIndexA];
+                let a = KWZ_LINE_TABLE.subarray(lineIndexA * 8, lineIndexA * 8 + 8);
+                let b = KWZ_LINE_TABLE.subarray(lineIndexB * 8, lineIndexB * 8 + 8);
                 pixelBuffer.set(a, pixelOffset);
                 pixelBuffer.set(b, pixelOffset + 320);
                 pixelBuffer.set(a, pixelOffset + 640);
@@ -361,11 +383,11 @@ export default class kwzParser extends dataStream {
                 for (let line = 0; line < 8; line++) {
                   let lineIndex = 0;
                   if (mask & (1 << line)) {
-                    lineIndex = TABLE_1[this.readBits(5)];
+                    lineIndex = KWZ_TABLE_1[this.readBits(5)];
                   } else {
                     lineIndex = this.readBits(13);
                   }
-                  let pixels = LINE_TABLE.subarray(lineIndex * 8, lineIndex * 8 + 8);
+                  let pixels = KWZ_LINE_TABLE.subarray(lineIndex * 8, lineIndex * 8 + 8);
                   pixelBuffer.set(pixels, pixelOffset + line * 320);
                 }
               }
@@ -384,16 +406,16 @@ export default class kwzParser extends dataStream {
                 let lineIndexB = 0;
 
                 if (useTable) {
-                  lineIndexA = TABLE_1[this.readBits(5)];
-                  lineIndexB = TABLE_1[this.readBits(5)];
+                  lineIndexA = KWZ_TABLE_1[this.readBits(5)];
+                  lineIndexB = KWZ_TABLE_1[this.readBits(5)];
                   pattern = (pattern + 1) % 4;
                 } else {
                   lineIndexA = this.readBits(13);
                   lineIndexB = this.readBits(13);
                 }
 
-                let a = LINE_TABLE.subarray(lineIndexA * 8, lineIndexA * 8 + 8);
-                let b = LINE_TABLE.subarray(lineIndexB * 8, lineIndexB * 8 + 8);
+                let a = KWZ_LINE_TABLE.subarray(lineIndexA * 8, lineIndexA * 8 + 8);
+                let b = KWZ_LINE_TABLE.subarray(lineIndexB * 8, lineIndexB * 8 + 8);
 
                 if (pattern == 0) {
                   pixelBuffer.set(a, pixelOffset);
@@ -439,34 +461,43 @@ export default class kwzParser extends dataStream {
       }
     }
 
-    this._prevDecodedFrame = frameIndex;
+    this.prevDecodedFrame = frameIndex;
     // return this._layers;
     return [
-      new Uint8Array(this._layers[0].buffer),
-      new Uint8Array(this._layers[1].buffer),
-      new Uint8Array(this._layers[2].buffer),
+      new Uint8Array(this.layers[0].buffer),
+      new Uint8Array(this.layers[1].buffer),
+      new Uint8Array(this.layers[2].buffer),
     ];
   }
 
-  getFramePalette(frameIndex) {
+  public getFramePalette(frameIndex: number) {
     let flags = this.frameMeta[frameIndex].flags;
+    let paletteMap = [
+      this.palette.WHITE,
+      this.palette.BLACK,
+      this.palette.RED,
+      this.palette.YELLOW,
+      this.palette.GREEN,
+      this.palette.BLUE,
+      this.palette.NONE
+    ];
     return [
-      this.palette[PALETTE_INDEX_MAP[flags & 0xF]], // paper color
-      this.palette[PALETTE_INDEX_MAP[(flags >> 8) & 0xF]], // layer A color 1
-      this.palette[PALETTE_INDEX_MAP[(flags >> 12) & 0xF]], // layer A color 2
-      this.palette[PALETTE_INDEX_MAP[(flags >> 16) & 0xF]], // layer B color 1
-      this.palette[PALETTE_INDEX_MAP[(flags >> 20) & 0xF]], // layer B color 2
-      this.palette[PALETTE_INDEX_MAP[(flags >> 24) & 0xF]], // layer C color 1
-      this.palette[PALETTE_INDEX_MAP[(flags >> 28) & 0xF]], // layer C color 2
+      paletteMap[flags & 0xF], // paper color
+      paletteMap[(flags >> 8) & 0xF], // layer A color 1
+      paletteMap[(flags >> 12) & 0xF], // layer A color 2
+      paletteMap[(flags >> 16) & 0xF], // layer B color 1
+      paletteMap[(flags >> 20) & 0xF], // layer B color 2
+      paletteMap[(flags >> 24) & 0xF], // layer C color 1
+      paletteMap[(flags >> 28) & 0xF], // layer C color 2
     ];
   }
 
   // retuns an uint8 array where each item is a pixel's palette index
-  getLayerPixels(frameIndex, layerIndex) {
-    if (this._prevDecodedFrame !== frameIndex) {
+  public getLayerPixels(frameIndex: number, layerIndex: number) {
+    if (this.prevDecodedFrame !== frameIndex) {
       this.decodeFrame(frameIndex);
     }
-    const layer = this._layers[layerIndex];
+    const layer = this.layers[layerIndex];
     const image = new Uint8Array((320 * 240));
     const paletteOffset = layerIndex * 2 + 1;
     for (let index = 0; index < layer.length; index++) {
@@ -481,11 +512,11 @@ export default class kwzParser extends dataStream {
   }
 
   // retuns an uint8 array where each item is a pixel's palette index
-  getFramePixels(frameIndex, useGlobalPalette = false) {
-    let paletteMap;
+  public getFramePixels(frameIndex: number, useGlobalPalette: boolean = false) {
+    let paletteMap: number[];
     if (useGlobalPalette) {
       const framePalette = this.getFramePalette(frameIndex);
-      paletteMap = framePalette.map(color => kwzParser.globalPalette.indexOf(color));
+      paletteMap = framePalette.map(color => KwzParser.globalPalette.indexOf(color));
     } else {
       paletteMap = [0, 1, 2, 3, 4, 5, 6];
     }
@@ -505,7 +536,7 @@ export default class kwzParser extends dataStream {
     return image;
   }
   
-  decodeSoundFlags() {
+  public decodeSoundFlags() {
     return this.frameMeta.map(frame => {
       let soundFlags = frame.soundFlags;
       return [
@@ -517,12 +548,13 @@ export default class kwzParser extends dataStream {
     });
   }
 
-  hasAudioTrack(trackIndex) {
-    let id = ["bgm", "se1", "se2", "se3", "se4"][trackIndex];
-    return this.soundMeta[id].length > 0
+  public hasAudioTrack(trackIndex: number) {
+    const keys: KwzSoundTrack[] = ['bgm', 'se1', 'se2', 'se3', 'se4'];
+    const id = keys[trackIndex];
+    return this.soundMeta[id].length > 0;
   }
 
-  decodeAudio(track) {
+  public decodeAudio(track: KwzSoundTrack) {
     let meta = this.soundMeta[track];
     let output = new Int16Array(16364 * 60);
     let outputOffset = 0;
@@ -530,7 +562,7 @@ export default class kwzParser extends dataStream {
     // initial decoder state
     var prevDiff = 0;
     var prevStepIndex = 40;
-    var sample, diff, stepIndex;
+    var sample: number, diff: number, stepIndex: number;
     // loop through each byte in the raw adpcm data
     for (let index = 0; index < adpcm.length; index++) {
       var byte = adpcm[index];
@@ -569,15 +601,3 @@ export default class kwzParser extends dataStream {
     return output.slice(0, outputOffset);
   }
 }
-
-kwzParser.width = 320;
-kwzParser.height = 240;
-kwzParser.globalPalette = [
-  PALETTE.BLACK,
-  PALETTE.WHITE,
-  PALETTE.RED,
-  PALETTE.YELLOW,
-  PALETTE.GREEN,
-  PALETTE.BLUE,
-  PALETTE.NONE,
-];

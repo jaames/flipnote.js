@@ -22,27 +22,25 @@
  *  and to Hatena for providing the Flipnote Hatena online service, both of which inspired so many c:
 */
 
-import dataStream from "../utils/dataStream";
+import { DataStream } from '../utils/dataStream';
 
 import {
   ADPCM_INDEX_TABLE_4,
   ADPCM_SAMPLE_TABLE_4
-} from "../utils/adpcm";
+} from './adpcm';
 
-// internal framerate value -> FPS table
-const FRAMERATES = {
-  1: 0.5,
-  2: 1,
-  3: 2,
-  4: 4,
-  5: 6,
-  6: 12,
-  7: 20,
-  8: 30,
-};
-
-const WIDTH = 256;
-const HEIGHT = 192;
+// internal frame speed value -> FPS table
+const FRAMERATES = [
+  null,
+  0.5,
+  1,
+  2,
+  4,
+  6,
+  12,
+  20,
+  30,
+];
 
 const PALETTE = {
   WHITE: [0xff, 0xff, 0xff],
@@ -51,60 +49,107 @@ const PALETTE = {
   BLUE:  [0x0a, 0x39, 0xff],
 };
 
-export default class ppmParser extends dataStream {
-  /**
-  * Create a ppmDecoder instance
-  * @param {ArrayBuffer} arrayBuffer - data to read from
-  */
-  constructor(arrayBuffer) {
+export interface PppMeta {
+  lock: boolean;
+  loop: boolean;
+  frame_count: number;
+  frame_speed: number;
+  bgm_speed: number;
+  thumb_index: number;
+  timestamp: Date;
+  spinoff: boolean;
+  root: {
+    filename: string;
+    username: string;
+    fsid: string;
+  },
+  parent: {
+    filename: string;
+    username: string;
+    fsid: string;
+  },
+  current: {
+    filename: string;
+    username: string;
+    fsid: string;
+  },
+};
+
+export type PpmSoundTrack = 'bgm' | 'se1' | 'se2' | 'se3';
+
+export type PpmSoundMeta = {
+  [k in PpmSoundTrack]?: {
+    offset: number, length: number
+  }
+};
+
+export class PpmParser extends DataStream {
+
+  static type: string = 'PPM';
+  static sampleRate: number = 8192;
+  static width: number = 256;
+  static height: number = 192;
+  static globalPalette = [
+    PALETTE.BLACK,
+    PALETTE.WHITE,
+    PALETTE.RED,
+    PALETTE.BLUE
+  ];
+
+  public palette = PALETTE;
+  public version: number;
+  public meta: PppMeta;
+  public soundMeta: PpmSoundMeta;
+  public frameCount: number;
+  public frameSpeed: number;
+  public bgmSpeed: number;
+  public framerate: number;
+  public bgmrate: number;
+  public thumbFrameIndex: number;
+
+  private layers: Uint8Array[];
+  private prevLayers: Uint8Array[];
+  private prevDecodedFrame: number = null;
+  private frameDataLength: number;
+  private soundDataLength: number;
+  private frameOffsets: Uint32Array;
+
+  constructor(arrayBuffer: ArrayBuffer) {
     super(arrayBuffer);
-    this.type = "PPM";
-    this._decodeHeader();
-    this._decodeAnimationHeader();
-    this._decodeSoundHeader();
-    this._decodeMeta();
-    this.sampleRate = 8192;
-    this.palette = PALETTE;
+    this.decodeHeader();
+    this.decodeAnimationHeader();
+    this.decodeSoundHeader();
+    this.decodeMeta();
     // create image buffers
-     this._layers = [
-      new Uint8Array(WIDTH * HEIGHT),
-      new Uint8Array(WIDTH * HEIGHT)
+    this.layers = [
+      new Uint8Array(PpmParser.width * PpmParser.height),
+      new Uint8Array(PpmParser.width * PpmParser.height)
     ];
-    this._prevLayers = [
-      new Uint8Array(WIDTH * HEIGHT),
-      new Uint8Array(WIDTH * HEIGHT)
+    this.prevLayers = [
+      new Uint8Array(PpmParser.width * PpmParser.height),
+      new Uint8Array(PpmParser.width * PpmParser.height)
     ];
-    this._prevDecodedFrame = null;
+    this.prevDecodedFrame = null;
   }
 
-  static validateFSID(fsid) {
+  static validateFSID(fsid: string) {
     return /[0159]{1}[0-9A-F]{6}0[0-9A-F]{8}/.test(fsid);
   }
 
-  static validateFilename(filename) {
+  static validateFilename(filename: string) {
     return /[0-9A-F]{6}_[0-9A-F]{13}_[0-9]{3}/.test(filename);
   }
 
-  /**
-  * Read a packed filename
-  * @returns {string}
-  * @access protected
-  */
-  readFilename() {
+  private readFilename() {
     return [
       this.readHex(3),
       this.readUtf8(13),
-      this.readUint16().toString().padStart(3, "0")
-    ].join("_");
+      this.readUint16().toString().padStart(3, '0')
+    ].join('_');
   }
 
-  /**
-  * Unpack the line encoding flags for all 192 lines in a layer
-  * @returns {array}
-  * @access protected
-  */
-  readLineEncoding() {
-    var unpacked = new Uint8Array(HEIGHT);
+  private readLineEncoding() {
+    var unpacked = new Uint8Array(PpmParser.height);
     for (var byteOffset = 0; byteOffset < 48; byteOffset ++) {
       var byte = this.readUint8();
       // each line's encoding type is stored as a 2-bit value
@@ -115,18 +160,18 @@ export default class ppmParser extends dataStream {
     return unpacked;
   }
 
-  _decodeHeader() {
+  private decodeHeader() {
     this.seek(0);
     // decode header
     // https://github.com/pbsds/hatena-server/wiki/PPM-format#file-header
     let magic = this.readUint32();
-    this._frameDataLength = this.readUint32();
-    this._soundDataLength = this.readUint32();
+    this.frameDataLength = this.readUint32();
+    this.soundDataLength = this.readUint32();
     this.frameCount = this.readUint16() + 1;
     this.version = this.readUint16();
   }
 
-  _decodeMeta() {
+  private decodeMeta() {
     // https://github.com/pbsds/hatena-server/wiki/PPM-format#file-header
     this.seek(0x10);
     var lock = this.readUint16(),
@@ -145,8 +190,8 @@ export default class ppmParser extends dataStream {
     var flags = this.readUint16();
     this.thumbFrameIndex = thumbIndex;
     this.meta = {
-      lock: lock,
-      loop: flags >> 1 & 0x01,
+      lock: lock === 1,
+      loop: (flags >> 1 & 0x01) === 1,
       frame_count: this.frameCount,
       frame_speed: this.frameSpeed,
       bgm_speed: this.bgmSpeed,
@@ -171,7 +216,7 @@ export default class ppmParser extends dataStream {
     };
   }
 
-  _decodeAnimationHeader() {
+  private decodeAnimationHeader() {
     // jump to the start of the animation data section
     // https://github.com/pbsds/hatena-server/wiki/PPM-format#animation-data-section
     this.seek(0x06A0);
@@ -179,15 +224,15 @@ export default class ppmParser extends dataStream {
     // skip padding + flags
     this.seek(0x06A8);
     // read frame offsets and build them into a table
-    this._frameOffsets = new Uint32Array(offsetTableLength / 4).map(value => {
+    this.frameOffsets = new Uint32Array(offsetTableLength / 4).map(value => {
       return 0x06A8 + offsetTableLength + this.readUint32();
     });
   }
 
-  _decodeSoundHeader() {
+  private decodeSoundHeader() {
     // https://github.com/pbsds/hatena-server/wiki/PPM-format#sound-data-section
     // offset = frame data offset + frame data length + sound effect flags
-    var offset = 0x06A0 + this._frameDataLength + this.frameCount;
+    var offset = 0x06A0 + this.frameDataLength + this.frameCount;
     // account for multiple-of-4 padding
     if (offset % 2 != 0) offset += 4 - (offset % 4);
     this.seek(offset);
@@ -201,31 +246,21 @@ export default class ppmParser extends dataStream {
     this.framerate = FRAMERATES[this.frameSpeed];
     this.bgmrate = FRAMERATES[this.bgmSpeed];
     this.soundMeta = {
-      "bgm": {offset: offset,           length: bgmLen},
-      "se1": {offset: offset += bgmLen, length: se1Len},
-      "se2": {offset: offset += se1Len, length: se2Len},
-      "se3": {offset: offset += se2Len, length: se3Len},
+      bgm: {offset: offset,           length: bgmLen},
+      se1: {offset: offset += bgmLen, length: se1Len},
+      se2: {offset: offset += se1Len, length: se2Len},
+      se3: {offset: offset += se2Len, length: se3Len},
     };
   }
 
-  /**
-  * Check whether or not a given frame is based on the previous one
-  * @param {number} index - zero-based frame index 
-  * @returns {boolean}
-  */
-  isNewFrame(index) {
-    this.seek(this._frameOffsets[index]);
+  public isNewFrame(frameIndex: number) {
+    this.seek(this.frameOffsets[frameIndex]);
     var header = this.readUint8();
     return (header >> 7) & 0x1;
   }
 
-  /**
-  * Get the color palette for a given frame
-  * @param {number} index - zero-based frame index 
-  * @returns {array} rgba palette in order of paper, layer1, layer2
-  */
-  getFramePalette(index) {
-    this.seek(this._frameOffsets[index]);
+  public getFramePalette(frameIndex: number) {
+    this.seek(this.frameOffsets[frameIndex]);
     const palette = this.palette;
     var header = this.readUint8();
     var paperColor = header & 0x1;
@@ -242,44 +277,39 @@ export default class ppmParser extends dataStream {
     ];
   }
 
-  /**
-  * Decode a frame
-  * @param {number} index - zero-based frame index 
-  * @returns {array} - 2 uint8 arrays representing each layer
-  * */
-  decodeFrame(index) {
-    if ((index !== 0) && (this._prevDecodedFrame !== index - 1) && (!this.isNewFrame(index)))
-      this.decodeFrame(index - 1);
+  public decodeFrame(frameIndex: number) {
+    if ((frameIndex !== 0) && (this.prevDecodedFrame !== frameIndex - 1) && (!this.isNewFrame(frameIndex)))
+      this.decodeFrame(frameIndex - 1);
     // https://github.com/pbsds/hatena-server/wiki/PPM-format#animation-frame
-    this.seek(this._frameOffsets[index]);
-    var header = this.readUint8();
-    var isNewFrame = (header >> 7) & 0x1;
-    var isTranslated = (header >> 5) & 0x3;
-    var translateX = 0;
-    var translateY = 0;
+    this.seek(this.frameOffsets[frameIndex]);
+    const header = this.readUint8();
+    const isNewFrame = (header >> 7) & 0x1;
+    const isTranslated = (header >> 5) & 0x3;
+    let translateX = 0;
+    let translateY = 0;
     // copy the current layer buffers to the previous ones
-    this._prevLayers[0].set(this._layers[0]);
-    this._prevLayers[1].set(this._layers[1]);
-    this._prevDecodedFrame = index;
+    this.prevLayers[0].set(this.layers[0]);
+    this.prevLayers[1].set(this.layers[1]);
+    this.prevDecodedFrame = frameIndex;
     // reset current layer buffers
-    this._layers[0].fill(0);
-    this._layers[1].fill(0);
+    this.layers[0].fill(0);
+    this.layers[1].fill(0);
 
     if (isTranslated) {
       translateX = this.readInt8();
       translateY = this.readInt8();
     }
 
-    var layerEncoding = [
+    const layerEncoding = [
       this.readLineEncoding(),
       this.readLineEncoding(),
     ];
      // start decoding layer bitmaps
-    for (var layer = 0; layer < 2; layer++) {
-      var layerBitmap = this._layers[layer];
-      for (var line = 0; line < HEIGHT; line++) {
-        var chunkOffset = line * WIDTH;
-        var lineType = layerEncoding[layer][line];
+    for (let layer = 0; layer < 2; layer++) {
+      const layerBitmap = this.layers[layer];
+      for (let line = 0; line < PpmParser.height; line++) {
+        const lineType = layerEncoding[layer][line];
+        let chunkOffset = line * PpmParser.width;
         switch(lineType) {
           // line type 0 = blank line, decode nothing
           case 0:
@@ -287,17 +317,17 @@ export default class ppmParser extends dataStream {
           // line types 1 + 2 = compressed bitmap line
           case 1:
           case 2:
-            var lineHeader = this.readUint32(false);
+            let lineHeader = this.readUint32(false);
             // line type 2 starts as an inverted line
-            if (lineType == 2) layerBitmap.fill(0xFF, chunkOffset, chunkOffset + WIDTH);
+            if (lineType == 2) layerBitmap.fill(0xFF, chunkOffset, chunkOffset + PpmParser.width);
             // loop through each bit in the line header
             while (lineHeader & 0xFFFFFFFF) {
               // if the bit is set, this 8-pix wide chunk is stored
               // else we can just leave it blank and move on to the next chunk
               if (lineHeader & 0x80000000) {
-                var chunk = this.readUint8();
+                const chunk = this.readUint8();
                 // unpack chunk bits
-                for (var pixel = 0; pixel < 8; pixel++) {
+                for (let pixel = 0; pixel < 8; pixel++) {
                   layerBitmap[chunkOffset + pixel] = (chunk >> pixel & 0x1) ? 0xFF : 0x00;
                 }
               }
@@ -308,9 +338,9 @@ export default class ppmParser extends dataStream {
             break;
           // line type 3 = raw bitmap line
           case 3:
-            while(chunkOffset < (line + 1) * WIDTH) {
-              var chunk = this.readUint8();
-              for (var pixel = 0; pixel < 8; pixel++) {
+            while(chunkOffset < (line + 1) * PpmParser.width) {
+              const chunk = this.readUint8();
+              for (let pixel = 0; pixel < 8; pixel++) {
                 layerBitmap[chunkOffset + pixel] = (chunk >> pixel & 0x1) ? 0xFF : 0x00;
               }
               chunkOffset += 8;
@@ -321,37 +351,37 @@ export default class ppmParser extends dataStream {
     }
     // if the current frame is based on changes from the preivous one, merge them by XORing their values
     if (!isNewFrame) {
-      var dest, src;
+      let dest: number, src: number;
       // loop through each line
-      for (var y = 0; y < HEIGHT; y++) {
+      for (var y = 0; y < PpmParser.height; y++) {
         // skip to next line if this one falls off the top edge of the screen
         if (y - translateY < 0) continue;
         // stop once the bottom screen edge has been reached
-        if (y - translateY >= HEIGHT) break;
+        if (y - translateY >= PpmParser.height) break;
         // loop through each pixel in the line
-        for (var x = 0; x < WIDTH; x++) {
+        for (var x = 0; x < PpmParser.width; x++) {
           // skip to the next pixel if this one falls off the left edge of the screen
           if (x - translateX < 0) continue;
           // stop diffing this line once the right screen edge has been reached
-          if (x - translateX >= WIDTH) break;
-          dest = x + y * WIDTH;
-          src = dest - (translateX + translateY * WIDTH);
+          if (x - translateX >= PpmParser.width) break;
+          dest = x + y * PpmParser.width;
+          src = dest - (translateX + translateY * PpmParser.width);
           // diff pixels with a binary XOR
-          this._layers[0][dest] ^= this._prevLayers[0][src];
-          this._layers[1][dest] ^= this._prevLayers[1][src];
+          this.layers[0][dest] ^= this.prevLayers[0][src];
+          this.layers[1][dest] ^= this.prevLayers[1][src];
         }
       }
     }
-    return this._layers;
+    return this.layers;
   }
 
   // retuns an uint8 array where each item is a pixel's palette index
-  getLayerPixels(frameIndex, layerIndex) {
-    if (this._prevDecodedFrame !== frameIndex) {
+  public getLayerPixels(frameIndex: number, layerIndex: number) {
+    if (this.prevDecodedFrame !== frameIndex) {
       this.decodeFrame(frameIndex);
     }
-    const layer = this._layers[layerIndex];
-    const image = new Uint8Array((256 * 192));
+    const layer = this.layers[layerIndex];
+    const image = new Uint8Array(PpmParser.width * PpmParser.height);
     const layerColor = layerIndex + 1
     for (let pixel = 0; pixel < image.length; pixel++) {
       if (layer[pixel] !== 0) {
@@ -362,16 +392,16 @@ export default class ppmParser extends dataStream {
   }
 
   // retuns an uint8 array where each item is a pixel's palette index
-  getFramePixels(frameIndex, useGlobalPalette = false) {
-    let paletteMap;
+  public getFramePixels(frameIndex: number, useGlobalPalette: boolean = false) {
+    let paletteMap: number[];
     if (useGlobalPalette) {
       const framePalette = this.getFramePalette(frameIndex);
-      paletteMap = framePalette.map(color => ppmParser.globalPalette.indexOf(color));
+      paletteMap = framePalette.map(color => PpmParser.globalPalette.indexOf(color));
     } else {
       paletteMap = [0, 1, 2];
     }
     const layers = this.decodeFrame(frameIndex);
-    const image = new Uint8Array((256 * 192));
+    const image = new Uint8Array(PpmParser.width * PpmParser.height);
     image.fill(paletteMap[0]);
     for (let pixel = 0; pixel < image.length; pixel++) {
       let a = layers[0][pixel];
@@ -382,17 +412,13 @@ export default class ppmParser extends dataStream {
     return image;
   }
 
-  hasAudioTrack(trackIndex) {
-    let id = ["bgm", "se1", "se2", "se3"][trackIndex];
+  public hasAudioTrack(trackIndex: number) {
+    const keys: PpmSoundTrack[] = ['bgm', 'se1', 'se2', 'se3'];
+    const id = keys[trackIndex];
     return this.soundMeta[id].length > 0;
   }
 
-  /**
-  * Decode an audio track to 32-bit adpcm
-  * @param {string} track - track name, "bgm" | "se1" | "se2" | "se3"
-  * @returns {Int16Array}
-  */
-  decodeAudio(track) {
+  public decodeAudio(track: PpmSoundTrack) {
     let meta = this.soundMeta[track];
     let adpcm = new Uint8Array(this.buffer, meta.offset, meta.length);
     let output = new Int16Array(adpcm.length * 2);
@@ -400,7 +426,7 @@ export default class ppmParser extends dataStream {
     // initial decoder state
     var prevDiff = 0;
     var prevStepIndex = 0;
-    var sample, diff, stepIndex;
+    var sample: number, diff: number, stepIndex: number;
     // loop through each byte in the raw adpcm data
     for (let index = 0; index < adpcm.length; index++) {
       let byte = adpcm[index];
@@ -428,12 +454,8 @@ export default class ppmParser extends dataStream {
     return output;
   }
 
-  /**
-  * Decode the sound effect usage for each frame
-  * @returns {array}
-  */
-  decodeSoundFlags() {
-    this.seek(0x06A0 + this._frameDataLength);
+  public decodeSoundFlags() {
+    this.seek(0x06A0 + this.frameDataLength);
     // per msdn docs - the array map callback is only invoked for array indicies that have assigned values
     // so when we create an array, we need to fill it with something before we can map over it
     var arr = new Array(this.frameCount).fill([]);
@@ -443,12 +465,3 @@ export default class ppmParser extends dataStream {
     });
   }
 }
-
-ppmParser.width = WIDTH;
-ppmParser.height = HEIGHT;
-ppmParser.globalPalette = [
-  PALETTE.BLACK,
-  PALETTE.WHITE,
-  PALETTE.RED,
-  PALETTE.BLUE
-];

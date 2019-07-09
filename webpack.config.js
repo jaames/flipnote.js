@@ -14,7 +14,7 @@ module.exports = function(env, argv) {
     mode,
     context: path.resolve(__dirname, "src"),
     entry: [
-      "./flipnote.js",
+      "./flipnote.ts",
       devserver ? "./test.js" : false,
     ].filter(Boolean),
     output: {
@@ -29,7 +29,7 @@ module.exports = function(env, argv) {
       globalObject: "typeof self !== 'undefined' ? self : this",
     },
     resolve: {
-      extensions: [".js"],
+      extensions: [".ts", ".tsx", ".js", ".jsx"],
       alias: {
         "webgl": path.resolve(__dirname, "src/webgl/"),
         "parser": path.resolve(__dirname, "src/parser/"),
@@ -42,11 +42,16 @@ module.exports = function(env, argv) {
     module: {
       rules: [
         {
-          test: /\.js?$/,
+          test: /\.jsx?$/,
           exclude: /node_modules/,
           use: {
             loader: "babel-loader"
           }
+        },
+        {
+          test: /\.tsx?$/,
+          exclude: /node_modules/,
+          use: "ts-loader",
         },
         {
           test: /\.(glsl|frag|vert)?$/,
