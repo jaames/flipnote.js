@@ -104,14 +104,7 @@ export class KwzParser extends DataStream {
     PALETTE.NONE,
   ];
 
-  private sections: KwzSectionMap;
-  private layers: Uint16Array[];
-  private prevDecodedFrame: number = null;
-  private frameMeta: KwzFrameMeta[];
-  private frameOffsets: Uint32Array;
-  private bitIndex: number = 0;
-  private bitValue: number = 0;
-
+  public type: string = KwzParser.type;
   public palette = PALETTE;
   public meta: KwzMeta;
   public soundMeta: KwzSoundMeta;
@@ -122,12 +115,20 @@ export class KwzParser extends DataStream {
   public bgmrate: number;
   public thumbFrameIndex: number;
 
+  private sections: KwzSectionMap;
+  private layers: Uint16Array[];
+  private prevDecodedFrame: number = null;
+  private frameMeta: KwzFrameMeta[];
+  private frameOffsets: Uint32Array;
+  private bitIndex: number = 0;
+  private bitValue: number = 0;
+
   constructor(arrayBuffer: ArrayBuffer) {
     super(arrayBuffer);
     this.layers = [
-      new Uint16Array(320 * 240),
-      new Uint16Array(320 * 240),
-      new Uint16Array(320 * 240),
+      new Uint16Array(KwzParser.width * KwzParser.height),
+      new Uint16Array(KwzParser.width * KwzParser.height),
+      new Uint16Array(KwzParser.width * KwzParser.height),
     ];
     this.bitIndex = 0;
     this.bitValue = 0;
@@ -221,8 +222,8 @@ export class KwzParser extends DataStream {
 
   private decodeFrameMeta() {
     this.frameOffsets = new Uint32Array(this.frameCount);
-    this.seek(this.sections["KMI"].offset + 8);
-    let offset = this.sections["KMC"].offset + 12;
+    this.seek(this.sections['KMI'].offset + 8);
+    let offset = this.sections['KMC'].offset + 12;
     for (let i = 0; i < this.frameCount; i++) {
       let frame = {
         flags: this.readUint32(),
@@ -247,18 +248,18 @@ export class KwzParser extends DataStream {
   }
 
   private decodeSoundHeader() {
-    let offset = this.sections["KSN"].offset + 8;
+    let offset = this.sections['KSN'].offset + 8;
     this.seek(offset);
     let bgmSpeed = this.readUint32();
     this.bgmSpeed = bgmSpeed;
     this.bgmrate = FRAMERATES[bgmSpeed];
     let trackSizes = new Uint32Array(this.buffer, offset + 4, 20);
     this.soundMeta = {
-      "bgm": {offset: offset += 28,            length: trackSizes[0]},
-      "se1": {offset: offset += trackSizes[0], length: trackSizes[1]},
-      "se2": {offset: offset += trackSizes[1], length: trackSizes[2]},
-      "se3": {offset: offset += trackSizes[2], length: trackSizes[3]},
-      "se4": {offset: offset += trackSizes[3], length: trackSizes[4]},
+      'bgm': {offset: offset += 28,            length: trackSizes[0]},
+      'se1': {offset: offset += trackSizes[0], length: trackSizes[1]},
+      'se2': {offset: offset += trackSizes[1], length: trackSizes[2]},
+      'se3': {offset: offset += trackSizes[2], length: trackSizes[3]},
+      'se4': {offset: offset += trackSizes[3], length: trackSizes[4]},
     };
   }
 
@@ -301,22 +302,22 @@ export class KwzParser extends DataStream {
       this.bitValue = 0;
       let skip = 0;
 
-      for (let tileOffsetY = 0; tileOffsetY < 240; tileOffsetY += 128) {
-        for (let tileOffsetX = 0; tileOffsetX < 320; tileOffsetX += 128) {
+      for (let tileOffsetY = 0; tileOffsetY < KwzParser.height; tileOffsetY += 128) {
+        for (let tileOffsetX = 0; tileOffsetX < KwzParser.width; tileOffsetX += 128) {
           for (let subTileOffsetY = 0; subTileOffsetY < 128; subTileOffsetY += 8) {
             let y = tileOffsetY + subTileOffsetY;
-            if (y >= 240) break;
+            if (y >= KwzParser.height) break;
 
             for (let subTileOffsetX = 0; subTileOffsetX < 128; subTileOffsetX += 8) {
               let x = tileOffsetX + subTileOffsetX;
-              if (x >= 320) break;
+              if (x >= KwzParser.width) break;
 
               if (skip) {
                 skip -= 1;
                 continue;
               }
 
-              let pixelOffset = y * 320 + x;
+              let pixelOffset = y * KwzParser.width + x;
               let pixelBuffer = this.layers[layerIndex];
 
               let type = this.readBits(3);
@@ -498,7 +499,7 @@ export class KwzParser extends DataStream {
       this.decodeFrame(frameIndex);
     }
     const layer = this.layers[layerIndex];
-    const image = new Uint8Array((320 * 240));
+    const image = new Uint8Array((KwzParser.width * KwzParser.height));
     const paletteOffset = layerIndex * 2 + 1;
     for (let index = 0; index < layer.length; index++) {
       let pixel = layer[index];
@@ -520,7 +521,7 @@ export class KwzParser extends DataStream {
     } else {
       paletteMap = [0, 1, 2, 3, 4, 5, 6];
     }
-    const image = new Uint8Array((320 * 240));
+    const image = new Uint8Array((KwzParser.width * KwzParser.height));
     image.fill(paletteMap[0]);
     const layerOrder = this.getLayerOrder(frameIndex);
     layerOrder.forEach(layerIndex => {

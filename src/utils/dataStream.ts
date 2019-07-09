@@ -147,7 +147,7 @@ export class DataStream {
   public readUtf16(count: number) {
     var chars = new Uint16Array(this.data.buffer, this.cursor, count);
     this.cursor += chars.byteLength;
-    var str = "";
+    var str = '';
     for (let i = 0; i < chars.length; i++) {
       let char = chars[i];
       if (char == 0) break;

@@ -96,6 +96,7 @@ export class PpmParser extends DataStream {
     PALETTE.BLUE
   ];
 
+  public type: string = PpmParser.type;
   public palette = PALETTE;
   public version: number;
   public meta: PppMeta;
