@@ -1,12 +1,17 @@
 import flipnote from "./flipnote";
 
-let canvas = document.createElement("canvas");
-canvas.id = "canvas";
-document.body.appendChild(canvas);
+// let canvas = document.createElement("canvas");
+// canvas.id = "canvas";
+// document.body.appendChild(canvas);
 
-var player = new flipnote.player("#canvas", 640, 480);
-player.open("demo/bee.ppm");
+// var player = new flipnote.player("#canvas", 640, 480);
+// player.open("demo/bee.ppm");
 
-window.player = player;
+// window.player = player;
+
+flipnote.parse('demo/bee.ppm').then(note => {
+  window.test = note;
+  console.log(note);
+})
 
 export default flipnote;

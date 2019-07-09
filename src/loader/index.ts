@@ -1,6 +1,6 @@
-import urlLoader from "./urlLoader";
-import fileLoader from "./fileLoader";
-import arrayBufferLoader from "./arrayBufferLoader";
+import urlLoader from './urlLoader';
+import fileLoader from './fileLoader';
+import arrayBufferLoader from './arrayBufferLoader';
 
 const loaders = [
   urlLoader,
@@ -8,7 +8,7 @@ const loaders = [
   arrayBufferLoader
 ];
 
-export default function load(source) {
+export function loadSource(source: any) {
   return new Promise(function (resolve, reject) {
     for (var i = 0; i < loaders.length; i++) {
       var loader = loaders[i];

@@ -1,16 +1,16 @@
 export default {
 
-  matches: function(source) {
+  matches: function(source: any) {
     return (source instanceof File);
   },
 
-  load: function(source, resolve, reject) {
+  load: function(source: File, resolve: Function, reject: Function) {
     var reader = new FileReader();
     reader.onload = (event) => {
-      resolve(event.target.result)
+      resolve(reader.result);
     };
     reader.onerror = (event) => {
-      reject({type: "fileReadError"});
+      reject({type: 'fileReadError'});
     };
     reader.readAsArrayBuffer(source);
   }
