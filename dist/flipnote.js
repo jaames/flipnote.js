@@ -1,5 +1,5 @@
 /*!
- * flipnote.js v2.7.6
+ * flipnote.js v2.7.7
  * Browser-based playback of .ppm and .kwz animations from Flipnote Studio and Flipnote Studio 3D
  * 2018 James Daniel
  * github.com/jaames/flipnote.js
@@ -566,10 +566,10 @@ var LZWEncoder = exports.LZWEncoder = function () {
   }, {
     key: "cl_block",
     value: function cl_block(outs) {
-      cl_hash(HSIZE);
+      this.cl_hash(HSIZE);
       this.free_ent = this.ClearCode + 2;
       this.clear_flg = true;
-      output(this.ClearCode, outs);
+      this.output(this.ClearCode, outs);
     }
 
     // Reset code table
@@ -867,7 +867,7 @@ var _dataStream2 = _interopRequireDefault(_dataStream);
 function _interopRequireDefault(obj) { return obj && obj.__esModule ? obj : { default: obj }; }
 
 exports.default = {
-  version: "2.7.6",
+  version: "2.7.7",
   player: _player2.default,
   parser: _parser2.default,
   ppmParser: _ppm2.default,

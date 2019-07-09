@@ -74,10 +74,10 @@ export class LZWEncoder {
   // Clear out the hash table
   // table clear for block compress
   cl_block(outs) {
-    cl_hash(HSIZE);
+    this.cl_hash(HSIZE);
     this.free_ent = this.ClearCode + 2;
     this.clear_flg = true;
-    output(this.ClearCode, outs);
+    this.output(this.ClearCode, outs);
   }
 
   // Reset code table
