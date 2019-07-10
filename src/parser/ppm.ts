@@ -49,7 +49,7 @@ const PALETTE = {
   BLUE:  [0x0a, 0x39, 0xff],
 };
 
-export interface PppMeta {
+export interface PpmMeta {
   lock: boolean;
   loop: boolean;
   frame_count: number;
@@ -99,7 +99,7 @@ export class PpmParser extends DataStream {
   public type: string = PpmParser.type;
   public palette = PALETTE;
   public version: number;
-  public meta: PppMeta;
+  public meta: PpmMeta;
   public soundMeta: PpmSoundMeta;
   public frameCount: number;
   public frameSpeed: number;
@@ -276,6 +276,10 @@ export class PpmParser extends DataStream {
       pen[(header >> 1) & 0x3], // layer 1 color
       pen[(header >> 3) & 0x3], // layer 2 color
     ];
+  }
+
+  public getLayerOrder(frameIndex?: number) {
+    return [0, 1];
   }
 
   public decodeFrame(frameIndex: number) {

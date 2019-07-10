@@ -1,9 +1,11 @@
 import { DataStream } from './utils/dataStream';
-import { parse, KwzParser, PpmParser } from './parser'; 
+import { parseSource, KwzParser, PpmParser } from './parser'; 
+import { Player } from './player';
 
 export default {
   DataStream,
   KwzParser,
   PpmParser,
-  parse
+  parseSource,
+  Player,
 }

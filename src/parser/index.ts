@@ -1,8 +1,12 @@
 import { loadSource } from '../loader';
-import { PpmParser } from './ppm';
-import { KwzParser } from './kwz';
+import { PpmParser, PpmMeta } from './ppm';
+import { KwzParser, KwzMeta } from './kwz';
 
-export function parse(source: any) {
+export type Flipnote = PpmParser | KwzParser;
+
+export type FlipnoteMeta = PpmMeta | KwzMeta; 
+
+export function parseSource(source: any) {
   return loadSource(source).then((arrayBuffer: ArrayBuffer) => {
     // check the buffer's magic to identify which format it uses
     const data = new DataView(arrayBuffer, 0, 4);
