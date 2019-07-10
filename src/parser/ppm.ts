@@ -75,7 +75,7 @@ export interface PpmMeta {
   },
 };
 
-export type PpmSoundTrack = 'bgm' | 'se1' | 'se2' | 'se3';
+export type PpmSoundTrack = 'bgm' | 'se1' | 'se2' | 'se3' | 'se4';
 
 export type PpmSoundMeta = {
   [k in PpmSoundTrack]?: {
@@ -106,6 +106,7 @@ export class PpmParser extends DataStream {
   public bgmSpeed: number;
   public framerate: number;
   public bgmrate: number;
+  public sampleRate = PpmParser.sampleRate;
   public thumbFrameIndex: number;
 
   private layers: Uint8Array[];

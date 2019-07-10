@@ -1,6 +1,5 @@
 import { parseSource, Flipnote, FlipnoteMeta } from '../parser';
-// import canvas from '../webgl/canvas';
-// import audioTrack from './audio';
+import { AudioTrack } from './audio';
 import { WebglCanvas, FilterType, DisplayMode } from '../webgl/canvas';
 
 interface PlayerEvents {
@@ -25,6 +24,8 @@ export class Player {
   
   private isOpen: boolean = false;
   private events: PlayerEvents = {};
+  private audioTracks: AudioTrack[];
+  private seFlags: number[][];
   private frame: number = 0;
   private playbackLoop: number = null;
   private hasPlaybackStarted: boolean = false;
@@ -34,13 +35,13 @@ export class Player {
     el = ('string' == typeof el) ? <HTMLCanvasElement>document.querySelector(el) : el;
     this.canvas = new WebglCanvas(el, width, height);
     // this.customPalette = null;
-    // this.audioTracks = [
-    //   new audioTrack('se1'),
-    //   new audioTrack('se2'),
-    //   new audioTrack('se3'),
-    //   new audioTrack('se4'),
-    //   new audioTrack('bgm'),
-    // ];
+    this.audioTracks = [
+      new AudioTrack('se1'),
+      new AudioTrack('se2'),
+      new AudioTrack('se3'),
+      new AudioTrack('se4'),
+      new AudioTrack('bgm'),
+    ];
   }
 
   get currentFrame() {
@@ -61,25 +62,25 @@ export class Player {
     }
   }
 
-  // get volume() {
-  //   return this.audioTracks[3].audio.volume;
-  // }
+  get volume() {
+    return this.audioTracks[3].audio.volume;
+  }
 
-  // set volume(value) {
-  //   for (let i = 0; i < this.audioTracks.length; i++) {
-  //     this.audioTracks[i].audio.volume = value;
-  //   }
-  // }
+  set volume(value) {
+    for (let i = 0; i < this.audioTracks.length; i++) {
+      this.audioTracks[i].audio.volume = value;
+    }
+  }
 
-  // get muted() {
-  //   return this.audioTracks[3].audio.muted;
-  // }
+  get muted() {
+    return this.audioTracks[3].audio.muted;
+  }
 
-  // set muted(value) {
-  //   for (let i = 0; i < this.audioTracks.length; i++) {
-  //     this.audioTracks[i].audio.muted = value;
-  //   }
-  // }
+  set muted(value) {
+    for (let i = 0; i < this.audioTracks.length; i++) {
+      this.audioTracks[i].audio.muted = value;
+    }
+  }
 
   get duration() {
     return this.isOpen ? this.frameCount * (1 / this.framerate) : null;
@@ -119,18 +120,18 @@ export class Player {
     this.loop = note.meta.loop;
     this.paused = true;
     this.isOpen = true;
-    // this.audioTracks.forEach(track => {
-    //   track.sampleRate = note.sampleRate;
-    // });
+    this.audioTracks.forEach(track => {
+      track.sampleRate = note.sampleRate;
+    });
     // if (this.customPalette) {
     //   this.setPalette(this.customPalette);
     // }
-    // if (this.note.hasAudioTrack(1)) this.audioTracks[0].set(this.note.decodeAudio('se1'), 1);
-    // if (this.note.hasAudioTrack(2)) this.audioTracks[1].set(this.note.decodeAudio('se2'), 1);
-    // if (this.note.hasAudioTrack(3)) this.audioTracks[2].set(this.note.decodeAudio('se3'), 1);
-    // if (this.type === 'KWZ' && this.note.hasAudioTrack(4)) this.audioTracks[3].set(this.note.decodeAudio('se4'), 1);
-    // if (this.note.hasAudioTrack(0)) this.audioTracks[4].set(this.note.decodeAudio('bgm'), this._audiorate);
-    // this._seFlags = this.note.decodeSoundFlags();
+    if (this.note.hasAudioTrack(1)) this.audioTracks[0].set(this.note.decodeAudio('se1'), 1);
+    if (this.note.hasAudioTrack(2)) this.audioTracks[1].set(this.note.decodeAudio('se2'), 1);
+    if (this.note.hasAudioTrack(3)) this.audioTracks[2].set(this.note.decodeAudio('se3'), 1);
+    if (this.type === 'KWZ' && this.note.hasAudioTrack(4)) this.audioTracks[3].set(this.note.decodeAudio('se4'), 1);
+    if (this.note.hasAudioTrack(0)) this.audioTracks[4].set(this.note.decodeAudio('bgm'), this.audiorate);
+    this.seFlags = this.note.decodeSoundFlags();
     this.playbackLoop = null;
     this.hasPlaybackStarted = false;
     this.layerVisibility = {
@@ -143,9 +144,6 @@ export class Player {
     this.emit('load');
   }
 
-  /**
-  * Close the currently loaded Flipnote and clear the player canvas
-  */
   public close(): void {
     this.pause();
     this.note = null;
@@ -154,74 +152,58 @@ export class Player {
     this.loop = null;
     this.meta = null;
     this.frame = 0;
-    // for (let i = 0; i < this.audioTracks.length; i++) {
-    //   this.audioTracks[i].unset();
-    // }
+    for (let i = 0; i < this.audioTracks.length; i++) {
+      this.audioTracks[i].unset();
+    }
     // this._seFlags = null;
     this.hasPlaybackStarted = null;
     this.canvas.clear();
     // this._imgCanvas.clear();
   }
 
-  /**
-  * Destroy this player instance cleanly
-  */
   public destroy(): void {
     this.close();
     this.canvas.destroy();
     // this._imgCanvas.destroy();
   }
 
-  /**
-  * Play the sound effects for a given frame
-  * @param {number} index - zero-based frame index
-  * @access protected
-  */
-  // _playFrameSe(index) {
-  //   var flags = this._seFlags[index];
-  //   for (let i = 0; i < flags.length; i++) {
-  //     if (flags[i] && this.audioTracks[i].active) this.audioTracks[i].start();
-  //   }
-  // }
+  private playFrameSe(index: number) {
+    var flags = this.seFlags[index];
+    for (let i = 0; i < flags.length; i++) {
+      if (flags[i] && this.audioTracks[i].isActive) this.audioTracks[i].start();
+    }
+  }
 
-  /**
-  * Play the Flipnote BGM
-  * @access protected
-  */
-  // _playBgm() {
-  //   this.audioTracks[4].start(this.currentTime);
-  // }
+  private playBgm() {
+    this.audioTracks[4].start(this.currentTime);
+  }
 
-  /**
-  * Stop all audio tracks
-  * @access protected
-  */
-  // _stopAudio() {
-  //   for (let i = 0; i < this.audioTracks.length; i++) {
-  //     this.audioTracks[i].stop();
-  //   }
-  // }
+  private stopAudio() {
+    for (let i = 0; i < this.audioTracks.length; i++) {
+      this.audioTracks[i].stop();
+    }
+  }
 
   public play(): void {
     if ((!this.isOpen) || (!this.paused)) return null;
     this.paused = false;
     if ((!this.hasPlaybackStarted) || ((!this.loop) && (this.currentFrame == this.frameCount - 1))) this.frame = 0;
-    // this._playBgm();
+    this.playBgm();
     this.playbackLoop = window.setInterval(() => {
       if (this.paused) clearInterval(this.playbackLoop);
       // if the end of the flipnote has been reached
       if (this.currentFrame >= this.frameCount -1) {
-        // this._stopAudio();
+        this.stopAudio();
         if (this.loop) {
           this.firstFrame();
-          // this._playBgm(0);
+          this.playBgm();
           this.emit('playback:loop');
         } else {
           this.pause();
           this.emit('playback:end');
         }
       } else {
-        // this._playFrameSe(this.currentFrame);
+        this.playFrameSe(this.currentFrame);
         this.nextFrame();
       }
     }, 1000 / this.framerate);
@@ -234,7 +216,7 @@ export class Player {
     // break the playback loop
     window.clearInterval(this.playbackLoop);
     this.paused = true;
-    // this._stopAudio();
+    this.stopAudio();
     this.emit('playback:stop');
   }
 

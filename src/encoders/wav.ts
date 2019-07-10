@@ -1,22 +1,30 @@
-import dataStream from "../utils/dataStream";
+import { DataStream } from '../utils/dataStream';
 
-export default class WavEncoder {
-  constructor(sampleRate, channels=1, bitsPerSample=16) {
+export class WavEncoder {
+
+  public sampleRate: number;
+  public channels: number;
+  public bitsPerSample: number;
+
+  private header: DataStream;
+  private pcmData: Int16Array;
+
+  constructor(sampleRate: number, channels=1, bitsPerSample=16) {
     this.sampleRate = sampleRate;
     this.channels = channels;
     this.bitsPerSample = bitsPerSample;
     // Write WAV file header
     // Reference: http://www.topherlee.com/software/pcm-tut-wavformat.html
     let headerBuffer = new ArrayBuffer(44);
-    let header = new dataStream(headerBuffer);
-    // "RIFF" indent
-    header.writeUtf8("RIFF");
+    let header = new DataStream(headerBuffer);
+    // 'RIFF' indent
+    header.writeUtf8('RIFF');
     // filesize (set later)
     header.writeUint32(0);
-    // "WAVE" indent
-    header.writeUtf8("WAVE");
-    // "fmt " section header
-    header.writeUtf8("fmt ");
+    // 'WAVE' indent
+    header.writeUtf8('WAVE');
+    // 'fmt ' section header
+    header.writeUtf8('fmt ');
     // fmt section length
     header.writeUint32(16);
     // specify audio format is pcm (type 1)
@@ -31,15 +39,15 @@ export default class WavEncoder {
     header.writeUint16((this.bitsPerSample * this.channels) / 8);
     // bits per sample
     header.writeUint16(this.bitsPerSample);
-    // "data" section header
-    header.writeUtf8("data");
+    // 'data' section header
+    header.writeUtf8('data');
     // data section length (set later)
     header.writeUint32(0);
     this.header = header;
     this.pcmData = null;
   }
 
-  writeFrames(pcmData) {
+  public writeFrames(pcmData: Int16Array) {
     let header = this.header;
     // fill in filesize
     header.seek(4);
@@ -50,7 +58,7 @@ export default class WavEncoder {
     this.pcmData = pcmData;
   }
 
-  getBlob() {
-    return new Blob([this.header.buffer, this.pcmData.buffer], {type: "audio/wav"});
+  public getBlob() {
+    return new Blob([this.header.buffer, this.pcmData.buffer], {type: 'audio/wav'});
   }
 }

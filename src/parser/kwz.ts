@@ -113,6 +113,7 @@ export class KwzParser extends DataStream {
   public bgmSpeed: number;
   public framerate: number;
   public bgmrate: number;
+  public sampleRate = KwzParser.sampleRate;
   public thumbFrameIndex: number;
 
   private sections: KwzSectionMap;
