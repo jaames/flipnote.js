@@ -105,6 +105,8 @@ export class KwzParser extends DataStream {
   ];
 
   public type: string = KwzParser.type;
+  public width: number = KwzParser.width;
+  public height: number = KwzParser.height;
   public palette = PALETTE;
   public meta: KwzMeta;
   public soundMeta: KwzSoundMeta;
@@ -138,6 +140,8 @@ export class KwzParser extends DataStream {
 
   load() {
     this.seek(0);
+    this.sections = {};
+    this.frameMeta = [];
     let size = this.byteLength - 256;
     let offset = 0;
     let sectionCount = 0;

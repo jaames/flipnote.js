@@ -4,14 +4,20 @@ uniform vec4 u_color1;
 uniform vec4 u_color2;
 uniform sampler2D u_bitmap;
 uniform bool u_isSmooth;
+uniform vec2 u_textureSize;
+uniform vec2 u_screenSize;
+
 void main() {
-  float weightColor1 = texture2D(u_bitmap, v_texcoord).a;
-  float weightColor2 = texture2D(u_bitmap, v_texcoord).r;
-  float alpha = 1.0;
-  if (u_isSmooth) {
-    weightColor1 = smoothstep(0.0, .9, weightColor1);
-    weightColor2 = smoothstep(0.0, .9, weightColor2);
-    float alpha = weightColor1 + weightColor2;
-  }
-  gl_FragColor = vec4(u_color1.rgb, alpha) * weightColor1 + vec4(u_color2.rgb, alpha) * weightColor2;
+  vec2 texel = v_texcoord * u_textureSize.xy;
+  vec2 texel_floored = floor(texel);
+  vec2 s = fract(texel);
+  float scale = floor(u_screenSize.y / u_textureSize.y + 0.01);
+  float region_range = 0.5 - 0.5 / scale;
+  vec2 center_dist = s - 0.5;
+  vec2 f = (center_dist - clamp(center_dist, -region_range, region_range)) * scale + 0.5;
+  vec2 mod_texel = texel_floored + f;
+  vec2 coord = mod_texel.xy / u_textureSize.xy;
+
+  vec2 colorWeights = texture2D(u_bitmap, coord).ra;
+  gl_FragColor = vec4(u_color1.rgb, 1.0) * colorWeights.y + vec4(u_color2.rgb, 1.0) * colorWeights.x;
 }

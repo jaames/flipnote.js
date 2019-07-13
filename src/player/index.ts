@@ -26,7 +26,7 @@ export class Player {
   private events: PlayerEvents = {};
   private audioTracks: AudioTrack[];
   private seFlags: number[][];
-  private frame: number = 0;
+  private frame: number = -1;
   private playbackLoop: number = null;
   private hasPlaybackStarted: boolean = false;
 
@@ -139,6 +139,7 @@ export class Player {
       2: true,
       3: true
     };
+    this.canvas.setInputSize(note.width, note.height);
     this.setMode(this.type === 'PPM' ? DisplayMode.PPM : DisplayMode.KWZ);
     this.setFrame(this.note.thumbFrameIndex);
     this.emit('load');

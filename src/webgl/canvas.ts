@@ -93,9 +93,12 @@ export class WebglCanvas {
     gl.uniform1i(this.uniforms['u_bitmap'], 0);
     this.setFilter(FilterType.Linear);
     this.setMode(DisplayMode.PPM);
+    this.setInputSize(320, 240);
+    this.setCanvasSize(this.width, this.height);
     this.refs.textures.push(tex);
     gl.enable(gl.BLEND);
-    gl.blendFunc(gl.ONE, gl.ONE_MINUS_SRC_ALPHA);
+    gl.blendEquation(gl.FUNC_ADD);
+    gl.blendFuncSeparate(gl.SRC_ALPHA, gl.ONE_MINUS_SRC_ALPHA, gl.ONE, gl.ONE_MINUS_SRC_ALPHA)
   }
 
   private createShader(type: ShaderType, source: string) {
@@ -111,6 +114,20 @@ export class WebglCanvas {
     }
     this.refs.shaders.push(shader);
     return shader;
+  }
+
+  public setInputSize(width: number, height: number) {
+    console.log(width, height)
+    this.gl.uniform2f(this.uniforms['u_textureSize'], width, height);
+  }
+
+  public setCanvasSize(width: number, height: number) {
+    this.gl.uniform2f(this.uniforms['u_screenSize'], width, height);
+    this.el.width = width;
+    this.el.height = height; 
+    this.width = width;
+    this.height = height;
+    this.gl.viewport(0, 0, width, height);
   }
   
   public setMode(mode: DisplayMode) {
@@ -151,11 +168,7 @@ export class WebglCanvas {
   }
 
   public resize(width=640, height=480) {
-    this.el.width = width;
-    this.el.height = height; 
-    this.width = width;
-    this.height = height;
-    this.gl.viewport(0, 0, width, height);
+    this.setCanvasSize(width, height);
   }
 
   public clear() {

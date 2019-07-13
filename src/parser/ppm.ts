@@ -97,6 +97,8 @@ export class PpmParser extends DataStream {
   ];
 
   public type: string = PpmParser.type;
+  public width: number = PpmParser.width;
+  public height: number = PpmParser.height;
   public palette = PALETTE;
   public version: number;
   public meta: PpmMeta;
