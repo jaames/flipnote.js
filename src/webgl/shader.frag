@@ -1,5 +1,4 @@
 precision highp float;
-varying vec2 v_texcoord;
 varying vec2 v_texel;
 varying float v_scale;
 uniform vec4 u_color1;
