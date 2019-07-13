@@ -117,7 +117,6 @@ export class WebglCanvas {
   }
 
   public setInputSize(width: number, height: number) {
-    console.log(width, height)
     this.gl.uniform2f(this.uniforms['u_textureSize'], width, height);
   }
 
