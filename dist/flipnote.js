@@ -1,7 +1,7 @@
 /*!
- * flipnote.js v2.7.7
+ * flipnote.js v3.0.0-beta
  * Browser-based playback of .ppm and .kwz animations from Flipnote Studio and Flipnote Studio 3D
- * 2018 James Daniel
+ * 2018 - 2019 James Daniel
  * github.com/jaames/flipnote.js
  * Flipnote Studio is (c) Nintendo Co., Ltd.
  */
@@ -103,6 +103,602 @@ return /******/ (function(modules) { // webpackBootstrap
 /************************************************************************/
 /******/ ({
 
+/***/ "./encoders/bmp.ts":
+/*!*************************!*\
+  !*** ./encoders/bmp.ts ***!
+  \*************************/
+/*! exports provided: roundToNearest, BitmapEncoder */
+/***/ (function(module, __webpack_exports__, __webpack_require__) {
+
+"use strict";
+__webpack_require__.r(__webpack_exports__);
+/* harmony export (binding) */ __webpack_require__.d(__webpack_exports__, "roundToNearest", function() { return roundToNearest; });
+/* harmony export (binding) */ __webpack_require__.d(__webpack_exports__, "BitmapEncoder", function() { return BitmapEncoder; });
+/* harmony import */ var _utils_dataStream__WEBPACK_IMPORTED_MODULE_0__ = __webpack_require__(/*! ../utils/dataStream */ "./utils/dataStream.ts");
+
+// round number to nearest multiple of n
+function roundToNearest(value, n) {
+    return Math.ceil(value / n) * n;
+}
+// simple bitmap class for rendering images
+// https://en.wikipedia.org/wiki/BMP_file_format
+var BitmapEncoder = /** @class */ (function () {
+    function BitmapEncoder(width, height, bpp) {
+        this.width = width;
+        this.height = height;
+        this.vWidth = roundToNearest(width, 4);
+        this.vHeight = roundToNearest(height, 4);
+        this.bpp = bpp;
+        this.fileHeader = new _utils_dataStream__WEBPACK_IMPORTED_MODULE_0__["DataStream"](new ArrayBuffer(14));
+        this.fileHeader.writeUtf8('BM'); // 'BM' file magic
+        // using BITMAPV4HEADER dib header variant:
+        this.dibHeader = new _utils_dataStream__WEBPACK_IMPORTED_MODULE_0__["DataStream"](new ArrayBuffer(108));
+        this.dibHeader.writeUint32(108); // DIB header length
+        this.dibHeader.writeInt32(width); // width
+        this.dibHeader.writeInt32(height); // height
+        this.dibHeader.writeUint16(1); // color panes (always 1)
+        this.dibHeader.writeUint16(bpp); // bits per pixel
+        this.dibHeader.writeUint32(3); // compression method (3 = BI_BITFIELDS for rgba, 0 = no compression for 8 bit)
+        this.dibHeader.writeUint32((this.vWidth * this.height) / (bpp / 8)); // image data size, (width * height) / bits per pixel
+        this.dibHeader.writeUint32(3780); // x res, pixel per meter
+        this.dibHeader.writeUint32(3780); // y res, pixel per meter
+        this.dibHeader.writeUint32(0); // the number of colors in the color palette, set by setPalette() method
+        this.dibHeader.writeUint32(0); // the number of important colors used, or 0 when every color is important; generally ignored
+        this.dibHeader.writeUint32(0x00FF0000); // red channel bitmask
+        this.dibHeader.writeUint32(0x0000FF00); // green channel bitmask
+        this.dibHeader.writeUint32(0x000000FF); // blue channel bitmask
+        this.dibHeader.writeUint32(0xFF000000); // alpha channel bitmask
+        this.dibHeader.writeUtf8('Win '); // LCS_WINDOWS_COLOR_SPACE 'Win '
+        /// rest can be left as nulls
+    }
+    BitmapEncoder.fromFlipnoteFrame = function (flipnote, frameIndex) {
+        var bmp = new BitmapEncoder(flipnote.width, flipnote.height, 8);
+        bmp.setPixels(flipnote.getFramePixels(frameIndex));
+        bmp.setPalette(flipnote.getFramePalette(frameIndex));
+        return bmp;
+    };
+    BitmapEncoder.prototype.setFilelength = function (value) {
+        this.fileHeader.seek(2);
+        this.fileHeader.writeUint32(value);
+    };
+    BitmapEncoder.prototype.setPixelOffset = function (value) {
+        this.fileHeader.seek(10);
+        this.fileHeader.writeUint32(value);
+    };
+    BitmapEncoder.prototype.setCompression = function (value) {
+        this.dibHeader.seek(16);
+        this.dibHeader.writeUint32(value);
+    };
+    BitmapEncoder.prototype.setPaletteCount = function (value) {
+        this.dibHeader.seek(32);
+        this.dibHeader.writeUint32(value);
+    };
+    BitmapEncoder.prototype.setPalette = function (colors) {
+        var palette = new Uint32Array(Math.pow(2, this.bpp));
+        for (var index = 0; index < colors.length; index++) {
+            var color = colors[index % colors.length];
+            // bmp color order is ARGB
+            palette[index] = 0xFF000000 | (color[0] << 16) | (color[1] << 8) | (color[2]);
+        }
+        this.setPaletteCount(palette.length); // set number of colors in DIB header
+        this.setCompression(0); // set compression to 0 so we're not using 32 bit
+        this.palette = palette;
+    };
+    BitmapEncoder.prototype.setPixels = function (pixelData) {
+        var pixels;
+        var pixelsLength = this.vWidth * this.height;
+        switch (this.bpp) {
+            case 8:
+                pixels = new Uint8Array(pixelsLength);
+                break;
+            case 32:
+                pixels = new Uint32Array(pixelsLength);
+                break;
+        }
+        // pixel rows are stored 'upside down' in bmps
+        var w = this.width;
+        for (var y = 0; y < this.height; y++) {
+            var srcOffset = (w * this.height) - ((y + 1) * w);
+            var destOffset = (y * this.width);
+            pixels.set(pixelData.slice(srcOffset, srcOffset + this.width), destOffset);
+        }
+        this.pixels = pixels;
+    };
+    BitmapEncoder.prototype.getBlob = function () {
+        var sections = [this.fileHeader.buffer, this.dibHeader.buffer];
+        var headerByteLength = this.fileHeader.byteLength + this.dibHeader.byteLength;
+        switch (this.bpp) {
+            case 1:
+            case 4:
+            case 8:
+                this.setFilelength(headerByteLength + this.pixels.byteLength + this.palette.byteLength);
+                this.setPixelOffset(headerByteLength + this.palette.byteLength);
+                sections = sections.concat([this.palette.buffer, this.pixels.buffer]);
+                break;
+            case 16:
+            case 32:
+                this.setFilelength(headerByteLength + this.pixels.byteLength);
+                this.setPixelOffset(headerByteLength);
+                sections = sections.concat([this.pixels.buffer]);
+                break;
+        }
+        return new Blob(sections, { type: 'image/bitmap' });
+    };
+    BitmapEncoder.prototype.getUrl = function () {
+        return window.URL.createObjectURL(this.getBlob());
+    };
+    BitmapEncoder.prototype.getImage = function () {
+        var img = new Image(this.width, this.height);
+        img.src = this.getUrl();
+        return img;
+    };
+    return BitmapEncoder;
+}());
+
+
+
+/***/ }),
+
+/***/ "./encoders/gif.ts":
+/*!*************************!*\
+  !*** ./encoders/gif.ts ***!
+  \*************************/
+/*! exports provided: GifEncoder */
+/***/ (function(module, __webpack_exports__, __webpack_require__) {
+
+"use strict";
+__webpack_require__.r(__webpack_exports__);
+/* harmony export (binding) */ __webpack_require__.d(__webpack_exports__, "GifEncoder", function() { return GifEncoder; });
+/* harmony import */ var _utils_dataStream__WEBPACK_IMPORTED_MODULE_0__ = __webpack_require__(/*! ../utils/dataStream */ "./utils/dataStream.ts");
+/* harmony import */ var _utils_byteArray__WEBPACK_IMPORTED_MODULE_1__ = __webpack_require__(/*! ../utils/byteArray */ "./utils/byteArray.ts");
+/* harmony import */ var _lzw__WEBPACK_IMPORTED_MODULE_2__ = __webpack_require__(/*! ./lzw */ "./encoders/lzw.ts");
+
+
+
+var GifEncoder = /** @class */ (function () {
+    function GifEncoder(width, height) {
+        this.delay = 100;
+        // -1 = no repeat, 0 = forever. anything else is repeat count
+        this.repeat = -1;
+        this.colorDepth = 8;
+        this.palette = [];
+        this.width = width;
+        this.height = height;
+        this.data = new _utils_byteArray__WEBPACK_IMPORTED_MODULE_1__["ByteArray"]();
+    }
+    GifEncoder.fromFlipnote = function (flipnote) {
+        var gif = new GifEncoder(flipnote.width, flipnote.height);
+        gif.palette = flipnote.globalPalette;
+        gif.delay = 100 / flipnote.framerate;
+        gif.repeat = flipnote.meta.loop ? -1 : 0;
+        gif.init();
+        for (var frameIndex = 0; frameIndex < flipnote.frameCount; frameIndex++) {
+            gif.writeFrame(flipnote.getFramePixels(frameIndex, true));
+        }
+        return gif;
+    };
+    GifEncoder.fromFlipnoteFrame = function (flipnote, frameIndex) {
+        var gif = new GifEncoder(flipnote.width, flipnote.height);
+        gif.palette = flipnote.globalPalette;
+        gif.delay = 100 / flipnote.framerate;
+        gif.repeat = flipnote.meta.loop ? -1 : 0;
+        gif.init();
+        gif.writeFrame(flipnote.getFramePixels(frameIndex, true));
+        return gif;
+    };
+    GifEncoder.prototype.init = function () {
+        var paletteSize = this.palette.length;
+        for (var p = 1; 1 << p < paletteSize; p += 1) {
+            continue;
+        }
+        this.colorDepth = p;
+        this.writeHeader();
+        this.writeColorTable();
+        this.writeNetscapeExt();
+    };
+    GifEncoder.prototype.writeHeader = function () {
+        var header = new _utils_dataStream__WEBPACK_IMPORTED_MODULE_0__["DataStream"](new ArrayBuffer(13));
+        header.writeUtf8('GIF89a');
+        // Logical Screen Descriptor
+        header.writeUint16(this.width);
+        header.writeUint16(this.height);
+        header.writeUint8(0x80 | // 1 : global color table flag = 1 (gct used)
+            (this.colorDepth - 1) // 6-8 : gct size
+        );
+        header.writeUint8(0);
+        header.writeUint8(0);
+        this.data.writeBytes(new Uint8Array(header.buffer));
+    };
+    GifEncoder.prototype.writeColorTable = function () {
+        var palette = new Uint8Array(3 * Math.pow(2, this.colorDepth));
+        for (var index = 0, offset = 0; offset < palette.length; index += 1, offset += 3) {
+            palette.set(this.palette[index], offset);
+        }
+        this.data.writeBytes(palette);
+    };
+    GifEncoder.prototype.writeGraphicsControlExt = function () {
+        var graphicsControlExt = new _utils_dataStream__WEBPACK_IMPORTED_MODULE_0__["DataStream"](new ArrayBuffer(8));
+        graphicsControlExt.writeBytes([
+            0x21,
+            0xF9,
+            4,
+            0 // bitfield
+        ]);
+        graphicsControlExt.writeUint16(this.delay); // loop flag
+        graphicsControlExt.writeBytes([
+            0,
+            0
+        ]);
+        this.data.writeBytes(new Uint8Array(graphicsControlExt.buffer));
+    };
+    GifEncoder.prototype.writeNetscapeExt = function () {
+        var netscapeExt = new _utils_dataStream__WEBPACK_IMPORTED_MODULE_0__["DataStream"](new ArrayBuffer(19));
+        netscapeExt.writeBytes([
+            0x21,
+            0xFF,
+            11,
+        ]);
+        netscapeExt.writeUtf8('NETSCAPE2.0');
+        netscapeExt.writeUint8(3); // subblock size
+        netscapeExt.writeUint8(1); // loop subblock id
+        netscapeExt.writeUint16(this.repeat); // loop flag
+        this.data.writeBytes(new Uint8Array(netscapeExt.buffer));
+    };
+    GifEncoder.prototype.writeImageDesc = function () {
+        var desc = new _utils_dataStream__WEBPACK_IMPORTED_MODULE_0__["DataStream"](new ArrayBuffer(10));
+        desc.writeUint8(0x2C);
+        desc.writeUint16(0); // image left
+        desc.writeUint16(0); // image top
+        desc.writeUint16(this.width);
+        desc.writeUint16(this.height);
+        desc.writeUint8(0);
+        this.data.writeBytes(new Uint8Array(desc.buffer));
+    };
+    GifEncoder.prototype.writePixels = function (pixels) {
+        var lzw = new _lzw__WEBPACK_IMPORTED_MODULE_2__["LZWEncoder"](this.width, this.height, pixels, this.colorDepth);
+        lzw.encode(this.data);
+    };
+    GifEncoder.prototype.writeFrame = function (pixels) {
+        this.writeGraphicsControlExt();
+        this.writeImageDesc();
+        this.writePixels(pixels);
+    };
+    GifEncoder.prototype.getBuffer = function () {
+        return this.data.getBuffer();
+    };
+    GifEncoder.prototype.getBlob = function () {
+        return new Blob([this.getBuffer()], { type: 'image/gif' });
+    };
+    GifEncoder.prototype.getUrl = function () {
+        return window.URL.createObjectURL(this.getBlob());
+    };
+    GifEncoder.prototype.getImage = function () {
+        var img = new Image(this.width, this.height);
+        img.src = this.getUrl();
+        return img;
+    };
+    return GifEncoder;
+}());
+
+
+
+/***/ }),
+
+/***/ "./encoders/lzw.ts":
+/*!*************************!*\
+  !*** ./encoders/lzw.ts ***!
+  \*************************/
+/*! exports provided: LZWEncoder */
+/***/ (function(module, __webpack_exports__, __webpack_require__) {
+
+"use strict";
+__webpack_require__.r(__webpack_exports__);
+/* harmony export (binding) */ __webpack_require__.d(__webpack_exports__, "LZWEncoder", function() { return LZWEncoder; });
+/*
+  LZWEncoder.js
+
+  Authors
+  Kevin Weiner (original Java version - kweiner@fmsware.com)
+  Thibault Imbert (AS3 version - bytearray.org)
+  Johan Nordberg (JS version - code@johan-nordberg.com)
+  James Daniel (ES6/TS version)
+
+  Acknowledgements
+  GIFCOMPR.C - GIF Image compression routines
+  Lempel-Ziv compression based on 'compress'. GIF modifications by
+  David Rowley (mgardi@watdcsu.waterloo.edu)
+  GIF Image compression - modified 'compress'
+  Based on: compress.c - File compression ala IEEE Computer, June 1984.
+  By Authors: Spencer W. Thomas (decvax!harpo!utah-cs!utah-gr!thomas)
+  Jim McKie (decvax!mcvax!jim)
+  Steve Davies (decvax!vax135!petsd!peora!srd)
+  Ken Turkowski (decvax!decwrl!turtlevax!ken)
+  James A. Woods (decvax!ihnp4!ames!jaw)
+  Joe Orost (decvax!vax135!petsd!joe)
+*/
+var EOF = -1;
+var BITS = 12;
+var HSIZE = 5003; // 80% occupancy
+var masks = [
+    0x0000, 0x0001, 0x0003, 0x0007, 0x000F, 0x001F,
+    0x003F, 0x007F, 0x00FF, 0x01FF, 0x03FF, 0x07FF,
+    0x0FFF, 0x1FFF, 0x3FFF, 0x7FFF, 0xFFFF
+];
+var LZWEncoder = /** @class */ (function () {
+    function LZWEncoder(width, height, pixels, colorDepth) {
+        this.accum = new Uint8Array(256);
+        this.htab = new Int32Array(HSIZE);
+        this.codetab = new Int32Array(HSIZE);
+        this.cur_accum = 0;
+        this.cur_bits = 0;
+        this.curPixel = 0;
+        this.free_ent = 0; // first unused entry
+        // block compression parameters -- after all codes are used up,
+        // and compression rate changes, start over.
+        this.clear_flg = false;
+        // Algorithm: use open addressing double hashing (no chaining) on the
+        // prefix code / next character combination. We do a variant of Knuth's
+        // algorithm D (vol. 3, sec. 6.4) along with G. Knott's relatively-prime
+        // secondary probe. Here, the modular division first probe is gives way
+        // to a faster exclusive-or manipulation. Also do block compression with
+        // an adaptive reset, whereby the code table is cleared when the compression
+        // ratio decreases, but after the table fills. The variable-length output
+        // codes are re-sized at this point, and a special CLEAR code is generated
+        // for the decompressor. Late addition: construct the table according to
+        // file size for noticeable speed improvement on small files. Please direct
+        // questions about this implementation to ames!jaw.
+        this.g_init_bits = undefined;
+        this.ClearCode = undefined;
+        this.EOFCode = undefined;
+        this.width = width;
+        this.height = height;
+        this.pixels = pixels;
+        this.colorDepth = colorDepth;
+        this.initCodeSize = Math.max(2, this.colorDepth);
+        this.accum = new Uint8Array(256);
+        this.htab = new Int32Array(HSIZE);
+        this.codetab = new Int32Array(HSIZE);
+        this.cur_accum = 0;
+        this.cur_bits = 0;
+        this.a_count;
+        this.remaining;
+        this.curPixel = 0;
+        this.free_ent = 0; // first unused entry
+        this.maxcode;
+        // block compression parameters -- after all codes are used up,
+        // and compression rate changes, start over.
+        this.clear_flg = false;
+        // Algorithm: use open addressing double hashing (no chaining) on the
+        // prefix code / next character combination. We do a variant of Knuth's
+        // algorithm D (vol. 3, sec. 6.4) along with G. Knott's relatively-prime
+        // secondary probe. Here, the modular division first probe is gives way
+        // to a faster exclusive-or manipulation. Also do block compression with
+        // an adaptive reset, whereby the code table is cleared when the compression
+        // ratio decreases, but after the table fills. The variable-length output
+        // codes are re-sized at this point, and a special CLEAR code is generated
+        // for the decompressor. Late addition: construct the table according to
+        // file size for noticeable speed improvement on small files. Please direct
+        // questions about this implementation to ames!jaw.
+        this.g_init_bits = undefined;
+        this.ClearCode = undefined;
+        this.EOFCode = undefined;
+    }
+    // Add a character to the end of the current packet, and if it is 254
+    // characters, flush the packet to disk.
+    LZWEncoder.prototype.char_out = function (c, outs) {
+        this.accum[this.a_count++] = c;
+        if (this.a_count >= 254)
+            this.flush_char(outs);
+    };
+    // Clear out the hash table
+    // table clear for block compress
+    LZWEncoder.prototype.cl_block = function (outs) {
+        this.cl_hash(HSIZE);
+        this.free_ent = this.ClearCode + 2;
+        this.clear_flg = true;
+        this.output(this.ClearCode, outs);
+    };
+    // Reset code table
+    LZWEncoder.prototype.cl_hash = function (hsize) {
+        for (var i = 0; i < hsize; ++i)
+            this.htab[i] = -1;
+    };
+    LZWEncoder.prototype.compress = function (init_bits, outs) {
+        var fcode, c, i, ent, disp, hsize_reg, hshift;
+        // Set up the globals: this.g_init_bits - initial number of bits
+        this.g_init_bits = init_bits;
+        // Set up the necessary values
+        this.clear_flg = false;
+        this.n_bits = this.g_init_bits;
+        this.maxcode = this.get_maxcode(this.n_bits);
+        this.ClearCode = 1 << (init_bits - 1);
+        this.EOFCode = this.ClearCode + 1;
+        this.free_ent = this.ClearCode + 2;
+        this.a_count = 0; // clear packet
+        ent = this.nextPixel();
+        hshift = 0;
+        for (fcode = HSIZE; fcode < 65536; fcode *= 2)
+            ++hshift;
+        hshift = 8 - hshift; // set hash code range bound
+        hsize_reg = HSIZE;
+        this.cl_hash(hsize_reg); // clear hash table
+        this.output(this.ClearCode, outs);
+        outer_loop: while ((c = this.nextPixel()) != EOF) {
+            fcode = (c << BITS) + ent;
+            i = (c << hshift) ^ ent; // xor hashing
+            if (this.htab[i] === fcode) {
+                ent = this.codetab[i];
+                continue;
+            }
+            else if (this.htab[i] >= 0) { // non-empty slot
+                disp = hsize_reg - i; // secondary hash (after G. Knott)
+                if (i === 0)
+                    disp = 1;
+                do {
+                    if ((i -= disp) < 0)
+                        i += hsize_reg;
+                    if (this.htab[i] === fcode) {
+                        ent = this.codetab[i];
+                        continue outer_loop;
+                    }
+                } while (this.htab[i] >= 0);
+            }
+            this.output(ent, outs);
+            ent = c;
+            if (this.free_ent < 1 << BITS) {
+                this.codetab[i] = this.free_ent++; // code -> hasthis.htable
+                this.htab[i] = fcode;
+            }
+            else {
+                this.cl_block(outs);
+            }
+        }
+        // Put out the final code.
+        this.output(ent, outs);
+        this.output(this.EOFCode, outs);
+    };
+    LZWEncoder.prototype.encode = function (outs) {
+        outs.writeByte(this.initCodeSize); // write 'initial code size' byte
+        this.remaining = this.width * this.height; // reset navigation variables
+        this.curPixel = 0;
+        this.compress(this.initCodeSize + 1, outs); // compress and write the pixel data
+        outs.writeByte(0); // write block terminator
+    };
+    // Flush the packet to disk, and reset the this.accumulator
+    LZWEncoder.prototype.flush_char = function (outs) {
+        if (this.a_count > 0) {
+            outs.writeByte(this.a_count);
+            outs.writeBytes(this.accum, 0, this.a_count);
+            this.a_count = 0;
+        }
+    };
+    LZWEncoder.prototype.get_maxcode = function (n_bits) {
+        return (1 << n_bits) - 1;
+    };
+    // Return the next pixel from the image
+    LZWEncoder.prototype.nextPixel = function () {
+        if (this.remaining === 0)
+            return EOF;
+        --this.remaining;
+        var pix = this.pixels[this.curPixel++];
+        return pix & 0xff;
+    };
+    LZWEncoder.prototype.output = function (code, outs) {
+        this.cur_accum &= masks[this.cur_bits];
+        if (this.cur_bits > 0)
+            this.cur_accum |= (code << this.cur_bits);
+        else
+            this.cur_accum = code;
+        this.cur_bits += this.n_bits;
+        while (this.cur_bits >= 8) {
+            this.char_out((this.cur_accum & 0xff), outs);
+            this.cur_accum >>= 8;
+            this.cur_bits -= 8;
+        }
+        // If the next entry is going to be too big for the code size,
+        // then increase it, if possible.
+        if (this.free_ent > this.maxcode || this.clear_flg) {
+            if (this.clear_flg) {
+                this.maxcode = this.get_maxcode(this.n_bits = this.g_init_bits);
+                this.clear_flg = false;
+            }
+            else {
+                ++this.n_bits;
+                if (this.n_bits == BITS)
+                    this.maxcode = 1 << BITS;
+                else
+                    this.maxcode = this.get_maxcode(this.n_bits);
+            }
+        }
+        if (code == this.EOFCode) {
+            // At EOF, write the rest of the buffer.
+            while (this.cur_bits > 0) {
+                this.char_out((this.cur_accum & 0xff), outs);
+                this.cur_accum >>= 8;
+                this.cur_bits -= 8;
+            }
+            this.flush_char(outs);
+        }
+    };
+    return LZWEncoder;
+}());
+
+
+
+/***/ }),
+
+/***/ "./encoders/wav.ts":
+/*!*************************!*\
+  !*** ./encoders/wav.ts ***!
+  \*************************/
+/*! exports provided: WavEncoder */
+/***/ (function(module, __webpack_exports__, __webpack_require__) {
+
+"use strict";
+__webpack_require__.r(__webpack_exports__);
+/* harmony export (binding) */ __webpack_require__.d(__webpack_exports__, "WavEncoder", function() { return WavEncoder; });
+/* harmony import */ var _utils_dataStream__WEBPACK_IMPORTED_MODULE_0__ = __webpack_require__(/*! ../utils/dataStream */ "./utils/dataStream.ts");
+
+var WavEncoder = /** @class */ (function () {
+    function WavEncoder(sampleRate, channels, bitsPerSample) {
+        if (channels === void 0) { channels = 1; }
+        if (bitsPerSample === void 0) { bitsPerSample = 16; }
+        this.sampleRate = sampleRate;
+        this.channels = channels;
+        this.bitsPerSample = bitsPerSample;
+        // Write WAV file header
+        // Reference: http://www.topherlee.com/software/pcm-tut-wavformat.html
+        var headerBuffer = new ArrayBuffer(44);
+        var header = new _utils_dataStream__WEBPACK_IMPORTED_MODULE_0__["DataStream"](headerBuffer);
+        // 'RIFF' indent
+        header.writeUtf8('RIFF');
+        // filesize (set later)
+        header.writeUint32(0);
+        // 'WAVE' indent
+        header.writeUtf8('WAVE');
+        // 'fmt ' section header
+        header.writeUtf8('fmt ');
+        // fmt section length
+        header.writeUint32(16);
+        // specify audio format is pcm (type 1)
+        header.writeUint16(1);
+        // number of audio channels
+        header.writeUint16(this.channels);
+        // audio sample rate
+        header.writeUint32(this.sampleRate);
+        // byterate = (sampleRate * bitsPerSample * channelCount) / 8
+        header.writeUint32((this.sampleRate * this.bitsPerSample * this.channels) / 8);
+        // blockalign = (bitsPerSample * channels) / 8
+        header.writeUint16((this.bitsPerSample * this.channels) / 8);
+        // bits per sample
+        header.writeUint16(this.bitsPerSample);
+        // 'data' section header
+        header.writeUtf8('data');
+        // data section length (set later)
+        header.writeUint32(0);
+        this.header = header;
+        this.pcmData = null;
+    }
+    WavEncoder.prototype.writeFrames = function (pcmData) {
+        var header = this.header;
+        // fill in filesize
+        header.seek(4);
+        header.writeUint32(header.byteLength + pcmData.byteLength);
+        // fill in data section length
+        header.seek(40);
+        header.writeUint32(pcmData.byteLength);
+        this.pcmData = pcmData;
+    };
+    WavEncoder.prototype.getBlob = function () {
+        return new Blob([this.header.buffer, this.pcmData.buffer], { type: 'audio/wav' });
+    };
+    return WavEncoder;
+}());
+
+
+
+/***/ }),
+
 /***/ "./flipnote.ts":
 /*!*********************!*\
   !*** ./flipnote.ts ***!
@@ -115,15 +711,21 @@ __webpack_require__.r(__webpack_exports__);
 /* harmony import */ var _utils_dataStream__WEBPACK_IMPORTED_MODULE_0__ = __webpack_require__(/*! ./utils/dataStream */ "./utils/dataStream.ts");
 /* harmony import */ var _parser__WEBPACK_IMPORTED_MODULE_1__ = __webpack_require__(/*! ./parser */ "./parser/index.ts");
 /* harmony import */ var _player__WEBPACK_IMPORTED_MODULE_2__ = __webpack_require__(/*! ./player */ "./player/index.ts");
+/* harmony import */ var _encoders_bmp__WEBPACK_IMPORTED_MODULE_3__ = __webpack_require__(/*! ./encoders/bmp */ "./encoders/bmp.ts");
+/* harmony import */ var _encoders_gif__WEBPACK_IMPORTED_MODULE_4__ = __webpack_require__(/*! ./encoders/gif */ "./encoders/gif.ts");
+
+
 
 
 
 /* harmony default export */ __webpack_exports__["default"] = ({
-    DataStream: _utils_dataStream__WEBPACK_IMPORTED_MODULE_0__["DataStream"],
-    KwzParser: _parser__WEBPACK_IMPORTED_MODULE_1__["KwzParser"],
-    PpmParser: _parser__WEBPACK_IMPORTED_MODULE_1__["PpmParser"],
+    dataStream: _utils_dataStream__WEBPACK_IMPORTED_MODULE_0__["DataStream"],
+    kwzParser: _parser__WEBPACK_IMPORTED_MODULE_1__["KwzParser"],
+    ppmParser: _parser__WEBPACK_IMPORTED_MODULE_1__["PpmParser"],
+    player: _player__WEBPACK_IMPORTED_MODULE_2__["Player"],
+    bitmapEncoder: _encoders_bmp__WEBPACK_IMPORTED_MODULE_3__["BitmapEncoder"],
+    gifEncoder: _encoders_gif__WEBPACK_IMPORTED_MODULE_4__["GifEncoder"],
     parseSource: _parser__WEBPACK_IMPORTED_MODULE_1__["parseSource"],
-    Player: _player__WEBPACK_IMPORTED_MODULE_2__["Player"],
 });
 
 
@@ -417,7 +1019,11 @@ var KwzParser = /** @class */ (function (_super) {
     function KwzParser(arrayBuffer) {
         var _this = _super.call(this, arrayBuffer) || this;
         _this.type = KwzParser.type;
+        _this.width = KwzParser.width;
+        _this.height = KwzParser.height;
         _this.palette = PALETTE;
+        _this.globalPalette = KwzParser.globalPalette;
+        _this.sampleRate = KwzParser.sampleRate;
         _this.prevDecodedFrame = null;
         _this.bitIndex = 0;
         _this.bitValue = 0;
@@ -433,6 +1039,8 @@ var KwzParser = /** @class */ (function (_super) {
     }
     KwzParser.prototype.load = function () {
         this.seek(0);
+        this.sections = {};
+        this.frameMeta = [];
         var size = this.byteLength - 256;
         var offset = 0;
         var sectionCount = 0;
@@ -1018,7 +1626,11 @@ var PpmParser = /** @class */ (function (_super) {
     function PpmParser(arrayBuffer) {
         var _this = _super.call(this, arrayBuffer) || this;
         _this.type = PpmParser.type;
+        _this.width = PpmParser.width;
+        _this.height = PpmParser.height;
         _this.palette = PALETTE;
+        _this.globalPalette = PpmParser.globalPalette;
+        _this.sampleRate = PpmParser.sampleRate;
         _this.prevDecodedFrame = null;
         _this.decodeHeader();
         _this.decodeAnimationHeader();
@@ -1374,6 +1986,76 @@ var PpmParser = /** @class */ (function (_super) {
 
 /***/ }),
 
+/***/ "./player/audio.ts":
+/*!*************************!*\
+  !*** ./player/audio.ts ***!
+  \*************************/
+/*! exports provided: AudioTrack */
+/***/ (function(module, __webpack_exports__, __webpack_require__) {
+
+"use strict";
+__webpack_require__.r(__webpack_exports__);
+/* harmony export (binding) */ __webpack_require__.d(__webpack_exports__, "AudioTrack", function() { return AudioTrack; });
+/* harmony import */ var _encoders_wav__WEBPACK_IMPORTED_MODULE_0__ = __webpack_require__(/*! ../encoders/wav */ "./encoders/wav.ts");
+
+var AudioTrack = /** @class */ (function () {
+    function AudioTrack(id) {
+        this.playbackRate = 1;
+        this.id = id;
+        this.channelCount = 1;
+        this.bitsPerSample = 16;
+        this.sampleRate = 0;
+        this.audio = document.createElement('audio');
+        this.audio.preload = 'auto';
+        this.isActive = false;
+    }
+    AudioTrack.prototype.set = function (pcmData, playbackRate) {
+        // the HTML5 audio element supports PCM audio if it's in a WAV wrapper
+        var wav = new _encoders_wav__WEBPACK_IMPORTED_MODULE_0__["WavEncoder"](this.sampleRate * playbackRate, this.channelCount, this.bitsPerSample);
+        wav.writeFrames(pcmData);
+        this.url = window.URL.createObjectURL(wav.getBlob());
+        // use the blob url for the audio element
+        this.audio.src = this.url;
+        this.isActive = true;
+        this.playbackRate = playbackRate;
+        this.length = pcmData.length;
+    };
+    Object.defineProperty(AudioTrack.prototype, "duration", {
+        get: function () {
+            return this.audio.duration;
+        },
+        enumerable: true,
+        configurable: true
+    });
+    AudioTrack.prototype.unset = function () {
+        if (this.isActive) {
+            window.URL.revokeObjectURL(this.url);
+            this.audio.src = '';
+            this.audio.load();
+            this.isActive = false;
+            this.playbackRate = 1;
+            this.length = null;
+        }
+    };
+    AudioTrack.prototype.start = function (offset) {
+        if (offset === void 0) { offset = 0; }
+        if (this.isActive) {
+            this.audio.currentTime = offset;
+            this.audio.play();
+        }
+    };
+    AudioTrack.prototype.stop = function () {
+        if (this.isActive) {
+            this.audio.pause();
+        }
+    };
+    return AudioTrack;
+}());
+
+
+
+/***/ }),
+
 /***/ "./player/index.ts":
 /*!*************************!*\
   !*** ./player/index.ts ***!
@@ -1385,7 +2067,8 @@ var PpmParser = /** @class */ (function (_super) {
 __webpack_require__.r(__webpack_exports__);
 /* harmony export (binding) */ __webpack_require__.d(__webpack_exports__, "Player", function() { return Player; });
 /* harmony import */ var _parser__WEBPACK_IMPORTED_MODULE_0__ = __webpack_require__(/*! ../parser */ "./parser/index.ts");
-/* harmony import */ var _webgl_canvas__WEBPACK_IMPORTED_MODULE_1__ = __webpack_require__(/*! ../webgl/canvas */ "./webgl/canvas.ts");
+/* harmony import */ var _audio__WEBPACK_IMPORTED_MODULE_1__ = __webpack_require__(/*! ./audio */ "./player/audio.ts");
+/* harmony import */ var _webgl_canvas__WEBPACK_IMPORTED_MODULE_2__ = __webpack_require__(/*! ../webgl/canvas */ "./webgl/canvas.ts");
 var __awaiter = (undefined && undefined.__awaiter) || function (thisArg, _arguments, P, generator) {
     return new (P || (P = Promise))(function (resolve, reject) {
         function fulfilled(value) { try { step(generator.next(value)); } catch (e) { reject(e); } }
@@ -1422,8 +2105,7 @@ var __generator = (undefined && undefined.__generator) || function (thisArg, bod
     }
 };
 
-// import canvas from '../webgl/canvas';
-// import audioTrack from './audio';
+
 
 /** flipnote player API, based on HTMLMediaElement (https://developer.mozilla.org/en-US/docs/Web/API/HTMLMediaElement) */
 var Player = /** @class */ (function () {
@@ -1432,20 +2114,21 @@ var Player = /** @class */ (function () {
         this.paused = true;
         this.smoothRendering = false;
         this.isOpen = false;
-        this.frame = 0;
+        this.events = {};
+        this.frame = -1;
         this.playbackLoop = null;
         this.hasPlaybackStarted = false;
         // if `el` is a string, use it to select an Element, else assume it's an element
         el = ('string' == typeof el) ? document.querySelector(el) : el;
-        this.canvas = new _webgl_canvas__WEBPACK_IMPORTED_MODULE_1__["WebglCanvas"](el, width, height);
+        this.canvas = new _webgl_canvas__WEBPACK_IMPORTED_MODULE_2__["WebglCanvas"](el, width, height);
         // this.customPalette = null;
-        // this.audioTracks = [
-        //   new audioTrack('se1'),
-        //   new audioTrack('se2'),
-        //   new audioTrack('se3'),
-        //   new audioTrack('se4'),
-        //   new audioTrack('bgm'),
-        // ];
+        this.audioTracks = [
+            new _audio__WEBPACK_IMPORTED_MODULE_1__["AudioTrack"]('se1'),
+            new _audio__WEBPACK_IMPORTED_MODULE_1__["AudioTrack"]('se2'),
+            new _audio__WEBPACK_IMPORTED_MODULE_1__["AudioTrack"]('se3'),
+            new _audio__WEBPACK_IMPORTED_MODULE_1__["AudioTrack"]('se4'),
+            new _audio__WEBPACK_IMPORTED_MODULE_1__["AudioTrack"]('bgm'),
+        ];
     }
     Object.defineProperty(Player.prototype, "currentFrame", {
         get: function () {
@@ -1469,23 +2152,31 @@ var Player = /** @class */ (function () {
         enumerable: true,
         configurable: true
     });
+    Object.defineProperty(Player.prototype, "volume", {
+        get: function () {
+            return this.audioTracks[3].audio.volume;
+        },
+        set: function (value) {
+            for (var i = 0; i < this.audioTracks.length; i++) {
+                this.audioTracks[i].audio.volume = value;
+            }
+        },
+        enumerable: true,
+        configurable: true
+    });
+    Object.defineProperty(Player.prototype, "muted", {
+        get: function () {
+            return this.audioTracks[3].audio.muted;
+        },
+        set: function (value) {
+            for (var i = 0; i < this.audioTracks.length; i++) {
+                this.audioTracks[i].audio.muted = value;
+            }
+        },
+        enumerable: true,
+        configurable: true
+    });
     Object.defineProperty(Player.prototype, "duration", {
-        // get volume() {
-        //   return this.audioTracks[3].audio.volume;
-        // }
-        // set volume(value) {
-        //   for (let i = 0; i < this.audioTracks.length; i++) {
-        //     this.audioTracks[i].audio.volume = value;
-        //   }
-        // }
-        // get muted() {
-        //   return this.audioTracks[3].audio.muted;
-        // }
-        // set muted(value) {
-        //   for (let i = 0; i < this.audioTracks.length; i++) {
-        //     this.audioTracks[i].audio.muted = value;
-        //   }
-        // }
         get: function () {
             return this.isOpen ? this.frameCount * (1 / this.framerate) : null;
         },
@@ -1543,18 +2234,23 @@ var Player = /** @class */ (function () {
         this.loop = note.meta.loop;
         this.paused = true;
         this.isOpen = true;
-        // this.audioTracks.forEach(track => {
-        //   track.sampleRate = note.sampleRate;
-        // });
+        this.audioTracks.forEach(function (track) {
+            track.sampleRate = note.sampleRate;
+        });
         // if (this.customPalette) {
         //   this.setPalette(this.customPalette);
         // }
-        // if (this.note.hasAudioTrack(1)) this.audioTracks[0].set(this.note.decodeAudio('se1'), 1);
-        // if (this.note.hasAudioTrack(2)) this.audioTracks[1].set(this.note.decodeAudio('se2'), 1);
-        // if (this.note.hasAudioTrack(3)) this.audioTracks[2].set(this.note.decodeAudio('se3'), 1);
-        // if (this.type === 'KWZ' && this.note.hasAudioTrack(4)) this.audioTracks[3].set(this.note.decodeAudio('se4'), 1);
-        // if (this.note.hasAudioTrack(0)) this.audioTracks[4].set(this.note.decodeAudio('bgm'), this._audiorate);
-        // this._seFlags = this.note.decodeSoundFlags();
+        if (this.note.hasAudioTrack(1))
+            this.audioTracks[0].set(this.note.decodeAudio('se1'), 1);
+        if (this.note.hasAudioTrack(2))
+            this.audioTracks[1].set(this.note.decodeAudio('se2'), 1);
+        if (this.note.hasAudioTrack(3))
+            this.audioTracks[2].set(this.note.decodeAudio('se3'), 1);
+        if (this.type === 'KWZ' && this.note.hasAudioTrack(4))
+            this.audioTracks[3].set(this.note.decodeAudio('se4'), 1);
+        if (this.note.hasAudioTrack(0))
+            this.audioTracks[4].set(this.note.decodeAudio('bgm'), this.audiorate);
+        this.seFlags = this.note.decodeSoundFlags();
         this.playbackLoop = null;
         this.hasPlaybackStarted = false;
         this.layerVisibility = {
@@ -1562,13 +2258,11 @@ var Player = /** @class */ (function () {
             2: true,
             3: true
         };
-        this.setMode(this.type === 'PPM' ? _webgl_canvas__WEBPACK_IMPORTED_MODULE_1__["DisplayMode"].PPM : _webgl_canvas__WEBPACK_IMPORTED_MODULE_1__["DisplayMode"].KWZ);
+        this.canvas.setInputSize(note.width, note.height);
+        this.canvas.setLayerType(this.type === 'PPM' ? _webgl_canvas__WEBPACK_IMPORTED_MODULE_2__["TextureType"].Alpha : _webgl_canvas__WEBPACK_IMPORTED_MODULE_2__["TextureType"].LuminanceAlpha);
         this.setFrame(this.note.thumbFrameIndex);
         this.emit('load');
     };
-    /**
-    * Close the currently loaded Flipnote and clear the player canvas
-    */
     Player.prototype.close = function () {
         this.pause();
         this.note = null;
@@ -1577,49 +2271,34 @@ var Player = /** @class */ (function () {
         this.loop = null;
         this.meta = null;
         this.frame = 0;
-        // for (let i = 0; i < this.audioTracks.length; i++) {
-        //   this.audioTracks[i].unset();
-        // }
+        for (var i = 0; i < this.audioTracks.length; i++) {
+            this.audioTracks[i].unset();
+        }
         // this._seFlags = null;
         this.hasPlaybackStarted = null;
         this.canvas.clear();
         // this._imgCanvas.clear();
     };
-    /**
-    * Destroy this player instance cleanly
-    */
     Player.prototype.destroy = function () {
         this.close();
         this.canvas.destroy();
         // this._imgCanvas.destroy();
     };
-    /**
-    * Play the sound effects for a given frame
-    * @param {number} index - zero-based frame index
-    * @access protected
-    */
-    // _playFrameSe(index) {
-    //   var flags = this._seFlags[index];
-    //   for (let i = 0; i < flags.length; i++) {
-    //     if (flags[i] && this.audioTracks[i].active) this.audioTracks[i].start();
-    //   }
-    // }
-    /**
-    * Play the Flipnote BGM
-    * @access protected
-    */
-    // _playBgm() {
-    //   this.audioTracks[4].start(this.currentTime);
-    // }
-    /**
-    * Stop all audio tracks
-    * @access protected
-    */
-    // _stopAudio() {
-    //   for (let i = 0; i < this.audioTracks.length; i++) {
-    //     this.audioTracks[i].stop();
-    //   }
-    // }
+    Player.prototype.playFrameSe = function (index) {
+        var flags = this.seFlags[index];
+        for (var i = 0; i < flags.length; i++) {
+            if (flags[i] && this.audioTracks[i].isActive)
+                this.audioTracks[i].start();
+        }
+    };
+    Player.prototype.playBgm = function () {
+        this.audioTracks[4].start(this.currentTime);
+    };
+    Player.prototype.stopAudio = function () {
+        for (var i = 0; i < this.audioTracks.length; i++) {
+            this.audioTracks[i].stop();
+        }
+    };
     Player.prototype.play = function () {
         var _this = this;
         if ((!this.isOpen) || (!this.paused))
@@ -1627,16 +2306,16 @@ var Player = /** @class */ (function () {
         this.paused = false;
         if ((!this.hasPlaybackStarted) || ((!this.loop) && (this.currentFrame == this.frameCount - 1)))
             this.frame = 0;
-        // this._playBgm();
+        this.playBgm();
         this.playbackLoop = window.setInterval(function () {
             if (_this.paused)
                 clearInterval(_this.playbackLoop);
             // if the end of the flipnote has been reached
             if (_this.currentFrame >= _this.frameCount - 1) {
-                // this._stopAudio();
+                _this.stopAudio();
                 if (_this.loop) {
                     _this.firstFrame();
-                    // this._playBgm(0);
+                    _this.playBgm();
                     _this.emit('playback:loop');
                 }
                 else {
@@ -1645,7 +2324,7 @@ var Player = /** @class */ (function () {
                 }
             }
             else {
-                // this._playFrameSe(this.currentFrame);
+                _this.playFrameSe(_this.currentFrame);
                 _this.nextFrame();
             }
         }, 1000 / this.framerate);
@@ -1658,7 +2337,7 @@ var Player = /** @class */ (function () {
         // break the playback loop
         window.clearInterval(this.playbackLoop);
         this.paused = true;
-        // this._stopAudio();
+        this.stopAudio();
         this.emit('playback:stop');
     };
     // getFrameImage(index, width, height, type, encoderOptions) {
@@ -1739,15 +2418,6 @@ var Player = /** @class */ (function () {
         this.layerVisibility[index] = value;
         this.forceUpdate();
     };
-    Player.prototype.setSmoothRendering = function (value) {
-        this.canvas.setFilter(value ? _webgl_canvas__WEBPACK_IMPORTED_MODULE_1__["FilterType"].Linear : _webgl_canvas__WEBPACK_IMPORTED_MODULE_1__["FilterType"].Nearest);
-        this.forceUpdate();
-        this.smoothRendering = value;
-    };
-    Player.prototype.setMode = function (mode) {
-        this.canvas.setMode(mode);
-        // this._imgCanvas.setMode(mode);
-    };
     Player.prototype.forceUpdate = function () {
         if (this.isOpen) {
             this.drawFrame(this.currentFrame, this.canvas);
@@ -1773,6 +2443,61 @@ var Player = /** @class */ (function () {
         }
     };
     return Player;
+}());
+
+
+
+/***/ }),
+
+/***/ "./utils/byteArray.ts":
+/*!****************************!*\
+  !*** ./utils/byteArray.ts ***!
+  \****************************/
+/*! exports provided: ByteArray */
+/***/ (function(module, __webpack_exports__, __webpack_require__) {
+
+"use strict";
+__webpack_require__.r(__webpack_exports__);
+/* harmony export (binding) */ __webpack_require__.d(__webpack_exports__, "ByteArray", function() { return ByteArray; });
+var ByteArray = /** @class */ (function () {
+    function ByteArray() {
+        this.page = -1;
+        this.pages = [];
+        this.cursor = 0;
+        this.newPage();
+    }
+    ByteArray.prototype.newPage = function () {
+        this.pages[++this.page] = new Uint8Array(ByteArray.pageSize);
+        this.cursor = 0;
+    };
+    ByteArray.prototype.getData = function () {
+        var _this = this;
+        var data = new Uint8Array((this.page) * ByteArray.pageSize + this.cursor);
+        this.pages.map(function (page, index) {
+            if (index === _this.page) {
+                data.set(page.slice(0, _this.cursor), index * ByteArray.pageSize);
+            }
+            else {
+                data.set(page, index * ByteArray.pageSize);
+            }
+        });
+        return data;
+    };
+    ByteArray.prototype.getBuffer = function () {
+        var data = this.getData();
+        return data.buffer;
+    };
+    ByteArray.prototype.writeByte = function (val) {
+        if (this.cursor >= ByteArray.pageSize)
+            this.newPage();
+        this.pages[this.page][this.cursor++] = val;
+    };
+    ByteArray.prototype.writeBytes = function (array, offset, length) {
+        for (var l = length || array.length, i = offset || 0; i < l; i++)
+            this.writeByte(array[i]);
+    };
+    ByteArray.pageSize = 4096;
+    return ByteArray;
 }());
 
 
@@ -1953,13 +2678,12 @@ var DataStream = /** @class */ (function () {
 /*!*************************!*\
   !*** ./webgl/canvas.ts ***!
   \*************************/
-/*! exports provided: FilterType, DisplayMode, WebglCanvas */
+/*! exports provided: TextureType, WebglCanvas */
 /***/ (function(module, __webpack_exports__, __webpack_require__) {
 
 "use strict";
 __webpack_require__.r(__webpack_exports__);
-/* harmony export (binding) */ __webpack_require__.d(__webpack_exports__, "FilterType", function() { return FilterType; });
-/* harmony export (binding) */ __webpack_require__.d(__webpack_exports__, "DisplayMode", function() { return DisplayMode; });
+/* harmony export (binding) */ __webpack_require__.d(__webpack_exports__, "TextureType", function() { return TextureType; });
 /* harmony export (binding) */ __webpack_require__.d(__webpack_exports__, "WebglCanvas", function() { return WebglCanvas; });
 /* harmony import */ var _shader_vert__WEBPACK_IMPORTED_MODULE_0__ = __webpack_require__(/*! ./shader.vert */ "./webgl/shader.vert");
 /* harmony import */ var _shader_vert__WEBPACK_IMPORTED_MODULE_0___default = /*#__PURE__*/__webpack_require__.n(_shader_vert__WEBPACK_IMPORTED_MODULE_0__);
@@ -1979,18 +2703,6 @@ var TextureType;
     TextureType[TextureType["Alpha"] = WebGLRenderingContext.ALPHA] = "Alpha";
     TextureType[TextureType["LuminanceAlpha"] = WebGLRenderingContext.LUMINANCE_ALPHA] = "LuminanceAlpha";
 })(TextureType || (TextureType = {}));
-;
-var FilterType;
-(function (FilterType) {
-    FilterType[FilterType["Linear"] = WebGLRenderingContext.LINEAR] = "Linear";
-    FilterType[FilterType["Nearest"] = WebGLRenderingContext.NEAREST] = "Nearest";
-})(FilterType || (FilterType = {}));
-;
-var DisplayMode;
-(function (DisplayMode) {
-    DisplayMode[DisplayMode["PPM"] = 0] = "PPM";
-    DisplayMode[DisplayMode["KWZ"] = 1] = "KWZ";
-})(DisplayMode || (DisplayMode = {}));
 ;
 /** webgl canvas wrapper class */
 var WebglCanvas = /** @class */ (function () {
@@ -2038,6 +2750,8 @@ var WebglCanvas = /** @class */ (function () {
         gl.bindTexture(gl.TEXTURE_2D, tex);
         gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_S, gl.CLAMP_TO_EDGE);
         gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_T, gl.CLAMP_TO_EDGE);
+        gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MIN_FILTER, gl.LINEAR);
+        gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MAG_FILTER, gl.LINEAR);
         // get uniform locations
         var uniformCount = gl.getProgramParameter(program, gl.ACTIVE_UNIFORMS);
         for (var i = 0; i < uniformCount; i++) {
@@ -2045,10 +2759,11 @@ var WebglCanvas = /** @class */ (function () {
             this.uniforms[name_1] = gl.getUniformLocation(program, name_1);
         }
         gl.uniform1i(this.uniforms['u_bitmap'], 0);
-        this.setFilter(FilterType.Linear);
-        this.setMode(DisplayMode.PPM);
+        this.setCanvasSize(this.width, this.height);
         this.refs.textures.push(tex);
+        gl.pixelStorei(gl.UNPACK_FLIP_Y_WEBGL, true);
         gl.enable(gl.BLEND);
+        gl.blendEquation(gl.FUNC_ADD);
         gl.blendFunc(gl.ONE, gl.ONE_MINUS_SRC_ALPHA);
     }
     WebglCanvas.prototype.createShader = function (type, source) {
@@ -2065,23 +2780,22 @@ var WebglCanvas = /** @class */ (function () {
         this.refs.shaders.push(shader);
         return shader;
     };
-    WebglCanvas.prototype.setMode = function (mode) {
-        if (mode === DisplayMode.PPM) {
-            this.textureType = TextureType.Alpha;
-        }
-        else if (DisplayMode.KWZ) {
-            this.textureType = TextureType.LuminanceAlpha;
-        }
+    WebglCanvas.prototype.setInputSize = function (width, height) {
+        this.gl.uniform2f(this.uniforms['u_textureSize'], width, height);
+    };
+    WebglCanvas.prototype.setCanvasSize = function (width, height) {
+        this.gl.uniform2f(this.uniforms['u_screenSize'], width, height);
+        this.el.width = width;
+        this.el.height = height;
+        this.width = width;
+        this.height = height;
+        this.gl.viewport(0, 0, width, height);
+    };
+    WebglCanvas.prototype.setLayerType = function (textureType) {
+        this.textureType = textureType;
     };
     WebglCanvas.prototype.toImage = function (type) {
         return this.el.toDataURL(type);
-    };
-    WebglCanvas.prototype.setFilter = function (filter) {
-        var gl = this.gl;
-        gl.uniform1i(this.uniforms['u_isSmooth'], filter === FilterType.Linear ? 0 : 1);
-        gl.activeTexture(gl.TEXTURE0);
-        gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MIN_FILTER, filter);
-        gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MAG_FILTER, filter);
     };
     WebglCanvas.prototype.setColor = function (color, value) {
         this.gl.uniform4f(this.uniforms[color], value[0] / 255, value[1] / 255, value[2] / 255, 1);
@@ -2100,11 +2814,7 @@ var WebglCanvas = /** @class */ (function () {
     WebglCanvas.prototype.resize = function (width, height) {
         if (width === void 0) { width = 640; }
         if (height === void 0) { height = 480; }
-        this.el.width = width;
-        this.el.height = height;
-        this.width = width;
-        this.height = height;
-        this.gl.viewport(0, 0, width, height);
+        this.setCanvasSize(width, height);
     };
     WebglCanvas.prototype.clear = function () {
         this.gl.clear(this.gl.COLOR_BUFFER_BIT);
@@ -2144,7 +2854,7 @@ var WebglCanvas = /** @class */ (function () {
 /*! no static exports found */
 /***/ (function(module, exports) {
 
-module.exports = "precision mediump float;\n#define GLSLIFY 1\nvarying vec2 v_texcoord;\nuniform vec4 u_color1;\nuniform vec4 u_color2;\nuniform sampler2D u_bitmap;\nuniform bool u_isSmooth;\nvoid main() {\n  float weightColor1 = texture2D(u_bitmap, v_texcoord).a;\n  float weightColor2 = texture2D(u_bitmap, v_texcoord).r;\n  float alpha = 1.0;\n  if (u_isSmooth) {\n    weightColor1 = smoothstep(0.0, .9, weightColor1);\n    weightColor2 = smoothstep(0.0, .9, weightColor2);\n    float alpha = weightColor1 + weightColor2;\n  }\n  gl_FragColor = vec4(u_color1.rgb, alpha) * weightColor1 + vec4(u_color2.rgb, alpha) * weightColor2;\n}\n"
+module.exports = "precision highp float;\n#define GLSLIFY 1\nvarying vec2 v_texel;\nvarying float v_scale;\nuniform vec4 u_color1;\nuniform vec4 u_color2;\nuniform sampler2D u_bitmap;\nuniform bool u_isSmooth;\nuniform vec2 u_textureSize;\nuniform vec2 u_screenSize;\n\nvoid main() {\n  vec2 texel_floored = floor(v_texel);\n  vec2 s = fract(v_texel);\n  float region_range = 0.5 - 0.5 / v_scale;\n  vec2 center_dist = s - 0.5;\n  vec2 f = (center_dist - clamp(center_dist, -region_range, region_range)) * v_scale + 0.5;\n  vec2 mod_texel = texel_floored + f;\n  vec2 coord = mod_texel.xy / u_textureSize.xy;\n  vec2 colorWeights = texture2D(u_bitmap, coord).ra;\n  gl_FragColor = vec4(u_color1.rgb, 1.0) * colorWeights.y + vec4(u_color2.rgb, 1.0) * colorWeights.x;\n}"
 
 /***/ }),
 
@@ -2155,7 +2865,7 @@ module.exports = "precision mediump float;\n#define GLSLIFY 1\nvarying vec2 v_te
 /*! no static exports found */
 /***/ (function(module, exports) {
 
-module.exports = "#define GLSLIFY 1\nattribute vec4 a_position;\nvarying vec2 v_texcoord;\nvoid main() {\n  gl_Position = a_position;\n  v_texcoord = a_position.xy * vec2(0.5, -0.5) + 0.5;\n}"
+module.exports = "#define GLSLIFY 1\nattribute vec4 a_position;\nvarying vec2 v_texel;\nvarying float v_scale;\nuniform vec2 u_textureSize;\nuniform vec2 u_screenSize;\n\nvoid main() {\n  gl_Position = a_position;\n  vec2 uv = a_position.xy * 0.5 + 0.5;\n  v_texel = uv * u_textureSize;\n  v_scale = floor(u_screenSize.y / u_textureSize.y + 0.01);\n}"
 
 /***/ }),
 

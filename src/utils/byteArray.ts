@@ -1,16 +1,21 @@
 export class ByteArray {
+
+  static pageSize: number = 4096;
+
+  private page: number = -1;
+  private pages: Uint8Array[] = [];
+  private cursor: number = 0;
+
   constructor() {
-    this.page = -1;
-    this.pages = [];
     this.newPage();
   }
   
-  newPage() {
+  private newPage() {
     this.pages[++this.page] = new Uint8Array(ByteArray.pageSize);
     this.cursor = 0;
   }
   
-  getData() {
+  public getData() {
     const data = new Uint8Array((this.page) * ByteArray.pageSize + this.cursor);
     this.pages.map((page, index) => {
       if (index === this.page) {
@@ -22,20 +27,18 @@ export class ByteArray {
     return data;
   }
 
-  getBuffer() {
+  public getBuffer() {
     const data = this.getData();
     return data.buffer;
   }
   
-  writeByte(val) {
+  public writeByte(val: number) {
     if (this.cursor >= ByteArray.pageSize) this.newPage();
     this.pages[this.page][this.cursor++] = val;
   }
 
-  writeBytes(array, offset, length) {
+  public writeBytes(array: Uint8Array | number[], offset?: number, length?: number) {
     for (var l = length || array.length, i = offset || 0; i < l; i++)
       this.writeByte(array[i]);
   }
 }
-
-ByteArray.pageSize = 4096;

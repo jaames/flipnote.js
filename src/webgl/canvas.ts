@@ -17,19 +17,9 @@ enum ShaderType {
   Fragment = WebGLRenderingContext.FRAGMENT_SHADER,
 };
 
-enum TextureType {
+export enum TextureType {
   Alpha = WebGLRenderingContext.ALPHA,
   LuminanceAlpha = WebGLRenderingContext.LUMINANCE_ALPHA,
-};
-
-export enum FilterType {
-  Linear = WebGLRenderingContext.LINEAR,
-  Nearest = WebGLRenderingContext.NEAREST,
-};
-
-export enum DisplayMode {
-  PPM,
-  KWZ
 };
 
 /** webgl canvas wrapper class */
@@ -93,15 +83,12 @@ export class WebglCanvas {
       this.uniforms[name] = gl.getUniformLocation(program, name);
     }
     gl.uniform1i(this.uniforms['u_bitmap'], 0);
-    this.setFilter(FilterType.Linear);
-    this.setMode(DisplayMode.PPM);
-    this.setInputSize(320, 240);
     this.setCanvasSize(this.width, this.height);
     this.refs.textures.push(tex);
     gl.pixelStorei(gl.UNPACK_FLIP_Y_WEBGL, true);
     gl.enable(gl.BLEND);
     gl.blendEquation(gl.FUNC_ADD);
-    gl.blendFuncSeparate(gl.SRC_ALPHA, gl.ONE_MINUS_SRC_ALPHA, gl.ONE, gl.ONE_MINUS_SRC_ALPHA);
+    gl.blendFunc(gl.ONE, gl.ONE_MINUS_SRC_ALPHA);
   }
 
   private createShader(type: ShaderType, source: string) {
@@ -132,21 +119,12 @@ export class WebglCanvas {
     this.gl.viewport(0, 0, width, height);
   }
   
-  public setMode(mode: DisplayMode) {
-    if (mode === DisplayMode.PPM) {
-      this.textureType = TextureType.Alpha;
-    } else if (DisplayMode.KWZ) {
-      this.textureType = TextureType.LuminanceAlpha;
-    }
+  public setLayerType(textureType: TextureType) {
+    this.textureType = textureType;
   }
 
   public toImage(type?: string) {
     return this.el.toDataURL(type);
-  }
-
-  public setFilter(filter: FilterType) {
-    var gl = this.gl;
-    // gl.uniform1i(this.uniforms['u_isSmooth'], filter === FilterType.Linear ? 0 : 1);
   }
 
   public setColor(color: string, value: number[]) {

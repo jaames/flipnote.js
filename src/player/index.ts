@@ -1,6 +1,6 @@
 import { parseSource, Flipnote, FlipnoteMeta } from '../parser';
 import { AudioTrack } from './audio';
-import { WebglCanvas, FilterType, DisplayMode } from '../webgl/canvas';
+import { WebglCanvas, TextureType } from '../webgl/canvas';
 
 interface PlayerEvents {
   [key: string]: Function[]
@@ -140,7 +140,7 @@ export class Player {
       3: true
     };
     this.canvas.setInputSize(note.width, note.height);
-    this.setMode(this.type === 'PPM' ? DisplayMode.PPM : DisplayMode.KWZ);
+    this.canvas.setLayerType(this.type === 'PPM' ? TextureType.Alpha : TextureType.LuminanceAlpha);
     this.setFrame(this.note.thumbFrameIndex);
     this.emit('load');
   }
@@ -301,17 +301,6 @@ export class Player {
   public setLayerVisibility(index: number, value: boolean): void {
     this.layerVisibility[index] = value;
     this.forceUpdate();
-  }
-
-  public setSmoothRendering(value: boolean): void {
-    this.canvas.setFilter(value ? FilterType.Linear : FilterType.Nearest);
-    this.forceUpdate();
-    this.smoothRendering = value;
-  }
-
-  private setMode(mode: DisplayMode): void {
-    this.canvas.setMode(mode);
-    // this._imgCanvas.setMode(mode);
   }
 
   public forceUpdate(): void {

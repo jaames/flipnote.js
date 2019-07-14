@@ -1,25 +1,37 @@
-import dataStream from "../utils/dataStream";
+import { DataStream } from '../utils/dataStream';
+import { Flipnote } from '../parser';
 
 // round number to nearest multiple of n
-export function roundToNearest(value, n) {
+export function roundToNearest(value: number, n: number) {
   return Math.ceil(value / n) * n;
 }
 
 // simple bitmap class for rendering images
 // https://en.wikipedia.org/wiki/BMP_file_format
 
-export default class BitmapEncoder {
+export class BitmapEncoder {
 
-  constructor(width, height, bpp) {
+  public width: number;
+  public height: number;
+  public bpp: number;
+
+  private vWidth: number;
+  private vHeight: number;
+  private fileHeader: DataStream;
+  private dibHeader: DataStream;
+  private palette: Uint32Array;
+  private pixels: Uint8Array | Uint32Array;
+
+  constructor(width: number, height: number, bpp: number) {
     this.width = width;
     this.height = height;
     this.vWidth = roundToNearest(width, 4);
     this.vHeight = roundToNearest(height, 4);
     this.bpp = bpp;
-    this.fileHeader = new dataStream(new ArrayBuffer(14));
-    this.fileHeader.writeUtf8("BM"); // "BM" file magic
+    this.fileHeader = new DataStream(new ArrayBuffer(14));
+    this.fileHeader.writeUtf8('BM'); // 'BM' file magic
     // using BITMAPV4HEADER dib header variant:
-    this.dibHeader = new dataStream(new ArrayBuffer(108))
+    this.dibHeader = new DataStream(new ArrayBuffer(108))
     this.dibHeader.writeUint32(108); // DIB header length
     this.dibHeader.writeInt32(width); // width
     this.dibHeader.writeInt32(height); // height
@@ -35,39 +47,38 @@ export default class BitmapEncoder {
     this.dibHeader.writeUint32(0x0000FF00); // green channel bitmask
     this.dibHeader.writeUint32(0x000000FF); // blue channel bitmask
     this.dibHeader.writeUint32(0xFF000000); // alpha channel bitmask
-    this.dibHeader.writeUtf8("Win "); // LCS_WINDOWS_COLOR_SPACE "Win "
+    this.dibHeader.writeUtf8('Win '); // LCS_WINDOWS_COLOR_SPACE 'Win '
     /// rest can be left as nulls
   }
 
-  static fromFlipnoteFrame(flipnote, frameIndex) {
-    const format = flipnote.constructor;
-    const bmp = new BitmapEncoder(format.width, format.height, 8);
+  static fromFlipnoteFrame(flipnote: Flipnote, frameIndex: number) {
+    const bmp = new BitmapEncoder(flipnote.width, flipnote.height, 8);
     bmp.setPixels(flipnote.getFramePixels(frameIndex));
     bmp.setPalette(flipnote.getFramePalette(frameIndex));
     return bmp;
   }
 
-  setFilelength(value) {
+  setFilelength(value: number) {
     this.fileHeader.seek(2);
     this.fileHeader.writeUint32(value);
   }
 
-  setPixelOffset(value) {
+  setPixelOffset(value: number) {
     this.fileHeader.seek(10);
     this.fileHeader.writeUint32(value);
   }
 
-  setCompression(value) {
+  setCompression(value: number) {
     this.dibHeader.seek(16);
     this.dibHeader.writeUint32(value);
   }
 
-  setPaletteCount(value) {
+  setPaletteCount(value: number) {
     this.dibHeader.seek(32);
     this.dibHeader.writeUint32(value);
   }
 
-  setPalette(colors) {
+  setPalette(colors: number[][]) {
     let palette = new Uint32Array(Math.pow(2, this.bpp));
     for (let index = 0; index < colors.length; index++) {
       let color = colors[index % colors.length];
@@ -79,8 +90,8 @@ export default class BitmapEncoder {
     this.palette = palette;
   }
 
-  setPixels(pixelData) {
-    let pixels;
+  setPixels(pixelData: Uint8Array) {
+    let pixels: Uint8Array | Uint32Array;
     let pixelsLength = this.vWidth * this.height;
     switch (this.bpp) {
       case 8:
@@ -90,7 +101,7 @@ export default class BitmapEncoder {
         pixels = new Uint32Array(pixelsLength);
         break;
     }
-    // pixel rows are stored "upside down" in bmps
+    // pixel rows are stored 'upside down' in bmps
     let w = this.width;
     for (let y = 0; y < this.height; y++) {
       let srcOffset = (w * this.height) - ((y + 1) * w);
@@ -118,7 +129,7 @@ export default class BitmapEncoder {
         sections = sections.concat([this.pixels.buffer]);
         break;
     }
-    return new Blob(sections, {type: "image/bitmap"})
+    return new Blob(sections, {type: 'image/bitmap'})
   }
 
   getUrl() {

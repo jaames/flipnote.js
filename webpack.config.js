@@ -68,7 +68,7 @@ module.exports = function(env, argv) {
         banner: [
           "flipnote.js v" + version,
           "Browser-based playback of .ppm and .kwz animations from Flipnote Studio and Flipnote Studio 3D",
-          "2018 James Daniel",
+          "2018 - 2019 James Daniel",
           "github.com/jaames/flipnote.js",
           "Flipnote Studio is (c) Nintendo Co., Ltd.",
         ].join("\n")

@@ -100,6 +100,7 @@ export class PpmParser extends DataStream {
   public width: number = PpmParser.width;
   public height: number = PpmParser.height;
   public palette = PALETTE;
+  public globalPalette = PpmParser.globalPalette;
   public version: number;
   public meta: PpmMeta;
   public soundMeta: PpmSoundMeta;

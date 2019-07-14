@@ -108,6 +108,7 @@ export class KwzParser extends DataStream {
   public width: number = KwzParser.width;
   public height: number = KwzParser.height;
   public palette = PALETTE;
+  public globalPalette = KwzParser.globalPalette;
   public meta: KwzMeta;
   public soundMeta: KwzSoundMeta;
   public frameCount: number;
