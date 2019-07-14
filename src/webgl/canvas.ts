@@ -84,6 +84,8 @@ export class WebglCanvas {
     gl.bindTexture(gl.TEXTURE_2D, tex);
     gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_S, gl.CLAMP_TO_EDGE);
     gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_T, gl.CLAMP_TO_EDGE);
+    gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MIN_FILTER, gl.LINEAR);
+    gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MAG_FILTER, gl.LINEAR);
     // get uniform locations
     let uniformCount = gl.getProgramParameter(program, gl.ACTIVE_UNIFORMS);
     for (let i = 0; i < uniformCount; i++) {
@@ -96,9 +98,10 @@ export class WebglCanvas {
     this.setInputSize(320, 240);
     this.setCanvasSize(this.width, this.height);
     this.refs.textures.push(tex);
+    gl.pixelStorei(gl.UNPACK_FLIP_Y_WEBGL, true);
     gl.enable(gl.BLEND);
     gl.blendEquation(gl.FUNC_ADD);
-    gl.blendFuncSeparate(gl.SRC_ALPHA, gl.ONE_MINUS_SRC_ALPHA, gl.ONE, gl.ONE_MINUS_SRC_ALPHA)
+    gl.blendFuncSeparate(gl.SRC_ALPHA, gl.ONE_MINUS_SRC_ALPHA, gl.ONE, gl.ONE_MINUS_SRC_ALPHA);
   }
 
   private createShader(type: ShaderType, source: string) {
@@ -143,10 +146,7 @@ export class WebglCanvas {
 
   public setFilter(filter: FilterType) {
     var gl = this.gl;
-    gl.uniform1i(this.uniforms['u_isSmooth'], filter === FilterType.Linear ? 0 : 1);
-    gl.activeTexture(gl.TEXTURE0);
-    gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MIN_FILTER, filter);
-    gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MAG_FILTER, filter);
+    // gl.uniform1i(this.uniforms['u_isSmooth'], filter === FilterType.Linear ? 0 : 1);
   }
 
   public setColor(color: string, value: number[]) {

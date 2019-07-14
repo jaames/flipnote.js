@@ -6,7 +6,7 @@ uniform vec2 u_screenSize;
 
 void main() {
   gl_Position = a_position;
-  vec2 uv = a_position.xy * vec2(0.5, -0.5) + 0.5;
+  vec2 uv = a_position.xy * 0.5 + 0.5;
   v_texel = uv * u_textureSize;
   v_scale = floor(u_screenSize.y / u_textureSize.y + 0.01);
 }

@@ -9,7 +9,6 @@ uniform vec2 u_textureSize;
 uniform vec2 u_screenSize;
 
 void main() {
-  vec2 texelsize = 1.0 / u_textureSize.xy;
   vec2 texel_floored = floor(v_texel);
   vec2 s = fract(v_texel);
   float region_range = 0.5 - 0.5 / v_scale;
