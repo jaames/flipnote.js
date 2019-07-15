@@ -69,7 +69,7 @@ export class GifEncoder {
 
   writeColorTable() {
     const palette = new Uint8Array(3 * Math.pow(2, this.colorDepth));
-    for(let index = 0, offset = 0; offset < palette.length; index += 1, offset += 3) {
+    for(let index = 0, offset = 0; index < this.palette.length; index += 1, offset += 3) {
       palette.set(this.palette[index], offset);
     }
     this.data.writeBytes(palette);

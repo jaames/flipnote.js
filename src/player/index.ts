@@ -19,14 +19,13 @@ export class Player {
   public meta: FlipnoteMeta;
   public loop: boolean = false;
   public paused: boolean = true;
-  public smoothRendering: boolean = false;
   public layerVisibility: PlayerLayerVisibility;
   
   private isOpen: boolean = false;
   private events: PlayerEvents = {};
   private audioTracks: AudioTrack[];
   private seFlags: number[][];
-  private frame: number = -1;
+  private _frame: number = -1;
   private playbackLoop: number = null;
   private hasPlaybackStarted: boolean = false;
 
@@ -45,7 +44,7 @@ export class Player {
   }
 
   get currentFrame() {
-    return this.frame;
+    return this._frame;
   }
 
   set currentFrame(frameIndex) {
@@ -120,7 +119,7 @@ export class Player {
     this.paused = true;
     this.loop = null;
     this.meta = null;
-    this.frame = 0;
+    this._frame = 0;
     for (let i = 0; i < this.audioTracks.length; i++) {
       this.audioTracks[i].unset();
     }
@@ -164,10 +163,13 @@ export class Player {
   public play(): void {
     if ((!this.isOpen) || (!this.paused)) return null;
     this.paused = false;
-    if ((!this.hasPlaybackStarted) || ((!this.loop) && (this.currentFrame == this.frameCount - 1))) this.frame = 0;
+    if ((!this.hasPlaybackStarted) || ((!this.loop) && (this.currentFrame == this.frameCount - 1))) this._frame = 0;
     this.playBgm();
     this.playbackLoop = window.setInterval(() => {
-      if (this.paused) window.clearInterval(this.playbackLoop);
+      if (this.paused) {
+        window.clearInterval(this.playbackLoop);
+        this.stopAudio();
+      };
       // if the end of the flipnote has been reached
       if (this.currentFrame >= this.frameCount -1) {
         this.stopAudio();
@@ -198,12 +200,13 @@ export class Player {
   }
 
   public setFrame(frameIndex: number): void {
-    if ((!this.isOpen) || (frameIndex === this.currentFrame)) return null;
-    // clamp frame index
-    frameIndex = Math.max(0, Math.min(Math.floor(frameIndex), this.frameCount - 1));
-    this.frame = frameIndex;
-    this.drawFrame(frameIndex);
-    this.emit('frame:update', this.currentFrame);
+    if ((this.isOpen) && (frameIndex !== this.currentFrame)) {
+      // clamp frame index
+      frameIndex = Math.max(0, Math.min(Math.floor(frameIndex), this.frameCount - 1));
+      this._frame = frameIndex;
+      this.drawFrame(frameIndex);
+      this.emit('frame:update', this.currentFrame);
+    }
   }
 
   public nextFrame(): void {
@@ -265,18 +268,18 @@ export class Player {
     }
   }
 
-  private playFrameSe(frameIndex: number) {
+  private playFrameSe(frameIndex: number): void {
     var flags = this.seFlags[frameIndex];
     for (let i = 0; i < flags.length; i++) {
       if (flags[i] && this.audioTracks[i].isActive) this.audioTracks[i].start();
     }
   }
 
-  private playBgm() {
+  private playBgm(): void {
     this.audioTracks[4].start(this.currentTime);
   }
 
-  private stopAudio() {
+  private stopAudio(): void {
     for (let i = 0; i < this.audioTracks.length; i++) {
       this.audioTracks[i].stop();
     }
@@ -314,8 +317,6 @@ export class Player {
       callbackList[i].apply(null, args); 
     }
   }
-
-  
 
   public clearEvents(): void {
     this.events = {};
