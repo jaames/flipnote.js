@@ -1,4 +1,4 @@
-import { loadSource } from '../loader';
+import { loadSource } from '../loaders';
 import { PpmParser, PpmMeta } from './ppm';
 import { KwzParser, KwzMeta } from './kwz';
 

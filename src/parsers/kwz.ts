@@ -143,14 +143,14 @@ export class KwzParser extends DataStream {
     this.seek(0);
     this.sections = {};
     this.frameMeta = [];
-    let size = this.byteLength - 256;
+    const fileSize = this.byteLength - 256;
     let offset = 0;
     let sectionCount = 0;
     // counting sections should mitigate against one of mrnbayoh's notehax exploits
-    while ((offset < size) && (sectionCount < 6)) {
+    while ((offset < fileSize) && (sectionCount < 6)) {
       this.seek(offset);
-      let sectionMagic = <KwzSectionMagic>this.readUtf8(4).substring(0, 3);
-      let sectionLength = this.readUint32();
+      const sectionMagic = <KwzSectionMagic>this.readUtf8(4).substring(0, 3);
+      const sectionLength = this.readUint32();
       this.sections[sectionMagic] = {
         offset: offset,
         length: sectionLength
@@ -166,12 +166,12 @@ export class KwzParser extends DataStream {
 
   private readBits(num: number) {
     if (this.bitIndex + num > 16) {
-      let nextBits = this.readUint16();
+      const nextBits = this.readUint16();
       this.bitValue |= nextBits << (16 - this.bitIndex);
       this.bitIndex -= 16;
     }
-    let mask = (1 << num) - 1;
-    let result = this.bitValue & mask;
+    const mask = (1 << num) - 1;
+    const result = this.bitValue & mask;
     this.bitValue >>= num;
     this.bitIndex += num;
     return result;
@@ -179,23 +179,23 @@ export class KwzParser extends DataStream {
 
   private decodeMeta() {
     this.seek(this.sections['KFH'].offset + 12);
-    let creationTimestamp = new Date((this.readUint32() + 946684800) * 1000),
-        modifiedTimestamp = new Date((this.readUint32() + 946684800) * 1000),
-        appVersion = this.readUint32(),
-        rootAuthorId = this.readHex(10),
-        parentAuthorId = this.readHex(10),
-        currentAuthorId = this.readHex(10),
-        rootAuthorName = this.readUtf16(11),
-        parentAuthorName = this.readUtf16(11),
-        currentAuthorName = this.readUtf16(11),
-        rootFilename = this.readUtf8(28),
-        parentFilename = this.readUtf8(28),
-        currentFilename = this.readUtf8(28),
-        frameCount = this.readUint16(),
-        thumbIndex = this.readUint16(),
-        flags = this.readUint16(),
-        frameSpeed = this.readUint8(),
-        layerFlags = this.readUint8();
+    const creationTimestamp = new Date((this.readUint32() + 946684800) * 1000),
+          modifiedTimestamp = new Date((this.readUint32() + 946684800) * 1000),
+          appVersion = this.readUint32(),
+          rootAuthorId = this.readHex(10),
+          parentAuthorId = this.readHex(10),
+          currentAuthorId = this.readHex(10),
+          rootAuthorName = this.readUtf16(11),
+          parentAuthorName = this.readUtf16(11),
+          currentAuthorName = this.readUtf16(11),
+          rootFilename = this.readUtf8(28),
+          parentFilename = this.readUtf8(28),
+          currentFilename = this.readUtf8(28),
+          frameCount = this.readUint16(),
+          thumbIndex = this.readUint16(),
+          flags = this.readUint16(),
+          frameSpeed = this.readUint8(),
+          layerFlags = this.readUint8();
     this.frameCount = frameCount;
     this.thumbFrameIndex = thumbIndex;
     this.frameSpeed = frameSpeed;
@@ -231,7 +231,7 @@ export class KwzParser extends DataStream {
     this.seek(this.sections['KMI'].offset + 8);
     let offset = this.sections['KMC'].offset + 12;
     for (let i = 0; i < this.frameCount; i++) {
-      let frame = {
+      const frame = {
         flags: this.readUint32(),
         layerSize: [
           this.readUint16(),
@@ -256,10 +256,10 @@ export class KwzParser extends DataStream {
   private decodeSoundHeader() {
     let offset = this.sections['KSN'].offset + 8;
     this.seek(offset);
-    let bgmSpeed = this.readUint32();
+    const bgmSpeed = this.readUint32();
     this.bgmSpeed = bgmSpeed;
     this.bgmrate = FRAMERATES[bgmSpeed];
-    let trackSizes = new Uint32Array(this.buffer, offset + 4, 20);
+    const trackSizes = new Uint32Array(this.buffer, offset + 4, 20);
     this.soundMeta = {
       'bgm': {offset: offset += 28,            length: trackSizes[0]},
       'se1': {offset: offset += trackSizes[0], length: trackSizes[1]},
@@ -296,7 +296,7 @@ export class KwzParser extends DataStream {
 
     for (let layerIndex = 0; layerIndex < 3; layerIndex++) {
       this.seek(offset);
-      let layerSize = meta.layerSize[layerIndex];
+      const layerSize = meta.layerSize[layerIndex];
       offset += layerSize;
 
       // if the layer is 38 bytes then it hasn't changed at all since the previous frame, so we can skip it
@@ -311,11 +311,11 @@ export class KwzParser extends DataStream {
       for (let tileOffsetY = 0; tileOffsetY < KwzParser.height; tileOffsetY += 128) {
         for (let tileOffsetX = 0; tileOffsetX < KwzParser.width; tileOffsetX += 128) {
           for (let subTileOffsetY = 0; subTileOffsetY < 128; subTileOffsetY += 8) {
-            let y = tileOffsetY + subTileOffsetY;
+            const y = tileOffsetY + subTileOffsetY;
             if (y >= KwzParser.height) break;
 
             for (let subTileOffsetX = 0; subTileOffsetX < 128; subTileOffsetX += 8) {
-              let x = tileOffsetX + subTileOffsetX;
+              const x = tileOffsetX + subTileOffsetX;
               if (x >= KwzParser.width) break;
 
               if (skip) {
@@ -323,14 +323,14 @@ export class KwzParser extends DataStream {
                 continue;
               }
 
-              let pixelOffset = y * KwzParser.width + x;
-              let pixelBuffer = this.layers[layerIndex];
+              const pixelOffset = y * KwzParser.width + x;
+              const pixelBuffer = this.layers[layerIndex];
 
-              let type = this.readBits(3);
+              const type = this.readBits(3);
 
               if (type == 0) {
-                let lineIndex = KWZ_TABLE_1[this.readBits(5)];
-                let pixels = KWZ_LINE_TABLE.subarray(lineIndex * 8, lineIndex * 8 + 8);
+                const lineIndex = KWZ_TABLE_1[this.readBits(5)];
+                const pixels = KWZ_LINE_TABLE.subarray(lineIndex * 8, lineIndex * 8 + 8);
                 pixelBuffer.set(pixels, pixelOffset);
                 pixelBuffer.set(pixels, pixelOffset + 320);
                 pixelBuffer.set(pixels, pixelOffset + 640);
@@ -342,8 +342,8 @@ export class KwzParser extends DataStream {
               } 
 
               else if (type == 1) {
-                let lineIndex = this.readBits(13);
-                let pixels = KWZ_LINE_TABLE.subarray(lineIndex * 8, lineIndex * 8 + 8);
+                const lineIndex = this.readBits(13);
+                const pixels = KWZ_LINE_TABLE.subarray(lineIndex * 8, lineIndex * 8 + 8);
                 pixelBuffer.set(pixels, pixelOffset);
                 pixelBuffer.set(pixels, pixelOffset + 320);
                 pixelBuffer.set(pixels, pixelOffset + 640);
@@ -355,11 +355,11 @@ export class KwzParser extends DataStream {
               } 
               
               else if (type == 2) {
-                let lineValue = this.readBits(5);
-                let lineIndexA = KWZ_TABLE_1[lineValue];
-                let lineIndexB = KWZ_TABLE_2[lineValue];
-                let a = KWZ_LINE_TABLE.subarray(lineIndexA * 8, lineIndexA * 8 + 8);
-                let b = KWZ_LINE_TABLE.subarray(lineIndexB * 8, lineIndexB * 8 + 8);
+                const lineValue = this.readBits(5);
+                const lineIndexA = KWZ_TABLE_1[lineValue];
+                const lineIndexB = KWZ_TABLE_2[lineValue];
+                const a = KWZ_LINE_TABLE.subarray(lineIndexA * 8, lineIndexA * 8 + 8);
+                const b = KWZ_LINE_TABLE.subarray(lineIndexB * 8, lineIndexB * 8 + 8);
                 pixelBuffer.set(a, pixelOffset);
                 pixelBuffer.set(b, pixelOffset + 320);
                 pixelBuffer.set(a, pixelOffset + 640);
@@ -371,10 +371,10 @@ export class KwzParser extends DataStream {
               } 
               
               else if (type == 3) {
-                let lineIndexA = this.readBits(13);
-                let lineIndexB = KWZ_TABLE_3[lineIndexA];
-                let a = KWZ_LINE_TABLE.subarray(lineIndexA * 8, lineIndexA * 8 + 8);
-                let b = KWZ_LINE_TABLE.subarray(lineIndexB * 8, lineIndexB * 8 + 8);
+                const lineIndexA = this.readBits(13);
+                const lineIndexB = KWZ_TABLE_3[lineIndexA];
+                const a = KWZ_LINE_TABLE.subarray(lineIndexA * 8, lineIndexA * 8 + 8);
+                const b = KWZ_LINE_TABLE.subarray(lineIndexB * 8, lineIndexB * 8 + 8);
                 pixelBuffer.set(a, pixelOffset);
                 pixelBuffer.set(b, pixelOffset + 320);
                 pixelBuffer.set(a, pixelOffset + 640);
@@ -386,7 +386,7 @@ export class KwzParser extends DataStream {
               }
 
               else if (type == 4) {
-                let mask = this.readBits(8);
+                const mask = this.readBits(8);
                 for (let line = 0; line < 8; line++) {
                   let lineIndex = 0;
                   if (mask & (1 << line)) {
@@ -394,7 +394,7 @@ export class KwzParser extends DataStream {
                   } else {
                     lineIndex = this.readBits(13);
                   }
-                  let pixels = KWZ_LINE_TABLE.subarray(lineIndex * 8, lineIndex * 8 + 8);
+                  const pixels = KWZ_LINE_TABLE.subarray(lineIndex * 8, lineIndex * 8 + 8);
                   pixelBuffer.set(pixels, pixelOffset + line * 320);
                 }
               }
@@ -421,8 +421,8 @@ export class KwzParser extends DataStream {
                   lineIndexB = this.readBits(13);
                 }
 
-                let a = KWZ_LINE_TABLE.subarray(lineIndexA * 8, lineIndexA * 8 + 8);
-                let b = KWZ_LINE_TABLE.subarray(lineIndexB * 8, lineIndexB * 8 + 8);
+                const a = KWZ_LINE_TABLE.subarray(lineIndexA * 8, lineIndexA * 8 + 8);
+                const b = KWZ_LINE_TABLE.subarray(lineIndexB * 8, lineIndexB * 8 + 8);
 
                 if (pattern == 0) {
                   pixelBuffer.set(a, pixelOffset);
@@ -478,8 +478,8 @@ export class KwzParser extends DataStream {
   }
 
   public getFramePalette(frameIndex: number) {
-    let flags = this.frameMeta[frameIndex].flags;
-    let paletteMap = [
+    const flags = this.frameMeta[frameIndex].flags;
+    const paletteMap = [
       this.palette.WHITE,
       this.palette.BLACK,
       this.palette.RED,
@@ -504,15 +504,15 @@ export class KwzParser extends DataStream {
     if (this.prevDecodedFrame !== frameIndex) {
       this.decodeFrame(frameIndex);
     }
-    const layer = this.layers[layerIndex];
+    const layers = this.layers[layerIndex];
     const image = new Uint8Array((KwzParser.width * KwzParser.height));
     const paletteOffset = layerIndex * 2 + 1;
-    for (let index = 0; index < layer.length; index++) {
-      let pixel = layer[index];
+    for (let pixelIndex = 0; pixelIndex < layers.length; pixelIndex++) {
+      let pixel = layers[pixelIndex];
       if (pixel & 0xff00) {
-        image[index] = paletteOffset;
+        image[pixelIndex] = paletteOffset;
       } else if (pixel & 0x00ff) {
-        image[index] = paletteOffset + 1;
+        image[pixelIndex] = paletteOffset + 1;
       }
     }
     return image;
@@ -533,10 +533,10 @@ export class KwzParser extends DataStream {
     layerOrder.forEach(layerIndex => {
       const layer = this.getLayerPixels(frameIndex, layerIndex);
       // merge layer into image result
-      for (let index = 0; index < layer.length; index++) {
-        let pixel = layer[index];
+      for (let pixelIndex = 0; pixelIndex < layer.length; pixelIndex++) {
+        const pixel = layer[pixelIndex];
         if (pixel !== 0) {
-          image[index] = paletteMap[pixel];
+          image[pixelIndex] = paletteMap[pixel];
         }
       }
     });
@@ -545,7 +545,7 @@ export class KwzParser extends DataStream {
   
   public decodeSoundFlags() {
     return this.frameMeta.map(frame => {
-      let soundFlags = frame.soundFlags;
+      const soundFlags = frame.soundFlags;
       return [
         soundFlags & 0x1,
         (soundFlags >> 1) & 0x1,
@@ -562,18 +562,20 @@ export class KwzParser extends DataStream {
   }
 
   public decodeAudio(track: KwzSoundTrack) {
-    let meta = this.soundMeta[track];
-    let output = new Int16Array(16364 * 60);
+    const trackMeta = this.soundMeta[track];
+    const adpcm = new Uint8Array(this.buffer, trackMeta.offset, trackMeta.length);
+    const output = new Int16Array(16364 * 60);
     let outputOffset = 0;
-    let adpcm = new Uint8Array(this.buffer, meta.offset, meta.length);
     // initial decoder state
-    var prevDiff = 0;
-    var prevStepIndex = 40;
-    var sample: number, diff: number, stepIndex: number;
+    let prevDiff = 0;
+    let prevStepIndex = 40;
+    let sample: number;
+    let diff: number;
+    let stepIndex: number;
     // loop through each byte in the raw adpcm data
-    for (let index = 0; index < adpcm.length; index++) {
-      var byte = adpcm[index];
-      var bitPos = 0;
+    for (let adpcmOffset = 0; adpcmOffset < adpcm.length; adpcmOffset++) {
+      const byte = adpcm[adpcmOffset];
+      let bitPos = 0;
       while (bitPos < 8) {
         if (prevStepIndex < 18 || bitPos == 6) {
           // isolate 2-bit sample

@@ -1,5 +1,5 @@
 import { DataStream } from '../utils/dataStream';
-import { Flipnote } from '../parser';
+import { Flipnote } from '../parsers';
 
 // round number to nearest multiple of n
 export function roundToNearest(value: number, n: number) {

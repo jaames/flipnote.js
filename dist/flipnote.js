@@ -103,142 +103,6 @@ return /******/ (function(modules) { // webpackBootstrap
 /************************************************************************/
 /******/ ({
 
-/***/ "./encoders/bmp.ts":
-/*!*************************!*\
-  !*** ./encoders/bmp.ts ***!
-  \*************************/
-/*! exports provided: roundToNearest, BitmapEncoder */
-/***/ (function(module, __webpack_exports__, __webpack_require__) {
-
-"use strict";
-__webpack_require__.r(__webpack_exports__);
-/* harmony export (binding) */ __webpack_require__.d(__webpack_exports__, "roundToNearest", function() { return roundToNearest; });
-/* harmony export (binding) */ __webpack_require__.d(__webpack_exports__, "BitmapEncoder", function() { return BitmapEncoder; });
-/* harmony import */ var _utils_dataStream__WEBPACK_IMPORTED_MODULE_0__ = __webpack_require__(/*! ../utils/dataStream */ "./utils/dataStream.ts");
-
-// round number to nearest multiple of n
-function roundToNearest(value, n) {
-    return Math.ceil(value / n) * n;
-}
-// simple bitmap class for rendering images
-// https://en.wikipedia.org/wiki/BMP_file_format
-var BitmapEncoder = /** @class */ (function () {
-    function BitmapEncoder(width, height, bpp) {
-        this.width = width;
-        this.height = height;
-        this.vWidth = roundToNearest(width, 4);
-        this.vHeight = roundToNearest(height, 4);
-        this.bpp = bpp;
-        this.fileHeader = new _utils_dataStream__WEBPACK_IMPORTED_MODULE_0__["DataStream"](new ArrayBuffer(14));
-        this.fileHeader.writeUtf8('BM'); // 'BM' file magic
-        // using BITMAPV4HEADER dib header variant:
-        this.dibHeader = new _utils_dataStream__WEBPACK_IMPORTED_MODULE_0__["DataStream"](new ArrayBuffer(108));
-        this.dibHeader.writeUint32(108); // DIB header length
-        this.dibHeader.writeInt32(width); // width
-        this.dibHeader.writeInt32(height); // height
-        this.dibHeader.writeUint16(1); // color panes (always 1)
-        this.dibHeader.writeUint16(bpp); // bits per pixel
-        this.dibHeader.writeUint32(3); // compression method (3 = BI_BITFIELDS for rgba, 0 = no compression for 8 bit)
-        this.dibHeader.writeUint32((this.vWidth * this.height) / (bpp / 8)); // image data size, (width * height) / bits per pixel
-        this.dibHeader.writeUint32(3780); // x res, pixel per meter
-        this.dibHeader.writeUint32(3780); // y res, pixel per meter
-        this.dibHeader.writeUint32(0); // the number of colors in the color palette, set by setPalette() method
-        this.dibHeader.writeUint32(0); // the number of important colors used, or 0 when every color is important; generally ignored
-        this.dibHeader.writeUint32(0x00FF0000); // red channel bitmask
-        this.dibHeader.writeUint32(0x0000FF00); // green channel bitmask
-        this.dibHeader.writeUint32(0x000000FF); // blue channel bitmask
-        this.dibHeader.writeUint32(0xFF000000); // alpha channel bitmask
-        this.dibHeader.writeUtf8('Win '); // LCS_WINDOWS_COLOR_SPACE 'Win '
-        /// rest can be left as nulls
-    }
-    BitmapEncoder.fromFlipnoteFrame = function (flipnote, frameIndex) {
-        var bmp = new BitmapEncoder(flipnote.width, flipnote.height, 8);
-        bmp.setPixels(flipnote.getFramePixels(frameIndex));
-        bmp.setPalette(flipnote.getFramePalette(frameIndex));
-        return bmp;
-    };
-    BitmapEncoder.prototype.setFilelength = function (value) {
-        this.fileHeader.seek(2);
-        this.fileHeader.writeUint32(value);
-    };
-    BitmapEncoder.prototype.setPixelOffset = function (value) {
-        this.fileHeader.seek(10);
-        this.fileHeader.writeUint32(value);
-    };
-    BitmapEncoder.prototype.setCompression = function (value) {
-        this.dibHeader.seek(16);
-        this.dibHeader.writeUint32(value);
-    };
-    BitmapEncoder.prototype.setPaletteCount = function (value) {
-        this.dibHeader.seek(32);
-        this.dibHeader.writeUint32(value);
-    };
-    BitmapEncoder.prototype.setPalette = function (colors) {
-        var palette = new Uint32Array(Math.pow(2, this.bpp));
-        for (var index = 0; index < colors.length; index++) {
-            var color = colors[index % colors.length];
-            // bmp color order is ARGB
-            palette[index] = 0xFF000000 | (color[0] << 16) | (color[1] << 8) | (color[2]);
-        }
-        this.setPaletteCount(palette.length); // set number of colors in DIB header
-        this.setCompression(0); // set compression to 0 so we're not using 32 bit
-        this.palette = palette;
-    };
-    BitmapEncoder.prototype.setPixels = function (pixelData) {
-        var pixels;
-        var pixelsLength = this.vWidth * this.height;
-        switch (this.bpp) {
-            case 8:
-                pixels = new Uint8Array(pixelsLength);
-                break;
-            case 32:
-                pixels = new Uint32Array(pixelsLength);
-                break;
-        }
-        // pixel rows are stored 'upside down' in bmps
-        var w = this.width;
-        for (var y = 0; y < this.height; y++) {
-            var srcOffset = (w * this.height) - ((y + 1) * w);
-            var destOffset = (y * this.width);
-            pixels.set(pixelData.slice(srcOffset, srcOffset + this.width), destOffset);
-        }
-        this.pixels = pixels;
-    };
-    BitmapEncoder.prototype.getBlob = function () {
-        var sections = [this.fileHeader.buffer, this.dibHeader.buffer];
-        var headerByteLength = this.fileHeader.byteLength + this.dibHeader.byteLength;
-        switch (this.bpp) {
-            case 1:
-            case 4:
-            case 8:
-                this.setFilelength(headerByteLength + this.pixels.byteLength + this.palette.byteLength);
-                this.setPixelOffset(headerByteLength + this.palette.byteLength);
-                sections = sections.concat([this.palette.buffer, this.pixels.buffer]);
-                break;
-            case 16:
-            case 32:
-                this.setFilelength(headerByteLength + this.pixels.byteLength);
-                this.setPixelOffset(headerByteLength);
-                sections = sections.concat([this.pixels.buffer]);
-                break;
-        }
-        return new Blob(sections, { type: 'image/bitmap' });
-    };
-    BitmapEncoder.prototype.getUrl = function () {
-        return window.URL.createObjectURL(this.getBlob());
-    };
-    BitmapEncoder.prototype.getImage = function () {
-        var img = new Image(this.width, this.height);
-        img.src = this.getUrl();
-        return img;
-    };
-    return BitmapEncoder;
-}());
-
-
-
-/***/ }),
-
 /***/ "./encoders/gif.ts":
 /*!*************************!*\
   !*** ./encoders/gif.ts ***!
@@ -249,10 +113,8 @@ var BitmapEncoder = /** @class */ (function () {
 "use strict";
 __webpack_require__.r(__webpack_exports__);
 /* harmony export (binding) */ __webpack_require__.d(__webpack_exports__, "GifEncoder", function() { return GifEncoder; });
-/* harmony import */ var _utils_dataStream__WEBPACK_IMPORTED_MODULE_0__ = __webpack_require__(/*! ../utils/dataStream */ "./utils/dataStream.ts");
-/* harmony import */ var _utils_byteArray__WEBPACK_IMPORTED_MODULE_1__ = __webpack_require__(/*! ../utils/byteArray */ "./utils/byteArray.ts");
-/* harmony import */ var _lzw__WEBPACK_IMPORTED_MODULE_2__ = __webpack_require__(/*! ./lzw */ "./encoders/lzw.ts");
-
+/* harmony import */ var _utils__WEBPACK_IMPORTED_MODULE_0__ = __webpack_require__(/*! ../utils */ "./utils/index.ts");
+/* harmony import */ var _lzw__WEBPACK_IMPORTED_MODULE_1__ = __webpack_require__(/*! ./lzw */ "./encoders/lzw.ts");
 
 
 var GifEncoder = /** @class */ (function () {
@@ -264,7 +126,7 @@ var GifEncoder = /** @class */ (function () {
         this.palette = [];
         this.width = width;
         this.height = height;
-        this.data = new _utils_byteArray__WEBPACK_IMPORTED_MODULE_1__["ByteArray"]();
+        this.data = new _utils__WEBPACK_IMPORTED_MODULE_0__["ByteArray"]();
     }
     GifEncoder.fromFlipnote = function (flipnote) {
         var gif = new GifEncoder(flipnote.width, flipnote.height);
@@ -297,7 +159,7 @@ var GifEncoder = /** @class */ (function () {
         this.writeNetscapeExt();
     };
     GifEncoder.prototype.writeHeader = function () {
-        var header = new _utils_dataStream__WEBPACK_IMPORTED_MODULE_0__["DataStream"](new ArrayBuffer(13));
+        var header = new _utils__WEBPACK_IMPORTED_MODULE_0__["DataStream"](new ArrayBuffer(13));
         header.writeUtf8('GIF89a');
         // Logical Screen Descriptor
         header.writeUint16(this.width);
@@ -317,7 +179,7 @@ var GifEncoder = /** @class */ (function () {
         this.data.writeBytes(palette);
     };
     GifEncoder.prototype.writeGraphicsControlExt = function () {
-        var graphicsControlExt = new _utils_dataStream__WEBPACK_IMPORTED_MODULE_0__["DataStream"](new ArrayBuffer(8));
+        var graphicsControlExt = new _utils__WEBPACK_IMPORTED_MODULE_0__["DataStream"](new ArrayBuffer(8));
         graphicsControlExt.writeBytes([
             0x21,
             0xF9,
@@ -332,7 +194,7 @@ var GifEncoder = /** @class */ (function () {
         this.data.writeBytes(new Uint8Array(graphicsControlExt.buffer));
     };
     GifEncoder.prototype.writeNetscapeExt = function () {
-        var netscapeExt = new _utils_dataStream__WEBPACK_IMPORTED_MODULE_0__["DataStream"](new ArrayBuffer(19));
+        var netscapeExt = new _utils__WEBPACK_IMPORTED_MODULE_0__["DataStream"](new ArrayBuffer(19));
         netscapeExt.writeBytes([
             0x21,
             0xFF,
@@ -345,7 +207,7 @@ var GifEncoder = /** @class */ (function () {
         this.data.writeBytes(new Uint8Array(netscapeExt.buffer));
     };
     GifEncoder.prototype.writeImageDesc = function () {
-        var desc = new _utils_dataStream__WEBPACK_IMPORTED_MODULE_0__["DataStream"](new ArrayBuffer(10));
+        var desc = new _utils__WEBPACK_IMPORTED_MODULE_0__["DataStream"](new ArrayBuffer(10));
         desc.writeUint8(0x2C);
         desc.writeUint16(0); // image left
         desc.writeUint16(0); // image top
@@ -355,7 +217,7 @@ var GifEncoder = /** @class */ (function () {
         this.data.writeBytes(new Uint8Array(desc.buffer));
     };
     GifEncoder.prototype.writePixels = function (pixels) {
-        var lzw = new _lzw__WEBPACK_IMPORTED_MODULE_2__["LZWEncoder"](this.width, this.height, pixels, this.colorDepth);
+        var lzw = new _lzw__WEBPACK_IMPORTED_MODULE_1__["LZWEncoder"](this.width, this.height, pixels, this.colorDepth);
         lzw.encode(this.data);
     };
     GifEncoder.prototype.writeFrame = function (pixels) {
@@ -379,6 +241,27 @@ var GifEncoder = /** @class */ (function () {
     };
     return GifEncoder;
 }());
+
+
+
+/***/ }),
+
+/***/ "./encoders/index.ts":
+/*!***************************!*\
+  !*** ./encoders/index.ts ***!
+  \***************************/
+/*! exports provided: GifEncoder, WavEncoder */
+/***/ (function(module, __webpack_exports__, __webpack_require__) {
+
+"use strict";
+__webpack_require__.r(__webpack_exports__);
+/* harmony import */ var _gif__WEBPACK_IMPORTED_MODULE_0__ = __webpack_require__(/*! ./gif */ "./encoders/gif.ts");
+/* harmony reexport (safe) */ __webpack_require__.d(__webpack_exports__, "GifEncoder", function() { return _gif__WEBPACK_IMPORTED_MODULE_0__["GifEncoder"]; });
+
+/* harmony import */ var _wav__WEBPACK_IMPORTED_MODULE_1__ = __webpack_require__(/*! ./wav */ "./encoders/wav.ts");
+/* harmony reexport (safe) */ __webpack_require__.d(__webpack_exports__, "WavEncoder", function() { return _wav__WEBPACK_IMPORTED_MODULE_1__["WavEncoder"]; });
+
+
 
 
 
@@ -637,7 +520,7 @@ var LZWEncoder = /** @class */ (function () {
 "use strict";
 __webpack_require__.r(__webpack_exports__);
 /* harmony export (binding) */ __webpack_require__.d(__webpack_exports__, "WavEncoder", function() { return WavEncoder; });
-/* harmony import */ var _utils_dataStream__WEBPACK_IMPORTED_MODULE_0__ = __webpack_require__(/*! ../utils/dataStream */ "./utils/dataStream.ts");
+/* harmony import */ var _utils__WEBPACK_IMPORTED_MODULE_0__ = __webpack_require__(/*! ../utils */ "./utils/index.ts");
 
 var WavEncoder = /** @class */ (function () {
     function WavEncoder(sampleRate, channels, bitsPerSample) {
@@ -649,7 +532,7 @@ var WavEncoder = /** @class */ (function () {
         // Write WAV file header
         // Reference: http://www.topherlee.com/software/pcm-tut-wavformat.html
         var headerBuffer = new ArrayBuffer(44);
-        var header = new _utils_dataStream__WEBPACK_IMPORTED_MODULE_0__["DataStream"](headerBuffer);
+        var header = new _utils__WEBPACK_IMPORTED_MODULE_0__["DataStream"](headerBuffer);
         // 'RIFF' indent
         header.writeUtf8('RIFF');
         // filesize (set later)
@@ -708,33 +591,31 @@ var WavEncoder = /** @class */ (function () {
 
 "use strict";
 __webpack_require__.r(__webpack_exports__);
-/* harmony import */ var _utils_dataStream__WEBPACK_IMPORTED_MODULE_0__ = __webpack_require__(/*! ./utils/dataStream */ "./utils/dataStream.ts");
-/* harmony import */ var _parser__WEBPACK_IMPORTED_MODULE_1__ = __webpack_require__(/*! ./parser */ "./parser/index.ts");
+/* harmony import */ var _utils__WEBPACK_IMPORTED_MODULE_0__ = __webpack_require__(/*! ./utils */ "./utils/index.ts");
+/* harmony import */ var _parsers__WEBPACK_IMPORTED_MODULE_1__ = __webpack_require__(/*! ./parsers */ "./parsers/index.ts");
 /* harmony import */ var _player__WEBPACK_IMPORTED_MODULE_2__ = __webpack_require__(/*! ./player */ "./player/index.ts");
-/* harmony import */ var _encoders_bmp__WEBPACK_IMPORTED_MODULE_3__ = __webpack_require__(/*! ./encoders/bmp */ "./encoders/bmp.ts");
-/* harmony import */ var _encoders_gif__WEBPACK_IMPORTED_MODULE_4__ = __webpack_require__(/*! ./encoders/gif */ "./encoders/gif.ts");
-
+/* harmony import */ var _encoders__WEBPACK_IMPORTED_MODULE_3__ = __webpack_require__(/*! ./encoders */ "./encoders/index.ts");
 
 
 
 
 /* harmony default export */ __webpack_exports__["default"] = ({
-    dataStream: _utils_dataStream__WEBPACK_IMPORTED_MODULE_0__["DataStream"],
-    kwzParser: _parser__WEBPACK_IMPORTED_MODULE_1__["KwzParser"],
-    ppmParser: _parser__WEBPACK_IMPORTED_MODULE_1__["PpmParser"],
+    utils: _utils__WEBPACK_IMPORTED_MODULE_0__,
+    kwzParser: _parsers__WEBPACK_IMPORTED_MODULE_1__["KwzParser"],
+    ppmParser: _parsers__WEBPACK_IMPORTED_MODULE_1__["PpmParser"],
     player: _player__WEBPACK_IMPORTED_MODULE_2__["Player"],
-    bitmapEncoder: _encoders_bmp__WEBPACK_IMPORTED_MODULE_3__["BitmapEncoder"],
-    gifEncoder: _encoders_gif__WEBPACK_IMPORTED_MODULE_4__["GifEncoder"],
-    parseSource: _parser__WEBPACK_IMPORTED_MODULE_1__["parseSource"],
+    gifEncoder: _encoders__WEBPACK_IMPORTED_MODULE_3__["GifEncoder"],
+    wavEncoder: _encoders__WEBPACK_IMPORTED_MODULE_3__["WavEncoder"],
+    parseSource: _parsers__WEBPACK_IMPORTED_MODULE_1__["parseSource"],
 });
 
 
 /***/ }),
 
-/***/ "./loader/arrayBufferLoader.ts":
-/*!*************************************!*\
-  !*** ./loader/arrayBufferLoader.ts ***!
-  \*************************************/
+/***/ "./loaders/arrayBufferLoader.ts":
+/*!**************************************!*\
+  !*** ./loaders/arrayBufferLoader.ts ***!
+  \**************************************/
 /*! exports provided: default */
 /***/ (function(module, __webpack_exports__, __webpack_require__) {
 
@@ -752,10 +633,10 @@ __webpack_require__.r(__webpack_exports__);
 
 /***/ }),
 
-/***/ "./loader/fileLoader.ts":
-/*!******************************!*\
-  !*** ./loader/fileLoader.ts ***!
-  \******************************/
+/***/ "./loaders/fileLoader.ts":
+/*!*******************************!*\
+  !*** ./loaders/fileLoader.ts ***!
+  \*******************************/
 /*! exports provided: default */
 /***/ (function(module, __webpack_exports__, __webpack_require__) {
 
@@ -780,19 +661,19 @@ __webpack_require__.r(__webpack_exports__);
 
 /***/ }),
 
-/***/ "./loader/index.ts":
-/*!*************************!*\
-  !*** ./loader/index.ts ***!
-  \*************************/
+/***/ "./loaders/index.ts":
+/*!**************************!*\
+  !*** ./loaders/index.ts ***!
+  \**************************/
 /*! exports provided: loadSource */
 /***/ (function(module, __webpack_exports__, __webpack_require__) {
 
 "use strict";
 __webpack_require__.r(__webpack_exports__);
 /* harmony export (binding) */ __webpack_require__.d(__webpack_exports__, "loadSource", function() { return loadSource; });
-/* harmony import */ var _urlLoader__WEBPACK_IMPORTED_MODULE_0__ = __webpack_require__(/*! ./urlLoader */ "./loader/urlLoader.ts");
-/* harmony import */ var _fileLoader__WEBPACK_IMPORTED_MODULE_1__ = __webpack_require__(/*! ./fileLoader */ "./loader/fileLoader.ts");
-/* harmony import */ var _arrayBufferLoader__WEBPACK_IMPORTED_MODULE_2__ = __webpack_require__(/*! ./arrayBufferLoader */ "./loader/arrayBufferLoader.ts");
+/* harmony import */ var _urlLoader__WEBPACK_IMPORTED_MODULE_0__ = __webpack_require__(/*! ./urlLoader */ "./loaders/urlLoader.ts");
+/* harmony import */ var _fileLoader__WEBPACK_IMPORTED_MODULE_1__ = __webpack_require__(/*! ./fileLoader */ "./loaders/fileLoader.ts");
+/* harmony import */ var _arrayBufferLoader__WEBPACK_IMPORTED_MODULE_2__ = __webpack_require__(/*! ./arrayBufferLoader */ "./loaders/arrayBufferLoader.ts");
 
 
 
@@ -803,23 +684,21 @@ var loaders = [
 ];
 function loadSource(source) {
     return new Promise(function (resolve, reject) {
-        for (var i = 0; i < loaders.length; i++) {
-            var loader = loaders[i];
+        loaders.forEach(function (loader) {
             if (loader.matches(source)) {
                 loader.load(source, resolve, reject);
-                break;
             }
-        }
+        });
     });
 }
 
 
 /***/ }),
 
-/***/ "./loader/urlLoader.ts":
-/*!*****************************!*\
-  !*** ./loader/urlLoader.ts ***!
-  \*****************************/
+/***/ "./loaders/urlLoader.ts":
+/*!******************************!*\
+  !*** ./loaders/urlLoader.ts ***!
+  \******************************/
 /*! exports provided: default */
 /***/ (function(module, __webpack_exports__, __webpack_require__) {
 
@@ -854,10 +733,10 @@ __webpack_require__.r(__webpack_exports__);
 
 /***/ }),
 
-/***/ "./parser/adpcm.ts":
-/*!*************************!*\
-  !*** ./parser/adpcm.ts ***!
-  \*************************/
+/***/ "./parsers/adpcm.ts":
+/*!**************************!*\
+  !*** ./parsers/adpcm.ts ***!
+  \**************************/
 /*! exports provided: ADPCM_INDEX_TABLE_2, ADPCM_INDEX_TABLE_4, ADPCM_STEP_TABLE, ADPCM_SAMPLE_TABLE_2, ADPCM_SAMPLE_TABLE_4 */
 /***/ (function(module, __webpack_exports__, __webpack_require__) {
 
@@ -919,19 +798,19 @@ for (var sample = 0; sample < 16; sample++) {
 
 /***/ }),
 
-/***/ "./parser/index.ts":
-/*!*************************!*\
-  !*** ./parser/index.ts ***!
-  \*************************/
+/***/ "./parsers/index.ts":
+/*!**************************!*\
+  !*** ./parsers/index.ts ***!
+  \**************************/
 /*! exports provided: parseSource, PpmParser, KwzParser */
 /***/ (function(module, __webpack_exports__, __webpack_require__) {
 
 "use strict";
 __webpack_require__.r(__webpack_exports__);
 /* harmony export (binding) */ __webpack_require__.d(__webpack_exports__, "parseSource", function() { return parseSource; });
-/* harmony import */ var _loader__WEBPACK_IMPORTED_MODULE_0__ = __webpack_require__(/*! ../loader */ "./loader/index.ts");
-/* harmony import */ var _ppm__WEBPACK_IMPORTED_MODULE_1__ = __webpack_require__(/*! ./ppm */ "./parser/ppm.ts");
-/* harmony import */ var _kwz__WEBPACK_IMPORTED_MODULE_2__ = __webpack_require__(/*! ./kwz */ "./parser/kwz.ts");
+/* harmony import */ var _loaders__WEBPACK_IMPORTED_MODULE_0__ = __webpack_require__(/*! ../loaders */ "./loaders/index.ts");
+/* harmony import */ var _ppm__WEBPACK_IMPORTED_MODULE_1__ = __webpack_require__(/*! ./ppm */ "./parsers/ppm.ts");
+/* harmony import */ var _kwz__WEBPACK_IMPORTED_MODULE_2__ = __webpack_require__(/*! ./kwz */ "./parsers/kwz.ts");
 /* harmony reexport (safe) */ __webpack_require__.d(__webpack_exports__, "PpmParser", function() { return _ppm__WEBPACK_IMPORTED_MODULE_1__["PpmParser"]; });
 
 /* harmony reexport (safe) */ __webpack_require__.d(__webpack_exports__, "KwzParser", function() { return _kwz__WEBPACK_IMPORTED_MODULE_2__["KwzParser"]; });
@@ -940,7 +819,7 @@ __webpack_require__.r(__webpack_exports__);
 
 
 function parseSource(source) {
-    return Object(_loader__WEBPACK_IMPORTED_MODULE_0__["loadSource"])(source).then(function (arrayBuffer) {
+    return Object(_loaders__WEBPACK_IMPORTED_MODULE_0__["loadSource"])(source).then(function (arrayBuffer) {
         // check the buffer's magic to identify which format it uses
         var data = new DataView(arrayBuffer, 0, 4);
         var magic = data.getUint32(0);
@@ -961,10 +840,10 @@ function parseSource(source) {
 
 /***/ }),
 
-/***/ "./parser/kwz.ts":
-/*!***********************!*\
-  !*** ./parser/kwz.ts ***!
-  \***********************/
+/***/ "./parsers/kwz.ts":
+/*!************************!*\
+  !*** ./parsers/kwz.ts ***!
+  \************************/
 /*! exports provided: KwzParser */
 /***/ (function(module, __webpack_exports__, __webpack_require__) {
 
@@ -972,8 +851,8 @@ function parseSource(source) {
 __webpack_require__.r(__webpack_exports__);
 /* harmony export (binding) */ __webpack_require__.d(__webpack_exports__, "KwzParser", function() { return KwzParser; });
 /* harmony import */ var _utils_dataStream__WEBPACK_IMPORTED_MODULE_0__ = __webpack_require__(/*! ../utils/dataStream */ "./utils/dataStream.ts");
-/* harmony import */ var _adpcm__WEBPACK_IMPORTED_MODULE_1__ = __webpack_require__(/*! ./adpcm */ "./parser/adpcm.ts");
-/* harmony import */ var _kwzTables__WEBPACK_IMPORTED_MODULE_2__ = __webpack_require__(/*! ./kwzTables */ "./parser/kwzTables.ts");
+/* harmony import */ var _adpcm__WEBPACK_IMPORTED_MODULE_1__ = __webpack_require__(/*! ./adpcm */ "./parsers/adpcm.ts");
+/* harmony import */ var _kwzTables__WEBPACK_IMPORTED_MODULE_2__ = __webpack_require__(/*! ./kwzTables */ "./parsers/kwzTables.ts");
 var __extends = (undefined && undefined.__extends) || (function () {
     var extendStatics = function (d, b) {
         extendStatics = Object.setPrototypeOf ||
@@ -1041,11 +920,11 @@ var KwzParser = /** @class */ (function (_super) {
         this.seek(0);
         this.sections = {};
         this.frameMeta = [];
-        var size = this.byteLength - 256;
+        var fileSize = this.byteLength - 256;
         var offset = 0;
         var sectionCount = 0;
         // counting sections should mitigate against one of mrnbayoh's notehax exploits
-        while ((offset < size) && (sectionCount < 6)) {
+        while ((offset < fileSize) && (sectionCount < 6)) {
             this.seek(offset);
             var sectionMagic = this.readUtf8(4).substring(0, 3);
             var sectionLength = this.readUint32();
@@ -1364,16 +1243,16 @@ var KwzParser = /** @class */ (function (_super) {
         if (this.prevDecodedFrame !== frameIndex) {
             this.decodeFrame(frameIndex);
         }
-        var layer = this.layers[layerIndex];
+        var layers = this.layers[layerIndex];
         var image = new Uint8Array((KwzParser.width * KwzParser.height));
         var paletteOffset = layerIndex * 2 + 1;
-        for (var index = 0; index < layer.length; index++) {
-            var pixel = layer[index];
+        for (var pixelIndex = 0; pixelIndex < layers.length; pixelIndex++) {
+            var pixel = layers[pixelIndex];
             if (pixel & 0xff00) {
-                image[index] = paletteOffset;
+                image[pixelIndex] = paletteOffset;
             }
             else if (pixel & 0x00ff) {
-                image[index] = paletteOffset + 1;
+                image[pixelIndex] = paletteOffset + 1;
             }
         }
         return image;
@@ -1396,10 +1275,10 @@ var KwzParser = /** @class */ (function (_super) {
         layerOrder.forEach(function (layerIndex) {
             var layer = _this.getLayerPixels(frameIndex, layerIndex);
             // merge layer into image result
-            for (var index = 0; index < layer.length; index++) {
-                var pixel = layer[index];
+            for (var pixelIndex = 0; pixelIndex < layer.length; pixelIndex++) {
+                var pixel = layer[pixelIndex];
                 if (pixel !== 0) {
-                    image[index] = paletteMap[pixel];
+                    image[pixelIndex] = paletteMap[pixel];
                 }
             }
         });
@@ -1422,17 +1301,19 @@ var KwzParser = /** @class */ (function (_super) {
         return this.soundMeta[id].length > 0;
     };
     KwzParser.prototype.decodeAudio = function (track) {
-        var meta = this.soundMeta[track];
+        var trackMeta = this.soundMeta[track];
+        var adpcm = new Uint8Array(this.buffer, trackMeta.offset, trackMeta.length);
         var output = new Int16Array(16364 * 60);
         var outputOffset = 0;
-        var adpcm = new Uint8Array(this.buffer, meta.offset, meta.length);
         // initial decoder state
         var prevDiff = 0;
         var prevStepIndex = 40;
-        var sample, diff, stepIndex;
+        var sample;
+        var diff;
+        var stepIndex;
         // loop through each byte in the raw adpcm data
-        for (var index = 0; index < adpcm.length; index++) {
-            var byte = adpcm[index];
+        for (var adpcmOffset = 0; adpcmOffset < adpcm.length; adpcmOffset++) {
+            var byte = adpcm[adpcmOffset];
             var bitPos = 0;
             while (bitPos < 8) {
                 if (prevStepIndex < 18 || bitPos == 6) {
@@ -1486,10 +1367,10 @@ var KwzParser = /** @class */ (function (_super) {
 
 /***/ }),
 
-/***/ "./parser/kwzTables.ts":
-/*!*****************************!*\
-  !*** ./parser/kwzTables.ts ***!
-  \*****************************/
+/***/ "./parsers/kwzTables.ts":
+/*!******************************!*\
+  !*** ./parsers/kwzTables.ts ***!
+  \******************************/
 /*! exports provided: KWZ_TABLE_1, KWZ_TABLE_2, KWZ_TABLE_3, KWZ_LINE_TABLE */
 /***/ (function(module, __webpack_exports__, __webpack_require__) {
 
@@ -1515,18 +1396,18 @@ var KWZ_TABLE_2 = new Uint16Array([
 ]);
 // table3 - line offsets, but the lines are shifted to the left by one pixel
 var KWZ_TABLE_3 = new Uint16Array(6561);
-var values = [0, 3, 7, 1, 4, 8, 2, 5, 6];
+var table3Values = [0, 3, 7, 1, 4, 8, 2, 5, 6];
 var index = 0;
 for (var a = 0; a < 9; a++)
     for (var b = 0; b < 9; b++)
         for (var c = 0; c < 9; c++)
             for (var d = 0; d < 9; d++) {
-                KWZ_TABLE_3[index] = ((values[a] * 9 + values[b]) * 9 + values[c]) * 9 + values[d];
+                KWZ_TABLE_3[index] = ((table3Values[a] * 9 + table3Values[b]) * 9 + table3Values[c]) * 9 + table3Values[d];
                 index++;
             }
 // linetable - contains every possible sequence of pixels for each tile line
 var KWZ_LINE_TABLE = new Uint16Array(6561 * 8);
-var values = [0x0000, 0xFF00, 0x00FF];
+var pixelValues = [0x0000, 0xFF00, 0x00FF];
 var offset = 0;
 for (var a = 0; a < 3; a++)
     for (var b = 0; b < 3; b++)
@@ -1537,14 +1418,14 @@ for (var a = 0; a < 3; a++)
                         for (var g = 0; g < 3; g++)
                             for (var h = 0; h < 3; h++) {
                                 KWZ_LINE_TABLE.set([
-                                    values[b],
-                                    values[a],
-                                    values[d],
-                                    values[c],
-                                    values[f],
-                                    values[e],
-                                    values[h],
-                                    values[g]
+                                    pixelValues[b],
+                                    pixelValues[a],
+                                    pixelValues[d],
+                                    pixelValues[c],
+                                    pixelValues[f],
+                                    pixelValues[e],
+                                    pixelValues[h],
+                                    pixelValues[g]
                                 ], offset);
                                 offset += 8;
                             }
@@ -1552,10 +1433,10 @@ for (var a = 0; a < 3; a++)
 
 /***/ }),
 
-/***/ "./parser/ppm.ts":
-/*!***********************!*\
-  !*** ./parser/ppm.ts ***!
-  \***********************/
+/***/ "./parsers/ppm.ts":
+/*!************************!*\
+  !*** ./parsers/ppm.ts ***!
+  \************************/
 /*! exports provided: PpmParser */
 /***/ (function(module, __webpack_exports__, __webpack_require__) {
 
@@ -1563,7 +1444,7 @@ for (var a = 0; a < 3; a++)
 __webpack_require__.r(__webpack_exports__);
 /* harmony export (binding) */ __webpack_require__.d(__webpack_exports__, "PpmParser", function() { return PpmParser; });
 /* harmony import */ var _utils_dataStream__WEBPACK_IMPORTED_MODULE_0__ = __webpack_require__(/*! ../utils/dataStream */ "./utils/dataStream.ts");
-/* harmony import */ var _adpcm__WEBPACK_IMPORTED_MODULE_1__ = __webpack_require__(/*! ./adpcm */ "./parser/adpcm.ts");
+/* harmony import */ var _adpcm__WEBPACK_IMPORTED_MODULE_1__ = __webpack_require__(/*! ./adpcm */ "./parsers/adpcm.ts");
 /**
  * PPM decoder
  * Reads frames, audio, and metadata from Flipnote Studio PPM files
@@ -1663,11 +1544,11 @@ var PpmParser = /** @class */ (function (_super) {
     };
     PpmParser.prototype.readLineEncoding = function () {
         var unpacked = new Uint8Array(PpmParser.height);
-        for (var byteOffset = 0; byteOffset < 48; byteOffset++) {
+        for (var byteIndex = 0; byteIndex < 48; byteIndex++) {
             var byte = this.readUint8();
             // each line's encoding type is stored as a 2-bit value
             for (var bitOffset = 0; bitOffset < 8; bitOffset += 2) {
-                unpacked[byteOffset * 4 + bitOffset / 2] = (byte >> bitOffset) & 0x03;
+                unpacked[byteIndex * 4 + bitOffset / 2] = (byte >> bitOffset) & 0x03;
             }
         }
         return unpacked;
@@ -1924,17 +1805,19 @@ var PpmParser = /** @class */ (function (_super) {
         return this.soundMeta[id].length > 0;
     };
     PpmParser.prototype.decodeAudio = function (track) {
-        var meta = this.soundMeta[track];
-        var adpcm = new Uint8Array(this.buffer, meta.offset, meta.length);
+        var trackMeta = this.soundMeta[track];
+        var adpcm = new Uint8Array(this.buffer, trackMeta.offset, trackMeta.length);
         var output = new Int16Array(adpcm.length * 2);
         var outputOffset = 0;
         // initial decoder state
         var prevDiff = 0;
         var prevStepIndex = 0;
-        var sample, diff, stepIndex;
+        var sample;
+        var diff;
+        var stepIndex;
         // loop through each byte in the raw adpcm data
-        for (var index = 0; index < adpcm.length; index++) {
-            var byte = adpcm[index];
+        for (var adpcmOffset = 0; adpcmOffset < adpcm.length; adpcmOffset++) {
+            var byte = adpcm[adpcmOffset];
             var bitPos = 0;
             while (bitPos < 8) {
                 // isolate 4-bit sample
@@ -2066,9 +1949,9 @@ var AudioTrack = /** @class */ (function () {
 "use strict";
 __webpack_require__.r(__webpack_exports__);
 /* harmony export (binding) */ __webpack_require__.d(__webpack_exports__, "Player", function() { return Player; });
-/* harmony import */ var _parser__WEBPACK_IMPORTED_MODULE_0__ = __webpack_require__(/*! ../parser */ "./parser/index.ts");
+/* harmony import */ var _parsers__WEBPACK_IMPORTED_MODULE_0__ = __webpack_require__(/*! ../parsers */ "./parsers/index.ts");
 /* harmony import */ var _audio__WEBPACK_IMPORTED_MODULE_1__ = __webpack_require__(/*! ./audio */ "./player/audio.ts");
-/* harmony import */ var _webgl_canvas__WEBPACK_IMPORTED_MODULE_2__ = __webpack_require__(/*! ../webgl/canvas */ "./webgl/canvas.ts");
+/* harmony import */ var _webgl__WEBPACK_IMPORTED_MODULE_2__ = __webpack_require__(/*! ../webgl */ "./webgl/index.ts");
 var __awaiter = (undefined && undefined.__awaiter) || function (thisArg, _arguments, P, generator) {
     return new (P || (P = Promise))(function (resolve, reject) {
         function fulfilled(value) { try { step(generator.next(value)); } catch (e) { reject(e); } }
@@ -2120,7 +2003,7 @@ var Player = /** @class */ (function () {
         this.hasPlaybackStarted = false;
         // if `el` is a string, use it to select an Element, else assume it's an element
         el = ('string' == typeof el) ? document.querySelector(el) : el;
-        this.canvas = new _webgl_canvas__WEBPACK_IMPORTED_MODULE_2__["WebglCanvas"](el, width, height);
+        this.canvas = new _webgl__WEBPACK_IMPORTED_MODULE_2__["WebglCanvas"](el, width, height);
         // this.customPalette = null;
         this.audioTracks = [
             new _audio__WEBPACK_IMPORTED_MODULE_1__["AudioTrack"]('se1'),
@@ -2134,8 +2017,8 @@ var Player = /** @class */ (function () {
         get: function () {
             return this.frame;
         },
-        set: function (index) {
-            this.setFrame(index);
+        set: function (frameIndex) {
+            this.setFrame(frameIndex);
         },
         enumerable: true,
         configurable: true
@@ -2217,7 +2100,7 @@ var Player = /** @class */ (function () {
             return __generator(this, function (_a) {
                 if (this.isOpen)
                     this.close();
-                return [2 /*return*/, Object(_parser__WEBPACK_IMPORTED_MODULE_0__["parseSource"])(source)
+                return [2 /*return*/, Object(_parsers__WEBPACK_IMPORTED_MODULE_0__["parseSource"])(source)
                         .then(function (note) {
                         _this.load(note);
                     })
@@ -2226,6 +2109,21 @@ var Player = /** @class */ (function () {
                     })];
             });
         });
+    };
+    Player.prototype.close = function () {
+        this.pause();
+        this.note = null;
+        this.isOpen = false;
+        this.paused = true;
+        this.loop = null;
+        this.meta = null;
+        this.frame = 0;
+        for (var i = 0; i < this.audioTracks.length; i++) {
+            this.audioTracks[i].unset();
+        }
+        // this._seFlags = null;
+        this.hasPlaybackStarted = null;
+        this.canvas.clear();
     };
     Player.prototype.load = function (note) {
         this.note = note;
@@ -2259,45 +2157,9 @@ var Player = /** @class */ (function () {
             3: true
         };
         this.canvas.setInputSize(note.width, note.height);
-        this.canvas.setLayerType(this.type === 'PPM' ? _webgl_canvas__WEBPACK_IMPORTED_MODULE_2__["TextureType"].Alpha : _webgl_canvas__WEBPACK_IMPORTED_MODULE_2__["TextureType"].LuminanceAlpha);
+        this.canvas.setLayerType(this.type === 'PPM' ? _webgl__WEBPACK_IMPORTED_MODULE_2__["TextureType"].Alpha : _webgl__WEBPACK_IMPORTED_MODULE_2__["TextureType"].LuminanceAlpha);
         this.setFrame(this.note.thumbFrameIndex);
         this.emit('load');
-    };
-    Player.prototype.close = function () {
-        this.pause();
-        this.note = null;
-        this.isOpen = false;
-        this.paused = true;
-        this.loop = null;
-        this.meta = null;
-        this.frame = 0;
-        for (var i = 0; i < this.audioTracks.length; i++) {
-            this.audioTracks[i].unset();
-        }
-        // this._seFlags = null;
-        this.hasPlaybackStarted = null;
-        this.canvas.clear();
-        // this._imgCanvas.clear();
-    };
-    Player.prototype.destroy = function () {
-        this.close();
-        this.canvas.destroy();
-        // this._imgCanvas.destroy();
-    };
-    Player.prototype.playFrameSe = function (index) {
-        var flags = this.seFlags[index];
-        for (var i = 0; i < flags.length; i++) {
-            if (flags[i] && this.audioTracks[i].isActive)
-                this.audioTracks[i].start();
-        }
-    };
-    Player.prototype.playBgm = function () {
-        this.audioTracks[4].start(this.currentTime);
-    };
-    Player.prototype.stopAudio = function () {
-        for (var i = 0; i < this.audioTracks.length; i++) {
-            this.audioTracks[i].stop();
-        }
     };
     Player.prototype.play = function () {
         var _this = this;
@@ -2309,7 +2171,7 @@ var Player = /** @class */ (function () {
         this.playBgm();
         this.playbackLoop = window.setInterval(function () {
             if (_this.paused)
-                clearInterval(_this.playbackLoop);
+                window.clearInterval(_this.playbackLoop);
             // if the end of the flipnote has been reached
             if (_this.currentFrame >= _this.frameCount - 1) {
                 _this.stopAudio();
@@ -2340,53 +2202,14 @@ var Player = /** @class */ (function () {
         this.stopAudio();
         this.emit('playback:stop');
     };
-    // getFrameImage(index, width, height, type, encoderOptions) {
-    //   if (!this._isOpen) return null;
-    //   var canvas = this._imgCanvas;
-    //   if (canvas.width !== width || canvas.height !== height) canvas.resize(width, height);
-    //   // clamp frame index
-    //   index = (index == 'thumb') ? (this.note.thumbFrameIndex) : (Math.max(0, Math.min(index, this.frameCount - 1)));
-    //   this.drawFrame(index, canvas);
-    //   return canvas.toImage(type, encoderOptions);
-    // }
-    Player.prototype.setPalette = function (palette) {
-        // this.customPalette = palette;
-        this.note.palette = palette;
-        this.forceUpdate();
-    };
-    Player.prototype.setFrame = function (index) {
-        if ((!this.isOpen) || (index === this.currentFrame))
+    Player.prototype.setFrame = function (frameIndex) {
+        if ((!this.isOpen) || (frameIndex === this.currentFrame))
             return null;
         // clamp frame index
-        index = Math.max(0, Math.min(Math.floor(index), this.frameCount - 1));
-        this.frame = index;
-        this.drawFrame(index, this.canvas);
+        frameIndex = Math.max(0, Math.min(Math.floor(frameIndex), this.frameCount - 1));
+        this.frame = frameIndex;
+        this.drawFrame(frameIndex);
         this.emit('frame:update', this.currentFrame);
-    };
-    Player.prototype.drawFrame = function (frameIndex, canvas) {
-        var _this = this;
-        var colors = this.note.getFramePalette(frameIndex);
-        var layerBuffers = this.note.decodeFrame(frameIndex);
-        canvas.setPaperColor(colors[0]);
-        canvas.clear();
-        if (this.note.type === 'PPM') {
-            if (this.layerVisibility[2])
-                canvas.drawLayer(layerBuffers[1], 256, 192, colors[2], [0, 0, 0, 0]);
-            if (this.layerVisibility[1])
-                canvas.drawLayer(layerBuffers[0], 256, 192, colors[1], [0, 0, 0, 0]);
-        }
-        else if (this.note.type === 'KWZ') {
-            // loop through each layer
-            this.note.getLayerOrder(frameIndex).forEach(function (layerIndex) {
-                // only draw layer if it's visible
-                if (_this.layerVisibility[layerIndex + 1]) {
-                    canvas.drawLayer(layerBuffers[layerIndex], 320, 240, colors[layerIndex * 2 + 1], colors[layerIndex * 2 + 2]);
-                }
-            });
-        }
-    };
-    Player.prototype.thumbnailFrame = function () {
-        this.currentFrame = this.note.thumbFrameIndex;
     };
     Player.prototype.nextFrame = function () {
         if ((this.loop) && (this.currentFrame >= this.frameCount - 1)) {
@@ -2410,18 +2233,67 @@ var Player = /** @class */ (function () {
     Player.prototype.firstFrame = function () {
         this.currentFrame = 0;
     };
+    Player.prototype.thumbnailFrame = function () {
+        this.currentFrame = this.note.thumbFrameIndex;
+    };
+    Player.prototype.drawFrame = function (frameIndex) {
+        var _this = this;
+        var width = this.note.width;
+        var height = this.note.height;
+        var colors = this.note.getFramePalette(frameIndex);
+        var layerBuffers = this.note.decodeFrame(frameIndex);
+        this.canvas.setPaperColor(colors[0]);
+        this.canvas.clear();
+        if (this.note.type === 'PPM') {
+            if (this.layerVisibility[2]) {
+                this.canvas.drawLayer(layerBuffers[1], width, height, colors[2], [0, 0, 0, 0]);
+            }
+            if (this.layerVisibility[1]) {
+                this.canvas.drawLayer(layerBuffers[0], width, height, colors[1], [0, 0, 0, 0]);
+            }
+        }
+        else if (this.note.type === 'KWZ') {
+            // loop through each layer
+            this.note.getLayerOrder(frameIndex).forEach(function (layerIndex) {
+                // only draw layer if it's visible
+                if (_this.layerVisibility[layerIndex + 1]) {
+                    _this.canvas.drawLayer(layerBuffers[layerIndex], width, height, colors[layerIndex * 2 + 1], colors[layerIndex * 2 + 2]);
+                }
+            });
+        }
+    };
+    Player.prototype.forceUpdate = function () {
+        if (this.isOpen) {
+            this.drawFrame(this.currentFrame);
+        }
+    };
+    Player.prototype.playFrameSe = function (frameIndex) {
+        var flags = this.seFlags[frameIndex];
+        for (var i = 0; i < flags.length; i++) {
+            if (flags[i] && this.audioTracks[i].isActive)
+                this.audioTracks[i].start();
+        }
+    };
+    Player.prototype.playBgm = function () {
+        this.audioTracks[4].start(this.currentTime);
+    };
+    Player.prototype.stopAudio = function () {
+        for (var i = 0; i < this.audioTracks.length; i++) {
+            this.audioTracks[i].stop();
+        }
+    };
     Player.prototype.resize = function (width, height) {
         this.canvas.resize(width, height);
         this.forceUpdate();
     };
-    Player.prototype.setLayerVisibility = function (index, value) {
-        this.layerVisibility[index] = value;
+    Player.prototype.setLayerVisibility = function (frameIndex, value) {
+        this.layerVisibility[frameIndex] = value;
         this.forceUpdate();
     };
-    Player.prototype.forceUpdate = function () {
-        if (this.isOpen) {
-            this.drawFrame(this.currentFrame, this.canvas);
-        }
+    Player.prototype.setPalette = function (palette) {
+        // this.customPalette = palette;
+        this.note.palette = palette;
+        this.forceUpdate();
     };
     Player.prototype.on = function (eventType, callback) {
         var events = this.events;
@@ -2441,6 +2313,13 @@ var Player = /** @class */ (function () {
         for (var i = 0; i < callbackList.length; i++) {
             callbackList[i].apply(null, args);
         }
+    };
+    Player.prototype.clearEvents = function () {
+        this.events = {};
+    };
+    Player.prototype.destroy = function () {
+        this.close();
+        this.canvas.destroy();
     };
     return Player;
 }());
@@ -2522,6 +2401,7 @@ var SeekOrigin;
     SeekOrigin[SeekOrigin["Current"] = 1] = "Current";
     SeekOrigin[SeekOrigin["End"] = 2] = "End";
 })(SeekOrigin || (SeekOrigin = {}));
+;
 var DataStream = /** @class */ (function () {
     function DataStream(arrayBuffer) {
         this.buffer = arrayBuffer;
@@ -2643,7 +2523,7 @@ var DataStream = /** @class */ (function () {
         var str = '';
         for (var i = 0; i < chars.length; i++) {
             var char = chars[i];
-            if (char == 0)
+            if (char === 0)
                 break;
             str += String.fromCharCode(char);
         }
@@ -2657,7 +2537,6 @@ var DataStream = /** @class */ (function () {
     };
     DataStream.prototype.readUtf16 = function (count) {
         var chars = new Uint16Array(this.data.buffer, this.cursor, count);
-        this.cursor += chars.byteLength;
         var str = '';
         for (var i = 0; i < chars.length; i++) {
             var char = chars[i];
@@ -2665,10 +2544,34 @@ var DataStream = /** @class */ (function () {
                 break;
             str += String.fromCharCode(char);
         }
+        this.cursor += chars.byteLength;
         return str;
     };
     return DataStream;
 }());
+
+
+
+/***/ }),
+
+/***/ "./utils/index.ts":
+/*!************************!*\
+  !*** ./utils/index.ts ***!
+  \************************/
+/*! exports provided: ByteArray, SeekOrigin, DataStream */
+/***/ (function(module, __webpack_exports__, __webpack_require__) {
+
+"use strict";
+__webpack_require__.r(__webpack_exports__);
+/* harmony import */ var _byteArray__WEBPACK_IMPORTED_MODULE_0__ = __webpack_require__(/*! ./byteArray */ "./utils/byteArray.ts");
+/* harmony reexport (safe) */ __webpack_require__.d(__webpack_exports__, "ByteArray", function() { return _byteArray__WEBPACK_IMPORTED_MODULE_0__["ByteArray"]; });
+
+/* harmony import */ var _dataStream__WEBPACK_IMPORTED_MODULE_1__ = __webpack_require__(/*! ./dataStream */ "./utils/dataStream.ts");
+/* harmony reexport (safe) */ __webpack_require__.d(__webpack_exports__, "SeekOrigin", function() { return _dataStream__WEBPACK_IMPORTED_MODULE_1__["SeekOrigin"]; });
+
+/* harmony reexport (safe) */ __webpack_require__.d(__webpack_exports__, "DataStream", function() { return _dataStream__WEBPACK_IMPORTED_MODULE_1__["DataStream"]; });
+
+
 
 
 
@@ -2716,18 +2619,26 @@ var WebglCanvas = /** @class */ (function () {
             textures: [],
             buffers: []
         };
-        this.width = el.width = width;
-        this.height = el.height = height;
         var gl = el.getContext('webgl', params);
-        var program = gl.createProgram();
         this.el = el;
         this.gl = gl;
-        this.program = program;
+        this.width = el.width = width;
+        this.height = el.height = height;
+        this.createProgram();
+        this.createScreenQuad();
+        this.createBitmapTexture();
+        this.setCanvasSize(this.width, this.height);
+        gl.pixelStorei(gl.UNPACK_FLIP_Y_WEBGL, true);
+        gl.enable(gl.BLEND);
+        gl.blendEquation(gl.FUNC_ADD);
+        gl.blendFunc(gl.ONE, gl.ONE_MINUS_SRC_ALPHA);
+    }
+    WebglCanvas.prototype.createProgram = function () {
+        var gl = this.gl;
+        var program = gl.createProgram();
         // set up shaders
-        var vShader = this.createShader(ShaderType.Vertex, _shader_vert__WEBPACK_IMPORTED_MODULE_0___default.a);
-        var fShader = this.createShader(ShaderType.Fragment, _shader_frag__WEBPACK_IMPORTED_MODULE_1___default.a);
-        gl.attachShader(program, vShader);
-        gl.attachShader(program, fShader);
+        gl.attachShader(program, this.createShader(ShaderType.Vertex, _shader_vert__WEBPACK_IMPORTED_MODULE_0___default.a));
+        gl.attachShader(program, this.createShader(ShaderType.Fragment, _shader_frag__WEBPACK_IMPORTED_MODULE_1___default.a));
         // link program
         gl.linkProgram(program);
         if (!gl.getProgramParameter(program, gl.LINK_STATUS)) {
@@ -2737,6 +2648,16 @@ var WebglCanvas = /** @class */ (function () {
         }
         // activate the program
         gl.useProgram(program);
+        // map uniform locations
+        var uniformCount = gl.getProgramParameter(program, gl.ACTIVE_UNIFORMS);
+        for (var index = 0; index < uniformCount; index++) {
+            var name_1 = gl.getActiveUniform(program, index).name;
+            this.uniforms[name_1] = gl.getUniformLocation(program, name_1);
+        }
+        this.program = program;
+    };
+    WebglCanvas.prototype.createScreenQuad = function () {
+        var gl = this.gl;
         // create quad that fills the screen, this will be our drawing surface
         var vertBuffer = gl.createBuffer();
         gl.bindBuffer(gl.ARRAY_BUFFER, vertBuffer);
@@ -2744,6 +2665,9 @@ var WebglCanvas = /** @class */ (function () {
         gl.enableVertexAttribArray(0);
         gl.vertexAttribPointer(0, 2, gl.FLOAT, false, 0, 0);
         this.refs.buffers.push(vertBuffer);
+    };
+    WebglCanvas.prototype.createBitmapTexture = function () {
+        var gl = this.gl;
         // create texture to use as the layer bitmap
         gl.activeTexture(gl.TEXTURE0);
         var tex = gl.createTexture();
@@ -2752,20 +2676,9 @@ var WebglCanvas = /** @class */ (function () {
         gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_T, gl.CLAMP_TO_EDGE);
         gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MIN_FILTER, gl.LINEAR);
         gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MAG_FILTER, gl.LINEAR);
-        // get uniform locations
-        var uniformCount = gl.getProgramParameter(program, gl.ACTIVE_UNIFORMS);
-        for (var i = 0; i < uniformCount; i++) {
-            var name_1 = gl.getActiveUniform(program, i).name;
-            this.uniforms[name_1] = gl.getUniformLocation(program, name_1);
-        }
         gl.uniform1i(this.uniforms['u_bitmap'], 0);
-        this.setCanvasSize(this.width, this.height);
         this.refs.textures.push(tex);
-        gl.pixelStorei(gl.UNPACK_FLIP_Y_WEBGL, true);
-        gl.enable(gl.BLEND);
-        gl.blendEquation(gl.FUNC_ADD);
-        gl.blendFunc(gl.ONE, gl.ONE_MINUS_SRC_ALPHA);
-    }
+    };
     WebglCanvas.prototype.createShader = function (type, source) {
         var gl = this.gl;
         var shader = gl.createShader(type);
@@ -2842,6 +2755,25 @@ var WebglCanvas = /** @class */ (function () {
     };
     return WebglCanvas;
 }());
+
+
+
+/***/ }),
+
+/***/ "./webgl/index.ts":
+/*!************************!*\
+  !*** ./webgl/index.ts ***!
+  \************************/
+/*! exports provided: TextureType, WebglCanvas */
+/***/ (function(module, __webpack_exports__, __webpack_require__) {
+
+"use strict";
+__webpack_require__.r(__webpack_exports__);
+/* harmony import */ var _canvas__WEBPACK_IMPORTED_MODULE_0__ = __webpack_require__(/*! ./canvas */ "./webgl/canvas.ts");
+/* harmony reexport (safe) */ __webpack_require__.d(__webpack_exports__, "TextureType", function() { return _canvas__WEBPACK_IMPORTED_MODULE_0__["TextureType"]; });
+
+/* harmony reexport (safe) */ __webpack_require__.d(__webpack_exports__, "WebglCanvas", function() { return _canvas__WEBPACK_IMPORTED_MODULE_0__["WebglCanvas"]; });
+
 
 
 

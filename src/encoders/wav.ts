@@ -1,4 +1,4 @@
-import { DataStream } from '../utils/dataStream';
+import { DataStream } from '../utils';
 
 export class WavEncoder {
 

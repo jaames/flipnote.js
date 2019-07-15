@@ -3,7 +3,7 @@ export enum SeekOrigin {
   Begin,
   Current,
   End
-}
+};
 
 export class DataStream {
 
@@ -41,7 +41,7 @@ export class DataStream {
   }
 
   public readUint8() {
-    var val = this.data.getUint8(this.cursor);
+    const val = this.data.getUint8(this.cursor);
     this.cursor += 1;
     return val;
   }
@@ -52,7 +52,7 @@ export class DataStream {
   }
 
   public readInt8() {
-    var val = this.data.getInt8(this.cursor);
+    const val = this.data.getInt8(this.cursor);
     this.cursor += 1;
     return val;
   }
@@ -63,7 +63,7 @@ export class DataStream {
   }
 
   public readUint16(littleEndian: boolean=true) {
-    var val = this.data.getUint16(this.cursor, littleEndian);
+    const val = this.data.getUint16(this.cursor, littleEndian);
     this.cursor += 2;
     return val;
   }
@@ -74,7 +74,7 @@ export class DataStream {
   }
 
   public readInt16(littleEndian: boolean=true) {
-    var val = this.data.getInt16(this.cursor, littleEndian);
+    const val = this.data.getInt16(this.cursor, littleEndian);
     this.cursor += 2;
     return val;
   }
@@ -85,7 +85,7 @@ export class DataStream {
   }
 
   public readUint32(littleEndian: boolean=true) {
-    var val = this.data.getUint32(this.cursor, littleEndian);
+    const val = this.data.getUint32(this.cursor, littleEndian);
     this.cursor += 4;
     return val;
   }
@@ -96,7 +96,7 @@ export class DataStream {
   }
 
   public readInt32(littleEndian: boolean=true) {
-    var val = this.data.getInt32(this.cursor, littleEndian);
+    const val = this.data.getInt32(this.cursor, littleEndian);
     this.cursor += 4;
     return val;
   }
@@ -107,7 +107,7 @@ export class DataStream {
   }
 
   public readBytes(count: number) {
-    var bytes = new Uint8Array(this.data.buffer, this.cursor, count);
+    const bytes = new Uint8Array(this.data.buffer, this.cursor, count);
     this.cursor += bytes.byteLength;
     return bytes;
   }
@@ -117,7 +117,7 @@ export class DataStream {
   }
 
   public readHex(count: number, reverse: boolean=false) {
-    var bytes = this.readBytes(count);
+    const bytes = this.readBytes(count);
     let hex = [];
     for (let i = 0; i < bytes.length; i++) {
       hex.push(bytes[i].toString(16).padStart(2, '0'));
@@ -127,11 +127,11 @@ export class DataStream {
   }
 
   public readUtf8(count: number) {
-    var chars = this.readBytes(count);
-    var str = '';
+    const chars = this.readBytes(count);
+    let str = '';
     for (let i = 0; i < chars.length; i++) {
-      let char = chars[i];
-      if (char == 0) break;
+      const char = chars[i];
+      if (char === 0) break;
       str += String.fromCharCode(char);
     }
     return str;
@@ -139,20 +139,20 @@ export class DataStream {
 
   public writeUtf8(string: string) {
     for (let i = 0; i < string.length; i++) {
-      let char = string.charCodeAt(i);
+      const char = string.charCodeAt(i);
       this.writeUint8(char);
     }
   }
 
   public readUtf16(count: number) {
-    var chars = new Uint16Array(this.data.buffer, this.cursor, count);
-    this.cursor += chars.byteLength;
-    var str = '';
+    const chars = new Uint16Array(this.data.buffer, this.cursor, count);
+    let str = '';
     for (let i = 0; i < chars.length; i++) {
-      let char = chars[i];
+      const char = chars[i];
       if (char == 0) break;
       str += String.fromCharCode(char);
     }
+    this.cursor += chars.byteLength;
     return str;
   }
 }

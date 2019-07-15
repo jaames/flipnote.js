@@ -4,7 +4,7 @@ let canvas = document.createElement("canvas");
 canvas.id = "canvas";
 document.body.appendChild(canvas);
 
-var player = new flipnote.Player("#canvas", 640, 480);
+var player = new flipnote.player("#canvas", 512, 384);
 player.open("demo/bee.ppm");
 
 window.player = player;

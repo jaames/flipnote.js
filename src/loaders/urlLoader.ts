@@ -1,11 +1,11 @@
 export default {
 
-  matches: function(source: any) {
+  matches: function(source: any): boolean {
     return typeof source === 'string';
   },
 
-  load: function(source: string, resolve: Function, reject: Function) {
-    var xhr = new XMLHttpRequest();
+  load: function(source: string, resolve: Function, reject: Function): void {
+    const xhr = new XMLHttpRequest();
     xhr.open('GET', source, true);
     xhr.responseType = 'arraybuffer'; 
     xhr.onreadystatechange = function (e) {

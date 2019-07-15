@@ -1,7 +1,6 @@
-import { DataStream } from '../utils/dataStream';
-import { ByteArray } from '../utils/byteArray';
+import { DataStream, ByteArray } from '../utils';
 import { LZWEncoder } from './lzw';
-import { Flipnote } from '../parser';
+import { Flipnote } from '../parsers';
 
 export class GifEncoder {
 
@@ -43,7 +42,7 @@ export class GifEncoder {
   }
 
   init() {
-    let paletteSize = this.palette.length;
+    const paletteSize = this.palette.length;
     for (var p = 1; 1 << p < paletteSize; p += 1) {
       continue;
     }
@@ -141,7 +140,7 @@ export class GifEncoder {
   }
 
   getImage() {
-    var img = new Image(this.width, this.height);
+    const img = new Image(this.width, this.height);
     img.src = this.getUrl();
     return img;
   }

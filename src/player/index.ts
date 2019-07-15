@@ -1,6 +1,6 @@
-import { parseSource, Flipnote, FlipnoteMeta } from '../parser';
+import { parseSource, Flipnote, FlipnoteMeta } from '../parsers';
 import { AudioTrack } from './audio';
-import { WebglCanvas, TextureType } from '../webgl/canvas';
+import { WebglCanvas, TextureType } from '../webgl';
 
 interface PlayerEvents {
   [key: string]: Function[]
@@ -48,8 +48,8 @@ export class Player {
     return this.frame;
   }
 
-  set currentFrame(index) {
-    this.setFrame(index);
+  set currentFrame(frameIndex) {
+    this.setFrame(frameIndex);
   }
 
   get currentTime() {
@@ -113,7 +113,23 @@ export class Player {
       });
   }
 
-  private load(note: Flipnote) {
+  public close(): void {
+    this.pause();
+    this.note = null;
+    this.isOpen = false;
+    this.paused = true;
+    this.loop = null;
+    this.meta = null;
+    this.frame = 0;
+    for (let i = 0; i < this.audioTracks.length; i++) {
+      this.audioTracks[i].unset();
+    }
+    // this._seFlags = null;
+    this.hasPlaybackStarted = null;
+    this.canvas.clear();
+  }
+
+  public load(note: Flipnote): void {
     this.note = note;
     this.meta = note.meta;
     this.type = note.type;
@@ -145,53 +161,13 @@ export class Player {
     this.emit('load');
   }
 
-  public close(): void {
-    this.pause();
-    this.note = null;
-    this.isOpen = false;
-    this.paused = true;
-    this.loop = null;
-    this.meta = null;
-    this.frame = 0;
-    for (let i = 0; i < this.audioTracks.length; i++) {
-      this.audioTracks[i].unset();
-    }
-    // this._seFlags = null;
-    this.hasPlaybackStarted = null;
-    this.canvas.clear();
-    // this._imgCanvas.clear();
-  }
-
-  public destroy(): void {
-    this.close();
-    this.canvas.destroy();
-    // this._imgCanvas.destroy();
-  }
-
-  private playFrameSe(index: number) {
-    var flags = this.seFlags[index];
-    for (let i = 0; i < flags.length; i++) {
-      if (flags[i] && this.audioTracks[i].isActive) this.audioTracks[i].start();
-    }
-  }
-
-  private playBgm() {
-    this.audioTracks[4].start(this.currentTime);
-  }
-
-  private stopAudio() {
-    for (let i = 0; i < this.audioTracks.length; i++) {
-      this.audioTracks[i].stop();
-    }
-  }
-
   public play(): void {
     if ((!this.isOpen) || (!this.paused)) return null;
     this.paused = false;
     if ((!this.hasPlaybackStarted) || ((!this.loop) && (this.currentFrame == this.frameCount - 1))) this.frame = 0;
     this.playBgm();
     this.playbackLoop = window.setInterval(() => {
-      if (this.paused) clearInterval(this.playbackLoop);
+      if (this.paused) window.clearInterval(this.playbackLoop);
       // if the end of the flipnote has been reached
       if (this.currentFrame >= this.frameCount -1) {
         this.stopAudio();
@@ -221,52 +197,13 @@ export class Player {
     this.emit('playback:stop');
   }
 
-  // getFrameImage(index, width, height, type, encoderOptions) {
-  //   if (!this._isOpen) return null;
-  //   var canvas = this._imgCanvas;
-  //   if (canvas.width !== width || canvas.height !== height) canvas.resize(width, height);
-  //   // clamp frame index
-  //   index = (index == 'thumb') ? (this.note.thumbFrameIndex) : (Math.max(0, Math.min(index, this.frameCount - 1)));
-  //   this.drawFrame(index, canvas);
-  //   return canvas.toImage(type, encoderOptions);
-  // }
-
-  public setPalette(palette: any): void {
-    // this.customPalette = palette;
-    this.note.palette = palette;
-    this.forceUpdate();
-  }
-
-  public setFrame(index: number): void {
-    if ((!this.isOpen) || (index === this.currentFrame)) return null;
+  public setFrame(frameIndex: number): void {
+    if ((!this.isOpen) || (frameIndex === this.currentFrame)) return null;
     // clamp frame index
-    index = Math.max(0, Math.min(Math.floor(index), this.frameCount - 1));
-    this.frame = index;
-    this.drawFrame(index, this.canvas);
+    frameIndex = Math.max(0, Math.min(Math.floor(frameIndex), this.frameCount - 1));
+    this.frame = frameIndex;
+    this.drawFrame(frameIndex);
     this.emit('frame:update', this.currentFrame);
-  }
-
- public drawFrame(frameIndex: number, canvas: WebglCanvas): void {
-    let colors = this.note.getFramePalette(frameIndex);
-    let layerBuffers = this.note.decodeFrame(frameIndex);
-    canvas.setPaperColor(colors[0]);
-    canvas.clear();
-    if (this.note.type === 'PPM') {
-      if (this.layerVisibility[2]) canvas.drawLayer(layerBuffers[1], 256, 192, colors[2], [0,0,0,0]);
-      if (this.layerVisibility[1]) canvas.drawLayer(layerBuffers[0], 256, 192, colors[1], [0,0,0,0]);
-    } else if (this.note.type === 'KWZ') {
-      // loop through each layer
-      this.note.getLayerOrder(frameIndex).forEach(layerIndex => {
-        // only draw layer if it's visible
-        if (this.layerVisibility[layerIndex + 1]) {
-          canvas.drawLayer(layerBuffers[layerIndex], 320, 240, colors[layerIndex * 2 + 1], colors[layerIndex * 2 + 2]);
-        }
-      });
-    }
-  }
-
-  public thumbnailFrame(): void {
-    this.currentFrame = this.note.thumbFrameIndex;
   }
 
   public nextFrame(): void {
@@ -293,20 +230,72 @@ export class Player {
     this.currentFrame = 0;
   }
 
+  public thumbnailFrame(): void {
+    this.currentFrame = this.note.thumbFrameIndex;
+  }
+
+  public drawFrame(frameIndex: number): void {
+    const width = this.note.width;
+    const height = this.note.height;
+    const colors = this.note.getFramePalette(frameIndex);
+    const layerBuffers = this.note.decodeFrame(frameIndex);
+    this.canvas.setPaperColor(colors[0]);
+    this.canvas.clear();
+    if (this.note.type === 'PPM') {
+      if (this.layerVisibility[2]) {
+        this.canvas.drawLayer(layerBuffers[1], width, height, colors[2], [0,0,0,0]);
+      }
+      if (this.layerVisibility[1]) {
+        this.canvas.drawLayer(layerBuffers[0], width, height, colors[1], [0,0,0,0]);
+      }
+    } else if (this.note.type === 'KWZ') {
+      // loop through each layer
+      this.note.getLayerOrder(frameIndex).forEach((layerIndex: number) => {
+        // only draw layer if it's visible
+        if (this.layerVisibility[layerIndex + 1]) {
+          this.canvas.drawLayer(layerBuffers[layerIndex], width, height, colors[layerIndex * 2 + 1], colors[layerIndex * 2 + 2]);
+        }
+      });
+    }
+  }
+
+  public forceUpdate(): void {
+    if (this.isOpen) {
+      this.drawFrame(this.currentFrame);
+    }
+  }
+
+  private playFrameSe(frameIndex: number) {
+    var flags = this.seFlags[frameIndex];
+    for (let i = 0; i < flags.length; i++) {
+      if (flags[i] && this.audioTracks[i].isActive) this.audioTracks[i].start();
+    }
+  }
+
+  private playBgm() {
+    this.audioTracks[4].start(this.currentTime);
+  }
+
+  private stopAudio() {
+    for (let i = 0; i < this.audioTracks.length; i++) {
+      this.audioTracks[i].stop();
+    }
+  }
+
   public resize(width: number, height: number): void {
     this.canvas.resize(width, height);
     this.forceUpdate();
   }
 
-  public setLayerVisibility(index: number, value: boolean): void {
-    this.layerVisibility[index] = value;
+  public setLayerVisibility(frameIndex: number, value: boolean): void {
+    this.layerVisibility[frameIndex] = value;
     this.forceUpdate();
   }
 
-  public forceUpdate(): void {
-    if (this.isOpen) {
-      this.drawFrame(this.currentFrame, this.canvas);
-    }
+  public setPalette(palette: any): void {
+    // this.customPalette = palette;
+    this.note.palette = palette;
+    this.forceUpdate();
   }
 
   public on(eventType: string, callback: Function): void {
@@ -324,6 +313,17 @@ export class Player {
     for (var i = 0; i < callbackList.length; i++) {
       callbackList[i].apply(null, args); 
     }
+  }
+
+  
+
+  public clearEvents(): void {
+    this.events = {};
+  }
+
+  public destroy(): void {
+    this.close();
+    this.canvas.destroy();
   }
 
 }

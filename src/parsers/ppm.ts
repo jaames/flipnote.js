@@ -154,12 +154,12 @@ export class PpmParser extends DataStream {
   }
 
   private readLineEncoding() {
-    var unpacked = new Uint8Array(PpmParser.height);
-    for (var byteOffset = 0; byteOffset < 48; byteOffset ++) {
-      var byte = this.readUint8();
+    const unpacked = new Uint8Array(PpmParser.height);
+    for (var byteIndex = 0; byteIndex < 48; byteIndex ++) {
+      const byte = this.readUint8();
       // each line's encoding type is stored as a 2-bit value
       for (var bitOffset = 0; bitOffset < 8; bitOffset += 2) {
-        unpacked[byteOffset * 4 + bitOffset / 2] = (byte >> bitOffset) & 0x03;
+        unpacked[byteIndex * 4 + bitOffset / 2] = (byte >> bitOffset) & 0x03;
       }
     }
     return unpacked;
@@ -179,20 +179,20 @@ export class PpmParser extends DataStream {
   private decodeMeta() {
     // https://github.com/pbsds/hatena-server/wiki/PPM-format#file-header
     this.seek(0x10);
-    var lock = this.readUint16(),
-        thumbIndex = this.readInt16(),
-        rootAuthorName = this.readUtf16(11),
-        parentAuthorName = this.readUtf16(11),
-        currentAuthorName = this.readUtf16(11),
-        parentAuthorId = this.readHex(8, true),
-        currentAuthorId = this.readHex(8, true),
-        parentFilename = this.readFilename(),
-        currentFilename = this.readFilename(),
-        rootAuthorId = this.readHex(8, true);
+    const lock = this.readUint16(),
+          thumbIndex = this.readInt16(),
+          rootAuthorName = this.readUtf16(11),
+          parentAuthorName = this.readUtf16(11),
+          currentAuthorName = this.readUtf16(11),
+          parentAuthorId = this.readHex(8, true),
+          currentAuthorId = this.readHex(8, true),
+          parentFilename = this.readFilename(),
+          currentFilename = this.readFilename(),
+          rootAuthorId = this.readHex(8, true);
     this.seek(0x9A);
-    var timestamp = new Date((this.readUint32() + 946684800) * 1000);
+    const timestamp = new Date((this.readUint32() + 946684800) * 1000);
     this.seek(0x06A6);
-    var flags = this.readUint16();
+    const flags = this.readUint16();
     this.thumbFrameIndex = thumbIndex;
     this.meta = {
       lock: lock === 1,
@@ -225,7 +225,7 @@ export class PpmParser extends DataStream {
     // jump to the start of the animation data section
     // https://github.com/pbsds/hatena-server/wiki/PPM-format#animation-data-section
     this.seek(0x06A0);
-    var offsetTableLength = this.readUint16();
+    const offsetTableLength = this.readUint16();
     // skip padding + flags
     this.seek(0x06A8);
     // read frame offsets and build them into a table
@@ -237,14 +237,14 @@ export class PpmParser extends DataStream {
   private decodeSoundHeader() {
     // https://github.com/pbsds/hatena-server/wiki/PPM-format#sound-data-section
     // offset = frame data offset + frame data length + sound effect flags
-    var offset = 0x06A0 + this.frameDataLength + this.frameCount;
+    let offset = 0x06A0 + this.frameDataLength + this.frameCount;
     // account for multiple-of-4 padding
     if (offset % 2 != 0) offset += 4 - (offset % 4);
     this.seek(offset);
-    var bgmLen = this.readUint32();
-    var se1Len = this.readUint32();
-    var se2Len = this.readUint32();
-    var se3Len = this.readUint32();
+    const bgmLen = this.readUint32();
+    const se1Len = this.readUint32();
+    const se2Len = this.readUint32();
+    const se3Len = this.readUint32();
     this.frameSpeed = 8 - this.readUint8();
     this.bgmSpeed = 8 - this.readUint8();
     offset += 32;
@@ -260,16 +260,16 @@ export class PpmParser extends DataStream {
 
   public isNewFrame(frameIndex: number) {
     this.seek(this.frameOffsets[frameIndex]);
-    var header = this.readUint8();
+    const header = this.readUint8();
     return (header >> 7) & 0x1;
   }
 
   public getFramePalette(frameIndex: number) {
     this.seek(this.frameOffsets[frameIndex]);
     const palette = this.palette;
-    var header = this.readUint8();
-    var paperColor = header & 0x1;
-    var pen = [
+    const header = this.readUint8();
+    const paperColor = header & 0x1;
+    const pen = [
       palette.BLACK,
       paperColor == 1 ? palette.BLACK : palette.WHITE,
       palette.RED,
@@ -362,13 +362,13 @@ export class PpmParser extends DataStream {
     if (!isNewFrame) {
       let dest: number, src: number;
       // loop through each line
-      for (var y = 0; y < PpmParser.height; y++) {
+      for (let y = 0; y < PpmParser.height; y++) {
         // skip to next line if this one falls off the top edge of the screen
         if (y - translateY < 0) continue;
         // stop once the bottom screen edge has been reached
         if (y - translateY >= PpmParser.height) break;
         // loop through each pixel in the line
-        for (var x = 0; x < PpmParser.width; x++) {
+        for (let x = 0; x < PpmParser.width; x++) {
           // skip to the next pixel if this one falls off the left edge of the screen
           if (x - translateX < 0) continue;
           // stop diffing this line once the right screen edge has been reached
@@ -413,8 +413,8 @@ export class PpmParser extends DataStream {
     const image = new Uint8Array(PpmParser.width * PpmParser.height);
     image.fill(paletteMap[0]);
     for (let pixel = 0; pixel < image.length; pixel++) {
-      let a = layers[0][pixel];
-      let b = layers[1][pixel];
+      const a = layers[0][pixel];
+      const b = layers[1][pixel];
       if (b) image[pixel] = paletteMap[2];
       if (a) image[pixel] = paletteMap[1];
     }
@@ -428,18 +428,20 @@ export class PpmParser extends DataStream {
   }
 
   public decodeAudio(track: PpmSoundTrack) {
-    let meta = this.soundMeta[track];
-    let adpcm = new Uint8Array(this.buffer, meta.offset, meta.length);
-    let output = new Int16Array(adpcm.length * 2);
+    const trackMeta = this.soundMeta[track];
+    const adpcm = new Uint8Array(this.buffer, trackMeta.offset, trackMeta.length);
+    const output = new Int16Array(adpcm.length * 2);
     let outputOffset = 0;
     // initial decoder state
-    var prevDiff = 0;
-    var prevStepIndex = 0;
-    var sample: number, diff: number, stepIndex: number;
+    let prevDiff = 0;
+    let prevStepIndex = 0;
+    let sample: number;
+    let diff: number;
+    let stepIndex: number;
     // loop through each byte in the raw adpcm data
-    for (let index = 0; index < adpcm.length; index++) {
-      let byte = adpcm[index];
-      var bitPos = 0;
+    for (let adpcmOffset = 0; adpcmOffset < adpcm.length; adpcmOffset++) {
+      const byte = adpcm[adpcmOffset];
+      let bitPos = 0;
       while (bitPos < 8) {
         // isolate 4-bit sample
         sample = (byte >> bitPos) & 0xF;
@@ -467,9 +469,9 @@ export class PpmParser extends DataStream {
     this.seek(0x06A0 + this.frameDataLength);
     // per msdn docs - the array map callback is only invoked for array indicies that have assigned values
     // so when we create an array, we need to fill it with something before we can map over it
-    var arr = new Array(this.frameCount).fill([]);
+    const arr = new Array(this.frameCount).fill([]);
     return arr.map(value => {
-      var byte = this.readUint8();
+      const byte = this.readUint8();
       return [byte & 0x1, (byte >> 1) & 0x1, (byte >> 2) & 0x1];
     });
   }

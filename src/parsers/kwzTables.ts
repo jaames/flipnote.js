@@ -16,19 +16,19 @@ export const KWZ_TABLE_2 = new Uint16Array([
 
 // table3 - line offsets, but the lines are shifted to the left by one pixel
 export const KWZ_TABLE_3 = new Uint16Array(6561);
-var values = [0, 3, 7, 1, 4, 8, 2, 5, 6];
+const table3Values = [0, 3, 7, 1, 4, 8, 2, 5, 6];
 let index = 0;
 for (let a = 0; a < 9; a++)
   for (let b = 0; b < 9; b++)
     for (let c = 0; c < 9; c++)
       for (let d = 0; d < 9; d++) {
-        KWZ_TABLE_3[index] = ((values[a] * 9 + values[b]) * 9 + values[c]) * 9 + values[d];
+        KWZ_TABLE_3[index] = ((table3Values[a] * 9 + table3Values[b]) * 9 + table3Values[c]) * 9 + table3Values[d];
         index++;
       }
 
 // linetable - contains every possible sequence of pixels for each tile line
 export const KWZ_LINE_TABLE = new Uint16Array(6561 * 8);
-var values = [0x0000, 0xFF00, 0x00FF];
+const pixelValues = [0x0000, 0xFF00, 0x00FF];
 let offset = 0;
 for (let a = 0; a < 3; a++)
   for (let b = 0; b < 3; b++)
@@ -39,14 +39,14 @@ for (let a = 0; a < 3; a++)
             for (let g = 0; g < 3; g++)
               for (let h = 0; h < 3; h++) {
                 KWZ_LINE_TABLE.set([
-                  values[b], 
-                  values[a], 
-                  values[d], 
-                  values[c], 
-                  values[f], 
-                  values[e], 
-                  values[h], 
-                  values[g]
+                  pixelValues[b], 
+                  pixelValues[a], 
+                  pixelValues[d], 
+                  pixelValues[c], 
+                  pixelValues[f], 
+                  pixelValues[e], 
+                  pixelValues[h], 
+                  pixelValues[g]
                 ], offset);
                 offset += 8;
               }

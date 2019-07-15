@@ -40,18 +40,27 @@ export class WebglCanvas {
   };
 
   constructor(el: HTMLCanvasElement, width=640, height=480, params={antialias: false, alpha: false}) {
-    this.width = el.width = width;
-    this.height = el.height = height; 
-    var gl = <WebGLRenderingContext>el.getContext('webgl', params);
-    var program = gl.createProgram();
+    const gl = <WebGLRenderingContext>el.getContext('webgl', params);
     this.el = el;
     this.gl = gl;
-    this.program = program;
+    this.width = el.width = width;
+    this.height = el.height = height; 
+    this.createProgram();
+    this.createScreenQuad();
+    this.createBitmapTexture();
+    this.setCanvasSize(this.width, this.height);
+    gl.pixelStorei(gl.UNPACK_FLIP_Y_WEBGL, true);
+    gl.enable(gl.BLEND);
+    gl.blendEquation(gl.FUNC_ADD);
+    gl.blendFunc(gl.ONE, gl.ONE_MINUS_SRC_ALPHA);
+  }
+
+  private createProgram() {
+    const gl = this.gl;
+    const program = gl.createProgram();
     // set up shaders
-    var vShader = this.createShader(ShaderType.Vertex, vertexShader);
-    var fShader = this.createShader(ShaderType.Fragment, fragmentShader);
-    gl.attachShader(program, vShader);
-    gl.attachShader(program, fShader);
+    gl.attachShader(program, this.createShader(ShaderType.Vertex, vertexShader));
+    gl.attachShader(program, this.createShader(ShaderType.Fragment, fragmentShader));
     // link program
     gl.linkProgram(program);
     if (!gl.getProgramParameter(program, gl.LINK_STATUS)) {
@@ -61,44 +70,48 @@ export class WebglCanvas {
     }
     // activate the program
     gl.useProgram(program);
+    // map uniform locations
+    const uniformCount = gl.getProgramParameter(program, gl.ACTIVE_UNIFORMS);
+    for (let index = 0; index < uniformCount; index++) {
+      const name = gl.getActiveUniform(program, index).name;
+      this.uniforms[name] = gl.getUniformLocation(program, name);
+    }
+    this.program = program;
+  }
+
+  private createScreenQuad() {
+    const gl = this.gl;
     // create quad that fills the screen, this will be our drawing surface
-    var vertBuffer = gl.createBuffer();
+    const vertBuffer = gl.createBuffer();
     gl.bindBuffer(gl.ARRAY_BUFFER, vertBuffer);
     gl.bufferData(gl.ARRAY_BUFFER, new Float32Array([1,  1, -1, 1, -1, -1, 1, 1, -1, -1, 1, -1]), gl.STATIC_DRAW);
     gl.enableVertexAttribArray(0);
     gl.vertexAttribPointer(0, 2, gl.FLOAT, false, 0, 0);
     this.refs.buffers.push(vertBuffer);
+  }
+
+  private createBitmapTexture() {
+    const gl = this.gl;
     // create texture to use as the layer bitmap
     gl.activeTexture(gl.TEXTURE0);
-    var tex = gl.createTexture();
+    const tex = gl.createTexture();
     gl.bindTexture(gl.TEXTURE_2D, tex);
     gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_S, gl.CLAMP_TO_EDGE);
     gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_T, gl.CLAMP_TO_EDGE);
     gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MIN_FILTER, gl.LINEAR);
     gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MAG_FILTER, gl.LINEAR);
-    // get uniform locations
-    let uniformCount = gl.getProgramParameter(program, gl.ACTIVE_UNIFORMS);
-    for (let i = 0; i < uniformCount; i++) {
-      let name = gl.getActiveUniform(program, i).name;
-      this.uniforms[name] = gl.getUniformLocation(program, name);
-    }
     gl.uniform1i(this.uniforms['u_bitmap'], 0);
-    this.setCanvasSize(this.width, this.height);
     this.refs.textures.push(tex);
-    gl.pixelStorei(gl.UNPACK_FLIP_Y_WEBGL, true);
-    gl.enable(gl.BLEND);
-    gl.blendEquation(gl.FUNC_ADD);
-    gl.blendFunc(gl.ONE, gl.ONE_MINUS_SRC_ALPHA);
   }
 
   private createShader(type: ShaderType, source: string) {
-    var gl = this.gl;
-    var shader = gl.createShader(type);
+    const gl = this.gl;
+    const shader = gl.createShader(type);
     gl.shaderSource(shader, source);
     gl.compileShader(shader);
     // test if shader compilation was successful
     if (!gl.getShaderParameter(shader, gl.COMPILE_STATUS)) {
-      let log = gl.getShaderInfoLog(shader);
+      const log = gl.getShaderInfoLog(shader);
       gl.deleteShader(shader);
       throw new Error(log);
     }
@@ -136,7 +149,7 @@ export class WebglCanvas {
   }
 
   public drawLayer(buffer: Uint8Array, width: number, height: number, color1: number[], color2: number[]) {
-    let gl = this.gl;
+    const gl = this.gl;
     gl.activeTexture(gl.TEXTURE0);
     gl.texImage2D(gl.TEXTURE_2D, 0, this.textureType, width, height, 0, this.textureType, gl.UNSIGNED_BYTE, buffer);
     this.setColor('u_color1', color1);
@@ -154,8 +167,8 @@ export class WebglCanvas {
 
   public destroy() {
     // free resources
-    var refs = this.refs;
-    var gl = this.gl;
+    const refs = this.refs;
+    const gl = this.gl;
     refs.shaders.forEach((shader) => {
       gl.deleteShader(shader);
     });

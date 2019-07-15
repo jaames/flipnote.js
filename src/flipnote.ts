@@ -1,15 +1,17 @@
-import { DataStream } from './utils/dataStream';
-import { parseSource, KwzParser, PpmParser } from './parser'; 
+import * as utils from './utils';
+import { parseSource, KwzParser, PpmParser } from './parsers'; 
 import { Player } from './player';
-import { BitmapEncoder } from './encoders/bmp';
-import { GifEncoder } from './encoders/gif';
+import { GifEncoder, WavEncoder } from './encoders';
+// bitmap encoder is deprecated in favor of gif
+// import { BitmapEncoder } from './encoders';
 
 export default {
-  dataStream: DataStream,
+  utils,
   kwzParser: KwzParser,
   ppmParser: PpmParser,
   player: Player,
-  bitmapEncoder: BitmapEncoder,
+  // bitmapEncoder: BitmapEncoder,
   gifEncoder: GifEncoder,
+  wavEncoder: WavEncoder,
   parseSource,
 }

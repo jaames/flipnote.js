@@ -10,12 +10,10 @@ const loaders = [
 
 export function loadSource(source: any) {
   return new Promise(function (resolve, reject) {
-    for (var i = 0; i < loaders.length; i++) {
-      var loader = loaders[i];
+    loaders.forEach(loader => {
       if (loader.matches(source)) {
         loader.load(source, resolve, reject);
-        break;
       }
-    }
+    });
   });
 }

@@ -25,7 +25,7 @@ export class AudioTrack {
 
   public set(pcmData: Int16Array, playbackRate: number): void {
     // the HTML5 audio element supports PCM audio if it's in a WAV wrapper
-    let wav = new WavEncoder(this.sampleRate * playbackRate, this.channelCount, this.bitsPerSample);
+    const wav = new WavEncoder(this.sampleRate * playbackRate, this.channelCount, this.bitsPerSample);
     wav.writeFrames(pcmData);
     this.url = window.URL.createObjectURL(wav.getBlob());
     // use the blob url for the audio element

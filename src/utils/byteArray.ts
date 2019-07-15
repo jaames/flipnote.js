@@ -38,7 +38,7 @@ export class ByteArray {
   }
 
   public writeBytes(array: Uint8Array | number[], offset?: number, length?: number) {
-    for (var l = length || array.length, i = offset || 0; i < l; i++)
+    for (let l = length || array.length, i = offset || 0; i < l; i++)
       this.writeByte(array[i]);
   }
 }
