@@ -173,7 +173,7 @@ var GifEncoder = /** @class */ (function () {
     };
     GifEncoder.prototype.writeColorTable = function () {
         var palette = new Uint8Array(3 * Math.pow(2, this.colorDepth));
-        for (var index = 0, offset = 0; offset < palette.length; index += 1, offset += 3) {
+        for (var index = 0, offset = 0; index < this.palette.length; index += 1, offset += 3) {
             palette.set(this.palette[index], offset);
         }
         this.data.writeBytes(palette);
@@ -263,6 +263,8 @@ __webpack_require__.r(__webpack_exports__);
 
 
 
+// bmp encoder is deprecated in favor of gif
+// export * from './bmp';
 
 
 /***/ }),
@@ -599,11 +601,14 @@ __webpack_require__.r(__webpack_exports__);
 
 
 
+// bitmap encoder is deprecated in favor of gif
+// import { BitmapEncoder } from './encoders';
 /* harmony default export */ __webpack_exports__["default"] = ({
     utils: _utils__WEBPACK_IMPORTED_MODULE_0__,
     kwzParser: _parsers__WEBPACK_IMPORTED_MODULE_1__["KwzParser"],
     ppmParser: _parsers__WEBPACK_IMPORTED_MODULE_1__["PpmParser"],
     player: _player__WEBPACK_IMPORTED_MODULE_2__["Player"],
+    // bitmapEncoder: BitmapEncoder,
     gifEncoder: _encoders__WEBPACK_IMPORTED_MODULE_3__["GifEncoder"],
     wavEncoder: _encoders__WEBPACK_IMPORTED_MODULE_3__["WavEncoder"],
     parseSource: _parsers__WEBPACK_IMPORTED_MODULE_1__["parseSource"],
@@ -1995,10 +2000,10 @@ var Player = /** @class */ (function () {
     function Player(el, width, height) {
         this.loop = false;
         this.paused = true;
-        this.smoothRendering = false;
         this.isOpen = false;
         this.events = {};
-        this.frame = -1;
+        this._frame = -1;
+        this._time = 0;
         this.playbackLoop = null;
         this.hasPlaybackStarted = false;
         // if `el` is a string, use it to select an Element, else assume it's an element
@@ -2015,7 +2020,7 @@ var Player = /** @class */ (function () {
     }
     Object.defineProperty(Player.prototype, "currentFrame", {
         get: function () {
-            return this.frame;
+            return this._frame;
         },
         set: function (frameIndex) {
             this.setFrame(frameIndex);
@@ -2025,11 +2030,13 @@ var Player = /** @class */ (function () {
     });
     Object.defineProperty(Player.prototype, "currentTime", {
         get: function () {
-            return this.isOpen ? this.currentFrame * (1 / this.framerate) : null;
+            return this.isOpen ? this._time : null;
         },
         set: function (value) {
             if ((this.isOpen) && (value < this.duration) && (value > 0)) {
                 this.setFrame(Math.round(value / (1 / this.framerate)));
+                this._time = value;
+                this.emit('time:update', this._time);
             }
         },
         enumerable: true,
@@ -2117,7 +2124,7 @@ var Player = /** @class */ (function () {
         this.paused = true;
         this.loop = null;
         this.meta = null;
-        this.frame = 0;
+        this._frame = 0;
         for (var i = 0; i < this.audioTracks.length; i++) {
             this.audioTracks[i].unset();
         }
@@ -2159,25 +2166,31 @@ var Player = /** @class */ (function () {
         this.canvas.setInputSize(note.width, note.height);
         this.canvas.setLayerType(this.type === 'PPM' ? _webgl__WEBPACK_IMPORTED_MODULE_2__["TextureType"].Alpha : _webgl__WEBPACK_IMPORTED_MODULE_2__["TextureType"].LuminanceAlpha);
         this.setFrame(this.note.thumbFrameIndex);
+        this._time = 0;
         this.emit('load');
     };
     Player.prototype.play = function () {
         var _this = this;
         if ((!this.isOpen) || (!this.paused))
             return null;
+        if ((!this.hasPlaybackStarted) || ((!this.loop) && (this.currentFrame == this.frameCount - 1))) {
+            this.currentFrame = 0;
+        }
         this.paused = false;
-        if ((!this.hasPlaybackStarted) || ((!this.loop) && (this.currentFrame == this.frameCount - 1)))
-            this.frame = 0;
         this.playBgm();
-        this.playbackLoop = window.setInterval(function () {
-            if (_this.paused)
-                window.clearInterval(_this.playbackLoop);
-            // if the end of the flipnote has been reached
-            if (_this.currentFrame >= _this.frameCount - 1) {
+        var start = (performance.now() / 1000) - this.currentTime;
+        var loop = function (timestamp) {
+            if (_this.paused) { // break loop if paused is set to true
                 _this.stopAudio();
+                return null;
+            }
+            var time = timestamp / 1000;
+            var progress = time - start;
+            if (progress > _this.duration) {
                 if (_this.loop) {
-                    _this.firstFrame();
                     _this.playBgm();
+                    _this.currentTime = 0;
+                    start = time;
                     _this.emit('playback:loop');
                 }
                 else {
@@ -2186,30 +2199,35 @@ var Player = /** @class */ (function () {
                 }
             }
             else {
-                _this.playFrameSe(_this.currentFrame);
-                _this.nextFrame();
+                _this.currentTime = progress;
             }
-        }, 1000 / this.framerate);
+            requestAnimationFrame(loop);
+        };
+        requestAnimationFrame(loop);
         this.hasPlaybackStarted = true;
         this.emit('playback:start');
     };
     Player.prototype.pause = function () {
         if ((!this.isOpen) || (this.paused))
             return null;
-        // break the playback loop
-        window.clearInterval(this.playbackLoop);
         this.paused = true;
         this.stopAudio();
         this.emit('playback:stop');
     };
     Player.prototype.setFrame = function (frameIndex) {
-        if ((!this.isOpen) || (frameIndex === this.currentFrame))
-            return null;
-        // clamp frame index
-        frameIndex = Math.max(0, Math.min(Math.floor(frameIndex), this.frameCount - 1));
-        this.frame = frameIndex;
-        this.drawFrame(frameIndex);
-        this.emit('frame:update', this.currentFrame);
+        if ((this.isOpen) && (frameIndex !== this.currentFrame)) {
+            // clamp frame index
+            frameIndex = Math.max(0, Math.min(Math.floor(frameIndex), this.frameCount - 1));
+            this.drawFrame(frameIndex);
+            this._frame = frameIndex;
+            if (this.paused) {
+                this._time = frameIndex * (1 / this.framerate);
+            }
+            else {
+                this.playFrameSe(frameIndex);
+            }
+            this.emit('frame:update', this.currentFrame);
+        }
     };
     Player.prototype.nextFrame = function () {
         if ((this.loop) && (this.currentFrame >= this.frameCount - 1)) {
@@ -2718,7 +2736,7 @@ var WebglCanvas = /** @class */ (function () {
     };
     WebglCanvas.prototype.drawLayer = function (buffer, width, height, color1, color2) {
         var gl = this.gl;
-        gl.activeTexture(gl.TEXTURE0);
+        // gl.activeTexture(gl.TEXTURE0);
         gl.texImage2D(gl.TEXTURE_2D, 0, this.textureType, width, height, 0, this.textureType, gl.UNSIGNED_BYTE, buffer);
         this.setColor('u_color1', color1);
         this.setColor('u_color2', color2);

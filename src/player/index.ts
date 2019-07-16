@@ -26,6 +26,7 @@ export class Player {
   private audioTracks: AudioTrack[];
   private seFlags: number[][];
   private _frame: number = -1;
+  private _time: number = 0;
   private playbackLoop: number = null;
   private hasPlaybackStarted: boolean = false;
 
@@ -52,12 +53,14 @@ export class Player {
   }
 
   get currentTime() {
-    return this.isOpen ? this.currentFrame * (1 / this.framerate) : null;
+    return this.isOpen ? this._time : null;
   }
 
   set currentTime(value) {
     if ((this.isOpen) && (value < this.duration) && (value > 0)) {
       this.setFrame(Math.round(value / (1 / this.framerate)));
+      this._time = value;
+      this.emit('time:update', this._time);
     }
   }
 
@@ -157,43 +160,51 @@ export class Player {
     this.canvas.setInputSize(note.width, note.height);
     this.canvas.setLayerType(this.type === 'PPM' ? TextureType.Alpha : TextureType.LuminanceAlpha);
     this.setFrame(this.note.thumbFrameIndex);
+    this._time = 0;
     this.emit('load');
   }
 
   public play(): void {
     if ((!this.isOpen) || (!this.paused)) return null;
+
+    if ((!this.hasPlaybackStarted) || ((!this.loop) && (this.currentFrame == this.frameCount - 1))) {
+      this.currentFrame = 0;
+    }
+
     this.paused = false;
-    if ((!this.hasPlaybackStarted) || ((!this.loop) && (this.currentFrame == this.frameCount - 1))) this._frame = 0;
     this.playBgm();
-    this.playbackLoop = window.setInterval(() => {
-      if (this.paused) {
-        window.clearInterval(this.playbackLoop);
+
+    let start = (performance.now() / 1000) - this.currentTime;
+
+    const loop = (timestamp: DOMHighResTimeStamp): void => {
+      if (this.paused) { // break loop if paused is set to true
         this.stopAudio();
-      };
-      // if the end of the flipnote has been reached
-      if (this.currentFrame >= this.frameCount -1) {
-        this.stopAudio();
+        return null;
+      }
+      const time = timestamp / 1000;
+      const progress = time - start;
+      if (progress > this.duration) {
         if (this.loop) {
-          this.firstFrame();
           this.playBgm();
+          this.currentTime = 0;
+          start = time;
           this.emit('playback:loop');
         } else {
           this.pause();
           this.emit('playback:end');
         }
       } else {
-        this.playFrameSe(this.currentFrame);
-        this.nextFrame();
+        this.currentTime = progress;
       }
-    }, 1000 / this.framerate);
+      requestAnimationFrame(loop);
+    }
+    requestAnimationFrame(loop);
     this.hasPlaybackStarted = true;
     this.emit('playback:start');
   }
 
   public pause(): void {
     if ((!this.isOpen) || (this.paused)) return null;
-    // break the playback loop
-    window.clearInterval(this.playbackLoop);
     this.paused = true;
     this.stopAudio();
     this.emit('playback:stop');
@@ -203,8 +214,13 @@ export class Player {
     if ((this.isOpen) && (frameIndex !== this.currentFrame)) {
       // clamp frame index
       frameIndex = Math.max(0, Math.min(Math.floor(frameIndex), this.frameCount - 1));
-      this._frame = frameIndex;
       this.drawFrame(frameIndex);
+      this._frame = frameIndex;
+      if (this.paused) {
+        this._time = frameIndex * (1 / this.framerate);
+      } else {
+        this.playFrameSe(frameIndex);
+      }
       this.emit('frame:update', this.currentFrame);
     }
   }
