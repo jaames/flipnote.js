@@ -150,7 +150,7 @@ export class WebglCanvas {
 
   public drawLayer(buffer: Uint8Array, width: number, height: number, color1: number[], color2: number[]) {
     const gl = this.gl;
-    gl.activeTexture(gl.TEXTURE0);
+    // gl.activeTexture(gl.TEXTURE0);
     gl.texImage2D(gl.TEXTURE_2D, 0, this.textureType, width, height, 0, this.textureType, gl.UNSIGNED_BYTE, buffer);
     this.setColor('u_color1', color1);
     this.setColor('u_color2', color2);

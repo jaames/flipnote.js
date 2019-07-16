@@ -19,6 +19,7 @@ export class Player {
   public meta: FlipnoteMeta;
   public loop: boolean = false;
   public paused: boolean = true;
+  public duration: number = 0;
   public layerVisibility: PlayerLayerVisibility;
   
   private isOpen: boolean = false;
@@ -57,11 +58,19 @@ export class Player {
   }
 
   set currentTime(value) {
-    if ((this.isOpen) && (value < this.duration) && (value > 0)) {
+    if ((this.isOpen) && (value <= this.duration) && (value > 0)) {
       this.setFrame(Math.round(value / (1 / this.framerate)));
       this._time = value;
-      this.emit('time:update', this._time);
+      this.emit('progress', this.progress);
     }
+  }
+
+  get progress() {
+    return (this.currentTime / this.duration) * 100;
+  }
+
+  set progress(value) {
+    this.currentTime = this.duration * (value / 100);
   }
 
   get volume() {
@@ -82,10 +91,6 @@ export class Player {
     for (let i = 0; i < this.audioTracks.length; i++) {
       this.audioTracks[i].audio.muted = value;
     }
-  }
-
-  get duration() {
-    return this.isOpen ? this.frameCount * (1 / this.framerate) : null;
   }
 
   get framerate() {
@@ -136,6 +141,7 @@ export class Player {
     this.meta = note.meta;
     this.type = note.type;
     this.loop = note.meta.loop;
+    this.duration = (this.note.frameCount) * (1 / this.note.framerate);
     this.paused = true;
     this.isOpen = true;
     this.audioTracks.forEach(track => {
