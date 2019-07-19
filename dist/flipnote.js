@@ -1,5 +1,5 @@
 /*!
- * flipnote.js v3.0.0
+ * flipnote.js v3.0.1
  * Browser-based playback of .ppm and .kwz animations from Flipnote Studio and Flipnote Studio 3D
  * 2018 - 2019 James Daniel
  * github.com/jaames/flipnote.js
@@ -604,7 +604,7 @@ __webpack_require__.r(__webpack_exports__);
 // bitmap encoder is deprecated in favor of gif
 // import { BitmapEncoder } from './encoders';
 /* harmony default export */ __webpack_exports__["default"] = ({
-    version: "3.0.0",
+    version: "3.0.1",
     player: _player__WEBPACK_IMPORTED_MODULE_2__["Player"],
     parseSource: _parsers__WEBPACK_IMPORTED_MODULE_1__["parseSource"],
     kwzParser: _parsers__WEBPACK_IMPORTED_MODULE_1__["KwzParser"],
@@ -2007,7 +2007,8 @@ var Player = /** @class */ (function () {
         this._frame = -1;
         this._time = 0;
         this.hasPlaybackStarted = false;
-        this.wasPlaying = null;
+        this.wasPlaying = false;
+        this.isSeeking = false;
         // if `el` is a string, use it to select an Element, else assume it's an element
         el = ('string' == typeof el) ? document.querySelector(el) : el;
         this.canvas = new _webgl__WEBPACK_IMPORTED_MODULE_2__["WebglCanvas"](el, width, height);
@@ -2264,17 +2265,23 @@ var Player = /** @class */ (function () {
         this.currentFrame = this.note.thumbFrameIndex;
     };
     Player.prototype.startSeek = function () {
-        this.wasPlaying = !this.paused;
-        this.pause();
+        if (!this.isSeeking) {
+            this.wasPlaying = !this.paused;
+            this.pause();
+            this.isSeeking = true;
+        }
     };
     Player.prototype.seek = function (progress) {
-        this.progress = progress;
+        if (this.isSeeking) {
+            this.progress = progress;
+        }
     };
     Player.prototype.endSeek = function () {
-        if (this.wasPlaying) {
+        if ((this.isSeeking) && (this.wasPlaying === true)) {
             this.play();
-            this.wasPlaying = null;
         }
+        this.wasPlaying = false;
+        this.isSeeking = false;
     };
     Player.prototype.drawFrame = function (frameIndex) {
         var _this = this;

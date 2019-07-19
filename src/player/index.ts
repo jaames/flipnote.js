@@ -31,7 +31,8 @@ export class Player {
   private _frame: number = -1;
   private _time: number = 0;
   private hasPlaybackStarted: boolean = false;
-  private wasPlaying: boolean = null;
+  private wasPlaying: boolean = false;
+  private isSeeking: boolean = false;
 
   constructor(el: string | HTMLCanvasElement, width: number, height: number) {
     // if `el` is a string, use it to select an Element, else assume it's an element
@@ -265,19 +266,25 @@ export class Player {
   }
 
   public startSeek(): void {
-    this.wasPlaying = !this.paused;
-    this.pause();
+    if (!this.isSeeking) {
+      this.wasPlaying = !this.paused;
+      this.pause();
+      this.isSeeking = true;
+    }
   }
 
   public seek(progress: number): void {
-    this.progress = progress;
+    if (this.isSeeking) {
+      this.progress = progress;
+    }
   }
 
   public endSeek(): void {
-    if (this.wasPlaying) {
+    if ((this.isSeeking) && (this.wasPlaying === true)) {
       this.play();
-      this.wasPlaying = null;
     }
+    this.wasPlaying = false;
+    this.isSeeking = false;
   }
 
   public drawFrame(frameIndex: number): void {
