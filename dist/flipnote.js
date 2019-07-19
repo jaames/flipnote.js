@@ -1,5 +1,5 @@
 /*!
- * flipnote.js v3.0.0-beta
+ * flipnote.js v3.0.0
  * Browser-based playback of .ppm and .kwz animations from Flipnote Studio and Flipnote Studio 3D
  * 2018 - 2019 James Daniel
  * github.com/jaames/flipnote.js
@@ -604,14 +604,15 @@ __webpack_require__.r(__webpack_exports__);
 // bitmap encoder is deprecated in favor of gif
 // import { BitmapEncoder } from './encoders';
 /* harmony default export */ __webpack_exports__["default"] = ({
-    utils: _utils__WEBPACK_IMPORTED_MODULE_0__,
+    version: "3.0.0",
+    player: _player__WEBPACK_IMPORTED_MODULE_2__["Player"],
+    parseSource: _parsers__WEBPACK_IMPORTED_MODULE_1__["parseSource"],
     kwzParser: _parsers__WEBPACK_IMPORTED_MODULE_1__["KwzParser"],
     ppmParser: _parsers__WEBPACK_IMPORTED_MODULE_1__["PpmParser"],
-    player: _player__WEBPACK_IMPORTED_MODULE_2__["Player"],
     // bitmapEncoder: BitmapEncoder,
     gifEncoder: _encoders__WEBPACK_IMPORTED_MODULE_3__["GifEncoder"],
     wavEncoder: _encoders__WEBPACK_IMPORTED_MODULE_3__["WavEncoder"],
-    parseSource: _parsers__WEBPACK_IMPORTED_MODULE_1__["parseSource"],
+    utils: _utils__WEBPACK_IMPORTED_MODULE_0__,
 });
 
 

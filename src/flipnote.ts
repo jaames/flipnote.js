@@ -6,12 +6,13 @@ import { GifEncoder, WavEncoder } from './encoders';
 // import { BitmapEncoder } from './encoders';
 
 export default {
-  utils,
+  version: VERSION,
+  player: Player,
+  parseSource,
   kwzParser: KwzParser,
   ppmParser: PpmParser,
-  player: Player,
   // bitmapEncoder: BitmapEncoder,
   gifEncoder: GifEncoder,
   wavEncoder: WavEncoder,
-  parseSource,
+  utils,
 }
