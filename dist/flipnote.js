@@ -2000,16 +2000,18 @@ var Player = /** @class */ (function () {
     function Player(el, width, height) {
         this.loop = false;
         this.paused = true;
+        this.duration = 0;
         this.isOpen = false;
         this.events = {};
         this._frame = -1;
         this._time = 0;
-        this.playbackLoop = null;
         this.hasPlaybackStarted = false;
+        this.wasPlaying = null;
         // if `el` is a string, use it to select an Element, else assume it's an element
         el = ('string' == typeof el) ? document.querySelector(el) : el;
         this.canvas = new _webgl__WEBPACK_IMPORTED_MODULE_2__["WebglCanvas"](el, width, height);
-        // this.customPalette = null;
+        this.el = this.canvas.el;
+        this.customPalette = null;
         this.audioTracks = [
             new _audio__WEBPACK_IMPORTED_MODULE_1__["AudioTrack"]('se1'),
             new _audio__WEBPACK_IMPORTED_MODULE_1__["AudioTrack"]('se2'),
@@ -2033,11 +2035,21 @@ var Player = /** @class */ (function () {
             return this.isOpen ? this._time : null;
         },
         set: function (value) {
-            if ((this.isOpen) && (value < this.duration) && (value > 0)) {
+            if ((this.isOpen) && (value <= this.duration) && (value >= 0)) {
                 this.setFrame(Math.round(value / (1 / this.framerate)));
                 this._time = value;
-                this.emit('time:update', this._time);
+                this.emit('progress', this.progress);
             }
+        },
+        enumerable: true,
+        configurable: true
+    });
+    Object.defineProperty(Player.prototype, "progress", {
+        get: function () {
+            return (this.currentTime / this.duration) * 100;
+        },
+        set: function (value) {
+            this.currentTime = this.duration * (value / 100);
         },
         enumerable: true,
         configurable: true
@@ -2062,13 +2074,6 @@ var Player = /** @class */ (function () {
             for (var i = 0; i < this.audioTracks.length; i++) {
                 this.audioTracks[i].audio.muted = value;
             }
-        },
-        enumerable: true,
-        configurable: true
-    });
-    Object.defineProperty(Player.prototype, "duration", {
-        get: function () {
-            return this.isOpen ? this.frameCount * (1 / this.framerate) : null;
         },
         enumerable: true,
         configurable: true
@@ -2124,11 +2129,14 @@ var Player = /** @class */ (function () {
         this.paused = true;
         this.loop = null;
         this.meta = null;
-        this._frame = 0;
+        this._frame = null;
+        this._time = null;
+        this.duration = null;
+        this.loop = null;
         for (var i = 0; i < this.audioTracks.length; i++) {
             this.audioTracks[i].unset();
         }
-        // this._seFlags = null;
+        this.seFlags = null;
         this.hasPlaybackStarted = null;
         this.canvas.clear();
     };
@@ -2137,14 +2145,15 @@ var Player = /** @class */ (function () {
         this.meta = note.meta;
         this.type = note.type;
         this.loop = note.meta.loop;
+        this.duration = (this.note.frameCount) * (1 / this.note.framerate);
         this.paused = true;
         this.isOpen = true;
         this.audioTracks.forEach(function (track) {
             track.sampleRate = note.sampleRate;
         });
-        // if (this.customPalette) {
-        //   this.setPalette(this.customPalette);
-        // }
+        if (this.customPalette) {
+            this.setPalette(this.customPalette);
+        }
         if (this.note.hasAudioTrack(1))
             this.audioTracks[0].set(this.note.decodeAudio('se1'), 1);
         if (this.note.hasAudioTrack(2))
@@ -2156,7 +2165,6 @@ var Player = /** @class */ (function () {
         if (this.note.hasAudioTrack(0))
             this.audioTracks[4].set(this.note.decodeAudio('bgm'), this.audiorate);
         this.seFlags = this.note.decodeSoundFlags();
-        this.playbackLoop = null;
         this.hasPlaybackStarted = false;
         this.layerVisibility = {
             1: true,
@@ -2174,7 +2182,7 @@ var Player = /** @class */ (function () {
         if ((!this.isOpen) || (!this.paused))
             return null;
         if ((!this.hasPlaybackStarted) || ((!this.loop) && (this.currentFrame == this.frameCount - 1))) {
-            this.currentFrame = 0;
+            this._time = 0;
         }
         this.paused = false;
         this.playBgm();
@@ -2188,8 +2196,8 @@ var Player = /** @class */ (function () {
             var progress = time - start;
             if (progress > _this.duration) {
                 if (_this.loop) {
-                    _this.playBgm();
                     _this.currentTime = 0;
+                    _this.playBgm();
                     start = time;
                     _this.emit('playback:loop');
                 }
@@ -2254,6 +2262,19 @@ var Player = /** @class */ (function () {
     Player.prototype.thumbnailFrame = function () {
         this.currentFrame = this.note.thumbFrameIndex;
     };
+    Player.prototype.startSeek = function () {
+        this.wasPlaying = !this.paused;
+        this.pause();
+    };
+    Player.prototype.seek = function (progress) {
+        this.progress = progress;
+    };
+    Player.prototype.endSeek = function () {
+        if (this.wasPlaying) {
+            this.play();
+            this.wasPlaying = null;
+        }
+    };
     Player.prototype.drawFrame = function (frameIndex) {
         var _this = this;
         var width = this.note.width;
@@ -2309,7 +2330,7 @@ var Player = /** @class */ (function () {
         this.forceUpdate();
     };
     Player.prototype.setPalette = function (palette) {
-        // this.customPalette = palette;
+        this.customPalette = palette;
         this.note.palette = palette;
         this.forceUpdate();
     };

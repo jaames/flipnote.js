@@ -14,6 +14,7 @@ interface PlayerLayerVisibility {
 export class Player {
 
   public canvas: WebglCanvas;
+  public el: HTMLCanvasElement;
   public type: string;
   public note: Flipnote;
   public meta: FlipnoteMeta;
@@ -23,19 +24,21 @@ export class Player {
   public layerVisibility: PlayerLayerVisibility;
   
   private isOpen: boolean = false;
+  private customPalette: {};
   private events: PlayerEvents = {};
   private audioTracks: AudioTrack[];
   private seFlags: number[][];
   private _frame: number = -1;
   private _time: number = 0;
-  private playbackLoop: number = null;
   private hasPlaybackStarted: boolean = false;
+  private wasPlaying: boolean = null;
 
   constructor(el: string | HTMLCanvasElement, width: number, height: number) {
     // if `el` is a string, use it to select an Element, else assume it's an element
     el = ('string' == typeof el) ? <HTMLCanvasElement>document.querySelector(el) : el;
     this.canvas = new WebglCanvas(el, width, height);
-    // this.customPalette = null;
+    this.el = this.canvas.el;
+    this.customPalette = null;
     this.audioTracks = [
       new AudioTrack('se1'),
       new AudioTrack('se2'),
@@ -58,7 +61,7 @@ export class Player {
   }
 
   set currentTime(value) {
-    if ((this.isOpen) && (value <= this.duration) && (value > 0)) {
+    if ((this.isOpen) && (value <= this.duration) && (value >= 0)) {
       this.setFrame(Math.round(value / (1 / this.framerate)));
       this._time = value;
       this.emit('progress', this.progress);
@@ -127,11 +130,14 @@ export class Player {
     this.paused = true;
     this.loop = null;
     this.meta = null;
-    this._frame = 0;
+    this._frame = null;
+    this._time = null;
+    this.duration = null;
+    this.loop = null;
     for (let i = 0; i < this.audioTracks.length; i++) {
       this.audioTracks[i].unset();
     }
-    // this._seFlags = null;
+    this.seFlags = null;
     this.hasPlaybackStarted = null;
     this.canvas.clear();
   }
@@ -147,16 +153,15 @@ export class Player {
     this.audioTracks.forEach(track => {
       track.sampleRate = note.sampleRate;
     });
-    // if (this.customPalette) {
-    //   this.setPalette(this.customPalette);
-    // }
+    if (this.customPalette) {
+      this.setPalette(this.customPalette);
+    }
     if (this.note.hasAudioTrack(1)) this.audioTracks[0].set(this.note.decodeAudio('se1'), 1);
     if (this.note.hasAudioTrack(2)) this.audioTracks[1].set(this.note.decodeAudio('se2'), 1);
     if (this.note.hasAudioTrack(3)) this.audioTracks[2].set(this.note.decodeAudio('se3'), 1);
     if (this.type === 'KWZ' && this.note.hasAudioTrack(4)) this.audioTracks[3].set(this.note.decodeAudio('se4'), 1);
     if (this.note.hasAudioTrack(0)) this.audioTracks[4].set(this.note.decodeAudio('bgm'), this.audiorate);
     this.seFlags = this.note.decodeSoundFlags();
-    this.playbackLoop = null;
     this.hasPlaybackStarted = false;
     this.layerVisibility = {
       1: true,
@@ -174,7 +179,7 @@ export class Player {
     if ((!this.isOpen) || (!this.paused)) return null;
 
     if ((!this.hasPlaybackStarted) || ((!this.loop) && (this.currentFrame == this.frameCount - 1))) {
-      this.currentFrame = 0;
+      this._time = 0
     }
 
     this.paused = false;
@@ -191,8 +196,8 @@ export class Player {
       const progress = time - start;
       if (progress > this.duration) {
         if (this.loop) {
-          this.playBgm();
           this.currentTime = 0;
+          this.playBgm();
           start = time;
           this.emit('playback:loop');
         } else {
@@ -259,6 +264,22 @@ export class Player {
     this.currentFrame = this.note.thumbFrameIndex;
   }
 
+  public startSeek(): void {
+    this.wasPlaying = !this.paused;
+    this.pause();
+  }
+
+  public seek(progress: number): void {
+    this.progress = progress;
+  }
+
+  public endSeek(): void {
+    if (this.wasPlaying) {
+      this.play();
+      this.wasPlaying = null;
+    }
+  }
+
   public drawFrame(frameIndex: number): void {
     const width = this.note.width;
     const height = this.note.height;
@@ -318,7 +339,7 @@ export class Player {
   }
 
   public setPalette(palette: any): void {
-    // this.customPalette = palette;
+    this.customPalette = palette;
     this.note.palette = palette;
     this.forceUpdate();
   }
