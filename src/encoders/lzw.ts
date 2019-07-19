@@ -1,3 +1,5 @@
+import { ByteArray } from '../utils/byteArray';
+
 /*
   LZWEncoder.js
 
@@ -5,7 +7,7 @@
   Kevin Weiner (original Java version - kweiner@fmsware.com)
   Thibault Imbert (AS3 version - bytearray.org)
   Johan Nordberg (JS version - code@johan-nordberg.com)
-  James Daniel (ES6 version)
+  James Daniel (ES6/TS version)
 
   Acknowledgements
   GIFCOMPR.C - GIF Image compression routines
@@ -24,12 +26,49 @@
 const EOF = -1;
 const BITS = 12;
 const HSIZE = 5003; // 80% occupancy
-const masks = [0x0000, 0x0001, 0x0003, 0x0007, 0x000F, 0x001F,
-             0x003F, 0x007F, 0x00FF, 0x01FF, 0x03FF, 0x07FF,
-             0x0FFF, 0x1FFF, 0x3FFF, 0x7FFF, 0xFFFF];
+const masks = [
+  0x0000, 0x0001, 0x0003, 0x0007, 0x000F, 0x001F,
+  0x003F, 0x007F, 0x00FF, 0x01FF, 0x03FF, 0x07FF,
+  0x0FFF, 0x1FFF, 0x3FFF, 0x7FFF, 0xFFFF
+];
 
 export class LZWEncoder {
-  constructor(width, height, pixels, colorDepth) {
+  public width: number;
+  public height: number;
+  public pixels: Uint8Array;
+  public colorDepth: number;
+
+  private initCodeSize: number;
+  private accum = new Uint8Array(256);
+  private htab = new Int32Array(HSIZE);
+  private codetab = new Int32Array(HSIZE);
+  private cur_accum = 0;
+  private cur_bits = 0;
+  private n_bits: number;
+  private a_count: number;
+  private remaining: number;
+  private curPixel = 0;
+  private free_ent = 0; // first unused entry
+  private maxcode: number;
+  // block compression parameters -- after all codes are used up,
+  // and compression rate changes, start over.
+  private clear_flg: boolean = false;
+  // Algorithm: use open addressing double hashing (no chaining) on the
+  // prefix code / next character combination. We do a variant of Knuth's
+  // algorithm D (vol. 3, sec. 6.4) along with G. Knott's relatively-prime
+  // secondary probe. Here, the modular division first probe is gives way
+  // to a faster exclusive-or manipulation. Also do block compression with
+  // an adaptive reset, whereby the code table is cleared when the compression
+  // ratio decreases, but after the table fills. The variable-length output
+  // codes are re-sized at this point, and a special CLEAR code is generated
+  // for the decompressor. Late addition: construct the table according to
+  // file size for noticeable speed improvement on small files. Please direct
+  // questions about this implementation to ames!jaw.
+  private g_init_bits: number = undefined;
+  private ClearCode: number = undefined;
+  private EOFCode: number = undefined;
+
+  constructor(width: number, height: number, pixels: Uint8Array, colorDepth: number) {
     this.width = width;
     this.height = height;
     this.pixels = pixels;
@@ -66,14 +105,14 @@ export class LZWEncoder {
 
   // Add a character to the end of the current packet, and if it is 254
   // characters, flush the packet to disk.
-  char_out(c, outs) {
+  char_out(c: number, outs: ByteArray) {
     this.accum[this.a_count++] = c;
     if (this.a_count >= 254) this.flush_char(outs);
   }
 
   // Clear out the hash table
   // table clear for block compress
-  cl_block(outs) {
+  cl_block(outs: ByteArray) {
     this.cl_hash(HSIZE);
     this.free_ent = this.ClearCode + 2;
     this.clear_flg = true;
@@ -81,11 +120,11 @@ export class LZWEncoder {
   }
 
   // Reset code table
-  cl_hash(hsize) {
+  cl_hash(hsize: number) {
     for (var i = 0; i < hsize; ++i) this.htab[i] = -1;
   }
 
-  compress(init_bits, outs) {
+  compress(init_bits: number, outs: ByteArray) {
     var fcode, c, i, ent, disp, hsize_reg, hshift;
 
     // Set up the globals: this.g_init_bits - initial number of bits
@@ -144,8 +183,8 @@ export class LZWEncoder {
     this.output(this.EOFCode, outs);
   }
 
-  encode(outs) {
-    outs.writeByte(this.initCodeSize); // write "initial code size" byte
+  encode(outs: ByteArray) {
+    outs.writeByte(this.initCodeSize); // write 'initial code size' byte
     this.remaining = this.width * this.height; // reset navigation variables
     this.curPixel = 0;
     this.compress(this.initCodeSize + 1, outs); // compress and write the pixel data
@@ -153,7 +192,7 @@ export class LZWEncoder {
   }
 
   // Flush the packet to disk, and reset the this.accumulator
-  flush_char(outs) {
+  flush_char(outs: ByteArray) {
     if (this.a_count > 0) {
       outs.writeByte(this.a_count);
       outs.writeBytes(this.accum, 0, this.a_count);
@@ -161,7 +200,7 @@ export class LZWEncoder {
     }
   }
 
-  get_maxcode(n_bits) {
+  get_maxcode(n_bits: number) {
     return (1 << n_bits) - 1;
   }
 
@@ -173,7 +212,7 @@ export class LZWEncoder {
     return pix & 0xff;
   }
 
-  output(code, outs) {
+  output(code: number, outs: ByteArray) {
     this.cur_accum &= masks[this.cur_bits];
 
     if (this.cur_bits > 0) this.cur_accum |= (code << this.cur_bits);

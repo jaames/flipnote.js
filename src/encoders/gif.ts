@@ -1,23 +1,27 @@
-import dataStream from "../utils/dataStream";
-import { ByteArray } from "../utils/byteArray";
-import { LZWEncoder } from "./lzw";
+import { DataStream, ByteArray } from '../utils';
+import { LZWEncoder } from './lzw';
+import { Flipnote } from '../parsers';
 
-export default class GifEncoder {
-  constructor(width, height) {
+export class GifEncoder {
+
+  public width: number;
+  public height: number;
+  public delay: number = 100;
+  // -1 = no repeat, 0 = forever. anything else is repeat count
+  public repeat: number = -1;
+  public colorDepth: number = 8;
+  public palette: number[][] = [];
+  public data: ByteArray;
+
+  constructor(width: number, height: number) {
     this.width = width;
     this.height = height;
-    this.delay = 100;
-    // -1 = no repeat, 0 = forever. anything else is repeat count
-    this.repeat = -1;
-    this.colorDepth = 8;
-    this.palette = [];
     this.data = new ByteArray();
   }
 
-  static fromFlipnote(flipnote) {
-    const format = flipnote.constructor;
-    const gif = new GifEncoder(format.width, format.height);
-    gif.palette = format.globalPalette.flat();
+  static fromFlipnote(flipnote: Flipnote) {
+    const gif = new GifEncoder(flipnote.width, flipnote.height);
+    gif.palette = flipnote.globalPalette;
     gif.delay = 100 / flipnote.framerate
     gif.repeat = flipnote.meta.loop ? -1 : 0;
     gif.init();
@@ -27,10 +31,9 @@ export default class GifEncoder {
     return gif;
   }
 
-  static fromFlipnoteFrame(flipnote, frameIndex) {
-    const format = flipnote.constructor;
-    const gif = new GifEncoder(format.width, format.height);
-    gif.palette = format.globalPalette.flat();
+  static fromFlipnoteFrame(flipnote: Flipnote, frameIndex: number) {
+    const gif = new GifEncoder(flipnote.width, flipnote.height);
+    gif.palette = flipnote.globalPalette;
     gif.delay = 100 / flipnote.framerate
     gif.repeat = flipnote.meta.loop ? -1 : 0;
     gif.init();
@@ -39,7 +42,7 @@ export default class GifEncoder {
   }
 
   init() {
-    let paletteSize = this.palette.length / 3;
+    const paletteSize = this.palette.length;
     for (var p = 1; 1 << p < paletteSize; p += 1) {
       continue;
     }
@@ -50,8 +53,8 @@ export default class GifEncoder {
   }
 
   writeHeader() {
-    const header = new dataStream(new ArrayBuffer(13));
-    header.writeUtf8("GIF89a");
+    const header = new DataStream(new ArrayBuffer(13));
+    header.writeUtf8('GIF89a');
     // Logical Screen Descriptor
     header.writeUint16(this.width);
     header.writeUint16(this.height);
@@ -66,12 +69,14 @@ export default class GifEncoder {
 
   writeColorTable() {
     const palette = new Uint8Array(3 * Math.pow(2, this.colorDepth));
-    palette.set(this.palette, 0);
+    for(let index = 0, offset = 0; index < this.palette.length; index += 1, offset += 3) {
+      palette.set(this.palette[index], offset);
+    }
     this.data.writeBytes(palette);
   }
 
   writeGraphicsControlExt() {
-    const graphicsControlExt = new dataStream(new ArrayBuffer(8));
+    const graphicsControlExt = new DataStream(new ArrayBuffer(8));
     graphicsControlExt.writeBytes([
       0x21, // extension introducer
       0xF9, // graphic control label
@@ -87,7 +92,7 @@ export default class GifEncoder {
   }
 
   writeNetscapeExt() {
-    const netscapeExt = new dataStream(new ArrayBuffer(19));
+    const netscapeExt = new DataStream(new ArrayBuffer(19));
     netscapeExt.writeBytes([
       0x21, // extension introducer
       0xFF, // app extension label
@@ -101,7 +106,7 @@ export default class GifEncoder {
   }
 
   writeImageDesc() {
-    const desc = new dataStream(new ArrayBuffer(10));
+    const desc = new DataStream(new ArrayBuffer(10));
     desc.writeUint8(0x2C);
     desc.writeUint16(0); // image left
     desc.writeUint16(0); // image top
@@ -111,12 +116,12 @@ export default class GifEncoder {
     this.data.writeBytes(new Uint8Array(desc.buffer));
   }
 
-  writePixels(pixels) {
+  writePixels(pixels: Uint8Array) {
     const lzw = new LZWEncoder(this.width, this.height, pixels, this.colorDepth);
     lzw.encode(this.data);
   }
 
-  writeFrame(pixels) {
+  writeFrame(pixels: Uint8Array) {
     this.writeGraphicsControlExt();
     this.writeImageDesc();
     this.writePixels(pixels);
@@ -127,7 +132,7 @@ export default class GifEncoder {
   }
 
   getBlob() {
-    return new Blob([this.getBuffer()], {type: "image/gif"})
+    return new Blob([this.getBuffer()], {type: 'image/gif'})
   }
 
   getUrl() {
@@ -135,7 +140,7 @@ export default class GifEncoder {
   }
 
   getImage() {
-    var img = new Image(this.width, this.height);
+    const img = new Image(this.width, this.height);
     img.src = this.getUrl();
     return img;
   }
