@@ -70,7 +70,7 @@ export class Player {
   }
 
   get progress() {
-    return (this.currentTime / this.duration) * 100;
+    return this.isOpen ? (this.currentTime / this.duration) * 100 : 0;
   }
 
   set progress(value) {
@@ -230,6 +230,7 @@ export class Player {
       this._frame = frameIndex;
       if (this.paused) {
         this._time = frameIndex * (1 / this.framerate);
+        this.emit('progress', this.progress);
       } else {
         this.playFrameSe(frameIndex);
       }

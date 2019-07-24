@@ -1,5 +1,5 @@
 /*!
- * flipnote.js v3.0.1
+ * flipnote.js v3.0.2
  * Browser-based playback of .ppm and .kwz animations from Flipnote Studio and Flipnote Studio 3D
  * 2018 - 2019 James Daniel
  * github.com/jaames/flipnote.js
@@ -14,7 +14,7 @@
 		exports["flipnote"] = factory();
 	else
 		root["flipnote"] = factory();
-})(typeof self !== 'undefined' ? self : this, function() {
+})(typeof self !== "undefined" ? self : this, function() {
 return /******/ (function(modules) { // webpackBootstrap
 /******/ 	// The module cache
 /******/ 	var installedModules = {};
@@ -604,7 +604,7 @@ __webpack_require__.r(__webpack_exports__);
 // bitmap encoder is deprecated in favor of gif
 // import { BitmapEncoder } from './encoders';
 /* harmony default export */ __webpack_exports__["default"] = ({
-    version: "3.0.1",
+    version: "3.0.2",
     player: _player__WEBPACK_IMPORTED_MODULE_2__["Player"],
     parseSource: _parsers__WEBPACK_IMPORTED_MODULE_1__["parseSource"],
     kwzParser: _parsers__WEBPACK_IMPORTED_MODULE_1__["KwzParser"],
@@ -2048,7 +2048,7 @@ var Player = /** @class */ (function () {
     });
     Object.defineProperty(Player.prototype, "progress", {
         get: function () {
-            return (this.currentTime / this.duration) * 100;
+            return this.isOpen ? (this.currentTime / this.duration) * 100 : 0;
         },
         set: function (value) {
             this.currentTime = this.duration * (value / 100);
@@ -2232,6 +2232,7 @@ var Player = /** @class */ (function () {
             this._frame = frameIndex;
             if (this.paused) {
                 this._time = frameIndex * (1 / this.framerate);
+                this.emit('progress', this.progress);
             }
             else {
                 this.playFrameSe(frameIndex);
