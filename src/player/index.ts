@@ -116,10 +116,11 @@ export class Player {
   public async open(source: any) {
     if (this.isOpen) this.close();
     return parseSource(source)
-      .then((note) => {
+      .then((note: Flipnote) => {
         this.load(note);
       })
-      .catch((err) => {
+      .catch((err: any) => {
+        this.emit('error', err);
         console.error('Error loading Flipnote:', err);
       });
   }

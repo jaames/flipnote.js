@@ -7,20 +7,21 @@ export type Flipnote = PpmParser | KwzParser;
 export type FlipnoteMeta = PpmMeta | KwzMeta; 
 
 export function parseSource(source: any) {
-  return loadSource(source).then((arrayBuffer: ArrayBuffer) => {
-    // check the buffer's magic to identify which format it uses
-    const data = new DataView(arrayBuffer, 0, 4);
-    const magic = data.getUint32(0);
-    // check if magic is PARA (ppm magic)
-    if (magic === 0x50415241) {
-      return new PpmParser(arrayBuffer);
-    } 
-    // check if magic is KFH (kwz magic)
-    else if ((magic & 0xFFFFFF00) === 0x4B464800) {
-      return new KwzParser(arrayBuffer);
-    }
-    return null;
-  });
+  return loadSource(source)
+    .then((arrayBuffer: ArrayBuffer) => {
+      return new Promise((resolve, reject) => {
+        // check the buffer's magic to identify which format it uses
+        const data = new DataView(arrayBuffer, 0, 4);
+        const magic = data.getUint32(0);
+        if (magic === 0x50415241) { // check if magic is PARA (ppm magic)
+          resolve(new PpmParser(arrayBuffer));
+        } else if ((magic & 0xFFFFFF00) === 0x4B464800) { // check if magic is KFH (kwz magic)
+          resolve(new KwzParser(arrayBuffer));
+        } else {
+          reject();
+        }
+      });
+    });
 }
 
 export * from './ppm';

@@ -1,5 +1,5 @@
 /*!
- * flipnote.js v3.0.2
+ * flipnote.js v3.0.3
  * Browser-based playback of .ppm and .kwz animations from Flipnote Studio and Flipnote Studio 3D
  * 2018 - 2019 James Daniel
  * github.com/jaames/flipnote.js
@@ -604,7 +604,7 @@ __webpack_require__.r(__webpack_exports__);
 // bitmap encoder is deprecated in favor of gif
 // import { BitmapEncoder } from './encoders';
 /* harmony default export */ __webpack_exports__["default"] = ({
-    version: "3.0.2",
+    version: "3.0.3",
     player: _player__WEBPACK_IMPORTED_MODULE_2__["Player"],
     parseSource: _parsers__WEBPACK_IMPORTED_MODULE_1__["parseSource"],
     kwzParser: _parsers__WEBPACK_IMPORTED_MODULE_1__["KwzParser"],
@@ -825,19 +825,22 @@ __webpack_require__.r(__webpack_exports__);
 
 
 function parseSource(source) {
-    return Object(_loaders__WEBPACK_IMPORTED_MODULE_0__["loadSource"])(source).then(function (arrayBuffer) {
-        // check the buffer's magic to identify which format it uses
-        var data = new DataView(arrayBuffer, 0, 4);
-        var magic = data.getUint32(0);
-        // check if magic is PARA (ppm magic)
-        if (magic === 0x50415241) {
-            return new _ppm__WEBPACK_IMPORTED_MODULE_1__["PpmParser"](arrayBuffer);
-        }
-        // check if magic is KFH (kwz magic)
-        else if ((magic & 0xFFFFFF00) === 0x4B464800) {
-            return new _kwz__WEBPACK_IMPORTED_MODULE_2__["KwzParser"](arrayBuffer);
-        }
-        return null;
+    return Object(_loaders__WEBPACK_IMPORTED_MODULE_0__["loadSource"])(source)
+        .then(function (arrayBuffer) {
+        return new Promise(function (resolve, reject) {
+            // check the buffer's magic to identify which format it uses
+            var data = new DataView(arrayBuffer, 0, 4);
+            var magic = data.getUint32(0);
+            if (magic === 0x50415241) { // check if magic is PARA (ppm magic)
+                resolve(new _ppm__WEBPACK_IMPORTED_MODULE_1__["PpmParser"](arrayBuffer));
+            }
+            else if ((magic & 0xFFFFFF00) === 0x4B464800) { // check if magic is KFH (kwz magic)
+                resolve(new _kwz__WEBPACK_IMPORTED_MODULE_2__["KwzParser"](arrayBuffer));
+            }
+            else {
+                reject();
+            }
+        });
     });
 }
 
@@ -2119,6 +2122,7 @@ var Player = /** @class */ (function () {
                         _this.load(note);
                     })
                         .catch(function (err) {
+                        _this.emit('error', err);
                         console.error('Error loading Flipnote:', err);
                     })];
             });

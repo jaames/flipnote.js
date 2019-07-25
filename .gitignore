@@ -3,6 +3,7 @@
 *.kwz
 *.html
 dist/demo
+demo
 
 # Logs
 logs
