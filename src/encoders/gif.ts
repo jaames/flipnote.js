@@ -1,6 +1,6 @@
-import { DataStream, ByteArray } from '../utils';
+import { DataStream, ByteArray } from '../utils/index';
 import { LZWEncoder } from './lzw';
-import { Flipnote } from '../parsers';
+import { Flipnote } from '../parsers/index';
 
 export class GifEncoder {
 

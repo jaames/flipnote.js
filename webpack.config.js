@@ -13,13 +13,13 @@ module.exports = function(env, argv) {
   return {
     mode,
     context: path.resolve(__dirname, 'src'),
-    entry: [
-      './flipnote.ts',
-      devserver ? './test.js' : false,
-    ].filter(Boolean),
+    entry: {
+      flipnote: devserver ? './test.js' : './flipnote.ts',
+      node: './node.ts',
+    },
     output: {
       path: path.resolve(__dirname, 'dist'),
-      filename: prod ? 'flipnote.min.js' : 'flipnote.js',
+      filename: prod ? '[name].min.js' : '[name].js',
       library: 'flipnote',
       libraryExport: 'default',
       libraryTarget: 'umd',

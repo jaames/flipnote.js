@@ -1,6 +1,6 @@
-import { parseSource, Flipnote, FlipnoteMeta } from '../parsers';
+import { parseSource, Flipnote, FlipnoteMeta } from '../parsers/index';
 import { AudioTrack } from './audio';
-import { WebglCanvas, TextureType } from '../webgl';
+import { WebglCanvas, TextureType } from '../webgl/index';
 
 interface PlayerEvents {
   [key: string]: Function[]
