@@ -239,7 +239,7 @@ export class PpmParser extends DataStream {
     // offset = frame data offset + frame data length + sound effect flags
     let offset = 0x06A0 + this.frameDataLength + this.frameCount;
     // account for multiple-of-4 padding
-    if (offset % 2 != 0) offset += 4 - (offset % 4);
+    if (offset % 4 != 0) offset += 4 - (offset % 4);
     this.seek(offset);
     const bgmLen = this.readUint32();
     const se1Len = this.readUint32();

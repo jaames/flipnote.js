@@ -1,5 +1,5 @@
 /*!
- * flipnote.js v3.1.1
+ * flipnote.js v3.1.2
  * Browser-based playback of .ppm and .kwz animations from Flipnote Studio and Flipnote Studio 3D
  * 2018 - 2019 James Daniel
  * github.com/jaames/flipnote.js
@@ -604,7 +604,7 @@ __webpack_require__.r(__webpack_exports__);
 // bitmap encoder is deprecated in favor of gif
 // import { BitmapEncoder } from './encoders';
 /* harmony default export */ __webpack_exports__["default"] = ({
-    version: "3.1.1",
+    version: "3.1.2",
     player: _player_index__WEBPACK_IMPORTED_MODULE_2__["Player"],
     parseSource: _parsers_index__WEBPACK_IMPORTED_MODULE_1__["parseSource"],
     kwzParser: _parsers_index__WEBPACK_IMPORTED_MODULE_1__["KwzParser"],
@@ -1630,7 +1630,7 @@ var PpmParser = /** @class */ (function (_super) {
         // offset = frame data offset + frame data length + sound effect flags
         var offset = 0x06A0 + this.frameDataLength + this.frameCount;
         // account for multiple-of-4 padding
-        if (offset % 2 != 0)
+        if (offset % 4 != 0)
             offset += 4 - (offset % 4);
         this.seek(offset);
         var bgmLen = this.readUint32();
@@ -2685,7 +2685,6 @@ var WebglCanvas = /** @class */ (function () {
         this.createScreenQuad();
         this.createBitmapTexture();
         this.setCanvasSize(this.width, this.height);
-        gl.pixelStorei(gl.UNPACK_FLIP_Y_WEBGL, true);
         gl.enable(gl.BLEND);
         gl.blendEquation(gl.FUNC_ADD);
         gl.blendFunc(gl.ONE, gl.ONE_MINUS_SRC_ALPHA);
@@ -2854,7 +2853,7 @@ module.exports = "precision highp float;\n#define GLSLIFY 1\nvarying vec2 v_texe
 /*! no static exports found */
 /***/ (function(module, exports) {
 
-module.exports = "#define GLSLIFY 1\nattribute vec4 a_position;\nvarying vec2 v_texel;\nvarying float v_scale;\nuniform vec2 u_textureSize;\nuniform vec2 u_screenSize;\n\nvoid main() {\n  gl_Position = a_position;\n  vec2 uv = a_position.xy * 0.5 + 0.5;\n  v_texel = uv * u_textureSize;\n  v_scale = floor(u_screenSize.y / u_textureSize.y + 0.01);\n}"
+module.exports = "#define GLSLIFY 1\nattribute vec4 a_position;\nvarying vec2 v_texel;\nvarying float v_scale;\nuniform vec2 u_textureSize;\nuniform vec2 u_screenSize;\n\nvoid main() {\n  gl_Position = a_position;\n  vec2 uv = a_position.xy * vec2(0.5, -0.5) + 0.5;\n  v_texel = uv * u_textureSize;\n  v_scale = floor(u_screenSize.y / u_textureSize.y + 0.01);\n}"
 
 /***/ })
 

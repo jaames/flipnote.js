@@ -49,7 +49,6 @@ export class WebglCanvas {
     this.createScreenQuad();
     this.createBitmapTexture();
     this.setCanvasSize(this.width, this.height);
-    gl.pixelStorei(gl.UNPACK_FLIP_Y_WEBGL, true);
     gl.enable(gl.BLEND);
     gl.blendEquation(gl.FUNC_ADD);
     gl.blendFunc(gl.ONE, gl.ONE_MINUS_SRC_ALPHA);
