@@ -254,19 +254,21 @@ export class KwzParser extends DataStream {
   }
 
   private decodeSoundHeader() {
-    let offset = this.sections['KSN'].offset + 8;
-    this.seek(offset);
-    const bgmSpeed = this.readUint32();
-    this.bgmSpeed = bgmSpeed;
-    this.bgmrate = FRAMERATES[bgmSpeed];
-    const trackSizes = new Uint32Array(this.buffer, offset + 4, 20);
-    this.soundMeta = {
-      'bgm': {offset: offset += 28,            length: trackSizes[0]},
-      'se1': {offset: offset += trackSizes[0], length: trackSizes[1]},
-      'se2': {offset: offset += trackSizes[1], length: trackSizes[2]},
-      'se3': {offset: offset += trackSizes[2], length: trackSizes[3]},
-      'se4': {offset: offset += trackSizes[3], length: trackSizes[4]},
-    };
+    if (this.sections.hasOwnProperty('KSN')) {
+      let offset = this.sections['KSN'].offset + 8;
+      this.seek(offset);
+      const bgmSpeed = this.readUint32();
+      this.bgmSpeed = bgmSpeed;
+      this.bgmrate = FRAMERATES[bgmSpeed];
+      const trackSizes = new Uint32Array(this.buffer, offset + 4, 20);
+      this.soundMeta = {
+        'bgm': {offset: offset += 28,            length: trackSizes[0]},
+        'se1': {offset: offset += trackSizes[0], length: trackSizes[1]},
+        'se2': {offset: offset += trackSizes[1], length: trackSizes[2]},
+        'se3': {offset: offset += trackSizes[2], length: trackSizes[3]},
+        'se4': {offset: offset += trackSizes[3], length: trackSizes[4]},
+      };
+    }
   }
 
   private getDiffingFlag(frameIndex: number) {

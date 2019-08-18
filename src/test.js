@@ -9,9 +9,10 @@ player.open("demo/bee.ppm");
 
 window.player = player;
 
-// flipnote.parse('demo/bee.ppm').then(note => {
-//   window.test = note;
-//   console.log(note);
+// flipnote.parseSource('demo/comment.kwc').then(note => {
+//   const gif = flipnote.gifEncoder.fromFlipnoteFrame(note, note.thumbFrameIndex);
+//   const img = gif.getImage();
+//   document.body.appendChild(img);
 // })
 
 export default flipnote;

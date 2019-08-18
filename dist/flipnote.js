@@ -1,5 +1,5 @@
 /*!
- * flipnote.js v3.1.2
+ * flipnote.js v3.2.0
  * Browser-based playback of .ppm and .kwz animations from Flipnote Studio and Flipnote Studio 3D
  * 2018 - 2019 James Daniel
  * github.com/jaames/flipnote.js
@@ -604,7 +604,7 @@ __webpack_require__.r(__webpack_exports__);
 // bitmap encoder is deprecated in favor of gif
 // import { BitmapEncoder } from './encoders';
 /* harmony default export */ __webpack_exports__["default"] = ({
-    version: "3.1.2",
+    version: "3.2.0",
     player: _player_index__WEBPACK_IMPORTED_MODULE_2__["Player"],
     parseSource: _parsers_index__WEBPACK_IMPORTED_MODULE_1__["parseSource"],
     kwzParser: _parsers_index__WEBPACK_IMPORTED_MODULE_1__["KwzParser"],
@@ -1024,19 +1024,21 @@ var KwzParser = /** @class */ (function (_super) {
         }
     };
     KwzParser.prototype.decodeSoundHeader = function () {
-        var offset = this.sections['KSN'].offset + 8;
-        this.seek(offset);
-        var bgmSpeed = this.readUint32();
-        this.bgmSpeed = bgmSpeed;
-        this.bgmrate = FRAMERATES[bgmSpeed];
-        var trackSizes = new Uint32Array(this.buffer, offset + 4, 20);
-        this.soundMeta = {
-            'bgm': { offset: offset += 28, length: trackSizes[0] },
-            'se1': { offset: offset += trackSizes[0], length: trackSizes[1] },
-            'se2': { offset: offset += trackSizes[1], length: trackSizes[2] },
-            'se3': { offset: offset += trackSizes[2], length: trackSizes[3] },
-            'se4': { offset: offset += trackSizes[3], length: trackSizes[4] },
-        };
+        if (this.sections.hasOwnProperty('KSN')) {
+            var offset = this.sections['KSN'].offset + 8;
+            this.seek(offset);
+            var bgmSpeed = this.readUint32();
+            this.bgmSpeed = bgmSpeed;
+            this.bgmrate = FRAMERATES[bgmSpeed];
+            var trackSizes = new Uint32Array(this.buffer, offset + 4, 20);
+            this.soundMeta = {
+                'bgm': { offset: offset += 28, length: trackSizes[0] },
+                'se1': { offset: offset += trackSizes[0], length: trackSizes[1] },
+                'se2': { offset: offset += trackSizes[1], length: trackSizes[2] },
+                'se3': { offset: offset += trackSizes[2], length: trackSizes[3] },
+                'se4': { offset: offset += trackSizes[3], length: trackSizes[4] },
+            };
+        }
     };
     KwzParser.prototype.getDiffingFlag = function (frameIndex) {
         return ~(this.frameMeta[frameIndex].flags >> 4) & 0x07;
