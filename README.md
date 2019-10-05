@@ -42,8 +42,9 @@ npm start
 
 ### Acknowledgments
 
-* KWZ format reverse-engineering: [Kinnay](https://github.com/Kinnay), [Khangaroo](https://github.com/khang06), [MrNbaYoh](https://github.com/MrNbaYoh), [Shutterbug](https://github.com/shutterbug2000).
-* PPM format reverse-engineering & documentaion: [bricklife](http://ugomemo.g.hatena.ne.jp/bricklife/20090307/1236391313), [mirai-iro](http://mirai-iro.hatenablog.jp/entry/20090116/ugomemo_ppm), [harimau_tigris](http://ugomemo.g.hatena.ne.jp/harimau_tigris), [steven](http://www.dsibrew.org/wiki/User:Steven), [yellows8](http://www.dsibrew.org/wiki/User:Yellows8) and [PBSDS](https://github.com/pbsds).
+* Flipnote.js implementation: [Jaames](https://github.com/jaames).
+* KWZ format reverse-engineering: [Kinnay](https://github.com/Kinnay), [Khangaroo](https://github.com/khang06), [MrNbaYoh](https://github.com/MrNbaYoh), [Shutterbug](https://github.com/shutterbug2000), [Jaames](https://github.com/jaames).
+* PPM format reverse-engineering & documentaion: [bricklife](http://ugomemo.g.hatena.ne.jp/bricklife/20090307/1236391313), [mirai-iro](http://mirai-iro.hatenablog.jp/entry/20090116/ugomemo_ppm), [harimau_tigris](http://ugomemo.g.hatena.ne.jp/harimau_tigris), [steven](http://www.dsibrew.org/wiki/User:Steven), [yellows8](http://www.dsibrew.org/wiki/User:Yellows8) and [PBSDS](https://github.com/pbsds), [Jaames](https://github.com/jaames).
 * Identifying the PPM sound codec: Midmad from Hatena Haiku (no longer active) and WDLMaster from the [HCS forum](https://hcs64.com/mboard/forum.php).
 * [PBSDS](https://github.com/pbsds) for creating [Hatena Tools](https://github.com/pbsds/Hatenatools), and for giving me some notes regarding areas where the documentation fell short. 
 * Stichting Mathematisch Centrum for writing this [ADPCM to PCM converter in C](http://www.cs.columbia.edu/~gskc/Code/AdvancedInternetServices/SoundNoiseRatio/dvi_adpcm.c) which I semi-ported to JS to handle audio.
