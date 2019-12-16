@@ -1,6 +1,6 @@
 {
   "name": "flipnote.js",
-  "version": "3.2.0",
+  "version": "3.2.1",
   "description": "API for handling Flipnote Studio's animation formats, capable of real-time playback using webGL",
   "main": "dist/flipnote.js",
   "scripts": {

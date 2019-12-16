@@ -1,5 +1,5 @@
 /*!
- * flipnote.js v3.2.0
+ * flipnote.js v3.2.1
  * Browser-based playback of .ppm and .kwz animations from Flipnote Studio and Flipnote Studio 3D
  * 2018 - 2019 James Daniel
  * github.com/jaames/flipnote.js
@@ -604,7 +604,7 @@ __webpack_require__.r(__webpack_exports__);
 // bitmap encoder is deprecated in favor of gif
 // import { BitmapEncoder } from './encoders';
 /* harmony default export */ __webpack_exports__["default"] = ({
-    version: "3.2.0",
+    version: "3.2.1",
     player: _player_index__WEBPACK_IMPORTED_MODULE_2__["Player"],
     parseSource: _parsers_index__WEBPACK_IMPORTED_MODULE_1__["parseSource"],
     kwzParser: _parsers_index__WEBPACK_IMPORTED_MODULE_1__["KwzParser"],
@@ -1412,15 +1412,18 @@ var KWZ_TABLE_2 = new Uint16Array([
 ]);
 // table3 - line offsets, but the lines are shifted to the left by one pixel
 var KWZ_TABLE_3 = new Uint16Array(6561);
-var table3Values = [0, 3, 7, 1, 4, 8, 2, 5, 6];
 var index = 0;
-for (var a = 0; a < 9; a++)
-    for (var b = 0; b < 9; b++)
-        for (var c = 0; c < 9; c++)
-            for (var d = 0; d < 9; d++) {
-                KWZ_TABLE_3[index] = ((table3Values[a] * 9 + table3Values[b]) * 9 + table3Values[c]) * 9 + table3Values[d];
-                index++;
-            }
+for (var a = 0; a < 2187; a += 729)
+    for (var b = 0; b < 729; b += 243)
+        for (var c = 0; c < 243; c += 81)
+            for (var d = 0; d < 81; d += 27)
+                for (var e = 0; e < 27; e += 9)
+                    for (var f = 0; f < 9; f += 3)
+                        for (var g = 0; g < 3; g += 1)
+                            for (var h = 0; h < 6561; h += 2187) {
+                                KWZ_TABLE_3[index] = a + b + c + d + e + f + g + h;
+                                index += 1;
+                            }
 // linetable - contains every possible sequence of pixels for each tile line
 var KWZ_LINE_TABLE = new Uint16Array(6561 * 8);
 var pixelValues = [0x0000, 0xFF00, 0x00FF];
