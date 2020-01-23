@@ -1,5 +1,5 @@
 /*!
- * flipnote.js v3.2.1
+ * flipnote.js v3.2.2
  * Browser-based playback of .ppm and .kwz animations from Flipnote Studio and Flipnote Studio 3D
  * 2018 - 2019 James Daniel
  * github.com/jaames/flipnote.js
@@ -604,7 +604,7 @@ __webpack_require__.r(__webpack_exports__);
 // bitmap encoder is deprecated in favor of gif
 // import { BitmapEncoder } from './encoders';
 /* harmony default export */ __webpack_exports__["default"] = ({
-    version: "3.2.1",
+    version: "3.2.2",
     player: _player_index__WEBPACK_IMPORTED_MODULE_2__["Player"],
     parseSource: _parsers_index__WEBPACK_IMPORTED_MODULE_1__["parseSource"],
     kwzParser: _parsers_index__WEBPACK_IMPORTED_MODULE_1__["KwzParser"],
@@ -1092,8 +1092,8 @@ var KwzParser = /** @class */ (function (_super) {
                             var pixelBuffer = this.layers[layerIndex];
                             var type = this.readBits(3);
                             if (type == 0) {
-                                var lineIndex = _kwzTables__WEBPACK_IMPORTED_MODULE_2__["KWZ_TABLE_1"][this.readBits(5)];
-                                var pixels = _kwzTables__WEBPACK_IMPORTED_MODULE_2__["KWZ_LINE_TABLE"].subarray(lineIndex * 8, lineIndex * 8 + 8);
+                                var lineIndex = this.readBits(5);
+                                var pixels = _kwzTables__WEBPACK_IMPORTED_MODULE_2__["KWZ_LINE_TABLE_COMMON"].subarray(lineIndex * 8, lineIndex * 8 + 8);
                                 pixelBuffer.set(pixels, pixelOffset);
                                 pixelBuffer.set(pixels, pixelOffset + 320);
                                 pixelBuffer.set(pixels, pixelOffset + 640);
@@ -1117,10 +1117,8 @@ var KwzParser = /** @class */ (function (_super) {
                             }
                             else if (type == 2) {
                                 var lineValue = this.readBits(5);
-                                var lineIndexA = _kwzTables__WEBPACK_IMPORTED_MODULE_2__["KWZ_TABLE_1"][lineValue];
-                                var lineIndexB = _kwzTables__WEBPACK_IMPORTED_MODULE_2__["KWZ_TABLE_2"][lineValue];
-                                var a = _kwzTables__WEBPACK_IMPORTED_MODULE_2__["KWZ_LINE_TABLE"].subarray(lineIndexA * 8, lineIndexA * 8 + 8);
-                                var b = _kwzTables__WEBPACK_IMPORTED_MODULE_2__["KWZ_LINE_TABLE"].subarray(lineIndexB * 8, lineIndexB * 8 + 8);
+                                var a = _kwzTables__WEBPACK_IMPORTED_MODULE_2__["KWZ_LINE_TABLE_COMMON"].subarray(lineValue * 8, lineValue * 8 + 8);
+                                var b = _kwzTables__WEBPACK_IMPORTED_MODULE_2__["KWZ_LINE_TABLE_COMMON_SHIFT"].subarray(lineValue * 8, lineValue * 8 + 8);
                                 pixelBuffer.set(a, pixelOffset);
                                 pixelBuffer.set(b, pixelOffset + 320);
                                 pixelBuffer.set(a, pixelOffset + 640);
@@ -1131,10 +1129,9 @@ var KwzParser = /** @class */ (function (_super) {
                                 pixelBuffer.set(b, pixelOffset + 2240);
                             }
                             else if (type == 3) {
-                                var lineIndexA = this.readBits(13);
-                                var lineIndexB = _kwzTables__WEBPACK_IMPORTED_MODULE_2__["KWZ_TABLE_3"][lineIndexA];
-                                var a = _kwzTables__WEBPACK_IMPORTED_MODULE_2__["KWZ_LINE_TABLE"].subarray(lineIndexA * 8, lineIndexA * 8 + 8);
-                                var b = _kwzTables__WEBPACK_IMPORTED_MODULE_2__["KWZ_LINE_TABLE"].subarray(lineIndexB * 8, lineIndexB * 8 + 8);
+                                var lineValue = this.readBits(13);
+                                var a = _kwzTables__WEBPACK_IMPORTED_MODULE_2__["KWZ_LINE_TABLE"].subarray(lineValue * 8, lineValue * 8 + 8);
+                                var b = _kwzTables__WEBPACK_IMPORTED_MODULE_2__["KWZ_LINE_TABLE_SHIFT"].subarray(lineValue * 8, lineValue * 8 + 8);
                                 pixelBuffer.set(a, pixelOffset);
                                 pixelBuffer.set(b, pixelOffset + 320);
                                 pixelBuffer.set(a, pixelOffset + 640);
@@ -1144,18 +1141,20 @@ var KwzParser = /** @class */ (function (_super) {
                                 pixelBuffer.set(a, pixelOffset + 1920);
                                 pixelBuffer.set(b, pixelOffset + 2240);
                             }
+                            // most common tile type
                             else if (type == 4) {
                                 var mask = this.readBits(8);
                                 for (var line = 0; line < 8; line++) {
-                                    var lineIndex = 0;
                                     if (mask & (1 << line)) {
-                                        lineIndex = _kwzTables__WEBPACK_IMPORTED_MODULE_2__["KWZ_TABLE_1"][this.readBits(5)];
+                                        var lineIndex = this.readBits(5);
+                                        var pixels = _kwzTables__WEBPACK_IMPORTED_MODULE_2__["KWZ_LINE_TABLE_COMMON"].subarray(lineIndex * 8, lineIndex * 8 + 8);
+                                        pixelBuffer.set(pixels, pixelOffset + line * 320);
                                     }
                                     else {
-                                        lineIndex = this.readBits(13);
+                                        var lineIndex = this.readBits(13);
+                                        var pixels = _kwzTables__WEBPACK_IMPORTED_MODULE_2__["KWZ_LINE_TABLE"].subarray(lineIndex * 8, lineIndex * 8 + 8);
+                                        pixelBuffer.set(pixels, pixelOffset + line * 320);
                                     }
-                                    var pixels = _kwzTables__WEBPACK_IMPORTED_MODULE_2__["KWZ_LINE_TABLE"].subarray(lineIndex * 8, lineIndex * 8 + 8);
-                                    pixelBuffer.set(pixels, pixelOffset + line * 320);
                                 }
                             }
                             else if (type == 5) {
@@ -1168,17 +1167,21 @@ var KwzParser = /** @class */ (function (_super) {
                                 var useTable = this.readBits(1);
                                 var lineIndexA = 0;
                                 var lineIndexB = 0;
+                                var a = void 0;
+                                var b = void 0;
                                 if (useTable) {
-                                    lineIndexA = _kwzTables__WEBPACK_IMPORTED_MODULE_2__["KWZ_TABLE_1"][this.readBits(5)];
-                                    lineIndexB = _kwzTables__WEBPACK_IMPORTED_MODULE_2__["KWZ_TABLE_1"][this.readBits(5)];
+                                    lineIndexA = this.readBits(5);
+                                    lineIndexB = this.readBits(5);
+                                    a = _kwzTables__WEBPACK_IMPORTED_MODULE_2__["KWZ_LINE_TABLE_COMMON"].subarray(lineIndexA * 8, lineIndexA * 8 + 8);
+                                    b = _kwzTables__WEBPACK_IMPORTED_MODULE_2__["KWZ_LINE_TABLE_COMMON"].subarray(lineIndexB * 8, lineIndexB * 8 + 8);
                                     pattern = (pattern + 1) % 4;
                                 }
                                 else {
                                     lineIndexA = this.readBits(13);
                                     lineIndexB = this.readBits(13);
+                                    a = _kwzTables__WEBPACK_IMPORTED_MODULE_2__["KWZ_LINE_TABLE"].subarray(lineIndexA * 8, lineIndexA * 8 + 8);
+                                    b = _kwzTables__WEBPACK_IMPORTED_MODULE_2__["KWZ_LINE_TABLE"].subarray(lineIndexB * 8, lineIndexB * 8 + 8);
                                 }
-                                var a = _kwzTables__WEBPACK_IMPORTED_MODULE_2__["KWZ_LINE_TABLE"].subarray(lineIndexA * 8, lineIndexA * 8 + 8);
-                                var b = _kwzTables__WEBPACK_IMPORTED_MODULE_2__["KWZ_LINE_TABLE"].subarray(lineIndexB * 8, lineIndexB * 8 + 8);
                                 if (pattern == 0) {
                                     pixelBuffer.set(a, pixelOffset);
                                     pixelBuffer.set(b, pixelOffset + 320);
@@ -1387,44 +1390,16 @@ var KwzParser = /** @class */ (function (_super) {
 /*!******************************!*\
   !*** ./parsers/kwzTables.ts ***!
   \******************************/
-/*! exports provided: KWZ_TABLE_1, KWZ_TABLE_2, KWZ_TABLE_3, KWZ_LINE_TABLE */
+/*! exports provided: KWZ_LINE_TABLE, KWZ_LINE_TABLE_SHIFT, KWZ_LINE_TABLE_COMMON, KWZ_LINE_TABLE_COMMON_SHIFT */
 /***/ (function(module, __webpack_exports__, __webpack_require__) {
 
 "use strict";
 __webpack_require__.r(__webpack_exports__);
-/* harmony export (binding) */ __webpack_require__.d(__webpack_exports__, "KWZ_TABLE_1", function() { return KWZ_TABLE_1; });
-/* harmony export (binding) */ __webpack_require__.d(__webpack_exports__, "KWZ_TABLE_2", function() { return KWZ_TABLE_2; });
-/* harmony export (binding) */ __webpack_require__.d(__webpack_exports__, "KWZ_TABLE_3", function() { return KWZ_TABLE_3; });
 /* harmony export (binding) */ __webpack_require__.d(__webpack_exports__, "KWZ_LINE_TABLE", function() { return KWZ_LINE_TABLE; });
-// table1 - commonly occuring line offsets
-var KWZ_TABLE_1 = new Uint16Array([
-    0x0000, 0x0CD0, 0x19A0, 0x02D9, 0x088B, 0x0051, 0x00F3, 0x0009,
-    0x001B, 0x0001, 0x0003, 0x05B2, 0x1116, 0x00A2, 0x01E6, 0x0012,
-    0x0036, 0x0002, 0x0006, 0x0B64, 0x08DC, 0x0144, 0x00FC, 0x0024,
-    0x001C, 0x0004, 0x0334, 0x099C, 0x0668, 0x1338, 0x1004, 0x166C
-]);
-// table2 - commonly occuring line offsets, but the lines are shifted to the left by one pixel
-var KWZ_TABLE_2 = new Uint16Array([
-    0x0000, 0x0CD0, 0x19A0, 0x0003, 0x02D9, 0x088B, 0x0051, 0x00F3,
-    0x0009, 0x001B, 0x0001, 0x0006, 0x05B2, 0x1116, 0x00A2, 0x01E6,
-    0x0012, 0x0036, 0x0002, 0x02DC, 0x0B64, 0x08DC, 0x0144, 0x00FC,
-    0x0024, 0x001C, 0x099C, 0x0334, 0x1338, 0x0668, 0x166C, 0x1004
-]);
-// table3 - line offsets, but the lines are shifted to the left by one pixel
-var KWZ_TABLE_3 = new Uint16Array(6561);
-var index = 0;
-for (var a = 0; a < 2187; a += 729)
-    for (var b = 0; b < 729; b += 243)
-        for (var c = 0; c < 243; c += 81)
-            for (var d = 0; d < 81; d += 27)
-                for (var e = 0; e < 27; e += 9)
-                    for (var f = 0; f < 9; f += 3)
-                        for (var g = 0; g < 3; g += 1)
-                            for (var h = 0; h < 6561; h += 2187) {
-                                KWZ_TABLE_3[index] = a + b + c + d + e + f + g + h;
-                                index += 1;
-                            }
-// linetable - contains every possible sequence of pixels for each tile line
+/* harmony export (binding) */ __webpack_require__.d(__webpack_exports__, "KWZ_LINE_TABLE_SHIFT", function() { return KWZ_LINE_TABLE_SHIFT; });
+/* harmony export (binding) */ __webpack_require__.d(__webpack_exports__, "KWZ_LINE_TABLE_COMMON", function() { return KWZ_LINE_TABLE_COMMON; });
+/* harmony export (binding) */ __webpack_require__.d(__webpack_exports__, "KWZ_LINE_TABLE_COMMON_SHIFT", function() { return KWZ_LINE_TABLE_COMMON_SHIFT; });
+// Every possible sequence of pixels for each tile line
 var KWZ_LINE_TABLE = new Uint16Array(6561 * 8);
 var pixelValues = [0x0000, 0xFF00, 0x00FF];
 var offset = 0;
@@ -1448,6 +1423,44 @@ for (var a = 0; a < 3; a++)
                                 ], offset);
                                 offset += 8;
                             }
+// Line offsets, but the lines are shifted to the left by one pixel
+var KWZ_LINE_TABLE_SHIFT = new Uint16Array(6561 * 8);
+var offset = 0;
+for (var a = 0; a < 2187; a += 729)
+    for (var b = 0; b < 729; b += 243)
+        for (var c = 0; c < 243; c += 81)
+            for (var d = 0; d < 81; d += 27)
+                for (var e = 0; e < 27; e += 9)
+                    for (var f = 0; f < 9; f += 3)
+                        for (var g = 0; g < 3; g += 1)
+                            for (var h = 0; h < 6561; h += 2187) {
+                                var lineTableIndex = a + b + c + d + e + f + g + h;
+                                var pixels = KWZ_LINE_TABLE.subarray(lineTableIndex * 8, lineTableIndex * 8 + 8);
+                                KWZ_LINE_TABLE_SHIFT.set(pixels, offset);
+                                offset += 8;
+                            }
+// Commonly occuring line offsets
+var KWZ_LINE_TABLE_COMMON = new Uint16Array(32 * 8);
+[
+    0x0000, 0x0CD0, 0x19A0, 0x02D9, 0x088B, 0x0051, 0x00F3, 0x0009,
+    0x001B, 0x0001, 0x0003, 0x05B2, 0x1116, 0x00A2, 0x01E6, 0x0012,
+    0x0036, 0x0002, 0x0006, 0x0B64, 0x08DC, 0x0144, 0x00FC, 0x0024,
+    0x001C, 0x0004, 0x0334, 0x099C, 0x0668, 0x1338, 0x1004, 0x166C
+].forEach(function (lineTableIndex, index) {
+    var pixels = KWZ_LINE_TABLE.subarray(lineTableIndex * 8, lineTableIndex * 8 + 8);
+    KWZ_LINE_TABLE_COMMON.set(pixels, index * 8);
+});
+// Commonly occuring line offsets, but the lines are shifted to the left by one pixel
+var KWZ_LINE_TABLE_COMMON_SHIFT = new Uint16Array(32 * 8);
+[
+    0x0000, 0x0CD0, 0x19A0, 0x0003, 0x02D9, 0x088B, 0x0051, 0x00F3,
+    0x0009, 0x001B, 0x0001, 0x0006, 0x05B2, 0x1116, 0x00A2, 0x01E6,
+    0x0012, 0x0036, 0x0002, 0x02DC, 0x0B64, 0x08DC, 0x0144, 0x00FC,
+    0x0024, 0x001C, 0x099C, 0x0334, 0x1338, 0x0668, 0x166C, 0x1004
+].forEach(function (lineTableIndex, index) {
+    var pixels = KWZ_LINE_TABLE.subarray(lineTableIndex * 8, lineTableIndex * 8 + 8);
+    KWZ_LINE_TABLE_COMMON_SHIFT.set(pixels, index * 8);
+});
 
 
 /***/ }),
@@ -1665,7 +1678,7 @@ var PpmParser = /** @class */ (function (_super) {
         var header = this.readUint8();
         var paperColor = header & 0x1;
         var pen = [
-            palette.BLACK,
+            paperColor == 1 ? palette.BLACK : palette.WHITE,
             paperColor == 1 ? palette.BLACK : palette.WHITE,
             palette.RED,
             palette.BLUE,
@@ -2348,8 +2361,8 @@ var Player = /** @class */ (function () {
         this.canvas.resize(width, height);
         this.forceUpdate();
     };
-    Player.prototype.setLayerVisibility = function (frameIndex, value) {
-        this.layerVisibility[frameIndex] = value;
+    Player.prototype.setLayerVisibility = function (layerIndex, value) {
+        this.layerVisibility[layerIndex] = value;
         this.forceUpdate();
     };
     Player.prototype.setPalette = function (palette) {
