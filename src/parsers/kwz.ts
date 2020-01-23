@@ -8,10 +8,10 @@ import {
 } from './adpcm';
 
 import {
-  KWZ_TABLE_1,
-  KWZ_TABLE_2,
-  KWZ_TABLE_3,
-  KWZ_LINE_TABLE
+  KWZ_LINE_TABLE,
+  KWZ_LINE_TABLE_SHIFT,
+  KWZ_LINE_TABLE_COMMON,
+  KWZ_LINE_TABLE_COMMON_SHIFT,
 } from './kwzTables';
 
 const FRAMERATES = [
@@ -331,8 +331,8 @@ export class KwzParser extends DataStream {
               const type = this.readBits(3);
 
               if (type == 0) {
-                const lineIndex = KWZ_TABLE_1[this.readBits(5)];
-                const pixels = KWZ_LINE_TABLE.subarray(lineIndex * 8, lineIndex * 8 + 8);
+                const lineIndex = this.readBits(5);
+                const pixels = KWZ_LINE_TABLE_COMMON.subarray(lineIndex * 8, lineIndex * 8 + 8);
                 pixelBuffer.set(pixels, pixelOffset);
                 pixelBuffer.set(pixels, pixelOffset + 320);
                 pixelBuffer.set(pixels, pixelOffset + 640);
@@ -358,10 +358,8 @@ export class KwzParser extends DataStream {
               
               else if (type == 2) {
                 const lineValue = this.readBits(5);
-                const lineIndexA = KWZ_TABLE_1[lineValue];
-                const lineIndexB = KWZ_TABLE_2[lineValue];
-                const a = KWZ_LINE_TABLE.subarray(lineIndexA * 8, lineIndexA * 8 + 8);
-                const b = KWZ_LINE_TABLE.subarray(lineIndexB * 8, lineIndexB * 8 + 8);
+                const a = KWZ_LINE_TABLE_COMMON.subarray(lineValue * 8, lineValue * 8 + 8);
+                const b = KWZ_LINE_TABLE_COMMON_SHIFT.subarray(lineValue * 8, lineValue * 8 + 8);
                 pixelBuffer.set(a, pixelOffset);
                 pixelBuffer.set(b, pixelOffset + 320);
                 pixelBuffer.set(a, pixelOffset + 640);
@@ -373,10 +371,9 @@ export class KwzParser extends DataStream {
               } 
               
               else if (type == 3) {
-                const lineIndexA = this.readBits(13);
-                const lineIndexB = KWZ_TABLE_3[lineIndexA];
-                const a = KWZ_LINE_TABLE.subarray(lineIndexA * 8, lineIndexA * 8 + 8);
-                const b = KWZ_LINE_TABLE.subarray(lineIndexB * 8, lineIndexB * 8 + 8);
+                const lineValue = this.readBits(13);
+                const a = KWZ_LINE_TABLE.subarray(lineValue * 8, lineValue * 8 + 8);
+                const b = KWZ_LINE_TABLE_SHIFT.subarray(lineValue * 8, lineValue * 8 + 8);
                 pixelBuffer.set(a, pixelOffset);
                 pixelBuffer.set(b, pixelOffset + 320);
                 pixelBuffer.set(a, pixelOffset + 640);
@@ -387,17 +384,19 @@ export class KwzParser extends DataStream {
                 pixelBuffer.set(b, pixelOffset + 2240);
               }
 
+              // most common tile type
               else if (type == 4) {
                 const mask = this.readBits(8);
                 for (let line = 0; line < 8; line++) {
-                  let lineIndex = 0;
                   if (mask & (1 << line)) {
-                    lineIndex = KWZ_TABLE_1[this.readBits(5)];
+                    const lineIndex = this.readBits(5);
+                    const pixels = KWZ_LINE_TABLE_COMMON.subarray(lineIndex * 8, lineIndex * 8 + 8);
+                    pixelBuffer.set(pixels, pixelOffset + line * 320);
                   } else {
-                    lineIndex = this.readBits(13);
+                    const lineIndex = this.readBits(13);
+                    const pixels = KWZ_LINE_TABLE.subarray(lineIndex * 8, lineIndex * 8 + 8);
+                    pixelBuffer.set(pixels, pixelOffset + line * 320);
                   }
-                  const pixels = KWZ_LINE_TABLE.subarray(lineIndex * 8, lineIndex * 8 + 8);
-                  pixelBuffer.set(pixels, pixelOffset + line * 320);
                 }
               }
 
@@ -414,17 +413,21 @@ export class KwzParser extends DataStream {
                 let lineIndexA = 0;
                 let lineIndexB = 0;
 
+                let a;
+                let b;
+
                 if (useTable) {
-                  lineIndexA = KWZ_TABLE_1[this.readBits(5)];
-                  lineIndexB = KWZ_TABLE_1[this.readBits(5)];
+                  lineIndexA = this.readBits(5);
+                  lineIndexB = this.readBits(5);
+                  a = KWZ_LINE_TABLE_COMMON.subarray(lineIndexA * 8, lineIndexA * 8 + 8);
+                  b = KWZ_LINE_TABLE_COMMON.subarray(lineIndexB * 8, lineIndexB * 8 + 8);
                   pattern = (pattern + 1) % 4;
                 } else {
                   lineIndexA = this.readBits(13);
                   lineIndexB = this.readBits(13);
+                  a = KWZ_LINE_TABLE.subarray(lineIndexA * 8, lineIndexA * 8 + 8);
+                  b = KWZ_LINE_TABLE.subarray(lineIndexB * 8, lineIndexB * 8 + 8);
                 }
-
-                const a = KWZ_LINE_TABLE.subarray(lineIndexA * 8, lineIndexA * 8 + 8);
-                const b = KWZ_LINE_TABLE.subarray(lineIndexB * 8, lineIndexB * 8 + 8);
 
                 if (pattern == 0) {
                   pixelBuffer.set(a, pixelOffset);
