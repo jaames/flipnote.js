@@ -270,7 +270,7 @@ export class PpmParser extends DataStream {
     const header = this.readUint8();
     const paperColor = header & 0x1;
     const pen = [
-      palette.BLACK,
+      paperColor == 1 ? palette.BLACK : palette.WHITE, // this palette slot is never used under normal circumstances
       paperColor == 1 ? palette.BLACK : palette.WHITE,
       palette.RED,
       palette.BLUE,

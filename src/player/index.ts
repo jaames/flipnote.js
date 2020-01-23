@@ -342,8 +342,8 @@ export class Player {
     this.forceUpdate();
   }
 
-  public setLayerVisibility(frameIndex: number, value: boolean): void {
-    this.layerVisibility[frameIndex] = value;
+  public setLayerVisibility(layerIndex: number, value: boolean): void {
+    this.layerVisibility[layerIndex] = value;
     this.forceUpdate();
   }
 
