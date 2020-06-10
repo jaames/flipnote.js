@@ -10,6 +10,7 @@ I hope that maybe in the long term it will serve some use in archiving Flipnote 
 * Full file parser implementations with metadata, frames, audio, etc
 * Player API based on the HTML5 Video and Audio APIs
 * Crisp upscaling/downscaling using sharp-bilinear shaders
+* Built-in GIF and WAV converters
 * Zero dependencies, only ~12kB when minified & gzipped :^)
 
 ## Demo
