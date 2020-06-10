@@ -5,6 +5,8 @@ dist/demo
 demo/samples
 test/samples
 
+yarn.lock
+
 # Logs
 logs
 *.log
