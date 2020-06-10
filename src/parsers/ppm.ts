@@ -22,7 +22,11 @@
  *  and to Hatena for providing the Flipnote Hatena online service, both of which inspired so many c:
 */
 
-import { DataStream } from '../utils/dataStream';
+import { 
+  PaletteDefinition,
+  FlipnoteAudioTrack,
+  FlipnoteParserBase
+} from './parserBase';
 
 import {
   ADPCM_INDEX_TABLE_4,
@@ -42,7 +46,7 @@ const FRAMERATES = [
   30,
 ];
 
-const PALETTE = {
+const PALETTE: PaletteDefinition = {
   WHITE: [0xff, 0xff, 0xff],
   BLACK: [0x0e, 0x0e, 0x0e],
   RED:   [0xff, 0x2a, 0x2a],
@@ -75,23 +79,15 @@ export interface PpmMeta {
   },
 };
 
-export type PpmSoundTrack = 'bgm' | 'se1' | 'se2' | 'se3' | 'se4';
-
-export type PpmSoundMeta = {
-  [k in PpmSoundTrack]?: {
-    offset: number, length: number
-  }
-};
-
-export class PpmParser extends DataStream {
+export class PpmParser extends FlipnoteParserBase {
 
   static type: string = 'PPM';
-  static sampleRate: number = 8192;
   static width: number = 256;
   static height: number = 192;
+  static sampleRate: number = 8192;
   static globalPalette = [
-    PALETTE.BLACK,
     PALETTE.WHITE,
+    PALETTE.BLACK,
     PALETTE.RED,
     PALETTE.BLUE
   ];
@@ -99,18 +95,10 @@ export class PpmParser extends DataStream {
   public type: string = PpmParser.type;
   public width: number = PpmParser.width;
   public height: number = PpmParser.height;
-  public palette = PALETTE;
   public globalPalette = PpmParser.globalPalette;
-  public version: number;
-  public meta: PpmMeta;
-  public soundMeta: PpmSoundMeta;
-  public frameCount: number;
-  public frameSpeed: number;
-  public bgmSpeed: number;
-  public framerate: number;
-  public bgmrate: number;
   public sampleRate = PpmParser.sampleRate;
-  public thumbFrameIndex: number;
+  public meta: PpmMeta;
+  public version: number;
 
   private layers: Uint8Array[];
   private prevLayers: Uint8Array[];
@@ -251,10 +239,10 @@ export class PpmParser extends DataStream {
     this.framerate = FRAMERATES[this.frameSpeed];
     this.bgmrate = FRAMERATES[this.bgmSpeed];
     this.soundMeta = {
-      bgm: {offset: offset,           length: bgmLen},
-      se1: {offset: offset += bgmLen, length: se1Len},
-      se2: {offset: offset += se1Len, length: se2Len},
-      se3: {offset: offset += se2Len, length: se3Len},
+      [FlipnoteAudioTrack.BGM]: {offset: offset,           length: bgmLen},
+      [FlipnoteAudioTrack.SE1]: {offset: offset += bgmLen, length: se1Len},
+      [FlipnoteAudioTrack.SE2]: {offset: offset += se1Len, length: se2Len},
+      [FlipnoteAudioTrack.SE3]: {offset: offset += se2Len, length: se3Len},
     };
   }
 
@@ -262,24 +250,6 @@ export class PpmParser extends DataStream {
     this.seek(this.frameOffsets[frameIndex]);
     const header = this.readUint8();
     return (header >> 7) & 0x1;
-  }
-
-  public getFramePalette(frameIndex: number) {
-    this.seek(this.frameOffsets[frameIndex]);
-    const palette = this.palette;
-    const header = this.readUint8();
-    const paperColor = header & 0x1;
-    const pen = [
-      paperColor == 1 ? palette.BLACK : palette.WHITE, // this palette slot is never used under normal circumstances
-      paperColor == 1 ? palette.BLACK : palette.WHITE,
-      palette.RED,
-      palette.BLUE,
-    ];
-    return [
-      paperColor == 1 ? palette.WHITE : palette.BLACK,
-      pen[(header >> 1) & 0x3], // layer 1 color
-      pen[(header >> 3) & 0x3], // layer 2 color
-    ];
   }
 
   public getLayerOrder(frameIndex?: number) {
@@ -384,14 +354,37 @@ export class PpmParser extends DataStream {
     return this.layers;
   }
 
+  public getFramePaletteIndices(frameIndex: number) {
+    this.seek(this.frameOffsets[frameIndex]);
+    const header = this.readUint8();
+    const isInverted = (header & 0x1) !== 1;
+    const penMap = [
+      isInverted ? 0 : 1, // pen index 0 isn't used in normal cases
+      isInverted ? 0 : 1,
+      2,
+      3,
+    ];
+    return [
+      isInverted ? 1 : 0, // paper
+      penMap[(header >> 1) & 0x3], // layer 1 color
+      penMap[(header >> 3) & 0x3], // layer 2 color
+    ];
+  }
+
+  public getFramePalette(frameIndex: number) {
+    const indices = this.getFramePaletteIndices(frameIndex);
+    return indices.map(colorIndex => this.globalPalette[colorIndex]);
+  }
+
   // retuns an uint8 array where each item is a pixel's palette index
   public getLayerPixels(frameIndex: number, layerIndex: number) {
     if (this.prevDecodedFrame !== frameIndex) {
       this.decodeFrame(frameIndex);
     }
+    const palette = this.getFramePaletteIndices(frameIndex);
     const layer = this.layers[layerIndex];
     const image = new Uint8Array(PpmParser.width * PpmParser.height);
-    const layerColor = layerIndex + 1
+    const layerColor = palette[layerIndex + 1];
     for (let pixel = 0; pixel < image.length; pixel++) {
       if (layer[pixel] !== 0) {
         image[pixel] = layerColor;
@@ -401,34 +394,24 @@ export class PpmParser extends DataStream {
   }
 
   // retuns an uint8 array where each item is a pixel's palette index
-  public getFramePixels(frameIndex: number, useGlobalPalette: boolean = false) {
-    let paletteMap: number[];
-    if (useGlobalPalette) {
-      const framePalette = this.getFramePalette(frameIndex);
-      paletteMap = framePalette.map(color => PpmParser.globalPalette.indexOf(color));
-    } else {
-      paletteMap = [0, 1, 2];
-    }
+  public getFramePixels(frameIndex: number) {
+    const palette = this.getFramePaletteIndices(frameIndex);
     const layers = this.decodeFrame(frameIndex);
     const image = new Uint8Array(PpmParser.width * PpmParser.height);
-    image.fill(paletteMap[0]);
+    image.fill(palette[0]); // fill with paper color first
     for (let pixel = 0; pixel < image.length; pixel++) {
       const a = layers[0][pixel];
       const b = layers[1][pixel];
-      if (b) image[pixel] = paletteMap[2];
-      if (a) image[pixel] = paletteMap[1];
+      if (a !== 0)
+        image[pixel] = palette[1];
+      else if (b !== 0)
+        image[pixel] = palette[2];
     }
     return image;
   }
 
-  public hasAudioTrack(trackIndex: number) {
-    const keys: PpmSoundTrack[] = ['bgm', 'se1', 'se2', 'se3'];
-    const id = keys[trackIndex];
-    return this.soundMeta[id].length > 0;
-  }
-
-  public decodeAudio(track: PpmSoundTrack) {
-    const trackMeta = this.soundMeta[track];
+  public decodeAudio(trackId: FlipnoteAudioTrack) {
+    const trackMeta = this.soundMeta[trackId];
     const adpcm = new Uint8Array(this.buffer, trackMeta.offset, trackMeta.length);
     const output = new Int16Array(adpcm.length * 2);
     let outputOffset = 0;
@@ -453,7 +436,7 @@ export class PpmParser extends DataStream {
         stepIndex = Math.max(0, Math.min(stepIndex, 79));
         diff = Math.max(-32767, Math.min(diff, 32767));
         // add result to output buffer
-        output[outputOffset] = (diff);
+        output[outputOffset] = diff;
         outputOffset += 1;
         // set prev decoder state
         prevStepIndex = stepIndex;

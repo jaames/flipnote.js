@@ -1,9 +1,9 @@
 # Test HTML page and Flipnote samples
 *.ppm
 *.kwz
-*.html
 dist/demo
-demo
+demo/samples
+test/samples
 
 # Logs
 logs

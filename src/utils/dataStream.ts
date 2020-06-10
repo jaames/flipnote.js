@@ -1,5 +1,5 @@
 /** datastream serves as a wrapper around the DataView API to help keep track of the offset into the stream */
-export enum SeekOrigin {
+export const enum SeekOrigin {
   Begin,
   Current,
   End

@@ -1,0 +1,65 @@
+import { Flipnote, FlipnoteMeta } from '../parsers/index';
+import { WebglCanvas } from '../webgl/index';
+interface PlayerLayerVisibility {
+    [key: number]: boolean;
+}
+/** flipnote player API, based on HTMLMediaElement (https://developer.mozilla.org/en-US/docs/Web/API/HTMLMediaElement) */
+export declare class Player {
+    canvas: WebglCanvas;
+    el: HTMLCanvasElement;
+    type: string;
+    note: Flipnote;
+    meta: FlipnoteMeta;
+    loop: boolean;
+    paused: boolean;
+    duration: number;
+    layerVisibility: PlayerLayerVisibility;
+    private isOpen;
+    private customPalette;
+    private events;
+    private audioTracks;
+    private seFlags;
+    private _frame;
+    private _time;
+    private hasPlaybackStarted;
+    private wasPlaying;
+    private isSeeking;
+    constructor(el: string | HTMLCanvasElement, width: number, height: number);
+    currentFrame: number;
+    currentTime: number;
+    progress: number;
+    volume: number;
+    muted: boolean;
+    readonly framerate: number;
+    readonly frameCount: number;
+    readonly frameSpeed: number;
+    readonly audiorate: number;
+    open(source: any): Promise<void>;
+    close(): void;
+    load(note: Flipnote): void;
+    play(): void;
+    pause(): void;
+    setFrame(frameIndex: number): void;
+    nextFrame(): void;
+    prevFrame(): void;
+    lastFrame(): void;
+    firstFrame(): void;
+    thumbnailFrame(): void;
+    startSeek(): void;
+    seek(progress: number): void;
+    endSeek(): void;
+    drawFrame(frameIndex: number): void;
+    forceUpdate(): void;
+    private playFrameSe;
+    private playBgm;
+    private stopAudio;
+    resize(width: number, height: number): void;
+    setLayerVisibility(layerIndex: number, value: boolean): void;
+    setPalette(palette: any): void;
+    on(eventType: string, callback: Function): void;
+    off(eventType: string, callback: Function): void;
+    emit(eventType: string, ...args: any): void;
+    clearEvents(): void;
+    destroy(): void;
+}
+export {};
