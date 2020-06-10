@@ -15,8 +15,6 @@ const devserver = process.env.DEV_SERVER || false;
 const esmodule = process.env.ES_MODULE || false;
 const prod = build === "production";
 
-console.log(target)
-
 const banner = `/*!!
  flipnote.js v${version} ${target}
  Browser-based playback of .ppm and .kwz animations from Flipnote Studio and Flipnote Studio 3D

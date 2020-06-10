@@ -55,7 +55,6 @@ export declare class Player {
     private stopAudio;
     resize(width: number, height: number): void;
     setLayerVisibility(layerIndex: number, value: boolean): void;
-    setPalette(palette: any): void;
     on(eventType: string, callback: Function): void;
     off(eventType: string, callback: Function): void;
     emit(eventType: string, ...args: any): void;

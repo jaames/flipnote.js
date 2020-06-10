@@ -1,5 +1,5 @@
 /*!!
- flipnote.js v3.3.0 web
+ flipnote.js v4.0.0 web
  Browser-based playback of .ppm and .kwz animations from Flipnote Studio and Flipnote Studio 3D
  2018 - 2020 James Daniel
  github.com/jaames/flipnote.js
@@ -1639,9 +1639,9 @@ class Player {
         this.audioTracks.forEach(track => {
             track.sampleRate = note.sampleRate;
         });
-        if (this.customPalette) {
-            this.setPalette(this.customPalette);
-        }
+        // if (this.customPalette) {
+        //   this.setPalette(this.customPalette);
+        // }
         const tracks = [FlipnoteAudioTrack.SE1, FlipnoteAudioTrack.SE2, FlipnoteAudioTrack.SE3, FlipnoteAudioTrack.SE4, FlipnoteAudioTrack.BGM];
         tracks.forEach((trackId, trackIndex) => {
             const trackRate = trackId === FlipnoteAudioTrack.BGM ? this.audiorate : 1;
@@ -1818,11 +1818,11 @@ class Player {
         this.layerVisibility[layerIndex] = value;
         this.forceUpdate();
     }
-    setPalette(palette) {
-        this.customPalette = palette;
-        this.note.palette = palette;
-        this.forceUpdate();
-    }
+    // public setPalette(palette: any): void {
+    //   this.customPalette = palette;
+    //   this.note.palette = palette;
+    //   this.forceUpdate();
+    // }
     on(eventType, callback) {
         const events = this.events;
         (events[eventType] || (events[eventType] = [])).push(callback);
@@ -2202,7 +2202,7 @@ class GifEncoder {
 // bitmap encoder is deprecated in favor of gif
 // import { BitmapEncoder } from './encoders';
 var flipnote = {
-    version: "3.3.0",
+    version: "4.0.0",
     player: Player,
     parseSource,
     kwzParser: KwzParser,

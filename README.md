@@ -7,10 +7,10 @@ I hope that maybe in the long term it will serve some use in archiving Flipnote 
 ## Features
 
 * Perfect image and audio playback for animation files from Flipnote Studio (`.ppm`) *and* Flipnote Studio 3D (`.kwz`)
-* Dynamic upscaling/downscaling
-* Metadata parsing
+* Full file parser implementations with metadata, frames, audio, etc
 * Player API based on the HTML5 Video and Audio APIs
-* Zero dependencies :^)
+* Crisp upscaling/downscaling using sharp-bilinear shaders
+* Zero dependencies, only ~12kB when minified & gzipped :^)
 
 ## Demo
 
@@ -295,6 +295,7 @@ npm start
 * Identifying the PPM sound codec: Midmad from Hatena Haiku (no longer active) and WDLMaster from the [HCS forum](https://hcs64.com/mboard/forum.php).
 * [PBSDS](https://github.com/pbsds) for creating [Hatena Tools](https://github.com/pbsds/Hatenatools), and for giving me some notes regarding areas where the documentation fell short. 
 * Stichting Mathematisch Centrum for writing this [ADPCM to PCM converter in C](http://www.cs.columbia.edu/~gskc/Code/AdvancedInternetServices/SoundNoiseRatio/dvi_adpcm.c) which I semi-ported to JS to handle audio.
+* Libretro for their [pixel art shaders](https://github.com/libretro/glsl-shaders), used as reference for the sharp-bilinear implementation
 * [Austin Burk](https://sudomemo.net) and [JoshuaDoes](https://github.com/joshuadoes) for helping to debug my Python3 PPM parser (which I used as a reference for the JS decoder).
 * [Lauren Kelly](https://github.com/thejsa) for performing packet captures of [Flipnote Hatena](http://flipnote.hatena.com/thankyou) before it shut down, without them reverse-engineering the app in general would have been a *huge* pain.
 * [Nintendo](https://www.nintendo.com/) for creating the Flipnote Studio application.

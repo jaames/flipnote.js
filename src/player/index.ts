@@ -155,9 +155,9 @@ export class Player {
     this.audioTracks.forEach(track => {
       track.sampleRate = note.sampleRate;
     });
-    if (this.customPalette) {
-      this.setPalette(this.customPalette);
-    }
+    // if (this.customPalette) {
+    //   this.setPalette(this.customPalette);
+    // }
     const tracks = [FlipnoteAudioTrack.SE1, FlipnoteAudioTrack.SE2, FlipnoteAudioTrack.SE3, FlipnoteAudioTrack.SE4, FlipnoteAudioTrack.BGM];
     tracks.forEach((trackId, trackIndex) => {
       const trackRate = trackId === FlipnoteAudioTrack.BGM ? this.audiorate : 1;
