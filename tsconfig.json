@@ -3,14 +3,14 @@
     "baseUrl": "./",
     "outDir": "./dist/",
     "noImplicitAny": true,
-    "module": "es6",
+    "module": "esnext",
     "target": "es5",
     "lib": [
       "es2017",
       "dom"
     ],
     "jsx": "react",
-    "allowJs": true,
+    "allowJs": false,
     "paths": {
       "*" : ["src/types/*"]
     }

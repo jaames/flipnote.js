@@ -1,4 +1,4 @@
-import { parseSource, Flipnote, FlipnoteMeta } from '../parsers/index';
+import { parseSource, Flipnote, FlipnoteMeta, FlipnoteAudioTrack } from '../parsers/index';
 import { AudioTrack } from './audio';
 import { WebglCanvas, TextureType } from '../webgl/index';
 
@@ -158,11 +158,12 @@ export class Player {
     if (this.customPalette) {
       this.setPalette(this.customPalette);
     }
-    if (this.note.hasAudioTrack(1)) this.audioTracks[0].set(this.note.decodeAudio('se1'), 1);
-    if (this.note.hasAudioTrack(2)) this.audioTracks[1].set(this.note.decodeAudio('se2'), 1);
-    if (this.note.hasAudioTrack(3)) this.audioTracks[2].set(this.note.decodeAudio('se3'), 1);
-    if (this.type === 'KWZ' && this.note.hasAudioTrack(4)) this.audioTracks[3].set(this.note.decodeAudio('se4'), 1);
-    if (this.note.hasAudioTrack(0)) this.audioTracks[4].set(this.note.decodeAudio('bgm'), this.audiorate);
+    const tracks = [FlipnoteAudioTrack.SE1, FlipnoteAudioTrack.SE2, FlipnoteAudioTrack.SE3, FlipnoteAudioTrack.SE4, FlipnoteAudioTrack.BGM];
+    tracks.forEach((trackId, trackIndex) => {
+      const trackRate = trackId === FlipnoteAudioTrack.BGM ? this.audiorate : 1;
+      if (this.note.hasAudioTrack(trackId))
+        this.audioTracks[trackIndex].set(this.note.decodeAudio(trackId), trackRate);
+    })
     this.seFlags = this.note.decodeSoundFlags();
     this.hasPlaybackStarted = false;
     this.layerVisibility = {
@@ -347,11 +348,11 @@ export class Player {
     this.forceUpdate();
   }
 
-  public setPalette(palette: any): void {
-    this.customPalette = palette;
-    this.note.palette = palette;
-    this.forceUpdate();
-  }
+  // public setPalette(palette: any): void {
+  //   this.customPalette = palette;
+  //   this.note.palette = palette;
+  //   this.forceUpdate();
+  // }
 
   public on(eventType: string, callback: Function): void {
     const events = this.events;

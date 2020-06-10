@@ -26,7 +26,7 @@ export class GifEncoder {
     gif.repeat = flipnote.meta.loop ? -1 : 0;
     gif.init();
     for (let frameIndex = 0; frameIndex < flipnote.frameCount; frameIndex++) {
-      gif.writeFrame(flipnote.getFramePixels(frameIndex, true));
+      gif.writeFrame(flipnote.getFramePixels(frameIndex));
     }
     return gif;
   }
@@ -37,7 +37,7 @@ export class GifEncoder {
     gif.delay = 100 / flipnote.framerate
     gif.repeat = flipnote.meta.loop ? -1 : 0;
     gif.init();
-    gif.writeFrame(flipnote.getFramePixels(frameIndex, true));
+    gif.writeFrame(flipnote.getFramePixels(frameIndex));
     return gif;
   }
 

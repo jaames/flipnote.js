@@ -1,4 +1,8 @@
-import { DataStream } from '../utils/dataStream';
+import { 
+  PaletteDefinition,
+  FlipnoteAudioTrack,
+  FlipnoteParserBase
+} from './parserBase';
 
 import {
   ADPCM_INDEX_TABLE_2,
@@ -15,8 +19,8 @@ import {
 } from './kwzTables';
 
 const FRAMERATES = [
-  0.2,
-  0.5,
+  1 / 5,
+  1 / 2,
   1,
   2,
   4, 
@@ -28,7 +32,7 @@ const FRAMERATES = [
   30
 ];
 
-const PALETTE = {
+const PALETTE: PaletteDefinition = {
   WHITE:  [0xff, 0xff, 0xff],
   BLACK:  [0x10, 0x10, 0x10],
   RED:    [0xff, 0x10, 0x10],
@@ -80,23 +84,15 @@ export interface KwzFrameMeta {
   cameraFlag: number;
 };
 
-export type KwzSoundTrack = 'bgm' | 'se1' | 'se2' | 'se3' | 'se4';
-
-export type KwzSoundMeta = {
-  [k in KwzSoundTrack]?: {
-    offset: number, length: number
-  }
-};
-
-export class KwzParser extends DataStream {
+export class KwzParser extends FlipnoteParserBase {
 
   static type: string = 'KWZ';
-  static sampleRate: number = 16364;
   static width: number = 320;
   static height: number = 240;
+  static sampleRate: number = 16364;
   static globalPalette = [
-    PALETTE.BLACK,
     PALETTE.WHITE,
+    PALETTE.BLACK,
     PALETTE.RED,
     PALETTE.YELLOW,
     PALETTE.GREEN,
@@ -107,17 +103,9 @@ export class KwzParser extends DataStream {
   public type: string = KwzParser.type;
   public width: number = KwzParser.width;
   public height: number = KwzParser.height;
-  public palette = PALETTE;
   public globalPalette = KwzParser.globalPalette;
-  public meta: KwzMeta;
-  public soundMeta: KwzSoundMeta;
-  public frameCount: number;
-  public frameSpeed: number;
-  public bgmSpeed: number;
-  public framerate: number;
-  public bgmrate: number;
   public sampleRate = KwzParser.sampleRate;
-  public thumbFrameIndex: number;
+  public meta: KwzMeta;
 
   private sections: KwzSectionMap;
   private layers: Uint16Array[];
@@ -262,11 +250,11 @@ export class KwzParser extends DataStream {
       this.bgmrate = FRAMERATES[bgmSpeed];
       const trackSizes = new Uint32Array(this.buffer, offset + 4, 20);
       this.soundMeta = {
-        'bgm': {offset: offset += 28,            length: trackSizes[0]},
-        'se1': {offset: offset += trackSizes[0], length: trackSizes[1]},
-        'se2': {offset: offset += trackSizes[1], length: trackSizes[2]},
-        'se3': {offset: offset += trackSizes[2], length: trackSizes[3]},
-        'se4': {offset: offset += trackSizes[3], length: trackSizes[4]},
+        [FlipnoteAudioTrack.BGM]: {offset: offset += 28,            length: trackSizes[0]},
+        [FlipnoteAudioTrack.SE1]: {offset: offset += trackSizes[0], length: trackSizes[1]},
+        [FlipnoteAudioTrack.SE2]: {offset: offset += trackSizes[1], length: trackSizes[2]},
+        [FlipnoteAudioTrack.SE3]: {offset: offset += trackSizes[2], length: trackSizes[3]},
+        [FlipnoteAudioTrack.SE4]: {offset: offset += trackSizes[3], length: trackSizes[4]},
       };
     }
   }
@@ -279,7 +267,7 @@ export class KwzParser extends DataStream {
     return this.frameMeta[frameIndex].layerDepth;
   }
 
-  // sort layer indices sorted by depth, drom bottom to top
+  // sort layer indices sorted by depth, from bottom to top
   public getLayerOrder(frameIndex: number) {
     const depths = this.getLayerDepths(frameIndex);
     return [2, 1, 0].sort((a, b) => depths[b] - depths[a]);
@@ -409,22 +397,20 @@ export class KwzParser extends DataStream {
 
               else if (type == 7) {
                 let pattern = this.readBits(2);
-                let useTable = this.readBits(1);
-                let lineIndexA = 0;
-                let lineIndexB = 0;
+                let useCommonLines = this.readBits(1);
 
                 let a;
                 let b;
 
-                if (useTable) {
-                  lineIndexA = this.readBits(5);
-                  lineIndexB = this.readBits(5);
+                if (useCommonLines) {
+                  const lineIndexA = this.readBits(5);
+                  const lineIndexB = this.readBits(5);
                   a = KWZ_LINE_TABLE_COMMON.subarray(lineIndexA * 8, lineIndexA * 8 + 8);
                   b = KWZ_LINE_TABLE_COMMON.subarray(lineIndexB * 8, lineIndexB * 8 + 8);
                   pattern = (pattern + 1) % 4;
                 } else {
-                  lineIndexA = this.readBits(13);
-                  lineIndexB = this.readBits(13);
+                  const lineIndexA = this.readBits(13);
+                  const lineIndexB = this.readBits(13);
                   a = KWZ_LINE_TABLE.subarray(lineIndexA * 8, lineIndexA * 8 + 8);
                   b = KWZ_LINE_TABLE.subarray(lineIndexB * 8, lineIndexB * 8 + 8);
                 }
@@ -482,26 +468,22 @@ export class KwzParser extends DataStream {
     ];
   }
 
-  public getFramePalette(frameIndex: number) {
-    const flags = this.frameMeta[frameIndex].flags;
-    const paletteMap = [
-      this.palette.WHITE,
-      this.palette.BLACK,
-      this.palette.RED,
-      this.palette.YELLOW,
-      this.palette.GREEN,
-      this.palette.BLUE,
-      this.palette.NONE
-    ];
+  public getFramePaletteIndices(frameIndex: number) {
+    const { flags } = this.frameMeta[frameIndex];
     return [
-      paletteMap[flags & 0xF], // paper color
-      paletteMap[(flags >> 8) & 0xF], // layer A color 1
-      paletteMap[(flags >> 12) & 0xF], // layer A color 2
-      paletteMap[(flags >> 16) & 0xF], // layer B color 1
-      paletteMap[(flags >> 20) & 0xF], // layer B color 2
-      paletteMap[(flags >> 24) & 0xF], // layer C color 1
-      paletteMap[(flags >> 28) & 0xF], // layer C color 2
+      flags & 0xF, // paper color
+      (flags >> 8) & 0xF, // layer A color 1
+      (flags >> 12) & 0xF, // layer A color 2
+      (flags >> 16) & 0xF, // layer B color 1
+      (flags >> 20) & 0xF, // layer B color 2
+      (flags >> 24) & 0xF, // layer C color 1
+      (flags >> 28) & 0xF, // layer C color 2
     ];
+  }
+
+  public getFramePalette(frameIndex: number) {
+    const indices = this.getFramePaletteIndices(frameIndex);
+    return indices.map(colorIndex => this.globalPalette[colorIndex]);
   }
 
   // retuns an uint8 array where each item is a pixel's palette index
@@ -509,31 +491,26 @@ export class KwzParser extends DataStream {
     if (this.prevDecodedFrame !== frameIndex) {
       this.decodeFrame(frameIndex);
     }
+    const palette = this.getFramePaletteIndices(frameIndex);
     const layers = this.layers[layerIndex];
     const image = new Uint8Array((KwzParser.width * KwzParser.height));
     const paletteOffset = layerIndex * 2 + 1;
     for (let pixelIndex = 0; pixelIndex < layers.length; pixelIndex++) {
       let pixel = layers[pixelIndex];
       if (pixel & 0xff00) {
-        image[pixelIndex] = paletteOffset;
+        image[pixelIndex] = palette[paletteOffset];
       } else if (pixel & 0x00ff) {
-        image[pixelIndex] = paletteOffset + 1;
+        image[pixelIndex] = palette[paletteOffset + 1];
       }
     }
     return image;
   }
 
   // retuns an uint8 array where each item is a pixel's palette index
-  public getFramePixels(frameIndex: number, useGlobalPalette: boolean = false) {
-    let paletteMap: number[];
-    if (useGlobalPalette) {
-      const framePalette = this.getFramePalette(frameIndex);
-      paletteMap = framePalette.map(color => KwzParser.globalPalette.indexOf(color));
-    } else {
-      paletteMap = [0, 1, 2, 3, 4, 5, 6];
-    }
+  public getFramePixels(frameIndex: number) {
+    const palette = this.getFramePaletteIndices(frameIndex);
     const image = new Uint8Array((KwzParser.width * KwzParser.height));
-    image.fill(paletteMap[0]);
+    image.fill(palette[0]); // fill with paper color first
     const layerOrder = this.getLayerOrder(frameIndex);
     layerOrder.forEach(layerIndex => {
       const layer = this.getLayerPixels(frameIndex, layerIndex);
@@ -541,7 +518,7 @@ export class KwzParser extends DataStream {
       for (let pixelIndex = 0; pixelIndex < layer.length; pixelIndex++) {
         const pixel = layer[pixelIndex];
         if (pixel !== 0) {
-          image[pixelIndex] = paletteMap[pixel];
+          image[pixelIndex] = pixel;
         }
       }
     });
@@ -560,14 +537,8 @@ export class KwzParser extends DataStream {
     });
   }
 
-  public hasAudioTrack(trackIndex: number) {
-    const keys: KwzSoundTrack[] = ['bgm', 'se1', 'se2', 'se3', 'se4'];
-    const id = keys[trackIndex];
-    return this.soundMeta[id].length > 0;
-  }
-
-  public decodeAudio(track: KwzSoundTrack) {
-    const trackMeta = this.soundMeta[track];
+  public decodeAudio(trackId: FlipnoteAudioTrack) {
+    const trackMeta = this.soundMeta[trackId];
     const adpcm = new Uint8Array(this.buffer, trackMeta.offset, trackMeta.length);
     const output = new Int16Array(16364 * 60);
     let outputOffset = 0;

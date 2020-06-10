@@ -1,81 +1,10 @@
 /*!!
- flipnote.js v3.3.0 node
+ flipnote.js v3.3.0 web
  Browser-based playback of .ppm and .kwz animations from Flipnote Studio and Flipnote Studio 3D
  2018 - 2020 James Daniel
  github.com/jaames/flipnote.js
  Flipnote Studio is (c) Nintendo Co., Ltd.
 */
-
-var urlLoader = {
-    matches: function (source) {
-        return typeof source === 'string';
-    },
-    load: function (source, resolve, reject) {
-        const xhr = new XMLHttpRequest();
-        xhr.open('GET', source, true);
-        xhr.responseType = 'arraybuffer';
-        xhr.onreadystatechange = function (e) {
-            if (xhr.readyState === 4) {
-                if (xhr.status >= 200 && xhr.status < 300) {
-                    resolve(xhr.response);
-                }
-                else {
-                    reject({
-                        type: 'httpError',
-                        status: xhr.status,
-                        statusText: xhr.statusText
-                    });
-                }
-            }
-        };
-        xhr.send(null);
-    }
-};
-
-var fileLoader = {
-    matches: function (source) {
-        return (typeof File !== 'undefined' && source instanceof File);
-    },
-    load: function (source, resolve, reject) {
-        if (typeof FileReader !== 'undefined') {
-            const reader = new FileReader();
-            reader.onload = (event) => {
-                resolve(reader.result);
-            };
-            reader.onerror = (event) => {
-                reject({ type: 'fileReadError' });
-            };
-            reader.readAsArrayBuffer(source);
-        }
-        else {
-            reject();
-        }
-    }
-};
-
-var arrayBufferLoader = {
-    matches: function (source) {
-        return (source instanceof ArrayBuffer);
-    },
-    load: function (source, resolve, reject) {
-        resolve(source);
-    }
-};
-
-const loaders = [
-    urlLoader,
-    fileLoader,
-    arrayBufferLoader
-];
-function loadSource(source) {
-    return new Promise(function (resolve, reject) {
-        loaders.forEach(loader => {
-            if (loader.matches(source)) {
-                loader.load(source, resolve, reject);
-            }
-        });
-    });
-}
 
 class ByteArray {
     constructor() {
@@ -243,6 +172,83 @@ class DataStream {
         this.cursor += chars.byteLength;
         return str;
     }
+}
+
+var utils = /*#__PURE__*/Object.freeze({
+  __proto__: null,
+  ByteArray: ByteArray,
+  DataStream: DataStream
+});
+
+var urlLoader = {
+    matches: function (source) {
+        return typeof source === 'string';
+    },
+    load: function (source, resolve, reject) {
+        const xhr = new XMLHttpRequest();
+        xhr.open('GET', source, true);
+        xhr.responseType = 'arraybuffer';
+        xhr.onreadystatechange = function (e) {
+            if (xhr.readyState === 4) {
+                if (xhr.status >= 200 && xhr.status < 300) {
+                    resolve(xhr.response);
+                }
+                else {
+                    reject({
+                        type: 'httpError',
+                        status: xhr.status,
+                        statusText: xhr.statusText
+                    });
+                }
+            }
+        };
+        xhr.send(null);
+    }
+};
+
+var fileLoader = {
+    matches: function (source) {
+        return (typeof File !== 'undefined' && source instanceof File);
+    },
+    load: function (source, resolve, reject) {
+        if (typeof FileReader !== 'undefined') {
+            const reader = new FileReader();
+            reader.onload = (event) => {
+                resolve(reader.result);
+            };
+            reader.onerror = (event) => {
+                reject({ type: 'fileReadError' });
+            };
+            reader.readAsArrayBuffer(source);
+        }
+        else {
+            reject();
+        }
+    }
+};
+
+var arrayBufferLoader = {
+    matches: function (source) {
+        return (source instanceof ArrayBuffer);
+    },
+    load: function (source, resolve, reject) {
+        resolve(source);
+    }
+};
+
+const loaders = [
+    urlLoader,
+    fileLoader,
+    arrayBufferLoader
+];
+function loadSource(source) {
+    return new Promise(function (resolve, reject) {
+        loaders.forEach(loader => {
+            if (loader.matches(source)) {
+                loader.load(source, resolve, reject);
+            }
+        });
+    });
 }
 
 var FlipnoteAudioTrack;
@@ -1264,6 +1270,583 @@ function parseSource(source) {
     });
 }
 
+class WavEncoder {
+    constructor(sampleRate, channels = 1, bitsPerSample = 16) {
+        this.sampleRate = sampleRate;
+        this.channels = channels;
+        this.bitsPerSample = bitsPerSample;
+        // Write WAV file header
+        // Reference: http://www.topherlee.com/software/pcm-tut-wavformat.html
+        let headerBuffer = new ArrayBuffer(44);
+        let header = new DataStream(headerBuffer);
+        // 'RIFF' indent
+        header.writeUtf8('RIFF');
+        // filesize (set later)
+        header.writeUint32(0);
+        // 'WAVE' indent
+        header.writeUtf8('WAVE');
+        // 'fmt ' section header
+        header.writeUtf8('fmt ');
+        // fmt section length
+        header.writeUint32(16);
+        // specify audio format is pcm (type 1)
+        header.writeUint16(1);
+        // number of audio channels
+        header.writeUint16(this.channels);
+        // audio sample rate
+        header.writeUint32(this.sampleRate);
+        // byterate = (sampleRate * bitsPerSample * channelCount) / 8
+        header.writeUint32((this.sampleRate * this.bitsPerSample * this.channels) / 8);
+        // blockalign = (bitsPerSample * channels) / 8
+        header.writeUint16((this.bitsPerSample * this.channels) / 8);
+        // bits per sample
+        header.writeUint16(this.bitsPerSample);
+        // 'data' section header
+        header.writeUtf8('data');
+        // data section length (set later)
+        header.writeUint32(0);
+        this.header = header;
+        this.pcmData = null;
+    }
+    writeFrames(pcmData) {
+        let header = this.header;
+        // fill in filesize
+        header.seek(4);
+        header.writeUint32(header.byteLength + pcmData.byteLength);
+        // fill in data section length
+        header.seek(40);
+        header.writeUint32(pcmData.byteLength);
+        this.pcmData = pcmData;
+    }
+    getBlob() {
+        return new Blob([this.header.buffer, this.pcmData.buffer], { type: 'audio/wav' });
+    }
+}
+
+class AudioTrack {
+    constructor(id) {
+        this.playbackRate = 1;
+        this.id = id;
+        this.channelCount = 1;
+        this.bitsPerSample = 16;
+        this.sampleRate = 0;
+        this.audio = document.createElement('audio');
+        this.audio.preload = 'auto';
+        this.isActive = false;
+    }
+    set(pcmData, playbackRate) {
+        // the HTML5 audio element supports PCM audio if it's in a WAV wrapper
+        const wav = new WavEncoder(this.sampleRate * playbackRate, this.channelCount, this.bitsPerSample);
+        wav.writeFrames(pcmData);
+        this.url = window.URL.createObjectURL(wav.getBlob());
+        // use the blob url for the audio element
+        this.audio.src = this.url;
+        this.isActive = true;
+        this.playbackRate = playbackRate;
+        this.length = pcmData.length;
+    }
+    get duration() {
+        return this.audio.duration;
+    }
+    unset() {
+        if (this.isActive) {
+            window.URL.revokeObjectURL(this.url);
+            this.audio.src = '';
+            this.audio.load();
+            this.isActive = false;
+            this.playbackRate = 1;
+            this.length = null;
+        }
+    }
+    start(offset = 0) {
+        if (this.isActive) {
+            this.audio.currentTime = offset;
+            this.audio.play();
+        }
+    }
+    stop() {
+        if (this.isActive) {
+            this.audio.pause();
+        }
+    }
+}
+
+var vertexShader = "#define GLSLIFY 1\nattribute vec4 a_position;varying vec2 v_texel;varying float v_scale;uniform vec2 u_textureSize;uniform vec2 u_screenSize;void main(){gl_Position=a_position;vec2 uv=a_position.xy*vec2(0.5,-0.5)+0.5;v_texel=uv*u_textureSize;v_scale=floor(u_screenSize.y/u_textureSize.y+0.01);}"; // eslint-disable-line
+
+var fragmentShader = "precision highp float;\n#define GLSLIFY 1\nvarying vec2 v_texel;varying float v_scale;uniform vec4 u_color1;uniform vec4 u_color2;uniform sampler2D u_bitmap;uniform bool u_isSmooth;uniform vec2 u_textureSize;uniform vec2 u_screenSize;void main(){vec2 texel_floored=floor(v_texel);vec2 s=fract(v_texel);float region_range=0.5-0.5/v_scale;vec2 center_dist=s-0.5;vec2 f=(center_dist-clamp(center_dist,-region_range,region_range))*v_scale+0.5;vec2 mod_texel=texel_floored+f;vec2 coord=mod_texel.xy/u_textureSize.xy;vec2 colorWeights=texture2D(u_bitmap,coord).ra;gl_FragColor=vec4(u_color1.rgb,1.0)*colorWeights.y+vec4(u_color2.rgb,1.0)*colorWeights.x;}"; // eslint-disable-line
+
+var TextureType;
+(function (TextureType) {
+    TextureType[TextureType["Alpha"] = WebGLRenderingContext.ALPHA] = "Alpha";
+    TextureType[TextureType["LuminanceAlpha"] = WebGLRenderingContext.LUMINANCE_ALPHA] = "LuminanceAlpha";
+})(TextureType || (TextureType = {}));
+/** webgl canvas wrapper class */
+class WebglCanvas {
+    constructor(el, width = 640, height = 480, params = { antialias: false, alpha: false }) {
+        this.uniforms = {};
+        this.refs = {
+            shaders: [],
+            textures: [],
+            buffers: []
+        };
+        const gl = el.getContext('webgl', params);
+        this.el = el;
+        this.gl = gl;
+        this.width = el.width = width;
+        this.height = el.height = height;
+        this.createProgram();
+        this.createScreenQuad();
+        this.createBitmapTexture();
+        this.setCanvasSize(this.width, this.height);
+        gl.enable(gl.BLEND);
+        gl.blendEquation(gl.FUNC_ADD);
+        gl.blendFunc(gl.ONE, gl.ONE_MINUS_SRC_ALPHA);
+    }
+    createProgram() {
+        const gl = this.gl;
+        const program = gl.createProgram();
+        // set up shaders
+        gl.attachShader(program, this.createShader(gl.VERTEX_SHADER, vertexShader));
+        gl.attachShader(program, this.createShader(gl.FRAGMENT_SHADER, fragmentShader));
+        // link program
+        gl.linkProgram(program);
+        if (!gl.getProgramParameter(program, gl.LINK_STATUS)) {
+            let log = gl.getProgramInfoLog(program);
+            gl.deleteProgram(program);
+            throw new Error(log);
+        }
+        // activate the program
+        gl.useProgram(program);
+        // map uniform locations
+        const uniformCount = gl.getProgramParameter(program, gl.ACTIVE_UNIFORMS);
+        for (let index = 0; index < uniformCount; index++) {
+            const name = gl.getActiveUniform(program, index).name;
+            this.uniforms[name] = gl.getUniformLocation(program, name);
+        }
+        this.program = program;
+    }
+    createScreenQuad() {
+        const gl = this.gl;
+        // create quad that fills the screen, this will be our drawing surface
+        const vertBuffer = gl.createBuffer();
+        gl.bindBuffer(gl.ARRAY_BUFFER, vertBuffer);
+        gl.bufferData(gl.ARRAY_BUFFER, new Float32Array([1, 1, -1, 1, -1, -1, 1, 1, -1, -1, 1, -1]), gl.STATIC_DRAW);
+        gl.enableVertexAttribArray(0);
+        gl.vertexAttribPointer(0, 2, gl.FLOAT, false, 0, 0);
+        this.refs.buffers.push(vertBuffer);
+    }
+    createBitmapTexture() {
+        const gl = this.gl;
+        // create texture to use as the layer bitmap
+        gl.activeTexture(gl.TEXTURE0);
+        const tex = gl.createTexture();
+        gl.bindTexture(gl.TEXTURE_2D, tex);
+        gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_S, gl.CLAMP_TO_EDGE);
+        gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_T, gl.CLAMP_TO_EDGE);
+        gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MIN_FILTER, gl.LINEAR);
+        gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MAG_FILTER, gl.LINEAR);
+        gl.uniform1i(this.uniforms['u_bitmap'], 0);
+        this.refs.textures.push(tex);
+    }
+    createShader(type, source) {
+        const gl = this.gl;
+        const shader = gl.createShader(type);
+        gl.shaderSource(shader, source);
+        gl.compileShader(shader);
+        // test if shader compilation was successful
+        if (!gl.getShaderParameter(shader, gl.COMPILE_STATUS)) {
+            const log = gl.getShaderInfoLog(shader);
+            gl.deleteShader(shader);
+            throw new Error(log);
+        }
+        this.refs.shaders.push(shader);
+        return shader;
+    }
+    setInputSize(width, height) {
+        this.gl.uniform2f(this.uniforms['u_textureSize'], width, height);
+    }
+    setCanvasSize(width, height) {
+        this.gl.uniform2f(this.uniforms['u_screenSize'], width, height);
+        this.el.width = width;
+        this.el.height = height;
+        this.width = width;
+        this.height = height;
+        this.gl.viewport(0, 0, width, height);
+    }
+    setLayerType(textureType) {
+        this.textureType = textureType;
+    }
+    toImage(type) {
+        return this.el.toDataURL(type);
+    }
+    setColor(color, value) {
+        this.gl.uniform4f(this.uniforms[color], value[0] / 255, value[1] / 255, value[2] / 255, 1);
+    }
+    setPaperColor(value) {
+        this.gl.clearColor(value[0] / 255, value[1] / 255, value[2] / 255, 1);
+    }
+    drawLayer(buffer, width, height, color1, color2) {
+        const gl = this.gl;
+        // gl.activeTexture(gl.TEXTURE0);
+        gl.texImage2D(gl.TEXTURE_2D, 0, this.textureType, width, height, 0, this.textureType, gl.UNSIGNED_BYTE, buffer);
+        this.setColor('u_color1', color1);
+        this.setColor('u_color2', color2);
+        gl.drawArrays(gl.TRIANGLES, 0, 6);
+    }
+    resize(width = 640, height = 480) {
+        this.setCanvasSize(width, height);
+    }
+    clear() {
+        this.gl.clear(this.gl.COLOR_BUFFER_BIT);
+    }
+    destroy() {
+        // free resources
+        const refs = this.refs;
+        const gl = this.gl;
+        refs.shaders.forEach((shader) => {
+            gl.deleteShader(shader);
+        });
+        refs.shaders = [];
+        refs.textures.forEach((texture) => {
+            gl.deleteTexture(texture);
+        });
+        refs.textures = [];
+        refs.buffers.forEach((buffer) => {
+            gl.deleteBuffer(buffer);
+        });
+        refs.buffers = [];
+        gl.deleteProgram(this.program);
+        // shrink the canvas to reduce memory usage until it is garbage collected
+        gl.canvas.width = 1;
+        gl.canvas.height = 1;
+    }
+}
+
+/** flipnote player API, based on HTMLMediaElement (https://developer.mozilla.org/en-US/docs/Web/API/HTMLMediaElement) */
+class Player {
+    constructor(el, width, height) {
+        this.loop = false;
+        this.paused = true;
+        this.duration = 0;
+        this.isOpen = false;
+        this.events = {};
+        this._frame = -1;
+        this._time = 0;
+        this.hasPlaybackStarted = false;
+        this.wasPlaying = false;
+        this.isSeeking = false;
+        // if `el` is a string, use it to select an Element, else assume it's an element
+        el = ('string' == typeof el) ? document.querySelector(el) : el;
+        this.canvas = new WebglCanvas(el, width, height);
+        this.el = this.canvas.el;
+        this.customPalette = null;
+        this.audioTracks = [
+            new AudioTrack('se1'),
+            new AudioTrack('se2'),
+            new AudioTrack('se3'),
+            new AudioTrack('se4'),
+            new AudioTrack('bgm'),
+        ];
+    }
+    get currentFrame() {
+        return this._frame;
+    }
+    set currentFrame(frameIndex) {
+        this.setFrame(frameIndex);
+    }
+    get currentTime() {
+        return this.isOpen ? this._time : null;
+    }
+    set currentTime(value) {
+        if ((this.isOpen) && (value <= this.duration) && (value >= 0)) {
+            this.setFrame(Math.round(value / (1 / this.framerate)));
+            this._time = value;
+            this.emit('progress', this.progress);
+        }
+    }
+    get progress() {
+        return this.isOpen ? (this.currentTime / this.duration) * 100 : 0;
+    }
+    set progress(value) {
+        this.currentTime = this.duration * (value / 100);
+    }
+    get volume() {
+        return this.audioTracks[3].audio.volume;
+    }
+    set volume(value) {
+        for (let i = 0; i < this.audioTracks.length; i++) {
+            this.audioTracks[i].audio.volume = value;
+        }
+    }
+    get muted() {
+        return this.audioTracks[3].audio.muted;
+    }
+    set muted(value) {
+        for (let i = 0; i < this.audioTracks.length; i++) {
+            this.audioTracks[i].audio.muted = value;
+        }
+    }
+    get framerate() {
+        return this.note.framerate;
+    }
+    get frameCount() {
+        return this.note.frameCount;
+    }
+    get frameSpeed() {
+        return this.note.frameSpeed;
+    }
+    get audiorate() {
+        return (1 / this.note.bgmrate) / (1 / this.note.framerate);
+    }
+    async open(source) {
+        if (this.isOpen)
+            this.close();
+        return parseSource(source)
+            .then((note) => {
+            this.load(note);
+        })
+            .catch((err) => {
+            this.emit('error', err);
+            console.error('Error loading Flipnote:', err);
+        });
+    }
+    close() {
+        this.pause();
+        this.note = null;
+        this.isOpen = false;
+        this.paused = true;
+        this.loop = null;
+        this.meta = null;
+        this._frame = null;
+        this._time = null;
+        this.duration = null;
+        this.loop = null;
+        for (let i = 0; i < this.audioTracks.length; i++) {
+            this.audioTracks[i].unset();
+        }
+        this.seFlags = null;
+        this.hasPlaybackStarted = null;
+        this.canvas.clear();
+    }
+    load(note) {
+        this.note = note;
+        this.meta = note.meta;
+        this.type = note.type;
+        this.loop = note.meta.loop;
+        this.duration = (this.note.frameCount) * (1 / this.note.framerate);
+        this.paused = true;
+        this.isOpen = true;
+        this.audioTracks.forEach(track => {
+            track.sampleRate = note.sampleRate;
+        });
+        if (this.customPalette) {
+            this.setPalette(this.customPalette);
+        }
+        const tracks = [FlipnoteAudioTrack.SE1, FlipnoteAudioTrack.SE2, FlipnoteAudioTrack.SE3, FlipnoteAudioTrack.SE4, FlipnoteAudioTrack.BGM];
+        tracks.forEach((trackId, trackIndex) => {
+            const trackRate = trackId === FlipnoteAudioTrack.BGM ? this.audiorate : 1;
+            if (this.note.hasAudioTrack(trackId))
+                this.audioTracks[trackIndex].set(this.note.decodeAudio(trackId), trackRate);
+        });
+        this.seFlags = this.note.decodeSoundFlags();
+        this.hasPlaybackStarted = false;
+        this.layerVisibility = {
+            1: true,
+            2: true,
+            3: true
+        };
+        this.canvas.setInputSize(note.width, note.height);
+        this.canvas.setLayerType(this.type === 'PPM' ? TextureType.Alpha : TextureType.LuminanceAlpha);
+        this.setFrame(this.note.thumbFrameIndex);
+        this._time = 0;
+        this.emit('load');
+    }
+    play() {
+        if ((!this.isOpen) || (!this.paused))
+            return null;
+        if ((!this.hasPlaybackStarted) || ((!this.loop) && (this.currentFrame == this.frameCount - 1))) {
+            this._time = 0;
+        }
+        this.paused = false;
+        this.playBgm();
+        let start = (performance.now() / 1000) - this.currentTime;
+        const loop = (timestamp) => {
+            if (this.paused) { // break loop if paused is set to true
+                this.stopAudio();
+                return null;
+            }
+            const time = timestamp / 1000;
+            const progress = time - start;
+            if (progress > this.duration) {
+                if (this.loop) {
+                    this.currentTime = 0;
+                    this.playBgm();
+                    start = time;
+                    this.emit('playback:loop');
+                }
+                else {
+                    this.pause();
+                    this.emit('playback:end');
+                }
+            }
+            else {
+                this.currentTime = progress;
+            }
+            requestAnimationFrame(loop);
+        };
+        requestAnimationFrame(loop);
+        this.hasPlaybackStarted = true;
+        this.emit('playback:start');
+    }
+    pause() {
+        if ((!this.isOpen) || (this.paused))
+            return null;
+        this.paused = true;
+        this.stopAudio();
+        this.emit('playback:stop');
+    }
+    setFrame(frameIndex) {
+        if ((this.isOpen) && (frameIndex !== this.currentFrame)) {
+            // clamp frame index
+            frameIndex = Math.max(0, Math.min(Math.floor(frameIndex), this.frameCount - 1));
+            this.drawFrame(frameIndex);
+            this._frame = frameIndex;
+            if (this.paused) {
+                this._time = frameIndex * (1 / this.framerate);
+                this.emit('progress', this.progress);
+            }
+            else {
+                this.playFrameSe(frameIndex);
+            }
+            this.emit('frame:update', this.currentFrame);
+        }
+    }
+    nextFrame() {
+        if ((this.loop) && (this.currentFrame >= this.frameCount - 1)) {
+            this.currentFrame = 0;
+        }
+        else {
+            this.currentFrame += 1;
+        }
+    }
+    prevFrame() {
+        if ((this.loop) && (this.currentFrame <= 0)) {
+            this.currentFrame = this.frameCount - 1;
+        }
+        else {
+            this.currentFrame -= 1;
+        }
+    }
+    lastFrame() {
+        this.currentFrame = this.frameCount - 1;
+    }
+    firstFrame() {
+        this.currentFrame = 0;
+    }
+    thumbnailFrame() {
+        this.currentFrame = this.note.thumbFrameIndex;
+    }
+    startSeek() {
+        if (!this.isSeeking) {
+            this.wasPlaying = !this.paused;
+            this.pause();
+            this.isSeeking = true;
+        }
+    }
+    seek(progress) {
+        if (this.isSeeking) {
+            this.progress = progress;
+        }
+    }
+    endSeek() {
+        if ((this.isSeeking) && (this.wasPlaying === true)) {
+            this.play();
+        }
+        this.wasPlaying = false;
+        this.isSeeking = false;
+    }
+    drawFrame(frameIndex) {
+        const width = this.note.width;
+        const height = this.note.height;
+        const colors = this.note.getFramePalette(frameIndex);
+        const layerBuffers = this.note.decodeFrame(frameIndex);
+        this.canvas.setPaperColor(colors[0]);
+        this.canvas.clear();
+        if (this.note.type === 'PPM') {
+            if (this.layerVisibility[2]) {
+                this.canvas.drawLayer(layerBuffers[1], width, height, colors[2], [0, 0, 0, 0]);
+            }
+            if (this.layerVisibility[1]) {
+                this.canvas.drawLayer(layerBuffers[0], width, height, colors[1], [0, 0, 0, 0]);
+            }
+        }
+        else if (this.note.type === 'KWZ') {
+            // loop through each layer
+            this.note.getLayerOrder(frameIndex).forEach((layerIndex) => {
+                // only draw layer if it's visible
+                if (this.layerVisibility[layerIndex + 1]) {
+                    this.canvas.drawLayer(layerBuffers[layerIndex], width, height, colors[layerIndex * 2 + 1], colors[layerIndex * 2 + 2]);
+                }
+            });
+        }
+    }
+    forceUpdate() {
+        if (this.isOpen) {
+            this.drawFrame(this.currentFrame);
+        }
+    }
+    playFrameSe(frameIndex) {
+        var flags = this.seFlags[frameIndex];
+        for (let i = 0; i < flags.length; i++) {
+            if (flags[i] && this.audioTracks[i].isActive)
+                this.audioTracks[i].start();
+        }
+    }
+    playBgm() {
+        this.audioTracks[4].start(this.currentTime);
+    }
+    stopAudio() {
+        for (let i = 0; i < this.audioTracks.length; i++) {
+            this.audioTracks[i].stop();
+        }
+    }
+    resize(width, height) {
+        this.canvas.resize(width, height);
+        this.forceUpdate();
+    }
+    setLayerVisibility(layerIndex, value) {
+        this.layerVisibility[layerIndex] = value;
+        this.forceUpdate();
+    }
+    setPalette(palette) {
+        this.customPalette = palette;
+        this.note.palette = palette;
+        this.forceUpdate();
+    }
+    on(eventType, callback) {
+        const events = this.events;
+        (events[eventType] || (events[eventType] = [])).push(callback);
+    }
+    off(eventType, callback) {
+        const callbackList = this.events[eventType];
+        if (callbackList)
+            callbackList.splice(callbackList.indexOf(callback), 1);
+    }
+    emit(eventType, ...args) {
+        var callbackList = this.events[eventType] || [];
+        for (var i = 0; i < callbackList.length; i++) {
+            callbackList[i].apply(null, args);
+        }
+    }
+    clearEvents() {
+        this.events = {};
+    }
+    destroy() {
+        this.close();
+        this.canvas.destroy();
+    }
+}
+
 /*
   LZWEncoder.js
 
@@ -1616,67 +2199,18 @@ class GifEncoder {
     }
 }
 
-class WavEncoder {
-    constructor(sampleRate, channels = 1, bitsPerSample = 16) {
-        this.sampleRate = sampleRate;
-        this.channels = channels;
-        this.bitsPerSample = bitsPerSample;
-        // Write WAV file header
-        // Reference: http://www.topherlee.com/software/pcm-tut-wavformat.html
-        let headerBuffer = new ArrayBuffer(44);
-        let header = new DataStream(headerBuffer);
-        // 'RIFF' indent
-        header.writeUtf8('RIFF');
-        // filesize (set later)
-        header.writeUint32(0);
-        // 'WAVE' indent
-        header.writeUtf8('WAVE');
-        // 'fmt ' section header
-        header.writeUtf8('fmt ');
-        // fmt section length
-        header.writeUint32(16);
-        // specify audio format is pcm (type 1)
-        header.writeUint16(1);
-        // number of audio channels
-        header.writeUint16(this.channels);
-        // audio sample rate
-        header.writeUint32(this.sampleRate);
-        // byterate = (sampleRate * bitsPerSample * channelCount) / 8
-        header.writeUint32((this.sampleRate * this.bitsPerSample * this.channels) / 8);
-        // blockalign = (bitsPerSample * channels) / 8
-        header.writeUint16((this.bitsPerSample * this.channels) / 8);
-        // bits per sample
-        header.writeUint16(this.bitsPerSample);
-        // 'data' section header
-        header.writeUtf8('data');
-        // data section length (set later)
-        header.writeUint32(0);
-        this.header = header;
-        this.pcmData = null;
-    }
-    writeFrames(pcmData) {
-        let header = this.header;
-        // fill in filesize
-        header.seek(4);
-        header.writeUint32(header.byteLength + pcmData.byteLength);
-        // fill in data section length
-        header.seek(40);
-        header.writeUint32(pcmData.byteLength);
-        this.pcmData = pcmData;
-    }
-    getBlob() {
-        return new Blob([this.header.buffer, this.pcmData.buffer], { type: 'audio/wav' });
-    }
-}
-
-// Stripped down build that only contains parsers + encoders
-var node = {
+// bitmap encoder is deprecated in favor of gif
+// import { BitmapEncoder } from './encoders';
+var flipnote = {
     version: "3.3.0",
+    player: Player,
     parseSource,
     kwzParser: KwzParser,
     ppmParser: PpmParser,
+    // bitmapEncoder: BitmapEncoder,
     gifEncoder: GifEncoder,
     wavEncoder: WavEncoder,
+    utils,
 };
 
-export default node;
+export default flipnote;

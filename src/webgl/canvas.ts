@@ -12,11 +12,6 @@ interface ResourceMap {
   buffers: WebGLBuffer[]
 }
 
-enum ShaderType {
-  Vertex = WebGLRenderingContext.VERTEX_SHADER,
-  Fragment = WebGLRenderingContext.FRAGMENT_SHADER,
-};
-
 export enum TextureType {
   Alpha = WebGLRenderingContext.ALPHA,
   LuminanceAlpha = WebGLRenderingContext.LUMINANCE_ALPHA,
@@ -58,8 +53,8 @@ export class WebglCanvas {
     const gl = this.gl;
     const program = gl.createProgram();
     // set up shaders
-    gl.attachShader(program, this.createShader(ShaderType.Vertex, vertexShader));
-    gl.attachShader(program, this.createShader(ShaderType.Fragment, fragmentShader));
+    gl.attachShader(program, this.createShader(gl.VERTEX_SHADER, vertexShader));
+    gl.attachShader(program, this.createShader(gl.FRAGMENT_SHADER, fragmentShader));
     // link program
     gl.linkProgram(program);
     if (!gl.getProgramParameter(program, gl.LINK_STATUS)) {
@@ -103,7 +98,7 @@ export class WebglCanvas {
     this.refs.textures.push(tex);
   }
 
-  private createShader(type: ShaderType, source: string) {
+  private createShader(type: number, source: string) {
     const gl = this.gl;
     const shader = gl.createShader(type);
     gl.shaderSource(shader, source);
