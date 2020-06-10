@@ -16,7 +16,7 @@ const esmodule = process.env.ES_MODULE || false;
 const prod = build === "production";
 
 const banner = `/*!!
- flipnote.js v${version} ${target}
+ flipnote.js v${version} (${target} ver)
  Browser-based playback of .ppm and .kwz animations from Flipnote Studio and Flipnote Studio 3D
  2018 - 2020 James Daniel
  github.com/jaames/flipnote.js
@@ -31,6 +31,7 @@ module.exports = {
       file: 'dist/node.js',
       format: 'es',
       name: 'flipnote',
+      exports: 'named',
       banner: banner,
       sourcemap: devserver ? true : false,
       sourcemapFile: 'dist/node.map'
@@ -39,6 +40,7 @@ module.exports = {
       file: 'dist/flipnote.es.js',
       format: 'es',
       name: 'flipnote',
+      exports: 'named',
       banner: banner,
       sourcemap: devserver ? true : false,
       sourcemapFile: 'dist/flipnote.es.map'
@@ -47,6 +49,7 @@ module.exports = {
       file: prod ? 'dist/flipnote.min.js' : 'dist/flipnote.js',
       format: 'umd',
       name: 'flipnote',
+      exports: 'named',
       banner: banner,
       sourcemap: devserver ? true : false,
       sourcemapFile: prod ? 'dist/flipnote.min.js.map' : 'dist/flipnote.js.map'
@@ -68,22 +71,9 @@ module.exports = {
       typescript: require('typescript'),
       tsconfigOverride: {
         compilerOptions: {
-          baseUrl: "./",
-          outDir: "./dist/",
-          noImplicitAny: true,
-          module: 'esnext',
           target: esmodule ? 'esnext' : 'es5',
           declaration: !devserver ? true : false,
           sourceMap: devserver ? true : false,
-          lib: [
-            "es2017",
-            "dom"
-          ],
-          jsx: "react",
-          allowJs: false,
-          paths: {
-            "*" : ["src/types/*"]
-          },
         },
       },
     }),

@@ -9,8 +9,8 @@ export declare class DataStream {
     private data;
     private cursor;
     constructor(arrayBuffer: ArrayBuffer);
-    readonly bytes: Uint8Array;
-    readonly byteLength: number;
+    get bytes(): Uint8Array;
+    get byteLength(): number;
     seek(offset: number, whence?: SeekOrigin): void;
     readUint8(): number;
     writeUint8(value: number): void;

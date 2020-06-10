@@ -1,5 +1,5 @@
 /*!!
- flipnote.js v4.0.0 node
+ flipnote.js v4.0.2 (node ver)
  Browser-based playback of .ppm and .kwz animations from Flipnote Studio and Flipnote Studio 3D
  2018 - 2020 James Daniel
  github.com/jaames/flipnote.js
@@ -1671,7 +1671,7 @@ class WavEncoder {
 
 // Stripped down build that only contains parsers + encoders
 var node = {
-    version: "4.0.0",
+    version: "4.0.2",
     parseSource,
     kwzParser: KwzParser,
     ppmParser: PpmParser,

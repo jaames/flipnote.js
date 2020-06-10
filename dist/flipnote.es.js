@@ -1,10 +1,81 @@
 /*!!
- flipnote.js v4.0.0 web
+ flipnote.js v4.0.2 (web ver)
  Browser-based playback of .ppm and .kwz animations from Flipnote Studio and Flipnote Studio 3D
  2018 - 2020 James Daniel
  github.com/jaames/flipnote.js
  Flipnote Studio is (c) Nintendo Co., Ltd.
 */
+
+var urlLoader = {
+    matches: function (source) {
+        return typeof source === 'string';
+    },
+    load: function (source, resolve, reject) {
+        const xhr = new XMLHttpRequest();
+        xhr.open('GET', source, true);
+        xhr.responseType = 'arraybuffer';
+        xhr.onreadystatechange = function (e) {
+            if (xhr.readyState === 4) {
+                if (xhr.status >= 200 && xhr.status < 300) {
+                    resolve(xhr.response);
+                }
+                else {
+                    reject({
+                        type: 'httpError',
+                        status: xhr.status,
+                        statusText: xhr.statusText
+                    });
+                }
+            }
+        };
+        xhr.send(null);
+    }
+};
+
+var fileLoader = {
+    matches: function (source) {
+        return (typeof File !== 'undefined' && source instanceof File);
+    },
+    load: function (source, resolve, reject) {
+        if (typeof FileReader !== 'undefined') {
+            const reader = new FileReader();
+            reader.onload = (event) => {
+                resolve(reader.result);
+            };
+            reader.onerror = (event) => {
+                reject({ type: 'fileReadError' });
+            };
+            reader.readAsArrayBuffer(source);
+        }
+        else {
+            reject();
+        }
+    }
+};
+
+var arrayBufferLoader = {
+    matches: function (source) {
+        return (source instanceof ArrayBuffer);
+    },
+    load: function (source, resolve, reject) {
+        resolve(source);
+    }
+};
+
+const loaders = [
+    urlLoader,
+    fileLoader,
+    arrayBufferLoader
+];
+function loadSource(source) {
+    return new Promise(function (resolve, reject) {
+        loaders.forEach(loader => {
+            if (loader.matches(source)) {
+                loader.load(source, resolve, reject);
+            }
+        });
+    });
+}
 
 class ByteArray {
     constructor() {
@@ -172,83 +243,6 @@ class DataStream {
         this.cursor += chars.byteLength;
         return str;
     }
-}
-
-var utils = /*#__PURE__*/Object.freeze({
-  __proto__: null,
-  ByteArray: ByteArray,
-  DataStream: DataStream
-});
-
-var urlLoader = {
-    matches: function (source) {
-        return typeof source === 'string';
-    },
-    load: function (source, resolve, reject) {
-        const xhr = new XMLHttpRequest();
-        xhr.open('GET', source, true);
-        xhr.responseType = 'arraybuffer';
-        xhr.onreadystatechange = function (e) {
-            if (xhr.readyState === 4) {
-                if (xhr.status >= 200 && xhr.status < 300) {
-                    resolve(xhr.response);
-                }
-                else {
-                    reject({
-                        type: 'httpError',
-                        status: xhr.status,
-                        statusText: xhr.statusText
-                    });
-                }
-            }
-        };
-        xhr.send(null);
-    }
-};
-
-var fileLoader = {
-    matches: function (source) {
-        return (typeof File !== 'undefined' && source instanceof File);
-    },
-    load: function (source, resolve, reject) {
-        if (typeof FileReader !== 'undefined') {
-            const reader = new FileReader();
-            reader.onload = (event) => {
-                resolve(reader.result);
-            };
-            reader.onerror = (event) => {
-                reject({ type: 'fileReadError' });
-            };
-            reader.readAsArrayBuffer(source);
-        }
-        else {
-            reject();
-        }
-    }
-};
-
-var arrayBufferLoader = {
-    matches: function (source) {
-        return (source instanceof ArrayBuffer);
-    },
-    load: function (source, resolve, reject) {
-        resolve(source);
-    }
-};
-
-const loaders = [
-    urlLoader,
-    fileLoader,
-    arrayBufferLoader
-];
-function loadSource(source) {
-    return new Promise(function (resolve, reject) {
-        loaders.forEach(loader => {
-            if (loader.matches(source)) {
-                loader.load(source, resolve, reject);
-            }
-        });
-    });
 }
 
 var FlipnoteAudioTrack;
@@ -2199,18 +2193,24 @@ class GifEncoder {
     }
 }
 
-// bitmap encoder is deprecated in favor of gif
-// import { BitmapEncoder } from './encoders';
-var flipnote = {
-    version: "4.0.0",
-    player: Player,
-    parseSource,
-    kwzParser: KwzParser,
-    ppmParser: PpmParser,
-    // bitmapEncoder: BitmapEncoder,
-    gifEncoder: GifEncoder,
-    wavEncoder: WavEncoder,
-    utils,
-};
+var api;
+(function (api) {
+    api.version = "4.0.2"; // replaced by @rollup/plugin-replace; see rollup.config.js
+    api.player = Player;
+    api.parseSource = parseSource;
+    api.kwzParser = KwzParser;
+    api.ppmParser = PpmParser;
+    api.gifEncoder = GifEncoder;
+    api.wavEncoder = WavEncoder;
+})(api || (api = {}));
+var api$1 = api;
+const version = "4.0.2";
+const player = Player;
+const parseSource$1 = parseSource;
+const kwzParser = KwzParser;
+const ppmParser = PpmParser;
+const gifEncoder = GifEncoder;
+const wavEncoder = WavEncoder;
 
-export default flipnote;
+export default api$1;
+export { gifEncoder, kwzParser, parseSource$1 as parseSource, player, ppmParser, version, wavEncoder };

@@ -10,7 +10,7 @@ export declare class AudioTrack {
     private url;
     constructor(id: string);
     set(pcmData: Int16Array, playbackRate: number): void;
-    readonly duration: number;
+    get duration(): number;
     unset(): void;
     start(offset?: number): void;
     stop(): void;

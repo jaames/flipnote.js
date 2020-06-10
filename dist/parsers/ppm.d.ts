@@ -52,11 +52,11 @@ export declare class PpmParser extends FlipnoteParserBase {
     static width: number;
     static height: number;
     static sampleRate: number;
-    static globalPalette: [number, number, number][];
+    static globalPalette: import("./parserBase").PaletteColor[];
     type: string;
     width: number;
     height: number;
-    globalPalette: [number, number, number][];
+    globalPalette: import("./parserBase").PaletteColor[];
     sampleRate: number;
     meta: PpmMeta;
     version: number;
@@ -79,7 +79,7 @@ export declare class PpmParser extends FlipnoteParserBase {
     getLayerOrder(frameIndex?: number): number[];
     decodeFrame(frameIndex: number): Uint8Array[];
     getFramePaletteIndices(frameIndex: number): number[];
-    getFramePalette(frameIndex: number): [number, number, number][];
+    getFramePalette(frameIndex: number): import("./parserBase").PaletteColor[];
     getLayerPixels(frameIndex: number, layerIndex: number): Uint8Array;
     getFramePixels(frameIndex: number): Uint8Array;
     decodeAudio(trackId: FlipnoteAudioTrack): Int16Array;
