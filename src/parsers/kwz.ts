@@ -573,7 +573,7 @@ export class KwzParser extends FlipnoteParserBase {
         }
         // clamp step index and diff
         stepIndex = Math.max(0, Math.min(stepIndex, 79));
-        diff = Math.max(-2048, Math.min(diff, 2048));
+        diff = Math.max(-2047, Math.min(diff, 2047));
         // add result to output buffer
         output[outputOffset] = (diff * 16);
         outputOffset += 1;
