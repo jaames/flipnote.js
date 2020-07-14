@@ -2373,6 +2373,7 @@
       return GifEncoder;
   }());
 
+  // Main entrypoint for web
   var api;
   (function (api) {
       api.version = "4.0.3"; // replaced by @rollup/plugin-replace; see rollup.config.js

@@ -122,6 +122,7 @@ export class Player {
       .catch((err: any) => {
         this.emit('error', err);
         console.error('Error loading Flipnote:', err);
+        throw 'Error loading Flipnote';
       });
   }
 

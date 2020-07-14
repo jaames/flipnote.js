@@ -2,7 +2,7 @@ import { parseSource as _parseSource, Flipnote as _Flipnote, FlipnoteMeta as _Fl
 import { Player } from './player/index';
 import { GifEncoder, WavEncoder } from './encoders/index';
 declare namespace api {
-    const version: string;
+    const version = "4.0.3";
     type Flipnpte = _Flipnote;
     type FlipnoteMeta = _FlipnoteMeta;
     type FlipnoteAudioTrack = _FlipnoteAudioTrack;
@@ -14,7 +14,7 @@ declare namespace api {
     const wavEncoder: typeof WavEncoder;
 }
 export default api;
-export declare const version: string;
+export declare const version = "4.0.3";
 export declare type Flipnpte = _Flipnote;
 export declare type FlipnoteMeta = _FlipnoteMeta;
 export declare type FlipnoteAudioTrack = _FlipnoteAudioTrack;

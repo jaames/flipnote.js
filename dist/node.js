@@ -1669,7 +1669,7 @@ class WavEncoder {
     }
 }
 
-// Stripped down build that only contains parsers + encoders
+// Stripped down entrypoint for Node that only contains parsers + encoders
 var node = {
     version: "4.0.3",
     parseSource,

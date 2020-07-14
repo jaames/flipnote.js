@@ -3,11 +3,15 @@ import alias from '@rollup/plugin-alias';
 import nodeResolve from '@rollup/plugin-node-resolve';
 import replace from '@rollup/plugin-replace';
 import typescript from 'rollup-plugin-typescript2';
-import { uglify } from 'rollup-plugin-uglify';
+// import { uglify } from 'rollup-plugin-uglify';
+import { terser } from 'rollup-plugin-terser';
 import serve from 'rollup-plugin-serve';
 import livereload from 'rollup-plugin-livereload';
 import bundleSize from 'rollup-plugin-bundle-size';
 import glslify from 'rollup-plugin-glslify';
+import svelte from 'rollup-plugin-svelte';
+import svelteSVG from 'rollup-plugin-svelte-svg';
+import autoPreprocess from 'svelte-preprocess'
 
 const target = process.env.TARGET || "web";
 const build = process.env.BUILD || "development";
@@ -25,7 +29,11 @@ const banner = `/*!!
 `
 
 module.exports = {
-  input: (target === 'node') ? 'src/node.ts' : 'src/flipnote.ts',
+  input: [
+    (target === 'web') ? 'src/flipnote.ts' : false,
+    (target === 'node') ? 'src/node.ts' : false,
+    (target === 'webcomponent') ? 'src/webcomponent.ts' : false,
+  ].filter(Boolean).join(''),
   output: [
     (target === 'node') ? {
       file: 'dist/node.js',
@@ -53,11 +61,31 @@ module.exports = {
       banner: banner,
       sourcemap: devserver ? true : false,
       sourcemapFile: prod ? 'dist/flipnote.min.js.map' : 'dist/flipnote.js.map'
+    } : false,
+    (target === 'webcomponent') ? {
+      file: prod ? 'dist/flipnote.webcomponent.min.js' : 'dist/flipnote.webcomponent.js',
+      format: 'umd',
+      name: 'flipnote',
+      exports: 'named',
+      banner: banner,
+      sourcemap: devserver ? true : false,
+      sourcemapFile: prod ? 'dist/flipnote.webcomponent.min.js.map' : 'dist/flipnote.webcomponent.js.map'
     } : false
   ].filter(Boolean),
   plugins: [
+    // use svelte for webcomponent build
+    target === 'webcomponent' ? svelte({
+      customElement: true,
+			// enable run-time checks when not in production
+			dev: !prod,
+      preprocess: autoPreprocess()
+    }) : false,
+    target === 'webcomponent' ? svelteSVG() : false,
     bundleSize(),
-    nodeResolve(),
+    nodeResolve({
+			browser: true,
+			dedupe: ['svelte']
+		}),
     alias({
       resolve: ['.jsx', '.js', '.ts', '.tsx'],
     }),
@@ -78,6 +106,7 @@ module.exports = {
       },
     }),
     glslify(),
+    // devserver + livereload
     devserver ? serve({
       contentBase: ['dist', 'test']
     }) : false,
@@ -85,7 +114,7 @@ module.exports = {
       watch: 'dist'
     }) : false,
     // only minify if we're producing a non-es production build
-    prod && !esmodule ? uglify({
+    prod && !esmodule ? terser({
       mangle: {
         properties: {
           regex: /^_/
@@ -101,5 +130,21 @@ module.exports = {
         }
       }
     }) : false,
+    // prod && !esmodule ? uglify({
+    //   mangle: {
+    //     properties: {
+    //       regex: /^_/
+    //     },
+    //   },
+    //   output: {
+    //     comments: function(node, comment) {
+    //       if (comment.type === 'comment2') {
+    //         // preserve banner comment
+    //         return /\!\!/i.test(comment.value);
+    //       }
+    //       return false;
+    //     }
+    //   }
+    // }) : false,
   ].filter(Boolean)
 };

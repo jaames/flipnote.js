@@ -1,4 +1,4 @@
-// Stripped down build that only contains parsers + encoders
+// Stripped down entrypoint for Node that only contains parsers + encoders
 
 import { parseSource, KwzParser, PpmParser } from './parsers/index'; 
 import { GifEncoder, WavEncoder } from './encoders/index';
