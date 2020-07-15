@@ -3,15 +3,14 @@ import alias from '@rollup/plugin-alias';
 import nodeResolve from '@rollup/plugin-node-resolve';
 import replace from '@rollup/plugin-replace';
 import typescript from 'rollup-plugin-typescript2';
-// import { uglify } from 'rollup-plugin-uglify';
 import { terser } from 'rollup-plugin-terser';
 import serve from 'rollup-plugin-serve';
 import livereload from 'rollup-plugin-livereload';
 import bundleSize from 'rollup-plugin-bundle-size';
 import glslify from 'rollup-plugin-glslify';
 import svelte from 'rollup-plugin-svelte';
-import svelteSVG from 'rollup-plugin-svelte-svg';
-import autoPreprocess from 'svelte-preprocess'
+import svgo from 'rollup-plugin-svgo';
+import autoPreprocess from 'svelte-preprocess';
 
 const target = process.env.TARGET || "web";
 const build = process.env.BUILD || "development";
@@ -80,7 +79,19 @@ module.exports = {
 			dev: !prod,
       preprocess: autoPreprocess()
     }) : false,
-    target === 'webcomponent' ? svelteSVG() : false,
+    target === 'webcomponent' ? svgo({
+      plugins: [
+        {
+          removeViewBox: false
+        },
+        {
+          removeDimensions: true
+        },
+        {
+          removeUnknownsAndDefaults: true
+        },
+      ]
+    }) : false,
     bundleSize(),
     nodeResolve({
 			browser: true,
@@ -130,21 +141,5 @@ module.exports = {
         }
       }
     }) : false,
-    // prod && !esmodule ? uglify({
-    //   mangle: {
-    //     properties: {
-    //       regex: /^_/
-    //     },
-    //   },
-    //   output: {
-    //     comments: function(node, comment) {
-    //       if (comment.type === 'comment2') {
-    //         // preserve banner comment
-    //         return /\!\!/i.test(comment.value);
-    //       }
-    //       return false;
-    //     }
-    //   }
-    // }) : false,
   ].filter(Boolean)
 };

@@ -1602,6 +1602,7 @@ class Player {
             .catch((err) => {
             this.emit('error', err);
             console.error('Error loading Flipnote:', err);
+            throw 'Error loading Flipnote';
         });
     }
     close() {

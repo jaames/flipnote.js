@@ -11,18 +11,21 @@
   const dispatch = createDomEventDispatcher();
 
   function onSliderInputStart(event) {
+    event.preventDefault();
     isSliderActive = true;
     onSliderInput(event);
     dispatch('inputstart');
   }
 
   function onSliderInputEnd(event) {
+    event.preventDefault();
     isSliderActive = false;
     onSliderInput(event);
     dispatch('inputend');
   }
 
   function onSliderInput(event) {
+    event.preventDefault();
     const rect = sliderElement.getBoundingClientRect();
     const railCap = rect.height / 2;
     const railLength = rect.width - railCap * 2;
@@ -70,7 +73,7 @@
   height: 4px;
   border-radius: 3px;
   margin: 6px 0;
-  background: #FFD3A6;
+  background: var(--flipnote-player-slider-track, #FFD3A6);
 }
 
 .PlayerSlider__level {
@@ -80,7 +83,7 @@
   height: 6px;
   margin: -1px;
   border-radius: 8px;
-  background: #F36A2D;
+  background: var(--flipnote-player-slider-level, #F36A2D);
 }
 .PlayerSlider__handle {
   /* display: none; */
@@ -91,7 +94,7 @@
   margin-left: -2px;
   margin-top: -3px;
   border-radius: 2px;
-  background: #F36A2D;
+  background: var(--flipnote-player-slider-handle, #F36A2D);
   /* box-shadow: 0 2px 3px 0 rgba(102, 102, 153, .62); */
 }
 

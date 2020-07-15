@@ -51,7 +51,7 @@ Uncompressed, with source comments included. Intended for debugging.
 [Production version](https://raw.githubusercontent.com/jaames/flipnote.js/master/dist/flipnote.min.js)
 Minified and optimized version.
 
-## Player setup
+## Manual Player Setup
 
 To create a new player, we need to make a HTML [canvas](https://developer.mozilla.org/en-US/docs/Web/API/Canvas_API/Tutorial) element with a unique identifier (an `id` attribute works well!) to act as a display for the player. 
 

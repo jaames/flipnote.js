@@ -19,7 +19,7 @@ export declare class GifEncoder {
     writeImageDesc(): void;
     writePixels(pixels: Uint8Array): void;
     writeFrame(pixels: Uint8Array): void;
-    getBuffer(): ArrayBuffer | SharedArrayBuffer;
+    getBuffer(): ArrayBufferLike;
     getBlob(): Blob;
     getUrl(): string;
     getImage(): HTMLImageElement;

@@ -183,7 +183,7 @@ export class Player {
     if ((!this.isOpen) || (!this.paused)) return null;
 
     if ((!this.hasPlaybackStarted) || ((!this.loop) && (this.currentFrame == this.frameCount - 1))) {
-      this._time = 0
+      this._time = 0;
     }
 
     this.paused = false;
@@ -223,6 +223,14 @@ export class Player {
     this.paused = true;
     this.stopAudio();
     this.emit('playback:stop');
+  }
+
+  public togglePlay(): void {
+    if (this.paused) {
+      this.play();
+    } else {
+      this.pause();
+    }
   }
 
   public setFrame(frameIndex: number): void {
@@ -347,6 +355,10 @@ export class Player {
   public setLayerVisibility(layerIndex: number, value: boolean): void {
     this.layerVisibility[layerIndex] = value;
     this.forceUpdate();
+  }
+
+  public toggleLayerVisibility(layerIndex: number) : void {
+    this.setLayerVisibility(layerIndex, !this.layerVisibility[layerIndex]);
   }
 
   // public setPalette(palette: any): void {

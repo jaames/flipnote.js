@@ -1770,6 +1770,7 @@
                           .catch(function (err) {
                           _this.emit('error', err);
                           console.error('Error loading Flipnote:', err);
+                          throw 'Error loading Flipnote';
                       })];
               });
           });

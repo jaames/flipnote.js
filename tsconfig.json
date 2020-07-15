@@ -12,7 +12,7 @@
     ],
     "jsx": "react",
     "allowJs": false,
-    "types": ["svelte"],
+    "types": ["@pyoner/svelte-types"],
     "allowSyntheticDefaultImports": true,
     "esModuleInterop": true ,
     "paths": {
