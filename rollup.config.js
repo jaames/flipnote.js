@@ -3,11 +3,14 @@ import alias from '@rollup/plugin-alias';
 import nodeResolve from '@rollup/plugin-node-resolve';
 import replace from '@rollup/plugin-replace';
 import typescript from 'rollup-plugin-typescript2';
-import { uglify } from 'rollup-plugin-uglify';
+import { terser } from 'rollup-plugin-terser';
 import serve from 'rollup-plugin-serve';
 import livereload from 'rollup-plugin-livereload';
 import bundleSize from 'rollup-plugin-bundle-size';
 import glslify from 'rollup-plugin-glslify';
+import svelte from 'rollup-plugin-svelte';
+import svgo from 'rollup-plugin-svgo';
+import autoPreprocess from 'svelte-preprocess';
 
 const target = process.env.TARGET || "web";
 const build = process.env.BUILD || "development";
@@ -16,7 +19,7 @@ const esmodule = process.env.ES_MODULE || false;
 const prod = build === "production";
 
 const banner = `/*!!
- flipnote.js v${version} (${target} ver)
+ flipnote.js v${version} (${target} version)
  Browser-based playback of .ppm and .kwz animations from Flipnote Studio and Flipnote Studio 3D
  2018 - 2020 James Daniel
  github.com/jaames/flipnote.js
@@ -25,7 +28,11 @@ const banner = `/*!!
 `
 
 module.exports = {
-  input: (target === 'node') ? 'src/node.ts' : 'src/flipnote.ts',
+  input: [
+    (target === 'web') ? 'src/flipnote.ts' : false,
+    (target === 'node') ? 'src/node.ts' : false,
+    (target === 'webcomponent') ? 'src/webcomponent.ts' : false,
+  ].filter(Boolean).join(''),
   output: [
     (target === 'node') ? {
       file: 'dist/node.js',
@@ -53,11 +60,43 @@ module.exports = {
       banner: banner,
       sourcemap: devserver ? true : false,
       sourcemapFile: prod ? 'dist/flipnote.min.js.map' : 'dist/flipnote.js.map'
+    } : false,
+    (target === 'webcomponent') ? {
+      file: prod ? 'dist/flipnote.webcomponent.min.js' : 'dist/flipnote.webcomponent.js',
+      format: 'umd',
+      name: 'flipnote',
+      exports: 'named',
+      banner: banner,
+      sourcemap: devserver ? true : false,
+      sourcemapFile: prod ? 'dist/flipnote.webcomponent.min.js.map' : 'dist/flipnote.webcomponent.js.map'
     } : false
   ].filter(Boolean),
   plugins: [
+    // use svelte for webcomponent build
+    target === 'webcomponent' ? svelte({
+      customElement: true,
+			// enable run-time checks when not in production
+			dev: !prod,
+      preprocess: autoPreprocess()
+    }) : false,
+    target === 'webcomponent' ? svgo({
+      plugins: [
+        {
+          removeViewBox: false
+        },
+        {
+          removeDimensions: true
+        },
+        {
+          removeUnknownsAndDefaults: true
+        },
+      ]
+    }) : false,
     bundleSize(),
-    nodeResolve(),
+    nodeResolve({
+			browser: true,
+			dedupe: ['svelte']
+		}),
     alias({
       resolve: ['.jsx', '.js', '.ts', '.tsx'],
     }),
@@ -78,6 +117,7 @@ module.exports = {
       },
     }),
     glslify(),
+    // devserver + livereload
     devserver ? serve({
       contentBase: ['dist', 'test']
     }) : false,
@@ -85,7 +125,7 @@ module.exports = {
       watch: 'dist'
     }) : false,
     // only minify if we're producing a non-es production build
-    prod && !esmodule ? uglify({
+    prod && !esmodule ? terser({
       mangle: {
         properties: {
           regex: /^_/

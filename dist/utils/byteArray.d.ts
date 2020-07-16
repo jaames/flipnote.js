@@ -6,7 +6,7 @@ export declare class ByteArray {
     constructor();
     private newPage;
     getData(): Uint8Array;
-    getBuffer(): ArrayBuffer | SharedArrayBuffer;
+    getBuffer(): ArrayBufferLike;
     writeByte(val: number): void;
     writeBytes(array: Uint8Array | number[], offset?: number, length?: number): void;
 }

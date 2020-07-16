@@ -44,6 +44,7 @@ export declare class Player {
     load(note: Flipnote): void;
     play(): void;
     pause(): void;
+    togglePlay(): void;
     setFrame(frameIndex: number): void;
     nextFrame(): void;
     prevFrame(): void;
@@ -60,6 +61,7 @@ export declare class Player {
     private stopAudio;
     resize(width: number, height: number): void;
     setLayerVisibility(layerIndex: number, value: boolean): void;
+    toggleLayerVisibility(layerIndex: number): void;
     on(eventType: string, callback: Function): void;
     off(eventType: string, callback: Function): void;
     emit(eventType: string, ...args: any): void;

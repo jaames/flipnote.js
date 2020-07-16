@@ -38,12 +38,10 @@ export class WebglCanvas {
     const gl = <WebGLRenderingContext>el.getContext('webgl', params);
     this.el = el;
     this.gl = gl;
-    this.width = el.width = width;
-    this.height = el.height = height; 
     this.createProgram();
+    this.setCanvasSize(width, height);
     this.createScreenQuad();
     this.createBitmapTexture();
-    this.setCanvasSize(this.width, this.height);
     gl.enable(gl.BLEND);
     gl.blendEquation(gl.FUNC_ADD);
     gl.blendFunc(gl.ONE, gl.ONE_MINUS_SRC_ALPHA);
@@ -118,12 +116,17 @@ export class WebglCanvas {
   }
 
   public setCanvasSize(width: number, height: number) {
-    this.gl.uniform2f(this.uniforms['u_screenSize'], width, height);
-    this.el.width = width;
-    this.el.height = height; 
-    this.width = width;
-    this.height = height;
-    this.gl.viewport(0, 0, width, height);
+    const dpi = window.devicePixelRatio || 1;
+    const internalWidth = width * dpi;
+    const internalHeight = height * dpi;
+    this.el.width = internalWidth;
+    this.el.height = internalHeight;
+    this.width = internalWidth;
+    this.height = internalHeight;
+    this.gl.viewport(0, 0, internalWidth, internalHeight);
+    this.gl.uniform2f(this.uniforms['u_screenSize'], internalWidth, internalHeight);
+    this.el.style.width = `${ width }px`;
+    this.el.style.height = `${ height }px`;
   }
   
   public setLayerType(textureType: TextureType) {

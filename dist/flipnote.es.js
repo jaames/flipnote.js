@@ -1,5 +1,5 @@
 /*!!
- flipnote.js v4.0.3 (web ver)
+ flipnote.js v4.1.0 (web version)
  Browser-based playback of .ppm and .kwz animations from Flipnote Studio and Flipnote Studio 3D
  2018 - 2020 James Daniel
  github.com/jaames/flipnote.js
@@ -1386,12 +1386,10 @@ class WebglCanvas {
         const gl = el.getContext('webgl', params);
         this.el = el;
         this.gl = gl;
-        this.width = el.width = width;
-        this.height = el.height = height;
         this.createProgram();
+        this.setCanvasSize(width, height);
         this.createScreenQuad();
         this.createBitmapTexture();
-        this.setCanvasSize(this.width, this.height);
         gl.enable(gl.BLEND);
         gl.blendEquation(gl.FUNC_ADD);
         gl.blendFunc(gl.ONE, gl.ONE_MINUS_SRC_ALPHA);
@@ -1460,12 +1458,17 @@ class WebglCanvas {
         this.gl.uniform2f(this.uniforms['u_textureSize'], width, height);
     }
     setCanvasSize(width, height) {
-        this.gl.uniform2f(this.uniforms['u_screenSize'], width, height);
-        this.el.width = width;
-        this.el.height = height;
-        this.width = width;
-        this.height = height;
-        this.gl.viewport(0, 0, width, height);
+        const dpi = window.devicePixelRatio || 1;
+        const internalWidth = width * dpi;
+        const internalHeight = height * dpi;
+        this.el.width = internalWidth;
+        this.el.height = internalHeight;
+        this.width = internalWidth;
+        this.height = internalHeight;
+        this.gl.viewport(0, 0, internalWidth, internalHeight);
+        this.gl.uniform2f(this.uniforms['u_screenSize'], internalWidth, internalHeight);
+        this.el.style.width = `${width}px`;
+        this.el.style.height = `${height}px`;
     }
     setLayerType(textureType) {
         this.textureType = textureType;
@@ -1602,6 +1605,7 @@ class Player {
             .catch((err) => {
             this.emit('error', err);
             console.error('Error loading Flipnote:', err);
+            throw 'Error loading Flipnote';
         });
     }
     close() {
@@ -1698,6 +1702,14 @@ class Player {
         this.paused = true;
         this.stopAudio();
         this.emit('playback:stop');
+    }
+    togglePlay() {
+        if (this.paused) {
+            this.play();
+        }
+        else {
+            this.pause();
+        }
     }
     setFrame(frameIndex) {
         if ((this.isOpen) && (frameIndex !== this.currentFrame)) {
@@ -1811,6 +1823,9 @@ class Player {
     setLayerVisibility(layerIndex, value) {
         this.layerVisibility[layerIndex] = value;
         this.forceUpdate();
+    }
+    toggleLayerVisibility(layerIndex) {
+        this.setLayerVisibility(layerIndex, !this.layerVisibility[layerIndex]);
     }
     // public setPalette(palette: any): void {
     //   this.customPalette = palette;
@@ -2193,9 +2208,10 @@ class GifEncoder {
     }
 }
 
+// Main entrypoint for web
 var api;
 (function (api) {
-    api.version = "4.0.3"; // replaced by @rollup/plugin-replace; see rollup.config.js
+    api.version = "4.1.0"; // replaced by @rollup/plugin-replace; see rollup.config.js
     api.player = Player;
     api.parseSource = parseSource;
     api.kwzParser = KwzParser;
@@ -2204,7 +2220,7 @@ var api;
     api.wavEncoder = WavEncoder;
 })(api || (api = {}));
 var api$1 = api;
-const version = "4.0.3";
+const version = "4.1.0";
 const player = Player;
 const parseSource$1 = parseSource;
 const kwzParser = KwzParser;

@@ -1,4 +1,4 @@
-import * as utils from './utils/index';
+// Main entrypoint for web
 
 import {
   parseSource as _parseSource,
