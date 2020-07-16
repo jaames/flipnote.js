@@ -36,7 +36,7 @@ module.exports = {
   output: [
     (target === 'node') ? {
       file: 'dist/node.js',
-      format: 'es',
+      format: 'umd',
       name: 'flipnote',
       exports: 'named',
       banner: banner,
