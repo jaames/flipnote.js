@@ -1,5 +1,5 @@
 /*!!
- flipnote.js v4.0.3 (web ver)
+ flipnote.js v4.1.0 (web version)
  Browser-based playback of .ppm and .kwz animations from Flipnote Studio and Flipnote Studio 3D
  2018 - 2020 James Daniel
  github.com/jaames/flipnote.js
@@ -1512,12 +1512,10 @@
           var gl = el.getContext('webgl', params);
           this.el = el;
           this.gl = gl;
-          this.width = el.width = width;
-          this.height = el.height = height;
           this.createProgram();
+          this.setCanvasSize(width, height);
           this.createScreenQuad();
           this.createBitmapTexture();
-          this.setCanvasSize(this.width, this.height);
           gl.enable(gl.BLEND);
           gl.blendEquation(gl.FUNC_ADD);
           gl.blendFunc(gl.ONE, gl.ONE_MINUS_SRC_ALPHA);
@@ -1586,12 +1584,17 @@
           this.gl.uniform2f(this.uniforms['u_textureSize'], width, height);
       };
       WebglCanvas.prototype.setCanvasSize = function (width, height) {
-          this.gl.uniform2f(this.uniforms['u_screenSize'], width, height);
-          this.el.width = width;
-          this.el.height = height;
-          this.width = width;
-          this.height = height;
-          this.gl.viewport(0, 0, width, height);
+          var dpi = window.devicePixelRatio || 1;
+          var internalWidth = width * dpi;
+          var internalHeight = height * dpi;
+          this.el.width = internalWidth;
+          this.el.height = internalHeight;
+          this.width = internalWidth;
+          this.height = internalHeight;
+          this.gl.viewport(0, 0, internalWidth, internalHeight);
+          this.gl.uniform2f(this.uniforms['u_screenSize'], internalWidth, internalHeight);
+          this.el.style.width = width + "px";
+          this.el.style.height = height + "px";
       };
       WebglCanvas.prototype.setLayerType = function (textureType) {
           this.textureType = textureType;
@@ -1872,6 +1875,14 @@
           this.stopAudio();
           this.emit('playback:stop');
       };
+      Player.prototype.togglePlay = function () {
+          if (this.paused) {
+              this.play();
+          }
+          else {
+              this.pause();
+          }
+      };
       Player.prototype.setFrame = function (frameIndex) {
           if ((this.isOpen) && (frameIndex !== this.currentFrame)) {
               // clamp frame index
@@ -1985,6 +1996,9 @@
       Player.prototype.setLayerVisibility = function (layerIndex, value) {
           this.layerVisibility[layerIndex] = value;
           this.forceUpdate();
+      };
+      Player.prototype.toggleLayerVisibility = function (layerIndex) {
+          this.setLayerVisibility(layerIndex, !this.layerVisibility[layerIndex]);
       };
       // public setPalette(palette: any): void {
       //   this.customPalette = palette;
@@ -2377,7 +2391,7 @@
   // Main entrypoint for web
   var api;
   (function (api) {
-      api.version = "4.0.3"; // replaced by @rollup/plugin-replace; see rollup.config.js
+      api.version = "4.1.0"; // replaced by @rollup/plugin-replace; see rollup.config.js
       api.player = Player;
       api.parseSource = parseSource;
       api.kwzParser = KwzParser;
@@ -2386,7 +2400,7 @@
       api.wavEncoder = WavEncoder;
   })(api || (api = {}));
   var api$1 = api;
-  var version = "4.0.3";
+  var version = "4.1.0";
   var player = Player;
   var parseSource$1 = parseSource;
   var kwzParser = KwzParser;

@@ -63,11 +63,11 @@
 <style>
 
 .PlayerSlider {
-  padding: 6px 0;
+  padding: 4px 0;
+  cursor: pointer;
 }
 
 .PlayerSlider__track {
-  cursor: pointer;
   position: relative;
   flex: 1;
   height: 4px;
@@ -79,26 +79,25 @@
 .PlayerSlider__level {
   position: absolute;
   width: 100%;
-  /* min-width: 6px; */
   height: 6px;
   margin: -1px;
   border-radius: 8px;
   background: var(--flipnote-player-slider-level, #F36A2D);
 }
 .PlayerSlider__handle {
-  /* display: none; */
+  display: none;
   position: absolute;
   top: 0;
   height: 10px;
-  width: 4px;
-  margin-left: -2px;
+  width: 6px;
+  margin-left: -3px;
   margin-top: -3px;
   border-radius: 2px;
   background: var(--flipnote-player-slider-handle, #F36A2D);
   /* box-shadow: 0 2px 3px 0 rgba(102, 102, 153, .62); */
 }
 
-/* .PlayerSlider:hover .PlayerSlider__handle {
+.PlayerSlider:hover .PlayerSlider__handle {
   display: block;
-} */
+}
 </style>

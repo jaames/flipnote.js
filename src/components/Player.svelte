@@ -26,7 +26,7 @@
   let volume = 1;
   let isMuted = false;
   let timeString = '';
-
+  
   onMount(() => {
     player = new FlipnotePlayer(canvasElement, 256, 192);
     player.on('load', () => {
@@ -34,6 +34,7 @@
       duration = player.duration;
       volume = player.volume;
       player.muted = muted;
+      player.resize(player.note.width, player.note.height);
     });
     player.on('progress', (playbackProgress) => {
       progress = playbackProgress;
@@ -106,7 +107,7 @@
 </script>
 
 <div class="FlipnotePlayer">
-  <div class="FlipnotePlayer__canvasArea" width="256px" height="192px">
+  <div class="FlipnotePlayer__canvasArea">
     <canvas
       class="FlipnotePlayer__canvas"
       bind:this={ canvasElement }
@@ -200,16 +201,20 @@
 
   .FlipnotePlayer {
     display: inline-block;
+    position: relative;
     font-family: var(--flipnote-player-font-family, sans-serif);
+    /* width: 100%; */
     /* user-select: none; */
   }
 
   .FlipnotePlayer__canvasArea {
     position: relative;
+    /* width: 100%; */
   }
 
   .FlipnotePlayer__canvas {
     position: relative;
+    display: block;
   }
 
   .FlipnotePlayer__overlay {
