@@ -1,5 +1,5 @@
 /*!!
- flipnote.js v4.1.1 (web version)
+ flipnote.js v4.1.2 (web version)
  Browser-based playback of .ppm and .kwz animations from Flipnote Studio and Flipnote Studio 3D
  2018 - 2020 James Daniel
  github.com/jaames/flipnote.js
@@ -2391,7 +2391,7 @@
   // Main entrypoint for web
   var api;
   (function (api) {
-      api.version = "4.1.1"; // replaced by @rollup/plugin-replace; see rollup.config.js
+      api.version = "4.1.2"; // replaced by @rollup/plugin-replace; see rollup.config.js
       api.player = Player;
       api.parseSource = parseSource;
       api.kwzParser = KwzParser;
@@ -2400,7 +2400,7 @@
       api.wavEncoder = WavEncoder;
   })(api || (api = {}));
   var api$1 = api;
-  var version = "4.1.1";
+  var version = "4.1.2";
   var player = Player;
   var parseSource$1 = parseSource;
   var kwzParser = KwzParser;

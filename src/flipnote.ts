@@ -23,7 +23,7 @@ import {
 namespace api {
   export const version = VERSION; // replaced by @rollup/plugin-replace; see rollup.config.js
 
-  export type Flipnpte = _Flipnote;
+  export type Flipnote = _Flipnote;
   export type FlipnoteMeta = _FlipnoteMeta;
   export type FlipnoteAudioTrack = _FlipnoteAudioTrack;
   
@@ -39,7 +39,7 @@ export default api;
 
 export const version = VERSION;
 
-export type Flipnpte = _Flipnote;
+export type Flipnote = _Flipnote;
 export type FlipnoteMeta = _FlipnoteMeta;
 export type FlipnoteAudioTrack = _FlipnoteAudioTrack;
 

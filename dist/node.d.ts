@@ -1,8 +1,8 @@
 import { parseSource as _parseSource, Flipnote as _Flipnote, FlipnoteMeta as _FlipnoteMeta, FlipnoteAudioTrack as _FlipnoteAudioTrack, KwzParser, PpmParser } from './parsers/index';
 import { GifEncoder, WavEncoder } from './encoders/index';
 declare namespace api {
-    const version = "4.1.1";
-    type Flipnpte = _Flipnote;
+    const version = "4.1.2";
+    type Flipnote = _Flipnote;
     type FlipnoteMeta = _FlipnoteMeta;
     type FlipnoteAudioTrack = _FlipnoteAudioTrack;
     const parseSource: typeof _parseSource;
@@ -12,8 +12,8 @@ declare namespace api {
     const wavEncoder: typeof WavEncoder;
 }
 export default api;
-export declare const version = "4.1.1";
-export declare type Flipnpte = _Flipnote;
+export declare const version = "4.1.2";
+export declare type Flipnote = _Flipnote;
 export declare type FlipnoteMeta = _FlipnoteMeta;
 export declare type FlipnoteAudioTrack = _FlipnoteAudioTrack;
 export declare const parseSource: typeof _parseSource;
