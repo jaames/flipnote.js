@@ -126,7 +126,7 @@ export class DataStream {
     return hex.join('').toUpperCase();
   }
 
-  public readUtf8(count: number) {
+  public readChars(count: number) {
     const chars = this.readBytes(count);
     let str = '';
     for (let i = 0; i < chars.length; i++) {
@@ -137,14 +137,14 @@ export class DataStream {
     return str;
   }
 
-  public writeUtf8(string: string) {
+  public writeChars(string: string) {
     for (let i = 0; i < string.length; i++) {
       const char = string.charCodeAt(i);
       this.writeUint8(char);
     }
   }
 
-  public readUtf16(count: number) {
+  public readWideChars(count: number) {
     const chars = new Uint16Array(this.data.buffer, this.cursor, count);
     let str = '';
     for (let i = 0; i < chars.length; i++) {

@@ -27,7 +27,7 @@ export declare class DataStream {
     readBytes(count: number): Uint8Array;
     writeBytes(bytes: number[] | Uint8Array): void;
     readHex(count: number, reverse?: boolean): string;
-    readUtf8(count: number): string;
-    writeUtf8(string: string): void;
-    readUtf16(count: number): string;
+    readChars(count: number): string;
+    writeChars(string: string): void;
+    readWideChars(count: number): string;
 }

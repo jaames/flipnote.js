@@ -1,12 +1,12 @@
 import { DataStream } from '../utils/index';
 
-export type PaletteColor = [number, number, number]; // r, g, b
+export type FlipnotePaletteColor = [number, number, number]; // r, g, b
 
-export type PaletteDefinition = {
-  [key in any]?: PaletteColor;
+export type FlipnotePaletteDefinition = {
+  [key in any]?: FlipnotePaletteColor;
 };
 
-export enum FlipnoteAudioTrack {
+export const enum FlipnoteAudioTrack {
   BGM,
   SE1,
   SE2,
@@ -27,13 +27,13 @@ export abstract class FlipnoteParserBase extends DataStream {
   static sampleRate: number;
   static width: number;
   static height: number;
-  static globalPalette: PaletteColor[];
+  static globalPalette: FlipnotePaletteColor[];
 
   public type: string
   public width: number;
   public height: number;
-  public palette: PaletteDefinition;
-  public globalPalette: PaletteColor[];
+  public palette: FlipnotePaletteDefinition;
+  public globalPalette: FlipnotePaletteColor[];
 
   public meta: any;
   public soundMeta: FlipnoteAudioTrackInfo;
@@ -56,29 +56,25 @@ export abstract class FlipnoteParserBase extends DataStream {
 
   abstract getFramePaletteIndices(frameIndex: number): number[];
   
-  abstract getFramePalette(frameIndex: number): PaletteColor[];
+  abstract getFramePalette(frameIndex: number): FlipnotePaletteColor[];
 
-  abstract decodeAudio(trackId: FlipnoteAudioTrack): Int16Array;
+  abstract decodeSoundFlags(): boolean[][];
 
-  abstract decodeSoundFlags(): number[][];
+  // Get raw audio data as bytes
+  abstract getAudioTrackRaw(trackId: FlipnoteAudioTrack): Uint8Array;
+
+  abstract decodeAudioTrack(trackId: FlipnoteAudioTrack): Int16Array;
+
+  // Get track audio as a standard int16 PCM buffer, at specified sample rate
+  abstract getAudioTrackPcm(trackId: FlipnoteAudioTrack, sampleRate: number): Int16Array;
+
+  // Get the merged master audio for this note, as int16 PCM buffer at specified sample rate
+  abstract getAudioMasterPcm(sampleRate: number): Int16Array;
 
   public hasAudioTrack(trackId: FlipnoteAudioTrack): boolean {
     if (this.soundMeta.hasOwnProperty(trackId) && this.soundMeta[trackId].length > 0) {
       return true;
     } 
     return false;
-  }
-
-  public getInt16AudioData(trackId: FlipnoteAudioTrack) {
-    return this.decodeAudio(trackId);
-  }
-
-  public getFloat32AudioData(trackId: FlipnoteAudioTrack) {
-    const pcm16 = this.decodeAudio(trackId);
-    const outbuffer = new Float32Array(pcm16.length);
-    for (let i = 0; i < pcm16.length; i++) {
-      outbuffer[i] = pcm16[i] / 32767;
-    }
-    return outbuffer;
   }
 }

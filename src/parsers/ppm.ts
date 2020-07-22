@@ -23,35 +23,28 @@
 */
 
 import { 
-  PaletteDefinition,
+  FlipnotePaletteDefinition,
   FlipnoteAudioTrack,
   FlipnoteParserBase
 } from './parserBase';
 
 import {
-  ADPCM_INDEX_TABLE_4,
-  ADPCM_SAMPLE_TABLE_4
+  clamp,
+  pcmDsAudioResample,
+  pcmAudioMix,
+  ADPCM_INDEX_TABLE_4BIT,
+  ADPCM_STEP_TABLE
 } from './adpcm';
 
 // internal frame speed value -> FPS table
-const FRAMERATES = [
-  null,
-  0.5,
-  1,
-  2,
-  4,
-  6,
-  12,
-  20,
-  30,
-];
-
-const PALETTE: PaletteDefinition = {
+const FRAMERATES = [0.5, 0.5, 1, 2, 4, 6, 12, 20, 30];
+const PALETTE: FlipnotePaletteDefinition = {
   WHITE: [0xff, 0xff, 0xff],
   BLACK: [0x0e, 0x0e, 0x0e],
   RED:   [0xff, 0x2a, 0x2a],
-  BLUE:  [0x0a, 0x39, 0xff],
+  BLUE:  [0x0a, 0x39, 0xff]
 };
+const DS_SAMPLE_RATE = 32768;
 
 export interface PpmMeta {
   lock: boolean;
@@ -85,6 +78,7 @@ export class PpmParser extends FlipnoteParserBase {
   static width: number = 256;
   static height: number = 192;
   static sampleRate: number = 8192;
+  static outputSampleRate: number = 32768; 
   static globalPalette = [
     PALETTE.WHITE,
     PALETTE.BLACK,
@@ -112,7 +106,11 @@ export class PpmParser extends FlipnoteParserBase {
     this.decodeHeader();
     this.decodeAnimationHeader();
     this.decodeSoundHeader();
-    this.decodeMeta();
+    // this is always true afaik, it's likely just a remnamt from development
+    // doesn't hurt to be accurate though...
+    if (((this.version >> 4) & 0xf) !== 0) {
+      this.decodeMeta();
+    }
     // create image buffers
     this.layers = [
       new Uint8Array(PpmParser.width * PpmParser.height),
@@ -133,26 +131,6 @@ export class PpmParser extends FlipnoteParserBase {
     return /[0-9A-F]{6}_[0-9A-F]{13}_[0-9]{3}/.test(filename);
   }
 
-  private readFilename() {
-    return [
-      this.readHex(3),
-      this.readUtf8(13),
-      this.readUint16().toString().padStart(3, '0')
-    ].join('_');
-  }
-
-  private readLineEncoding() {
-    const unpacked = new Uint8Array(PpmParser.height);
-    for (var byteIndex = 0; byteIndex < 48; byteIndex ++) {
-      const byte = this.readUint8();
-      // each line's encoding type is stored as a 2-bit value
-      for (var bitOffset = 0; bitOffset < 8; bitOffset += 2) {
-        unpacked[byteIndex * 4 + bitOffset / 2] = (byte >> bitOffset) & 0x03;
-      }
-    }
-    return unpacked;
-  }
-
   private decodeHeader() {
     this.seek(0);
     // decode header
@@ -164,14 +142,22 @@ export class PpmParser extends FlipnoteParserBase {
     this.version = this.readUint16();
   }
 
+  private readFilename() {
+    return [
+      this.readHex(3),
+      this.readChars(13),
+      this.readUint16().toString().padStart(3, '0')
+    ].join('_');
+  }
+
   private decodeMeta() {
     // https://github.com/pbsds/hatena-server/wiki/PPM-format#file-header
     this.seek(0x10);
     const lock = this.readUint16(),
           thumbIndex = this.readInt16(),
-          rootAuthorName = this.readUtf16(11),
-          parentAuthorName = this.readUtf16(11),
-          currentAuthorName = this.readUtf16(11),
+          rootAuthorName = this.readWideChars(11),
+          parentAuthorName = this.readWideChars(11),
+          currentAuthorName = this.readWideChars(11),
           parentAuthorId = this.readHex(8, true),
           currentAuthorId = this.readHex(8, true),
           parentFilename = this.readFilename(),
@@ -214,12 +200,15 @@ export class PpmParser extends FlipnoteParserBase {
     // https://github.com/pbsds/hatena-server/wiki/PPM-format#animation-data-section
     this.seek(0x06A0);
     const offsetTableLength = this.readUint16();
+    const numOffsets = offsetTableLength / 4;
     // skip padding + flags
     this.seek(0x06A8);
     // read frame offsets and build them into a table
-    this.frameOffsets = new Uint32Array(offsetTableLength / 4).map(value => {
-      return 0x06A8 + offsetTableLength + this.readUint32();
-    });
+    const frameOffsets = new Uint32Array(numOffsets);
+    for (let n = 0; n < numOffsets; n++) {
+      frameOffsets[n] = 0x06A8 + offsetTableLength + this.readUint32();
+    }
+    this.frameOffsets = frameOffsets;
   }
 
   private decodeSoundHeader() {
@@ -227,7 +216,8 @@ export class PpmParser extends FlipnoteParserBase {
     // offset = frame data offset + frame data length + sound effect flags
     let offset = 0x06A0 + this.frameDataLength + this.frameCount;
     // account for multiple-of-4 padding
-    if (offset % 4 != 0) offset += 4 - (offset % 4);
+    if (offset % 4 != 0)
+      offset += 4 - (offset % 4);
     this.seek(offset);
     const bgmLen = this.readUint32();
     const se1Len = this.readUint32();
@@ -256,8 +246,21 @@ export class PpmParser extends FlipnoteParserBase {
     return [0, 1];
   }
 
+  private readLineEncoding() {
+    const unpacked = new Uint8Array(PpmParser.height);
+    let unpackedPtr = 0;
+    for (var byteIndex = 0; byteIndex < 48; byteIndex ++) {
+      const byte = this.readUint8();
+      // each line's encoding type is stored as a 2-bit value
+      for (var bitOffset = 0; bitOffset < 8; bitOffset += 2) {
+        unpacked[unpackedPtr++] = (byte >> bitOffset) & 0x03;
+      }
+    }
+    return unpacked;
+  }
+
   public decodeFrame(frameIndex: number) {
-    if ((frameIndex !== 0) && (this.prevDecodedFrame !== frameIndex - 1) && (!this.isNewFrame(frameIndex)))
+    if ((this.prevDecodedFrame !== frameIndex - 1) && (!this.isNewFrame(frameIndex) && (frameIndex !== 0)))
       this.decodeFrame(frameIndex - 1);
     // https://github.com/pbsds/hatena-server/wiki/PPM-format#animation-frame
     this.seek(this.frameOffsets[frameIndex]);
@@ -298,7 +301,8 @@ export class PpmParser extends FlipnoteParserBase {
           case 2:
             let lineHeader = this.readUint32(false);
             // line type 2 starts as an inverted line
-            if (lineType == 2) layerBitmap.fill(0xFF, chunkOffset, chunkOffset + PpmParser.width);
+            if (lineType == 2)
+              layerBitmap.fill(0xFF, chunkOffset, chunkOffset + PpmParser.width);
             // loop through each bit in the line header
             while (lineHeader & 0xFFFFFFFF) {
               // if the bit is set, this 8-pix wide chunk is stored
@@ -329,25 +333,33 @@ export class PpmParser extends FlipnoteParserBase {
       }
     }
     // if the current frame is based on changes from the preivous one, merge them by XORing their values
+    const layer1 = this.layers[0];
+    const layer2 = this.layers[1];
+    const layer1Prev = this.prevLayers[0];
+    const layer2Prev = this.prevLayers[1];
     if (!isNewFrame) {
       let dest: number, src: number;
       // loop through each line
       for (let y = 0; y < PpmParser.height; y++) {
         // skip to next line if this one falls off the top edge of the screen
-        if (y - translateY < 0) continue;
+        if (y - translateY < 0)
+          continue;
         // stop once the bottom screen edge has been reached
-        if (y - translateY >= PpmParser.height) break;
+        if (y - translateY >= PpmParser.height)
+          break;
         // loop through each pixel in the line
         for (let x = 0; x < PpmParser.width; x++) {
           // skip to the next pixel if this one falls off the left edge of the screen
-          if (x - translateX < 0) continue;
+          if (x - translateX < 0)
+            continue;
           // stop diffing this line once the right screen edge has been reached
-          if (x - translateX >= PpmParser.width) break;
+          if (x - translateX >= PpmParser.width)
+            break;
           dest = x + y * PpmParser.width;
           src = dest - (translateX + translateY * PpmParser.width);
           // diff pixels with a binary XOR
-          this.layers[0][dest] ^= this.prevLayers[0][src];
-          this.layers[1][dest] ^= this.prevLayers[1][src];
+          layer1[dest] ^= layer1Prev[src];
+          layer2[dest] ^= layer2Prev[src];
         }
       }
     }
@@ -386,9 +398,8 @@ export class PpmParser extends FlipnoteParserBase {
     const image = new Uint8Array(PpmParser.width * PpmParser.height);
     const layerColor = palette[layerIndex + 1];
     for (let pixel = 0; pixel < image.length; pixel++) {
-      if (layer[pixel] !== 0) {
+      if (layer[pixel] !== 0)
         image[pixel] = layerColor;
-      }
     }
     return image;
   }
@@ -398,64 +409,125 @@ export class PpmParser extends FlipnoteParserBase {
     const palette = this.getFramePaletteIndices(frameIndex);
     const layers = this.decodeFrame(frameIndex);
     const image = new Uint8Array(PpmParser.width * PpmParser.height);
-    image.fill(palette[0]); // fill with paper color first
+    const layer1 = layers[0];
+    const layer2 = layers[1];
+    const paperColor = palette[0];
+    const layer1Color = palette[1];
+    const layer2Color = palette[2];
+    image.fill(paperColor);
     for (let pixel = 0; pixel < image.length; pixel++) {
-      const a = layers[0][pixel];
-      const b = layers[1][pixel];
+      const a = layer1[pixel];
+      const b = layer2[pixel];
       if (a !== 0)
-        image[pixel] = palette[1];
+        image[pixel] = layer1Color;
       else if (b !== 0)
-        image[pixel] = palette[2];
+        image[pixel] = layer2Color;
     }
     return image;
   }
 
-  public decodeAudio(trackId: FlipnoteAudioTrack) {
-    const trackMeta = this.soundMeta[trackId];
-    const adpcm = new Uint8Array(this.buffer, trackMeta.offset, trackMeta.length);
-    const output = new Int16Array(adpcm.length * 2);
-    let outputOffset = 0;
-    // initial decoder state
-    let prevDiff = 0;
-    let prevStepIndex = 0;
-    let sample: number;
-    let diff: number;
-    let stepIndex: number;
-    // loop through each byte in the raw adpcm data
-    for (let adpcmOffset = 0; adpcmOffset < adpcm.length; adpcmOffset++) {
-      const byte = adpcm[adpcmOffset];
-      let bitPos = 0;
-      while (bitPos < 8) {
-        // isolate 4-bit sample
-        sample = (byte >> bitPos) & 0xF;
-        // get diff
-        diff = prevDiff + ADPCM_SAMPLE_TABLE_4[sample + 16 * prevStepIndex];
-        // get step index
-        stepIndex = prevStepIndex + ADPCM_INDEX_TABLE_4[sample];
-        // clamp step index and diff
-        stepIndex = Math.max(0, Math.min(stepIndex, 79));
-        diff = Math.max(-32767, Math.min(diff, 32767));
-        // add result to output buffer
-        output[outputOffset] = diff;
-        outputOffset += 1;
-        // set prev decoder state
-        prevStepIndex = stepIndex;
-        prevDiff = diff;
-        // move to next sample
-        bitPos += 4;
-      }
-    }
-    return output;
-  }
-
   public decodeSoundFlags() {
     this.seek(0x06A0 + this.frameDataLength);
-    // per msdn docs - the array map callback is only invoked for array indicies that have assigned values
-    // so when we create an array, we need to fill it with something before we can map over it
-    const arr = new Array(this.frameCount).fill([]);
-    return arr.map(value => {
-      const byte = this.readUint8();
-      return [byte & 0x1, (byte >> 1) & 0x1, (byte >> 2) & 0x1];
-    });
+    const numFlags = this.frameCount;
+    const flags = this.readBytes(numFlags);
+    const unpacked = new Array(numFlags);
+    for (let i = 0; i < numFlags; i++) {
+      const byte = flags[i];
+      unpacked[i] = [
+        (byte & 0x1) !== 0,
+        (byte & 0x2) !== 0,
+        (byte & 0x4) !== 0,
+      ];
+    }
+    return unpacked;
+  }
+
+  public getAudioTrackRaw(trackId: FlipnoteAudioTrack) {
+    const trackMeta = this.soundMeta[trackId];
+    const adpcm = new Uint8Array(this.buffer, trackMeta.offset, trackMeta.length);
+    return adpcm;
+  }
+
+  // kinda slow, maybe use sample lookup table
+  public decodeAudioTrack(trackId: FlipnoteAudioTrack) {
+    const src = this.getAudioTrackRaw(trackId);
+    const srcSize = src.length;
+    const dst = new Int16Array(srcSize * 2);
+    let srcPtr = 0;
+    let dstPtr = 0;
+    let sample = 0;
+    let stepIndex = 0;
+    let predictor = 0;
+    let lowNibble = true;
+    while (srcPtr < srcSize) {
+      if (lowNibble)
+        sample = src[srcPtr] & 0xF;
+      else
+        sample = src[srcPtr++] >> 4;
+      lowNibble = !lowNibble;
+      const step = ADPCM_STEP_TABLE[stepIndex];
+      let diff = step >> 3;
+      if (sample & 1)
+        diff += step >> 2;
+      if (sample & 2)
+        diff += step >> 1;
+      if (sample & 4)
+        diff += step;
+      if (sample & 8)
+        diff = -diff;
+      predictor += diff;
+      predictor = clamp(predictor, -32768, 32767);
+      stepIndex += ADPCM_INDEX_TABLE_4BIT[sample];
+      stepIndex = clamp(stepIndex, 0, 88);
+      dst[dstPtr++] = predictor;
+    }
+    return dst;
+  }
+
+  public getAudioTrackPcm(trackId: FlipnoteAudioTrack, dstFreq: number = DS_SAMPLE_RATE) {
+    const srcPcm = this.decodeAudioTrack(trackId);
+    let srcFreq = this.sampleRate;
+    if (trackId === FlipnoteAudioTrack.BGM) {
+      const bgmAdjust = (1 / this.bgmrate) / (1 / this.framerate);
+      srcFreq = this.sampleRate * bgmAdjust;
+    }
+    if (srcFreq !== dstFreq) {
+      return pcmDsAudioResample(srcPcm, srcFreq, dstFreq);
+    }
+    return srcPcm;
+  }
+
+  public getAudioMasterPcm(dstFreq: number = DS_SAMPLE_RATE) {
+    const duration = this.frameCount * (1 / this.framerate);
+    const dstSize = Math.floor(duration * dstFreq);
+    const master = new Int16Array(dstSize);
+    const hasBgm = this.hasAudioTrack(FlipnoteAudioTrack.BGM);
+    const hasSe1 = this.hasAudioTrack(FlipnoteAudioTrack.SE1);
+    const hasSe2 = this.hasAudioTrack(FlipnoteAudioTrack.SE2);
+    const hasSe3 = this.hasAudioTrack(FlipnoteAudioTrack.SE3);
+    // Mix background music
+    if (hasBgm) {
+      const bgmPcm = this.getAudioTrackPcm(FlipnoteAudioTrack.BGM, dstFreq);
+      pcmAudioMix(bgmPcm, master, 0);
+    }
+    // Mix sound effects
+    if (hasSe1 || hasSe2 || hasSe3) {
+      const samplesPerFrame = Math.floor(dstFreq / this.framerate);
+      const seFlags = this.decodeSoundFlags();
+      const se1Pcm = hasSe1 ? this.getAudioTrackPcm(FlipnoteAudioTrack.SE1, dstFreq) : null;
+      const se2Pcm = hasSe2 ? this.getAudioTrackPcm(FlipnoteAudioTrack.SE2, dstFreq) : null;
+      const se3Pcm = hasSe3 ? this.getAudioTrackPcm(FlipnoteAudioTrack.SE3, dstFreq) : null;
+      for (let i = 0; i < this.frameCount; i++) {
+        const seOffset = samplesPerFrame * i;
+        const flag = seFlags[i];
+        if (hasSe1 && flag[0])
+          pcmAudioMix(se1Pcm, master, seOffset);
+        if (hasSe2 && flag[1])
+          pcmAudioMix(se2Pcm, master, seOffset);
+        if (hasSe3 && flag[2])
+          pcmAudioMix(se3Pcm, master, seOffset);
+      }
+    }
+    return master;
   }
 }

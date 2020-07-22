@@ -1,6 +1,17 @@
-import { parseSource, Flipnote, FlipnoteMeta, FlipnoteAudioTrack } from '../parsers/index';
-import { AudioTrack } from './audio';
-import { WebglCanvas, TextureType } from '../webgl/index';
+import {
+  parseSource,
+  Flipnote,
+  FlipnoteMeta,
+} from '../parsers';
+
+import {
+  WebglCanvas,
+  TextureType
+} from '../webgl';
+
+import { 
+  WebAudioPlayer
+} from '../webaudio';
 
 interface PlayerEvents {
   [key: string]: Function[]
@@ -26,13 +37,13 @@ export class Player {
   private isOpen: boolean = false;
   private customPalette: {};
   private events: PlayerEvents = {};
-  private audioTracks: AudioTrack[];
-  private seFlags: number[][];
   private _frame: number = -1;
   private _time: number = 0;
   private hasPlaybackStarted: boolean = false;
   private wasPlaying: boolean = false;
   private isSeeking: boolean = false;
+
+  private audioPlayer: WebAudioPlayer;
 
   constructor(el: string | HTMLCanvasElement, width: number, height: number) {
     // if `el` is a string, use it to select an Element, else assume it's an element
@@ -40,13 +51,6 @@ export class Player {
     this.canvas = new WebglCanvas(el, width, height);
     this.el = this.canvas.el;
     this.customPalette = null;
-    this.audioTracks = [
-      new AudioTrack('se1'),
-      new AudioTrack('se2'),
-      new AudioTrack('se3'),
-      new AudioTrack('se4'),
-      new AudioTrack('bgm'),
-    ];
   }
 
   get currentFrame() {
@@ -78,23 +82,25 @@ export class Player {
   }
 
   get volume() {
-    return this.audioTracks[3].audio.volume;
+    // return this.audioTracks[3].audio.volume;
+    return 1;
   }
 
   set volume(value) {
-    for (let i = 0; i < this.audioTracks.length; i++) {
-      this.audioTracks[i].audio.volume = value;
-    }
+    // for (let i = 0; i < this.audioTracks.length; i++) {
+    //   this.audioTracks[i].audio.volume = value;
+    // }
   }
 
   get muted() {
-    return this.audioTracks[3].audio.muted;
+    // return this.audioTracks[3].audio.muted;
+    return false;
   }
 
   set muted(value) {
-    for (let i = 0; i < this.audioTracks.length; i++) {
-      this.audioTracks[i].audio.muted = value;
-    }
+    // for (let i = 0; i < this.audioTracks.length; i++) {
+    //   this.audioTracks[i].audio.muted = value;
+    // }
   }
 
   get framerate() {
@@ -137,10 +143,6 @@ export class Player {
     this._time = null;
     this.duration = null;
     this.loop = null;
-    for (let i = 0; i < this.audioTracks.length; i++) {
-      this.audioTracks[i].unset();
-    }
-    this.seFlags = null;
     this.hasPlaybackStarted = null;
     this.canvas.clear();
   }
@@ -153,30 +155,27 @@ export class Player {
     this.duration = (this.note.frameCount) * (1 / this.note.framerate);
     this.paused = true;
     this.isOpen = true;
-    this.audioTracks.forEach(track => {
-      track.sampleRate = note.sampleRate;
-    });
-    // if (this.customPalette) {
-    //   this.setPalette(this.customPalette);
-    // }
-    const tracks = [FlipnoteAudioTrack.SE1, FlipnoteAudioTrack.SE2, FlipnoteAudioTrack.SE3, FlipnoteAudioTrack.SE4, FlipnoteAudioTrack.BGM];
-    tracks.forEach((trackId, trackIndex) => {
-      const trackRate = trackId === FlipnoteAudioTrack.BGM ? this.audiorate : 1;
-      if (this.note.hasAudioTrack(trackId))
-        this.audioTracks[trackIndex].set(this.note.decodeAudio(trackId), trackRate);
-    })
-    this.seFlags = this.note.decodeSoundFlags();
     this.hasPlaybackStarted = false;
     this.layerVisibility = {
       1: true,
       2: true,
       3: true
     };
+    const pcm = note.getAudioMasterPcm(32768);
+    this.audioPlayer = new WebAudioPlayer(pcm, 32768);
     this.canvas.setInputSize(note.width, note.height);
     this.canvas.setLayerType(this.type === 'PPM' ? TextureType.Alpha : TextureType.LuminanceAlpha);
     this.setFrame(this.note.thumbFrameIndex);
     this._time = 0;
     this.emit('load');
+  }
+
+  private playAudio(): void {
+    this.audioPlayer.playFrom(this.currentTime);
+  }
+
+  private stopAudio(): void {
+    this.audioPlayer.stop();
   }
 
   public play(): void {
@@ -187,7 +186,7 @@ export class Player {
     }
 
     this.paused = false;
-    this.playBgm();
+    this.playAudio();
 
     let start = (performance.now() / 1000) - this.currentTime;
 
@@ -201,7 +200,7 @@ export class Player {
       if (progress > this.duration) {
         if (this.loop) {
           this.currentTime = 0;
-          this.playBgm();
+          this.playAudio();
           start = time;
           this.emit('playback:loop');
         } else {
@@ -242,9 +241,7 @@ export class Player {
       if (this.paused) {
         this._time = frameIndex * (1 / this.framerate);
         this.emit('progress', this.progress);
-      } else {
-        this.playFrameSe(frameIndex);
-      }
+      } 
       this.emit('frame:update', this.currentFrame);
     }
   }
@@ -327,23 +324,6 @@ export class Player {
   public forceUpdate(): void {
     if (this.isOpen) {
       this.drawFrame(this.currentFrame);
-    }
-  }
-
-  private playFrameSe(frameIndex: number): void {
-    var flags = this.seFlags[frameIndex];
-    for (let i = 0; i < flags.length; i++) {
-      if (flags[i] && this.audioTracks[i].isActive) this.audioTracks[i].start();
-    }
-  }
-
-  private playBgm(): void {
-    this.audioTracks[4].start(this.currentTime);
-  }
-
-  private stopAudio(): void {
-    for (let i = 0; i < this.audioTracks.length; i++) {
-      this.audioTracks[i].stop();
     }
   }
 

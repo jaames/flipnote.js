@@ -22,7 +22,7 @@ export class GifEncoder {
   static fromFlipnote(flipnote: Flipnote) {
     const gif = new GifEncoder(flipnote.width, flipnote.height);
     gif.palette = flipnote.globalPalette;
-    gif.delay = 100 / flipnote.framerate
+    gif.delay = 100 / flipnote.framerate;
     gif.repeat = flipnote.meta.loop ? -1 : 0;
     gif.init();
     for (let frameIndex = 0; frameIndex < flipnote.frameCount; frameIndex++) {
@@ -34,7 +34,8 @@ export class GifEncoder {
   static fromFlipnoteFrame(flipnote: Flipnote, frameIndex: number) {
     const gif = new GifEncoder(flipnote.width, flipnote.height);
     gif.palette = flipnote.globalPalette;
-    gif.delay = 100 / flipnote.framerate
+    // TODO: look at ideal delay and repeat settings for single frame GIF
+    gif.delay = 100 / flipnote.framerate;
     gif.repeat = flipnote.meta.loop ? -1 : 0;
     gif.init();
     gif.writeFrame(flipnote.getFramePixels(frameIndex));
@@ -43,9 +44,8 @@ export class GifEncoder {
 
   init() {
     const paletteSize = this.palette.length;
-    for (var p = 1; 1 << p < paletteSize; p += 1) {
+    for (var p = 1; 1 << p < paletteSize; p += 1)
       continue;
-    }
     this.colorDepth = p;
     this.writeHeader();
     this.writeColorTable();
@@ -54,7 +54,7 @@ export class GifEncoder {
 
   writeHeader() {
     const header = new DataStream(new ArrayBuffer(13));
-    header.writeUtf8('GIF89a');
+    header.writeChars('GIF89a');
     // Logical Screen Descriptor
     header.writeUint16(this.width);
     header.writeUint16(this.height);
@@ -98,7 +98,7 @@ export class GifEncoder {
       0xFF, // app extension label
       11, // block size
     ]);
-    netscapeExt.writeUtf8('NETSCAPE2.0');
+    netscapeExt.writeChars('NETSCAPE2.0');
     netscapeExt.writeUint8(3); // subblock size
     netscapeExt.writeUint8(1); // loop subblock id
     netscapeExt.writeUint16(this.repeat); // loop flag

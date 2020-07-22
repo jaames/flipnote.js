@@ -29,7 +29,7 @@ export class BitmapEncoder {
     this.vHeight = roundToNearest(height, 4);
     this.bpp = bpp;
     this.fileHeader = new DataStream(new ArrayBuffer(14));
-    this.fileHeader.writeUtf8('BM'); // 'BM' file magic
+    this.fileHeader.writeChars('BM'); // 'BM' file magic
     // using BITMAPV4HEADER dib header variant:
     this.dibHeader = new DataStream(new ArrayBuffer(108))
     this.dibHeader.writeUint32(108); // DIB header length
@@ -47,7 +47,7 @@ export class BitmapEncoder {
     this.dibHeader.writeUint32(0x0000FF00); // green channel bitmask
     this.dibHeader.writeUint32(0x000000FF); // blue channel bitmask
     this.dibHeader.writeUint32(0xFF000000); // alpha channel bitmask
-    this.dibHeader.writeUtf8('Win '); // LCS_WINDOWS_COLOR_SPACE 'Win '
+    this.dibHeader.writeChars('Win '); // LCS_WINDOWS_COLOR_SPACE 'Win '
     /// rest can be left as nulls
   }
 
@@ -129,7 +129,7 @@ export class BitmapEncoder {
         sections = sections.concat([this.pixels.buffer]);
         break;
     }
-    return new Blob(sections, {type: 'image/bitmap'})
+    return new Blob(sections, {type: 'image/bitmap'});
   }
 
   getUrl() {

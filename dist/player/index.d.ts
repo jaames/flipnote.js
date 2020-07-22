@@ -1,5 +1,5 @@
-import { Flipnote, FlipnoteMeta } from '../parsers/index';
-import { WebglCanvas } from '../webgl/index';
+import { Flipnote, FlipnoteMeta } from '../parsers';
+import { WebglCanvas } from '../webgl';
 interface PlayerLayerVisibility {
     [key: number]: boolean;
 }
@@ -17,13 +17,12 @@ export declare class Player {
     private isOpen;
     private customPalette;
     private events;
-    private audioTracks;
-    private seFlags;
     private _frame;
     private _time;
     private hasPlaybackStarted;
     private wasPlaying;
     private isSeeking;
+    private audioPlayer;
     constructor(el: string | HTMLCanvasElement, width: number, height: number);
     get currentFrame(): number;
     set currentFrame(frameIndex: number);
@@ -42,6 +41,8 @@ export declare class Player {
     open(source: any): Promise<void>;
     close(): void;
     load(note: Flipnote): void;
+    private playAudio;
+    private stopAudio;
     play(): void;
     pause(): void;
     togglePlay(): void;
@@ -56,9 +57,6 @@ export declare class Player {
     endSeek(): void;
     drawFrame(frameIndex: number): void;
     forceUpdate(): void;
-    private playFrameSe;
-    private playBgm;
-    private stopAudio;
     resize(width: number, height: number): void;
     setLayerVisibility(layerIndex: number, value: boolean): void;
     toggleLayerVisibility(layerIndex: number): void;

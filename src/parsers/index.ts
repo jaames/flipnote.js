@@ -18,13 +18,14 @@ export function parseSource(source: any): Promise<Flipnote> {
         // check the buffer's magic to identify which format it uses
         const magicBytes = new Uint8Array(arrayBuffer.slice(0, 4));
         const magic = (magicBytes[0] << 24) | (magicBytes[1] << 16) | (magicBytes[2] << 8) | magicBytes[3];
-        if (magic === 0x50415241) { // check if magic is PARA (ppm magic)
+        // check if magic is PARA (ppm magic)
+        if (magic === 0x50415241)
           resolve(new PpmParser(arrayBuffer));
-        } else if ((magic & 0xFFFFFF00) === 0x4B464800) { // check if magic is KFH (kwz magic)
+        // check if magic is KFH (kwz magic)
+        else if ((magic & 0xFFFFFF00) === 0x4B464800)
           resolve(new KwzParser(arrayBuffer));
-        } else {
+        else
           reject();
-        }
       });
     });
 }

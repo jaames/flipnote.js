@@ -43,11 +43,11 @@ export declare class KwzParser extends FlipnoteParserBase {
     static width: number;
     static height: number;
     static sampleRate: number;
-    static globalPalette: import("./parserBase").PaletteColor[];
+    static globalPalette: import("./parserBase").FlipnotePaletteColor[];
     type: string;
     width: number;
     height: number;
-    globalPalette: import("./parserBase").PaletteColor[];
+    globalPalette: import("./parserBase").FlipnotePaletteColor[];
     sampleRate: number;
     meta: KwzMeta;
     private sections;
@@ -68,9 +68,12 @@ export declare class KwzParser extends FlipnoteParserBase {
     getLayerOrder(frameIndex: number): number[];
     decodeFrame(frameIndex: number, diffingFlag?: number, isPrevFrame?: boolean): Uint8Array[];
     getFramePaletteIndices(frameIndex: number): number[];
-    getFramePalette(frameIndex: number): import("./parserBase").PaletteColor[];
+    getFramePalette(frameIndex: number): import("./parserBase").FlipnotePaletteColor[];
     getLayerPixels(frameIndex: number, layerIndex: number): Uint8Array;
     getFramePixels(frameIndex: number): Uint8Array;
-    decodeSoundFlags(): number[][];
-    decodeAudio(trackId: FlipnoteAudioTrack): Int16Array;
+    decodeSoundFlags(): boolean[][];
+    getAudioTrackRaw(trackId: FlipnoteAudioTrack): Uint8Array;
+    decodeAudioTrack(trackId: FlipnoteAudioTrack): Int16Array;
+    getAudioTrackPcm(trackId: FlipnoteAudioTrack, dstFreq?: number): Int16Array;
+    getAudioMasterPcm(dstFreq?: number): Int16Array;
 }

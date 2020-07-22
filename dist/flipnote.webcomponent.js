@@ -1,5 +1,5 @@
 /*!!
- flipnote.js v4.0.3 (webcomponent ver)
+ flipnote.js v4.1.0 (webcomponent version)
  Browser-based playback of .ppm and .kwz animations from Flipnote Studio and Flipnote Studio 3D
  2018 - 2020 James Daniel
  github.com/jaames/flipnote.js
@@ -755,7 +755,7 @@
                 hex.reverse();
             return hex.join('').toUpperCase();
         };
-        DataStream.prototype.readUtf8 = function (count) {
+        DataStream.prototype.readChars = function (count) {
             var chars = this.readBytes(count);
             var str = '';
             for (var i = 0; i < chars.length; i++) {
@@ -766,13 +766,13 @@
             }
             return str;
         };
-        DataStream.prototype.writeUtf8 = function (string) {
+        DataStream.prototype.writeChars = function (string) {
             for (var i = 0; i < string.length; i++) {
                 var char = string.charCodeAt(i);
                 this.writeUint8(char);
             }
         };
-        DataStream.prototype.readUtf16 = function (count) {
+        DataStream.prototype.readWideChars = function (count) {
             var chars = new Uint16Array(this.data.buffer, this.cursor, count);
             var str = '';
             for (var i = 0; i < chars.length; i++) {
@@ -787,14 +787,6 @@
         return DataStream;
     }());
 
-    var FlipnoteAudioTrack;
-    (function (FlipnoteAudioTrack) {
-        FlipnoteAudioTrack[FlipnoteAudioTrack["BGM"] = 0] = "BGM";
-        FlipnoteAudioTrack[FlipnoteAudioTrack["SE1"] = 1] = "SE1";
-        FlipnoteAudioTrack[FlipnoteAudioTrack["SE2"] = 2] = "SE2";
-        FlipnoteAudioTrack[FlipnoteAudioTrack["SE3"] = 3] = "SE3";
-        FlipnoteAudioTrack[FlipnoteAudioTrack["SE4"] = 4] = "SE4";
-    })(FlipnoteAudioTrack || (FlipnoteAudioTrack = {}));
     var FlipnoteParserBase = /** @class */ (function (_super) {
         __extends(FlipnoteParserBase, _super);
         function FlipnoteParserBase() {
@@ -806,24 +798,43 @@
             }
             return false;
         };
-        FlipnoteParserBase.prototype.getInt16AudioData = function (trackId) {
-            return this.decodeAudio(trackId);
-        };
-        FlipnoteParserBase.prototype.getFloat32AudioData = function (trackId) {
-            var pcm16 = this.decodeAudio(trackId);
-            var outbuffer = new Float32Array(pcm16.length);
-            for (var i = 0; i < pcm16.length; i++) {
-                outbuffer[i] = pcm16[i] / 32767;
-            }
-            return outbuffer;
-        };
         return FlipnoteParserBase;
     }(DataStream));
 
-    var ADPCM_INDEX_TABLE_2 = new Int8Array([
+    function clamp(n, l, h) {
+        if (n < l)
+            return l;
+        if (n > h)
+            return h;
+        return n;
+    }
+    // zero-order hold interpolation
+    function pcmDsAudioResample(src, srcFreq, dstFreq) {
+        var srcDuration = src.length / srcFreq;
+        var dstLength = srcDuration * dstFreq;
+        var dst = new Int16Array(dstLength);
+        var adjFreq = (srcFreq << 8) / dstFreq;
+        for (var n = 0; n < dst.length; n++) {
+            var samp = src[(n * adjFreq) >> 8] / 2;
+            dst[n] = clamp(samp, -32768, 32767);
+        }
+        return dst;
+    }
+    function pcmAudioMix(src, dst, dstOffset) {
+        if (dstOffset === void 0) { dstOffset = 0; }
+        var srcSize = src.length;
+        var dstSize = dst.length;
+        for (var n = 0; n < srcSize; n++) {
+            if (dstOffset + n > dstSize)
+                break;
+            var samp = dst[dstOffset + n] + src[n];
+            dst[dstOffset + n] = clamp(samp, -32768, 32767);
+        }
+    }
+    var ADPCM_INDEX_TABLE_2BIT = new Int8Array([
         -1, 2, -1, 2
     ]);
-    var ADPCM_INDEX_TABLE_4 = new Int8Array([
+    var ADPCM_INDEX_TABLE_4BIT = new Int8Array([
         -1, -1, -1, -1, 2, 4, 6, 8,
         -1, -1, -1, -1, 2, 4, 6, 8
     ]);
@@ -839,7 +850,7 @@
         5894, 6484, 7132, 7845, 8630, 9493, 10442, 11487, 12635, 13899,
         15289, 16818, 18500, 20350, 22385, 24623, 27086, 29794, 32767, 0
     ]);
-    var ADPCM_SAMPLE_TABLE_2 = new Int16Array(90 * 4);
+    var ADPCM_SAMPLE_TABLE_2BIT = new Int16Array(90 * 4);
     for (var sample = 0; sample < 4; sample++) {
         for (var stepIndex = 0; stepIndex < 90; stepIndex++) {
             var step = ADPCM_STEP_TABLE[stepIndex];
@@ -848,10 +859,10 @@
                 diff += step;
             if (sample & 2)
                 diff = -diff;
-            ADPCM_SAMPLE_TABLE_2[sample + 4 * stepIndex] = diff;
+            ADPCM_SAMPLE_TABLE_2BIT[sample + 4 * stepIndex] = diff;
         }
     }
-    var ADPCM_SAMPLE_TABLE_4 = new Int16Array(90 * 16);
+    var ADPCM_SAMPLE_TABLE_4BIT = new Int16Array(90 * 16);
     for (var sample = 0; sample < 16; sample++) {
         for (var stepIndex = 0; stepIndex < 90; stepIndex++) {
             var step = ADPCM_STEP_TABLE[stepIndex];
@@ -864,7 +875,7 @@
                 diff += step >> 2;
             if (sample & 8)
                 diff = -diff;
-            ADPCM_SAMPLE_TABLE_4[sample + 16 * stepIndex] = diff;
+            ADPCM_SAMPLE_TABLE_4BIT[sample + 16 * stepIndex] = diff;
         }
     }
 
@@ -892,23 +903,14 @@
      *  and to Hatena for providing the Flipnote Hatena online service, both of which inspired so many c:
     */
     // internal frame speed value -> FPS table
-    var FRAMERATES = [
-        null,
-        0.5,
-        1,
-        2,
-        4,
-        6,
-        12,
-        20,
-        30,
-    ];
+    var FRAMERATES = [0.5, 0.5, 1, 2, 4, 6, 12, 20, 30];
     var PALETTE = {
         WHITE: [0xff, 0xff, 0xff],
         BLACK: [0x0e, 0x0e, 0x0e],
         RED: [0xff, 0x2a, 0x2a],
-        BLUE: [0x0a, 0x39, 0xff],
+        BLUE: [0x0a, 0x39, 0xff]
     };
+    var DS_SAMPLE_RATE = 32768;
     var PpmParser = /** @class */ (function (_super) {
         __extends(PpmParser, _super);
         function PpmParser(arrayBuffer) {
@@ -922,7 +924,11 @@
             _this.decodeHeader();
             _this.decodeAnimationHeader();
             _this.decodeSoundHeader();
-            _this.decodeMeta();
+            // this is always true afaik, it's likely just a remnamt from development
+            // doesn't hurt to be accurate though...
+            if (((_this.version >> 4) & 0xf) !== 0) {
+                _this.decodeMeta();
+            }
             // create image buffers
             _this.layers = [
                 new Uint8Array(PpmParser.width * PpmParser.height),
@@ -941,24 +947,6 @@
         PpmParser.validateFilename = function (filename) {
             return /[0-9A-F]{6}_[0-9A-F]{13}_[0-9]{3}/.test(filename);
         };
-        PpmParser.prototype.readFilename = function () {
-            return [
-                this.readHex(3),
-                this.readUtf8(13),
-                this.readUint16().toString().padStart(3, '0')
-            ].join('_');
-        };
-        PpmParser.prototype.readLineEncoding = function () {
-            var unpacked = new Uint8Array(PpmParser.height);
-            for (var byteIndex = 0; byteIndex < 48; byteIndex++) {
-                var byte = this.readUint8();
-                // each line's encoding type is stored as a 2-bit value
-                for (var bitOffset = 0; bitOffset < 8; bitOffset += 2) {
-                    unpacked[byteIndex * 4 + bitOffset / 2] = (byte >> bitOffset) & 0x03;
-                }
-            }
-            return unpacked;
-        };
         PpmParser.prototype.decodeHeader = function () {
             this.seek(0);
             // decode header
@@ -969,10 +957,17 @@
             this.frameCount = this.readUint16() + 1;
             this.version = this.readUint16();
         };
+        PpmParser.prototype.readFilename = function () {
+            return [
+                this.readHex(3),
+                this.readChars(13),
+                this.readUint16().toString().padStart(3, '0')
+            ].join('_');
+        };
         PpmParser.prototype.decodeMeta = function () {
             // https://github.com/pbsds/hatena-server/wiki/PPM-format#file-header
             this.seek(0x10);
-            var lock = this.readUint16(), thumbIndex = this.readInt16(), rootAuthorName = this.readUtf16(11), parentAuthorName = this.readUtf16(11), currentAuthorName = this.readUtf16(11), parentAuthorId = this.readHex(8, true), currentAuthorId = this.readHex(8, true), parentFilename = this.readFilename(), currentFilename = this.readFilename(), rootAuthorId = this.readHex(8, true);
+            var lock = this.readUint16(), thumbIndex = this.readInt16(), rootAuthorName = this.readWideChars(11), parentAuthorName = this.readWideChars(11), currentAuthorName = this.readWideChars(11), parentAuthorId = this.readHex(8, true), currentAuthorId = this.readHex(8, true), parentFilename = this.readFilename(), currentFilename = this.readFilename(), rootAuthorId = this.readHex(8, true);
             this.seek(0x9A);
             var timestamp = new Date((this.readUint32() + 946684800) * 1000);
             this.seek(0x06A6);
@@ -1005,17 +1000,19 @@
             };
         };
         PpmParser.prototype.decodeAnimationHeader = function () {
-            var _this = this;
             // jump to the start of the animation data section
             // https://github.com/pbsds/hatena-server/wiki/PPM-format#animation-data-section
             this.seek(0x06A0);
             var offsetTableLength = this.readUint16();
+            var numOffsets = offsetTableLength / 4;
             // skip padding + flags
             this.seek(0x06A8);
             // read frame offsets and build them into a table
-            this.frameOffsets = new Uint32Array(offsetTableLength / 4).map(function (value) {
-                return 0x06A8 + offsetTableLength + _this.readUint32();
-            });
+            var frameOffsets = new Uint32Array(numOffsets);
+            for (var n = 0; n < numOffsets; n++) {
+                frameOffsets[n] = 0x06A8 + offsetTableLength + this.readUint32();
+            }
+            this.frameOffsets = frameOffsets;
         };
         PpmParser.prototype.decodeSoundHeader = function () {
             var _a;
@@ -1036,10 +1033,10 @@
             this.framerate = FRAMERATES[this.frameSpeed];
             this.bgmrate = FRAMERATES[this.bgmSpeed];
             this.soundMeta = (_a = {},
-                _a[FlipnoteAudioTrack.BGM] = { offset: offset, length: bgmLen },
-                _a[FlipnoteAudioTrack.SE1] = { offset: offset += bgmLen, length: se1Len },
-                _a[FlipnoteAudioTrack.SE2] = { offset: offset += se1Len, length: se2Len },
-                _a[FlipnoteAudioTrack.SE3] = { offset: offset += se2Len, length: se3Len },
+                _a[0 /* BGM */] = { offset: offset, length: bgmLen },
+                _a[1 /* SE1 */] = { offset: offset += bgmLen, length: se1Len },
+                _a[2 /* SE2 */] = { offset: offset += se1Len, length: se2Len },
+                _a[3 /* SE3 */] = { offset: offset += se2Len, length: se3Len },
                 _a);
         };
         PpmParser.prototype.isNewFrame = function (frameIndex) {
@@ -1050,8 +1047,20 @@
         PpmParser.prototype.getLayerOrder = function (frameIndex) {
             return [0, 1];
         };
+        PpmParser.prototype.readLineEncoding = function () {
+            var unpacked = new Uint8Array(PpmParser.height);
+            var unpackedPtr = 0;
+            for (var byteIndex = 0; byteIndex < 48; byteIndex++) {
+                var byte = this.readUint8();
+                // each line's encoding type is stored as a 2-bit value
+                for (var bitOffset = 0; bitOffset < 8; bitOffset += 2) {
+                    unpacked[unpackedPtr++] = (byte >> bitOffset) & 0x03;
+                }
+            }
+            return unpacked;
+        };
         PpmParser.prototype.decodeFrame = function (frameIndex) {
-            if ((frameIndex !== 0) && (this.prevDecodedFrame !== frameIndex - 1) && (!this.isNewFrame(frameIndex)))
+            if ((this.prevDecodedFrame !== frameIndex - 1) && (!this.isNewFrame(frameIndex) && (frameIndex !== 0)))
                 this.decodeFrame(frameIndex - 1);
             // https://github.com/pbsds/hatena-server/wiki/PPM-format#animation-frame
             this.seek(this.frameOffsets[frameIndex]);
@@ -1122,6 +1131,10 @@
                 }
             }
             // if the current frame is based on changes from the preivous one, merge them by XORing their values
+            var layer1 = this.layers[0];
+            var layer2 = this.layers[1];
+            var layer1Prev = this.prevLayers[0];
+            var layer2Prev = this.prevLayers[1];
             if (!isNewFrame) {
                 var dest = void 0, src = void 0;
                 // loop through each line
@@ -1143,8 +1156,8 @@
                         dest = x + y * PpmParser.width;
                         src = dest - (translateX + translateY * PpmParser.width);
                         // diff pixels with a binary XOR
-                        this.layers[0][dest] ^= this.prevLayers[0][src];
-                        this.layers[1][dest] ^= this.prevLayers[1][src];
+                        layer1[dest] ^= layer1Prev[src];
+                        layer2[dest] ^= layer2Prev[src];
                     }
                 }
             }
@@ -1181,9 +1194,8 @@
             var image = new Uint8Array(PpmParser.width * PpmParser.height);
             var layerColor = palette[layerIndex + 1];
             for (var pixel = 0; pixel < image.length; pixel++) {
-                if (layer[pixel] !== 0) {
+                if (layer[pixel] !== 0)
                     image[pixel] = layerColor;
-                }
             }
             return image;
         };
@@ -1192,69 +1204,129 @@
             var palette = this.getFramePaletteIndices(frameIndex);
             var layers = this.decodeFrame(frameIndex);
             var image = new Uint8Array(PpmParser.width * PpmParser.height);
-            image.fill(palette[0]); // fill with paper color first
+            var layer1 = layers[0];
+            var layer2 = layers[1];
+            var paperColor = palette[0];
+            var layer1Color = palette[1];
+            var layer2Color = palette[2];
+            image.fill(paperColor);
             for (var pixel = 0; pixel < image.length; pixel++) {
-                var a = layers[0][pixel];
-                var b = layers[1][pixel];
+                var a = layer1[pixel];
+                var b = layer2[pixel];
                 if (a !== 0)
-                    image[pixel] = palette[1];
+                    image[pixel] = layer1Color;
                 else if (b !== 0)
-                    image[pixel] = palette[2];
+                    image[pixel] = layer2Color;
             }
             return image;
         };
-        PpmParser.prototype.decodeAudio = function (trackId) {
+        PpmParser.prototype.decodeSoundFlags = function () {
+            this.seek(0x06A0 + this.frameDataLength);
+            var numFlags = this.frameCount;
+            var flags = this.readBytes(numFlags);
+            var unpacked = new Array(numFlags);
+            for (var i = 0; i < numFlags; i++) {
+                var byte = flags[i];
+                unpacked[i] = [
+                    (byte & 0x1) !== 0,
+                    (byte & 0x2) !== 0,
+                    (byte & 0x4) !== 0,
+                ];
+            }
+            return unpacked;
+        };
+        PpmParser.prototype.getAudioTrackRaw = function (trackId) {
             var trackMeta = this.soundMeta[trackId];
             var adpcm = new Uint8Array(this.buffer, trackMeta.offset, trackMeta.length);
-            var output = new Int16Array(adpcm.length * 2);
-            var outputOffset = 0;
-            // initial decoder state
-            var prevDiff = 0;
-            var prevStepIndex = 0;
-            var sample;
-            var diff;
-            var stepIndex;
-            // loop through each byte in the raw adpcm data
-            for (var adpcmOffset = 0; adpcmOffset < adpcm.length; adpcmOffset++) {
-                var byte = adpcm[adpcmOffset];
-                var bitPos = 0;
-                while (bitPos < 8) {
-                    // isolate 4-bit sample
-                    sample = (byte >> bitPos) & 0xF;
-                    // get diff
-                    diff = prevDiff + ADPCM_SAMPLE_TABLE_4[sample + 16 * prevStepIndex];
-                    // get step index
-                    stepIndex = prevStepIndex + ADPCM_INDEX_TABLE_4[sample];
-                    // clamp step index and diff
-                    stepIndex = Math.max(0, Math.min(stepIndex, 79));
-                    diff = Math.max(-32767, Math.min(diff, 32767));
-                    // add result to output buffer
-                    output[outputOffset] = diff;
-                    outputOffset += 1;
-                    // set prev decoder state
-                    prevStepIndex = stepIndex;
-                    prevDiff = diff;
-                    // move to next sample
-                    bitPos += 4;
+            return adpcm;
+        };
+        // kinda slow, maybe use sample lookup table
+        PpmParser.prototype.decodeAudioTrack = function (trackId) {
+            var src = this.getAudioTrackRaw(trackId);
+            var srcSize = src.length;
+            var dst = new Int16Array(srcSize * 2);
+            var srcPtr = 0;
+            var dstPtr = 0;
+            var sample = 0;
+            var stepIndex = 0;
+            var predictor = 0;
+            var lowNibble = true;
+            while (srcPtr < srcSize) {
+                if (lowNibble)
+                    sample = src[srcPtr] & 0xF;
+                else
+                    sample = src[srcPtr++] >> 4;
+                lowNibble = !lowNibble;
+                var step = ADPCM_STEP_TABLE[stepIndex];
+                var diff = step >> 3;
+                if (sample & 1)
+                    diff += step >> 2;
+                if (sample & 2)
+                    diff += step >> 1;
+                if (sample & 4)
+                    diff += step;
+                if (sample & 8)
+                    diff = -diff;
+                predictor += diff;
+                predictor = clamp(predictor, -32768, 32767);
+                stepIndex += ADPCM_INDEX_TABLE_4BIT[sample];
+                stepIndex = clamp(stepIndex, 0, 88);
+                dst[dstPtr++] = predictor;
+            }
+            return dst;
+        };
+        PpmParser.prototype.getAudioTrackPcm = function (trackId, dstFreq) {
+            if (dstFreq === void 0) { dstFreq = DS_SAMPLE_RATE; }
+            var srcPcm = this.decodeAudioTrack(trackId);
+            var srcFreq = this.sampleRate;
+            if (trackId === 0 /* BGM */) {
+                var bgmAdjust = (1 / this.bgmrate) / (1 / this.framerate);
+                srcFreq = this.sampleRate * bgmAdjust;
+            }
+            if (srcFreq !== dstFreq) {
+                return pcmDsAudioResample(srcPcm, srcFreq, dstFreq);
+            }
+            return srcPcm;
+        };
+        PpmParser.prototype.getAudioMasterPcm = function (dstFreq) {
+            if (dstFreq === void 0) { dstFreq = DS_SAMPLE_RATE; }
+            var duration = this.frameCount * (1 / this.framerate);
+            var dstSize = Math.floor(duration * dstFreq);
+            var master = new Int16Array(dstSize);
+            var hasBgm = this.hasAudioTrack(0 /* BGM */);
+            var hasSe1 = this.hasAudioTrack(1 /* SE1 */);
+            var hasSe2 = this.hasAudioTrack(2 /* SE2 */);
+            var hasSe3 = this.hasAudioTrack(3 /* SE3 */);
+            // Mix background music
+            if (hasBgm) {
+                var bgmPcm = this.getAudioTrackPcm(0 /* BGM */, dstFreq);
+                pcmAudioMix(bgmPcm, master, 0);
+            }
+            // Mix sound effects
+            if (hasSe1 || hasSe2 || hasSe3) {
+                var samplesPerFrame = Math.floor(dstFreq / this.framerate);
+                var seFlags = this.decodeSoundFlags();
+                var se1Pcm = hasSe1 ? this.getAudioTrackPcm(1 /* SE1 */, dstFreq) : null;
+                var se2Pcm = hasSe2 ? this.getAudioTrackPcm(2 /* SE2 */, dstFreq) : null;
+                var se3Pcm = hasSe3 ? this.getAudioTrackPcm(3 /* SE3 */, dstFreq) : null;
+                for (var i = 0; i < this.frameCount; i++) {
+                    var seOffset = samplesPerFrame * i;
+                    var flag = seFlags[i];
+                    if (hasSe1 && flag[0])
+                        pcmAudioMix(se1Pcm, master, seOffset);
+                    if (hasSe2 && flag[1])
+                        pcmAudioMix(se2Pcm, master, seOffset);
+                    if (hasSe3 && flag[2])
+                        pcmAudioMix(se3Pcm, master, seOffset);
                 }
             }
-            return output;
-        };
-        PpmParser.prototype.decodeSoundFlags = function () {
-            var _this = this;
-            this.seek(0x06A0 + this.frameDataLength);
-            // per msdn docs - the array map callback is only invoked for array indicies that have assigned values
-            // so when we create an array, we need to fill it with something before we can map over it
-            var arr = new Array(this.frameCount).fill([]);
-            return arr.map(function (value) {
-                var byte = _this.readUint8();
-                return [byte & 0x1, (byte >> 1) & 0x1, (byte >> 2) & 0x1];
-            });
+            return master;
         };
         PpmParser.type = 'PPM';
         PpmParser.width = 256;
         PpmParser.height = 192;
         PpmParser.sampleRate = 8192;
+        PpmParser.outputSampleRate = 32768;
         PpmParser.globalPalette = [
             PALETTE.WHITE,
             PALETTE.BLACK,
@@ -1327,19 +1399,7 @@
         KWZ_LINE_TABLE_COMMON_SHIFT.set(pixels, index * 8);
     });
 
-    var FRAMERATES$1 = [
-        1 / 5,
-        1 / 2,
-        1,
-        2,
-        4,
-        6,
-        8,
-        12,
-        20,
-        24,
-        30
-    ];
+    var FRAMERATES$1 = [.2, .5, 1, 2, 4, 6, 8, 12, 20, 24, 30];
     var PALETTE$1 = {
         WHITE: [0xff, 0xff, 0xff],
         BLACK: [0x10, 0x10, 0x10],
@@ -1349,6 +1409,7 @@
         BLUE: [0x00, 0x38, 0xce],
         NONE: [0xff, 0xff, 0xff]
     };
+    var CTR_SAMPLE_RATE = 32768;
     var KwzParser = /** @class */ (function (_super) {
         __extends(KwzParser, _super);
         function KwzParser(arrayBuffer) {
@@ -1381,7 +1442,7 @@
             // counting sections should mitigate against one of mrnbayoh's notehax exploits
             while ((offset < fileSize) && (sectionCount < 6)) {
                 this.seek(offset);
-                var sectionMagic = this.readUtf8(4).substring(0, 3);
+                var sectionMagic = this.readChars(4).substring(0, 3);
                 var sectionLength = this.readUint32();
                 this.sections[sectionMagic] = {
                     offset: offset,
@@ -1408,7 +1469,7 @@
         };
         KwzParser.prototype.decodeMeta = function () {
             this.seek(this.sections['KFH'].offset + 12);
-            var creationTimestamp = new Date((this.readUint32() + 946684800) * 1000), modifiedTimestamp = new Date((this.readUint32() + 946684800) * 1000), appVersion = this.readUint32(), rootAuthorId = this.readHex(10), parentAuthorId = this.readHex(10), currentAuthorId = this.readHex(10), rootAuthorName = this.readUtf16(11), parentAuthorName = this.readUtf16(11), currentAuthorName = this.readUtf16(11), rootFilename = this.readUtf8(28), parentFilename = this.readUtf8(28), currentFilename = this.readUtf8(28), frameCount = this.readUint16(), thumbIndex = this.readUint16(), flags = this.readUint16(), frameSpeed = this.readUint8(), layerFlags = this.readUint8();
+            var creationTimestamp = new Date((this.readUint32() + 946684800) * 1000), modifiedTimestamp = new Date((this.readUint32() + 946684800) * 1000), appVersion = this.readUint32(), rootAuthorId = this.readHex(10), parentAuthorId = this.readHex(10), currentAuthorId = this.readHex(10), rootAuthorName = this.readWideChars(11), parentAuthorName = this.readWideChars(11), currentAuthorName = this.readWideChars(11), rootFilename = this.readChars(28), parentFilename = this.readChars(28), currentFilename = this.readChars(28), frameCount = this.readUint16(), thumbIndex = this.readUint16(), flags = this.readUint16(), frameSpeed = this.readUint8(), layerFlags = this.readUint8();
             this.frameCount = frameCount;
             this.thumbFrameIndex = thumbIndex;
             this.frameSpeed = frameSpeed;
@@ -1474,11 +1535,11 @@
                 this.bgmrate = FRAMERATES$1[bgmSpeed];
                 var trackSizes = new Uint32Array(this.buffer, offset + 4, 20);
                 this.soundMeta = (_a = {},
-                    _a[FlipnoteAudioTrack.BGM] = { offset: offset += 28, length: trackSizes[0] },
-                    _a[FlipnoteAudioTrack.SE1] = { offset: offset += trackSizes[0], length: trackSizes[1] },
-                    _a[FlipnoteAudioTrack.SE2] = { offset: offset += trackSizes[1], length: trackSizes[2] },
-                    _a[FlipnoteAudioTrack.SE3] = { offset: offset += trackSizes[2], length: trackSizes[3] },
-                    _a[FlipnoteAudioTrack.SE4] = { offset: offset += trackSizes[3], length: trackSizes[4] },
+                    _a[0 /* BGM */] = { offset: offset += 28, length: trackSizes[0] },
+                    _a[1 /* SE1 */] = { offset: offset += trackSizes[0], length: trackSizes[1] },
+                    _a[2 /* SE2 */] = { offset: offset += trackSizes[1], length: trackSizes[2] },
+                    _a[3 /* SE3 */] = { offset: offset += trackSizes[2], length: trackSizes[3] },
+                    _a[4 /* SE4 */] = { offset: offset += trackSizes[3], length: trackSizes[4] },
                     _a);
             }
         };
@@ -1500,7 +1561,7 @@
             if (isPrevFrame)
                 diffingFlag &= this.getDiffingFlag(frameIndex + 1);
             // the prevDecodedFrame check is an optimisation for decoding frames in full sequence
-            if ((frameIndex !== 0) && (this.prevDecodedFrame !== frameIndex - 1) && (diffingFlag))
+            if ((this.prevDecodedFrame !== frameIndex - 1) && (diffingFlag) && (frameIndex !== 0))
                 this.decodeFrame(frameIndex - 1, diffingFlag = diffingFlag, isPrevFrame = true);
             var meta = this.frameMeta[frameIndex];
             var offset = this.frameOffsets[frameIndex];
@@ -1736,16 +1797,19 @@
             return this.frameMeta.map(function (frame) {
                 var soundFlags = frame.soundFlags;
                 return [
-                    soundFlags & 0x1,
-                    (soundFlags >> 1) & 0x1,
-                    (soundFlags >> 2) & 0x1,
-                    (soundFlags >> 3) & 0x1,
+                    (soundFlags & 0x1) !== 0,
+                    (soundFlags & 0x2) !== 0,
+                    (soundFlags & 0x4) !== 0,
+                    (soundFlags & 0x8) !== 0,
                 ];
             });
         };
-        KwzParser.prototype.decodeAudio = function (trackId) {
+        KwzParser.prototype.getAudioTrackRaw = function (trackId) {
             var trackMeta = this.soundMeta[trackId];
-            var adpcm = new Uint8Array(this.buffer, trackMeta.offset, trackMeta.length);
+            return new Uint8Array(this.buffer, trackMeta.offset, trackMeta.length);
+        };
+        KwzParser.prototype.decodeAudioTrack = function (trackId) {
+            var adpcm = this.getAudioTrackRaw(trackId);
             var output = new Int16Array(16364 * 60);
             var outputOffset = 0;
             // initial decoder state
@@ -1763,18 +1827,18 @@
                         // isolate 2-bit sample
                         sample = (byte >> bitPos) & 0x3;
                         // get diff
-                        diff = prevDiff + ADPCM_SAMPLE_TABLE_2[sample + 4 * prevStepIndex];
+                        diff = prevDiff + ADPCM_SAMPLE_TABLE_2BIT[sample + 4 * prevStepIndex];
                         // get step index
-                        stepIndex = prevStepIndex + ADPCM_INDEX_TABLE_2[sample];
+                        stepIndex = prevStepIndex + ADPCM_INDEX_TABLE_2BIT[sample];
                         bitPos += 2;
                     }
                     else {
                         // isolate 4-bit sample
                         sample = (byte >> bitPos) & 0xF;
                         // get diff
-                        diff = prevDiff + ADPCM_SAMPLE_TABLE_4[sample + 16 * prevStepIndex];
+                        diff = prevDiff + ADPCM_SAMPLE_TABLE_4BIT[sample + 16 * prevStepIndex];
                         // get step index
-                        stepIndex = prevStepIndex + ADPCM_INDEX_TABLE_4[sample];
+                        stepIndex = prevStepIndex + ADPCM_INDEX_TABLE_4BIT[sample];
                         bitPos += 4;
                     }
                     // clamp step index and diff
@@ -1789,6 +1853,57 @@
                 }
             }
             return output.slice(0, outputOffset);
+        };
+        KwzParser.prototype.getAudioTrackPcm = function (trackId, dstFreq) {
+            if (dstFreq === void 0) { dstFreq = CTR_SAMPLE_RATE; }
+            var srcPcm = this.decodeAudioTrack(trackId);
+            var srcFreq = this.sampleRate;
+            if (trackId === 0 /* BGM */) {
+                var bgmAdjust = (1 / this.bgmrate) / (1 / this.framerate);
+                srcFreq = this.sampleRate * bgmAdjust;
+            }
+            if (srcFreq !== dstFreq) {
+                return pcmDsAudioResample(srcPcm, srcFreq, dstFreq);
+            }
+            return srcPcm;
+        };
+        KwzParser.prototype.getAudioMasterPcm = function (dstFreq) {
+            if (dstFreq === void 0) { dstFreq = CTR_SAMPLE_RATE; }
+            var duration = this.frameCount * (1 / this.framerate);
+            var dstSize = Math.floor(duration * dstFreq);
+            var master = new Int16Array(dstSize);
+            var hasBgm = this.hasAudioTrack(0 /* BGM */);
+            var hasSe1 = this.hasAudioTrack(1 /* SE1 */);
+            var hasSe2 = this.hasAudioTrack(2 /* SE2 */);
+            var hasSe3 = this.hasAudioTrack(3 /* SE3 */);
+            var hasSe4 = this.hasAudioTrack(4 /* SE4 */);
+            // Mix background music
+            if (hasBgm) {
+                var bgmPcm = this.getAudioTrackPcm(0 /* BGM */, dstFreq);
+                pcmAudioMix(bgmPcm, master, 0);
+            }
+            // Mix sound effects
+            if (hasSe1 || hasSe2 || hasSe3) {
+                var samplesPerFrame = Math.floor(dstFreq / this.framerate);
+                var seFlags = this.decodeSoundFlags();
+                var se1Pcm = hasSe1 ? this.getAudioTrackPcm(1 /* SE1 */, dstFreq) : null;
+                var se2Pcm = hasSe2 ? this.getAudioTrackPcm(2 /* SE2 */, dstFreq) : null;
+                var se3Pcm = hasSe3 ? this.getAudioTrackPcm(3 /* SE3 */, dstFreq) : null;
+                var se4Pcm = hasSe4 ? this.getAudioTrackPcm(4 /* SE4 */, dstFreq) : null;
+                for (var i = 0; i < this.frameCount; i++) {
+                    var seOffset = samplesPerFrame * i;
+                    var flag = seFlags[i];
+                    if (hasSe1 && flag[0])
+                        pcmAudioMix(se1Pcm, master, seOffset);
+                    if (hasSe2 && flag[1])
+                        pcmAudioMix(se2Pcm, master, seOffset);
+                    if (hasSe3 && flag[2])
+                        pcmAudioMix(se3Pcm, master, seOffset);
+                    if (hasSe4 && flag[3])
+                        pcmAudioMix(se4Pcm, master, seOffset);
+                }
+            }
+            return master;
         };
         KwzParser.type = 'KWZ';
         KwzParser.width = 320;
@@ -1813,128 +1928,17 @@
                 // check the buffer's magic to identify which format it uses
                 var magicBytes = new Uint8Array(arrayBuffer.slice(0, 4));
                 var magic = (magicBytes[0] << 24) | (magicBytes[1] << 16) | (magicBytes[2] << 8) | magicBytes[3];
-                if (magic === 0x50415241) { // check if magic is PARA (ppm magic)
+                // check if magic is PARA (ppm magic)
+                if (magic === 0x50415241)
                     resolve(new PpmParser(arrayBuffer));
-                }
-                else if ((magic & 0xFFFFFF00) === 0x4B464800) { // check if magic is KFH (kwz magic)
+                // check if magic is KFH (kwz magic)
+                else if ((magic & 0xFFFFFF00) === 0x4B464800)
                     resolve(new KwzParser(arrayBuffer));
-                }
-                else {
+                else
                     reject();
-                }
             });
         });
     }
-
-    var WavEncoder = /** @class */ (function () {
-        function WavEncoder(sampleRate, channels, bitsPerSample) {
-            if (channels === void 0) { channels = 1; }
-            if (bitsPerSample === void 0) { bitsPerSample = 16; }
-            this.sampleRate = sampleRate;
-            this.channels = channels;
-            this.bitsPerSample = bitsPerSample;
-            // Write WAV file header
-            // Reference: http://www.topherlee.com/software/pcm-tut-wavformat.html
-            var headerBuffer = new ArrayBuffer(44);
-            var header = new DataStream(headerBuffer);
-            // 'RIFF' indent
-            header.writeUtf8('RIFF');
-            // filesize (set later)
-            header.writeUint32(0);
-            // 'WAVE' indent
-            header.writeUtf8('WAVE');
-            // 'fmt ' section header
-            header.writeUtf8('fmt ');
-            // fmt section length
-            header.writeUint32(16);
-            // specify audio format is pcm (type 1)
-            header.writeUint16(1);
-            // number of audio channels
-            header.writeUint16(this.channels);
-            // audio sample rate
-            header.writeUint32(this.sampleRate);
-            // byterate = (sampleRate * bitsPerSample * channelCount) / 8
-            header.writeUint32((this.sampleRate * this.bitsPerSample * this.channels) / 8);
-            // blockalign = (bitsPerSample * channels) / 8
-            header.writeUint16((this.bitsPerSample * this.channels) / 8);
-            // bits per sample
-            header.writeUint16(this.bitsPerSample);
-            // 'data' section header
-            header.writeUtf8('data');
-            // data section length (set later)
-            header.writeUint32(0);
-            this.header = header;
-            this.pcmData = null;
-        }
-        WavEncoder.prototype.writeFrames = function (pcmData) {
-            var header = this.header;
-            // fill in filesize
-            header.seek(4);
-            header.writeUint32(header.byteLength + pcmData.byteLength);
-            // fill in data section length
-            header.seek(40);
-            header.writeUint32(pcmData.byteLength);
-            this.pcmData = pcmData;
-        };
-        WavEncoder.prototype.getBlob = function () {
-            return new Blob([this.header.buffer, this.pcmData.buffer], { type: 'audio/wav' });
-        };
-        return WavEncoder;
-    }());
-
-    var AudioTrack = /** @class */ (function () {
-        function AudioTrack(id) {
-            this.playbackRate = 1;
-            this.id = id;
-            this.channelCount = 1;
-            this.bitsPerSample = 16;
-            this.sampleRate = 0;
-            this.audio = document.createElement('audio');
-            this.audio.preload = 'auto';
-            this.isActive = false;
-        }
-        AudioTrack.prototype.set = function (pcmData, playbackRate) {
-            // the HTML5 audio element supports PCM audio if it's in a WAV wrapper
-            var wav = new WavEncoder(this.sampleRate * playbackRate, this.channelCount, this.bitsPerSample);
-            wav.writeFrames(pcmData);
-            this.url = window.URL.createObjectURL(wav.getBlob());
-            // use the blob url for the audio element
-            this.audio.src = this.url;
-            this.isActive = true;
-            this.playbackRate = playbackRate;
-            this.length = pcmData.length;
-        };
-        Object.defineProperty(AudioTrack.prototype, "duration", {
-            get: function () {
-                return this.audio.duration;
-            },
-            enumerable: false,
-            configurable: true
-        });
-        AudioTrack.prototype.unset = function () {
-            if (this.isActive) {
-                window.URL.revokeObjectURL(this.url);
-                this.audio.src = '';
-                this.audio.load();
-                this.isActive = false;
-                this.playbackRate = 1;
-                this.length = null;
-            }
-        };
-        AudioTrack.prototype.start = function (offset) {
-            if (offset === void 0) { offset = 0; }
-            if (this.isActive) {
-                this.audio.currentTime = offset;
-                this.audio.play();
-            }
-        };
-        AudioTrack.prototype.stop = function () {
-            if (this.isActive) {
-                this.audio.pause();
-            }
-        };
-        return AudioTrack;
-    }());
 
     var vertexShader = "#define GLSLIFY 1\nattribute vec4 a_position;varying vec2 v_texel;varying float v_scale;uniform vec2 u_textureSize;uniform vec2 u_screenSize;void main(){gl_Position=a_position;vec2 uv=a_position.xy*vec2(0.5,-0.5)+0.5;v_texel=uv*u_textureSize;v_scale=floor(u_screenSize.y/u_textureSize.y+0.01);}"; // eslint-disable-line
 
@@ -2096,6 +2100,40 @@
         return WebglCanvas;
     }());
 
+    var _AudioContext = (window.AudioContext || window.webkitAudioContext);
+    var WebAudioPlayer = /** @class */ (function () {
+        function WebAudioPlayer(sampleData, sampleRate) {
+            this.ctx = new _AudioContext();
+            this.setSamples(sampleData, sampleRate);
+        }
+        WebAudioPlayer.prototype.setSamples = function (sampleData, sampleRate) {
+            var numSamples = sampleData.length;
+            var audioBuffer = this.ctx.createBuffer(1, numSamples, sampleRate);
+            var channelData = audioBuffer.getChannelData(0);
+            if (sampleData instanceof Float32Array) {
+                channelData.set(sampleData, 0);
+            }
+            else if (sampleData instanceof Int16Array) {
+                for (var i = 0; i < numSamples; i++) {
+                    channelData[i] = sampleData[i] / 32767;
+                }
+            }
+            this.buffer = audioBuffer;
+            this.sampleRate = sampleRate;
+        };
+        WebAudioPlayer.prototype.stop = function () {
+            this.source.stop(0);
+        };
+        WebAudioPlayer.prototype.playFrom = function (currentTime) {
+            var source = this.ctx.createBufferSource();
+            source.buffer = this.buffer;
+            source.connect(this.ctx.destination, 0, 0);
+            this.source = source;
+            this.source.start(0, currentTime);
+        };
+        return WebAudioPlayer;
+    }());
+
     /** flipnote player API, based on HTMLMediaElement (https://developer.mozilla.org/en-US/docs/Web/API/HTMLMediaElement) */
     var Player = /** @class */ (function () {
         function Player(el, width, height) {
@@ -2114,13 +2152,6 @@
             this.canvas = new WebglCanvas(el, width, height);
             this.el = this.canvas.el;
             this.customPalette = null;
-            this.audioTracks = [
-                new AudioTrack('se1'),
-                new AudioTrack('se2'),
-                new AudioTrack('se3'),
-                new AudioTrack('se4'),
-                new AudioTrack('bgm'),
-            ];
         }
         Object.defineProperty(Player.prototype, "currentFrame", {
             get: function () {
@@ -2158,24 +2189,26 @@
         });
         Object.defineProperty(Player.prototype, "volume", {
             get: function () {
-                return this.audioTracks[3].audio.volume;
+                // return this.audioTracks[3].audio.volume;
+                return 1;
             },
             set: function (value) {
-                for (var i = 0; i < this.audioTracks.length; i++) {
-                    this.audioTracks[i].audio.volume = value;
-                }
+                // for (let i = 0; i < this.audioTracks.length; i++) {
+                //   this.audioTracks[i].audio.volume = value;
+                // }
             },
             enumerable: false,
             configurable: true
         });
         Object.defineProperty(Player.prototype, "muted", {
             get: function () {
-                return this.audioTracks[3].audio.muted;
+                // return this.audioTracks[3].audio.muted;
+                return false;
             },
             set: function (value) {
-                for (var i = 0; i < this.audioTracks.length; i++) {
-                    this.audioTracks[i].audio.muted = value;
-                }
+                // for (let i = 0; i < this.audioTracks.length; i++) {
+                //   this.audioTracks[i].audio.muted = value;
+                // }
             },
             enumerable: false,
             configurable: true
@@ -2237,15 +2270,10 @@
             this._time = null;
             this.duration = null;
             this.loop = null;
-            for (var i = 0; i < this.audioTracks.length; i++) {
-                this.audioTracks[i].unset();
-            }
-            this.seFlags = null;
             this.hasPlaybackStarted = null;
             this.canvas.clear();
         };
         Player.prototype.load = function (note) {
-            var _this = this;
             this.note = note;
             this.meta = note.meta;
             this.type = note.type;
@@ -2253,30 +2281,25 @@
             this.duration = (this.note.frameCount) * (1 / this.note.framerate);
             this.paused = true;
             this.isOpen = true;
-            this.audioTracks.forEach(function (track) {
-                track.sampleRate = note.sampleRate;
-            });
-            // if (this.customPalette) {
-            //   this.setPalette(this.customPalette);
-            // }
-            var tracks = [FlipnoteAudioTrack.SE1, FlipnoteAudioTrack.SE2, FlipnoteAudioTrack.SE3, FlipnoteAudioTrack.SE4, FlipnoteAudioTrack.BGM];
-            tracks.forEach(function (trackId, trackIndex) {
-                var trackRate = trackId === FlipnoteAudioTrack.BGM ? _this.audiorate : 1;
-                if (_this.note.hasAudioTrack(trackId))
-                    _this.audioTracks[trackIndex].set(_this.note.decodeAudio(trackId), trackRate);
-            });
-            this.seFlags = this.note.decodeSoundFlags();
             this.hasPlaybackStarted = false;
             this.layerVisibility = {
                 1: true,
                 2: true,
                 3: true
             };
+            var pcm = note.getAudioMasterPcm(32768);
+            this.audioPlayer = new WebAudioPlayer(pcm, 32768);
             this.canvas.setInputSize(note.width, note.height);
             this.canvas.setLayerType(this.type === 'PPM' ? TextureType.Alpha : TextureType.LuminanceAlpha);
             this.setFrame(this.note.thumbFrameIndex);
             this._time = 0;
             this.emit('load');
+        };
+        Player.prototype.playAudio = function () {
+            this.audioPlayer.playFrom(this.currentTime);
+        };
+        Player.prototype.stopAudio = function () {
+            this.audioPlayer.stop();
         };
         Player.prototype.play = function () {
             var _this = this;
@@ -2286,7 +2309,7 @@
                 this._time = 0;
             }
             this.paused = false;
-            this.playBgm();
+            this.playAudio();
             var start = (performance.now() / 1000) - this.currentTime;
             var loop = function (timestamp) {
                 if (_this.paused) { // break loop if paused is set to true
@@ -2298,7 +2321,7 @@
                 if (progress > _this.duration) {
                     if (_this.loop) {
                         _this.currentTime = 0;
-                        _this.playBgm();
+                        _this.playAudio();
                         start = time;
                         _this.emit('playback:loop');
                     }
@@ -2340,9 +2363,6 @@
                 if (this.paused) {
                     this._time = frameIndex * (1 / this.framerate);
                     this.emit('progress', this.progress);
-                }
-                else {
-                    this.playFrameSe(frameIndex);
                 }
                 this.emit('frame:update', this.currentFrame);
             }
@@ -2420,21 +2440,6 @@
         Player.prototype.forceUpdate = function () {
             if (this.isOpen) {
                 this.drawFrame(this.currentFrame);
-            }
-        };
-        Player.prototype.playFrameSe = function (frameIndex) {
-            var flags = this.seFlags[frameIndex];
-            for (var i = 0; i < flags.length; i++) {
-                if (flags[i] && this.audioTracks[i].isActive)
-                    this.audioTracks[i].start();
-            }
-        };
-        Player.prototype.playBgm = function () {
-            this.audioTracks[4].start(this.currentTime);
-        };
-        Player.prototype.stopAudio = function () {
-            for (var i = 0; i < this.audioTracks.length; i++) {
-                this.audioTracks[i].stop();
             }
         };
         Player.prototype.resize = function (width, height) {
@@ -3831,6 +3836,7 @@
         GifEncoder.fromFlipnoteFrame = function (flipnote, frameIndex) {
             var gif = new GifEncoder(flipnote.width, flipnote.height);
             gif.palette = flipnote.globalPalette;
+            // TODO: look at ideal delay and repeat settings for single frame GIF
             gif.delay = 100 / flipnote.framerate;
             gif.repeat = flipnote.meta.loop ? -1 : 0;
             gif.init();
@@ -3839,9 +3845,8 @@
         };
         GifEncoder.prototype.init = function () {
             var paletteSize = this.palette.length;
-            for (var p = 1; 1 << p < paletteSize; p += 1) {
+            for (var p = 1; 1 << p < paletteSize; p += 1)
                 continue;
-            }
             this.colorDepth = p;
             this.writeHeader();
             this.writeColorTable();
@@ -3849,7 +3854,7 @@
         };
         GifEncoder.prototype.writeHeader = function () {
             var header = new DataStream(new ArrayBuffer(13));
-            header.writeUtf8('GIF89a');
+            header.writeChars('GIF89a');
             // Logical Screen Descriptor
             header.writeUint16(this.width);
             header.writeUint16(this.height);
@@ -3889,7 +3894,7 @@
                 0xFF,
                 11,
             ]);
-            netscapeExt.writeUtf8('NETSCAPE2.0');
+            netscapeExt.writeChars('NETSCAPE2.0');
             netscapeExt.writeUint8(3); // subblock size
             netscapeExt.writeUint8(1); // loop subblock id
             netscapeExt.writeUint16(this.repeat); // loop flag
@@ -3931,10 +3936,80 @@
         return GifEncoder;
     }());
 
+    // Typical WAV sample rate
+    var WAV_SAMPLE_RATE = 44100;
+    var WavEncoder = /** @class */ (function () {
+        function WavEncoder(sampleRate, channels, bitsPerSample) {
+            if (channels === void 0) { channels = 1; }
+            if (bitsPerSample === void 0) { bitsPerSample = 16; }
+            this.sampleRate = sampleRate;
+            this.channels = channels;
+            this.bitsPerSample = bitsPerSample;
+            // Write WAV file header
+            // Reference: http://www.topherlee.com/software/pcm-tut-wavformat.html
+            var headerBuffer = new ArrayBuffer(44);
+            var header = new DataStream(headerBuffer);
+            // 'RIFF' indent
+            header.writeChars('RIFF');
+            // filesize (set later)
+            header.writeUint32(0);
+            // 'WAVE' indent
+            header.writeChars('WAVE');
+            // 'fmt ' section header
+            header.writeChars('fmt ');
+            // fmt section length
+            header.writeUint32(16);
+            // specify audio format is pcm (type 1)
+            header.writeUint16(1);
+            // number of audio channels
+            header.writeUint16(this.channels);
+            // audio sample rate
+            header.writeUint32(this.sampleRate);
+            // byterate = (sampleRate * bitsPerSample * channelCount) / 8
+            header.writeUint32((this.sampleRate * this.bitsPerSample * this.channels) / 8);
+            // blockalign = (bitsPerSample * channels) / 8
+            header.writeUint16((this.bitsPerSample * this.channels) / 8);
+            // bits per sample
+            header.writeUint16(this.bitsPerSample);
+            // 'data' section header
+            header.writeChars('data');
+            // data section length (set later)
+            header.writeUint32(0);
+            this.header = header;
+            this.pcmData = null;
+        }
+        WavEncoder.fromFlipnote = function (note) {
+            var wav = new WavEncoder(WAV_SAMPLE_RATE, 1, 16);
+            var pcm = note.getAudioMasterPcm(WAV_SAMPLE_RATE);
+            wav.writeFrames(pcm);
+            return wav;
+        };
+        WavEncoder.fromFlipnoteTrack = function (note, trackId) {
+            var wav = new WavEncoder(WAV_SAMPLE_RATE, 1, 16);
+            var pcm = note.getAudioTrackPcm(trackId, WAV_SAMPLE_RATE);
+            wav.writeFrames(pcm);
+            return wav;
+        };
+        WavEncoder.prototype.writeFrames = function (pcmData) {
+            var header = this.header;
+            // fill in filesize
+            header.seek(4);
+            header.writeUint32(header.byteLength + pcmData.byteLength);
+            // fill in data section length
+            header.seek(40);
+            header.writeUint32(pcmData.byteLength);
+            this.pcmData = pcmData;
+        };
+        WavEncoder.prototype.getBlob = function () {
+            return new Blob([this.header.buffer, this.pcmData.buffer], { type: 'audio/wav' });
+        };
+        return WavEncoder;
+    }());
+
     // Main entrypoint for web
     var api;
     (function (api) {
-        api.version = "4.0.3"; // replaced by @rollup/plugin-replace; see rollup.config.js
+        api.version = "4.1.0"; // replaced by @rollup/plugin-replace; see rollup.config.js
         api.player = Player;
         api.parseSource = parseSource;
         api.kwzParser = KwzParser;
@@ -3942,7 +4017,7 @@
         api.gifEncoder = GifEncoder;
         api.wavEncoder = WavEncoder;
     })(api || (api = {}));
-    var version = "4.0.3";
+    var version = "4.1.0";
     var player = Player;
     var parseSource$1 = parseSource;
     var kwzParser = KwzParser;

@@ -1,8 +1,40 @@
-export const ADPCM_INDEX_TABLE_2 = new Int8Array([
+export function clamp(n: number, l: number, h: number) {
+  if (n < l)
+    return l;
+  if (n > h)
+    return h;
+  return n;
+}
+
+// zero-order hold interpolation
+export function pcmDsAudioResample(src: Int16Array, srcFreq: number, dstFreq: number) {
+  const srcDuration = src.length / srcFreq;
+  const dstLength = srcDuration * dstFreq;
+  const dst = new Int16Array(dstLength);
+  const adjFreq = (srcFreq << 8) / dstFreq;
+  for (let n = 0; n < dst.length; n++) {
+    let samp = src[(n * adjFreq) >> 8] / 2;
+    dst[n] = clamp(samp, -32768, 32767);
+  }
+  return dst;
+}
+
+export function pcmAudioMix(src: Int16Array, dst: Int16Array, dstOffset: number = 0) {
+  const srcSize = src.length;
+  const dstSize = dst.length;
+  for (let n = 0; n < srcSize; n++) {
+    if (dstOffset + n > dstSize) 
+      break;
+    const samp = dst[dstOffset + n] + src[n];
+    dst[dstOffset + n] = clamp(samp, -32768, 32767);
+  }
+}
+
+export const ADPCM_INDEX_TABLE_2BIT = new Int8Array([
   -1, 2, -1, 2
 ]);
 
-export const ADPCM_INDEX_TABLE_4 = new Int8Array([
+export const ADPCM_INDEX_TABLE_4BIT = new Int8Array([
   -1, -1, -1, -1, 2, 4, 6, 8,
   -1, -1, -1, -1, 2, 4, 6, 8
 ]);
@@ -20,18 +52,18 @@ export const ADPCM_STEP_TABLE = new Int16Array([
   15289, 16818, 18500, 20350, 22385, 24623, 27086, 29794, 32767, 0
 ]);
 
-export const ADPCM_SAMPLE_TABLE_2 = new Int16Array(90 * 4);
+export const ADPCM_SAMPLE_TABLE_2BIT = new Int16Array(90 * 4);
 for (let sample = 0; sample < 4; sample++) {
   for (let stepIndex = 0; stepIndex < 90; stepIndex++) {
     let step = ADPCM_STEP_TABLE[stepIndex];
     let diff = step >> 3;
     if (sample & 1) diff += step;
     if (sample & 2) diff = -diff;
-    ADPCM_SAMPLE_TABLE_2[sample + 4 * stepIndex] = diff;
+    ADPCM_SAMPLE_TABLE_2BIT[sample + 4 * stepIndex] = diff;
   }
 }
 
-export const ADPCM_SAMPLE_TABLE_4 = new Int16Array(90 * 16);
+export const ADPCM_SAMPLE_TABLE_4BIT = new Int16Array(90 * 16);
 for (let sample = 0; sample < 16; sample++) {
   for (let stepIndex = 0; stepIndex < 90; stepIndex++) {
     let step = ADPCM_STEP_TABLE[stepIndex];
@@ -40,6 +72,6 @@ for (let sample = 0; sample < 16; sample++) {
     if (sample & 2) diff += step >> 1;
     if (sample & 1) diff += step >> 2;
     if (sample & 8) diff = -diff;
-    ADPCM_SAMPLE_TABLE_4[sample + 16 * stepIndex] = diff;
+    ADPCM_SAMPLE_TABLE_4BIT[sample + 16 * stepIndex] = diff;
   }
 }

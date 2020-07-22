@@ -1,9 +1,9 @@
 import { DataStream } from '../utils/index';
-export declare type PaletteColor = [number, number, number];
-export declare type PaletteDefinition = {
-    [key in any]?: PaletteColor;
+export declare type FlipnotePaletteColor = [number, number, number];
+export declare type FlipnotePaletteDefinition = {
+    [key in any]?: FlipnotePaletteColor;
 };
-export declare enum FlipnoteAudioTrack {
+export declare const enum FlipnoteAudioTrack {
     BGM = 0,
     SE1 = 1,
     SE2 = 2,
@@ -21,12 +21,12 @@ export declare abstract class FlipnoteParserBase extends DataStream {
     static sampleRate: number;
     static width: number;
     static height: number;
-    static globalPalette: PaletteColor[];
+    static globalPalette: FlipnotePaletteColor[];
     type: string;
     width: number;
     height: number;
-    palette: PaletteDefinition;
-    globalPalette: PaletteColor[];
+    palette: FlipnotePaletteDefinition;
+    globalPalette: FlipnotePaletteColor[];
     meta: any;
     soundMeta: FlipnoteAudioTrackInfo;
     frameCount: number;
@@ -41,10 +41,11 @@ export declare abstract class FlipnoteParserBase extends DataStream {
     abstract getLayerOrder(frameIndex: number): number[];
     abstract getFramePixels(frameIndex: number): Uint8Array;
     abstract getFramePaletteIndices(frameIndex: number): number[];
-    abstract getFramePalette(frameIndex: number): PaletteColor[];
-    abstract decodeAudio(trackId: FlipnoteAudioTrack): Int16Array;
-    abstract decodeSoundFlags(): number[][];
+    abstract getFramePalette(frameIndex: number): FlipnotePaletteColor[];
+    abstract decodeSoundFlags(): boolean[][];
+    abstract getAudioTrackRaw(trackId: FlipnoteAudioTrack): Uint8Array;
+    abstract decodeAudioTrack(trackId: FlipnoteAudioTrack): Int16Array;
+    abstract getAudioTrackPcm(trackId: FlipnoteAudioTrack, sampleRate: number): Int16Array;
+    abstract getAudioMasterPcm(sampleRate: number): Int16Array;
     hasAudioTrack(trackId: FlipnoteAudioTrack): boolean;
-    getInt16AudioData(trackId: FlipnoteAudioTrack): Int16Array;
-    getFloat32AudioData(trackId: FlipnoteAudioTrack): Float32Array;
 }
