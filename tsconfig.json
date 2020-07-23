@@ -14,7 +14,7 @@
     "allowJs": false,
     "types": ["@pyoner/svelte-types"],
     "allowSyntheticDefaultImports": true,
-    "esModuleInterop": true ,
+    "esModuleInterop": true,
     "paths": {
       "*" : ["src/types/*"]
     }

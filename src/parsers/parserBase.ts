@@ -6,7 +6,7 @@ export type FlipnotePaletteDefinition = {
   [key in any]?: FlipnotePaletteColor;
 };
 
-export const enum FlipnoteAudioTrack {
+export enum FlipnoteAudioTrack {
   BGM,
   SE1,
   SE2,

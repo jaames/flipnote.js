@@ -13,8 +13,8 @@ export function pcmDsAudioResample(src: Int16Array, srcFreq: number, dstFreq: nu
   const dst = new Int16Array(dstLength);
   const adjFreq = (srcFreq << 8) / dstFreq;
   for (let n = 0; n < dst.length; n++) {
-    let samp = src[(n * adjFreq) >> 8] / 2;
-    dst[n] = clamp(samp, -32768, 32767);
+    dst[n] = src[(n * adjFreq) >> 8];
+    // dst[n] = clamp(samp, -32768, 32767);
   }
   return dst;
 }
@@ -23,9 +23,10 @@ export function pcmAudioMix(src: Int16Array, dst: Int16Array, dstOffset: number 
   const srcSize = src.length;
   const dstSize = dst.length;
   for (let n = 0; n < srcSize; n++) {
-    if (dstOffset + n > dstSize) 
+    if (dstOffset + n > dstSize)
       break;
-    const samp = dst[dstOffset + n] + src[n];
+    // half src volume
+    const samp = dst[dstOffset + n] + (src[n] / 2);
     dst[dstOffset + n] = clamp(samp, -32768, 32767);
   }
 }

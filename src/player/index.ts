@@ -5,6 +5,10 @@ import {
 } from '../parsers';
 
 import {
+  WavEncoder
+} from '../encoders';
+
+import {
   WebglCanvas,
   TextureType
 } from '../webgl';
@@ -14,17 +18,46 @@ import {
 } from '../webaudio';
 
 interface PlayerEvents {
-  [key: string]: Function[]
+  [key: string]: Function[];
 }
 
 interface PlayerLayerVisibility {
   [key: number]: boolean;
 }
 
+interface PlayerState {
+  noteType: 'PPM' | 'KWZ';
+  isNoteOpen: boolean;
+  hasPlaybackStarted: boolean;
+  paused: boolean;
+  frame: number,
+  time: number,
+  loop: boolean;
+  volume: number;
+  muted: boolean;
+  layerVisibility: PlayerLayerVisibility;
+  isSeeking: boolean;
+  wasPlaying: boolean;
+};
+
+const saveData = (function () {
+  var a = document.createElement("a");
+  // document.body.appendChild(a);
+  // a.style.display = "none";
+  return function (blob: Blob, filename:string) {
+    const url = window.URL.createObjectURL(blob);
+    a.href = url;
+    a.download = filename;
+    a.click();
+    window.URL.revokeObjectURL(url);
+  };
+}());
+
 /** flipnote player API, based on HTMLMediaElement (https://developer.mozilla.org/en-US/docs/Web/API/HTMLMediaElement) */ 
 export class Player {
 
   public canvas: WebglCanvas;
+  public audio: WebAudioPlayer;
   public el: HTMLCanvasElement;
   public type: string;
   public note: Flipnote;
@@ -33,24 +66,51 @@ export class Player {
   public paused: boolean = true;
   public duration: number = 0;
   public layerVisibility: PlayerLayerVisibility;
+
+  static defaultState: PlayerState = {
+    noteType: null,
+    isNoteOpen: false,
+    paused: false,
+    hasPlaybackStarted: false,
+    frame: -1,
+    time: -1,
+    loop: false,
+    volume: 1,
+    muted: false,
+    layerVisibility: {
+      1: true,
+      2: true,
+      3: true
+    },
+    isSeeking: false,
+    wasPlaying: false,
+  };
+
+  public state: PlayerState;
   
   private isOpen: boolean = false;
   private customPalette: {};
   private events: PlayerEvents = {};
+  private _lastTick: number = -1;
   private _frame: number = -1;
-  private _time: number = 0;
+  private _time: number = -1;
   private hasPlaybackStarted: boolean = false;
   private wasPlaying: boolean = false;
   private isSeeking: boolean = false;
-
-  private audioPlayer: WebAudioPlayer;
 
   constructor(el: string | HTMLCanvasElement, width: number, height: number) {
     // if `el` is a string, use it to select an Element, else assume it's an element
     el = ('string' == typeof el) ? <HTMLCanvasElement>document.querySelector(el) : el;
     this.canvas = new WebglCanvas(el, width, height);
+    this.audio = new WebAudioPlayer();
     this.el = this.canvas.el;
     this.customPalette = null;
+    this.state = {...Player.defaultState};
+  }
+
+  saveWav() {
+    const wav = WavEncoder.fromFlipnote(this.note);
+    saveData(wav.getBlob(), 'audio.wav');
   }
 
   get currentFrame() {
@@ -74,7 +134,7 @@ export class Player {
   }
 
   get progress() {
-    return this.isOpen ? (this.currentTime / this.duration) * 100 : 0;
+    return this.isOpen ? (this._time / this.duration) * 100 : 0;
   }
 
   set progress(value) {
@@ -82,14 +142,11 @@ export class Player {
   }
 
   get volume() {
-    // return this.audioTracks[3].audio.volume;
-    return 1;
+    return this.audio.volume;
   }
 
   set volume(value) {
-    // for (let i = 0; i < this.audioTracks.length; i++) {
-    //   this.audioTracks[i].audio.volume = value;
-    // }
+    this.audio.volume = value;
   }
 
   get muted() {
@@ -115,16 +172,16 @@ export class Player {
     return this.note.frameSpeed;
   }
 
-  get audiorate() {
-    return (1 / this.note.bgmrate) / (1 / this.note.framerate);
+  private setState(newState: Partial<PlayerState>) {
+    newState = {...this.state, ...newState};
+    const oldState = this.state;
+    this.emit('state:change');
   }
 
   public async open(source: any) {
     if (this.isOpen) this.close();
     return parseSource(source)
-      .then((note: Flipnote) => {
-        this.load(note);
-      })
+      .then((note: Flipnote) => this.load(note))
       .catch((err: any) => {
         this.emit('error', err);
         console.error('Error loading Flipnote:', err);
@@ -161,8 +218,9 @@ export class Player {
       2: true,
       3: true
     };
-    const pcm = note.getAudioMasterPcm(32768);
-    this.audioPlayer = new WebAudioPlayer(pcm, 32768);
+    const sampleRate = this.audio.ctx.sampleRate;
+    const pcm = note.getAudioMasterPcm(sampleRate);
+    this.audio.setSamples(pcm, sampleRate);
     this.canvas.setInputSize(note.width, note.height);
     this.canvas.setLayerType(this.type === 'PPM' ? TextureType.Alpha : TextureType.LuminanceAlpha);
     this.setFrame(this.note.thumbFrameIndex);
@@ -171,49 +229,53 @@ export class Player {
   }
 
   private playAudio(): void {
-    this.audioPlayer.playFrom(this.currentTime);
+    this.audio.playFrom(this.currentTime);
   }
 
   private stopAudio(): void {
-    this.audioPlayer.stop();
+    this.audio.stop();
+  }
+
+  toggleEq() {
+    this.stopAudio();
+    this.audio.useEq = !this.audio.useEq;
+    this.playAudio();
+  }
+
+  private playbackLoop(timestamp: DOMHighResTimeStamp): void {
+    if (this.paused) { // break loop if paused is set to true
+      this.stopAudio();
+      return null;
+    }
+    const time = timestamp / 1000;
+    const progress = time - this._lastTick;
+    if (progress > this.duration) {
+      if (this.loop) {
+        this.currentTime = 0;
+        this.playAudio();
+        this._lastTick = time;
+        this.emit('playback:loop');
+      } else {
+        this.pause();
+        this.emit('playback:end');
+      }
+    } else {
+      this.currentTime = progress;
+    }
+    requestAnimationFrame(this.playbackLoop.bind(this));
   }
 
   public play(): void {
-    if ((!this.isOpen) || (!this.paused)) return null;
-
-    if ((!this.hasPlaybackStarted) || ((!this.loop) && (this.currentFrame == this.frameCount - 1))) {
+    (window as any).__activeFlipnotePlayer = this;
+    if ((!this.isOpen) || (!this.paused))
+      return null;
+    if ((!this.hasPlaybackStarted) || ((!this.loop) && (this.currentFrame == this.frameCount - 1)))
       this._time = 0;
-    }
-
     this.paused = false;
-    this.playAudio();
-
-    let start = (performance.now() / 1000) - this.currentTime;
-
-    const loop = (timestamp: DOMHighResTimeStamp): void => {
-      if (this.paused) { // break loop if paused is set to true
-        this.stopAudio();
-        return null;
-      }
-      const time = timestamp / 1000;
-      const progress = time - start;
-      if (progress > this.duration) {
-        if (this.loop) {
-          this.currentTime = 0;
-          this.playAudio();
-          start = time;
-          this.emit('playback:loop');
-        } else {
-          this.pause();
-          this.emit('playback:end');
-        }
-      } else {
-        this.currentTime = progress;
-      }
-      requestAnimationFrame(loop);
-    }
-    requestAnimationFrame(loop);
     this.hasPlaybackStarted = true;
+    this._lastTick = (performance.now() / 1000) - this.currentTime;
+    this.playAudio();
+    requestAnimationFrame(this.playbackLoop.bind(this));
     this.emit('playback:start');
   }
 

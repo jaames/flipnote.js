@@ -34,7 +34,7 @@ import {
   pcmAudioMix,
   ADPCM_INDEX_TABLE_4BIT,
   ADPCM_STEP_TABLE
-} from './adpcm';
+} from './audio';
 
 // internal frame speed value -> FPS table
 const FRAMERATES = [0.5, 0.5, 1, 2, 4, 6, 12, 20, 30];

@@ -1,11 +1,27 @@
 import { Flipnote, FlipnoteMeta } from '../parsers';
 import { WebglCanvas } from '../webgl';
+import { WebAudioPlayer } from '../webaudio';
 interface PlayerLayerVisibility {
     [key: number]: boolean;
+}
+interface PlayerState {
+    noteType: 'PPM' | 'KWZ';
+    isNoteOpen: boolean;
+    hasPlaybackStarted: boolean;
+    paused: boolean;
+    frame: number;
+    time: number;
+    loop: boolean;
+    volume: number;
+    muted: boolean;
+    layerVisibility: PlayerLayerVisibility;
+    isSeeking: boolean;
+    wasPlaying: boolean;
 }
 /** flipnote player API, based on HTMLMediaElement (https://developer.mozilla.org/en-US/docs/Web/API/HTMLMediaElement) */
 export declare class Player {
     canvas: WebglCanvas;
+    audio: WebAudioPlayer;
     el: HTMLCanvasElement;
     type: string;
     note: Flipnote;
@@ -14,16 +30,19 @@ export declare class Player {
     paused: boolean;
     duration: number;
     layerVisibility: PlayerLayerVisibility;
+    static defaultState: PlayerState;
+    state: PlayerState;
     private isOpen;
     private customPalette;
     private events;
+    private _lastTick;
     private _frame;
     private _time;
     private hasPlaybackStarted;
     private wasPlaying;
     private isSeeking;
-    private audioPlayer;
     constructor(el: string | HTMLCanvasElement, width: number, height: number);
+    saveWav(): void;
     get currentFrame(): number;
     set currentFrame(frameIndex: number);
     get currentTime(): number;
@@ -37,12 +56,14 @@ export declare class Player {
     get framerate(): number;
     get frameCount(): number;
     get frameSpeed(): number;
-    get audiorate(): number;
+    private setState;
     open(source: any): Promise<void>;
     close(): void;
     load(note: Flipnote): void;
     private playAudio;
     private stopAudio;
+    toggleEq(): void;
+    private playbackLoop;
     play(): void;
     pause(): void;
     togglePlay(): void;

@@ -3,7 +3,7 @@ export declare type FlipnotePaletteColor = [number, number, number];
 export declare type FlipnotePaletteDefinition = {
     [key in any]?: FlipnotePaletteColor;
 };
-export declare const enum FlipnoteAudioTrack {
+export declare enum FlipnoteAudioTrack {
     BGM = 0,
     SE1 = 1,
     SE2 = 2,

@@ -489,6 +489,17 @@
         d.prototype = b === null ? Object.create(b) : (__.prototype = b.prototype, new __());
     }
 
+    var __assign = function() {
+        __assign = Object.assign || function __assign(t) {
+            for (var s, i = 1, n = arguments.length; i < n; i++) {
+                s = arguments[i];
+                for (var p in s) if (Object.prototype.hasOwnProperty.call(s, p)) t[p] = s[p];
+            }
+            return t;
+        };
+        return __assign.apply(this, arguments);
+    };
+
     function __awaiter(thisArg, _arguments, P, generator) {
         function adopt(value) { return value instanceof P ? value : new P(function (resolve) { resolve(value); }); }
         return new (P || (P = Promise))(function (resolve, reject) {
@@ -787,6 +798,14 @@
         return DataStream;
     }());
 
+    var FlipnoteAudioTrack;
+    (function (FlipnoteAudioTrack) {
+        FlipnoteAudioTrack[FlipnoteAudioTrack["BGM"] = 0] = "BGM";
+        FlipnoteAudioTrack[FlipnoteAudioTrack["SE1"] = 1] = "SE1";
+        FlipnoteAudioTrack[FlipnoteAudioTrack["SE2"] = 2] = "SE2";
+        FlipnoteAudioTrack[FlipnoteAudioTrack["SE3"] = 3] = "SE3";
+        FlipnoteAudioTrack[FlipnoteAudioTrack["SE4"] = 4] = "SE4";
+    })(FlipnoteAudioTrack || (FlipnoteAudioTrack = {}));
     var FlipnoteParserBase = /** @class */ (function (_super) {
         __extends(FlipnoteParserBase, _super);
         function FlipnoteParserBase() {
@@ -815,8 +834,8 @@
         var dst = new Int16Array(dstLength);
         var adjFreq = (srcFreq << 8) / dstFreq;
         for (var n = 0; n < dst.length; n++) {
-            var samp = src[(n * adjFreq) >> 8] / 2;
-            dst[n] = clamp(samp, -32768, 32767);
+            dst[n] = src[(n * adjFreq) >> 8];
+            // dst[n] = clamp(samp, -32768, 32767);
         }
         return dst;
     }
@@ -827,7 +846,8 @@
         for (var n = 0; n < srcSize; n++) {
             if (dstOffset + n > dstSize)
                 break;
-            var samp = dst[dstOffset + n] + src[n];
+            // half src volume
+            var samp = dst[dstOffset + n] + (src[n] / 2);
             dst[dstOffset + n] = clamp(samp, -32768, 32767);
         }
     }
@@ -1033,10 +1053,10 @@
             this.framerate = FRAMERATES[this.frameSpeed];
             this.bgmrate = FRAMERATES[this.bgmSpeed];
             this.soundMeta = (_a = {},
-                _a[0 /* BGM */] = { offset: offset, length: bgmLen },
-                _a[1 /* SE1 */] = { offset: offset += bgmLen, length: se1Len },
-                _a[2 /* SE2 */] = { offset: offset += se1Len, length: se2Len },
-                _a[3 /* SE3 */] = { offset: offset += se2Len, length: se3Len },
+                _a[FlipnoteAudioTrack.BGM] = { offset: offset, length: bgmLen },
+                _a[FlipnoteAudioTrack.SE1] = { offset: offset += bgmLen, length: se1Len },
+                _a[FlipnoteAudioTrack.SE2] = { offset: offset += se1Len, length: se2Len },
+                _a[FlipnoteAudioTrack.SE3] = { offset: offset += se2Len, length: se3Len },
                 _a);
         };
         PpmParser.prototype.isNewFrame = function (frameIndex) {
@@ -1279,7 +1299,7 @@
             if (dstFreq === void 0) { dstFreq = DS_SAMPLE_RATE; }
             var srcPcm = this.decodeAudioTrack(trackId);
             var srcFreq = this.sampleRate;
-            if (trackId === 0 /* BGM */) {
+            if (trackId === FlipnoteAudioTrack.BGM) {
                 var bgmAdjust = (1 / this.bgmrate) / (1 / this.framerate);
                 srcFreq = this.sampleRate * bgmAdjust;
             }
@@ -1293,22 +1313,22 @@
             var duration = this.frameCount * (1 / this.framerate);
             var dstSize = Math.floor(duration * dstFreq);
             var master = new Int16Array(dstSize);
-            var hasBgm = this.hasAudioTrack(0 /* BGM */);
-            var hasSe1 = this.hasAudioTrack(1 /* SE1 */);
-            var hasSe2 = this.hasAudioTrack(2 /* SE2 */);
-            var hasSe3 = this.hasAudioTrack(3 /* SE3 */);
+            var hasBgm = this.hasAudioTrack(FlipnoteAudioTrack.BGM);
+            var hasSe1 = this.hasAudioTrack(FlipnoteAudioTrack.SE1);
+            var hasSe2 = this.hasAudioTrack(FlipnoteAudioTrack.SE2);
+            var hasSe3 = this.hasAudioTrack(FlipnoteAudioTrack.SE3);
             // Mix background music
             if (hasBgm) {
-                var bgmPcm = this.getAudioTrackPcm(0 /* BGM */, dstFreq);
+                var bgmPcm = this.getAudioTrackPcm(FlipnoteAudioTrack.BGM, dstFreq);
                 pcmAudioMix(bgmPcm, master, 0);
             }
             // Mix sound effects
             if (hasSe1 || hasSe2 || hasSe3) {
                 var samplesPerFrame = Math.floor(dstFreq / this.framerate);
                 var seFlags = this.decodeSoundFlags();
-                var se1Pcm = hasSe1 ? this.getAudioTrackPcm(1 /* SE1 */, dstFreq) : null;
-                var se2Pcm = hasSe2 ? this.getAudioTrackPcm(2 /* SE2 */, dstFreq) : null;
-                var se3Pcm = hasSe3 ? this.getAudioTrackPcm(3 /* SE3 */, dstFreq) : null;
+                var se1Pcm = hasSe1 ? this.getAudioTrackPcm(FlipnoteAudioTrack.SE1, dstFreq) : null;
+                var se2Pcm = hasSe2 ? this.getAudioTrackPcm(FlipnoteAudioTrack.SE2, dstFreq) : null;
+                var se3Pcm = hasSe3 ? this.getAudioTrackPcm(FlipnoteAudioTrack.SE3, dstFreq) : null;
                 for (var i = 0; i < this.frameCount; i++) {
                     var seOffset = samplesPerFrame * i;
                     var flag = seFlags[i];
@@ -1535,11 +1555,11 @@
                 this.bgmrate = FRAMERATES$1[bgmSpeed];
                 var trackSizes = new Uint32Array(this.buffer, offset + 4, 20);
                 this.soundMeta = (_a = {},
-                    _a[0 /* BGM */] = { offset: offset += 28, length: trackSizes[0] },
-                    _a[1 /* SE1 */] = { offset: offset += trackSizes[0], length: trackSizes[1] },
-                    _a[2 /* SE2 */] = { offset: offset += trackSizes[1], length: trackSizes[2] },
-                    _a[3 /* SE3 */] = { offset: offset += trackSizes[2], length: trackSizes[3] },
-                    _a[4 /* SE4 */] = { offset: offset += trackSizes[3], length: trackSizes[4] },
+                    _a[FlipnoteAudioTrack.BGM] = { offset: offset += 28, length: trackSizes[0] },
+                    _a[FlipnoteAudioTrack.SE1] = { offset: offset += trackSizes[0], length: trackSizes[1] },
+                    _a[FlipnoteAudioTrack.SE2] = { offset: offset += trackSizes[1], length: trackSizes[2] },
+                    _a[FlipnoteAudioTrack.SE3] = { offset: offset += trackSizes[2], length: trackSizes[3] },
+                    _a[FlipnoteAudioTrack.SE4] = { offset: offset += trackSizes[3], length: trackSizes[4] },
                     _a);
             }
         };
@@ -1756,21 +1776,18 @@
         };
         // retuns an uint8 array where each item is a pixel's palette index
         KwzParser.prototype.getLayerPixels = function (frameIndex, layerIndex) {
-            if (this.prevDecodedFrame !== frameIndex) {
+            if (this.prevDecodedFrame !== frameIndex)
                 this.decodeFrame(frameIndex);
-            }
             var palette = this.getFramePaletteIndices(frameIndex);
             var layers = this.layers[layerIndex];
             var image = new Uint8Array((KwzParser.width * KwzParser.height));
             var paletteOffset = layerIndex * 2 + 1;
             for (var pixelIndex = 0; pixelIndex < layers.length; pixelIndex++) {
                 var pixel = layers[pixelIndex];
-                if (pixel & 0xff00) {
+                if (pixel & 0xff00)
                     image[pixelIndex] = palette[paletteOffset];
-                }
-                else if (pixel & 0x00ff) {
+                else if (pixel & 0x00ff)
                     image[pixelIndex] = palette[paletteOffset + 1];
-                }
             }
             return image;
         };
@@ -1786,9 +1803,8 @@
                 // merge layer into image result
                 for (var pixelIndex = 0; pixelIndex < layer.length; pixelIndex++) {
                     var pixel = layer[pixelIndex];
-                    if (pixel !== 0) {
+                    if (pixel !== 0)
                         image[pixelIndex] = pixel;
-                    }
                 }
             });
             return image;
@@ -1842,8 +1858,8 @@
                         bitPos += 4;
                     }
                     // clamp step index and diff
-                    stepIndex = Math.max(0, Math.min(stepIndex, 79));
-                    diff = Math.max(-2047, Math.min(diff, 2047));
+                    stepIndex = clamp(stepIndex, 0, 79);
+                    diff = clamp(diff, -2047, 2047);
                     // add result to output buffer
                     output[outputOffset] = (diff * 16);
                     outputOffset += 1;
@@ -1858,7 +1874,7 @@
             if (dstFreq === void 0) { dstFreq = CTR_SAMPLE_RATE; }
             var srcPcm = this.decodeAudioTrack(trackId);
             var srcFreq = this.sampleRate;
-            if (trackId === 0 /* BGM */) {
+            if (trackId === FlipnoteAudioTrack.BGM) {
                 var bgmAdjust = (1 / this.bgmrate) / (1 / this.framerate);
                 srcFreq = this.sampleRate * bgmAdjust;
             }
@@ -1872,24 +1888,24 @@
             var duration = this.frameCount * (1 / this.framerate);
             var dstSize = Math.floor(duration * dstFreq);
             var master = new Int16Array(dstSize);
-            var hasBgm = this.hasAudioTrack(0 /* BGM */);
-            var hasSe1 = this.hasAudioTrack(1 /* SE1 */);
-            var hasSe2 = this.hasAudioTrack(2 /* SE2 */);
-            var hasSe3 = this.hasAudioTrack(3 /* SE3 */);
-            var hasSe4 = this.hasAudioTrack(4 /* SE4 */);
+            var hasBgm = this.hasAudioTrack(FlipnoteAudioTrack.BGM);
+            var hasSe1 = this.hasAudioTrack(FlipnoteAudioTrack.SE1);
+            var hasSe2 = this.hasAudioTrack(FlipnoteAudioTrack.SE2);
+            var hasSe3 = this.hasAudioTrack(FlipnoteAudioTrack.SE3);
+            var hasSe4 = this.hasAudioTrack(FlipnoteAudioTrack.SE4);
             // Mix background music
             if (hasBgm) {
-                var bgmPcm = this.getAudioTrackPcm(0 /* BGM */, dstFreq);
+                var bgmPcm = this.getAudioTrackPcm(FlipnoteAudioTrack.BGM, dstFreq);
                 pcmAudioMix(bgmPcm, master, 0);
             }
             // Mix sound effects
             if (hasSe1 || hasSe2 || hasSe3) {
                 var samplesPerFrame = Math.floor(dstFreq / this.framerate);
                 var seFlags = this.decodeSoundFlags();
-                var se1Pcm = hasSe1 ? this.getAudioTrackPcm(1 /* SE1 */, dstFreq) : null;
-                var se2Pcm = hasSe2 ? this.getAudioTrackPcm(2 /* SE2 */, dstFreq) : null;
-                var se3Pcm = hasSe3 ? this.getAudioTrackPcm(3 /* SE3 */, dstFreq) : null;
-                var se4Pcm = hasSe4 ? this.getAudioTrackPcm(4 /* SE4 */, dstFreq) : null;
+                var se1Pcm = hasSe1 ? this.getAudioTrackPcm(FlipnoteAudioTrack.SE1, dstFreq) : null;
+                var se2Pcm = hasSe2 ? this.getAudioTrackPcm(FlipnoteAudioTrack.SE2, dstFreq) : null;
+                var se3Pcm = hasSe3 ? this.getAudioTrackPcm(FlipnoteAudioTrack.SE3, dstFreq) : null;
+                var se4Pcm = hasSe4 ? this.getAudioTrackPcm(FlipnoteAudioTrack.SE4, dstFreq) : null;
                 for (var i = 0; i < this.frameCount; i++) {
                     var seOffset = samplesPerFrame * i;
                     var flag = seFlags[i];
@@ -1939,6 +1955,430 @@
             });
         });
     }
+
+    /*
+      LZWEncoder.js
+
+      Authors
+      Kevin Weiner (original Java version - kweiner@fmsware.com)
+      Thibault Imbert (AS3 version - bytearray.org)
+      Johan Nordberg (JS version - code@johan-nordberg.com)
+      James Daniel (ES6/TS version)
+
+      Acknowledgements
+      GIFCOMPR.C - GIF Image compression routines
+      Lempel-Ziv compression based on 'compress'. GIF modifications by
+      David Rowley (mgardi@watdcsu.waterloo.edu)
+      GIF Image compression - modified 'compress'
+      Based on: compress.c - File compression ala IEEE Computer, June 1984.
+      By Authors: Spencer W. Thomas (decvax!harpo!utah-cs!utah-gr!thomas)
+      Jim McKie (decvax!mcvax!jim)
+      Steve Davies (decvax!vax135!petsd!peora!srd)
+      Ken Turkowski (decvax!decwrl!turtlevax!ken)
+      James A. Woods (decvax!ihnp4!ames!jaw)
+      Joe Orost (decvax!vax135!petsd!joe)
+    */
+    var EOF = -1;
+    var BITS = 12;
+    var HSIZE = 5003; // 80% occupancy
+    var masks = [
+        0x0000, 0x0001, 0x0003, 0x0007, 0x000F, 0x001F,
+        0x003F, 0x007F, 0x00FF, 0x01FF, 0x03FF, 0x07FF,
+        0x0FFF, 0x1FFF, 0x3FFF, 0x7FFF, 0xFFFF
+    ];
+    var LZWEncoder = /** @class */ (function () {
+        function LZWEncoder(width, height, pixels, colorDepth) {
+            this.accum = new Uint8Array(256);
+            this.htab = new Int32Array(HSIZE);
+            this.codetab = new Int32Array(HSIZE);
+            this.cur_accum = 0;
+            this.cur_bits = 0;
+            this.curPixel = 0;
+            this.free_ent = 0; // first unused entry
+            // block compression parameters -- after all codes are used up,
+            // and compression rate changes, start over.
+            this.clear_flg = false;
+            // Algorithm: use open addressing double hashing (no chaining) on the
+            // prefix code / next character combination. We do a variant of Knuth's
+            // algorithm D (vol. 3, sec. 6.4) along with G. Knott's relatively-prime
+            // secondary probe. Here, the modular division first probe is gives way
+            // to a faster exclusive-or manipulation. Also do block compression with
+            // an adaptive reset, whereby the code table is cleared when the compression
+            // ratio decreases, but after the table fills. The variable-length output
+            // codes are re-sized at this point, and a special CLEAR code is generated
+            // for the decompressor. Late addition: construct the table according to
+            // file size for noticeable speed improvement on small files. Please direct
+            // questions about this implementation to ames!jaw.
+            this.g_init_bits = undefined;
+            this.ClearCode = undefined;
+            this.EOFCode = undefined;
+            this.width = width;
+            this.height = height;
+            this.pixels = pixels;
+            this.colorDepth = colorDepth;
+            this.initCodeSize = Math.max(2, this.colorDepth);
+            this.accum = new Uint8Array(256);
+            this.htab = new Int32Array(HSIZE);
+            this.codetab = new Int32Array(HSIZE);
+            this.cur_accum = 0;
+            this.cur_bits = 0;
+            this.a_count;
+            this.remaining;
+            this.curPixel = 0;
+            this.free_ent = 0; // first unused entry
+            this.maxcode;
+            // block compression parameters -- after all codes are used up,
+            // and compression rate changes, start over.
+            this.clear_flg = false;
+            // Algorithm: use open addressing double hashing (no chaining) on the
+            // prefix code / next character combination. We do a variant of Knuth's
+            // algorithm D (vol. 3, sec. 6.4) along with G. Knott's relatively-prime
+            // secondary probe. Here, the modular division first probe is gives way
+            // to a faster exclusive-or manipulation. Also do block compression with
+            // an adaptive reset, whereby the code table is cleared when the compression
+            // ratio decreases, but after the table fills. The variable-length output
+            // codes are re-sized at this point, and a special CLEAR code is generated
+            // for the decompressor. Late addition: construct the table according to
+            // file size for noticeable speed improvement on small files. Please direct
+            // questions about this implementation to ames!jaw.
+            this.g_init_bits = undefined;
+            this.ClearCode = undefined;
+            this.EOFCode = undefined;
+        }
+        // Add a character to the end of the current packet, and if it is 254
+        // characters, flush the packet to disk.
+        LZWEncoder.prototype.char_out = function (c, outs) {
+            this.accum[this.a_count++] = c;
+            if (this.a_count >= 254)
+                this.flush_char(outs);
+        };
+        // Clear out the hash table
+        // table clear for block compress
+        LZWEncoder.prototype.cl_block = function (outs) {
+            this.cl_hash(HSIZE);
+            this.free_ent = this.ClearCode + 2;
+            this.clear_flg = true;
+            this.output(this.ClearCode, outs);
+        };
+        // Reset code table
+        LZWEncoder.prototype.cl_hash = function (hsize) {
+            for (var i = 0; i < hsize; ++i)
+                this.htab[i] = -1;
+        };
+        LZWEncoder.prototype.compress = function (init_bits, outs) {
+            var fcode, c, i, ent, disp, hsize_reg, hshift;
+            // Set up the globals: this.g_init_bits - initial number of bits
+            this.g_init_bits = init_bits;
+            // Set up the necessary values
+            this.clear_flg = false;
+            this.n_bits = this.g_init_bits;
+            this.maxcode = this.get_maxcode(this.n_bits);
+            this.ClearCode = 1 << (init_bits - 1);
+            this.EOFCode = this.ClearCode + 1;
+            this.free_ent = this.ClearCode + 2;
+            this.a_count = 0; // clear packet
+            ent = this.nextPixel();
+            hshift = 0;
+            for (fcode = HSIZE; fcode < 65536; fcode *= 2)
+                ++hshift;
+            hshift = 8 - hshift; // set hash code range bound
+            hsize_reg = HSIZE;
+            this.cl_hash(hsize_reg); // clear hash table
+            this.output(this.ClearCode, outs);
+            outer_loop: while ((c = this.nextPixel()) != EOF) {
+                fcode = (c << BITS) + ent;
+                i = (c << hshift) ^ ent; // xor hashing
+                if (this.htab[i] === fcode) {
+                    ent = this.codetab[i];
+                    continue;
+                }
+                else if (this.htab[i] >= 0) { // non-empty slot
+                    disp = hsize_reg - i; // secondary hash (after G. Knott)
+                    if (i === 0)
+                        disp = 1;
+                    do {
+                        if ((i -= disp) < 0)
+                            i += hsize_reg;
+                        if (this.htab[i] === fcode) {
+                            ent = this.codetab[i];
+                            continue outer_loop;
+                        }
+                    } while (this.htab[i] >= 0);
+                }
+                this.output(ent, outs);
+                ent = c;
+                if (this.free_ent < 1 << BITS) {
+                    this.codetab[i] = this.free_ent++; // code -> hasthis.htable
+                    this.htab[i] = fcode;
+                }
+                else {
+                    this.cl_block(outs);
+                }
+            }
+            // Put out the final code.
+            this.output(ent, outs);
+            this.output(this.EOFCode, outs);
+        };
+        LZWEncoder.prototype.encode = function (outs) {
+            outs.writeByte(this.initCodeSize); // write 'initial code size' byte
+            this.remaining = this.width * this.height; // reset navigation variables
+            this.curPixel = 0;
+            this.compress(this.initCodeSize + 1, outs); // compress and write the pixel data
+            outs.writeByte(0); // write block terminator
+        };
+        // Flush the packet to disk, and reset the this.accumulator
+        LZWEncoder.prototype.flush_char = function (outs) {
+            if (this.a_count > 0) {
+                outs.writeByte(this.a_count);
+                outs.writeBytes(this.accum, 0, this.a_count);
+                this.a_count = 0;
+            }
+        };
+        LZWEncoder.prototype.get_maxcode = function (n_bits) {
+            return (1 << n_bits) - 1;
+        };
+        // Return the next pixel from the image
+        LZWEncoder.prototype.nextPixel = function () {
+            if (this.remaining === 0)
+                return EOF;
+            --this.remaining;
+            var pix = this.pixels[this.curPixel++];
+            return pix & 0xff;
+        };
+        LZWEncoder.prototype.output = function (code, outs) {
+            this.cur_accum &= masks[this.cur_bits];
+            if (this.cur_bits > 0)
+                this.cur_accum |= (code << this.cur_bits);
+            else
+                this.cur_accum = code;
+            this.cur_bits += this.n_bits;
+            while (this.cur_bits >= 8) {
+                this.char_out((this.cur_accum & 0xff), outs);
+                this.cur_accum >>= 8;
+                this.cur_bits -= 8;
+            }
+            // If the next entry is going to be too big for the code size,
+            // then increase it, if possible.
+            if (this.free_ent > this.maxcode || this.clear_flg) {
+                if (this.clear_flg) {
+                    this.maxcode = this.get_maxcode(this.n_bits = this.g_init_bits);
+                    this.clear_flg = false;
+                }
+                else {
+                    ++this.n_bits;
+                    if (this.n_bits == BITS)
+                        this.maxcode = 1 << BITS;
+                    else
+                        this.maxcode = this.get_maxcode(this.n_bits);
+                }
+            }
+            if (code == this.EOFCode) {
+                // At EOF, write the rest of the buffer.
+                while (this.cur_bits > 0) {
+                    this.char_out((this.cur_accum & 0xff), outs);
+                    this.cur_accum >>= 8;
+                    this.cur_bits -= 8;
+                }
+                this.flush_char(outs);
+            }
+        };
+        return LZWEncoder;
+    }());
+
+    var GifEncoder = /** @class */ (function () {
+        function GifEncoder(width, height) {
+            this.delay = 100;
+            // -1 = no repeat, 0 = forever. anything else is repeat count
+            this.repeat = -1;
+            this.colorDepth = 8;
+            this.palette = [];
+            this.width = width;
+            this.height = height;
+            this.data = new ByteArray();
+        }
+        GifEncoder.fromFlipnote = function (flipnote) {
+            var gif = new GifEncoder(flipnote.width, flipnote.height);
+            gif.palette = flipnote.globalPalette;
+            gif.delay = 100 / flipnote.framerate;
+            gif.repeat = flipnote.meta.loop ? -1 : 0;
+            gif.init();
+            for (var frameIndex = 0; frameIndex < flipnote.frameCount; frameIndex++) {
+                gif.writeFrame(flipnote.getFramePixels(frameIndex));
+            }
+            return gif;
+        };
+        GifEncoder.fromFlipnoteFrame = function (flipnote, frameIndex) {
+            var gif = new GifEncoder(flipnote.width, flipnote.height);
+            gif.palette = flipnote.globalPalette;
+            // TODO: look at ideal delay and repeat settings for single frame GIF
+            gif.delay = 100 / flipnote.framerate;
+            gif.repeat = flipnote.meta.loop ? -1 : 0;
+            gif.init();
+            gif.writeFrame(flipnote.getFramePixels(frameIndex));
+            return gif;
+        };
+        GifEncoder.prototype.init = function () {
+            var paletteSize = this.palette.length;
+            for (var p = 1; 1 << p < paletteSize; p += 1)
+                continue;
+            this.colorDepth = p;
+            this.writeHeader();
+            this.writeColorTable();
+            this.writeNetscapeExt();
+        };
+        GifEncoder.prototype.writeHeader = function () {
+            var header = new DataStream(new ArrayBuffer(13));
+            header.writeChars('GIF89a');
+            // Logical Screen Descriptor
+            header.writeUint16(this.width);
+            header.writeUint16(this.height);
+            header.writeUint8(0x80 | // 1 : global color table flag = 1 (gct used)
+                (this.colorDepth - 1) // 6-8 : gct size
+            );
+            header.writeUint8(0);
+            header.writeUint8(0);
+            this.data.writeBytes(new Uint8Array(header.buffer));
+        };
+        GifEncoder.prototype.writeColorTable = function () {
+            var palette = new Uint8Array(3 * Math.pow(2, this.colorDepth));
+            for (var index = 0, offset = 0; index < this.palette.length; index += 1, offset += 3) {
+                palette.set(this.palette[index], offset);
+            }
+            this.data.writeBytes(palette);
+        };
+        GifEncoder.prototype.writeGraphicsControlExt = function () {
+            var graphicsControlExt = new DataStream(new ArrayBuffer(8));
+            graphicsControlExt.writeBytes([
+                0x21,
+                0xF9,
+                4,
+                0 // bitfield
+            ]);
+            graphicsControlExt.writeUint16(this.delay); // loop flag
+            graphicsControlExt.writeBytes([
+                0,
+                0
+            ]);
+            this.data.writeBytes(new Uint8Array(graphicsControlExt.buffer));
+        };
+        GifEncoder.prototype.writeNetscapeExt = function () {
+            var netscapeExt = new DataStream(new ArrayBuffer(19));
+            netscapeExt.writeBytes([
+                0x21,
+                0xFF,
+                11,
+            ]);
+            netscapeExt.writeChars('NETSCAPE2.0');
+            netscapeExt.writeUint8(3); // subblock size
+            netscapeExt.writeUint8(1); // loop subblock id
+            netscapeExt.writeUint16(this.repeat); // loop flag
+            this.data.writeBytes(new Uint8Array(netscapeExt.buffer));
+        };
+        GifEncoder.prototype.writeImageDesc = function () {
+            var desc = new DataStream(new ArrayBuffer(10));
+            desc.writeUint8(0x2C);
+            desc.writeUint16(0); // image left
+            desc.writeUint16(0); // image top
+            desc.writeUint16(this.width);
+            desc.writeUint16(this.height);
+            desc.writeUint8(0);
+            this.data.writeBytes(new Uint8Array(desc.buffer));
+        };
+        GifEncoder.prototype.writePixels = function (pixels) {
+            var lzw = new LZWEncoder(this.width, this.height, pixels, this.colorDepth);
+            lzw.encode(this.data);
+        };
+        GifEncoder.prototype.writeFrame = function (pixels) {
+            this.writeGraphicsControlExt();
+            this.writeImageDesc();
+            this.writePixels(pixels);
+        };
+        GifEncoder.prototype.getBuffer = function () {
+            return this.data.getBuffer();
+        };
+        GifEncoder.prototype.getBlob = function () {
+            return new Blob([this.getBuffer()], { type: 'image/gif' });
+        };
+        GifEncoder.prototype.getUrl = function () {
+            return window.URL.createObjectURL(this.getBlob());
+        };
+        GifEncoder.prototype.getImage = function () {
+            var img = new Image(this.width, this.height);
+            img.src = this.getUrl();
+            return img;
+        };
+        return GifEncoder;
+    }());
+
+    // Typical WAV sample rate
+    var WAV_SAMPLE_RATE = 44100;
+    var WavEncoder = /** @class */ (function () {
+        function WavEncoder(sampleRate, channels, bitsPerSample) {
+            if (channels === void 0) { channels = 1; }
+            if (bitsPerSample === void 0) { bitsPerSample = 16; }
+            this.sampleRate = sampleRate;
+            this.channels = channels;
+            this.bitsPerSample = bitsPerSample;
+            // Write WAV file header
+            // Reference: http://www.topherlee.com/software/pcm-tut-wavformat.html
+            var headerBuffer = new ArrayBuffer(44);
+            var header = new DataStream(headerBuffer);
+            // 'RIFF' indent
+            header.writeChars('RIFF');
+            // filesize (set later)
+            header.writeUint32(0);
+            // 'WAVE' indent
+            header.writeChars('WAVE');
+            // 'fmt ' section header
+            header.writeChars('fmt ');
+            // fmt section length
+            header.writeUint32(16);
+            // specify audio format is pcm (type 1)
+            header.writeUint16(1);
+            // number of audio channels
+            header.writeUint16(this.channels);
+            // audio sample rate
+            header.writeUint32(this.sampleRate);
+            // byterate = (sampleRate * bitsPerSample * channelCount) / 8
+            header.writeUint32((this.sampleRate * this.bitsPerSample * this.channels) / 8);
+            // blockalign = (bitsPerSample * channels) / 8
+            header.writeUint16((this.bitsPerSample * this.channels) / 8);
+            // bits per sample
+            header.writeUint16(this.bitsPerSample);
+            // 'data' section header
+            header.writeChars('data');
+            // data section length (set later)
+            header.writeUint32(0);
+            this.header = header;
+            this.pcmData = null;
+        }
+        WavEncoder.fromFlipnote = function (note) {
+            var wav = new WavEncoder(WAV_SAMPLE_RATE, 1, 16);
+            var pcm = note.getAudioMasterPcm(WAV_SAMPLE_RATE);
+            wav.writeFrames(pcm);
+            return wav;
+        };
+        WavEncoder.fromFlipnoteTrack = function (note, trackId) {
+            var wav = new WavEncoder(WAV_SAMPLE_RATE, 1, 16);
+            var pcm = note.getAudioTrackPcm(trackId, WAV_SAMPLE_RATE);
+            wav.writeFrames(pcm);
+            return wav;
+        };
+        WavEncoder.prototype.writeFrames = function (pcmData) {
+            var header = this.header;
+            // fill in filesize
+            header.seek(4);
+            header.writeUint32(header.byteLength + pcmData.byteLength);
+            // fill in data section length
+            header.seek(40);
+            header.writeUint32(pcmData.byteLength);
+            this.pcmData = pcmData;
+        };
+        WavEncoder.prototype.getBlob = function () {
+            return new Blob([this.header.buffer, this.pcmData.buffer], { type: 'audio/wav' });
+        };
+        return WavEncoder;
+    }());
 
     var vertexShader = "#define GLSLIFY 1\nattribute vec4 a_position;varying vec2 v_texel;varying float v_scale;uniform vec2 u_textureSize;uniform vec2 u_screenSize;void main(){gl_Position=a_position;vec2 uv=a_position.xy*vec2(0.5,-0.5)+0.5;v_texel=uv*u_textureSize;v_scale=floor(u_screenSize.y/u_textureSize.y+0.01);}"; // eslint-disable-line
 
@@ -2102,10 +2542,33 @@
 
     var _AudioContext = (window.AudioContext || window.webkitAudioContext);
     var WebAudioPlayer = /** @class */ (function () {
-        function WebAudioPlayer(sampleData, sampleRate) {
+        function WebAudioPlayer() {
+            this.useEq = false;
+            // Thanks to Sudomemo for the default settings
+            this.eqSettings = [
+                [31.25, 4.1],
+                [62.5, 1.2],
+                [125, 0],
+                [250, -4.1],
+                [500, -2.3],
+                [1000, 0.5],
+                [2000, 6.5],
+                [8000, 5.1],
+                [16000, 5.1]
+            ];
+            this._volume = 1;
             this.ctx = new _AudioContext();
-            this.setSamples(sampleData, sampleRate);
         }
+        Object.defineProperty(WebAudioPlayer.prototype, "volume", {
+            get: function () {
+                return this._volume;
+            },
+            set: function (value) {
+                this.setVolume(value);
+            },
+            enumerable: false,
+            configurable: true
+        });
         WebAudioPlayer.prototype.setSamples = function (sampleData, sampleRate) {
             var numSamples = sampleData.length;
             var audioBuffer = this.ctx.createBuffer(1, numSamples, sampleRate);
@@ -2121,19 +2584,73 @@
             this.buffer = audioBuffer;
             this.sampleRate = sampleRate;
         };
+        WebAudioPlayer.prototype.connectEqNodesTo = function (inNode) {
+            var _a = this, ctx = _a.ctx, eqSettings = _a.eqSettings;
+            var lastNode = inNode;
+            eqSettings.forEach(function (_a, index) {
+                var frequency = _a[0], gain = _a[1];
+                var node = ctx.createBiquadFilter();
+                if (index === 0)
+                    node.type = 'lowshelf';
+                else if (index === eqSettings.length - 1)
+                    node.type = 'highshelf';
+                else
+                    node.type = 'peaking';
+                node.frequency.value = frequency;
+                node.gain.value = gain;
+                lastNode.connect(node);
+                lastNode = node;
+            });
+            return lastNode;
+        };
+        WebAudioPlayer.prototype.initNodes = function () {
+            var ctx = this.ctx;
+            var source = ctx.createBufferSource();
+            source.buffer = this.buffer;
+            var gainNode = ctx.createGain();
+            if (this.useEq) {
+                var eq = this.connectEqNodesTo(source);
+                eq.connect(gainNode);
+            }
+            else {
+                source.connect(gainNode);
+            }
+            source.connect(gainNode);
+            gainNode.connect(ctx.destination);
+            this.source = source;
+            this.gainNode = gainNode;
+            this.setVolume(this._volume);
+        };
+        WebAudioPlayer.prototype.setVolume = function (value) {
+            this._volume = value;
+            if (this.gainNode) {
+                // human perception of loudness is logarithmic, rather than linear
+                // https://www.dr-lex.be/info-stuff/volumecontrols.html
+                this.gainNode.gain.value = Math.pow(value, 2);
+            }
+        };
         WebAudioPlayer.prototype.stop = function () {
             this.source.stop(0);
         };
         WebAudioPlayer.prototype.playFrom = function (currentTime) {
-            var source = this.ctx.createBufferSource();
-            source.buffer = this.buffer;
-            source.connect(this.ctx.destination, 0, 0);
-            this.source = source;
+            this.initNodes();
             this.source.start(0, currentTime);
         };
         return WebAudioPlayer;
     }());
 
+    var saveData = (function () {
+        var a = document.createElement("a");
+        // document.body.appendChild(a);
+        // a.style.display = "none";
+        return function (blob, filename) {
+            var url = window.URL.createObjectURL(blob);
+            a.href = url;
+            a.download = filename;
+            a.click();
+            window.URL.revokeObjectURL(url);
+        };
+    }());
     /** flipnote player API, based on HTMLMediaElement (https://developer.mozilla.org/en-US/docs/Web/API/HTMLMediaElement) */
     var Player = /** @class */ (function () {
         function Player(el, width, height) {
@@ -2142,17 +2659,24 @@
             this.duration = 0;
             this.isOpen = false;
             this.events = {};
+            this._lastTick = -1;
             this._frame = -1;
-            this._time = 0;
+            this._time = -1;
             this.hasPlaybackStarted = false;
             this.wasPlaying = false;
             this.isSeeking = false;
             // if `el` is a string, use it to select an Element, else assume it's an element
             el = ('string' == typeof el) ? document.querySelector(el) : el;
             this.canvas = new WebglCanvas(el, width, height);
+            this.audio = new WebAudioPlayer();
             this.el = this.canvas.el;
             this.customPalette = null;
+            this.state = __assign({}, Player.defaultState);
         }
+        Player.prototype.saveWav = function () {
+            var wav = WavEncoder.fromFlipnote(this.note);
+            saveData(wav.getBlob(), 'audio.wav');
+        };
         Object.defineProperty(Player.prototype, "currentFrame", {
             get: function () {
                 return this._frame;
@@ -2179,7 +2703,7 @@
         });
         Object.defineProperty(Player.prototype, "progress", {
             get: function () {
-                return this.isOpen ? (this.currentTime / this.duration) * 100 : 0;
+                return this.isOpen ? (this._time / this.duration) * 100 : 0;
             },
             set: function (value) {
                 this.currentTime = this.duration * (value / 100);
@@ -2189,13 +2713,10 @@
         });
         Object.defineProperty(Player.prototype, "volume", {
             get: function () {
-                // return this.audioTracks[3].audio.volume;
-                return 1;
+                return this.audio.volume;
             },
             set: function (value) {
-                // for (let i = 0; i < this.audioTracks.length; i++) {
-                //   this.audioTracks[i].audio.volume = value;
-                // }
+                this.audio.volume = value;
             },
             enumerable: false,
             configurable: true
@@ -2234,13 +2755,11 @@
             enumerable: false,
             configurable: true
         });
-        Object.defineProperty(Player.prototype, "audiorate", {
-            get: function () {
-                return (1 / this.note.bgmrate) / (1 / this.note.framerate);
-            },
-            enumerable: false,
-            configurable: true
-        });
+        Player.prototype.setState = function (newState) {
+            newState = __assign(__assign({}, this.state), newState);
+            var oldState = this.state;
+            this.emit('state:change');
+        };
         Player.prototype.open = function (source) {
             return __awaiter(this, void 0, void 0, function () {
                 var _this = this;
@@ -2248,9 +2767,7 @@
                     if (this.isOpen)
                         this.close();
                     return [2 /*return*/, parseSource(source)
-                            .then(function (note) {
-                            _this.load(note);
-                        })
+                            .then(function (note) { return _this.load(note); })
                             .catch(function (err) {
                             _this.emit('error', err);
                             console.error('Error loading Flipnote:', err);
@@ -2287,8 +2804,9 @@
                 2: true,
                 3: true
             };
-            var pcm = note.getAudioMasterPcm(32768);
-            this.audioPlayer = new WebAudioPlayer(pcm, 32768);
+            var sampleRate = this.audio.ctx.sampleRate;
+            var pcm = note.getAudioMasterPcm(sampleRate);
+            this.audio.setSamples(pcm, sampleRate);
             this.canvas.setInputSize(note.width, note.height);
             this.canvas.setLayerType(this.type === 'PPM' ? TextureType.Alpha : TextureType.LuminanceAlpha);
             this.setFrame(this.note.thumbFrameIndex);
@@ -2296,47 +2814,51 @@
             this.emit('load');
         };
         Player.prototype.playAudio = function () {
-            this.audioPlayer.playFrom(this.currentTime);
+            this.audio.playFrom(this.currentTime);
         };
         Player.prototype.stopAudio = function () {
-            this.audioPlayer.stop();
+            this.audio.stop();
         };
-        Player.prototype.play = function () {
-            var _this = this;
-            if ((!this.isOpen) || (!this.paused))
-                return null;
-            if ((!this.hasPlaybackStarted) || ((!this.loop) && (this.currentFrame == this.frameCount - 1))) {
-                this._time = 0;
-            }
-            this.paused = false;
+        Player.prototype.toggleEq = function () {
+            this.stopAudio();
+            this.audio.useEq = !this.audio.useEq;
             this.playAudio();
-            var start = (performance.now() / 1000) - this.currentTime;
-            var loop = function (timestamp) {
-                if (_this.paused) { // break loop if paused is set to true
-                    _this.stopAudio();
-                    return null;
-                }
-                var time = timestamp / 1000;
-                var progress = time - start;
-                if (progress > _this.duration) {
-                    if (_this.loop) {
-                        _this.currentTime = 0;
-                        _this.playAudio();
-                        start = time;
-                        _this.emit('playback:loop');
-                    }
-                    else {
-                        _this.pause();
-                        _this.emit('playback:end');
-                    }
+        };
+        Player.prototype.playbackLoop = function (timestamp) {
+            if (this.paused) { // break loop if paused is set to true
+                this.stopAudio();
+                return null;
+            }
+            var time = timestamp / 1000;
+            var progress = time - this._lastTick;
+            if (progress > this.duration) {
+                if (this.loop) {
+                    this.currentTime = 0;
+                    this.playAudio();
+                    this._lastTick = time;
+                    this.emit('playback:loop');
                 }
                 else {
-                    _this.currentTime = progress;
+                    this.pause();
+                    this.emit('playback:end');
                 }
-                requestAnimationFrame(loop);
-            };
-            requestAnimationFrame(loop);
+            }
+            else {
+                this.currentTime = progress;
+            }
+            requestAnimationFrame(this.playbackLoop.bind(this));
+        };
+        Player.prototype.play = function () {
+            window.__activeFlipnotePlayer = this;
+            if ((!this.isOpen) || (!this.paused))
+                return null;
+            if ((!this.hasPlaybackStarted) || ((!this.loop) && (this.currentFrame == this.frameCount - 1)))
+                this._time = 0;
+            this.paused = false;
             this.hasPlaybackStarted = true;
+            this._lastTick = (performance.now() / 1000) - this.currentTime;
+            this.playAudio();
+            requestAnimationFrame(this.playbackLoop.bind(this));
             this.emit('playback:start');
         };
         Player.prototype.pause = function () {
@@ -2483,6 +3005,24 @@
         Player.prototype.destroy = function () {
             this.close();
             this.canvas.destroy();
+        };
+        Player.defaultState = {
+            noteType: null,
+            isNoteOpen: false,
+            paused: false,
+            hasPlaybackStarted: false,
+            frame: -1,
+            time: -1,
+            loop: false,
+            volume: 1,
+            muted: false,
+            layerVisibility: {
+                1: true,
+                2: true,
+                3: true
+            },
+            isSeeking: false,
+            wasPlaying: false,
         };
         return Player;
     }());
@@ -3581,430 +4121,6 @@
     		flush();
     	}
     }
-
-    /*
-      LZWEncoder.js
-
-      Authors
-      Kevin Weiner (original Java version - kweiner@fmsware.com)
-      Thibault Imbert (AS3 version - bytearray.org)
-      Johan Nordberg (JS version - code@johan-nordberg.com)
-      James Daniel (ES6/TS version)
-
-      Acknowledgements
-      GIFCOMPR.C - GIF Image compression routines
-      Lempel-Ziv compression based on 'compress'. GIF modifications by
-      David Rowley (mgardi@watdcsu.waterloo.edu)
-      GIF Image compression - modified 'compress'
-      Based on: compress.c - File compression ala IEEE Computer, June 1984.
-      By Authors: Spencer W. Thomas (decvax!harpo!utah-cs!utah-gr!thomas)
-      Jim McKie (decvax!mcvax!jim)
-      Steve Davies (decvax!vax135!petsd!peora!srd)
-      Ken Turkowski (decvax!decwrl!turtlevax!ken)
-      James A. Woods (decvax!ihnp4!ames!jaw)
-      Joe Orost (decvax!vax135!petsd!joe)
-    */
-    var EOF = -1;
-    var BITS = 12;
-    var HSIZE = 5003; // 80% occupancy
-    var masks = [
-        0x0000, 0x0001, 0x0003, 0x0007, 0x000F, 0x001F,
-        0x003F, 0x007F, 0x00FF, 0x01FF, 0x03FF, 0x07FF,
-        0x0FFF, 0x1FFF, 0x3FFF, 0x7FFF, 0xFFFF
-    ];
-    var LZWEncoder = /** @class */ (function () {
-        function LZWEncoder(width, height, pixels, colorDepth) {
-            this.accum = new Uint8Array(256);
-            this.htab = new Int32Array(HSIZE);
-            this.codetab = new Int32Array(HSIZE);
-            this.cur_accum = 0;
-            this.cur_bits = 0;
-            this.curPixel = 0;
-            this.free_ent = 0; // first unused entry
-            // block compression parameters -- after all codes are used up,
-            // and compression rate changes, start over.
-            this.clear_flg = false;
-            // Algorithm: use open addressing double hashing (no chaining) on the
-            // prefix code / next character combination. We do a variant of Knuth's
-            // algorithm D (vol. 3, sec. 6.4) along with G. Knott's relatively-prime
-            // secondary probe. Here, the modular division first probe is gives way
-            // to a faster exclusive-or manipulation. Also do block compression with
-            // an adaptive reset, whereby the code table is cleared when the compression
-            // ratio decreases, but after the table fills. The variable-length output
-            // codes are re-sized at this point, and a special CLEAR code is generated
-            // for the decompressor. Late addition: construct the table according to
-            // file size for noticeable speed improvement on small files. Please direct
-            // questions about this implementation to ames!jaw.
-            this.g_init_bits = undefined;
-            this.ClearCode = undefined;
-            this.EOFCode = undefined;
-            this.width = width;
-            this.height = height;
-            this.pixels = pixels;
-            this.colorDepth = colorDepth;
-            this.initCodeSize = Math.max(2, this.colorDepth);
-            this.accum = new Uint8Array(256);
-            this.htab = new Int32Array(HSIZE);
-            this.codetab = new Int32Array(HSIZE);
-            this.cur_accum = 0;
-            this.cur_bits = 0;
-            this.a_count;
-            this.remaining;
-            this.curPixel = 0;
-            this.free_ent = 0; // first unused entry
-            this.maxcode;
-            // block compression parameters -- after all codes are used up,
-            // and compression rate changes, start over.
-            this.clear_flg = false;
-            // Algorithm: use open addressing double hashing (no chaining) on the
-            // prefix code / next character combination. We do a variant of Knuth's
-            // algorithm D (vol. 3, sec. 6.4) along with G. Knott's relatively-prime
-            // secondary probe. Here, the modular division first probe is gives way
-            // to a faster exclusive-or manipulation. Also do block compression with
-            // an adaptive reset, whereby the code table is cleared when the compression
-            // ratio decreases, but after the table fills. The variable-length output
-            // codes are re-sized at this point, and a special CLEAR code is generated
-            // for the decompressor. Late addition: construct the table according to
-            // file size for noticeable speed improvement on small files. Please direct
-            // questions about this implementation to ames!jaw.
-            this.g_init_bits = undefined;
-            this.ClearCode = undefined;
-            this.EOFCode = undefined;
-        }
-        // Add a character to the end of the current packet, and if it is 254
-        // characters, flush the packet to disk.
-        LZWEncoder.prototype.char_out = function (c, outs) {
-            this.accum[this.a_count++] = c;
-            if (this.a_count >= 254)
-                this.flush_char(outs);
-        };
-        // Clear out the hash table
-        // table clear for block compress
-        LZWEncoder.prototype.cl_block = function (outs) {
-            this.cl_hash(HSIZE);
-            this.free_ent = this.ClearCode + 2;
-            this.clear_flg = true;
-            this.output(this.ClearCode, outs);
-        };
-        // Reset code table
-        LZWEncoder.prototype.cl_hash = function (hsize) {
-            for (var i = 0; i < hsize; ++i)
-                this.htab[i] = -1;
-        };
-        LZWEncoder.prototype.compress = function (init_bits, outs) {
-            var fcode, c, i, ent, disp, hsize_reg, hshift;
-            // Set up the globals: this.g_init_bits - initial number of bits
-            this.g_init_bits = init_bits;
-            // Set up the necessary values
-            this.clear_flg = false;
-            this.n_bits = this.g_init_bits;
-            this.maxcode = this.get_maxcode(this.n_bits);
-            this.ClearCode = 1 << (init_bits - 1);
-            this.EOFCode = this.ClearCode + 1;
-            this.free_ent = this.ClearCode + 2;
-            this.a_count = 0; // clear packet
-            ent = this.nextPixel();
-            hshift = 0;
-            for (fcode = HSIZE; fcode < 65536; fcode *= 2)
-                ++hshift;
-            hshift = 8 - hshift; // set hash code range bound
-            hsize_reg = HSIZE;
-            this.cl_hash(hsize_reg); // clear hash table
-            this.output(this.ClearCode, outs);
-            outer_loop: while ((c = this.nextPixel()) != EOF) {
-                fcode = (c << BITS) + ent;
-                i = (c << hshift) ^ ent; // xor hashing
-                if (this.htab[i] === fcode) {
-                    ent = this.codetab[i];
-                    continue;
-                }
-                else if (this.htab[i] >= 0) { // non-empty slot
-                    disp = hsize_reg - i; // secondary hash (after G. Knott)
-                    if (i === 0)
-                        disp = 1;
-                    do {
-                        if ((i -= disp) < 0)
-                            i += hsize_reg;
-                        if (this.htab[i] === fcode) {
-                            ent = this.codetab[i];
-                            continue outer_loop;
-                        }
-                    } while (this.htab[i] >= 0);
-                }
-                this.output(ent, outs);
-                ent = c;
-                if (this.free_ent < 1 << BITS) {
-                    this.codetab[i] = this.free_ent++; // code -> hasthis.htable
-                    this.htab[i] = fcode;
-                }
-                else {
-                    this.cl_block(outs);
-                }
-            }
-            // Put out the final code.
-            this.output(ent, outs);
-            this.output(this.EOFCode, outs);
-        };
-        LZWEncoder.prototype.encode = function (outs) {
-            outs.writeByte(this.initCodeSize); // write 'initial code size' byte
-            this.remaining = this.width * this.height; // reset navigation variables
-            this.curPixel = 0;
-            this.compress(this.initCodeSize + 1, outs); // compress and write the pixel data
-            outs.writeByte(0); // write block terminator
-        };
-        // Flush the packet to disk, and reset the this.accumulator
-        LZWEncoder.prototype.flush_char = function (outs) {
-            if (this.a_count > 0) {
-                outs.writeByte(this.a_count);
-                outs.writeBytes(this.accum, 0, this.a_count);
-                this.a_count = 0;
-            }
-        };
-        LZWEncoder.prototype.get_maxcode = function (n_bits) {
-            return (1 << n_bits) - 1;
-        };
-        // Return the next pixel from the image
-        LZWEncoder.prototype.nextPixel = function () {
-            if (this.remaining === 0)
-                return EOF;
-            --this.remaining;
-            var pix = this.pixels[this.curPixel++];
-            return pix & 0xff;
-        };
-        LZWEncoder.prototype.output = function (code, outs) {
-            this.cur_accum &= masks[this.cur_bits];
-            if (this.cur_bits > 0)
-                this.cur_accum |= (code << this.cur_bits);
-            else
-                this.cur_accum = code;
-            this.cur_bits += this.n_bits;
-            while (this.cur_bits >= 8) {
-                this.char_out((this.cur_accum & 0xff), outs);
-                this.cur_accum >>= 8;
-                this.cur_bits -= 8;
-            }
-            // If the next entry is going to be too big for the code size,
-            // then increase it, if possible.
-            if (this.free_ent > this.maxcode || this.clear_flg) {
-                if (this.clear_flg) {
-                    this.maxcode = this.get_maxcode(this.n_bits = this.g_init_bits);
-                    this.clear_flg = false;
-                }
-                else {
-                    ++this.n_bits;
-                    if (this.n_bits == BITS)
-                        this.maxcode = 1 << BITS;
-                    else
-                        this.maxcode = this.get_maxcode(this.n_bits);
-                }
-            }
-            if (code == this.EOFCode) {
-                // At EOF, write the rest of the buffer.
-                while (this.cur_bits > 0) {
-                    this.char_out((this.cur_accum & 0xff), outs);
-                    this.cur_accum >>= 8;
-                    this.cur_bits -= 8;
-                }
-                this.flush_char(outs);
-            }
-        };
-        return LZWEncoder;
-    }());
-
-    var GifEncoder = /** @class */ (function () {
-        function GifEncoder(width, height) {
-            this.delay = 100;
-            // -1 = no repeat, 0 = forever. anything else is repeat count
-            this.repeat = -1;
-            this.colorDepth = 8;
-            this.palette = [];
-            this.width = width;
-            this.height = height;
-            this.data = new ByteArray();
-        }
-        GifEncoder.fromFlipnote = function (flipnote) {
-            var gif = new GifEncoder(flipnote.width, flipnote.height);
-            gif.palette = flipnote.globalPalette;
-            gif.delay = 100 / flipnote.framerate;
-            gif.repeat = flipnote.meta.loop ? -1 : 0;
-            gif.init();
-            for (var frameIndex = 0; frameIndex < flipnote.frameCount; frameIndex++) {
-                gif.writeFrame(flipnote.getFramePixels(frameIndex));
-            }
-            return gif;
-        };
-        GifEncoder.fromFlipnoteFrame = function (flipnote, frameIndex) {
-            var gif = new GifEncoder(flipnote.width, flipnote.height);
-            gif.palette = flipnote.globalPalette;
-            // TODO: look at ideal delay and repeat settings for single frame GIF
-            gif.delay = 100 / flipnote.framerate;
-            gif.repeat = flipnote.meta.loop ? -1 : 0;
-            gif.init();
-            gif.writeFrame(flipnote.getFramePixels(frameIndex));
-            return gif;
-        };
-        GifEncoder.prototype.init = function () {
-            var paletteSize = this.palette.length;
-            for (var p = 1; 1 << p < paletteSize; p += 1)
-                continue;
-            this.colorDepth = p;
-            this.writeHeader();
-            this.writeColorTable();
-            this.writeNetscapeExt();
-        };
-        GifEncoder.prototype.writeHeader = function () {
-            var header = new DataStream(new ArrayBuffer(13));
-            header.writeChars('GIF89a');
-            // Logical Screen Descriptor
-            header.writeUint16(this.width);
-            header.writeUint16(this.height);
-            header.writeUint8(0x80 | // 1 : global color table flag = 1 (gct used)
-                (this.colorDepth - 1) // 6-8 : gct size
-            );
-            header.writeUint8(0);
-            header.writeUint8(0);
-            this.data.writeBytes(new Uint8Array(header.buffer));
-        };
-        GifEncoder.prototype.writeColorTable = function () {
-            var palette = new Uint8Array(3 * Math.pow(2, this.colorDepth));
-            for (var index = 0, offset = 0; index < this.palette.length; index += 1, offset += 3) {
-                palette.set(this.palette[index], offset);
-            }
-            this.data.writeBytes(palette);
-        };
-        GifEncoder.prototype.writeGraphicsControlExt = function () {
-            var graphicsControlExt = new DataStream(new ArrayBuffer(8));
-            graphicsControlExt.writeBytes([
-                0x21,
-                0xF9,
-                4,
-                0 // bitfield
-            ]);
-            graphicsControlExt.writeUint16(this.delay); // loop flag
-            graphicsControlExt.writeBytes([
-                0,
-                0
-            ]);
-            this.data.writeBytes(new Uint8Array(graphicsControlExt.buffer));
-        };
-        GifEncoder.prototype.writeNetscapeExt = function () {
-            var netscapeExt = new DataStream(new ArrayBuffer(19));
-            netscapeExt.writeBytes([
-                0x21,
-                0xFF,
-                11,
-            ]);
-            netscapeExt.writeChars('NETSCAPE2.0');
-            netscapeExt.writeUint8(3); // subblock size
-            netscapeExt.writeUint8(1); // loop subblock id
-            netscapeExt.writeUint16(this.repeat); // loop flag
-            this.data.writeBytes(new Uint8Array(netscapeExt.buffer));
-        };
-        GifEncoder.prototype.writeImageDesc = function () {
-            var desc = new DataStream(new ArrayBuffer(10));
-            desc.writeUint8(0x2C);
-            desc.writeUint16(0); // image left
-            desc.writeUint16(0); // image top
-            desc.writeUint16(this.width);
-            desc.writeUint16(this.height);
-            desc.writeUint8(0);
-            this.data.writeBytes(new Uint8Array(desc.buffer));
-        };
-        GifEncoder.prototype.writePixels = function (pixels) {
-            var lzw = new LZWEncoder(this.width, this.height, pixels, this.colorDepth);
-            lzw.encode(this.data);
-        };
-        GifEncoder.prototype.writeFrame = function (pixels) {
-            this.writeGraphicsControlExt();
-            this.writeImageDesc();
-            this.writePixels(pixels);
-        };
-        GifEncoder.prototype.getBuffer = function () {
-            return this.data.getBuffer();
-        };
-        GifEncoder.prototype.getBlob = function () {
-            return new Blob([this.getBuffer()], { type: 'image/gif' });
-        };
-        GifEncoder.prototype.getUrl = function () {
-            return window.URL.createObjectURL(this.getBlob());
-        };
-        GifEncoder.prototype.getImage = function () {
-            var img = new Image(this.width, this.height);
-            img.src = this.getUrl();
-            return img;
-        };
-        return GifEncoder;
-    }());
-
-    // Typical WAV sample rate
-    var WAV_SAMPLE_RATE = 44100;
-    var WavEncoder = /** @class */ (function () {
-        function WavEncoder(sampleRate, channels, bitsPerSample) {
-            if (channels === void 0) { channels = 1; }
-            if (bitsPerSample === void 0) { bitsPerSample = 16; }
-            this.sampleRate = sampleRate;
-            this.channels = channels;
-            this.bitsPerSample = bitsPerSample;
-            // Write WAV file header
-            // Reference: http://www.topherlee.com/software/pcm-tut-wavformat.html
-            var headerBuffer = new ArrayBuffer(44);
-            var header = new DataStream(headerBuffer);
-            // 'RIFF' indent
-            header.writeChars('RIFF');
-            // filesize (set later)
-            header.writeUint32(0);
-            // 'WAVE' indent
-            header.writeChars('WAVE');
-            // 'fmt ' section header
-            header.writeChars('fmt ');
-            // fmt section length
-            header.writeUint32(16);
-            // specify audio format is pcm (type 1)
-            header.writeUint16(1);
-            // number of audio channels
-            header.writeUint16(this.channels);
-            // audio sample rate
-            header.writeUint32(this.sampleRate);
-            // byterate = (sampleRate * bitsPerSample * channelCount) / 8
-            header.writeUint32((this.sampleRate * this.bitsPerSample * this.channels) / 8);
-            // blockalign = (bitsPerSample * channels) / 8
-            header.writeUint16((this.bitsPerSample * this.channels) / 8);
-            // bits per sample
-            header.writeUint16(this.bitsPerSample);
-            // 'data' section header
-            header.writeChars('data');
-            // data section length (set later)
-            header.writeUint32(0);
-            this.header = header;
-            this.pcmData = null;
-        }
-        WavEncoder.fromFlipnote = function (note) {
-            var wav = new WavEncoder(WAV_SAMPLE_RATE, 1, 16);
-            var pcm = note.getAudioMasterPcm(WAV_SAMPLE_RATE);
-            wav.writeFrames(pcm);
-            return wav;
-        };
-        WavEncoder.fromFlipnoteTrack = function (note, trackId) {
-            var wav = new WavEncoder(WAV_SAMPLE_RATE, 1, 16);
-            var pcm = note.getAudioTrackPcm(trackId, WAV_SAMPLE_RATE);
-            wav.writeFrames(pcm);
-            return wav;
-        };
-        WavEncoder.prototype.writeFrames = function (pcmData) {
-            var header = this.header;
-            // fill in filesize
-            header.seek(4);
-            header.writeUint32(header.byteLength + pcmData.byteLength);
-            // fill in data section length
-            header.seek(40);
-            header.writeUint32(pcmData.byteLength);
-            this.pcmData = pcmData;
-        };
-        WavEncoder.prototype.getBlob = function () {
-            return new Blob([this.header.buffer, this.pcmData.buffer], { type: 'audio/wav' });
-        };
-        return WavEncoder;
-    }());
 
     // Main entrypoint for web
     var api;

@@ -19,7 +19,7 @@ import {
   ADPCM_INDEX_TABLE_4BIT,
   ADPCM_SAMPLE_TABLE_2BIT,
   ADPCM_SAMPLE_TABLE_4BIT
-} from './adpcm';
+} from './audio';
 
 const FRAMERATES = [.2, .5, 1, 2, 4, 6, 8, 12, 20, 24, 30];
 const PALETTE: FlipnotePaletteDefinition = {
@@ -483,20 +483,18 @@ export class KwzParser extends FlipnoteParserBase {
 
   // retuns an uint8 array where each item is a pixel's palette index
   public getLayerPixels(frameIndex: number, layerIndex: number) {
-    if (this.prevDecodedFrame !== frameIndex) {
+    if (this.prevDecodedFrame !== frameIndex)
       this.decodeFrame(frameIndex);
-    }
     const palette = this.getFramePaletteIndices(frameIndex);
     const layers = this.layers[layerIndex];
     const image = new Uint8Array((KwzParser.width * KwzParser.height));
     const paletteOffset = layerIndex * 2 + 1;
     for (let pixelIndex = 0; pixelIndex < layers.length; pixelIndex++) {
       let pixel = layers[pixelIndex];
-      if (pixel & 0xff00) {
+      if (pixel & 0xff00)
         image[pixelIndex] = palette[paletteOffset];
-      } else if (pixel & 0x00ff) {
+      else if (pixel & 0x00ff)
         image[pixelIndex] = palette[paletteOffset + 1];
-      }
     }
     return image;
   }
@@ -512,9 +510,8 @@ export class KwzParser extends FlipnoteParserBase {
       // merge layer into image result
       for (let pixelIndex = 0; pixelIndex < layer.length; pixelIndex++) {
         const pixel = layer[pixelIndex];
-        if (pixel !== 0) {
+        if (pixel !== 0)
           image[pixelIndex] = pixel;
-        }
       }
     });
     return image;
@@ -571,8 +568,8 @@ export class KwzParser extends FlipnoteParserBase {
           bitPos += 4;
         }
         // clamp step index and diff
-        stepIndex = Math.max(0, Math.min(stepIndex, 79));
-        diff = Math.max(-2047, Math.min(diff, 2047));
+        stepIndex = clamp(stepIndex, 0, 79);
+        diff = clamp(diff, -2047, 2047);
         // add result to output buffer
         output[outputOffset] = (diff * 16);
         outputOffset += 1;

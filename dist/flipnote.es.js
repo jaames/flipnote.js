@@ -245,6 +245,14 @@ class DataStream {
     }
 }
 
+var FlipnoteAudioTrack;
+(function (FlipnoteAudioTrack) {
+    FlipnoteAudioTrack[FlipnoteAudioTrack["BGM"] = 0] = "BGM";
+    FlipnoteAudioTrack[FlipnoteAudioTrack["SE1"] = 1] = "SE1";
+    FlipnoteAudioTrack[FlipnoteAudioTrack["SE2"] = 2] = "SE2";
+    FlipnoteAudioTrack[FlipnoteAudioTrack["SE3"] = 3] = "SE3";
+    FlipnoteAudioTrack[FlipnoteAudioTrack["SE4"] = 4] = "SE4";
+})(FlipnoteAudioTrack || (FlipnoteAudioTrack = {}));
 class FlipnoteParserBase extends DataStream {
     hasAudioTrack(trackId) {
         if (this.soundMeta.hasOwnProperty(trackId) && this.soundMeta[trackId].length > 0) {
@@ -268,8 +276,8 @@ function pcmDsAudioResample(src, srcFreq, dstFreq) {
     const dst = new Int16Array(dstLength);
     const adjFreq = (srcFreq << 8) / dstFreq;
     for (let n = 0; n < dst.length; n++) {
-        let samp = src[(n * adjFreq) >> 8] / 2;
-        dst[n] = clamp(samp, -32768, 32767);
+        dst[n] = src[(n * adjFreq) >> 8];
+        // dst[n] = clamp(samp, -32768, 32767);
     }
     return dst;
 }
@@ -279,7 +287,8 @@ function pcmAudioMix(src, dst, dstOffset = 0) {
     for (let n = 0; n < srcSize; n++) {
         if (dstOffset + n > dstSize)
             break;
-        const samp = dst[dstOffset + n] + src[n];
+        // half src volume
+        const samp = dst[dstOffset + n] + (src[n] / 2);
         dst[dstOffset + n] = clamp(samp, -32768, 32767);
     }
 }
@@ -482,10 +491,10 @@ class PpmParser extends FlipnoteParserBase {
         this.framerate = FRAMERATES[this.frameSpeed];
         this.bgmrate = FRAMERATES[this.bgmSpeed];
         this.soundMeta = {
-            [0 /* BGM */]: { offset: offset, length: bgmLen },
-            [1 /* SE1 */]: { offset: offset += bgmLen, length: se1Len },
-            [2 /* SE2 */]: { offset: offset += se1Len, length: se2Len },
-            [3 /* SE3 */]: { offset: offset += se2Len, length: se3Len },
+            [FlipnoteAudioTrack.BGM]: { offset: offset, length: bgmLen },
+            [FlipnoteAudioTrack.SE1]: { offset: offset += bgmLen, length: se1Len },
+            [FlipnoteAudioTrack.SE2]: { offset: offset += se1Len, length: se2Len },
+            [FlipnoteAudioTrack.SE3]: { offset: offset += se2Len, length: se3Len },
         };
     }
     isNewFrame(frameIndex) {
@@ -726,7 +735,7 @@ class PpmParser extends FlipnoteParserBase {
     getAudioTrackPcm(trackId, dstFreq = DS_SAMPLE_RATE) {
         const srcPcm = this.decodeAudioTrack(trackId);
         let srcFreq = this.sampleRate;
-        if (trackId === 0 /* BGM */) {
+        if (trackId === FlipnoteAudioTrack.BGM) {
             const bgmAdjust = (1 / this.bgmrate) / (1 / this.framerate);
             srcFreq = this.sampleRate * bgmAdjust;
         }
@@ -739,22 +748,22 @@ class PpmParser extends FlipnoteParserBase {
         const duration = this.frameCount * (1 / this.framerate);
         const dstSize = Math.floor(duration * dstFreq);
         const master = new Int16Array(dstSize);
-        const hasBgm = this.hasAudioTrack(0 /* BGM */);
-        const hasSe1 = this.hasAudioTrack(1 /* SE1 */);
-        const hasSe2 = this.hasAudioTrack(2 /* SE2 */);
-        const hasSe3 = this.hasAudioTrack(3 /* SE3 */);
+        const hasBgm = this.hasAudioTrack(FlipnoteAudioTrack.BGM);
+        const hasSe1 = this.hasAudioTrack(FlipnoteAudioTrack.SE1);
+        const hasSe2 = this.hasAudioTrack(FlipnoteAudioTrack.SE2);
+        const hasSe3 = this.hasAudioTrack(FlipnoteAudioTrack.SE3);
         // Mix background music
         if (hasBgm) {
-            const bgmPcm = this.getAudioTrackPcm(0 /* BGM */, dstFreq);
+            const bgmPcm = this.getAudioTrackPcm(FlipnoteAudioTrack.BGM, dstFreq);
             pcmAudioMix(bgmPcm, master, 0);
         }
         // Mix sound effects
         if (hasSe1 || hasSe2 || hasSe3) {
             const samplesPerFrame = Math.floor(dstFreq / this.framerate);
             const seFlags = this.decodeSoundFlags();
-            const se1Pcm = hasSe1 ? this.getAudioTrackPcm(1 /* SE1 */, dstFreq) : null;
-            const se2Pcm = hasSe2 ? this.getAudioTrackPcm(2 /* SE2 */, dstFreq) : null;
-            const se3Pcm = hasSe3 ? this.getAudioTrackPcm(3 /* SE3 */, dstFreq) : null;
+            const se1Pcm = hasSe1 ? this.getAudioTrackPcm(FlipnoteAudioTrack.SE1, dstFreq) : null;
+            const se2Pcm = hasSe2 ? this.getAudioTrackPcm(FlipnoteAudioTrack.SE2, dstFreq) : null;
+            const se3Pcm = hasSe3 ? this.getAudioTrackPcm(FlipnoteAudioTrack.SE3, dstFreq) : null;
             for (let i = 0; i < this.frameCount; i++) {
                 const seOffset = samplesPerFrame * i;
                 const flag = seFlags[i];
@@ -977,11 +986,11 @@ class KwzParser extends FlipnoteParserBase {
             this.bgmrate = FRAMERATES$1[bgmSpeed];
             const trackSizes = new Uint32Array(this.buffer, offset + 4, 20);
             this.soundMeta = {
-                [0 /* BGM */]: { offset: offset += 28, length: trackSizes[0] },
-                [1 /* SE1 */]: { offset: offset += trackSizes[0], length: trackSizes[1] },
-                [2 /* SE2 */]: { offset: offset += trackSizes[1], length: trackSizes[2] },
-                [3 /* SE3 */]: { offset: offset += trackSizes[2], length: trackSizes[3] },
-                [4 /* SE4 */]: { offset: offset += trackSizes[3], length: trackSizes[4] },
+                [FlipnoteAudioTrack.BGM]: { offset: offset += 28, length: trackSizes[0] },
+                [FlipnoteAudioTrack.SE1]: { offset: offset += trackSizes[0], length: trackSizes[1] },
+                [FlipnoteAudioTrack.SE2]: { offset: offset += trackSizes[1], length: trackSizes[2] },
+                [FlipnoteAudioTrack.SE3]: { offset: offset += trackSizes[2], length: trackSizes[3] },
+                [FlipnoteAudioTrack.SE4]: { offset: offset += trackSizes[3], length: trackSizes[4] },
             };
         }
     }
@@ -1195,21 +1204,18 @@ class KwzParser extends FlipnoteParserBase {
     }
     // retuns an uint8 array where each item is a pixel's palette index
     getLayerPixels(frameIndex, layerIndex) {
-        if (this.prevDecodedFrame !== frameIndex) {
+        if (this.prevDecodedFrame !== frameIndex)
             this.decodeFrame(frameIndex);
-        }
         const palette = this.getFramePaletteIndices(frameIndex);
         const layers = this.layers[layerIndex];
         const image = new Uint8Array((KwzParser.width * KwzParser.height));
         const paletteOffset = layerIndex * 2 + 1;
         for (let pixelIndex = 0; pixelIndex < layers.length; pixelIndex++) {
             let pixel = layers[pixelIndex];
-            if (pixel & 0xff00) {
+            if (pixel & 0xff00)
                 image[pixelIndex] = palette[paletteOffset];
-            }
-            else if (pixel & 0x00ff) {
+            else if (pixel & 0x00ff)
                 image[pixelIndex] = palette[paletteOffset + 1];
-            }
         }
         return image;
     }
@@ -1224,9 +1230,8 @@ class KwzParser extends FlipnoteParserBase {
             // merge layer into image result
             for (let pixelIndex = 0; pixelIndex < layer.length; pixelIndex++) {
                 const pixel = layer[pixelIndex];
-                if (pixel !== 0) {
+                if (pixel !== 0)
                     image[pixelIndex] = pixel;
-                }
             }
         });
         return image;
@@ -1280,8 +1285,8 @@ class KwzParser extends FlipnoteParserBase {
                     bitPos += 4;
                 }
                 // clamp step index and diff
-                stepIndex = Math.max(0, Math.min(stepIndex, 79));
-                diff = Math.max(-2047, Math.min(diff, 2047));
+                stepIndex = clamp(stepIndex, 0, 79);
+                diff = clamp(diff, -2047, 2047);
                 // add result to output buffer
                 output[outputOffset] = (diff * 16);
                 outputOffset += 1;
@@ -1295,7 +1300,7 @@ class KwzParser extends FlipnoteParserBase {
     getAudioTrackPcm(trackId, dstFreq = CTR_SAMPLE_RATE) {
         const srcPcm = this.decodeAudioTrack(trackId);
         let srcFreq = this.sampleRate;
-        if (trackId === 0 /* BGM */) {
+        if (trackId === FlipnoteAudioTrack.BGM) {
             const bgmAdjust = (1 / this.bgmrate) / (1 / this.framerate);
             srcFreq = this.sampleRate * bgmAdjust;
         }
@@ -1308,24 +1313,24 @@ class KwzParser extends FlipnoteParserBase {
         const duration = this.frameCount * (1 / this.framerate);
         const dstSize = Math.floor(duration * dstFreq);
         const master = new Int16Array(dstSize);
-        const hasBgm = this.hasAudioTrack(0 /* BGM */);
-        const hasSe1 = this.hasAudioTrack(1 /* SE1 */);
-        const hasSe2 = this.hasAudioTrack(2 /* SE2 */);
-        const hasSe3 = this.hasAudioTrack(3 /* SE3 */);
-        const hasSe4 = this.hasAudioTrack(4 /* SE4 */);
+        const hasBgm = this.hasAudioTrack(FlipnoteAudioTrack.BGM);
+        const hasSe1 = this.hasAudioTrack(FlipnoteAudioTrack.SE1);
+        const hasSe2 = this.hasAudioTrack(FlipnoteAudioTrack.SE2);
+        const hasSe3 = this.hasAudioTrack(FlipnoteAudioTrack.SE3);
+        const hasSe4 = this.hasAudioTrack(FlipnoteAudioTrack.SE4);
         // Mix background music
         if (hasBgm) {
-            const bgmPcm = this.getAudioTrackPcm(0 /* BGM */, dstFreq);
+            const bgmPcm = this.getAudioTrackPcm(FlipnoteAudioTrack.BGM, dstFreq);
             pcmAudioMix(bgmPcm, master, 0);
         }
         // Mix sound effects
         if (hasSe1 || hasSe2 || hasSe3) {
             const samplesPerFrame = Math.floor(dstFreq / this.framerate);
             const seFlags = this.decodeSoundFlags();
-            const se1Pcm = hasSe1 ? this.getAudioTrackPcm(1 /* SE1 */, dstFreq) : null;
-            const se2Pcm = hasSe2 ? this.getAudioTrackPcm(2 /* SE2 */, dstFreq) : null;
-            const se3Pcm = hasSe3 ? this.getAudioTrackPcm(3 /* SE3 */, dstFreq) : null;
-            const se4Pcm = hasSe4 ? this.getAudioTrackPcm(4 /* SE4 */, dstFreq) : null;
+            const se1Pcm = hasSe1 ? this.getAudioTrackPcm(FlipnoteAudioTrack.SE1, dstFreq) : null;
+            const se2Pcm = hasSe2 ? this.getAudioTrackPcm(FlipnoteAudioTrack.SE2, dstFreq) : null;
+            const se3Pcm = hasSe3 ? this.getAudioTrackPcm(FlipnoteAudioTrack.SE3, dstFreq) : null;
+            const se4Pcm = hasSe4 ? this.getAudioTrackPcm(FlipnoteAudioTrack.SE4, dstFreq) : null;
             for (let i = 0; i < this.frameCount; i++) {
                 const seOffset = samplesPerFrame * i;
                 const flag = seFlags[i];
@@ -1373,498 +1378,6 @@ function parseSource(source) {
                 reject();
         });
     });
-}
-
-var vertexShader = "#define GLSLIFY 1\nattribute vec4 a_position;varying vec2 v_texel;varying float v_scale;uniform vec2 u_textureSize;uniform vec2 u_screenSize;void main(){gl_Position=a_position;vec2 uv=a_position.xy*vec2(0.5,-0.5)+0.5;v_texel=uv*u_textureSize;v_scale=floor(u_screenSize.y/u_textureSize.y+0.01);}"; // eslint-disable-line
-
-var fragmentShader = "precision highp float;\n#define GLSLIFY 1\nvarying vec2 v_texel;varying float v_scale;uniform vec4 u_color1;uniform vec4 u_color2;uniform sampler2D u_bitmap;uniform bool u_isSmooth;uniform vec2 u_textureSize;uniform vec2 u_screenSize;void main(){vec2 texel_floored=floor(v_texel);vec2 s=fract(v_texel);float region_range=0.5-0.5/v_scale;vec2 center_dist=s-0.5;vec2 f=(center_dist-clamp(center_dist,-region_range,region_range))*v_scale+0.5;vec2 mod_texel=texel_floored+f;vec2 coord=mod_texel.xy/u_textureSize.xy;vec2 colorWeights=texture2D(u_bitmap,coord).ra;gl_FragColor=vec4(u_color1.rgb,1.0)*colorWeights.y+vec4(u_color2.rgb,1.0)*colorWeights.x;}"; // eslint-disable-line
-
-var TextureType;
-(function (TextureType) {
-    TextureType[TextureType["Alpha"] = WebGLRenderingContext.ALPHA] = "Alpha";
-    TextureType[TextureType["LuminanceAlpha"] = WebGLRenderingContext.LUMINANCE_ALPHA] = "LuminanceAlpha";
-})(TextureType || (TextureType = {}));
-/** webgl canvas wrapper class */
-class WebglCanvas {
-    constructor(el, width = 640, height = 480, params = { antialias: false, alpha: false }) {
-        this.uniforms = {};
-        this.refs = {
-            shaders: [],
-            textures: [],
-            buffers: []
-        };
-        const gl = el.getContext('webgl', params);
-        this.el = el;
-        this.gl = gl;
-        this.createProgram();
-        this.setCanvasSize(width, height);
-        this.createScreenQuad();
-        this.createBitmapTexture();
-        gl.enable(gl.BLEND);
-        gl.blendEquation(gl.FUNC_ADD);
-        gl.blendFunc(gl.ONE, gl.ONE_MINUS_SRC_ALPHA);
-    }
-    createProgram() {
-        const gl = this.gl;
-        const program = gl.createProgram();
-        // set up shaders
-        gl.attachShader(program, this.createShader(gl.VERTEX_SHADER, vertexShader));
-        gl.attachShader(program, this.createShader(gl.FRAGMENT_SHADER, fragmentShader));
-        // link program
-        gl.linkProgram(program);
-        if (!gl.getProgramParameter(program, gl.LINK_STATUS)) {
-            let log = gl.getProgramInfoLog(program);
-            gl.deleteProgram(program);
-            throw new Error(log);
-        }
-        // activate the program
-        gl.useProgram(program);
-        // map uniform locations
-        const uniformCount = gl.getProgramParameter(program, gl.ACTIVE_UNIFORMS);
-        for (let index = 0; index < uniformCount; index++) {
-            const name = gl.getActiveUniform(program, index).name;
-            this.uniforms[name] = gl.getUniformLocation(program, name);
-        }
-        this.program = program;
-    }
-    createScreenQuad() {
-        const gl = this.gl;
-        // create quad that fills the screen, this will be our drawing surface
-        const vertBuffer = gl.createBuffer();
-        gl.bindBuffer(gl.ARRAY_BUFFER, vertBuffer);
-        gl.bufferData(gl.ARRAY_BUFFER, new Float32Array([1, 1, -1, 1, -1, -1, 1, 1, -1, -1, 1, -1]), gl.STATIC_DRAW);
-        gl.enableVertexAttribArray(0);
-        gl.vertexAttribPointer(0, 2, gl.FLOAT, false, 0, 0);
-        this.refs.buffers.push(vertBuffer);
-    }
-    createBitmapTexture() {
-        const gl = this.gl;
-        // create texture to use as the layer bitmap
-        gl.activeTexture(gl.TEXTURE0);
-        const tex = gl.createTexture();
-        gl.bindTexture(gl.TEXTURE_2D, tex);
-        gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_S, gl.CLAMP_TO_EDGE);
-        gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_T, gl.CLAMP_TO_EDGE);
-        gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MIN_FILTER, gl.LINEAR);
-        gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MAG_FILTER, gl.LINEAR);
-        gl.uniform1i(this.uniforms['u_bitmap'], 0);
-        this.refs.textures.push(tex);
-    }
-    createShader(type, source) {
-        const gl = this.gl;
-        const shader = gl.createShader(type);
-        gl.shaderSource(shader, source);
-        gl.compileShader(shader);
-        // test if shader compilation was successful
-        if (!gl.getShaderParameter(shader, gl.COMPILE_STATUS)) {
-            const log = gl.getShaderInfoLog(shader);
-            gl.deleteShader(shader);
-            throw new Error(log);
-        }
-        this.refs.shaders.push(shader);
-        return shader;
-    }
-    setInputSize(width, height) {
-        this.gl.uniform2f(this.uniforms['u_textureSize'], width, height);
-    }
-    setCanvasSize(width, height) {
-        const dpi = window.devicePixelRatio || 1;
-        const internalWidth = width * dpi;
-        const internalHeight = height * dpi;
-        this.el.width = internalWidth;
-        this.el.height = internalHeight;
-        this.width = internalWidth;
-        this.height = internalHeight;
-        this.gl.viewport(0, 0, internalWidth, internalHeight);
-        this.gl.uniform2f(this.uniforms['u_screenSize'], internalWidth, internalHeight);
-        this.el.style.width = `${width}px`;
-        this.el.style.height = `${height}px`;
-    }
-    setLayerType(textureType) {
-        this.textureType = textureType;
-    }
-    toImage(type) {
-        return this.el.toDataURL(type);
-    }
-    setColor(color, value) {
-        this.gl.uniform4f(this.uniforms[color], value[0] / 255, value[1] / 255, value[2] / 255, 1);
-    }
-    setPaperColor(value) {
-        this.gl.clearColor(value[0] / 255, value[1] / 255, value[2] / 255, 1);
-    }
-    drawLayer(buffer, width, height, color1, color2) {
-        const gl = this.gl;
-        // gl.activeTexture(gl.TEXTURE0);
-        gl.texImage2D(gl.TEXTURE_2D, 0, this.textureType, width, height, 0, this.textureType, gl.UNSIGNED_BYTE, buffer);
-        this.setColor('u_color1', color1);
-        this.setColor('u_color2', color2);
-        gl.drawArrays(gl.TRIANGLES, 0, 6);
-    }
-    resize(width = 640, height = 480) {
-        this.setCanvasSize(width, height);
-    }
-    clear() {
-        this.gl.clear(this.gl.COLOR_BUFFER_BIT);
-    }
-    destroy() {
-        // free resources
-        const refs = this.refs;
-        const gl = this.gl;
-        refs.shaders.forEach((shader) => {
-            gl.deleteShader(shader);
-        });
-        refs.shaders = [];
-        refs.textures.forEach((texture) => {
-            gl.deleteTexture(texture);
-        });
-        refs.textures = [];
-        refs.buffers.forEach((buffer) => {
-            gl.deleteBuffer(buffer);
-        });
-        refs.buffers = [];
-        gl.deleteProgram(this.program);
-        // shrink the canvas to reduce memory usage until it is garbage collected
-        gl.canvas.width = 1;
-        gl.canvas.height = 1;
-    }
-}
-
-const _AudioContext = (window.AudioContext || window.webkitAudioContext);
-class WebAudioPlayer {
-    constructor(sampleData, sampleRate) {
-        this.ctx = new _AudioContext();
-        this.setSamples(sampleData, sampleRate);
-    }
-    setSamples(sampleData, sampleRate) {
-        const numSamples = sampleData.length;
-        const audioBuffer = this.ctx.createBuffer(1, numSamples, sampleRate);
-        const channelData = audioBuffer.getChannelData(0);
-        if (sampleData instanceof Float32Array) {
-            channelData.set(sampleData, 0);
-        }
-        else if (sampleData instanceof Int16Array) {
-            for (let i = 0; i < numSamples; i++) {
-                channelData[i] = sampleData[i] / 32767;
-            }
-        }
-        this.buffer = audioBuffer;
-        this.sampleRate = sampleRate;
-    }
-    stop() {
-        this.source.stop(0);
-    }
-    playFrom(currentTime) {
-        const source = this.ctx.createBufferSource();
-        source.buffer = this.buffer;
-        source.connect(this.ctx.destination, 0, 0);
-        this.source = source;
-        this.source.start(0, currentTime);
-    }
-}
-
-/** flipnote player API, based on HTMLMediaElement (https://developer.mozilla.org/en-US/docs/Web/API/HTMLMediaElement) */
-class Player {
-    constructor(el, width, height) {
-        this.loop = false;
-        this.paused = true;
-        this.duration = 0;
-        this.isOpen = false;
-        this.events = {};
-        this._frame = -1;
-        this._time = 0;
-        this.hasPlaybackStarted = false;
-        this.wasPlaying = false;
-        this.isSeeking = false;
-        // if `el` is a string, use it to select an Element, else assume it's an element
-        el = ('string' == typeof el) ? document.querySelector(el) : el;
-        this.canvas = new WebglCanvas(el, width, height);
-        this.el = this.canvas.el;
-        this.customPalette = null;
-    }
-    get currentFrame() {
-        return this._frame;
-    }
-    set currentFrame(frameIndex) {
-        this.setFrame(frameIndex);
-    }
-    get currentTime() {
-        return this.isOpen ? this._time : null;
-    }
-    set currentTime(value) {
-        if ((this.isOpen) && (value <= this.duration) && (value >= 0)) {
-            this.setFrame(Math.round(value / (1 / this.framerate)));
-            this._time = value;
-            this.emit('progress', this.progress);
-        }
-    }
-    get progress() {
-        return this.isOpen ? (this.currentTime / this.duration) * 100 : 0;
-    }
-    set progress(value) {
-        this.currentTime = this.duration * (value / 100);
-    }
-    get volume() {
-        // return this.audioTracks[3].audio.volume;
-        return 1;
-    }
-    set volume(value) {
-        // for (let i = 0; i < this.audioTracks.length; i++) {
-        //   this.audioTracks[i].audio.volume = value;
-        // }
-    }
-    get muted() {
-        // return this.audioTracks[3].audio.muted;
-        return false;
-    }
-    set muted(value) {
-        // for (let i = 0; i < this.audioTracks.length; i++) {
-        //   this.audioTracks[i].audio.muted = value;
-        // }
-    }
-    get framerate() {
-        return this.note.framerate;
-    }
-    get frameCount() {
-        return this.note.frameCount;
-    }
-    get frameSpeed() {
-        return this.note.frameSpeed;
-    }
-    get audiorate() {
-        return (1 / this.note.bgmrate) / (1 / this.note.framerate);
-    }
-    async open(source) {
-        if (this.isOpen)
-            this.close();
-        return parseSource(source)
-            .then((note) => {
-            this.load(note);
-        })
-            .catch((err) => {
-            this.emit('error', err);
-            console.error('Error loading Flipnote:', err);
-            throw 'Error loading Flipnote';
-        });
-    }
-    close() {
-        this.pause();
-        this.note = null;
-        this.isOpen = false;
-        this.paused = true;
-        this.loop = null;
-        this.meta = null;
-        this._frame = null;
-        this._time = null;
-        this.duration = null;
-        this.loop = null;
-        this.hasPlaybackStarted = null;
-        this.canvas.clear();
-    }
-    load(note) {
-        this.note = note;
-        this.meta = note.meta;
-        this.type = note.type;
-        this.loop = note.meta.loop;
-        this.duration = (this.note.frameCount) * (1 / this.note.framerate);
-        this.paused = true;
-        this.isOpen = true;
-        this.hasPlaybackStarted = false;
-        this.layerVisibility = {
-            1: true,
-            2: true,
-            3: true
-        };
-        const pcm = note.getAudioMasterPcm(32768);
-        this.audioPlayer = new WebAudioPlayer(pcm, 32768);
-        this.canvas.setInputSize(note.width, note.height);
-        this.canvas.setLayerType(this.type === 'PPM' ? TextureType.Alpha : TextureType.LuminanceAlpha);
-        this.setFrame(this.note.thumbFrameIndex);
-        this._time = 0;
-        this.emit('load');
-    }
-    playAudio() {
-        this.audioPlayer.playFrom(this.currentTime);
-    }
-    stopAudio() {
-        this.audioPlayer.stop();
-    }
-    play() {
-        if ((!this.isOpen) || (!this.paused))
-            return null;
-        if ((!this.hasPlaybackStarted) || ((!this.loop) && (this.currentFrame == this.frameCount - 1))) {
-            this._time = 0;
-        }
-        this.paused = false;
-        this.playAudio();
-        let start = (performance.now() / 1000) - this.currentTime;
-        const loop = (timestamp) => {
-            if (this.paused) { // break loop if paused is set to true
-                this.stopAudio();
-                return null;
-            }
-            const time = timestamp / 1000;
-            const progress = time - start;
-            if (progress > this.duration) {
-                if (this.loop) {
-                    this.currentTime = 0;
-                    this.playAudio();
-                    start = time;
-                    this.emit('playback:loop');
-                }
-                else {
-                    this.pause();
-                    this.emit('playback:end');
-                }
-            }
-            else {
-                this.currentTime = progress;
-            }
-            requestAnimationFrame(loop);
-        };
-        requestAnimationFrame(loop);
-        this.hasPlaybackStarted = true;
-        this.emit('playback:start');
-    }
-    pause() {
-        if ((!this.isOpen) || (this.paused))
-            return null;
-        this.paused = true;
-        this.stopAudio();
-        this.emit('playback:stop');
-    }
-    togglePlay() {
-        if (this.paused) {
-            this.play();
-        }
-        else {
-            this.pause();
-        }
-    }
-    setFrame(frameIndex) {
-        if ((this.isOpen) && (frameIndex !== this.currentFrame)) {
-            // clamp frame index
-            frameIndex = Math.max(0, Math.min(Math.floor(frameIndex), this.frameCount - 1));
-            this.drawFrame(frameIndex);
-            this._frame = frameIndex;
-            if (this.paused) {
-                this._time = frameIndex * (1 / this.framerate);
-                this.emit('progress', this.progress);
-            }
-            this.emit('frame:update', this.currentFrame);
-        }
-    }
-    nextFrame() {
-        if ((this.loop) && (this.currentFrame >= this.frameCount - 1)) {
-            this.currentFrame = 0;
-        }
-        else {
-            this.currentFrame += 1;
-        }
-    }
-    prevFrame() {
-        if ((this.loop) && (this.currentFrame <= 0)) {
-            this.currentFrame = this.frameCount - 1;
-        }
-        else {
-            this.currentFrame -= 1;
-        }
-    }
-    lastFrame() {
-        this.currentFrame = this.frameCount - 1;
-    }
-    firstFrame() {
-        this.currentFrame = 0;
-    }
-    thumbnailFrame() {
-        this.currentFrame = this.note.thumbFrameIndex;
-    }
-    startSeek() {
-        if (!this.isSeeking) {
-            this.wasPlaying = !this.paused;
-            this.pause();
-            this.isSeeking = true;
-        }
-    }
-    seek(progress) {
-        if (this.isSeeking) {
-            this.progress = progress;
-        }
-    }
-    endSeek() {
-        if ((this.isSeeking) && (this.wasPlaying === true)) {
-            this.play();
-        }
-        this.wasPlaying = false;
-        this.isSeeking = false;
-    }
-    drawFrame(frameIndex) {
-        const width = this.note.width;
-        const height = this.note.height;
-        const colors = this.note.getFramePalette(frameIndex);
-        const layerBuffers = this.note.decodeFrame(frameIndex);
-        this.canvas.setPaperColor(colors[0]);
-        this.canvas.clear();
-        if (this.note.type === 'PPM') {
-            if (this.layerVisibility[2]) {
-                this.canvas.drawLayer(layerBuffers[1], width, height, colors[2], [0, 0, 0, 0]);
-            }
-            if (this.layerVisibility[1]) {
-                this.canvas.drawLayer(layerBuffers[0], width, height, colors[1], [0, 0, 0, 0]);
-            }
-        }
-        else if (this.note.type === 'KWZ') {
-            // loop through each layer
-            this.note.getLayerOrder(frameIndex).forEach((layerIndex) => {
-                // only draw layer if it's visible
-                if (this.layerVisibility[layerIndex + 1]) {
-                    this.canvas.drawLayer(layerBuffers[layerIndex], width, height, colors[layerIndex * 2 + 1], colors[layerIndex * 2 + 2]);
-                }
-            });
-        }
-    }
-    forceUpdate() {
-        if (this.isOpen) {
-            this.drawFrame(this.currentFrame);
-        }
-    }
-    resize(width, height) {
-        this.canvas.resize(width, height);
-        this.forceUpdate();
-    }
-    setLayerVisibility(layerIndex, value) {
-        this.layerVisibility[layerIndex] = value;
-        this.forceUpdate();
-    }
-    toggleLayerVisibility(layerIndex) {
-        this.setLayerVisibility(layerIndex, !this.layerVisibility[layerIndex]);
-    }
-    // public setPalette(palette: any): void {
-    //   this.customPalette = palette;
-    //   this.note.palette = palette;
-    //   this.forceUpdate();
-    // }
-    on(eventType, callback) {
-        const events = this.events;
-        (events[eventType] || (events[eventType] = [])).push(callback);
-    }
-    off(eventType, callback) {
-        const callbackList = this.events[eventType];
-        if (callbackList)
-            callbackList.splice(callbackList.indexOf(callback), 1);
-    }
-    emit(eventType, ...args) {
-        var callbackList = this.events[eventType] || [];
-        for (var i = 0; i < callbackList.length; i++) {
-            callbackList[i].apply(null, args);
-        }
-    }
-    clearEvents() {
-        this.events = {};
-    }
-    destroy() {
-        this.close();
-        this.canvas.destroy();
-    }
 }
 
 /*
@@ -2285,6 +1798,598 @@ class WavEncoder {
         return new Blob([this.header.buffer, this.pcmData.buffer], { type: 'audio/wav' });
     }
 }
+
+var vertexShader = "#define GLSLIFY 1\nattribute vec4 a_position;varying vec2 v_texel;varying float v_scale;uniform vec2 u_textureSize;uniform vec2 u_screenSize;void main(){gl_Position=a_position;vec2 uv=a_position.xy*vec2(0.5,-0.5)+0.5;v_texel=uv*u_textureSize;v_scale=floor(u_screenSize.y/u_textureSize.y+0.01);}"; // eslint-disable-line
+
+var fragmentShader = "precision highp float;\n#define GLSLIFY 1\nvarying vec2 v_texel;varying float v_scale;uniform vec4 u_color1;uniform vec4 u_color2;uniform sampler2D u_bitmap;uniform bool u_isSmooth;uniform vec2 u_textureSize;uniform vec2 u_screenSize;void main(){vec2 texel_floored=floor(v_texel);vec2 s=fract(v_texel);float region_range=0.5-0.5/v_scale;vec2 center_dist=s-0.5;vec2 f=(center_dist-clamp(center_dist,-region_range,region_range))*v_scale+0.5;vec2 mod_texel=texel_floored+f;vec2 coord=mod_texel.xy/u_textureSize.xy;vec2 colorWeights=texture2D(u_bitmap,coord).ra;gl_FragColor=vec4(u_color1.rgb,1.0)*colorWeights.y+vec4(u_color2.rgb,1.0)*colorWeights.x;}"; // eslint-disable-line
+
+var TextureType;
+(function (TextureType) {
+    TextureType[TextureType["Alpha"] = WebGLRenderingContext.ALPHA] = "Alpha";
+    TextureType[TextureType["LuminanceAlpha"] = WebGLRenderingContext.LUMINANCE_ALPHA] = "LuminanceAlpha";
+})(TextureType || (TextureType = {}));
+/** webgl canvas wrapper class */
+class WebglCanvas {
+    constructor(el, width = 640, height = 480, params = { antialias: false, alpha: false }) {
+        this.uniforms = {};
+        this.refs = {
+            shaders: [],
+            textures: [],
+            buffers: []
+        };
+        const gl = el.getContext('webgl', params);
+        this.el = el;
+        this.gl = gl;
+        this.createProgram();
+        this.setCanvasSize(width, height);
+        this.createScreenQuad();
+        this.createBitmapTexture();
+        gl.enable(gl.BLEND);
+        gl.blendEquation(gl.FUNC_ADD);
+        gl.blendFunc(gl.ONE, gl.ONE_MINUS_SRC_ALPHA);
+    }
+    createProgram() {
+        const gl = this.gl;
+        const program = gl.createProgram();
+        // set up shaders
+        gl.attachShader(program, this.createShader(gl.VERTEX_SHADER, vertexShader));
+        gl.attachShader(program, this.createShader(gl.FRAGMENT_SHADER, fragmentShader));
+        // link program
+        gl.linkProgram(program);
+        if (!gl.getProgramParameter(program, gl.LINK_STATUS)) {
+            let log = gl.getProgramInfoLog(program);
+            gl.deleteProgram(program);
+            throw new Error(log);
+        }
+        // activate the program
+        gl.useProgram(program);
+        // map uniform locations
+        const uniformCount = gl.getProgramParameter(program, gl.ACTIVE_UNIFORMS);
+        for (let index = 0; index < uniformCount; index++) {
+            const name = gl.getActiveUniform(program, index).name;
+            this.uniforms[name] = gl.getUniformLocation(program, name);
+        }
+        this.program = program;
+    }
+    createScreenQuad() {
+        const gl = this.gl;
+        // create quad that fills the screen, this will be our drawing surface
+        const vertBuffer = gl.createBuffer();
+        gl.bindBuffer(gl.ARRAY_BUFFER, vertBuffer);
+        gl.bufferData(gl.ARRAY_BUFFER, new Float32Array([1, 1, -1, 1, -1, -1, 1, 1, -1, -1, 1, -1]), gl.STATIC_DRAW);
+        gl.enableVertexAttribArray(0);
+        gl.vertexAttribPointer(0, 2, gl.FLOAT, false, 0, 0);
+        this.refs.buffers.push(vertBuffer);
+    }
+    createBitmapTexture() {
+        const gl = this.gl;
+        // create texture to use as the layer bitmap
+        gl.activeTexture(gl.TEXTURE0);
+        const tex = gl.createTexture();
+        gl.bindTexture(gl.TEXTURE_2D, tex);
+        gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_S, gl.CLAMP_TO_EDGE);
+        gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_T, gl.CLAMP_TO_EDGE);
+        gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MIN_FILTER, gl.LINEAR);
+        gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MAG_FILTER, gl.LINEAR);
+        gl.uniform1i(this.uniforms['u_bitmap'], 0);
+        this.refs.textures.push(tex);
+    }
+    createShader(type, source) {
+        const gl = this.gl;
+        const shader = gl.createShader(type);
+        gl.shaderSource(shader, source);
+        gl.compileShader(shader);
+        // test if shader compilation was successful
+        if (!gl.getShaderParameter(shader, gl.COMPILE_STATUS)) {
+            const log = gl.getShaderInfoLog(shader);
+            gl.deleteShader(shader);
+            throw new Error(log);
+        }
+        this.refs.shaders.push(shader);
+        return shader;
+    }
+    setInputSize(width, height) {
+        this.gl.uniform2f(this.uniforms['u_textureSize'], width, height);
+    }
+    setCanvasSize(width, height) {
+        const dpi = window.devicePixelRatio || 1;
+        const internalWidth = width * dpi;
+        const internalHeight = height * dpi;
+        this.el.width = internalWidth;
+        this.el.height = internalHeight;
+        this.width = internalWidth;
+        this.height = internalHeight;
+        this.gl.viewport(0, 0, internalWidth, internalHeight);
+        this.gl.uniform2f(this.uniforms['u_screenSize'], internalWidth, internalHeight);
+        this.el.style.width = `${width}px`;
+        this.el.style.height = `${height}px`;
+    }
+    setLayerType(textureType) {
+        this.textureType = textureType;
+    }
+    toImage(type) {
+        return this.el.toDataURL(type);
+    }
+    setColor(color, value) {
+        this.gl.uniform4f(this.uniforms[color], value[0] / 255, value[1] / 255, value[2] / 255, 1);
+    }
+    setPaperColor(value) {
+        this.gl.clearColor(value[0] / 255, value[1] / 255, value[2] / 255, 1);
+    }
+    drawLayer(buffer, width, height, color1, color2) {
+        const gl = this.gl;
+        // gl.activeTexture(gl.TEXTURE0);
+        gl.texImage2D(gl.TEXTURE_2D, 0, this.textureType, width, height, 0, this.textureType, gl.UNSIGNED_BYTE, buffer);
+        this.setColor('u_color1', color1);
+        this.setColor('u_color2', color2);
+        gl.drawArrays(gl.TRIANGLES, 0, 6);
+    }
+    resize(width = 640, height = 480) {
+        this.setCanvasSize(width, height);
+    }
+    clear() {
+        this.gl.clear(this.gl.COLOR_BUFFER_BIT);
+    }
+    destroy() {
+        // free resources
+        const refs = this.refs;
+        const gl = this.gl;
+        refs.shaders.forEach((shader) => {
+            gl.deleteShader(shader);
+        });
+        refs.shaders = [];
+        refs.textures.forEach((texture) => {
+            gl.deleteTexture(texture);
+        });
+        refs.textures = [];
+        refs.buffers.forEach((buffer) => {
+            gl.deleteBuffer(buffer);
+        });
+        refs.buffers = [];
+        gl.deleteProgram(this.program);
+        // shrink the canvas to reduce memory usage until it is garbage collected
+        gl.canvas.width = 1;
+        gl.canvas.height = 1;
+    }
+}
+
+const _AudioContext = (window.AudioContext || window.webkitAudioContext);
+class WebAudioPlayer {
+    constructor() {
+        this.useEq = false;
+        // Thanks to Sudomemo for the default settings
+        this.eqSettings = [
+            [31.25, 4.1],
+            [62.5, 1.2],
+            [125, 0],
+            [250, -4.1],
+            [500, -2.3],
+            [1000, 0.5],
+            [2000, 6.5],
+            [8000, 5.1],
+            [16000, 5.1]
+        ];
+        this._volume = 1;
+        this.ctx = new _AudioContext();
+    }
+    set volume(value) {
+        this.setVolume(value);
+    }
+    get volume() {
+        return this._volume;
+    }
+    setSamples(sampleData, sampleRate) {
+        const numSamples = sampleData.length;
+        const audioBuffer = this.ctx.createBuffer(1, numSamples, sampleRate);
+        const channelData = audioBuffer.getChannelData(0);
+        if (sampleData instanceof Float32Array) {
+            channelData.set(sampleData, 0);
+        }
+        else if (sampleData instanceof Int16Array) {
+            for (let i = 0; i < numSamples; i++) {
+                channelData[i] = sampleData[i] / 32767;
+            }
+        }
+        this.buffer = audioBuffer;
+        this.sampleRate = sampleRate;
+    }
+    connectEqNodesTo(inNode) {
+        const { ctx, eqSettings } = this;
+        let lastNode = inNode;
+        eqSettings.forEach(([frequency, gain], index) => {
+            let node = ctx.createBiquadFilter();
+            if (index === 0)
+                node.type = 'lowshelf';
+            else if (index === eqSettings.length - 1)
+                node.type = 'highshelf';
+            else
+                node.type = 'peaking';
+            node.frequency.value = frequency;
+            node.gain.value = gain;
+            lastNode.connect(node);
+            lastNode = node;
+        });
+        return lastNode;
+    }
+    initNodes() {
+        const { ctx } = this;
+        const source = ctx.createBufferSource();
+        source.buffer = this.buffer;
+        const gainNode = ctx.createGain();
+        if (this.useEq) {
+            const eq = this.connectEqNodesTo(source);
+            eq.connect(gainNode);
+        }
+        else {
+            source.connect(gainNode);
+        }
+        source.connect(gainNode);
+        gainNode.connect(ctx.destination);
+        this.source = source;
+        this.gainNode = gainNode;
+        this.setVolume(this._volume);
+    }
+    setVolume(value) {
+        this._volume = value;
+        if (this.gainNode) {
+            // human perception of loudness is logarithmic, rather than linear
+            // https://www.dr-lex.be/info-stuff/volumecontrols.html
+            this.gainNode.gain.value = Math.pow(value, 2);
+        }
+    }
+    stop() {
+        this.source.stop(0);
+    }
+    playFrom(currentTime) {
+        this.initNodes();
+        this.source.start(0, currentTime);
+    }
+}
+
+const saveData = (function () {
+    var a = document.createElement("a");
+    // document.body.appendChild(a);
+    // a.style.display = "none";
+    return function (blob, filename) {
+        const url = window.URL.createObjectURL(blob);
+        a.href = url;
+        a.download = filename;
+        a.click();
+        window.URL.revokeObjectURL(url);
+    };
+}());
+/** flipnote player API, based on HTMLMediaElement (https://developer.mozilla.org/en-US/docs/Web/API/HTMLMediaElement) */
+class Player {
+    constructor(el, width, height) {
+        this.loop = false;
+        this.paused = true;
+        this.duration = 0;
+        this.isOpen = false;
+        this.events = {};
+        this._lastTick = -1;
+        this._frame = -1;
+        this._time = -1;
+        this.hasPlaybackStarted = false;
+        this.wasPlaying = false;
+        this.isSeeking = false;
+        // if `el` is a string, use it to select an Element, else assume it's an element
+        el = ('string' == typeof el) ? document.querySelector(el) : el;
+        this.canvas = new WebglCanvas(el, width, height);
+        this.audio = new WebAudioPlayer();
+        this.el = this.canvas.el;
+        this.customPalette = null;
+        this.state = { ...Player.defaultState };
+    }
+    saveWav() {
+        const wav = WavEncoder.fromFlipnote(this.note);
+        saveData(wav.getBlob(), 'audio.wav');
+    }
+    get currentFrame() {
+        return this._frame;
+    }
+    set currentFrame(frameIndex) {
+        this.setFrame(frameIndex);
+    }
+    get currentTime() {
+        return this.isOpen ? this._time : null;
+    }
+    set currentTime(value) {
+        if ((this.isOpen) && (value <= this.duration) && (value >= 0)) {
+            this.setFrame(Math.round(value / (1 / this.framerate)));
+            this._time = value;
+            this.emit('progress', this.progress);
+        }
+    }
+    get progress() {
+        return this.isOpen ? (this._time / this.duration) * 100 : 0;
+    }
+    set progress(value) {
+        this.currentTime = this.duration * (value / 100);
+    }
+    get volume() {
+        return this.audio.volume;
+    }
+    set volume(value) {
+        this.audio.volume = value;
+    }
+    get muted() {
+        // return this.audioTracks[3].audio.muted;
+        return false;
+    }
+    set muted(value) {
+        // for (let i = 0; i < this.audioTracks.length; i++) {
+        //   this.audioTracks[i].audio.muted = value;
+        // }
+    }
+    get framerate() {
+        return this.note.framerate;
+    }
+    get frameCount() {
+        return this.note.frameCount;
+    }
+    get frameSpeed() {
+        return this.note.frameSpeed;
+    }
+    setState(newState) {
+        newState = { ...this.state, ...newState };
+        const oldState = this.state;
+        this.emit('state:change');
+    }
+    async open(source) {
+        if (this.isOpen)
+            this.close();
+        return parseSource(source)
+            .then((note) => this.load(note))
+            .catch((err) => {
+            this.emit('error', err);
+            console.error('Error loading Flipnote:', err);
+            throw 'Error loading Flipnote';
+        });
+    }
+    close() {
+        this.pause();
+        this.note = null;
+        this.isOpen = false;
+        this.paused = true;
+        this.loop = null;
+        this.meta = null;
+        this._frame = null;
+        this._time = null;
+        this.duration = null;
+        this.loop = null;
+        this.hasPlaybackStarted = null;
+        this.canvas.clear();
+    }
+    load(note) {
+        this.note = note;
+        this.meta = note.meta;
+        this.type = note.type;
+        this.loop = note.meta.loop;
+        this.duration = (this.note.frameCount) * (1 / this.note.framerate);
+        this.paused = true;
+        this.isOpen = true;
+        this.hasPlaybackStarted = false;
+        this.layerVisibility = {
+            1: true,
+            2: true,
+            3: true
+        };
+        const sampleRate = this.audio.ctx.sampleRate;
+        const pcm = note.getAudioMasterPcm(sampleRate);
+        this.audio.setSamples(pcm, sampleRate);
+        this.canvas.setInputSize(note.width, note.height);
+        this.canvas.setLayerType(this.type === 'PPM' ? TextureType.Alpha : TextureType.LuminanceAlpha);
+        this.setFrame(this.note.thumbFrameIndex);
+        this._time = 0;
+        this.emit('load');
+    }
+    playAudio() {
+        this.audio.playFrom(this.currentTime);
+    }
+    stopAudio() {
+        this.audio.stop();
+    }
+    toggleEq() {
+        this.stopAudio();
+        this.audio.useEq = !this.audio.useEq;
+        this.playAudio();
+    }
+    playbackLoop(timestamp) {
+        if (this.paused) { // break loop if paused is set to true
+            this.stopAudio();
+            return null;
+        }
+        const time = timestamp / 1000;
+        const progress = time - this._lastTick;
+        if (progress > this.duration) {
+            if (this.loop) {
+                this.currentTime = 0;
+                this.playAudio();
+                this._lastTick = time;
+                this.emit('playback:loop');
+            }
+            else {
+                this.pause();
+                this.emit('playback:end');
+            }
+        }
+        else {
+            this.currentTime = progress;
+        }
+        requestAnimationFrame(this.playbackLoop.bind(this));
+    }
+    play() {
+        window.__activeFlipnotePlayer = this;
+        if ((!this.isOpen) || (!this.paused))
+            return null;
+        if ((!this.hasPlaybackStarted) || ((!this.loop) && (this.currentFrame == this.frameCount - 1)))
+            this._time = 0;
+        this.paused = false;
+        this.hasPlaybackStarted = true;
+        this._lastTick = (performance.now() / 1000) - this.currentTime;
+        this.playAudio();
+        requestAnimationFrame(this.playbackLoop.bind(this));
+        this.emit('playback:start');
+    }
+    pause() {
+        if ((!this.isOpen) || (this.paused))
+            return null;
+        this.paused = true;
+        this.stopAudio();
+        this.emit('playback:stop');
+    }
+    togglePlay() {
+        if (this.paused) {
+            this.play();
+        }
+        else {
+            this.pause();
+        }
+    }
+    setFrame(frameIndex) {
+        if ((this.isOpen) && (frameIndex !== this.currentFrame)) {
+            // clamp frame index
+            frameIndex = Math.max(0, Math.min(Math.floor(frameIndex), this.frameCount - 1));
+            this.drawFrame(frameIndex);
+            this._frame = frameIndex;
+            if (this.paused) {
+                this._time = frameIndex * (1 / this.framerate);
+                this.emit('progress', this.progress);
+            }
+            this.emit('frame:update', this.currentFrame);
+        }
+    }
+    nextFrame() {
+        if ((this.loop) && (this.currentFrame >= this.frameCount - 1)) {
+            this.currentFrame = 0;
+        }
+        else {
+            this.currentFrame += 1;
+        }
+    }
+    prevFrame() {
+        if ((this.loop) && (this.currentFrame <= 0)) {
+            this.currentFrame = this.frameCount - 1;
+        }
+        else {
+            this.currentFrame -= 1;
+        }
+    }
+    lastFrame() {
+        this.currentFrame = this.frameCount - 1;
+    }
+    firstFrame() {
+        this.currentFrame = 0;
+    }
+    thumbnailFrame() {
+        this.currentFrame = this.note.thumbFrameIndex;
+    }
+    startSeek() {
+        if (!this.isSeeking) {
+            this.wasPlaying = !this.paused;
+            this.pause();
+            this.isSeeking = true;
+        }
+    }
+    seek(progress) {
+        if (this.isSeeking) {
+            this.progress = progress;
+        }
+    }
+    endSeek() {
+        if ((this.isSeeking) && (this.wasPlaying === true)) {
+            this.play();
+        }
+        this.wasPlaying = false;
+        this.isSeeking = false;
+    }
+    drawFrame(frameIndex) {
+        const width = this.note.width;
+        const height = this.note.height;
+        const colors = this.note.getFramePalette(frameIndex);
+        const layerBuffers = this.note.decodeFrame(frameIndex);
+        this.canvas.setPaperColor(colors[0]);
+        this.canvas.clear();
+        if (this.note.type === 'PPM') {
+            if (this.layerVisibility[2]) {
+                this.canvas.drawLayer(layerBuffers[1], width, height, colors[2], [0, 0, 0, 0]);
+            }
+            if (this.layerVisibility[1]) {
+                this.canvas.drawLayer(layerBuffers[0], width, height, colors[1], [0, 0, 0, 0]);
+            }
+        }
+        else if (this.note.type === 'KWZ') {
+            // loop through each layer
+            this.note.getLayerOrder(frameIndex).forEach((layerIndex) => {
+                // only draw layer if it's visible
+                if (this.layerVisibility[layerIndex + 1]) {
+                    this.canvas.drawLayer(layerBuffers[layerIndex], width, height, colors[layerIndex * 2 + 1], colors[layerIndex * 2 + 2]);
+                }
+            });
+        }
+    }
+    forceUpdate() {
+        if (this.isOpen) {
+            this.drawFrame(this.currentFrame);
+        }
+    }
+    resize(width, height) {
+        this.canvas.resize(width, height);
+        this.forceUpdate();
+    }
+    setLayerVisibility(layerIndex, value) {
+        this.layerVisibility[layerIndex] = value;
+        this.forceUpdate();
+    }
+    toggleLayerVisibility(layerIndex) {
+        this.setLayerVisibility(layerIndex, !this.layerVisibility[layerIndex]);
+    }
+    // public setPalette(palette: any): void {
+    //   this.customPalette = palette;
+    //   this.note.palette = palette;
+    //   this.forceUpdate();
+    // }
+    on(eventType, callback) {
+        const events = this.events;
+        (events[eventType] || (events[eventType] = [])).push(callback);
+    }
+    off(eventType, callback) {
+        const callbackList = this.events[eventType];
+        if (callbackList)
+            callbackList.splice(callbackList.indexOf(callback), 1);
+    }
+    emit(eventType, ...args) {
+        var callbackList = this.events[eventType] || [];
+        for (var i = 0; i < callbackList.length; i++) {
+            callbackList[i].apply(null, args);
+        }
+    }
+    clearEvents() {
+        this.events = {};
+    }
+    destroy() {
+        this.close();
+        this.canvas.destroy();
+    }
+}
+Player.defaultState = {
+    noteType: null,
+    isNoteOpen: false,
+    paused: false,
+    hasPlaybackStarted: false,
+    frame: -1,
+    time: -1,
+    loop: false,
+    volume: 1,
+    muted: false,
+    layerVisibility: {
+        1: true,
+        2: true,
+        3: true
+    },
+    isSeeking: false,
+    wasPlaying: false,
+};
 
 // Main entrypoint for web
 var api;

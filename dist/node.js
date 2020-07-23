@@ -245,6 +245,14 @@ class DataStream {
     }
 }
 
+var FlipnoteAudioTrack;
+(function (FlipnoteAudioTrack) {
+    FlipnoteAudioTrack[FlipnoteAudioTrack["BGM"] = 0] = "BGM";
+    FlipnoteAudioTrack[FlipnoteAudioTrack["SE1"] = 1] = "SE1";
+    FlipnoteAudioTrack[FlipnoteAudioTrack["SE2"] = 2] = "SE2";
+    FlipnoteAudioTrack[FlipnoteAudioTrack["SE3"] = 3] = "SE3";
+    FlipnoteAudioTrack[FlipnoteAudioTrack["SE4"] = 4] = "SE4";
+})(FlipnoteAudioTrack || (FlipnoteAudioTrack = {}));
 class FlipnoteParserBase extends DataStream {
     hasAudioTrack(trackId) {
         if (this.soundMeta.hasOwnProperty(trackId) && this.soundMeta[trackId].length > 0) {
@@ -268,8 +276,8 @@ function pcmDsAudioResample(src, srcFreq, dstFreq) {
     const dst = new Int16Array(dstLength);
     const adjFreq = (srcFreq << 8) / dstFreq;
     for (let n = 0; n < dst.length; n++) {
-        let samp = src[(n * adjFreq) >> 8] / 2;
-        dst[n] = clamp(samp, -32768, 32767);
+        dst[n] = src[(n * adjFreq) >> 8];
+        // dst[n] = clamp(samp, -32768, 32767);
     }
     return dst;
 }
@@ -279,7 +287,8 @@ function pcmAudioMix(src, dst, dstOffset = 0) {
     for (let n = 0; n < srcSize; n++) {
         if (dstOffset + n > dstSize)
             break;
-        const samp = dst[dstOffset + n] + src[n];
+        // half src volume
+        const samp = dst[dstOffset + n] + (src[n] / 2);
         dst[dstOffset + n] = clamp(samp, -32768, 32767);
     }
 }
@@ -482,10 +491,10 @@ class PpmParser extends FlipnoteParserBase {
         this.framerate = FRAMERATES[this.frameSpeed];
         this.bgmrate = FRAMERATES[this.bgmSpeed];
         this.soundMeta = {
-            [0 /* BGM */]: { offset: offset, length: bgmLen },
-            [1 /* SE1 */]: { offset: offset += bgmLen, length: se1Len },
-            [2 /* SE2 */]: { offset: offset += se1Len, length: se2Len },
-            [3 /* SE3 */]: { offset: offset += se2Len, length: se3Len },
+            [FlipnoteAudioTrack.BGM]: { offset: offset, length: bgmLen },
+            [FlipnoteAudioTrack.SE1]: { offset: offset += bgmLen, length: se1Len },
+            [FlipnoteAudioTrack.SE2]: { offset: offset += se1Len, length: se2Len },
+            [FlipnoteAudioTrack.SE3]: { offset: offset += se2Len, length: se3Len },
         };
     }
     isNewFrame(frameIndex) {
@@ -726,7 +735,7 @@ class PpmParser extends FlipnoteParserBase {
     getAudioTrackPcm(trackId, dstFreq = DS_SAMPLE_RATE) {
         const srcPcm = this.decodeAudioTrack(trackId);
         let srcFreq = this.sampleRate;
-        if (trackId === 0 /* BGM */) {
+        if (trackId === FlipnoteAudioTrack.BGM) {
             const bgmAdjust = (1 / this.bgmrate) / (1 / this.framerate);
             srcFreq = this.sampleRate * bgmAdjust;
         }
@@ -739,22 +748,22 @@ class PpmParser extends FlipnoteParserBase {
         const duration = this.frameCount * (1 / this.framerate);
         const dstSize = Math.floor(duration * dstFreq);
         const master = new Int16Array(dstSize);
-        const hasBgm = this.hasAudioTrack(0 /* BGM */);
-        const hasSe1 = this.hasAudioTrack(1 /* SE1 */);
-        const hasSe2 = this.hasAudioTrack(2 /* SE2 */);
-        const hasSe3 = this.hasAudioTrack(3 /* SE3 */);
+        const hasBgm = this.hasAudioTrack(FlipnoteAudioTrack.BGM);
+        const hasSe1 = this.hasAudioTrack(FlipnoteAudioTrack.SE1);
+        const hasSe2 = this.hasAudioTrack(FlipnoteAudioTrack.SE2);
+        const hasSe3 = this.hasAudioTrack(FlipnoteAudioTrack.SE3);
         // Mix background music
         if (hasBgm) {
-            const bgmPcm = this.getAudioTrackPcm(0 /* BGM */, dstFreq);
+            const bgmPcm = this.getAudioTrackPcm(FlipnoteAudioTrack.BGM, dstFreq);
             pcmAudioMix(bgmPcm, master, 0);
         }
         // Mix sound effects
         if (hasSe1 || hasSe2 || hasSe3) {
             const samplesPerFrame = Math.floor(dstFreq / this.framerate);
             const seFlags = this.decodeSoundFlags();
-            const se1Pcm = hasSe1 ? this.getAudioTrackPcm(1 /* SE1 */, dstFreq) : null;
-            const se2Pcm = hasSe2 ? this.getAudioTrackPcm(2 /* SE2 */, dstFreq) : null;
-            const se3Pcm = hasSe3 ? this.getAudioTrackPcm(3 /* SE3 */, dstFreq) : null;
+            const se1Pcm = hasSe1 ? this.getAudioTrackPcm(FlipnoteAudioTrack.SE1, dstFreq) : null;
+            const se2Pcm = hasSe2 ? this.getAudioTrackPcm(FlipnoteAudioTrack.SE2, dstFreq) : null;
+            const se3Pcm = hasSe3 ? this.getAudioTrackPcm(FlipnoteAudioTrack.SE3, dstFreq) : null;
             for (let i = 0; i < this.frameCount; i++) {
                 const seOffset = samplesPerFrame * i;
                 const flag = seFlags[i];
@@ -977,11 +986,11 @@ class KwzParser extends FlipnoteParserBase {
             this.bgmrate = FRAMERATES$1[bgmSpeed];
             const trackSizes = new Uint32Array(this.buffer, offset + 4, 20);
             this.soundMeta = {
-                [0 /* BGM */]: { offset: offset += 28, length: trackSizes[0] },
-                [1 /* SE1 */]: { offset: offset += trackSizes[0], length: trackSizes[1] },
-                [2 /* SE2 */]: { offset: offset += trackSizes[1], length: trackSizes[2] },
-                [3 /* SE3 */]: { offset: offset += trackSizes[2], length: trackSizes[3] },
-                [4 /* SE4 */]: { offset: offset += trackSizes[3], length: trackSizes[4] },
+                [FlipnoteAudioTrack.BGM]: { offset: offset += 28, length: trackSizes[0] },
+                [FlipnoteAudioTrack.SE1]: { offset: offset += trackSizes[0], length: trackSizes[1] },
+                [FlipnoteAudioTrack.SE2]: { offset: offset += trackSizes[1], length: trackSizes[2] },
+                [FlipnoteAudioTrack.SE3]: { offset: offset += trackSizes[2], length: trackSizes[3] },
+                [FlipnoteAudioTrack.SE4]: { offset: offset += trackSizes[3], length: trackSizes[4] },
             };
         }
     }
@@ -1195,21 +1204,18 @@ class KwzParser extends FlipnoteParserBase {
     }
     // retuns an uint8 array where each item is a pixel's palette index
     getLayerPixels(frameIndex, layerIndex) {
-        if (this.prevDecodedFrame !== frameIndex) {
+        if (this.prevDecodedFrame !== frameIndex)
             this.decodeFrame(frameIndex);
-        }
         const palette = this.getFramePaletteIndices(frameIndex);
         const layers = this.layers[layerIndex];
         const image = new Uint8Array((KwzParser.width * KwzParser.height));
         const paletteOffset = layerIndex * 2 + 1;
         for (let pixelIndex = 0; pixelIndex < layers.length; pixelIndex++) {
             let pixel = layers[pixelIndex];
-            if (pixel & 0xff00) {
+            if (pixel & 0xff00)
                 image[pixelIndex] = palette[paletteOffset];
-            }
-            else if (pixel & 0x00ff) {
+            else if (pixel & 0x00ff)
                 image[pixelIndex] = palette[paletteOffset + 1];
-            }
         }
         return image;
     }
@@ -1224,9 +1230,8 @@ class KwzParser extends FlipnoteParserBase {
             // merge layer into image result
             for (let pixelIndex = 0; pixelIndex < layer.length; pixelIndex++) {
                 const pixel = layer[pixelIndex];
-                if (pixel !== 0) {
+                if (pixel !== 0)
                     image[pixelIndex] = pixel;
-                }
             }
         });
         return image;
@@ -1280,8 +1285,8 @@ class KwzParser extends FlipnoteParserBase {
                     bitPos += 4;
                 }
                 // clamp step index and diff
-                stepIndex = Math.max(0, Math.min(stepIndex, 79));
-                diff = Math.max(-2047, Math.min(diff, 2047));
+                stepIndex = clamp(stepIndex, 0, 79);
+                diff = clamp(diff, -2047, 2047);
                 // add result to output buffer
                 output[outputOffset] = (diff * 16);
                 outputOffset += 1;
@@ -1295,7 +1300,7 @@ class KwzParser extends FlipnoteParserBase {
     getAudioTrackPcm(trackId, dstFreq = CTR_SAMPLE_RATE) {
         const srcPcm = this.decodeAudioTrack(trackId);
         let srcFreq = this.sampleRate;
-        if (trackId === 0 /* BGM */) {
+        if (trackId === FlipnoteAudioTrack.BGM) {
             const bgmAdjust = (1 / this.bgmrate) / (1 / this.framerate);
             srcFreq = this.sampleRate * bgmAdjust;
         }
@@ -1308,24 +1313,24 @@ class KwzParser extends FlipnoteParserBase {
         const duration = this.frameCount * (1 / this.framerate);
         const dstSize = Math.floor(duration * dstFreq);
         const master = new Int16Array(dstSize);
-        const hasBgm = this.hasAudioTrack(0 /* BGM */);
-        const hasSe1 = this.hasAudioTrack(1 /* SE1 */);
-        const hasSe2 = this.hasAudioTrack(2 /* SE2 */);
-        const hasSe3 = this.hasAudioTrack(3 /* SE3 */);
-        const hasSe4 = this.hasAudioTrack(4 /* SE4 */);
+        const hasBgm = this.hasAudioTrack(FlipnoteAudioTrack.BGM);
+        const hasSe1 = this.hasAudioTrack(FlipnoteAudioTrack.SE1);
+        const hasSe2 = this.hasAudioTrack(FlipnoteAudioTrack.SE2);
+        const hasSe3 = this.hasAudioTrack(FlipnoteAudioTrack.SE3);
+        const hasSe4 = this.hasAudioTrack(FlipnoteAudioTrack.SE4);
         // Mix background music
         if (hasBgm) {
-            const bgmPcm = this.getAudioTrackPcm(0 /* BGM */, dstFreq);
+            const bgmPcm = this.getAudioTrackPcm(FlipnoteAudioTrack.BGM, dstFreq);
             pcmAudioMix(bgmPcm, master, 0);
         }
         // Mix sound effects
         if (hasSe1 || hasSe2 || hasSe3) {
             const samplesPerFrame = Math.floor(dstFreq / this.framerate);
             const seFlags = this.decodeSoundFlags();
-            const se1Pcm = hasSe1 ? this.getAudioTrackPcm(1 /* SE1 */, dstFreq) : null;
-            const se2Pcm = hasSe2 ? this.getAudioTrackPcm(2 /* SE2 */, dstFreq) : null;
-            const se3Pcm = hasSe3 ? this.getAudioTrackPcm(3 /* SE3 */, dstFreq) : null;
-            const se4Pcm = hasSe4 ? this.getAudioTrackPcm(4 /* SE4 */, dstFreq) : null;
+            const se1Pcm = hasSe1 ? this.getAudioTrackPcm(FlipnoteAudioTrack.SE1, dstFreq) : null;
+            const se2Pcm = hasSe2 ? this.getAudioTrackPcm(FlipnoteAudioTrack.SE2, dstFreq) : null;
+            const se3Pcm = hasSe3 ? this.getAudioTrackPcm(FlipnoteAudioTrack.SE3, dstFreq) : null;
+            const se4Pcm = hasSe4 ? this.getAudioTrackPcm(FlipnoteAudioTrack.SE4, dstFreq) : null;
             for (let i = 0; i < this.frameCount; i++) {
                 const seOffset = samplesPerFrame * i;
                 const flag = seFlags[i];
