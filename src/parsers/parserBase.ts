@@ -43,6 +43,7 @@ export abstract class FlipnoteParserBase extends DataStream {
   public bgmSpeed: number;
   public framerate: number;
   public bgmrate: number;
+  public rawSampleRate: number;
   public sampleRate: number;
   public thumbFrameIndex: number;
 
@@ -66,10 +67,10 @@ export abstract class FlipnoteParserBase extends DataStream {
   abstract decodeAudioTrack(trackId: FlipnoteAudioTrack): Int16Array;
 
   // Get track audio as a standard int16 PCM buffer, at specified sample rate
-  abstract getAudioTrackPcm(trackId: FlipnoteAudioTrack, sampleRate: number): Int16Array;
+  abstract getAudioTrackPcm(trackId: FlipnoteAudioTrack, sampleRate?: number): Int16Array;
 
   // Get the merged master audio for this note, as int16 PCM buffer at specified sample rate
-  abstract getAudioMasterPcm(sampleRate: number): Int16Array;
+  abstract getAudioMasterPcm(sampleRate?: number): Int16Array;
 
   public hasAudioTrack(trackId: FlipnoteAudioTrack): boolean {
     if (this.soundMeta.hasOwnProperty(trackId) && this.soundMeta[trackId].length > 0) {

@@ -218,8 +218,8 @@ export class Player {
       2: true,
       3: true
     };
-    const sampleRate = this.audio.ctx.sampleRate;
-    const pcm = note.getAudioMasterPcm(sampleRate);
+    const sampleRate = this.note.sampleRate;
+    const pcm = note.getAudioMasterPcm();
     this.audio.setSamples(pcm, sampleRate);
     this.canvas.setInputSize(note.width, note.height);
     this.canvas.setLayerType(this.type === 'PPM' ? TextureType.Alpha : TextureType.LuminanceAlpha);

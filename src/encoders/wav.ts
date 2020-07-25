@@ -1,9 +1,6 @@
 import { DataStream } from '../utils/index';
 import { Flipnote, FlipnoteAudioTrack } from '../parsers/index';
 
-// Typical WAV sample rate
-const WAV_SAMPLE_RATE = 44100;
-
 export class WavEncoder {
 
   public sampleRate: number;
@@ -52,15 +49,17 @@ export class WavEncoder {
   }
 
   static fromFlipnote(note: Flipnote) {
-    const wav = new WavEncoder(WAV_SAMPLE_RATE, 1, 16);
-    const pcm = note.getAudioMasterPcm(WAV_SAMPLE_RATE);
+    const sampleRate = note.sampleRate;
+    const wav = new WavEncoder(sampleRate, 1, 16);
+    const pcm = note.getAudioMasterPcm(sampleRate);
     wav.writeFrames(pcm);
     return wav;
   }
 
   static fromFlipnoteTrack(note: Flipnote, trackId: FlipnoteAudioTrack) {
-    const wav = new WavEncoder(WAV_SAMPLE_RATE, 1, 16);
-    const pcm = note.getAudioTrackPcm(trackId, WAV_SAMPLE_RATE);
+    const sampleRate = note.sampleRate;
+    const wav = new WavEncoder(sampleRate, 1, 16);
+    const pcm = note.getAudioTrackPcm(trackId, sampleRate);
     wav.writeFrames(pcm);
     return wav;
   }

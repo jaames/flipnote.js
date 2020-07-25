@@ -77,8 +77,8 @@ export class PpmParser extends FlipnoteParserBase {
   static type: string = 'PPM';
   static width: number = 256;
   static height: number = 192;
-  static sampleRate: number = 8192;
-  static outputSampleRate: number = 32768; 
+  static rawSampleRate: number = 8192;
+  static sampleRate: number = DS_SAMPLE_RATE; 
   static globalPalette = [
     PALETTE.WHITE,
     PALETTE.BLACK,
@@ -90,6 +90,7 @@ export class PpmParser extends FlipnoteParserBase {
   public width: number = PpmParser.width;
   public height: number = PpmParser.height;
   public globalPalette = PpmParser.globalPalette;
+  public rawSampleRate = PpmParser.rawSampleRate;
   public sampleRate = PpmParser.sampleRate;
   public meta: PpmMeta;
   public version: number;
@@ -486,20 +487,19 @@ export class PpmParser extends FlipnoteParserBase {
 
   public getAudioTrackPcm(trackId: FlipnoteAudioTrack, dstFreq: number = DS_SAMPLE_RATE) {
     const srcPcm = this.decodeAudioTrack(trackId);
-    let srcFreq = this.sampleRate;
+    let srcFreq = this.rawSampleRate;
     if (trackId === FlipnoteAudioTrack.BGM) {
-      const bgmAdjust = (1 / this.bgmrate) / (1 / this.framerate);
-      srcFreq = this.sampleRate * bgmAdjust;
+      const bgmAdjust = Math.round(this.framerate / this.bgmrate);
+      srcFreq = this.rawSampleRate * bgmAdjust;
     }
-    if (srcFreq !== dstFreq) {
+    if (srcFreq !== dstFreq)
       return pcmDsAudioResample(srcPcm, srcFreq, dstFreq);
-    }
     return srcPcm;
   }
 
   public getAudioMasterPcm(dstFreq: number = DS_SAMPLE_RATE) {
     const duration = this.frameCount * (1 / this.framerate);
-    const dstSize = Math.floor(duration * dstFreq);
+    const dstSize = Math.ceil(duration * dstFreq);
     const master = new Int16Array(dstSize);
     const hasBgm = this.hasAudioTrack(FlipnoteAudioTrack.BGM);
     const hasSe1 = this.hasAudioTrack(FlipnoteAudioTrack.SE1);
@@ -512,14 +512,15 @@ export class PpmParser extends FlipnoteParserBase {
     }
     // Mix sound effects
     if (hasSe1 || hasSe2 || hasSe3) {
-      const samplesPerFrame = Math.floor(dstFreq / this.framerate);
       const seFlags = this.decodeSoundFlags();
       const se1Pcm = hasSe1 ? this.getAudioTrackPcm(FlipnoteAudioTrack.SE1, dstFreq) : null;
       const se2Pcm = hasSe2 ? this.getAudioTrackPcm(FlipnoteAudioTrack.SE2, dstFreq) : null;
       const se3Pcm = hasSe3 ? this.getAudioTrackPcm(FlipnoteAudioTrack.SE3, dstFreq) : null;
-      for (let i = 0; i < this.frameCount; i++) {
-        const seOffset = samplesPerFrame * i;
-        const flag = seFlags[i];
+      const adjFreq = dstFreq / this.rawSampleRate;
+      const samplesPerFrame = Math.round(this.rawSampleRate / this.framerate) * adjFreq;
+      for (let frame = 0; frame < this.frameCount; frame++) {
+        const seOffset = (frame + .5) * samplesPerFrame;
+        const flag = seFlags[frame];
         if (hasSe1 && flag[0])
           pcmAudioMix(se1Pcm, master, seOffset);
         if (hasSe2 && flag[1])

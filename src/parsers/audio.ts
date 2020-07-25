@@ -11,10 +11,9 @@ export function pcmDsAudioResample(src: Int16Array, srcFreq: number, dstFreq: nu
   const srcDuration = src.length / srcFreq;
   const dstLength = srcDuration * dstFreq;
   const dst = new Int16Array(dstLength);
-  const adjFreq = (srcFreq << 8) / dstFreq;
+  const adjFreq = (srcFreq) / dstFreq;
   for (let n = 0; n < dst.length; n++) {
-    dst[n] = src[(n * adjFreq) >> 8];
-    // dst[n] = clamp(samp, -32768, 32767);
+    dst[n] = src[Math.floor(n * adjFreq)];
   }
   return dst;
 }

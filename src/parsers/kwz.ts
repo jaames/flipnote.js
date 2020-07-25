@@ -80,7 +80,9 @@ export class KwzParser extends FlipnoteParserBase {
   static type: string = 'KWZ';
   static width: number = 320;
   static height: number = 240;
-  static sampleRate: number = 16364;
+  static rawSampleRate: number = 16364;
+  // TODO: check this is true, it probably isnt
+  static sampleRate: number = CTR_SAMPLE_RATE;
   static globalPalette = [
     PALETTE.WHITE,
     PALETTE.BLACK,
@@ -95,6 +97,7 @@ export class KwzParser extends FlipnoteParserBase {
   public width: number = KwzParser.width;
   public height: number = KwzParser.height;
   public globalPalette = KwzParser.globalPalette;
+  public rawSampleRate = KwzParser.rawSampleRate;
   public sampleRate = KwzParser.sampleRate;
   public meta: KwzMeta;
 
@@ -583,10 +586,10 @@ export class KwzParser extends FlipnoteParserBase {
 
   public getAudioTrackPcm(trackId: FlipnoteAudioTrack, dstFreq: number = CTR_SAMPLE_RATE) {
     const srcPcm = this.decodeAudioTrack(trackId);
-    let srcFreq = this.sampleRate;
+    let srcFreq = this.rawSampleRate;
     if (trackId === FlipnoteAudioTrack.BGM) {
       const bgmAdjust = (1 / this.bgmrate) / (1 / this.framerate);
-      srcFreq = this.sampleRate * bgmAdjust;
+      srcFreq = this.rawSampleRate * bgmAdjust;
     }
     if (srcFreq !== dstFreq) {
       return pcmDsAudioResample(srcPcm, srcFreq, dstFreq);
