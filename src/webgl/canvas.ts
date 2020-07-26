@@ -27,6 +27,9 @@ export class WebglCanvas {
 
   private program: WebGLProgram;
   private textureType: TextureType;
+  private textureBuffer: Uint8ClampedArray;
+  private textureWidth: number;
+  private textureHeight: number;
   private uniforms: UniformMap = {};
   private refs: ResourceMap = {
     shaders: [],
@@ -34,14 +37,18 @@ export class WebglCanvas {
     buffers: []
   };
 
-  constructor(el: HTMLCanvasElement, width=640, height=480, params={antialias: false, alpha: false}) {
-    const gl = <WebGLRenderingContext>el.getContext('webgl', params);
+  constructor(el: HTMLCanvasElement, width=640, height=480) {
+    const gl = <WebGLRenderingContext>el.getContext('webgl', {
+      antialias: false,
+      alpha: true
+    });
     this.el = el;
     this.gl = gl;
     this.createProgram();
     this.setCanvasSize(width, height);
     this.createScreenQuad();
     this.createBitmapTexture();
+    this.setTextureFmt(TextureType.Alpha, 256, 192);
     gl.enable(gl.BLEND);
     gl.blendEquation(gl.FUNC_ADD);
     gl.blendFunc(gl.ONE, gl.ONE_MINUS_SRC_ALPHA);
@@ -113,6 +120,7 @@ export class WebglCanvas {
 
   public setInputSize(width: number, height: number) {
     this.gl.uniform2f(this.uniforms['u_textureSize'], width, height);
+    this.setTextureFmt(this.textureType, width, height);
   }
 
   public setCanvasSize(width: number, height: number) {
@@ -129,8 +137,14 @@ export class WebglCanvas {
     this.el.style.height = `${ height }px`;
   }
   
-  public setLayerType(textureType: TextureType) {
+  public setTextureFmt(textureType: TextureType, width: number, height: number) {
     this.textureType = textureType;
+    this.textureWidth = width;
+    this.textureHeight = height;
+    if (textureType === TextureType.Alpha)
+      this.textureBuffer = new Uint8ClampedArray(width * height);
+    else if (textureType === TextureType.LuminanceAlpha)
+      this.textureBuffer = new Uint8ClampedArray(width * height * 2);
   }
 
   public toImage(type?: string) {
@@ -138,17 +152,46 @@ export class WebglCanvas {
   }
 
   public setColor(color: string, value: number[]) {
-    this.gl.uniform4f(this.uniforms[color], value[0]/255, value[1]/255, value[2]/255, 1);
+    this.gl.uniform4f(this.uniforms[color], value[0] / 255, value[1] / 255, value[2] / 255, value[3] / 255);
   }
 
   public setPaperColor(value: number[]) {
-    this.gl.clearColor(value[0] / 255, value[1] / 255, value[2] / 255, 1);
+    this.gl.clearColor(value[0] / 255, value[1] / 255, value[2] / 255, value[3] / 255);
   }
 
-  public drawLayer(buffer: Uint8Array, width: number, height: number, color1: number[], color2: number[]) {
+  private copyPixelsToTexture(pixels: Uint8Array) {
+    const data = this.textureBuffer;
+    data.fill(0);
+    if (this.textureType === TextureType.Alpha) {
+      for (let i = 0; i < pixels.length; i++) {
+        if (pixels[i] === 1)
+          data[i] = 0xFF;
+      }
+    }
+    else if (this.textureType === TextureType.LuminanceAlpha) {
+      for (let i = 0, o = 0; i < pixels.length; i++, o+=2) {
+        if (pixels[i] === 1)
+          data[o + 1] = 0xFF;
+        else if (pixels[i] === 2)
+          data[o] = 0xFF;
+      }
+    }
+  }
+
+  public drawPixels(pixels: Uint8Array, color1: number[], color2: number[]) {
     const gl = this.gl;
-    // gl.activeTexture(gl.TEXTURE0);
-    gl.texImage2D(gl.TEXTURE_2D, 0, this.textureType, width, height, 0, this.textureType, gl.UNSIGNED_BYTE, buffer);
+    this.copyPixelsToTexture(pixels);
+    gl.texImage2D(
+      gl.TEXTURE_2D,
+      0,
+      this.textureType,
+      this.textureWidth,
+      this.textureHeight,
+      0, 
+      this.textureType, 
+      gl.UNSIGNED_BYTE, 
+      this.textureBuffer
+    );
     this.setColor('u_color1', color1);
     this.setColor('u_color2', color2);
     gl.drawArrays(gl.TRIANGLES, 0, 6);

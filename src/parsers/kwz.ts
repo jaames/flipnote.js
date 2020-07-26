@@ -23,13 +23,13 @@ import {
 
 const FRAMERATES = [.2, .5, 1, 2, 4, 6, 8, 12, 20, 24, 30];
 const PALETTE: FlipnotePaletteDefinition = {
-  WHITE:  [0xff, 0xff, 0xff],
-  BLACK:  [0x10, 0x10, 0x10],
-  RED:    [0xff, 0x10, 0x10],
-  YELLOW: [0xff, 0xe7, 0x00],
-  GREEN:  [0x00, 0x86, 0x31],
-  BLUE:   [0x00, 0x38, 0xce],
-  NONE:   [0xff, 0xff, 0xff]
+  WHITE:  [0xff, 0xff, 0xff, 0xff],
+  BLACK:  [0x10, 0x10, 0x10, 0xff],
+  RED:    [0xff, 0x10, 0x10, 0xff],
+  YELLOW: [0xff, 0xe7, 0x00, 0xff],
+  GREEN:  [0x00, 0x86, 0x31, 0xff],
+  BLUE:   [0x00, 0x38, 0xce, 0xff],
+  NONE:   [0xff, 0xff, 0xff, 0x00]
 };
 const CTR_SAMPLE_RATE = 32768;
 
@@ -102,7 +102,7 @@ export class KwzParser extends FlipnoteParserBase {
   public meta: KwzMeta;
 
   private sections: KwzSectionMap;
-  private layers: Uint16Array[];
+  private layers: [Uint8Array, Uint8Array, Uint8Array];
   private prevDecodedFrame: number = null;
   private frameMeta: KwzFrameMeta[];
   private frameOffsets: Uint32Array;
@@ -112,9 +112,9 @@ export class KwzParser extends FlipnoteParserBase {
   constructor(arrayBuffer: ArrayBuffer) {
     super(arrayBuffer);
     this.layers = [
-      new Uint16Array(KwzParser.width * KwzParser.height),
-      new Uint16Array(KwzParser.width * KwzParser.height),
-      new Uint16Array(KwzParser.width * KwzParser.height),
+      new Uint8Array(KwzParser.width * KwzParser.height),
+      new Uint8Array(KwzParser.width * KwzParser.height),
+      new Uint8Array(KwzParser.width * KwzParser.height),
     ];
     this.bitIndex = 0;
     this.bitValue = 0;
@@ -490,13 +490,13 @@ export class KwzParser extends FlipnoteParserBase {
       this.decodeFrame(frameIndex);
     const palette = this.getFramePaletteIndices(frameIndex);
     const layers = this.layers[layerIndex];
-    const image = new Uint8Array((KwzParser.width * KwzParser.height));
+    const image = new Uint8Array(KwzParser.width * KwzParser.height);
     const paletteOffset = layerIndex * 2 + 1;
     for (let pixelIndex = 0; pixelIndex < layers.length; pixelIndex++) {
       let pixel = layers[pixelIndex];
-      if (pixel & 0xff00)
+      if (pixel === 1)
         image[pixelIndex] = palette[paletteOffset];
-      else if (pixel & 0x00ff)
+      else if (pixel === 2)
         image[pixelIndex] = palette[paletteOffset + 1];
     }
     return image;
@@ -504,19 +504,41 @@ export class KwzParser extends FlipnoteParserBase {
 
   // retuns an uint8 array where each item is a pixel's palette index
   public getFramePixels(frameIndex: number) {
+    if (this.prevDecodedFrame !== frameIndex)
+      this.decodeFrame(frameIndex);
     const palette = this.getFramePaletteIndices(frameIndex);
-    const image = new Uint8Array((KwzParser.width * KwzParser.height));
+    const image = new Uint8Array(KwzParser.width * KwzParser.height);
     image.fill(palette[0]); // fill with paper color first
     const layerOrder = this.getLayerOrder(frameIndex);
-    layerOrder.forEach(layerIndex => {
-      const layer = this.getLayerPixels(frameIndex, layerIndex);
-      // merge layer into image result
-      for (let pixelIndex = 0; pixelIndex < layer.length; pixelIndex++) {
-        const pixel = layer[pixelIndex];
-        if (pixel !== 0)
-          image[pixelIndex] = pixel;
-      }
-    });
+
+    // TODO: fix swimming flipnote
+
+    const layerA = this.layers[layerOrder[2]];
+    const layerB = this.layers[layerOrder[1]];
+    const layerC = this.layers[layerOrder[0]];
+    const layerAColor1 = palette[1];
+    const layerAColor2 = palette[2];
+    const layerBColor1 = palette[3];
+    const layerBColor2 = palette[4];
+    const layerCColor1 = palette[5];
+    const layerCColor2 = palette[6];
+    for (let pixel = 0; pixel < image.length; pixel++) {
+      const a = layerA[pixel];
+      const b = layerB[pixel];
+      const c = layerC[pixel];
+      if (a === 1)
+        image[pixel] = layerAColor1;
+      else if (a === 2)
+        image[pixel] = layerAColor2;
+      else if (b === 1)
+        image[pixel] = layerBColor1;
+      else if (b === 2)
+        image[pixel] = layerBColor2;
+      else if (c === 1)
+        image[pixel] = layerCColor1;
+      else if (c === 2)
+        image[pixel] = layerCColor2;
+    }
     return image;
   }
   

@@ -1,6 +1,6 @@
 import { DataStream } from '../utils/index';
 
-export type FlipnotePaletteColor = [number, number, number]; // r, g, b
+export type FlipnotePaletteColor = [number, number, number, number]; // r, g, b, a
 
 export type FlipnotePaletteDefinition = {
   [key in any]?: FlipnotePaletteColor;
@@ -49,7 +49,7 @@ export abstract class FlipnoteParserBase extends DataStream {
 
   abstract decodeFrame(frameIndex: number): Uint8Array[];
 
-  abstract getLayerPixels(frameIndex: number, layerIndex: number): Uint8Array | Uint16Array;
+  abstract getLayerPixels(frameIndex: number, layerIndex: number): Uint8Array;
 
   abstract getLayerOrder(frameIndex: number): number[];
 

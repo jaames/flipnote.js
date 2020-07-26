@@ -17,5 +17,5 @@ void main() {
   vec2 mod_texel = texel_floored + f;
   vec2 coord = mod_texel.xy / u_textureSize.xy;
   vec2 colorWeights = texture2D(u_bitmap, coord).ra;
-  gl_FragColor = vec4(u_color1.rgb, 1.0) * colorWeights.y + vec4(u_color2.rgb, 1.0) * colorWeights.x;
+  gl_FragColor = u_color1.rgba * colorWeights.y + u_color2.rgba * colorWeights.x;
 }

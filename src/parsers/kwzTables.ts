@@ -1,6 +1,6 @@
 // Every possible sequence of pixels for each tile line
-export const KWZ_LINE_TABLE = new Uint16Array(6561 * 8);
-const pixelValues = [0x0000, 0xFF00, 0x00FF];
+export const KWZ_LINE_TABLE = new Uint8Array(6561 * 8);
+// const pixelValues = [0x0000, 0xFF00, 0x00FF];
 var offset = 0;
 for (let a = 0; a < 3; a++)
   for (let b = 0; b < 3; b++)
@@ -11,20 +11,20 @@ for (let a = 0; a < 3; a++)
             for (let g = 0; g < 3; g++)
               for (let h = 0; h < 3; h++) {
                 KWZ_LINE_TABLE.set([
-                  pixelValues[b], 
-                  pixelValues[a], 
-                  pixelValues[d], 
-                  pixelValues[c], 
-                  pixelValues[f], 
-                  pixelValues[e], 
-                  pixelValues[h], 
-                  pixelValues[g]
+                  b, 
+                  a, 
+                  d, 
+                  c, 
+                  f, 
+                  e, 
+                  h, 
+                  g
                 ], offset);
                 offset += 8;
               }
 
 // Line offsets, but the lines are shifted to the left by one pixel
-export const KWZ_LINE_TABLE_SHIFT = new Uint16Array(6561 * 8);
+export const KWZ_LINE_TABLE_SHIFT = new Uint8Array(6561 * 8);
 var offset = 0;
 for (let a = 0; a < 2187; a += 729)
   for (let b = 0; b < 729; b += 243)
@@ -41,7 +41,7 @@ for (let a = 0; a < 2187; a += 729)
               }
 
 // Commonly occuring line offsets
-export const KWZ_LINE_TABLE_COMMON = new Uint16Array(32 * 8);
+export const KWZ_LINE_TABLE_COMMON = new Uint8Array(32 * 8);
 [
   0x0000, 0x0CD0, 0x19A0, 0x02D9, 0x088B, 0x0051, 0x00F3, 0x0009,
   0x001B, 0x0001, 0x0003, 0x05B2, 0x1116, 0x00A2, 0x01E6, 0x0012,
@@ -53,7 +53,7 @@ export const KWZ_LINE_TABLE_COMMON = new Uint16Array(32 * 8);
 });
 
 // Commonly occuring line offsets, but the lines are shifted to the left by one pixel
-export const KWZ_LINE_TABLE_COMMON_SHIFT = new Uint16Array(32 * 8);
+export const KWZ_LINE_TABLE_COMMON_SHIFT = new Uint8Array(32 * 8);
 [
   0x0000, 0x0CD0, 0x19A0, 0x0003, 0x02D9, 0x088B, 0x0051, 0x00F3, 
   0x0009, 0x001B, 0x0001, 0x0006, 0x05B2, 0x1116, 0x00A2, 0x01E6, 
