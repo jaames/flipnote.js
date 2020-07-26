@@ -5,7 +5,9 @@ import {
 } from '../parsers';
 
 import {
-  WavEncoder
+  WavEncoder,
+  GifEncoder,
+  GifEncoderPartialMeta
 } from '../encoders';
 
 import {
@@ -106,11 +108,6 @@ export class Player {
     this.el = this.canvas.el;
     this.customPalette = null;
     this.state = {...Player.defaultState};
-  }
-
-  saveWav() {
-    const wav = WavEncoder.fromFlipnote(this.note);
-    saveData(wav.getBlob(), 'audio.wav');
   }
 
   get currentFrame() {
@@ -222,7 +219,7 @@ export class Player {
     const pcm = note.getAudioMasterPcm();
     this.audio.setSamples(pcm, sampleRate);
     this.canvas.setInputSize(note.width, note.height);
-    this.canvas.setLayerType(this.type === 'PPM' ? TextureType.Alpha : TextureType.LuminanceAlpha);
+    this.canvas.setTextureFmt(this.type === 'PPM' ? TextureType.Alpha : TextureType.LuminanceAlpha, note.width, note.height);
     this.setFrame(this.note.thumbFrameIndex);
     this._time = 0;
     this.emit('load');
@@ -358,6 +355,33 @@ export class Player {
     this.isSeeking = false;
   }
 
+  public getMasterWav() {
+    return WavEncoder.fromFlipnote(this.note);;
+  }
+
+  public saveMasterWav() {
+    const wav = this.getMasterWav();
+    saveData(wav.getBlob(), `${ this.meta.current.filename }.wav`);
+  }
+
+  public getFrameGif(frameIndex: number, meta: GifEncoderPartialMeta = {}) {
+    return GifEncoder.fromFlipnoteFrame(this.note, frameIndex, meta);
+  }
+
+  public saveFrameGif(frameIndex: number, meta: GifEncoderPartialMeta = {}) {
+    const gif = this.getFrameGif(frameIndex, meta);
+    saveData(gif.getBlob(), `${ this.meta.current.filename }_${ frameIndex.toString().padStart(3, '0') }.gif`);
+  }
+
+  public getAnimatedGif(meta: GifEncoderPartialMeta = {}) {
+    return GifEncoder.fromFlipnote(this.note, meta);
+  }
+
+  public saveAnimatedGif(meta: GifEncoderPartialMeta = {}) {
+    const gif = this.getAnimatedGif(meta);
+    saveData(gif.getBlob(), `${ this.meta.current.filename }.gif`);
+  }
+
   public drawFrame(frameIndex: number): void {
     const width = this.note.width;
     const height = this.note.height;
@@ -367,17 +391,17 @@ export class Player {
     this.canvas.clear();
     if (this.note.type === 'PPM') {
       if (this.layerVisibility[2]) {
-        this.canvas.drawLayer(layerBuffers[1], width, height, colors[2], [0,0,0,0]);
+        this.canvas.drawPixels(layerBuffers[1], colors[2], [0,0,0,0]);
       }
       if (this.layerVisibility[1]) {
-        this.canvas.drawLayer(layerBuffers[0], width, height, colors[1], [0,0,0,0]);
+        this.canvas.drawPixels(layerBuffers[0], colors[1], [0,0,0,0]);
       }
     } else if (this.note.type === 'KWZ') {
       // loop through each layer
       this.note.getLayerOrder(frameIndex).forEach((layerIndex: number) => {
         // only draw layer if it's visible
         if (this.layerVisibility[layerIndex + 1]) {
-          this.canvas.drawLayer(layerBuffers[layerIndex], width, height, colors[layerIndex * 2 + 1], colors[layerIndex * 2 + 2]);
+          this.canvas.drawPixels(layerBuffers[layerIndex], colors[layerIndex * 2 + 1], colors[layerIndex * 2 + 2]);
         }
       });
     }

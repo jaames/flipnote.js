@@ -2,28 +2,45 @@ import { DataStream, ByteArray } from '../utils/index';
 import { LZWEncoder } from './lzw';
 import { Flipnote } from '../parsers/index';
 
+export interface GifEncoderMeta {
+  transparentBg: boolean;
+  delay: number;
+  colorDepth: number;
+  // -1 = no repeat, 0 = forever. anything else is repeat count
+  repeat: number;
+};
+
+export type GifEncoderPartialMeta = Partial<GifEncoderMeta>;
+
 export class GifEncoder {
+
+  static defaultMeta: GifEncoderMeta = {
+    transparentBg: false,
+    delay: 100,
+    repeat: -1,
+    colorDepth: 8
+  };
 
   public width: number;
   public height: number;
-  public delay: number = 100;
-  // -1 = no repeat, 0 = forever. anything else is repeat count
-  public repeat: number = -1;
-  public colorDepth: number = 8;
   public palette: number[][] = [];
   public data: ByteArray;
+  public meta: GifEncoderMeta;
 
-  constructor(width: number, height: number) {
+  constructor(width: number, height: number, meta: GifEncoderPartialMeta = {}) {
     this.width = width;
     this.height = height;
     this.data = new ByteArray();
+    this.meta = { ...GifEncoder.defaultMeta, ...meta };
   }
 
-  static fromFlipnote(flipnote: Flipnote) {
-    const gif = new GifEncoder(flipnote.width, flipnote.height);
+  static fromFlipnote(flipnote: Flipnote, gifMeta: GifEncoderPartialMeta = {}) {
+    const gif = new GifEncoder(flipnote.width, flipnote.height, {
+      delay: 100 / flipnote.framerate,
+      repeat: flipnote.meta.loop ? -1 : 0,
+      ...gifMeta
+    });
     gif.palette = flipnote.globalPalette;
-    gif.delay = 100 / flipnote.framerate;
-    gif.repeat = flipnote.meta.loop ? -1 : 0;
     gif.init();
     for (let frameIndex = 0; frameIndex < flipnote.frameCount; frameIndex++) {
       gif.writeFrame(flipnote.getFramePixels(frameIndex));
@@ -31,12 +48,14 @@ export class GifEncoder {
     return gif;
   }
 
-  static fromFlipnoteFrame(flipnote: Flipnote, frameIndex: number) {
-    const gif = new GifEncoder(flipnote.width, flipnote.height);
+  static fromFlipnoteFrame(flipnote: Flipnote, frameIndex: number, gifMeta: GifEncoderPartialMeta = {}) {
+    const gif = new GifEncoder(flipnote.width, flipnote.height, {
+      // TODO: look at ideal delay and repeat settings for single frame GIF
+      delay: 100 / flipnote.framerate,
+      repeat: -1,
+      ...gifMeta,
+    });
     gif.palette = flipnote.globalPalette;
-    // TODO: look at ideal delay and repeat settings for single frame GIF
-    gif.delay = 100 / flipnote.framerate;
-    gif.repeat = flipnote.meta.loop ? -1 : 0;
     gif.init();
     gif.writeFrame(flipnote.getFramePixels(frameIndex));
     return gif;
@@ -44,9 +63,10 @@ export class GifEncoder {
 
   init() {
     const paletteSize = this.palette.length;
+    // calc colorDepth
     for (var p = 1; 1 << p < paletteSize; p += 1)
       continue;
-    this.colorDepth = p;
+    this.meta.colorDepth = p;
     this.writeHeader();
     this.writeColorTable();
     this.writeNetscapeExt();
@@ -60,33 +80,40 @@ export class GifEncoder {
     header.writeUint16(this.height);
     header.writeUint8(
       0x80 | // 1 : global color table flag = 1 (gct used)
-      (this.colorDepth - 1) // 6-8 : gct size
+      (this.meta.colorDepth - 1) // 6-8 : gct size
     );
-    header.writeUint8(0);
-    header.writeUint8(0);
+    header.writeBytes([
+      0x0,
+      0x0
+    ]);
     this.data.writeBytes(new Uint8Array(header.buffer));
   }
 
   writeColorTable() {
-    const palette = new Uint8Array(3 * Math.pow(2, this.colorDepth));
-    for(let index = 0, offset = 0; index < this.palette.length; index += 1, offset += 3) {
-      palette.set(this.palette[index], offset);
+    const palette = new Uint8Array(3 * Math.pow(2, this.meta.colorDepth));
+    let offset = 0;
+    for(let index = 0; index < this.palette.length; index += 1) {
+      const [r, g, b, a] = this.palette[index];
+      palette[offset++] = r;
+      palette[offset++] = g;
+      palette[offset++] = b;
     }
     this.data.writeBytes(palette);
   }
 
   writeGraphicsControlExt() {
     const graphicsControlExt = new DataStream(new ArrayBuffer(8));
+    const transparentFlag = this.meta.transparentBg ? 0x1 : 0x0;
     graphicsControlExt.writeBytes([
       0x21, // extension introducer
       0xF9, // graphic control label
-      4, // block size
-      0 // bitfield
+      0x4, // block size
+      0x0 | transparentFlag // bitflags
     ]);
-    graphicsControlExt.writeUint16(this.delay); // loop flag
+    graphicsControlExt.writeUint16(this.meta.delay); // loop flag
     graphicsControlExt.writeBytes([
-      0,
-      0
+      0x0,
+      0x0
     ]);
     this.data.writeBytes(new Uint8Array(graphicsControlExt.buffer));
   }
@@ -101,7 +128,7 @@ export class GifEncoder {
     netscapeExt.writeChars('NETSCAPE2.0');
     netscapeExt.writeUint8(3); // subblock size
     netscapeExt.writeUint8(1); // loop subblock id
-    netscapeExt.writeUint16(this.repeat); // loop flag
+    netscapeExt.writeUint16(this.meta.repeat); // loop flag
     this.data.writeBytes(new Uint8Array(netscapeExt.buffer));
   }
 
@@ -117,7 +144,7 @@ export class GifEncoder {
   }
 
   writePixels(pixels: Uint8Array) {
-    const lzw = new LZWEncoder(this.width, this.height, pixels, this.colorDepth);
+    const lzw = new LZWEncoder(this.width, this.height, pixels, this.meta.colorDepth);
     lzw.encode(this.data);
   }
 
