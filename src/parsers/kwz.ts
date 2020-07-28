@@ -458,12 +458,7 @@ export class KwzParser extends FlipnoteParserBase {
     }
 
     this.prevDecodedFrame = frameIndex;
-    // return this._layers;
-    return [
-      new Uint8Array(this.layers[0].buffer),
-      new Uint8Array(this.layers[1].buffer),
-      new Uint8Array(this.layers[2].buffer),
-    ];
+    return this.layers;
   }
 
   public getFramePaletteIndices(frameIndex: number) {
