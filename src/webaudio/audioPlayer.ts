@@ -9,15 +9,15 @@ export class WebAudioPlayer {
   public useEq: boolean = false;
   // Thanks to Sudomemo for the default settings
   public eqSettings: [number, number][] = [
-    [31.25,4.1],
-    [62.5,1.2],
-    [125,0],
-    [250,-4.1],
-    [500,-2.3],
-    [1000,0.5],
-    [2000,6.5],
-    [8000,5.1],
-    [16000,5.1]
+    [31.25, 4.1],
+    [62.5, 1.2],
+    [125, 0],
+    [250, -4.1],
+    [500, -2.3],
+    [1000, 0.5],
+    [2000, 6.5],
+    [8000, 5.1],
+    [16000, 5.1]
   ];
 
   private _volume: number = 1;
@@ -41,9 +41,8 @@ export class WebAudioPlayer {
     const numSamples = sampleData.length;
     const audioBuffer = this.ctx.createBuffer(1, numSamples, sampleRate);
     const channelData = audioBuffer.getChannelData(0);
-    if (sampleData instanceof Float32Array) {
+    if (sampleData instanceof Float32Array)
       channelData.set(sampleData, 0);
-    }
     else if (sampleData instanceof Int16Array) {
       for (let i = 0; i < numSamples; i++) {
         channelData[i] = sampleData[i] / 32767;
@@ -58,14 +57,14 @@ export class WebAudioPlayer {
     let lastNode = inNode;
     eqSettings.forEach(([ frequency, gain ], index) => {
       let node = ctx.createBiquadFilter();
+      node.frequency.value = frequency;
+      node.gain.value = gain;
       if (index === 0)
         node.type = 'lowshelf';
       else if (index === eqSettings.length - 1)
         node.type = 'highshelf';
       else
         node.type = 'peaking';
-      node.frequency.value = frequency;
-      node.gain.value = gain;
       lastNode.connect(node);
       lastNode = node;
     });
@@ -80,9 +79,9 @@ export class WebAudioPlayer {
     if (this.useEq) {
       const eq = this.connectEqNodesTo(source);
       eq.connect(gainNode);
-    } else {
-      source.connect(gainNode); 
     }
+    else
+      source.connect(gainNode);
     source.connect(gainNode);
     gainNode.connect(ctx.destination);
     this.source = source;

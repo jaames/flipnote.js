@@ -1,33 +1,33 @@
-export declare enum TextureType {
-    Alpha,
-    LuminanceAlpha
-}
 /** webgl canvas wrapper class */
 export declare class WebglCanvas {
     width: number;
     height: number;
     el: HTMLCanvasElement;
     gl: WebGLRenderingContext;
-    private program;
-    private textureType;
-    private uniforms;
+    private layerDrawProgram;
+    private postProcessProgram;
+    private quadBuffer;
+    private layerTexture;
+    private frameTexture;
+    private frameBuffer;
+    private textureWidth;
+    private textureHeight;
     private refs;
-    constructor(el: HTMLCanvasElement, width?: number, height?: number, params?: {
-        antialias: boolean;
-        alpha: boolean;
-    });
+    constructor(el: HTMLCanvasElement, width?: number, height?: number);
+    private initBlendMode;
+    private setProgram;
     private createProgram;
     private createScreenQuad;
-    private createBitmapTexture;
-    private createShader;
-    setInputSize(width: number, height: number): void;
+    private createTexture;
+    private createFrameTexture;
+    private createFrameBuffer;
+    bindScreenBuffer(): void;
+    bindFrameBuffer(): void;
+    clearFrameBuffer(value: number[]): void;
+    setTextureSize(width: number, height: number): void;
     setCanvasSize(width: number, height: number): void;
-    setLayerType(textureType: TextureType): void;
-    toImage(type?: string): string;
-    setColor(color: string, value: number[]): void;
-    setPaperColor(value: number[]): void;
-    drawLayer(buffer: Uint8Array, width: number, height: number, color1: number[], color2: number[]): void;
+    drawPixels(pixels: Uint8Array, color1: number[], color2: number[]): void;
+    postProcess(): void;
     resize(width?: number, height?: number): void;
-    clear(): void;
     destroy(): void;
 }

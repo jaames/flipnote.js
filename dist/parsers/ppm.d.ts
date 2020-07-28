@@ -51,13 +51,14 @@ export declare class PpmParser extends FlipnoteParserBase {
     static type: string;
     static width: number;
     static height: number;
+    static rawSampleRate: number;
     static sampleRate: number;
-    static outputSampleRate: number;
     static globalPalette: import("./parserBase").FlipnotePaletteColor[];
     type: string;
     width: number;
     height: number;
     globalPalette: import("./parserBase").FlipnotePaletteColor[];
+    rawSampleRate: number;
     sampleRate: number;
     meta: PpmMeta;
     version: number;

@@ -62,5 +62,7 @@
     "svelte-preprocess": "^4.0.6",
     "typescript": "^3.5.3"
   },
-  "dependencies": {}
+  "dependencies": {
+    "twgl.js": "^4.15.2"
+  }
 }

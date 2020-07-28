@@ -1,4 +1,17 @@
-import * as twgl from 'twgl.js';
+import {
+  ProgramInfo,
+  BufferInfo,
+  FramebufferInfo,
+  setBuffersAndAttributes,
+  createProgramInfo,
+  createBufferInfoFromArrays,
+  drawBufferInfo,
+  createTexture,
+  resizeTexture,
+  createFramebufferInfo,
+  resizeFramebufferInfo,
+  setUniforms,
+} from 'twgl.js';
 
 import quadShader from './quad.vert';
 import layerDrawShader from './drawLayer.frag';
@@ -21,12 +34,12 @@ export class WebglCanvas {
   public el: HTMLCanvasElement;
   public gl: WebGLRenderingContext;
 
-  private layerDrawProgram: twgl.ProgramInfo; // for drawing layers to a renderbuffer
-  private postProcessProgram: twgl.ProgramInfo; // for drawing renderbuffer w/ filtering
-  private quadBuffer: twgl.BufferInfo;
+  private layerDrawProgram: ProgramInfo; // for drawing layers to a renderbuffer
+  private postProcessProgram: ProgramInfo; // for drawing renderbuffer w/ filtering
+  private quadBuffer: BufferInfo;
   private layerTexture: WebGLTexture;
   private frameTexture: WebGLTexture;
-  private frameBuffer: twgl.FramebufferInfo;
+  private frameBuffer: FramebufferInfo;
   private textureWidth: number;
   private textureHeight: number;
   private refs: ResourceMap = {
@@ -49,8 +62,8 @@ export class WebglCanvas {
     // this.compositeProgram = this.createProgram(vertexShader, fragmentShader);
     this.setCanvasSize(width, height);
     this.quadBuffer = this.createScreenQuad(-1, -1, 2, 2, 8, 8);
-    twgl.setBuffersAndAttributes(gl, this.layerDrawProgram, this.quadBuffer);
-    twgl.setBuffersAndAttributes(gl, this.postProcessProgram, this.quadBuffer);
+    setBuffersAndAttributes(gl, this.layerDrawProgram, this.quadBuffer);
+    setBuffersAndAttributes(gl, this.postProcessProgram, this.quadBuffer);
     this.layerTexture = this.createTexture();
     this.frameTexture = this.createFrameTexture();
     this.frameBuffer = this.createFrameBuffer(this.frameTexture);
@@ -78,12 +91,12 @@ export class WebglCanvas {
     gl.blendFunc(gl.ONE, gl.ONE_MINUS_SRC_ALPHA);
   }
 
-  private setProgram(programInfo: twgl.ProgramInfo) {
+  private setProgram(programInfo: ProgramInfo) {
     this.gl.useProgram(programInfo.program);
   }
 
   private createProgram(vertexShader: string, fragmentShader: string) {
-    const programInfo = twgl.createProgramInfo(this.gl, [vertexShader, fragmentShader], (errLog) => {
+    const programInfo = createProgramInfo(this.gl, [vertexShader, fragmentShader], (errLog) => {
       throw new Error(errLog);
     });
     const { program } = programInfo;
@@ -130,7 +143,7 @@ export class WebglCanvas {
         indices[indicesPtr++] = (y + 1) * numVertsAcross + x + 1;
       }
     }
-    return twgl.createBufferInfoFromArrays(this.gl, {
+    return createBufferInfoFromArrays(this.gl, {
       position: {
         numComponents: 2,
         data: positions
@@ -145,7 +158,7 @@ export class WebglCanvas {
 
   private createTexture() {
     const gl = this.gl;
-    const tex = twgl.createTexture(gl, {
+    const tex = createTexture(gl, {
       auto: false,
       minMag: gl.NEAREST,
       wrap: gl.CLAMP_TO_EDGE
@@ -155,7 +168,7 @@ export class WebglCanvas {
 
   private createFrameTexture() {
     const gl = this.gl;
-    const tex = twgl.createTexture(gl, {
+    const tex = createTexture(gl, {
       auto: false,
       src: null,
       width: 1,
@@ -168,7 +181,7 @@ export class WebglCanvas {
 
   private createFrameBuffer(colorTexture: WebGLTexture) {
     const gl = this.gl;
-    const fb = twgl.createFramebufferInfo(gl, [{
+    const fb = createFramebufferInfo(gl, [{
       format: gl.RGBA,
       attach: gl.COLOR_ATTACHMENT0,
       attachment: colorTexture
@@ -215,11 +228,11 @@ export class WebglCanvas {
     const gl = this.gl;
     this.textureWidth = width;
     this.textureHeight = height;
-    twgl.resizeTexture(gl, this.frameTexture, {
+    resizeTexture(gl, this.frameTexture, {
       width, 
       height
     })
-    twgl.resizeFramebufferInfo(gl, this.frameBuffer, [], width, height);
+    resizeFramebufferInfo(gl, this.frameBuffer, [], width, height);
   }
 
   public setCanvasSize(width: number, height: number) {
@@ -243,7 +256,7 @@ export class WebglCanvas {
     const [r2, g2, b2, a2] = color2;
     this.bindFrameBuffer();
     gl.useProgram(layerDrawProgram.program);
-    twgl.setUniforms(layerDrawProgram, {
+    setUniforms(layerDrawProgram, {
       u_debugWireframe: false,
       u_bitmap: this.layerTexture,
       u_screenSize: [this.width, this.height],
@@ -253,7 +266,7 @@ export class WebglCanvas {
     });
     gl.activeTexture(gl.TEXTURE0);
     gl.texImage2D(gl.TEXTURE_2D, 0, gl.ALPHA, width, height, 0, gl.ALPHA, gl.UNSIGNED_BYTE, pixels);
-    twgl.drawBufferInfo(gl, this.quadBuffer);
+    drawBufferInfo(gl, this.quadBuffer);
     // if (DEBUG) {
     //   twgl.setUniforms(layerDrawProgram, {
     //     u_debugWireframe: true,
@@ -268,14 +281,14 @@ export class WebglCanvas {
     this.bindScreenBuffer();
     gl.clearColor(1, 1, 1, 1);
     gl.clear(gl.COLOR_BUFFER_BIT);
-    twgl.setUniforms(this.postProcessProgram, {
+    setUniforms(this.postProcessProgram, {
       u_debugWireframe: false,
       u_flipY: true,
       u_screenSize: [this.width, this.height],
       u_tex: this.frameTexture,
       u_textureSize: [this.textureWidth, this.textureHeight],
     });
-    twgl.drawBufferInfo(gl, this.quadBuffer);
+    drawBufferInfo(gl, this.quadBuffer);
     // if (DEBUG) {
     //   twgl.setUniforms(this.postProcessProgram, {
     //     u_debugWireframe: true,

@@ -42,12 +42,14 @@ export declare class KwzParser extends FlipnoteParserBase {
     static type: string;
     static width: number;
     static height: number;
+    static rawSampleRate: number;
     static sampleRate: number;
     static globalPalette: import("./parserBase").FlipnotePaletteColor[];
     type: string;
     width: number;
     height: number;
     globalPalette: import("./parserBase").FlipnotePaletteColor[];
+    rawSampleRate: number;
     sampleRate: number;
     meta: KwzMeta;
     private sections;
@@ -66,7 +68,7 @@ export declare class KwzParser extends FlipnoteParserBase {
     private getDiffingFlag;
     getLayerDepths(frameIndex: number): number[];
     getLayerOrder(frameIndex: number): number[];
-    decodeFrame(frameIndex: number, diffingFlag?: number, isPrevFrame?: boolean): Uint8Array[];
+    decodeFrame(frameIndex: number, diffingFlag?: number, isPrevFrame?: boolean): [Uint8Array, Uint8Array, Uint8Array];
     getFramePaletteIndices(frameIndex: number): number[];
     getFramePalette(frameIndex: number): import("./parserBase").FlipnotePaletteColor[];
     getLayerPixels(frameIndex: number, layerIndex: number): Uint8Array;

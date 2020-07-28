@@ -1,16 +1,22 @@
 import { ByteArray } from '../utils/index';
 import { Flipnote } from '../parsers/index';
+export interface GifEncoderMeta {
+    transparentBg: boolean;
+    delay: number;
+    colorDepth: number;
+    repeat: number;
+}
+export declare type GifEncoderPartialMeta = Partial<GifEncoderMeta>;
 export declare class GifEncoder {
+    static defaultMeta: GifEncoderMeta;
     width: number;
     height: number;
-    delay: number;
-    repeat: number;
-    colorDepth: number;
     palette: number[][];
     data: ByteArray;
-    constructor(width: number, height: number);
-    static fromFlipnote(flipnote: Flipnote): GifEncoder;
-    static fromFlipnoteFrame(flipnote: Flipnote, frameIndex: number): GifEncoder;
+    meta: GifEncoderMeta;
+    constructor(width: number, height: number, meta?: GifEncoderPartialMeta);
+    static fromFlipnote(flipnote: Flipnote, gifMeta?: GifEncoderPartialMeta): GifEncoder;
+    static fromFlipnoteFrame(flipnote: Flipnote, frameIndex: number, gifMeta?: GifEncoderPartialMeta): GifEncoder;
     init(): void;
     writeHeader(): void;
     writeColorTable(): void;

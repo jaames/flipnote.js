@@ -18,11 +18,10 @@ export class ByteArray {
   public getData() {
     const data = new Uint8Array((this.page) * ByteArray.pageSize + this.cursor);
     this.pages.map((page, index) => {
-      if (index === this.page) {
+      if (index === this.page)
         data.set(page.slice(0, this.cursor), index * ByteArray.pageSize);
-      } else {
+      else
         data.set(page, index * ByteArray.pageSize);
-      }
     });
     return data;
   }
@@ -33,7 +32,8 @@ export class ByteArray {
   }
   
   public writeByte(val: number) {
-    if (this.cursor >= ByteArray.pageSize) this.newPage();
+    if (this.cursor >= ByteArray.pageSize)
+      this.newPage();
     this.pages[this.page][this.cursor++] = val;
   }
 

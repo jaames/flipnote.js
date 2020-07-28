@@ -1,4 +1,5 @@
 import { Flipnote, FlipnoteMeta } from '../parsers';
+import { WavEncoder, GifEncoder, GifEncoderPartialMeta } from '../encoders';
 import { WebglCanvas } from '../webgl';
 import { WebAudioPlayer } from '../webaudio';
 interface PlayerLayerVisibility {
@@ -42,7 +43,6 @@ export declare class Player {
     private wasPlaying;
     private isSeeking;
     constructor(el: string | HTMLCanvasElement, width: number, height: number);
-    saveWav(): void;
     get currentFrame(): number;
     set currentFrame(frameIndex: number);
     get currentTime(): number;
@@ -76,6 +76,12 @@ export declare class Player {
     startSeek(): void;
     seek(progress: number): void;
     endSeek(): void;
+    getMasterWav(): WavEncoder;
+    saveMasterWav(): void;
+    getFrameGif(frameIndex: number, meta?: GifEncoderPartialMeta): GifEncoder;
+    saveFrameGif(frameIndex: number, meta?: GifEncoderPartialMeta): void;
+    getAnimatedGif(meta?: GifEncoderPartialMeta): GifEncoder;
+    saveAnimatedGif(meta?: GifEncoderPartialMeta): void;
     drawFrame(frameIndex: number): void;
     forceUpdate(): void;
     resize(width: number, height: number): void;
