@@ -1,20 +1,16 @@
+import * as twgl from 'twgl.js';
 
-import vertexShader from './shader.vert';
-import fragmentShader from './shader.frag';
+import quadShader from './quad.vert';
+import layerDrawShader from './drawLayer.frag';
+import postProcessShader from './postProcess_sharpBilinear.frag';
 
-interface UniformMap {
-  [key : string]: WebGLUniformLocation;
-};
+const DEBUG = true;
 
 interface ResourceMap {
-  shaders: WebGLShader[],
-  textures: WebGLTexture[],
-  buffers: WebGLBuffer[]
-}
-
-export enum TextureType {
-  Alpha = WebGLRenderingContext.ALPHA,
-  LuminanceAlpha = WebGLRenderingContext.LUMINANCE_ALPHA,
+  programs: WebGLProgram[];
+  shaders: WebGLShader[];
+  textures: WebGLTexture[];
+  buffers: WebGLBuffer[];
 };
 
 /** webgl canvas wrapper class */
@@ -25,13 +21,16 @@ export class WebglCanvas {
   public el: HTMLCanvasElement;
   public gl: WebGLRenderingContext;
 
-  private program: WebGLProgram;
-  private textureType: TextureType;
-  private textureBuffer: Uint8ClampedArray;
+  private layerDrawProgram: twgl.ProgramInfo; // for drawing layers to a renderbuffer
+  private postProcessProgram: twgl.ProgramInfo; // for drawing renderbuffer w/ filtering
+  private quadBuffer: twgl.BufferInfo;
+  private layerTexture: WebGLTexture;
+  private frameTexture: WebGLTexture;
+  private frameBuffer: twgl.FramebufferInfo;
   private textureWidth: number;
   private textureHeight: number;
-  private uniforms: UniformMap = {};
   private refs: ResourceMap = {
+    programs: [],
     shaders: [],
     textures: [],
     buffers: []
@@ -44,83 +43,183 @@ export class WebglCanvas {
     });
     this.el = el;
     this.gl = gl;
-    this.createProgram();
+    this.layerDrawProgram = this.createProgram(quadShader, layerDrawShader);
+    this.postProcessProgram = this.createProgram(quadShader, postProcessShader);
+    // legacy:
+    // this.compositeProgram = this.createProgram(vertexShader, fragmentShader);
     this.setCanvasSize(width, height);
-    this.createScreenQuad();
-    this.createBitmapTexture();
-    this.setTextureFmt(TextureType.Alpha, 256, 192);
+    this.quadBuffer = this.createScreenQuad(-1, -1, 2, 2, 8, 8);
+    twgl.setBuffersAndAttributes(gl, this.layerDrawProgram, this.quadBuffer);
+    twgl.setBuffersAndAttributes(gl, this.postProcessProgram, this.quadBuffer);
+    this.layerTexture = this.createTexture();
+    this.frameTexture = this.createFrameTexture();
+    this.frameBuffer = this.createFrameBuffer(this.frameTexture);
+
+    // gl.activeTexture(gl.TEXTURE1);
+    // const level = 0;
+    // const internalFormat = gl.RGBA;
+    // const border = 0;
+    // const format = gl.RGBA;
+    // const type = gl.UNSIGNED_BYTE;
+    // gl.texImage2D(gl.TEXTURE_2D, level, internalFormat, this.width, this.height, border, format, type, null);
+
+    // const fb = gl.createFramebuffer();
+    // gl.bindFramebuffer(gl.FRAMEBUFFER, fb);
+    // const attachmentPoint = gl.COLOR_ATTACHMENT0;
+    // gl.framebufferTexture2D(gl.FRAMEBUFFER, attachmentPoint, gl.TEXTURE_2D, this.frameTexture, 0);
+    // this.frameBuffer = fb;
+    this.initBlendMode();
+  }
+
+  private initBlendMode() {
+    const gl = this.gl;
     gl.enable(gl.BLEND);
     gl.blendEquation(gl.FUNC_ADD);
     gl.blendFunc(gl.ONE, gl.ONE_MINUS_SRC_ALPHA);
   }
 
-  private createProgram() {
-    const gl = this.gl;
-    const program = gl.createProgram();
-    // set up shaders
-    gl.attachShader(program, this.createShader(gl.VERTEX_SHADER, vertexShader));
-    gl.attachShader(program, this.createShader(gl.FRAGMENT_SHADER, fragmentShader));
-    // link program
-    gl.linkProgram(program);
-    if (!gl.getProgramParameter(program, gl.LINK_STATUS)) {
-      let log = gl.getProgramInfoLog(program);
-      gl.deleteProgram(program);
-      throw new Error(log);
+  private setProgram(programInfo: twgl.ProgramInfo) {
+    this.gl.useProgram(programInfo.program);
+  }
+
+  private createProgram(vertexShader: string, fragmentShader: string) {
+    const programInfo = twgl.createProgramInfo(this.gl, [vertexShader, fragmentShader], (errLog) => {
+      throw new Error(errLog);
+    });
+    const { program } = programInfo;
+    this.refs.programs.push(program);
+    return programInfo;
+  }
+
+  private createScreenQuad(
+    x0: number, 
+    y0: number,
+    width: number,
+    height: number,
+    xSubdivisions: number,
+    ySubdivisions: number,
+    flipUv: boolean = false
+  ) {
+    const numVerts = (xSubdivisions + 1) * (ySubdivisions + 1);
+    const numVertsAcross = xSubdivisions + 1;
+    const positions = new Float32Array(numVerts * 2);
+    const texCoords = new Float32Array(numVerts * 2);
+    let positionPtr = 0;
+    let texCoordPtr = 0;
+    for (let y = 0; y <= ySubdivisions; y++) {
+      for (let x = 0; x <= xSubdivisions; x++) {
+        const u = x / xSubdivisions;
+        const v = y / ySubdivisions;
+        positions[positionPtr++] = x0 + width * u;
+        positions[positionPtr++] = y0 + height * v;
+        texCoords[texCoordPtr++] = u;
+        texCoords[texCoordPtr++] = v;
+      }
     }
-    // activate the program
-    gl.useProgram(program);
-    // map uniform locations
-    const uniformCount = gl.getProgramParameter(program, gl.ACTIVE_UNIFORMS);
-    for (let index = 0; index < uniformCount; index++) {
-      const name = gl.getActiveUniform(program, index).name;
-      this.uniforms[name] = gl.getUniformLocation(program, name);
+    const indices = new Uint16Array(xSubdivisions * ySubdivisions * 2 * 3);
+    let indicesPtr = 0;
+    for (let y = 0; y < ySubdivisions; y++) {
+      for (let x = 0; x < xSubdivisions; x++) {
+        // triangle 1
+        indices[indicesPtr++] = (y + 0) * numVertsAcross + x;
+        indices[indicesPtr++] = (y + 1) * numVertsAcross + x;
+        indices[indicesPtr++] = (y + 0) * numVertsAcross + x + 1;
+        // triangle 2
+        indices[indicesPtr++] = (y + 0) * numVertsAcross + x + 1;
+        indices[indicesPtr++] = (y + 1) * numVertsAcross + x;
+        indices[indicesPtr++] = (y + 1) * numVertsAcross + x + 1;
+      }
     }
-    this.program = program;
+    return twgl.createBufferInfoFromArrays(this.gl, {
+      position: {
+        numComponents: 2,
+        data: positions
+      },
+      texcoord: {
+        numComponents: 2,
+        data: texCoords
+      },
+      indices: indices
+    });
   }
 
-  private createScreenQuad() {
+  private createTexture() {
     const gl = this.gl;
-    // create quad that fills the screen, this will be our drawing surface
-    const vertBuffer = gl.createBuffer();
-    gl.bindBuffer(gl.ARRAY_BUFFER, vertBuffer);
-    gl.bufferData(gl.ARRAY_BUFFER, new Float32Array([1,  1, -1, 1, -1, -1, 1, 1, -1, -1, 1, -1]), gl.STATIC_DRAW);
-    gl.enableVertexAttribArray(0);
-    gl.vertexAttribPointer(0, 2, gl.FLOAT, false, 0, 0);
-    this.refs.buffers.push(vertBuffer);
+    const tex = twgl.createTexture(gl, {
+      auto: false,
+      minMag: gl.NEAREST,
+      wrap: gl.CLAMP_TO_EDGE
+    });
+    return tex;
   }
 
-  private createBitmapTexture() {
+  private createFrameTexture() {
     const gl = this.gl;
-    // create texture to use as the layer bitmap
-    gl.activeTexture(gl.TEXTURE0);
-    const tex = gl.createTexture();
-    gl.bindTexture(gl.TEXTURE_2D, tex);
-    gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_S, gl.CLAMP_TO_EDGE);
-    gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_T, gl.CLAMP_TO_EDGE);
-    gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MIN_FILTER, gl.LINEAR);
-    gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MAG_FILTER, gl.LINEAR);
-    gl.uniform1i(this.uniforms['u_bitmap'], 0);
-    this.refs.textures.push(tex);
+    const tex = twgl.createTexture(gl, {
+      auto: false,
+      src: null,
+      width: 1,
+      height: 1,
+      minMag: gl.LINEAR,
+      wrap: gl.CLAMP_TO_EDGE
+    });
+    return tex;
   }
 
-  private createShader(type: number, source: string) {
+  private createFrameBuffer(colorTexture: WebGLTexture) {
     const gl = this.gl;
-    const shader = gl.createShader(type);
-    gl.shaderSource(shader, source);
-    gl.compileShader(shader);
-    // test if shader compilation was successful
-    if (!gl.getShaderParameter(shader, gl.COMPILE_STATUS)) {
-      const log = gl.getShaderInfoLog(shader);
-      gl.deleteShader(shader);
-      throw new Error(log);
-    }
-    this.refs.shaders.push(shader);
-    return shader;
+    const fb = twgl.createFramebufferInfo(gl, [{
+      format: gl.RGBA,
+      attach: gl.COLOR_ATTACHMENT0,
+      attachment: colorTexture
+    }], this.textureWidth, this.textureHeight);
+    // if (DEBUG) {
+    //   const check = gl.checkFramebufferStatus(gl.FRAMEBUFFER);
+    //   switch (check) {
+    //     case gl.FRAMEBUFFER_COMPLETE:
+    //       // success
+    //       console.log('success')
+    //       break;
+    //     case gl.FRAMEBUFFER_INCOMPLETE_ATTACHMENT:
+    //       console.log('incomplete attachment')
+    //       break;
+    //     case gl.FRAMEBUFFER_INCOMPLETE_MISSING_ATTACHMENT:
+    //       console.log('missing attachment')
+    //       break;
+    //   }
+    // }
+    return fb;
   }
 
-  public setInputSize(width: number, height: number) {
-    this.gl.uniform2f(this.uniforms['u_textureSize'], width, height);
-    this.setTextureFmt(this.textureType, width, height);
+  public bindScreenBuffer() {
+    const gl = this.gl;
+    gl.bindFramebuffer(gl.FRAMEBUFFER, null);
+    gl.viewport(0, 0, this.width, this.height);
+  }
+
+  public bindFrameBuffer() {
+    const gl = this.gl;
+    gl.bindFramebuffer(gl.FRAMEBUFFER, this.frameBuffer.framebuffer);
+    gl.viewport(0, 0, this.textureWidth, this.textureHeight);
+  }
+
+  public clearFrameBuffer(value: number[]) {
+    const gl = this.gl;
+    const [ r, g, b, a ] = value;
+    this.bindFrameBuffer();
+    gl.clearColor(r/255, g/255, b/255, a/255);
+    gl.clear(gl.COLOR_BUFFER_BIT);
+  }
+
+  public setTextureSize(width: number, height: number) {
+    const gl = this.gl;
+    this.textureWidth = width;
+    this.textureHeight = height;
+    twgl.resizeTexture(gl, this.frameTexture, {
+      width, 
+      height
+    })
+    twgl.resizeFramebufferInfo(gl, this.frameBuffer, [], width, height);
   }
 
   public setCanvasSize(width: number, height: number) {
@@ -131,78 +230,62 @@ export class WebglCanvas {
     this.el.height = internalHeight;
     this.width = internalWidth;
     this.height = internalHeight;
-    this.gl.viewport(0, 0, internalWidth, internalHeight);
-    this.gl.uniform2f(this.uniforms['u_screenSize'], internalWidth, internalHeight);
     this.el.style.width = `${ width }px`;
     this.el.style.height = `${ height }px`;
-  }
-  
-  public setTextureFmt(textureType: TextureType, width: number, height: number) {
-    this.textureType = textureType;
-    this.textureWidth = width;
-    this.textureHeight = height;
-    if (textureType === TextureType.Alpha)
-      this.textureBuffer = new Uint8ClampedArray(width * height);
-    else if (textureType === TextureType.LuminanceAlpha)
-      this.textureBuffer = new Uint8ClampedArray(width * height * 2);
-  }
-
-  public toImage(type?: string) {
-    return this.el.toDataURL(type);
-  }
-
-  public setColor(color: string, value: number[]) {
-    this.gl.uniform4f(this.uniforms[color], value[0] / 255, value[1] / 255, value[2] / 255, value[3] / 255);
-  }
-
-  public setPaperColor(value: number[]) {
-    this.gl.clearColor(value[0] / 255, value[1] / 255, value[2] / 255, value[3] / 255);
-  }
-
-  private copyPixelsToTexture(pixels: Uint8Array) {
-    const data = this.textureBuffer;
-    data.fill(0);
-    if (this.textureType === TextureType.Alpha) {
-      for (let i = 0; i < pixels.length; i++) {
-        if (pixels[i] === 1)
-          data[i] = 0xFF;
-      }
-    }
-    else if (this.textureType === TextureType.LuminanceAlpha) {
-      for (let i = 0, o = 0; i < pixels.length; i++, o+=2) {
-        if (pixels[i] === 1)
-          data[o + 1] = 0xFF;
-        else if (pixels[i] === 2)
-          data[o] = 0xFF;
-      }
-    }
   }
 
   public drawPixels(pixels: Uint8Array, color1: number[], color2: number[]) {
     const gl = this.gl;
-    this.copyPixelsToTexture(pixels);
-    gl.texImage2D(
-      gl.TEXTURE_2D,
-      0,
-      this.textureType,
-      this.textureWidth,
-      this.textureHeight,
-      0, 
-      this.textureType, 
-      gl.UNSIGNED_BYTE, 
-      this.textureBuffer
-    );
-    this.setColor('u_color1', color1);
-    this.setColor('u_color2', color2);
-    gl.drawArrays(gl.TRIANGLES, 0, 6);
+    const layerDrawProgram = this.layerDrawProgram;
+    const width = this.textureWidth;
+    const height = this.textureHeight;
+    const [r1, g1, b1, a1] = color1;
+    const [r2, g2, b2, a2] = color2;
+    this.bindFrameBuffer();
+    gl.useProgram(layerDrawProgram.program);
+    twgl.setUniforms(layerDrawProgram, {
+      u_debugWireframe: false,
+      u_bitmap: this.layerTexture,
+      u_screenSize: [this.width, this.height],
+      u_textureSize: [width, height],
+      u_color1: [r1/255, g1/255, b1/255, a1/255],
+      u_color2: [r2/255, g2/255, b2/255, a2/255],
+    });
+    gl.activeTexture(gl.TEXTURE0);
+    gl.texImage2D(gl.TEXTURE_2D, 0, gl.ALPHA, width, height, 0, gl.ALPHA, gl.UNSIGNED_BYTE, pixels);
+    twgl.drawBufferInfo(gl, this.quadBuffer);
+    // if (DEBUG) {
+    //   twgl.setUniforms(layerDrawProgram, {
+    //     u_debugWireframe: true,
+    //   });
+    //   twgl.drawBufferInfo(gl, this.quadBuffer, gl.LINES);
+    // }
+  }
+
+  public postProcess() {
+    const gl = this.gl;
+    gl.useProgram(this.postProcessProgram.program);
+    this.bindScreenBuffer();
+    gl.clearColor(1, 1, 1, 1);
+    gl.clear(gl.COLOR_BUFFER_BIT);
+    twgl.setUniforms(this.postProcessProgram, {
+      u_debugWireframe: false,
+      u_flipY: true,
+      u_screenSize: [this.width, this.height],
+      u_tex: this.frameTexture,
+      u_textureSize: [this.textureWidth, this.textureHeight],
+    });
+    twgl.drawBufferInfo(gl, this.quadBuffer);
+    // if (DEBUG) {
+    //   twgl.setUniforms(this.postProcessProgram, {
+    //     u_debugWireframe: true,
+    //   });
+    //   twgl.drawBufferInfo(gl, this.quadBuffer, gl.LINES);
+    // }
   }
 
   public resize(width=640, height=480) {
     this.setCanvasSize(width, height);
-  }
-
-  public clear() {
-    this.gl.clear(this.gl.COLOR_BUFFER_BIT);
   }
 
   public destroy() {
@@ -221,7 +304,10 @@ export class WebglCanvas {
       gl.deleteBuffer(buffer);
     });
     refs.buffers = [];
-    gl.deleteProgram(this.program);
+    refs.programs.forEach((program) => {
+      gl.deleteProgram(program);
+    });
+    refs.programs = [];
     // shrink the canvas to reduce memory usage until it is garbage collected
     gl.canvas.width = 1;
     gl.canvas.height = 1;

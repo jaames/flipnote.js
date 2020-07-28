@@ -11,8 +11,7 @@ import {
 } from '../encoders';
 
 import {
-  WebglCanvas,
-  TextureType
+  WebglCanvas
 } from '../webgl';
 
 import { 
@@ -198,7 +197,7 @@ export class Player {
     this.duration = null;
     this.loop = null;
     this.hasPlaybackStarted = null;
-    this.canvas.clear();
+    // this.canvas.clearFrameBuffer();
   }
 
   public load(note: Flipnote): void {
@@ -218,8 +217,7 @@ export class Player {
     const sampleRate = this.note.sampleRate;
     const pcm = note.getAudioMasterPcm();
     this.audio.setSamples(pcm, sampleRate);
-    this.canvas.setInputSize(note.width, note.height);
-    this.canvas.setTextureFmt(this.type === 'PPM' ? TextureType.Alpha : TextureType.LuminanceAlpha, note.width, note.height);
+    this.canvas.setTextureSize(note.width, note.height);
     this.setFrame(this.note.thumbFrameIndex);
     this._time = 0;
     this.emit('load');
@@ -383,12 +381,10 @@ export class Player {
   }
 
   public drawFrame(frameIndex: number): void {
-    const width = this.note.width;
-    const height = this.note.height;
     const colors = this.note.getFramePalette(frameIndex);
     const layerBuffers = this.note.decodeFrame(frameIndex);
-    this.canvas.setPaperColor(colors[0]);
-    this.canvas.clear();
+    // this.canvas.setPaperColor(colors[0]);
+    this.canvas.clearFrameBuffer(colors[0]);
     if (this.note.type === 'PPM') {
       if (this.layerVisibility[2]) {
         this.canvas.drawPixels(layerBuffers[1], colors[2], [0,0,0,0]);
@@ -405,6 +401,7 @@ export class Player {
         }
       });
     }
+    this.canvas.postProcess();
   }
 
   public forceUpdate(): void {
