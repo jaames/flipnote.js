@@ -1,5 +1,5 @@
 /*!!
- flipnote.js v4.1.0 (webcomponent version)
+ flipnote.js v5.0.0 (webcomponent version)
  Browser-based playback of .ppm and .kwz animations from Flipnote Studio and Flipnote Studio 3D
  2018 - 2020 James Daniel
  github.com/jaames/flipnote.js
@@ -611,24 +611,26 @@
 
     var ByteArray = /** @class */ (function () {
         function ByteArray() {
-            this.page = -1;
+            this.pageSize = ByteArray.pageSize;
+            this.currPageIndex = -1;
             this.pages = [];
             this.cursor = 0;
             this.newPage();
         }
         ByteArray.prototype.newPage = function () {
-            this.pages[++this.page] = new Uint8Array(ByteArray.pageSize);
+            this.pages[++this.currPageIndex] = new Uint8Array(this.pageSize);
+            this.currPage = this.pages[this.currPageIndex];
             this.cursor = 0;
         };
         ByteArray.prototype.getData = function () {
-            var _this = this;
-            var data = new Uint8Array((this.page) * ByteArray.pageSize + this.cursor);
-            this.pages.map(function (page, index) {
-                if (index === _this.page)
-                    data.set(page.slice(0, _this.cursor), index * ByteArray.pageSize);
+            var data = new Uint8Array(this.currPageIndex * this.pageSize + this.cursor);
+            for (var index = 0; index < this.pages.length; index++) {
+                var page = this.pages[index];
+                if (index === this.currPageIndex)
+                    data.set(page.slice(0, this.cursor), index * this.pageSize);
                 else
-                    data.set(page, index * ByteArray.pageSize);
-            });
+                    data.set(page, index * this.pageSize);
+            }
             return data;
         };
         ByteArray.prototype.getBuffer = function () {
@@ -638,11 +640,17 @@
         ByteArray.prototype.writeByte = function (val) {
             if (this.cursor >= ByteArray.pageSize)
                 this.newPage();
-            this.pages[this.page][this.cursor++] = val;
+            this.currPage[this.cursor++] = val;
         };
         ByteArray.prototype.writeBytes = function (array, offset, length) {
+            // if (this.cursor + array.length < this.pageSize) {
+            //   this.currPage.set(array, this.cursor);
+            //   this.cursor += array.length;
+            // }
+            // else {
             for (var l = length || array.length, i = offset || 0; i < l; i++)
                 this.writeByte(array[i]);
+            // }
         };
         ByteArray.pageSize = 4096;
         return ByteArray;
@@ -1803,32 +1811,22 @@
             var image = new Uint8Array(KwzParser.width * KwzParser.height);
             image.fill(palette[0]); // fill with paper color first
             var layerOrder = this.getLayerOrder(frameIndex);
-            // TODO: fix swimming flipnote
             var layerA = this.layers[layerOrder[2]];
             var layerB = this.layers[layerOrder[1]];
             var layerC = this.layers[layerOrder[0]];
-            var layerAColor1 = palette[1];
-            var layerAColor2 = palette[2];
-            var layerBColor1 = palette[3];
-            var layerBColor2 = palette[4];
-            var layerCColor1 = palette[5];
-            var layerCColor2 = palette[6];
+            var layerAOffset = layerOrder[2] * 2;
+            var layerBOffset = layerOrder[1] * 2;
+            var layerCOffset = layerOrder[0] * 2;
             for (var pixel = 0; pixel < image.length; pixel++) {
                 var a = layerA[pixel];
                 var b = layerB[pixel];
                 var c = layerC[pixel];
-                if (a === 1)
-                    image[pixel] = layerAColor1;
-                else if (a === 2)
-                    image[pixel] = layerAColor2;
-                else if (b === 1)
-                    image[pixel] = layerBColor1;
-                else if (b === 2)
-                    image[pixel] = layerBColor2;
-                else if (c === 1)
-                    image[pixel] = layerCColor1;
-                else if (c === 2)
-                    image[pixel] = layerCColor2;
+                if (a !== 0)
+                    image[pixel] = palette[layerAOffset + a];
+                else if (b !== 0)
+                    image[pixel] = palette[layerBOffset + b];
+                else if (c !== 0)
+                    image[pixel] = palette[layerCOffset + c];
             }
             return image;
         };
@@ -2275,22 +2273,6 @@
             }
             this.data.writeBytes(palette);
         };
-        GifEncoder.prototype.writeGraphicsControlExt = function () {
-            var graphicsControlExt = new DataStream(new ArrayBuffer(8));
-            var transparentFlag = this.meta.transparentBg ? 0x1 : 0x0;
-            graphicsControlExt.writeBytes([
-                0x21,
-                0xF9,
-                0x4,
-                0x0 | transparentFlag // bitflags
-            ]);
-            graphicsControlExt.writeUint16(this.meta.delay); // loop flag
-            graphicsControlExt.writeBytes([
-                0x0,
-                0x0
-            ]);
-            this.data.writeBytes(new Uint8Array(graphicsControlExt.buffer));
-        };
         GifEncoder.prototype.writeNetscapeExt = function () {
             var netscapeExt = new DataStream(new ArrayBuffer(19));
             netscapeExt.writeBytes([
@@ -2304,23 +2286,36 @@
             netscapeExt.writeUint16(this.meta.repeat); // loop flag
             this.data.writeBytes(new Uint8Array(netscapeExt.buffer));
         };
-        GifEncoder.prototype.writeImageDesc = function () {
-            var desc = new DataStream(new ArrayBuffer(10));
-            desc.writeUint8(0x2C);
-            desc.writeUint16(0); // image left
-            desc.writeUint16(0); // image top
-            desc.writeUint16(this.width);
-            desc.writeUint16(this.height);
-            desc.writeUint8(0);
-            this.data.writeBytes(new Uint8Array(desc.buffer));
+        GifEncoder.prototype.writeFrameHeader = function () {
+            var fHeader = new DataStream(new ArrayBuffer(18));
+            // graphics control ext block
+            var transparentFlag = this.meta.transparentBg ? 0x1 : 0x0;
+            fHeader.writeBytes([
+                0x21,
+                0xF9,
+                0x4,
+                0x0 | transparentFlag // bitflags
+            ]);
+            fHeader.writeUint16(this.meta.delay); // loop flag
+            fHeader.writeBytes([
+                0x0,
+                0x0
+            ]);
+            // image desc block
+            fHeader.writeUint8(0x2C);
+            fHeader.writeUint16(0); // image left
+            fHeader.writeUint16(0); // image top
+            fHeader.writeUint16(this.width);
+            fHeader.writeUint16(this.height);
+            fHeader.writeUint8(0);
+            this.data.writeBytes(new Uint8Array(fHeader.buffer));
         };
         GifEncoder.prototype.writePixels = function (pixels) {
             var lzw = new LZWEncoder(this.width, this.height, pixels, this.meta.colorDepth);
             lzw.encode(this.data);
         };
         GifEncoder.prototype.writeFrame = function (pixels) {
-            this.writeGraphicsControlExt();
-            this.writeImageDesc();
+            this.writeFrameHeader();
             this.writePixels(pixels);
         };
         GifEncoder.prototype.getBuffer = function () {
@@ -3063,7 +3058,7 @@
      * @private
      */
     //function getVersionAsNumber(gl) {
-    //  return parseFloat(gl.getParameter(gl."4.1.0").substr(6));
+    //  return parseFloat(gl.getParameter(gl."5.0.0").substr(6));
     //}
 
     /**
@@ -3074,7 +3069,7 @@
      */
     function isWebGL2(gl) {
       // This is the correct check but it's slow
-      //  return gl.getParameter(gl."4.1.0").indexOf("WebGL 2.0") === 0;
+      //  return gl.getParameter(gl."5.0.0").indexOf("WebGL 2.0") === 0;
       // This might also be the correct check but I'm assuming it's slow-ish
       // return gl instanceof WebGL2RenderingContext;
       return !!gl.texStorage2D;
@@ -3083,7 +3078,6 @@
     const TEXTURE0                       = 0x84c0;
 
     const ARRAY_BUFFER$1                   = 0x8892;
-    const ELEMENT_ARRAY_BUFFER$1           = 0x8893;
 
     const ACTIVE_UNIFORMS                = 0x8b86;
     const ACTIVE_ATTRIBUTES              = 0x8b89;
@@ -3960,54 +3954,6 @@
     }
 
     /**
-     * Sets attributes and buffers including the `ELEMENT_ARRAY_BUFFER` if appropriate
-     *
-     * Example:
-     *
-     *     const programInfo = createProgramInfo(
-     *         gl, ["some-vs", "some-fs");
-     *
-     *     const arrays = {
-     *       position: { numComponents: 3, data: [0, 0, 0, 10, 0, 0, 0, 10, 0, 10, 10, 0], },
-     *       texcoord: { numComponents: 2, data: [0, 0, 0, 1, 1, 0, 1, 1],                 },
-     *     };
-     *
-     *     const bufferInfo = createBufferInfoFromArrays(gl, arrays);
-     *
-     *     gl.useProgram(programInfo.program);
-     *
-     * This will automatically bind the buffers AND set the
-     * attributes.
-     *
-     *     setBuffersAndAttributes(gl, programInfo, bufferInfo);
-     *
-     * For the example above it is equivalent to
-     *
-     *     gl.bindBuffer(gl.ARRAY_BUFFER, positionBuffer);
-     *     gl.enableVertexAttribArray(a_positionLocation);
-     *     gl.vertexAttribPointer(a_positionLocation, 3, gl.FLOAT, false, 0, 0);
-     *     gl.bindBuffer(gl.ARRAY_BUFFER, texcoordBuffer);
-     *     gl.enableVertexAttribArray(a_texcoordLocation);
-     *     gl.vertexAttribPointer(a_texcoordLocation, 4, gl.FLOAT, false, 0, 0);
-     *
-     * @param {WebGLRenderingContext} gl A WebGLRenderingContext.
-     * @param {(module:twgl.ProgramInfo|Object.<string, function>)} setters A `ProgramInfo` as returned from {@link module:twgl.createProgramInfo} or Attribute setters as returned from {@link module:twgl.createAttributeSetters}
-     * @param {(module:twgl.BufferInfo|module:twgl.VertexArrayInfo)} buffers a `BufferInfo` as returned from {@link module:twgl.createBufferInfoFromArrays}.
-     *   or a `VertexArrayInfo` as returned from {@link module:twgl.createVertexArrayInfo}
-     * @memberOf module:twgl/programs
-     */
-    function setBuffersAndAttributes(gl, programInfo, buffers) {
-      if (buffers.vertexArrayObject) {
-        gl.bindVertexArray(buffers.vertexArrayObject);
-      } else {
-        setAttributes(programInfo.attribSetters || programInfo, buffers.attribs);
-        if (buffers.indices) {
-          gl.bindBuffer(ELEMENT_ARRAY_BUFFER$1, buffers.indices);
-        }
-      }
-    }
-
-    /**
      * @typedef {Object} ProgramInfo
      * @property {WebGLProgram} program A shader program
      * @property {Object<string, function>} uniformSetters object of setters as returned from createUniformSetters,
@@ -4077,14 +4023,13 @@
             this.gl = gl;
             this.layerDrawProgram = this.createProgram(quadShader, layerDrawShader);
             this.postProcessProgram = this.createProgram(quadShader, postProcessShader);
-            this.quadBuffer = this.createScreenQuad(-1, -1, 2, 2, 64, 64);
-            setBuffersAndAttributes(gl, this.layerDrawProgram, this.quadBuffer);
-            setBuffersAndAttributes(gl, this.postProcessProgram, this.quadBuffer);
+            this.quadBuffer = this.createScreenQuad(-1, -1, 2, 2, 8, 8);
+            this.setBuffersAndAttribs(this.layerDrawProgram, this.quadBuffer);
+            this.setBuffersAndAttribs(this.postProcessProgram, this.quadBuffer);
             this.paletteTexture = this.createTexture(gl.RGBA, gl.NEAREST, gl.CLAMP_TO_EDGE, 256, 1);
             this.layerTexture = this.createTexture(gl.ALPHA, gl.NEAREST, gl.CLAMP_TO_EDGE);
             this.frameTexture = this.createTexture(gl.RGBA, gl.LINEAR, gl.CLAMP_TO_EDGE);
             this.frameBuffer = this.createFrameBuffer(this.frameTexture);
-            // this.setPalette();
             this.setCanvasSize(width, height);
         }
         WebglCanvas.prototype.createProgram = function (vertexShaderSource, fragmentShaderSource) {
@@ -4120,27 +4065,27 @@
             this.refs.shaders.push(shader);
             return shader;
         };
-        WebglCanvas.prototype.createScreenQuad = function (x0, y0, width, height, xSubdivisions, ySubdivisions) {
-            var numVerts = (xSubdivisions + 1) * (ySubdivisions + 1);
-            var numVertsAcross = xSubdivisions + 1;
+        WebglCanvas.prototype.createScreenQuad = function (x0, y0, width, height, xSubdivs, ySubdivs) {
+            var numVerts = (xSubdivs + 1) * (ySubdivs + 1);
+            var numVertsAcross = xSubdivs + 1;
             var positions = new Float32Array(numVerts * 2);
             var texCoords = new Float32Array(numVerts * 2);
             var positionPtr = 0;
             var texCoordPtr = 0;
-            for (var y = 0; y <= ySubdivisions; y++) {
-                for (var x = 0; x <= xSubdivisions; x++) {
-                    var u = x / xSubdivisions;
-                    var v = y / ySubdivisions;
+            for (var y = 0; y <= ySubdivs; y++) {
+                for (var x = 0; x <= xSubdivs; x++) {
+                    var u = x / xSubdivs;
+                    var v = y / ySubdivs;
                     positions[positionPtr++] = x0 + width * u;
                     positions[positionPtr++] = y0 + height * v;
                     texCoords[texCoordPtr++] = u;
                     texCoords[texCoordPtr++] = v;
                 }
             }
-            var indices = new Uint16Array(xSubdivisions * ySubdivisions * 2 * 3);
+            var indices = new Uint16Array(xSubdivs * ySubdivs * 2 * 3);
             var indicesPtr = 0;
-            for (var y = 0; y < ySubdivisions; y++) {
-                for (var x = 0; x < xSubdivisions; x++) {
+            for (var y = 0; y < ySubdivs; y++) {
+                for (var x = 0; x < xSubdivs; x++) {
                     // triangle 1
                     indices[indicesPtr++] = (y + 0) * numVertsAcross + x;
                     indices[indicesPtr++] = (y + 1) * numVertsAcross + x;
@@ -4151,7 +4096,7 @@
                     indices[indicesPtr++] = (y + 1) * numVertsAcross + x + 1;
                 }
             }
-            return createBufferInfoFromArrays(this.gl, {
+            var bufferInfo = createBufferInfoFromArrays(this.gl, {
                 position: {
                     numComponents: 2,
                     data: positions
@@ -4162,6 +4107,16 @@
                 },
                 indices: indices
             });
+            // collect references to buffer objects
+            for (var name_1 in bufferInfo.attribs) {
+                this.refs.buffers.push(bufferInfo.attribs[name_1].buffer);
+            }
+            return bufferInfo;
+        };
+        WebglCanvas.prototype.setBuffersAndAttribs = function (program, buffer) {
+            var gl = this.gl;
+            setAttributes(program.attribSetters, buffer.attribs);
+            gl.bindBuffer(gl.ELEMENT_ARRAY_BUFFER, buffer.indices);
         };
         WebglCanvas.prototype.createTexture = function (type, minMag, wrap, width, height) {
             if (width === void 0) { width = 1; }
@@ -4196,8 +4151,8 @@
             var internalHeight = height * dpi;
             this.el.width = internalWidth;
             this.el.height = internalHeight;
-            this.width = internalWidth;
-            this.height = internalHeight;
+            this.screenWidth = internalWidth;
+            this.screenHeight = internalHeight;
             this.el.style.width = width + "px";
             this.el.style.height = height + "px";
         };
@@ -5914,7 +5869,7 @@
     // Main entrypoint for web
     var api;
     (function (api) {
-        api.version = "4.1.0"; // replaced by @rollup/plugin-replace; see rollup.config.js
+        api.version = "5.0.0"; // replaced by @rollup/plugin-replace; see rollup.config.js
         api.player = Player;
         api.parseSource = parseSource;
         api.kwzParser = KwzParser;
@@ -5922,7 +5877,7 @@
         api.gifEncoder = GifEncoder;
         api.wavEncoder = WavEncoder;
     })(api || (api = {}));
-    var version = "4.1.0";
+    var version = "5.0.0";
     var player = Player;
     var parseSource$1 = parseSource;
     var kwzParser = KwzParser;

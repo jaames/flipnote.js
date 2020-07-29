@@ -101,23 +101,6 @@ export class GifEncoder {
     this.data.writeBytes(palette);
   }
 
-  writeGraphicsControlExt() {
-    const graphicsControlExt = new DataStream(new ArrayBuffer(8));
-    const transparentFlag = this.meta.transparentBg ? 0x1 : 0x0;
-    graphicsControlExt.writeBytes([
-      0x21, // extension introducer
-      0xF9, // graphic control label
-      0x4, // block size
-      0x0 | transparentFlag // bitflags
-    ]);
-    graphicsControlExt.writeUint16(this.meta.delay); // loop flag
-    graphicsControlExt.writeBytes([
-      0x0,
-      0x0
-    ]);
-    this.data.writeBytes(new Uint8Array(graphicsControlExt.buffer));
-  }
-
   writeNetscapeExt() {
     const netscapeExt = new DataStream(new ArrayBuffer(19));
     netscapeExt.writeBytes([
@@ -132,15 +115,29 @@ export class GifEncoder {
     this.data.writeBytes(new Uint8Array(netscapeExt.buffer));
   }
 
-  writeImageDesc() {
-    const desc = new DataStream(new ArrayBuffer(10));
-    desc.writeUint8(0x2C);
-    desc.writeUint16(0); // image left
-    desc.writeUint16(0); // image top
-    desc.writeUint16(this.width);
-    desc.writeUint16(this.height);
-    desc.writeUint8(0);
-    this.data.writeBytes(new Uint8Array(desc.buffer));
+  writeFrameHeader() {
+    const fHeader = new DataStream(new ArrayBuffer(18));
+    // graphics control ext block
+    const transparentFlag = this.meta.transparentBg ? 0x1 : 0x0;
+    fHeader.writeBytes([
+      0x21, // extension introducer
+      0xF9, // graphic control label
+      0x4, // block size
+      0x0 | transparentFlag // bitflags
+    ]);
+    fHeader.writeUint16(this.meta.delay); // loop flag
+    fHeader.writeBytes([
+      0x0,
+      0x0
+    ]);
+    // image desc block
+    fHeader.writeUint8(0x2C);
+    fHeader.writeUint16(0); // image left
+    fHeader.writeUint16(0); // image top
+    fHeader.writeUint16(this.width);
+    fHeader.writeUint16(this.height);
+    fHeader.writeUint8(0);
+    this.data.writeBytes(new Uint8Array(fHeader.buffer));
   }
 
   writePixels(pixels: Uint8Array) {
@@ -149,8 +146,7 @@ export class GifEncoder {
   }
 
   writeFrame(pixels: Uint8Array) {
-    this.writeGraphicsControlExt();
-    this.writeImageDesc();
+    this.writeFrameHeader();
     this.writePixels(pixels);
   }
 

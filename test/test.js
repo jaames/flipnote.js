@@ -1,3 +1,5 @@
+const testEl = document.getElementById('test');
+
 // let canvas = document.createElement("canvas");
 // canvas.id = "canvas";
 // document.body.appendChild(canvas);
@@ -31,10 +33,36 @@
 
 // window.player = player;
 
-// flipnote.parseSource('demo/comment.kwc').then(note => {
-//   const gif = flipnote.gifEncoder.fromFlipnoteFrame(note, note.thumbFrameIndex);
+// flipnote.parseSource('samples/sample19.kwz').then(note => {
+//   const gif = flipnote.gifEncoder.fromFlipnote(note);
 //   const img = gif.getImage();
-//   document.body.appendChild(img);
+//   testEl.appendChild(img);
+// })
+
+flipnote.parseSource('samples/memoA.kwz').then(note => {
+  let gif;
+  console.time('frame GIF x100')
+  for (let i = 0; i < 100; i++) {
+    gif = flipnote.gifEncoder.fromFlipnoteFrame(note, 1);
+  }
+  console.timeEnd('frame GIF x100')
+  const img = gif.getImage();
+  testEl.appendChild(img);
+})
+
+// flipnote.parseSource('samples/memoF.kwz').then(note => {
+//   console.time('animated GIF')
+//   const gif = flipnote.gifEncoder.fromFlipnoteFrame(note, 2);
+//   console.timeEnd('animated GIF')
+//   const img = gif.getImage();
+//   testEl.appendChild(img);
+// })
+
+
+// flipnote.parseSource('samples/bee.ppm').then(note => {
+//   const gif = flipnote.gifEncoder.fromFlipnote(note);
+//   const img = gif.getImage();
+//   testEl.appendChild(img);
 // })
 
 // export default flipnote;

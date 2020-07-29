@@ -505,34 +505,22 @@ export class KwzParser extends FlipnoteParserBase {
     const image = new Uint8Array(KwzParser.width * KwzParser.height);
     image.fill(palette[0]); // fill with paper color first
     const layerOrder = this.getLayerOrder(frameIndex);
-
-    // TODO: fix swimming flipnote
-
     const layerA = this.layers[layerOrder[2]];
     const layerB = this.layers[layerOrder[1]];
     const layerC = this.layers[layerOrder[0]];
-    const layerAColor1 = palette[1];
-    const layerAColor2 = palette[2];
-    const layerBColor1 = palette[3];
-    const layerBColor2 = palette[4];
-    const layerCColor1 = palette[5];
-    const layerCColor2 = palette[6];
+    const layerAOffset = layerOrder[2] * 2;
+    const layerBOffset = layerOrder[1] * 2;
+    const layerCOffset = layerOrder[0] * 2;
     for (let pixel = 0; pixel < image.length; pixel++) {
       const a = layerA[pixel];
       const b = layerB[pixel];
       const c = layerC[pixel];
-      if (a === 1)
-        image[pixel] = layerAColor1;
-      else if (a === 2)
-        image[pixel] = layerAColor2;
-      else if (b === 1)
-        image[pixel] = layerBColor1;
-      else if (b === 2)
-        image[pixel] = layerBColor2;
-      else if (c === 1)
-        image[pixel] = layerCColor1;
-      else if (c === 2)
-        image[pixel] = layerCColor2;
+      if (a !== 0)
+        image[pixel] = palette[layerAOffset + a];
+      else if (b !== 0)
+        image[pixel] = palette[layerBOffset + b];
+      else if (c !== 0)
+        image[pixel] = palette[layerCOffset + c];
     }
     return image;
   }

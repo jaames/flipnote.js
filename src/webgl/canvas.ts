@@ -1,7 +1,7 @@
 import {
   ProgramInfo,
   BufferInfo,
-  setBuffersAndAttributes,
+  setAttributes,
   createProgramInfoFromProgram,
   createBufferInfoFromArrays,
   setUniforms,
@@ -21,11 +21,10 @@ interface ResourceMap {
 
 /** webgl canvas wrapper class */
 export class WebglCanvas {
-
-  public width: number;
-  public height: number;
   public el: HTMLCanvasElement;
   public gl: WebGLRenderingContext;
+  public screenWidth: number;
+  public screenHeight: number;
 
   private layerDrawProgram: ProgramInfo; // for drawing layers to a renderbuffer
   private postProcessProgram: ProgramInfo; // for drawing renderbuffer w/ filtering
@@ -53,14 +52,13 @@ export class WebglCanvas {
     this.gl = gl;
     this.layerDrawProgram = this.createProgram(quadShader, layerDrawShader);
     this.postProcessProgram = this.createProgram(quadShader, postProcessShader);
-    this.quadBuffer = this.createScreenQuad(-1, -1, 2, 2, 64, 64);
-    setBuffersAndAttributes(gl, this.layerDrawProgram, this.quadBuffer);
-    setBuffersAndAttributes(gl, this.postProcessProgram, this.quadBuffer);
+    this.quadBuffer = this.createScreenQuad(-1, -1, 2, 2, 8, 8);
+    this.setBuffersAndAttribs(this.layerDrawProgram, this.quadBuffer);
+    this.setBuffersAndAttribs(this.postProcessProgram, this.quadBuffer);
     this.paletteTexture = this.createTexture(gl.RGBA, gl.NEAREST, gl.CLAMP_TO_EDGE, 256, 1);
     this.layerTexture = this.createTexture(gl.ALPHA, gl.NEAREST, gl.CLAMP_TO_EDGE);
     this.frameTexture = this.createTexture(gl.RGBA, gl.LINEAR, gl.CLAMP_TO_EDGE);
     this.frameBuffer = this.createFrameBuffer(this.frameTexture);
-    // this.setPalette();
     this.setCanvasSize(width, height);
   }
 
@@ -99,34 +97,27 @@ export class WebglCanvas {
     return shader;
   }
 
-  private createScreenQuad(
-    x0: number, 
-    y0: number,
-    width: number,
-    height: number,
-    xSubdivisions: number,
-    ySubdivisions: number
-  ) {
-    const numVerts = (xSubdivisions + 1) * (ySubdivisions + 1);
-    const numVertsAcross = xSubdivisions + 1;
+  private createScreenQuad(x0: number, y0: number, width: number, height: number, xSubdivs: number, ySubdivs: number) {
+    const numVerts = (xSubdivs + 1) * (ySubdivs + 1);
+    const numVertsAcross = xSubdivs + 1;
     const positions = new Float32Array(numVerts * 2);
     const texCoords = new Float32Array(numVerts * 2);
     let positionPtr = 0;
     let texCoordPtr = 0;
-    for (let y = 0; y <= ySubdivisions; y++) {
-      for (let x = 0; x <= xSubdivisions; x++) {
-        const u = x / xSubdivisions;
-        const v = y / ySubdivisions;
+    for (let y = 0; y <= ySubdivs; y++) {
+      for (let x = 0; x <= xSubdivs; x++) {
+        const u = x / xSubdivs;
+        const v = y / ySubdivs;
         positions[positionPtr++] = x0 + width * u;
         positions[positionPtr++] = y0 + height * v;
         texCoords[texCoordPtr++] = u;
         texCoords[texCoordPtr++] = v;
       }
     }
-    const indices = new Uint16Array(xSubdivisions * ySubdivisions * 2 * 3);
+    const indices = new Uint16Array(xSubdivs * ySubdivs * 2 * 3);
     let indicesPtr = 0;
-    for (let y = 0; y < ySubdivisions; y++) {
-      for (let x = 0; x < xSubdivisions; x++) {
+    for (let y = 0; y < ySubdivs; y++) {
+      for (let x = 0; x < xSubdivs; x++) {
         // triangle 1
         indices[indicesPtr++] = (y + 0) * numVertsAcross + x;
         indices[indicesPtr++] = (y + 1) * numVertsAcross + x;
@@ -137,7 +128,7 @@ export class WebglCanvas {
         indices[indicesPtr++] = (y + 1) * numVertsAcross + x + 1;
       }
     }
-    return createBufferInfoFromArrays(this.gl, {
+    const bufferInfo = createBufferInfoFromArrays(this.gl, {
       position: {
         numComponents: 2,
         data: positions
@@ -148,6 +139,17 @@ export class WebglCanvas {
       },
       indices: indices
     });
+    // collect references to buffer objects
+    for (let name in bufferInfo.attribs) {
+      this.refs.buffers.push(bufferInfo.attribs[name].buffer);
+    }
+    return bufferInfo;
+  }
+
+  private setBuffersAndAttribs(program: ProgramInfo, buffer: BufferInfo) {
+    const gl = this.gl;
+    setAttributes(program.attribSetters, buffer.attribs);
+    gl.bindBuffer(gl.ELEMENT_ARRAY_BUFFER, buffer.indices);
   }
 
   private createTexture(type: number, minMag: number, wrap: number, width = 1, height = 1) {
@@ -183,8 +185,8 @@ export class WebglCanvas {
     const internalHeight = height * dpi;
     this.el.width = internalWidth;
     this.el.height = internalHeight;
-    this.width = internalWidth;
-    this.height = internalHeight;
+    this.screenWidth = internalWidth;
+    this.screenHeight = internalHeight;
     this.el.style.width = `${ width }px`;
     this.el.style.height = `${ height }px`;
   }
@@ -204,7 +206,7 @@ export class WebglCanvas {
     gl.bindFramebuffer(gl.FRAMEBUFFER, this.frameBuffer);
     gl.viewport(0, 0, this.textureWidth, this.textureHeight);
     // clear it using the paper color
-    const [ r, g, b, a ] = paperColor;
+    const [r, g, b, a] = paperColor;
     gl.clearColor(r/255, g/255, b/255, a/255);
     gl.clear(gl.COLOR_BUFFER_BIT);
   }
