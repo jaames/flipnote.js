@@ -270,9 +270,6 @@ export class PpmParser extends FlipnoteParserBase {
     const isTranslated = (header >> 5) & 0x3;
     let translateX = 0;
     let translateY = 0;
-    // copy the current layer buffers to the previous ones
-    this.prevLayers[0].set(this.layers[0]);
-    this.prevLayers[1].set(this.layers[1]);
     this.prevDecodedFrame = frameIndex;
     // reset current layer buffers
     this.layers[0].fill(0);
@@ -364,6 +361,9 @@ export class PpmParser extends FlipnoteParserBase {
         }
       }
     }
+    // copy the current layer buffers to the previous ones
+    this.prevLayers[0].set(this.layers[0]);
+    this.prevLayers[1].set(this.layers[1]);
     return this.layers;
   }
 

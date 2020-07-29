@@ -7,6 +7,7 @@ export declare class WebglCanvas {
     private layerDrawProgram;
     private postProcessProgram;
     private quadBuffer;
+    private paletteTexture;
     private layerTexture;
     private frameTexture;
     private frameBuffer;
@@ -14,20 +15,17 @@ export declare class WebglCanvas {
     private textureHeight;
     private refs;
     constructor(el: HTMLCanvasElement, width?: number, height?: number);
-    private initBlendMode;
-    private setProgram;
     private createProgram;
+    private createShader;
     private createScreenQuad;
     private createTexture;
-    private createFrameTexture;
     private createFrameBuffer;
-    bindScreenBuffer(): void;
-    bindFrameBuffer(): void;
-    clearFrameBuffer(value: number[]): void;
-    setTextureSize(width: number, height: number): void;
     setCanvasSize(width: number, height: number): void;
-    drawPixels(pixels: Uint8Array, color1: number[], color2: number[]): void;
-    postProcess(): void;
+    setTextureSize(width: number, height: number): void;
+    clearFrameBuffer(paperColor: number[]): void;
+    setPalette(colors: number[][]): void;
+    drawPixels(pixels: Uint8Array, paletteOffset: number): void;
+    composite(): void;
     resize(width?: number, height?: number): void;
     destroy(): void;
 }

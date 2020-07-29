@@ -4,8 +4,6 @@ uniform sampler2D u_tex;
 varying float v_scale;
 uniform vec2 u_textureSize;
 uniform vec2 u_screenSize;
-uniform bool u_debugWireframe;
-const vec4 wireframeColor = vec4(.2, 0, 1, .75);
 
 void main() {
   vec2 v_texel = v_uv * u_textureSize;
@@ -17,5 +15,4 @@ void main() {
   vec2 mod_texel = texel_floored + f;
   vec2 coord = mod_texel.xy / u_textureSize.xy;
   gl_FragColor = texture2D(u_tex, coord);
-  // gl_FragColor = texture2D(u_tex, v_uv.xy);
 }

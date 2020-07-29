@@ -384,24 +384,28 @@ export class Player {
     const colors = this.note.getFramePalette(frameIndex);
     const layerBuffers = this.note.decodeFrame(frameIndex);
     // this.canvas.setPaperColor(colors[0]);
+    this.canvas.setPalette(colors);
     this.canvas.clearFrameBuffer(colors[0]);
     if (this.note.type === 'PPM') {
-      if (this.layerVisibility[2]) {
-        this.canvas.drawPixels(layerBuffers[1], colors[2], [0,0,0,0]);
-      }
-      if (this.layerVisibility[1]) {
-        this.canvas.drawPixels(layerBuffers[0], colors[1], [0,0,0,0]);
-      }
-    } else if (this.note.type === 'KWZ') {
+      if (this.layerVisibility[2])
+        this.canvas.drawPixels(layerBuffers[1], 1);
+      if (this.layerVisibility[1])
+        this.canvas.drawPixels(layerBuffers[0], 0);
+    } 
+    else if (this.note.type === 'KWZ') {
       // loop through each layer
-      this.note.getLayerOrder(frameIndex).forEach((layerIndex: number) => {
-        // only draw layer if it's visible
-        if (this.layerVisibility[layerIndex + 1]) {
-          this.canvas.drawPixels(layerBuffers[layerIndex], colors[layerIndex * 2 + 1], colors[layerIndex * 2 + 2]);
-        }
-      });
+      const order = this.note.getLayerOrder(frameIndex)
+      const layerIndexA = order[0];
+      const layerIndexB = order[1];
+      const layerIndexC = order[2];
+      if (this.layerVisibility[layerIndexA + 1])
+        this.canvas.drawPixels(layerBuffers[layerIndexA], layerIndexA * 2);
+      if (this.layerVisibility[layerIndexB + 1])
+        this.canvas.drawPixels(layerBuffers[layerIndexB], layerIndexB * 2);
+      if (this.layerVisibility[layerIndexC + 1])
+        this.canvas.drawPixels(layerBuffers[layerIndexC], layerIndexC * 2);
     }
-    this.canvas.postProcess();
+    this.canvas.composite();
   }
 
   public forceUpdate(): void {

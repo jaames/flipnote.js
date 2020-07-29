@@ -1,5 +1,5 @@
 /*!!
- flipnote.js v4.1.0 (node version)
+ flipnote.js v5.0.0 (node version)
  Browser-based playback of .ppm and .kwz animations from Flipnote Studio and Flipnote Studio 3D
  2018 - 2020 James Daniel
  github.com/jaames/flipnote.js
@@ -525,9 +525,6 @@ class PpmParser extends FlipnoteParserBase {
         const isTranslated = (header >> 5) & 0x3;
         let translateX = 0;
         let translateY = 0;
-        // copy the current layer buffers to the previous ones
-        this.prevLayers[0].set(this.layers[0]);
-        this.prevLayers[1].set(this.layers[1]);
         this.prevDecodedFrame = frameIndex;
         // reset current layer buffers
         this.layers[0].fill(0);
@@ -617,6 +614,9 @@ class PpmParser extends FlipnoteParserBase {
                 }
             }
         }
+        // copy the current layer buffers to the previous ones
+        this.prevLayers[0].set(this.layers[0]);
+        this.prevLayers[1].set(this.layers[1]);
         return this.layers;
     }
     getFramePaletteIndices(frameIndex) {
@@ -1842,7 +1842,7 @@ class WavEncoder {
 
 // Stripped down entrypoint for Node that only contains parsers + encoders
 var node = {
-    version: "4.1.0",
+    version: "5.0.0",
     parseSource,
     kwzParser: KwzParser,
     ppmParser: PpmParser,

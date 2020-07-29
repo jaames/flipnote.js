@@ -8,7 +8,10 @@ uniform vec2 u_textureSize;
 uniform vec2 u_screenSize;
 
 void main() {
-  gl_Position = position * vec4(1, u_flipY ? -1 : 1, 1, 1);
   v_uv = texcoord;
   v_scale = floor(u_screenSize.y / u_textureSize.y + 0.01);
+  gl_Position = position;
+  if (u_flipY) {
+    gl_Position.y *= -1.;
+  }
 }
