@@ -63,4 +63,3 @@ export const KWZ_LINE_TABLE_COMMON_SHIFT = new Uint8Array(32 * 8);
   const pixels = KWZ_LINE_TABLE.subarray(lineTableIndex * 8, lineTableIndex * 8 + 8);
   KWZ_LINE_TABLE_COMMON_SHIFT.set(pixels, index * 8);
 });
-

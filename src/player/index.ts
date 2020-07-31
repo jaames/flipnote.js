@@ -394,7 +394,7 @@ export class Player {
     } 
     else if (this.note.type === 'KWZ') {
       // loop through each layer
-      const order = this.note.getLayerOrder(frameIndex)
+      const order = this.note.getFrameLayerOrder(frameIndex)
       const layerIndexA = order[0];
       const layerIndexB = order[1];
       const layerIndexC = order[2];

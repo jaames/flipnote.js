@@ -51,7 +51,7 @@ export abstract class FlipnoteParserBase extends DataStream {
 
   abstract getLayerPixels(frameIndex: number, layerIndex: number): Uint8Array;
 
-  abstract getLayerOrder(frameIndex: number): number[];
+  abstract getFrameLayerOrder(frameIndex: number): number[];
 
   abstract getFramePixels(frameIndex: number): Uint8Array;
 

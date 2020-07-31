@@ -8,8 +8,8 @@ export const enum SeekOrigin {
 export class DataStream {
 
   public buffer: ArrayBuffer;
+  public cursor: number;
   private data: DataView;
-  private cursor: number;
 
   constructor(arrayBuffer: ArrayBuffer) {
     this.buffer = arrayBuffer;

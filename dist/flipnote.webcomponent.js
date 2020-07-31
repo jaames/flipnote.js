@@ -938,7 +938,7 @@
     var DS_SAMPLE_RATE = 32768;
     var PpmParser = /** @class */ (function (_super) {
         __extends(PpmParser, _super);
-        function PpmParser(arrayBuffer) {
+        function PpmParser(arrayBuffer, params) {
             var _this = _super.call(this, arrayBuffer) || this;
             _this.type = PpmParser.type;
             _this.width = PpmParser.width;
@@ -1070,7 +1070,7 @@
             var header = this.readUint8();
             return (header >> 7) & 0x1;
         };
-        PpmParser.prototype.getLayerOrder = function (frameIndex) {
+        PpmParser.prototype.getFrameLayerOrder = function (frameIndex) {
             return [0, 1];
         };
         PpmParser.prototype.readLineEncoding = function () {
@@ -1445,10 +1445,15 @@
         BLUE: [0x00, 0x38, 0xce, 0xff],
         NONE: [0xff, 0xff, 0xff, 0x00]
     };
-    var CTR_SAMPLE_RATE = 32768;
+    var CTR_SAMPLE_RATE = 32768; // probably wronng
+    var BITMASKS = new Uint16Array(16);
+    for (var i = 0; i < 16; i++) {
+        BITMASKS[i] = (1 << i) - 1;
+    }
     var KwzParser = /** @class */ (function (_super) {
         __extends(KwzParser, _super);
-        function KwzParser(arrayBuffer) {
+        function KwzParser(arrayBuffer, config) {
+            if (config === void 0) { config = {}; }
             var _this = _super.call(this, arrayBuffer) || this;
             _this.type = KwzParser.type;
             _this.width = KwzParser.width;
@@ -1456,9 +1461,10 @@
             _this.globalPalette = KwzParser.globalPalette;
             _this.rawSampleRate = KwzParser.rawSampleRate;
             _this.sampleRate = KwzParser.sampleRate;
-            _this.prevDecodedFrame = null;
+            _this.prevFrameIndex = null;
             _this.bitIndex = 0;
             _this.bitValue = 0;
+            _this.config = __assign(__assign({}, KwzParser.defaultConfig), config);
             _this.layers = [
                 new Uint8Array(KwzParser.width * KwzParser.height),
                 new Uint8Array(KwzParser.width * KwzParser.height),
@@ -1472,7 +1478,6 @@
         KwzParser.prototype.load = function () {
             this.seek(0);
             this.sections = {};
-            this.frameMeta = [];
             var fileSize = this.byteLength - 256;
             var offset = 0;
             var sectionCount = 0;
@@ -1488,8 +1493,11 @@
                 offset += sectionLength + 8;
                 sectionCount += 1;
             }
-            this.decodeMeta();
-            this.decodeFrameMeta();
+            if (!this.config.quickMeta)
+                this.decodeMeta();
+            else
+                this.decodeMetaQuick();
+            this.getFrameOffsets();
             this.decodeSoundHeader();
         };
         KwzParser.prototype.readBits = function (num) {
@@ -1498,8 +1506,8 @@
                 this.bitValue |= nextBits << (16 - this.bitIndex);
                 this.bitIndex -= 16;
             }
-            var mask = (1 << num) - 1;
-            var result = this.bitValue & mask;
+            // const mask = (1 << num) - 1;
+            var result = this.bitValue & BITMASKS[num];
             this.bitValue >>= num;
             this.bitIndex += num;
             return result;
@@ -1512,8 +1520,8 @@
             this.frameSpeed = frameSpeed;
             this.framerate = FRAMERATES$1[frameSpeed];
             this.meta = {
-                lock: (flags & 0x1) === 1,
-                loop: ((flags >> 1) & 0x01) === 1,
+                lock: (flags & 0x1) !== 0,
+                loop: (flags & 0x2) !== 0,
                 frame_count: frameCount,
                 frame_speed: frameSpeed,
                 thumb_index: thumbIndex,
@@ -1536,31 +1544,41 @@
                 },
             };
         };
-        KwzParser.prototype.decodeFrameMeta = function () {
-            this.frameOffsets = new Uint32Array(this.frameCount);
-            this.seek(this.sections['KMI'].offset + 8);
-            var offset = this.sections['KMC'].offset + 12;
-            for (var i = 0; i < this.frameCount; i++) {
-                var frame = {
-                    flags: this.readUint32(),
-                    layerSize: [
-                        this.readUint16(),
-                        this.readUint16(),
-                        this.readUint16()
-                    ],
-                    frameAuthor: this.readHex(10),
-                    layerDepth: [
-                        this.readUint8(),
-                        this.readUint8(),
-                        this.readUint8(),
-                    ],
-                    soundFlags: this.readUint8(),
-                    cameraFlag: this.readUint32(),
-                };
-                this.frameMeta.push(frame);
-                this.frameOffsets[i] = offset;
-                offset += frame.layerSize[0] + frame.layerSize[1] + frame.layerSize[2];
+        KwzParser.prototype.decodeMetaQuick = function () {
+            this.seek(this.sections['KFH'].offset + 0x8 + 0xC4);
+            var frameCount = this.readUint16();
+            var thumbFrameIndex = this.readUint16();
+            var flags = this.readUint16();
+            var frameSpeed = this.readUint8();
+            var layerFlags = this.readUint8();
+            this.frameCount = frameCount;
+            this.thumbFrameIndex = thumbFrameIndex;
+            this.frameSpeed = frameSpeed;
+            this.framerate = FRAMERATES$1[frameSpeed];
+        };
+        KwzParser.prototype.getFrameOffsets = function () {
+            var numFrames = this.frameCount;
+            var kmiSection = this.sections['KMI'];
+            var kmcSection = this.sections['KMC'];
+            var frameMetaOffsets = new Uint32Array(numFrames);
+            var frameDataOffsets = new Uint32Array(numFrames);
+            var frameLayerSizes = [];
+            var frameMetaOffset = kmiSection.offset + 8;
+            var frameDataOffset = kmcSection.offset + 12;
+            for (var frameIndex = 0; frameIndex < numFrames; frameIndex++) {
+                this.seek(frameMetaOffset + 4);
+                var layerASize = this.readUint16();
+                var layerBSize = this.readUint16();
+                var layerCSize = this.readUint16();
+                frameMetaOffsets[frameIndex] = frameMetaOffset;
+                frameDataOffsets[frameIndex] = frameDataOffset;
+                frameMetaOffset += 28;
+                frameDataOffset += layerASize + layerBSize + layerCSize;
+                frameLayerSizes.push([layerASize, layerBSize, layerCSize]);
             }
+            this.frameMetaOffsets = frameMetaOffsets;
+            this.frameDataOffsets = frameDataOffsets;
+            this.frameLayerSizes = frameLayerSizes;
         };
         KwzParser.prototype.decodeSoundHeader = function () {
             var _a;
@@ -1580,42 +1598,95 @@
                     _a);
             }
         };
-        KwzParser.prototype.getDiffingFlag = function (frameIndex) {
-            return ~(this.frameMeta[frameIndex].flags >> 4) & 0x07;
+        KwzParser.prototype.getFramePaletteIndices = function (frameIndex) {
+            this.seek(this.frameMetaOffsets[frameIndex]);
+            var flags = this.readUint32();
+            return [
+                flags & 0xF,
+                (flags >> 8) & 0xF,
+                (flags >> 12) & 0xF,
+                (flags >> 16) & 0xF,
+                (flags >> 20) & 0xF,
+                (flags >> 24) & 0xF,
+                (flags >> 28) & 0xF,
+            ];
         };
-        KwzParser.prototype.getLayerDepths = function (frameIndex) {
-            return this.frameMeta[frameIndex].layerDepth;
+        KwzParser.prototype.getFrameDiffingFlag = function (frameIndex) {
+            this.seek(this.frameMetaOffsets[frameIndex]);
+            var flags = this.readUint32();
+            return (flags >> 4) & 0x07;
+        };
+        KwzParser.prototype.getFrameLayerSizes = function (frameIndex) {
+            this.seek(this.frameMetaOffsets[frameIndex] + 0x4);
+            return [
+                this.readUint16(),
+                this.readUint16(),
+                this.readUint16()
+            ];
+        };
+        KwzParser.prototype.getFrameLayerDepths = function (frameIndex) {
+            this.seek(this.frameMetaOffsets[frameIndex] + 0x14);
+            return [
+                this.readUint8(),
+                this.readUint8(),
+                this.readUint8()
+            ];
+        };
+        KwzParser.prototype.getFrameAuthor = function (frameIndex) {
+            this.seek(this.frameMetaOffsets[frameIndex] + 0xA);
+            return this.readHex(10);
+        };
+        KwzParser.prototype.getFrameSoundFlags = function (frameIndex) {
+            this.seek(this.frameMetaOffsets[frameIndex] + 0x17);
+            var soundFlags = this.readUint8();
+            return [
+                (soundFlags & 0x1) !== 0,
+                (soundFlags & 0x2) !== 0,
+                (soundFlags & 0x3) !== 0,
+                (soundFlags & 0x4) !== 0,
+            ];
         };
         // sort layer indices sorted by depth, from bottom to top
-        KwzParser.prototype.getLayerOrder = function (frameIndex) {
-            var depths = this.getLayerDepths(frameIndex);
+        KwzParser.prototype.getFrameLayerOrder = function (frameIndex) {
+            var depths = this.getFrameLayerDepths(frameIndex);
             return [2, 1, 0].sort(function (a, b) { return depths[b] - depths[a]; });
         };
         KwzParser.prototype.decodeFrame = function (frameIndex, diffingFlag, isPrevFrame) {
             if (diffingFlag === void 0) { diffingFlag = 0x7; }
             if (isPrevFrame === void 0) { isPrevFrame = false; }
-            // if this frame is being decoded as a prev frame, then we only want to decode the layers necessary
-            if (isPrevFrame)
-                diffingFlag &= this.getDiffingFlag(frameIndex + 1);
             // the prevDecodedFrame check is an optimisation for decoding frames in full sequence
-            if ((this.prevDecodedFrame !== frameIndex - 1) && (diffingFlag) && (frameIndex !== 0))
-                this.decodeFrame(frameIndex - 1, diffingFlag = diffingFlag, isPrevFrame = true);
-            var meta = this.frameMeta[frameIndex];
-            var offset = this.frameOffsets[frameIndex];
+            if (this.prevFrameIndex !== frameIndex - 1 && frameIndex !== 0) {
+                // if this frame is being decoded as a prev frame, then we only want to decode the layers necessary
+                // diffingFlag is negated with ~ so if no layers are diff-based, diffingFlag is 0
+                if (isPrevFrame)
+                    diffingFlag = diffingFlag & ~this.getFrameDiffingFlag(frameIndex + 1);
+                // if diffing flag isn't 0, decode the previous frame before this one
+                if (diffingFlag !== 0)
+                    this.decodeFrame(frameIndex - 1, diffingFlag, true);
+            }
+            var ptr = this.frameDataOffsets[frameIndex];
+            var layerSizes = this.frameLayerSizes[frameIndex];
             for (var layerIndex = 0; layerIndex < 3; layerIndex++) {
-                this.seek(offset);
-                var layerSize = meta.layerSize[layerIndex];
-                offset += layerSize;
+                // dsi gallery conversions don't use the third layer, so it can be skipped if this is set
+                if (this.config.dsiGalleryNote && layerIndex === 3)
+                    break;
+                this.seek(ptr);
+                var layerSize = layerSizes[layerIndex];
+                ptr += layerSize;
                 // if the layer is 38 bytes then it hasn't changed at all since the previous frame, so we can skip it
                 if (layerSize === 38)
                     continue;
+                // if this layer doesn't need to be decoded for diffing
                 if (((diffingFlag >> layerIndex) & 0x1) === 0)
                     continue;
+                // reset readbits state
                 this.bitIndex = 16;
                 this.bitValue = 0;
+                // tile skip counter
                 var skip = 0;
                 for (var tileOffsetY = 0; tileOffsetY < KwzParser.height; tileOffsetY += 128) {
                     for (var tileOffsetX = 0; tileOffsetX < KwzParser.width; tileOffsetX += 128) {
+                        // loop small tiles
                         for (var subTileOffsetY = 0; subTileOffsetY < 128; subTileOffsetY += 8) {
                             var y = tileOffsetY + subTileOffsetY;
                             if (y >= KwzParser.height)
@@ -1624,7 +1695,7 @@
                                 var x = tileOffsetX + subTileOffsetX;
                                 if (x >= KwzParser.width)
                                     break;
-                                if (skip) {
+                                if (skip > 0) {
                                     skip -= 1;
                                     continue;
                                 }
@@ -1684,17 +1755,20 @@
                                 // most common tile type
                                 else if (type == 4) {
                                     var mask = this.readBits(8);
+                                    var ptr_1 = pixelOffset;
                                     for (var line = 0; line < 8; line++) {
-                                        if (mask & (1 << line)) {
+                                        if ((mask & 0x1) !== 0) {
                                             var lineIndex = this.readBits(5);
                                             var pixels = KWZ_LINE_TABLE_COMMON.subarray(lineIndex * 8, lineIndex * 8 + 8);
-                                            pixelBuffer.set(pixels, pixelOffset + line * 320);
+                                            pixelBuffer.set(pixels, ptr_1);
                                         }
                                         else {
                                             var lineIndex = this.readBits(13);
                                             var pixels = KWZ_LINE_TABLE.subarray(lineIndex * 8, lineIndex * 8 + 8);
-                                            pixelBuffer.set(pixels, pixelOffset + line * 320);
+                                            pixelBuffer.set(pixels, ptr_1);
                                         }
+                                        mask >>= 1;
+                                        ptr_1 += 320;
                                     }
                                 }
                                 else if (type == 5) {
@@ -1707,7 +1781,7 @@
                                     var useCommonLines = this.readBits(1);
                                     var a = void 0;
                                     var b = void 0;
-                                    if (useCommonLines) {
+                                    if (useCommonLines !== 0) {
                                         var lineIndexA = this.readBits(5);
                                         var lineIndexB = this.readBits(5);
                                         a = KWZ_LINE_TABLE_COMMON.subarray(lineIndexA * 8, lineIndexA * 8 + 8);
@@ -1766,20 +1840,8 @@
                     }
                 }
             }
-            this.prevDecodedFrame = frameIndex;
+            this.prevFrameIndex = frameIndex;
             return this.layers;
-        };
-        KwzParser.prototype.getFramePaletteIndices = function (frameIndex) {
-            var flags = this.frameMeta[frameIndex].flags;
-            return [
-                flags & 0xF,
-                (flags >> 8) & 0xF,
-                (flags >> 12) & 0xF,
-                (flags >> 16) & 0xF,
-                (flags >> 20) & 0xF,
-                (flags >> 24) & 0xF,
-                (flags >> 28) & 0xF,
-            ];
         };
         KwzParser.prototype.getFramePalette = function (frameIndex) {
             var _this = this;
@@ -1788,7 +1850,7 @@
         };
         // retuns an uint8 array where each item is a pixel's palette index
         KwzParser.prototype.getLayerPixels = function (frameIndex, layerIndex) {
-            if (this.prevDecodedFrame !== frameIndex)
+            if (this.prevFrameIndex !== frameIndex)
                 this.decodeFrame(frameIndex);
             var palette = this.getFramePaletteIndices(frameIndex);
             var layers = this.layers[layerIndex];
@@ -1805,41 +1867,62 @@
         };
         // retuns an uint8 array where each item is a pixel's palette index
         KwzParser.prototype.getFramePixels = function (frameIndex) {
-            if (this.prevDecodedFrame !== frameIndex)
+            if (this.prevFrameIndex !== frameIndex)
                 this.decodeFrame(frameIndex);
             var palette = this.getFramePaletteIndices(frameIndex);
-            var image = new Uint8Array(KwzParser.width * KwzParser.height);
-            image.fill(palette[0]); // fill with paper color first
-            var layerOrder = this.getLayerOrder(frameIndex);
-            var layerA = this.layers[layerOrder[2]];
-            var layerB = this.layers[layerOrder[1]];
-            var layerC = this.layers[layerOrder[0]];
+            var layerOrder = this.getFrameLayerOrder(frameIndex);
+            var layerA = this.layers[layerOrder[2]]; // top
+            var layerB = this.layers[layerOrder[1]]; // middle
+            var layerC = this.layers[layerOrder[0]]; // bottom
             var layerAOffset = layerOrder[2] * 2;
             var layerBOffset = layerOrder[1] * 2;
             var layerCOffset = layerOrder[0] * 2;
-            for (var pixel = 0; pixel < image.length; pixel++) {
-                var a = layerA[pixel];
-                var b = layerB[pixel];
-                var c = layerC[pixel];
-                if (a !== 0)
-                    image[pixel] = palette[layerAOffset + a];
-                else if (b !== 0)
-                    image[pixel] = palette[layerBOffset + b];
-                else if (c !== 0)
-                    image[pixel] = palette[layerCOffset + c];
+            if (!this.config.dsiGalleryNote) {
+                var image = new Uint8Array(KwzParser.width * KwzParser.height);
+                image.fill(palette[0]); // fill with paper color first
+                for (var pixel = 0; pixel < image.length; pixel++) {
+                    var a = layerA[pixel];
+                    var b = layerB[pixel];
+                    var c = layerC[pixel];
+                    if (a !== 0)
+                        image[pixel] = palette[layerAOffset + a];
+                    else if (b !== 0)
+                        image[pixel] = palette[layerBOffset + b];
+                    else if (c !== 0)
+                        image[pixel] = palette[layerCOffset + c];
+                }
+                return image;
             }
-            return image;
+            // for dsi gallery notes, bottom layer is ignored and edge is cropped
+            else {
+                var image = new Uint8Array(KwzParser.width * KwzParser.height);
+                image.fill(palette[0]); // fill with paper color first
+                var cropStartY = 32;
+                var cropStartX = 24;
+                var cropWidth = KwzParser.width - 64;
+                var cropHeight = KwzParser.height - 48;
+                var srcStride = KwzParser.width;
+                for (var y = cropStartY; y < cropHeight; y++) {
+                    var srcPtr = y * srcStride;
+                    for (var x = cropStartX; x < cropWidth; x++) {
+                        var a = layerA[srcPtr];
+                        var b = layerB[srcPtr];
+                        if (a !== 0)
+                            image[srcPtr] = palette[layerAOffset + a];
+                        else if (b !== 0)
+                            image[srcPtr] = palette[layerBOffset + b];
+                        srcPtr += 1;
+                    }
+                }
+                return image;
+            }
         };
         KwzParser.prototype.decodeSoundFlags = function () {
-            return this.frameMeta.map(function (frame) {
-                var soundFlags = frame.soundFlags;
-                return [
-                    (soundFlags & 0x1) !== 0,
-                    (soundFlags & 0x2) !== 0,
-                    (soundFlags & 0x4) !== 0,
-                    (soundFlags & 0x8) !== 0,
-                ];
-            });
+            var result = [];
+            for (var i = 0; i < this.frameCount; i++) {
+                result.push(this.getFrameSoundFlags(i));
+            }
+            return result;
         };
         KwzParser.prototype.getAudioTrackRaw = function (trackId) {
             var trackMeta = this.soundMeta[trackId];
@@ -1922,25 +2005,28 @@
             // Mix sound effects
             if (hasSe1 || hasSe2 || hasSe3) {
                 var samplesPerFrame = Math.floor(dstFreq / this.framerate);
-                var seFlags = this.decodeSoundFlags();
                 var se1Pcm = hasSe1 ? this.getAudioTrackPcm(FlipnoteAudioTrack.SE1, dstFreq) : null;
                 var se2Pcm = hasSe2 ? this.getAudioTrackPcm(FlipnoteAudioTrack.SE2, dstFreq) : null;
                 var se3Pcm = hasSe3 ? this.getAudioTrackPcm(FlipnoteAudioTrack.SE3, dstFreq) : null;
                 var se4Pcm = hasSe4 ? this.getAudioTrackPcm(FlipnoteAudioTrack.SE4, dstFreq) : null;
                 for (var i = 0; i < this.frameCount; i++) {
+                    var seFlags = this.getFrameSoundFlags(i);
                     var seOffset = samplesPerFrame * i;
-                    var flag = seFlags[i];
-                    if (hasSe1 && flag[0])
+                    if (hasSe1 && seFlags[0])
                         pcmAudioMix(se1Pcm, master, seOffset);
-                    if (hasSe2 && flag[1])
+                    if (hasSe2 && seFlags[1])
                         pcmAudioMix(se2Pcm, master, seOffset);
-                    if (hasSe3 && flag[2])
+                    if (hasSe3 && seFlags[2])
                         pcmAudioMix(se3Pcm, master, seOffset);
-                    if (hasSe4 && flag[3])
+                    if (hasSe4 && seFlags[3])
                         pcmAudioMix(se4Pcm, master, seOffset);
                 }
             }
             return master;
+        };
+        KwzParser.defaultConfig = {
+            quickMeta: false,
+            dsiGalleryNote: false,
         };
         KwzParser.type = 'KWZ';
         KwzParser.width = 320;
@@ -1960,7 +2046,7 @@
         return KwzParser;
     }(FlipnoteParserBase));
 
-    function parseSource(source) {
+    function parseSource(source, parserConfig) {
         return loadSource(source)
             .then(function (arrayBuffer) {
             return new Promise(function (resolve, reject) {
@@ -1969,10 +2055,10 @@
                 var magic = (magicBytes[0] << 24) | (magicBytes[1] << 16) | (magicBytes[2] << 8) | magicBytes[3];
                 // check if magic is PARA (ppm magic)
                 if (magic === 0x50415241)
-                    resolve(new PpmParser(arrayBuffer));
+                    resolve(new PpmParser(arrayBuffer, parserConfig));
                 // check if magic is KFH (kwz magic)
                 else if ((magic & 0xFFFFFF00) === 0x4B464800)
-                    resolve(new KwzParser(arrayBuffer));
+                    resolve(new KwzParser(arrayBuffer, parserConfig));
                 else
                     reject();
             });
@@ -4690,7 +4776,7 @@
             }
             else if (this.note.type === 'KWZ') {
                 // loop through each layer
-                var order = this.note.getLayerOrder(frameIndex);
+                var order = this.note.getFrameLayerOrder(frameIndex);
                 var layerIndexA = order[0];
                 var layerIndexB = order[1];
                 var layerIndexC = order[2];

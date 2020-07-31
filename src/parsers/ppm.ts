@@ -72,6 +72,10 @@ export interface PpmMeta {
   },
 };
 
+export interface PpmParserConfig {
+
+};
+
 export class PpmParser extends FlipnoteParserBase {
 
   static type: string = 'PPM';
@@ -102,7 +106,7 @@ export class PpmParser extends FlipnoteParserBase {
   private soundDataLength: number;
   private frameOffsets: Uint32Array;
 
-  constructor(arrayBuffer: ArrayBuffer) {
+  constructor(arrayBuffer: ArrayBuffer, params: PpmParserConfig = {}) {
     super(arrayBuffer);
     this.decodeHeader();
     this.decodeAnimationHeader();
@@ -243,7 +247,7 @@ export class PpmParser extends FlipnoteParserBase {
     return (header >> 7) & 0x1;
   }
 
-  public getLayerOrder(frameIndex?: number) {
+  public getFrameLayerOrder(frameIndex?: number) {
     return [0, 1];
   }
 

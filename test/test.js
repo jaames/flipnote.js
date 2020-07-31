@@ -39,16 +39,28 @@ const testEl = document.getElementById('test');
 //   testEl.appendChild(img);
 // })
 
-flipnote.parseSource('samples/memoA.kwz').then(note => {
-  let gif;
-  console.time('frame GIF x100')
-  for (let i = 0; i < 100; i++) {
-    gif = flipnote.gifEncoder.fromFlipnoteFrame(note, 1);
-  }
-  console.timeEnd('frame GIF x100')
-  const img = gif.getImage();
-  testEl.appendChild(img);
+fetch('samples/pekira_beach.kwz')
+.then(resp => resp.arrayBuffer())
+.then(data => {
+  console.time('kwz parse')
+  flipnote.parseSource(data, {
+    dsiGalleryNote: true,
+    quickParse: true,
+  }).then(note => {
+    console.timeEnd('kwz parse')
+    let gif;
+    console.time('frame GIF x100')
+    for (let i = 0; i < 100; i++) {
+      gif = flipnote.gifEncoder.fromFlipnoteFrame(note, i);
+      // gif = flipnote.gifEncoder.fromFlipnote(note);
+    }
+    console.timeEnd('frame GIF x100')
+    const img = gif.getImage();
+    testEl.appendChild(img);
+  })
 })
+
+
 
 // flipnote.parseSource('samples/memoF.kwz').then(note => {
 //   console.time('animated GIF')
