@@ -1,10 +1,14 @@
-import { parseSource, KwzParser, PpmParser } from './parsers/index';
+import { parseSource, KwzFile, PpmFile } from './parsers/index';
 import { GifEncoder, WavEncoder } from './encoders/index';
 declare const _default: {
     version: string;
     parseSource: typeof parseSource;
-    kwzParser: typeof KwzParser;
-    ppmParser: typeof PpmParser;
+    KwzFile: typeof KwzFile;
+    PpmFile: typeof PpmFile;
+    GifEncoder: typeof GifEncoder;
+    WavEncoder: typeof WavEncoder;
+    kwzParser: typeof KwzFile;
+    ppmParser: typeof PpmFile;
     gifEncoder: typeof GifEncoder;
     wavEncoder: typeof WavEncoder;
 };

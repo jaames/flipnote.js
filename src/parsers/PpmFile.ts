@@ -25,8 +25,8 @@
 import { 
   FlipnotePaletteDefinition,
   FlipnoteAudioTrack,
-  FlipnoteParserBase
-} from './parserBase';
+  FlipnoteFileBase
+} from './FlipnoteFileBase';
 
 import {
   clamp,
@@ -34,7 +34,7 @@ import {
   pcmAudioMix,
   ADPCM_INDEX_TABLE_4BIT,
   ADPCM_STEP_TABLE
-} from './audio';
+} from './audioUtils';
 
 // internal frame speed value -> FPS table
 const FRAMERATES = [0.5, 0.5, 1, 2, 4, 6, 12, 20, 30];
@@ -76,7 +76,7 @@ export interface PpmParserConfig {
 
 };
 
-export class PpmParser extends FlipnoteParserBase {
+export class PpmFile extends FlipnoteFileBase {
 
   static type: string = 'PPM';
   static width: number = 256;
@@ -90,12 +90,12 @@ export class PpmParser extends FlipnoteParserBase {
     PALETTE.BLUE
   ];
 
-  public type: string = PpmParser.type;
-  public width: number = PpmParser.width;
-  public height: number = PpmParser.height;
-  public globalPalette = PpmParser.globalPalette;
-  public rawSampleRate = PpmParser.rawSampleRate;
-  public sampleRate = PpmParser.sampleRate;
+  public type: string = PpmFile.type;
+  public width: number = PpmFile.width;
+  public height: number = PpmFile.height;
+  public globalPalette = PpmFile.globalPalette;
+  public rawSampleRate = PpmFile.rawSampleRate;
+  public sampleRate = PpmFile.sampleRate;
   public meta: PpmMeta;
   public version: number;
 
@@ -118,12 +118,12 @@ export class PpmParser extends FlipnoteParserBase {
     }
     // create image buffers
     this.layers = [
-      new Uint8Array(PpmParser.width * PpmParser.height),
-      new Uint8Array(PpmParser.width * PpmParser.height)
+      new Uint8Array(PpmFile.width * PpmFile.height),
+      new Uint8Array(PpmFile.width * PpmFile.height)
     ];
     this.prevLayers = [
-      new Uint8Array(PpmParser.width * PpmParser.height),
-      new Uint8Array(PpmParser.width * PpmParser.height)
+      new Uint8Array(PpmFile.width * PpmFile.height),
+      new Uint8Array(PpmFile.width * PpmFile.height)
     ];
     this.prevDecodedFrame = null;
   }
@@ -252,7 +252,7 @@ export class PpmParser extends FlipnoteParserBase {
   }
 
   private readLineEncoding() {
-    const unpacked = new Uint8Array(PpmParser.height);
+    const unpacked = new Uint8Array(PpmFile.height);
     let unpackedPtr = 0;
     for (var byteIndex = 0; byteIndex < 48; byteIndex ++) {
       const byte = this.readUint8();
@@ -291,9 +291,9 @@ export class PpmParser extends FlipnoteParserBase {
      // start decoding layer bitmaps
     for (let layer = 0; layer < 2; layer++) {
       const layerBitmap = this.layers[layer];
-      for (let line = 0; line < PpmParser.height; line++) {
+      for (let line = 0; line < PpmFile.height; line++) {
         const lineType = layerEncoding[layer][line];
-        let chunkOffset = line * PpmParser.width;
+        let chunkOffset = line * PpmFile.width;
         switch(lineType) {
           // line type 0 = blank line, decode nothing
           case 0:
@@ -304,7 +304,7 @@ export class PpmParser extends FlipnoteParserBase {
             let lineHeader = this.readUint32(false);
             // line type 2 starts as an inverted line
             if (lineType == 2)
-              layerBitmap.fill(1, chunkOffset, chunkOffset + PpmParser.width);
+              layerBitmap.fill(1, chunkOffset, chunkOffset + PpmFile.width);
             // loop through each bit in the line header
             while (lineHeader & 0xFFFFFFFF) {
               // if the bit is set, this 8-pix wide chunk is stored
@@ -323,7 +323,7 @@ export class PpmParser extends FlipnoteParserBase {
             break;
           // line type 3 = raw bitmap line
           case 3:
-            while(chunkOffset < (line + 1) * PpmParser.width) {
+            while(chunkOffset < (line + 1) * PpmFile.width) {
               const chunk = this.readUint8();
               for (let pixel = 0; pixel < 8; pixel++) {
                 layerBitmap[chunkOffset + pixel] = chunk >> pixel & 0x1;
@@ -342,23 +342,23 @@ export class PpmParser extends FlipnoteParserBase {
     if (!isNewFrame) {
       let dest: number, src: number;
       // loop through each line
-      for (let y = 0; y < PpmParser.height; y++) {
+      for (let y = 0; y < PpmFile.height; y++) {
         // skip to next line if this one falls off the top edge of the screen
         if (y - translateY < 0)
           continue;
         // stop once the bottom screen edge has been reached
-        if (y - translateY >= PpmParser.height)
+        if (y - translateY >= PpmFile.height)
           break;
         // loop through each pixel in the line
-        for (let x = 0; x < PpmParser.width; x++) {
+        for (let x = 0; x < PpmFile.width; x++) {
           // skip to the next pixel if this one falls off the left edge of the screen
           if (x - translateX < 0)
             continue;
           // stop diffing this line once the right screen edge has been reached
-          if (x - translateX >= PpmParser.width)
+          if (x - translateX >= PpmFile.width)
             break;
-          dest = x + y * PpmParser.width;
-          src = dest - (translateX + translateY * PpmParser.width);
+          dest = x + y * PpmFile.width;
+          src = dest - (translateX + translateY * PpmFile.width);
           // diff pixels with a binary XOR
           layer1[dest] ^= layer1Prev[src];
           layer2[dest] ^= layer2Prev[src];
@@ -400,7 +400,7 @@ export class PpmParser extends FlipnoteParserBase {
     }
     const palette = this.getFramePaletteIndices(frameIndex);
     const layer = this.layers[layerIndex];
-    const image = new Uint8Array(PpmParser.width * PpmParser.height);
+    const image = new Uint8Array(PpmFile.width * PpmFile.height);
     const layerColor = palette[layerIndex + 1];
     for (let pixel = 0; pixel < image.length; pixel++) {
       if (layer[pixel] === 1)
@@ -413,7 +413,7 @@ export class PpmParser extends FlipnoteParserBase {
   public getFramePixels(frameIndex: number) {
     const palette = this.getFramePaletteIndices(frameIndex);
     const layers = this.decodeFrame(frameIndex);
-    const image = new Uint8Array(PpmParser.width * PpmParser.height);
+    const image = new Uint8Array(PpmFile.width * PpmFile.height);
     const layer1 = layers[0];
     const layer2 = layers[1];
     const paperColor = palette[0];

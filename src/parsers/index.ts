@@ -1,13 +1,13 @@
 import { loadSource } from '../loaders/index';
-import { FlipnoteParserBase } from './parserBase';
-import { PpmParser, PpmParserConfig, PpmMeta } from './ppm';
-import { KwzParser, KwzParserConfig, KwzMeta } from './kwz';
+import { FlipnoteFileBase } from './FlipnoteFileBase';
+import { PpmFile, PpmParserConfig, PpmMeta } from './PpmFile';
+import { KwzFile, KwzParserConfig, KwzMeta } from './KwzFile';
 
-export * from './ppm';
-export * from './kwz';
-export * from './parserBase';
+export * from './PpmFile';
+export * from './KwzFile';
+export * from './FlipnoteFileBase';
 
-export type Flipnote = FlipnoteParserBase;
+export type Flipnote = FlipnoteFileBase;
 export type FlipnoteParserConfig = PpmParserConfig | KwzParserConfig;
 export type FlipnoteMeta = PpmMeta | KwzMeta; 
 
@@ -20,10 +20,10 @@ export function parseSource(source: any, parserConfig?: FlipnoteParserConfig): P
       const magic = (magicBytes[0] << 24) | (magicBytes[1] << 16) | (magicBytes[2] << 8) | magicBytes[3];
       // check if magic is PARA (ppm magic)
       if (magic === 0x50415241)
-        resolve(new PpmParser(arrayBuffer, parserConfig));
+        resolve(new PpmFile(arrayBuffer, parserConfig));
       // check if magic is KFH (kwz magic)
       else if ((magic & 0xFFFFFF00) === 0x4B464800)
-        resolve(new KwzParser(arrayBuffer, parserConfig));
+        resolve(new KwzFile(arrayBuffer, parserConfig));
       else
         reject();
     });

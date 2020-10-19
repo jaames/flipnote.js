@@ -1,8 +1,10 @@
 export declare class ByteArray {
     static pageSize: number;
-    private page;
-    private pages;
-    private cursor;
+    pageSize: number;
+    currPageIndex: number;
+    pages: Uint8Array[];
+    currPage: Uint8Array;
+    cursor: number;
     constructor();
     private newPage;
     getData(): Uint8Array;

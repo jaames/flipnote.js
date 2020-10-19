@@ -6,8 +6,8 @@ export declare const enum SeekOrigin {
 }
 export declare class DataStream {
     buffer: ArrayBuffer;
+    cursor: number;
     private data;
-    private cursor;
     constructor(arrayBuffer: ArrayBuffer);
     get bytes(): Uint8Array;
     get byteLength(): number;

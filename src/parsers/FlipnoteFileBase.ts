@@ -21,7 +21,7 @@ export type FlipnoteAudioTrackInfo = {
   }
 }
 
-export abstract class FlipnoteParserBase extends DataStream {
+export abstract class FlipnoteFileBase extends DataStream {
 
   static type: string;
   static sampleRate: number;

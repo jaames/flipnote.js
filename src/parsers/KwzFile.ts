@@ -1,8 +1,8 @@
 import { 
   FlipnotePaletteDefinition,
   FlipnoteAudioTrack,
-  FlipnoteParserBase
-} from './parserBase';
+  FlipnoteFileBase
+} from './FlipnoteFileBase';
 
 import {
   KWZ_LINE_TABLE,
@@ -19,7 +19,7 @@ import {
   ADPCM_INDEX_TABLE_4BIT,
   ADPCM_SAMPLE_TABLE_2BIT,
   ADPCM_SAMPLE_TABLE_4BIT
-} from './audio';
+} from './audioUtils';
 
 const FRAMERATES = [.2, .5, 1, 2, 4, 6, 8, 12, 20, 24, 30];
 const PALETTE: FlipnotePaletteDefinition = {
@@ -87,7 +87,7 @@ export interface KwzParserConfig {
   dsiGalleryNote?: boolean;
 };
 
-export class KwzParser extends FlipnoteParserBase {
+export class KwzFile extends FlipnoteFileBase {
 
   static defaultConfig: KwzParserConfig = {
     quickMeta: false,
@@ -110,12 +110,12 @@ export class KwzParser extends FlipnoteParserBase {
   ];
   
   public config: KwzParserConfig;
-  public type: string = KwzParser.type;
-  public width: number = KwzParser.width;
-  public height: number = KwzParser.height;
-  public globalPalette = KwzParser.globalPalette;
-  public rawSampleRate = KwzParser.rawSampleRate;
-  public sampleRate = KwzParser.sampleRate;
+  public type: string = KwzFile.type;
+  public width: number = KwzFile.width;
+  public height: number = KwzFile.height;
+  public globalPalette = KwzFile.globalPalette;
+  public rawSampleRate = KwzFile.rawSampleRate;
+  public sampleRate = KwzFile.sampleRate;
   public meta: KwzMeta;
 
   private sections: KwzSectionMap;
@@ -130,11 +130,11 @@ export class KwzParser extends FlipnoteParserBase {
 
   constructor(arrayBuffer: ArrayBuffer, config: KwzParserConfig = {}) {
     super(arrayBuffer);
-    this.config = {...KwzParser.defaultConfig, ...config};
+    this.config = {...KwzFile.defaultConfig, ...config};
     this.layers = [
-      new Uint8Array(KwzParser.width * KwzParser.height),
-      new Uint8Array(KwzParser.width * KwzParser.height),
-      new Uint8Array(KwzParser.width * KwzParser.height),
+      new Uint8Array(KwzFile.width * KwzFile.height),
+      new Uint8Array(KwzFile.width * KwzFile.height),
+      new Uint8Array(KwzFile.width * KwzFile.height),
     ];
     this.bitIndex = 0;
     this.bitValue = 0;
@@ -383,17 +383,17 @@ export class KwzParser extends FlipnoteParserBase {
       // tile skip counter
       let skip = 0;
 
-      for (let tileOffsetY = 0; tileOffsetY < KwzParser.height; tileOffsetY += 128) {
-        for (let tileOffsetX = 0; tileOffsetX < KwzParser.width; tileOffsetX += 128) {
+      for (let tileOffsetY = 0; tileOffsetY < KwzFile.height; tileOffsetY += 128) {
+        for (let tileOffsetX = 0; tileOffsetX < KwzFile.width; tileOffsetX += 128) {
           // loop small tiles
           for (let subTileOffsetY = 0; subTileOffsetY < 128; subTileOffsetY += 8) {
             const y = tileOffsetY + subTileOffsetY;
-            if (y >= KwzParser.height)
+            if (y >= KwzFile.height)
               break;
 
             for (let subTileOffsetX = 0; subTileOffsetX < 128; subTileOffsetX += 8) {
               const x = tileOffsetX + subTileOffsetX;
-              if (x >= KwzParser.width)
+              if (x >= KwzFile.width)
                 break;
 
               if (skip > 0) {
@@ -401,7 +401,7 @@ export class KwzParser extends FlipnoteParserBase {
                 continue;
               }
 
-              const pixelOffset = y * KwzParser.width + x;
+              const pixelOffset = y * KwzFile.width + x;
               const pixelBuffer = this.layers[layerIndex];
 
               const type = this.readBits(3);
@@ -565,7 +565,7 @@ export class KwzParser extends FlipnoteParserBase {
       this.decodeFrame(frameIndex);
     const palette = this.getFramePaletteIndices(frameIndex);
     const layers = this.layers[layerIndex];
-    const image = new Uint8Array(KwzParser.width * KwzParser.height);
+    const image = new Uint8Array(KwzFile.width * KwzFile.height);
     const paletteOffset = layerIndex * 2 + 1;
     for (let pixelIndex = 0; pixelIndex < layers.length; pixelIndex++) {
       let pixel = layers[pixelIndex];
@@ -590,7 +590,7 @@ export class KwzParser extends FlipnoteParserBase {
     const layerBOffset = layerOrder[1] * 2;
     const layerCOffset = layerOrder[0] * 2;
     if (!this.config.dsiGalleryNote) {
-      const image = new Uint8Array(KwzParser.width * KwzParser.height);
+      const image = new Uint8Array(KwzFile.width * KwzFile.height);
       image.fill(palette[0]); // fill with paper color first
       for (let pixel = 0; pixel < image.length; pixel++) {
         const a = layerA[pixel];
@@ -607,13 +607,13 @@ export class KwzParser extends FlipnoteParserBase {
     } 
     // for dsi gallery notes, bottom layer is ignored and edge is cropped
     else {
-      const image = new Uint8Array(KwzParser.width * KwzParser.height);
+      const image = new Uint8Array(KwzFile.width * KwzFile.height);
       image.fill(palette[0]); // fill with paper color first
       const cropStartY = 32;
       const cropStartX = 24;
-      const cropWidth = KwzParser.width - 64;
-      const cropHeight = KwzParser.height - 48;
-      const srcStride = KwzParser.width;
+      const cropWidth = KwzFile.width - 64;
+      const cropHeight = KwzFile.height - 48;
+      const srcStride = KwzFile.width;
       for (let y = cropStartY; y < cropHeight; y++) {
         let srcPtr = y * srcStride;
         for (let x = cropStartX; x < cropWidth; x++) {

@@ -20,9 +20,8 @@ export declare class GifEncoder {
     init(): void;
     writeHeader(): void;
     writeColorTable(): void;
-    writeGraphicsControlExt(): void;
     writeNetscapeExt(): void;
-    writeImageDesc(): void;
+    writeFrameHeader(): void;
     writePixels(pixels: Uint8Array): void;
     writeFrame(pixels: Uint8Array): void;
     getBuffer(): ArrayBufferLike;

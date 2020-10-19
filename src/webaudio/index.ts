@@ -1,1 +1,1 @@
-export * from './audioPlayer';
+export * from './WebAudioPlayer';

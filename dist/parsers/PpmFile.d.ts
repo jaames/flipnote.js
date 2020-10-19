@@ -21,7 +21,7 @@
  *  Lastly, a huge thanks goes to Nintendo for creating Flipnote Studio,
  *  and to Hatena for providing the Flipnote Hatena online service, both of which inspired so many c:
 */
-import { FlipnoteAudioTrack, FlipnoteParserBase } from './parserBase';
+import { FlipnoteAudioTrack, FlipnoteFileBase } from './FlipnoteFileBase';
 export interface PpmMeta {
     lock: boolean;
     loop: boolean;
@@ -47,17 +47,19 @@ export interface PpmMeta {
         fsid: string;
     };
 }
-export declare class PpmParser extends FlipnoteParserBase {
+export interface PpmParserConfig {
+}
+export declare class PpmFile extends FlipnoteFileBase {
     static type: string;
     static width: number;
     static height: number;
     static rawSampleRate: number;
     static sampleRate: number;
-    static globalPalette: import("./parserBase").FlipnotePaletteColor[];
+    static globalPalette: import("./FlipnoteFileBase").FlipnotePaletteColor[];
     type: string;
     width: number;
     height: number;
-    globalPalette: import("./parserBase").FlipnotePaletteColor[];
+    globalPalette: import("./FlipnoteFileBase").FlipnotePaletteColor[];
     rawSampleRate: number;
     sampleRate: number;
     meta: PpmMeta;
@@ -68,7 +70,7 @@ export declare class PpmParser extends FlipnoteParserBase {
     private frameDataLength;
     private soundDataLength;
     private frameOffsets;
-    constructor(arrayBuffer: ArrayBuffer);
+    constructor(arrayBuffer: ArrayBuffer, params?: PpmParserConfig);
     static validateFSID(fsid: string): boolean;
     static validateFilename(filename: string): boolean;
     private decodeHeader;
@@ -77,11 +79,11 @@ export declare class PpmParser extends FlipnoteParserBase {
     private decodeAnimationHeader;
     private decodeSoundHeader;
     isNewFrame(frameIndex: number): number;
-    getLayerOrder(frameIndex?: number): number[];
+    getFrameLayerOrder(frameIndex?: number): number[];
     private readLineEncoding;
     decodeFrame(frameIndex: number): Uint8Array[];
     getFramePaletteIndices(frameIndex: number): number[];
-    getFramePalette(frameIndex: number): import("./parserBase").FlipnotePaletteColor[];
+    getFramePalette(frameIndex: number): import("./FlipnoteFileBase").FlipnotePaletteColor[];
     getLayerPixels(frameIndex: number, layerIndex: number): Uint8Array;
     getFramePixels(frameIndex: number): Uint8Array;
     decodeSoundFlags(): any[];

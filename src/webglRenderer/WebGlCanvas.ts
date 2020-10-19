@@ -7,9 +7,9 @@ import {
   setUniforms,
 } from 'twgl.js';
 
-import quadShader from './quad.vert';
-import layerDrawShader from './drawLayer.frag';
-import postProcessShader from './postProcess_sharpBilinear.frag';
+import quadShader from './shaders/quad.vert';
+import layerDrawShader from './shaders/drawLayer.frag';
+import postProcessShader from './shaders/postProcess_sharpBilinear.frag';
 
 interface ResourceMap {
   programs: WebGLProgram[];
@@ -20,7 +20,7 @@ interface ResourceMap {
 };
 
 /** webgl canvas wrapper class */
-export class WebglCanvas {
+export class WebGlCanvas {
   public el: HTMLCanvasElement;
   public gl: WebGLRenderingContext;
   public screenWidth: number;

@@ -1,9 +1,10 @@
-import { FlipnoteParserBase } from './parserBase';
-import { PpmMeta } from './ppm';
-import { KwzMeta } from './kwz';
-export * from './ppm';
-export * from './kwz';
-export * from './parserBase';
-export declare type Flipnote = FlipnoteParserBase;
+import { FlipnoteFileBase } from './FlipnoteFileBase';
+import { PpmParserConfig, PpmMeta } from './PpmFile';
+import { KwzParserConfig, KwzMeta } from './KwzFile';
+export * from './PpmFile';
+export * from './KwzFile';
+export * from './FlipnoteFileBase';
+export declare type Flipnote = FlipnoteFileBase;
+export declare type FlipnoteParserConfig = PpmParserConfig | KwzParserConfig;
 export declare type FlipnoteMeta = PpmMeta | KwzMeta;
-export declare function parseSource(source: any): Promise<Flipnote>;
+export declare function parseSource(source: any, parserConfig?: FlipnoteParserConfig): Promise<Flipnote>;

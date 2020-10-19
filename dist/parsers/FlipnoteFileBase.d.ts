@@ -16,7 +16,7 @@ export declare type FlipnoteAudioTrackInfo = {
         length: number;
     };
 };
-export declare abstract class FlipnoteParserBase extends DataStream {
+export declare abstract class FlipnoteFileBase extends DataStream {
     static type: string;
     static sampleRate: number;
     static width: number;
@@ -39,7 +39,7 @@ export declare abstract class FlipnoteParserBase extends DataStream {
     thumbFrameIndex: number;
     abstract decodeFrame(frameIndex: number): Uint8Array[];
     abstract getLayerPixels(frameIndex: number, layerIndex: number): Uint8Array;
-    abstract getLayerOrder(frameIndex: number): number[];
+    abstract getFrameLayerOrder(frameIndex: number): number[];
     abstract getFramePixels(frameIndex: number): Uint8Array;
     abstract getFramePaletteIndices(frameIndex: number): number[];
     abstract getFramePalette(frameIndex: number): FlipnotePaletteColor[];

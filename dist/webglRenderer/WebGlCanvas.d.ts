@@ -1,9 +1,9 @@
 /** webgl canvas wrapper class */
-export declare class WebglCanvas {
-    width: number;
-    height: number;
+export declare class WebGlCanvas {
     el: HTMLCanvasElement;
     gl: WebGLRenderingContext;
+    screenWidth: number;
+    screenHeight: number;
     private layerDrawProgram;
     private postProcessProgram;
     private quadBuffer;
@@ -18,6 +18,7 @@ export declare class WebglCanvas {
     private createProgram;
     private createShader;
     private createScreenQuad;
+    private setBuffersAndAttribs;
     private createTexture;
     private createFrameBuffer;
     setCanvasSize(width: number, height: number): void;

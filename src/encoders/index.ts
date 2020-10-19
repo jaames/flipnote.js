@@ -1,4 +1,4 @@
-export * from './gif';
-export * from './wav';
+export * from './GifEncoder';
+export * from './WavEncoder';
 // bmp encoder is deprecated in favor of gif
-// export * from './bmp';
+// export * from './BitmapEncoder';
