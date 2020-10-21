@@ -147,7 +147,7 @@ export class KwzParser extends FlipnoteParserBase<KwzMeta> {
     dsiGalleryNote: false,
   };
   /** File format type */
-  static format: FlipnoteFormat.KWZ;
+  static format = FlipnoteFormat.KWZ;
   /** Animation frame width */
   static width: number = 320;
   /** Animation frame height */
@@ -168,7 +168,7 @@ export class KwzParser extends FlipnoteParserBase<KwzMeta> {
   ];
   
   /** File format type, reflects {@link KwzParser.format} */
-  public format: FlipnoteFormat.KWZ;
+  public format = FlipnoteFormat.KWZ;
   /** Animation frame width, reflects {@link KwzParser.width} */
   public width: number = KwzParser.width;
   /** Animation frame height, reflects {@link KwzParser.height} */
