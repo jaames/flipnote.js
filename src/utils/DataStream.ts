@@ -1,10 +1,12 @@
 /** datastream serves as a wrapper around the DataView API to help keep track of the offset into the stream */
+/** @internal */
 export const enum SeekOrigin {
   Begin,
   Current,
   End
 };
 
+/** @internal */
 export class DataStream {
 
   public buffer: ArrayBuffer;

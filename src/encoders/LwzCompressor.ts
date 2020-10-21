@@ -23,16 +23,21 @@ import { ByteArray } from '../utils/byteArray';
   Joe Orost (decvax!vax135!petsd!joe)
 */
 
+/** @internal */
 const EOF = -1;
+/** @internal */
 const BITS = 12;
+/** @internal */
 const HSIZE = 5003; // 80% occupancy
+/** @internal */
 const masks = [
   0x0000, 0x0001, 0x0003, 0x0007, 0x000F, 0x001F,
   0x003F, 0x007F, 0x00FF, 0x01FF, 0x03FF, 0x07FF,
   0x0FFF, 0x1FFF, 0x3FFF, 0x7FFF, 0xFFFF
 ];
 
-export class LZWEncoder {
+/** @internal */
+export class LzwCompressor {
   public width: number;
   public height: number;
   public pixels: Uint8Array;

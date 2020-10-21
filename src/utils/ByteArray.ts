@@ -1,12 +1,13 @@
+/** @internal */
 export class ByteArray {
 
   static pageSize: number = 4096;
 
-  public pageSize = ByteArray.pageSize;
-  public currPageIndex: number = -1;
-  public pages: Uint8Array[] = [];
-  public currPage: Uint8Array;
-  public cursor: number = 0;
+  private pageSize = ByteArray.pageSize;
+  private currPageIndex: number = -1;
+  private pages: Uint8Array[] = [];
+  private currPage: Uint8Array;
+  private cursor: number = 0;
 
   constructor() {
     this.newPage();
@@ -18,7 +19,7 @@ export class ByteArray {
     this.cursor = 0;
   }
   
-  public getData() {
+  public getData(): Uint8Array {
     const data = new Uint8Array(this.currPageIndex * this.pageSize + this.cursor);
     for (let index = 0; index < this.pages.length; index++) {
       const page = this.pages[index];
@@ -30,7 +31,7 @@ export class ByteArray {
     return data;
   }
 
-  public getBuffer() {
+  public getBuffer(): ArrayBufferLike {
     const data = this.getData();
     return data.buffer;
   }
@@ -41,14 +42,14 @@ export class ByteArray {
     this.currPage[this.cursor++] = val;
   }
 
-  public writeBytes(array: Uint8Array | number[], offset?: number, length?: number) {
+  public writeBytes(bytes: Uint8Array | number[], offset?: number, length?: number) {
     // if (this.cursor + array.length < this.pageSize) {
     //   this.currPage.set(array, this.cursor);
     //   this.cursor += array.length;
     // }
     // else {
-      for (let l = length || array.length, i = offset || 0; i < l; i++)
-        this.writeByte(array[i]);
+      for (let l = length || bytes.length, i = offset || 0; i < l; i++)
+        this.writeByte(bytes[i]);
     // }
   }
 }

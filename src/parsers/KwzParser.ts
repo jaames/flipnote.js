@@ -1,8 +1,9 @@
 import { 
+  FlipnoteFormat,
   FlipnotePaletteDefinition,
   FlipnoteAudioTrack,
-  FlipnoteFileBase
-} from './FlipnoteFileBase';
+  FlipnoteParserBase
+} from './FlipnoteParserBase';
 
 import {
   KWZ_LINE_TABLE,
@@ -21,8 +22,14 @@ import {
   ADPCM_SAMPLE_TABLE_4BIT
 } from './audioUtils';
 
-const FRAMERATES = [.2, .5, 1, 2, 4, 6, 8, 12, 20, 24, 30];
-const PALETTE: FlipnotePaletteDefinition = {
+/** 
+ * KWZ framerates in frames per second, indexed by the in-app frame speed
+ */
+const KWZ_FRAMERATES = [.2, .5, 1, 2, 4, 6, 8, 12, 20, 24, 30];
+/** 
+ * KWZ color defines (red, green, blue, alpha)
+ */
+const KWZ_PALETTE: FlipnotePaletteDefinition = {
   WHITE:  [0xff, 0xff, 0xff, 0xff],
   BLACK:  [0x10, 0x10, 0x10, 0xff],
   RED:    [0xff, 0x10, 0x10, 0xff],
@@ -31,39 +38,66 @@ const PALETTE: FlipnotePaletteDefinition = {
   BLUE:   [0x00, 0x38, 0xce, 0xff],
   NONE:   [0xff, 0xff, 0xff, 0x00]
 };
-const CTR_SAMPLE_RATE = 32768; // probably wronng
+/** @internal */
+const KWZ_OUTPUT_SAMPLE_RATE = 32768; // probably wronng
 
+/** 
+ * Pre computed bitmasks for readBits; done as a slight optimisation
+ * @internal
+ */
 const BITMASKS = new Uint16Array(16);
 for (let i = 0; i < 16; i++) {
   BITMASKS[i] = (1 << i) - 1;
 }
 
+/** 
+ * KWZ section types
+ * @internal
+ */
 export type KwzSectionMagic = 'KFH' | 'KTN' | 'KMC' | 'KMI' | 'KSN' | 'ICO';
 
+/** 
+ * KWZ section map, tracking their offset and length
+ * @internal
+ */
 export type KwzSectionMap = {
   [k in KwzSectionMagic]?: {
-    offset: number, length: number
+    offset: number, 
+    length: number
   }
 };
 
+/** 
+ * KWZ file metadata, stores information about its playback, author details, etc
+ */
 export interface KwzMeta {
+  /** Flipnote lock state. Locked Flipnotes cannot be edited by anyone other than the current author */
   lock: boolean;
+  /** Playback loop state. If `true`, playback will loop once the end is reached */
   loop: boolean;
+  /** Total number of animation frames */
   frame_count: number;
+  /** In-app animation playback speed, range 0 to 10 */
   frame_speed: number;
+  /** Index of the animation frame used as the Flipnote's thumbnail image */
   thumb_index: number;
+  /** Date representing when the file was last edited */
   timestamp: Date;
+  /** Date representing when the file was created */
   creation_timestamp: Date;
+  /** Metadata about the author of the original Flipnote file */
   root: {
     filename: string;
     username: string;
     fsid: string;
   },
+  /** Metadata about the previous author of the Flipnote file */
   parent: {
     filename: string;
     username: string;
     fsid: string;
   },
+  /** Metadata about the current author of the Flipnote file */
   current: {
     filename: string;
     username: string;
@@ -71,53 +105,84 @@ export interface KwzMeta {
   },
 };
 
+/** 
+ * KWZ frame metadata, stores information about each frame, like layer depths sound effect usage
+ */
 export interface KwzFrameMeta {
+  /** Frame flags */
   flags: number[];
+  /** Frame layer sizes */
   layerSize: number[];
+  /** Frame author's Flipnote Studio ID */
   frameAuthor: string;
+  /** Frame layer 3D depths */
   layerDepth: number[];
+  /** Frame sound */
   soundFlags: number;
+  /** Whether this frame contains photos taken with the console's camera */
   cameraFlag: number;
 };
 
-export interface KwzParserConfig {
-  // skip full metadata parsing for quickness
+/** 
+ * KWZ parser options for enabling optimisations and other extra features
+ */
+export interface KwzParserSettings {
+  /** Skip full metadata parsing for quickness */ 
   quickMeta?: boolean;
-  // apply special cases for dsi gallery notes
+  /** apply special cases for dsi gallery notes */ 
   dsiGalleryNote?: boolean;
 };
 
-export class KwzFile extends FlipnoteFileBase {
+/** 
+ * Parser class for Flipnote Studio 3D's KWZ animation format
+ * 
+ * Format docs: https://github.com/Flipnote-Collective/flipnote-studio-3d-docs/wiki/KWZ-Format
+ * @category File Parser
+ */
+export class KwzParser extends FlipnoteParserBase<KwzMeta> {
 
-  static defaultConfig: KwzParserConfig = {
+  /** Default KWZ parser settings */
+  static defaultSettings: KwzParserSettings = {
     quickMeta: false,
     dsiGalleryNote: false,
   };
-  static type: string = 'KWZ';
+  /** File format type */
+  static format: FlipnoteFormat.KWZ;
+  /** Animation frame width */
   static width: number = 320;
+  /** Animation frame height */
   static height: number = 240;
+  /** Audio track base sample rate */
   static rawSampleRate: number = 16364;
-  // TODO: check this is true, it probably isnt
-  static sampleRate: number = CTR_SAMPLE_RATE;
+  /** Audio output sample rate. NOTE: probably isn't accurate, full KWZ audio stack is still on the todo */
+  static sampleRate: number = KWZ_OUTPUT_SAMPLE_RATE;
+  /** Global animation frame color palette */
   static globalPalette = [
-    PALETTE.WHITE,
-    PALETTE.BLACK,
-    PALETTE.RED,
-    PALETTE.YELLOW,
-    PALETTE.GREEN,
-    PALETTE.BLUE,
-    PALETTE.NONE,
+    KWZ_PALETTE.WHITE,
+    KWZ_PALETTE.BLACK,
+    KWZ_PALETTE.RED,
+    KWZ_PALETTE.YELLOW,
+    KWZ_PALETTE.GREEN,
+    KWZ_PALETTE.BLUE,
+    KWZ_PALETTE.NONE,
   ];
   
-  public config: KwzParserConfig;
-  public type: string = KwzFile.type;
-  public width: number = KwzFile.width;
-  public height: number = KwzFile.height;
-  public globalPalette = KwzFile.globalPalette;
-  public rawSampleRate = KwzFile.rawSampleRate;
-  public sampleRate = KwzFile.sampleRate;
+  /** File format type, reflects {@link KwzParser.format} */
+  public format: FlipnoteFormat.KWZ;
+  /** Animation frame width, reflects {@link KwzParser.width} */
+  public width: number = KwzParser.width;
+  /** Animation frame height, reflects {@link KwzParser.height} */
+  public height: number = KwzParser.height;
+  /** Audio track base sample rate, reflects {@link KwzParser.rawSampleRate} */
+  public rawSampleRate = KwzParser.rawSampleRate;
+  /** Audio output sample rate, reflects {@link KwzParser.sampleRate} */
+  public sampleRate = KwzParser.sampleRate;
+  /** Global animation frame color palette, reflects {@link KwzParser.globalPalette} */
+  public globalPalette = KwzParser.globalPalette;
+  /** File metadata, see {@link KwzMeta} for structure */
   public meta: KwzMeta;
 
+  private settings: KwzParserSettings;
   private sections: KwzSectionMap;
   private layers: [Uint8Array, Uint8Array, Uint8Array];
   private prevFrameIndex: number = null;
@@ -128,20 +193,31 @@ export class KwzFile extends FlipnoteFileBase {
   private bitIndex: number = 0;
   private bitValue: number = 0;
 
-  constructor(arrayBuffer: ArrayBuffer, config: KwzParserConfig = {}) {
+  /**
+   * Create a new KWZ file parser instance
+   * @param arrayBuffer an ArrayBuffer containing file data
+   * @param settings parser settings
+   */
+  constructor(arrayBuffer: ArrayBuffer, settings: Partial<KwzParserSettings> = {}) {
     super(arrayBuffer);
-    this.config = {...KwzFile.defaultConfig, ...config};
+    this.settings = {...KwzParser.defaultSettings, ...settings};
     this.layers = [
-      new Uint8Array(KwzFile.width * KwzFile.height),
-      new Uint8Array(KwzFile.width * KwzFile.height),
-      new Uint8Array(KwzFile.width * KwzFile.height),
+      new Uint8Array(KwzParser.width * KwzParser.height),
+      new Uint8Array(KwzParser.width * KwzParser.height),
+      new Uint8Array(KwzParser.width * KwzParser.height),
     ];
     this.bitIndex = 0;
     this.bitValue = 0;
-    this.load();
+    this.buildSectionMap();
+    if (!this.settings.quickMeta)
+      this.decodeMeta();
+    else
+      this.decodeMetaQuick();
+    this.getFrameOffsets();
+    this.decodeSoundHeader();
   }
-
-  load() {
+  
+  private buildSectionMap() {
     this.seek(0);
     this.sections = {};
     const fileSize = this.byteLength - 256;
@@ -159,12 +235,6 @@ export class KwzFile extends FlipnoteFileBase {
       offset += sectionLength + 8;
       sectionCount += 1;
     }
-    if (!this.config.quickMeta)
-      this.decodeMeta();
-    else
-      this.decodeMetaQuick();
-    this.getFrameOffsets();
-    this.decodeSoundHeader();
   }
 
   private readBits(num: number) {
@@ -173,7 +243,6 @@ export class KwzFile extends FlipnoteFileBase {
       this.bitValue |= nextBits << (16 - this.bitIndex);
       this.bitIndex -= 16;
     }
-    // const mask = (1 << num) - 1;
     const result = this.bitValue & BITMASKS[num];
     this.bitValue >>= num;
     this.bitIndex += num;
@@ -202,7 +271,7 @@ export class KwzFile extends FlipnoteFileBase {
     this.frameCount = frameCount;
     this.thumbFrameIndex = thumbIndex;
     this.frameSpeed = frameSpeed;
-    this.framerate = FRAMERATES[frameSpeed];
+    this.framerate = KWZ_FRAMERATES[frameSpeed];
     this.meta = {
       lock: (flags & 0x1) !== 0,
       loop: (flags & 0x2) !== 0,
@@ -239,7 +308,7 @@ export class KwzFile extends FlipnoteFileBase {
     this.frameCount = frameCount;
     this.thumbFrameIndex = thumbFrameIndex;
     this.frameSpeed = frameSpeed;
-    this.framerate = FRAMERATES[frameSpeed];
+    this.framerate = KWZ_FRAMERATES[frameSpeed];
   }
 
   private getFrameOffsets() {
@@ -273,7 +342,7 @@ export class KwzFile extends FlipnoteFileBase {
       this.seek(offset);
       const bgmSpeed = this.readUint32();
       this.bgmSpeed = bgmSpeed;
-      this.bgmrate = FRAMERATES[bgmSpeed];
+      this.bgmrate = KWZ_FRAMERATES[bgmSpeed];
       const trackSizes = new Uint32Array(this.buffer, offset + 4, 20);
       this.soundMeta = {
         [FlipnoteAudioTrack.BGM]: {offset: offset += 28,            length: trackSizes[0]},
@@ -285,18 +354,49 @@ export class KwzFile extends FlipnoteFileBase {
     }
   }
 
+  /** 
+   * Get the color palette indices for a given frame. RGBA colors for these values can be indexed from {@link KwzParser.globalPalette}
+   * 
+   * Returns an array where:
+   *  - index 0 is the paper color index
+   *  - index 1 is the layer A color 1 index
+   *  - index 2 is the layer A color 2 index
+   *  - index 3 is the layer B color 1 index
+   *  - index 4 is the layer B color 2 index
+   *  - index 5 is the layer C color 1 index
+   *  - index 6 is the layer C color 2 index
+   * @category Image
+  */
   public getFramePaletteIndices(frameIndex: number) {
     this.seek(this.frameMetaOffsets[frameIndex]);
     const flags = this.readUint32();
     return [
-      flags & 0xF, // paper color
-      (flags >> 8) & 0xF, // layer A color 1
-      (flags >> 12) & 0xF, // layer A color 2
-      (flags >> 16) & 0xF, // layer B color 1
-      (flags >> 20) & 0xF, // layer B color 2
-      (flags >> 24) & 0xF, // layer C color 1
-      (flags >> 28) & 0xF, // layer C color 2
+      flags & 0xF,
+      (flags >> 8) & 0xF,
+      (flags >> 12) & 0xF,
+      (flags >> 16) & 0xF,
+      (flags >> 20) & 0xF,
+      (flags >> 24) & 0xF,
+      (flags >> 28) & 0xF,
     ];
+  }
+
+  /**
+   * Get the RGBA colors for a given frame
+   * 
+   * Returns an array where:
+   *  - index 0 is the paper color
+   *  - index 1 is the layer A color 1
+   *  - index 2 is the layer A color 2
+   *  - index 3 is the layer B color 1
+   *  - index 4 is the layer B color 2
+   *  - index 5 is the layer C color 1
+   *  - index 6 is the layer C color 2
+   * @category Image
+  */
+  public getFramePalette(frameIndex: number) {
+    const indices = this.getFramePaletteIndices(frameIndex);
+    return indices.map(colorIndex => this.globalPalette[colorIndex]);
   }
 
   private getFrameDiffingFlag(frameIndex: number) {
@@ -339,12 +439,20 @@ export class KwzFile extends FlipnoteFileBase {
     ];
   }
 
-  // sort layer indices sorted by depth, from bottom to top
+  /** 
+   * Get the layer draw order for a given frame
+   * @category Image
+   * @returns Array of layer indexes, in the order they should be drawn
+  */
   public getFrameLayerOrder(frameIndex: number) {
     const depths = this.getFrameLayerDepths(frameIndex);
     return [2, 1, 0].sort((a, b) => depths[b] - depths[a]);
   }
 
+  /** 
+   * Decode a frame, returning the raw pixel buffers for each layer
+   * @category Image
+  */
   public decodeFrame(frameIndex: number, diffingFlag = 0x7, isPrevFrame = false) {
     // the prevDecodedFrame check is an optimisation for decoding frames in full sequence
     if (this.prevFrameIndex !== frameIndex - 1 && frameIndex !== 0) {
@@ -361,7 +469,7 @@ export class KwzFile extends FlipnoteFileBase {
 
     for (let layerIndex = 0; layerIndex < 3; layerIndex++) {
       // dsi gallery conversions don't use the third layer, so it can be skipped if this is set
-      if (this.config.dsiGalleryNote && layerIndex === 3)
+      if (this.settings.dsiGalleryNote && layerIndex === 3)
         break;
 
       this.seek(ptr);
@@ -383,17 +491,17 @@ export class KwzFile extends FlipnoteFileBase {
       // tile skip counter
       let skip = 0;
 
-      for (let tileOffsetY = 0; tileOffsetY < KwzFile.height; tileOffsetY += 128) {
-        for (let tileOffsetX = 0; tileOffsetX < KwzFile.width; tileOffsetX += 128) {
+      for (let tileOffsetY = 0; tileOffsetY < KwzParser.height; tileOffsetY += 128) {
+        for (let tileOffsetX = 0; tileOffsetX < KwzParser.width; tileOffsetX += 128) {
           // loop small tiles
           for (let subTileOffsetY = 0; subTileOffsetY < 128; subTileOffsetY += 8) {
             const y = tileOffsetY + subTileOffsetY;
-            if (y >= KwzFile.height)
+            if (y >= KwzParser.height)
               break;
 
             for (let subTileOffsetX = 0; subTileOffsetX < 128; subTileOffsetX += 8) {
               const x = tileOffsetX + subTileOffsetX;
-              if (x >= KwzFile.width)
+              if (x >= KwzParser.width)
                 break;
 
               if (skip > 0) {
@@ -401,7 +509,7 @@ export class KwzFile extends FlipnoteFileBase {
                 continue;
               }
 
-              const pixelOffset = y * KwzFile.width + x;
+              const pixelOffset = y * KwzParser.width + x;
               const pixelBuffer = this.layers[layerIndex];
 
               const type = this.readBits(3);
@@ -554,18 +662,16 @@ export class KwzFile extends FlipnoteFileBase {
     return this.layers;
   }
 
-  public getFramePalette(frameIndex: number) {
-    const indices = this.getFramePaletteIndices(frameIndex);
-    return indices.map(colorIndex => this.globalPalette[colorIndex]);
-  }
-
-  // retuns an uint8 array where each item is a pixel's palette index
+  /** 
+   * Get the pixels for a given frame layer
+   * @category Image
+  */
   public getLayerPixels(frameIndex: number, layerIndex: number) {
     if (this.prevFrameIndex !== frameIndex)
       this.decodeFrame(frameIndex);
     const palette = this.getFramePaletteIndices(frameIndex);
     const layers = this.layers[layerIndex];
-    const image = new Uint8Array(KwzFile.width * KwzFile.height);
+    const image = new Uint8Array(KwzParser.width * KwzParser.height);
     const paletteOffset = layerIndex * 2 + 1;
     for (let pixelIndex = 0; pixelIndex < layers.length; pixelIndex++) {
       let pixel = layers[pixelIndex];
@@ -577,7 +683,10 @@ export class KwzFile extends FlipnoteFileBase {
     return image;
   }
 
-  // retuns an uint8 array where each item is a pixel's palette index
+  /** 
+   * Get the pixels for a given frame
+   * @category Image
+  */
   public getFramePixels(frameIndex: number) {
     if (this.prevFrameIndex !== frameIndex)
       this.decodeFrame(frameIndex);
@@ -589,8 +698,8 @@ export class KwzFile extends FlipnoteFileBase {
     const layerAOffset = layerOrder[2] * 2;
     const layerBOffset = layerOrder[1] * 2;
     const layerCOffset = layerOrder[0] * 2;
-    if (!this.config.dsiGalleryNote) {
-      const image = new Uint8Array(KwzFile.width * KwzFile.height);
+    if (!this.settings.dsiGalleryNote) {
+      const image = new Uint8Array(KwzParser.width * KwzParser.height);
       image.fill(palette[0]); // fill with paper color first
       for (let pixel = 0; pixel < image.length; pixel++) {
         const a = layerA[pixel];
@@ -607,13 +716,13 @@ export class KwzFile extends FlipnoteFileBase {
     } 
     // for dsi gallery notes, bottom layer is ignored and edge is cropped
     else {
-      const image = new Uint8Array(KwzFile.width * KwzFile.height);
+      const image = new Uint8Array(KwzParser.width * KwzParser.height);
       image.fill(palette[0]); // fill with paper color first
       const cropStartY = 32;
       const cropStartX = 24;
-      const cropWidth = KwzFile.width - 64;
-      const cropHeight = KwzFile.height - 48;
-      const srcStride = KwzFile.width;
+      const cropWidth = KwzParser.width - 64;
+      const cropHeight = KwzParser.height - 48;
+      const srcStride = KwzParser.width;
       for (let y = cropStartY; y < cropHeight; y++) {
         let srcPtr = y * srcStride;
         for (let x = cropStartX; x < cropWidth; x++) {
@@ -630,6 +739,10 @@ export class KwzFile extends FlipnoteFileBase {
     }  
   }
   
+  /** 
+   * Get the sound effect flags for every frame in the Flipnote
+   * @category Audio
+  */
   public decodeSoundFlags() {
     const result = [];
     for (let i = 0; i < this.frameCount; i++) {
@@ -638,11 +751,21 @@ export class KwzFile extends FlipnoteFileBase {
     return result;
   }
 
+  /** 
+   * Get the raw compressed audio data for a given track
+   * @returns Byte array
+   * @category Audio
+  */
   public getAudioTrackRaw(trackId: FlipnoteAudioTrack) {
     const trackMeta = this.soundMeta[trackId];
     return new Uint8Array(this.buffer, trackMeta.offset, trackMeta.length);
   }
 
+  /** 
+   * Get the decoded audio data for a given track, using the track's native samplerate
+   * @returns Signed 16-bit PCM audio
+   * @category Audio
+  */
   public decodeAudioTrack(trackId: FlipnoteAudioTrack) {
     const adpcm = this.getAudioTrackRaw(trackId);
     const output = new Int16Array(16364 * 60);
@@ -690,7 +813,12 @@ export class KwzFile extends FlipnoteFileBase {
     return output.slice(0, outputOffset);
   }
 
-  public getAudioTrackPcm(trackId: FlipnoteAudioTrack, dstFreq: number = CTR_SAMPLE_RATE) {
+  /** 
+   * Get the decoded audio data for a given track, using the specified samplerate
+   * @returns Signed 16-bit PCM audio
+   * @category Audio
+  */
+  public getAudioTrackPcm(trackId: FlipnoteAudioTrack, dstFreq: number = KWZ_OUTPUT_SAMPLE_RATE) {
     const srcPcm = this.decodeAudioTrack(trackId);
     let srcFreq = this.rawSampleRate;
     if (trackId === FlipnoteAudioTrack.BGM) {
@@ -703,7 +831,12 @@ export class KwzFile extends FlipnoteFileBase {
     return srcPcm;
   }
 
-  public getAudioMasterPcm(dstFreq: number = CTR_SAMPLE_RATE) {
+  /** 
+   * Get the full mixed audio for the Flipnote, using the specified samplerate
+   * @returns Signed 16-bit PCM audio
+   * @category Audio
+  */
+  public getAudioMasterPcm(dstFreq: number = KWZ_OUTPUT_SAMPLE_RATE) {
     const duration = this.frameCount * (1 / this.framerate);
     const dstSize = Math.floor(duration * dstFreq);
     const master = new Int16Array(dstSize);

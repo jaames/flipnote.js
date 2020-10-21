@@ -7,4 +7,5 @@ export * from './flipnote'; // make sure regular flipnote.js api is available on
 // Had to do a hacky type coercion fix to get this to compile without complaints :/
 customElements.define('flipnote-player', PlayerComponent as unknown as CustomElementConstructor);
 
+/** @internal */
 export const playerComponent = PlayerComponent; // adds window.flipnote.playerComponent

@@ -23,10 +23,11 @@
 */
 
 import { 
+  FlipnoteFormat,
   FlipnotePaletteDefinition,
   FlipnoteAudioTrack,
-  FlipnoteFileBase
-} from './FlipnoteFileBase';
+  FlipnoteParserBase
+} from './FlipnoteParserBase';
 
 import {
   clamp,
@@ -36,35 +37,56 @@ import {
   ADPCM_STEP_TABLE
 } from './audioUtils';
 
-// internal frame speed value -> FPS table
-const FRAMERATES = [0.5, 0.5, 1, 2, 4, 6, 12, 20, 30];
-const PALETTE: FlipnotePaletteDefinition = {
+/** 
+ * PPM framerates in frames per second, indexed by the in-app frame speed.
+ * Frame speed 0 is never noramally used
+ */
+const PPM_FRAMERATES = [0.5, 0.5, 1, 2, 4, 6, 12, 20, 30];
+/** 
+ * PPM color defines (red, green, blue, alpha)
+ */
+const PPM_PALETTE: FlipnotePaletteDefinition = {
   WHITE: [0xff, 0xff, 0xff, 0xff],
   BLACK: [0x0e, 0x0e, 0x0e, 0xff],
   RED:   [0xff, 0x2a, 0x2a, 0xff],
   BLUE:  [0x0a, 0x39, 0xff, 0xff]
 };
-const DS_SAMPLE_RATE = 32768;
+/** @internal */
+const PPM_OUTPUT_SAMPLE_RATE = 32768;
 
+/** 
+ * PPM file metadata, stores information about its playback, author details, etc
+ */
 export interface PpmMeta {
+  /** File lock state. Locked Flipnotes cannot be edited by anyone other than the current author */
   lock: boolean;
+  /** Playback loop state. If `true`, playback will loop once the end is reached */
   loop: boolean;
+  /** Total number of animation frames */
   frame_count: number;
+  /** In-app frame playback speed, range 1 to 8 */
   frame_speed: number;
+  /** In-app frame playback speed when the BGM audio track was recorded */
   bgm_speed: number;
+  /** Index of the animation frame used as the Flipnote's thumbnail image */
   thumb_index: number;
+  /** Date representing when the file was last edited */
   timestamp: Date;
+  /** Spinoffs are remixes of another user's Flipnote */
   spinoff: boolean;
+  /** Metadata about the author of the original Flipnote file */
   root: {
     filename: string;
     username: string;
     fsid: string;
   },
+  /** Metadata about the previous author of the Flipnote file */
   parent: {
     filename: string;
     username: string;
     fsid: string;
   },
+  /** Metadata about the current author of the Flipnote file */
   current: {
     filename: string;
     username: string;
@@ -72,58 +94,87 @@ export interface PpmMeta {
   },
 };
 
-export interface PpmParserConfig {
+/**
+ * PPM parser options for enabling optimisations and other extra features.
+ * None are currently implemented
+ */
+export interface PpmParserSettings {};
 
-};
+/**
+ * Parser class for (DSiWare) Flipnote Studio's PPM animation format.
+ * 
+ * Format docs: https://github.com/Flipnote-Collective/flipnote-studio-docs/wiki/PPM-format
+ * @category File Parser
+ */
+export class PpmParser extends FlipnoteParserBase<PpmMeta> {
 
-export class PpmFile extends FlipnoteFileBase {
-
-  static type: string = 'PPM';
+  /** Default PPM parser settings */
+  static defaultSettings: PpmParserSettings = {};
+  /** File format type */
+  static format: FlipnoteFormat.PPM;
+  /** Animation frame width */
   static width: number = 256;
+  /** Animation frame height */
   static height: number = 192;
+  /** Audio track base sample rate */
   static rawSampleRate: number = 8192;
-  static sampleRate: number = DS_SAMPLE_RATE; 
+  /** Nintendo DSi audui output rate */
+  static sampleRate: number = PPM_OUTPUT_SAMPLE_RATE; 
+  /** Global animation frame color palette */
   static globalPalette = [
-    PALETTE.WHITE,
-    PALETTE.BLACK,
-    PALETTE.RED,
-    PALETTE.BLUE
+    PPM_PALETTE.WHITE,
+    PPM_PALETTE.BLACK,
+    PPM_PALETTE.RED,
+    PPM_PALETTE.BLUE
   ];
 
-  public type: string = PpmFile.type;
-  public width: number = PpmFile.width;
-  public height: number = PpmFile.height;
-  public globalPalette = PpmFile.globalPalette;
-  public rawSampleRate = PpmFile.rawSampleRate;
-  public sampleRate = PpmFile.sampleRate;
+  /** File format type, reflects {@link PpmParser.format} */
+  public format: FlipnoteFormat.PPM;
+  /** Animation frame width, reflects {@link PpmParser.width} */
+  public width: number = PpmParser.width;
+  /** Animation frame height, reflects {@link PpmParser.height} */
+  public height: number = PpmParser.height;
+  /** Audio track base sample rate, reflects {@link PpmParser.rawSampleRate} */
+  public rawSampleRate = PpmParser.rawSampleRate;
+  /** Audio output sample rate, reflects {@link PpmParser.sampleRate} */
+  public sampleRate = PpmParser.sampleRate;
+  /** Global animation frame color palette, reflects {@link PpmParser.globalPalette} */
+  public globalPalette = PpmParser.globalPalette;
+  /** File metadata, see {@link PpmMeta} for structure */
   public meta: PpmMeta;
+  /** File format version; always the same as far as we know */
   public version: number;
 
-  private layers: Uint8Array[];
-  private prevLayers: Uint8Array[];
+  private layers: [Uint8Array, Uint8Array];
+  private prevLayers: [Uint8Array, Uint8Array];
   private prevDecodedFrame: number = null;
   private frameDataLength: number;
   private soundDataLength: number;
   private frameOffsets: Uint32Array;
 
-  constructor(arrayBuffer: ArrayBuffer, params: PpmParserConfig = {}) {
+  /**
+   * Create a new PPM file parser instance
+   * @param arrayBuffer an ArrayBuffer containing file data
+   * @param settings parser settings (none currently implemented)
+   */
+  constructor(arrayBuffer: ArrayBuffer, settings: Partial<PpmParserSettings> = {}) {
     super(arrayBuffer);
     this.decodeHeader();
     this.decodeAnimationHeader();
     this.decodeSoundHeader();
-    // this is always true afaik, it's likely just a remnamt from development
+    // this is always true afaik, it's likely just a remnant from development
     // doesn't hurt to be accurate though...
     if (((this.version >> 4) & 0xf) !== 0) {
       this.decodeMeta();
     }
     // create image buffers
     this.layers = [
-      new Uint8Array(PpmFile.width * PpmFile.height),
-      new Uint8Array(PpmFile.width * PpmFile.height)
+      new Uint8Array(PpmParser.width * PpmParser.height),
+      new Uint8Array(PpmParser.width * PpmParser.height)
     ];
     this.prevLayers = [
-      new Uint8Array(PpmFile.width * PpmFile.height),
-      new Uint8Array(PpmFile.width * PpmFile.height)
+      new Uint8Array(PpmParser.width * PpmParser.height),
+      new Uint8Array(PpmParser.width * PpmParser.height)
     ];
     this.prevDecodedFrame = null;
   }
@@ -231,8 +282,8 @@ export class PpmFile extends FlipnoteFileBase {
     this.frameSpeed = 8 - this.readUint8();
     this.bgmSpeed = 8 - this.readUint8();
     offset += 32;
-    this.framerate = FRAMERATES[this.frameSpeed];
-    this.bgmrate = FRAMERATES[this.bgmSpeed];
+    this.framerate = PPM_FRAMERATES[this.frameSpeed];
+    this.bgmrate = PPM_FRAMERATES[this.bgmSpeed];
     this.soundMeta = {
       [FlipnoteAudioTrack.BGM]: {offset: offset,           length: bgmLen},
       [FlipnoteAudioTrack.SE1]: {offset: offset += bgmLen, length: se1Len},
@@ -241,18 +292,14 @@ export class PpmFile extends FlipnoteFileBase {
     };
   }
 
-  public isNewFrame(frameIndex: number) {
+  private isNewFrame(frameIndex: number) {
     this.seek(this.frameOffsets[frameIndex]);
     const header = this.readUint8();
     return (header >> 7) & 0x1;
   }
 
-  public getFrameLayerOrder(frameIndex?: number) {
-    return [0, 1];
-  }
-
   private readLineEncoding() {
-    const unpacked = new Uint8Array(PpmFile.height);
+    const unpacked = new Uint8Array(PpmParser.height);
     let unpackedPtr = 0;
     for (var byteIndex = 0; byteIndex < 48; byteIndex ++) {
       const byte = this.readUint8();
@@ -263,7 +310,11 @@ export class PpmFile extends FlipnoteFileBase {
     }
     return unpacked;
   }
-
+  
+  /** 
+   * Decode a frame, returning the raw pixel buffers for each layer
+   * @category Image
+  */
   public decodeFrame(frameIndex: number) {
     if ((this.prevDecodedFrame !== frameIndex - 1) && (!this.isNewFrame(frameIndex) && (frameIndex !== 0)))
       this.decodeFrame(frameIndex - 1);
@@ -291,9 +342,9 @@ export class PpmFile extends FlipnoteFileBase {
      // start decoding layer bitmaps
     for (let layer = 0; layer < 2; layer++) {
       const layerBitmap = this.layers[layer];
-      for (let line = 0; line < PpmFile.height; line++) {
+      for (let line = 0; line < PpmParser.height; line++) {
         const lineType = layerEncoding[layer][line];
-        let chunkOffset = line * PpmFile.width;
+        let lineOffset = line * PpmParser.width;
         switch(lineType) {
           // line type 0 = blank line, decode nothing
           case 0:
@@ -304,7 +355,7 @@ export class PpmFile extends FlipnoteFileBase {
             let lineHeader = this.readUint32(false);
             // line type 2 starts as an inverted line
             if (lineType == 2)
-              layerBitmap.fill(1, chunkOffset, chunkOffset + PpmFile.width);
+              layerBitmap.fill(1, lineOffset, lineOffset + PpmParser.width);
             // loop through each bit in the line header
             while (lineHeader & 0xFFFFFFFF) {
               // if the bit is set, this 8-pix wide chunk is stored
@@ -313,22 +364,22 @@ export class PpmFile extends FlipnoteFileBase {
                 const chunk = this.readUint8();
                 // unpack chunk bits
                 for (let pixel = 0; pixel < 8; pixel++) {
-                  layerBitmap[chunkOffset + pixel] = chunk >> pixel & 0x1;
+                  layerBitmap[lineOffset + pixel] = chunk >> pixel & 0x1;
                 }
               }
-              chunkOffset += 8;
+              lineOffset += 8;
               // shift lineheader to the left by 1 bit, now on the next loop cycle the next bit will be checked
               lineHeader <<= 1;
             }
             break;
           // line type 3 = raw bitmap line
           case 3:
-            while(chunkOffset < (line + 1) * PpmFile.width) {
+            while(lineOffset < (line + 1) * PpmParser.width) {
               const chunk = this.readUint8();
               for (let pixel = 0; pixel < 8; pixel++) {
-                layerBitmap[chunkOffset + pixel] = chunk >> pixel & 0x1;
+                layerBitmap[lineOffset + pixel] = chunk >> pixel & 0x1;
               }
-              chunkOffset += 8;
+              lineOffset += 8;
             }
             break;
         }
@@ -342,23 +393,23 @@ export class PpmFile extends FlipnoteFileBase {
     if (!isNewFrame) {
       let dest: number, src: number;
       // loop through each line
-      for (let y = 0; y < PpmFile.height; y++) {
+      for (let y = 0; y < PpmParser.height; y++) {
         // skip to next line if this one falls off the top edge of the screen
         if (y - translateY < 0)
           continue;
         // stop once the bottom screen edge has been reached
-        if (y - translateY >= PpmFile.height)
+        if (y - translateY >= PpmParser.height)
           break;
         // loop through each pixel in the line
-        for (let x = 0; x < PpmFile.width; x++) {
+        for (let x = 0; x < PpmParser.width; x++) {
           // skip to the next pixel if this one falls off the left edge of the screen
           if (x - translateX < 0)
             continue;
           // stop diffing this line once the right screen edge has been reached
-          if (x - translateX >= PpmFile.width)
+          if (x - translateX >= PpmParser.width)
             break;
-          dest = x + y * PpmFile.width;
-          src = dest - (translateX + translateY * PpmFile.width);
+          dest = x + y * PpmParser.width;
+          src = dest - (translateX + translateY * PpmParser.width);
           // diff pixels with a binary XOR
           layer1[dest] ^= layer1Prev[src];
           layer2[dest] ^= layer2Prev[src];
@@ -371,6 +422,24 @@ export class PpmFile extends FlipnoteFileBase {
     return this.layers;
   }
 
+  /** 
+   * Get the layer draw order for a given frame
+   * @category Image
+   * @returns Array of layer indexes, in the order they should be drawn
+  */
+  public getFrameLayerOrder(frameIndex?: number) {
+    return [0, 1];
+  }
+
+  /** 
+   * Get the color palette indices for a given frame. RGBA colors for these values can be indexed from {@link PpmParser.globalPalette}
+   *
+   * Returns an array where:
+   *  - index 0 is the paper color index
+   *  - index 1 is the layer 1 color index
+   *  - index 2 is the layer 2 color index
+   * @category Image
+  */
   public getFramePaletteIndices(frameIndex: number) {
     this.seek(this.frameOffsets[frameIndex]);
     const header = this.readUint8();
@@ -388,19 +457,31 @@ export class PpmFile extends FlipnoteFileBase {
     ];
   }
 
+  /**
+   * Get the RGBA colors for a given frame
+   * 
+   * Returns an array where:
+   *  - index 0 is the paper color
+   *  - index 1 is the layer 1 color
+   *  - index 2 is the layer 2 color
+   * @category Image
+   */
   public getFramePalette(frameIndex: number) {
     const indices = this.getFramePaletteIndices(frameIndex);
     return indices.map(colorIndex => this.globalPalette[colorIndex]);
   }
 
-  // retuns an uint8 array where each item is a pixel's palette index
+  /** 
+   * Get the pixels for a given frame layer
+   * @category Image
+  */
   public getLayerPixels(frameIndex: number, layerIndex: number) {
     if (this.prevDecodedFrame !== frameIndex) {
       this.decodeFrame(frameIndex);
     }
     const palette = this.getFramePaletteIndices(frameIndex);
     const layer = this.layers[layerIndex];
-    const image = new Uint8Array(PpmFile.width * PpmFile.height);
+    const image = new Uint8Array(PpmParser.width * PpmParser.height);
     const layerColor = palette[layerIndex + 1];
     for (let pixel = 0; pixel < image.length; pixel++) {
       if (layer[pixel] === 1)
@@ -409,11 +490,14 @@ export class PpmFile extends FlipnoteFileBase {
     return image;
   }
 
-  // retuns an uint8 array where each item is a pixel's palette index
+  /** 
+   * Get the pixels for a given frame
+   * @category Image
+  */
   public getFramePixels(frameIndex: number) {
     const palette = this.getFramePaletteIndices(frameIndex);
     const layers = this.decodeFrame(frameIndex);
-    const image = new Uint8Array(PpmFile.width * PpmFile.height);
+    const image = new Uint8Array(PpmParser.width * PpmParser.height);
     const layer1 = layers[0];
     const layer2 = layers[1];
     const paperColor = palette[0];
@@ -431,6 +515,10 @@ export class PpmFile extends FlipnoteFileBase {
     return image;
   }
 
+  /** 
+   * Get the sound effect flags for every frame in the Flipnote
+   * @category Audio
+  */
   public decodeSoundFlags() {
     // https://github.com/Flipnote-Collective/flipnote-studio-docs/wiki/PPM-format#sound-effect-flags
     this.seek(0x06A0 + this.frameDataLength);
@@ -448,16 +536,25 @@ export class PpmFile extends FlipnoteFileBase {
     return unpacked;
   }
 
+  /** 
+   * Get the raw compressed audio data for a given track
+   * @returns byte array
+   * @category Audio
+  */
   public getAudioTrackRaw(trackId: FlipnoteAudioTrack) {
     const trackMeta = this.soundMeta[trackId];
     this.seek(trackMeta.offset);
     return this.readBytes(trackMeta.length);
   }
-
-  // returns decoded PCM samples as an Int16Array
-  // note this doesn't resample
-  // TODO: kinda slow, maybe use sample lookup table
+  
+  /** 
+   * Get the decoded audio data for a given track, using the track's native samplerate
+   * @returns Signed 16-bit PCM audio
+   * @category Audio
+  */
   public decodeAudioTrack(trackId: FlipnoteAudioTrack) {
+    // note this doesn't resample
+    // TODO: kinda slow, maybe use sample lookup table
     // decode a 4 bit IMA adpcm audio track
     // https://github.com/Flipnote-Collective/flipnote-studio-docs/wiki/PPM-format#sound-data
     const src = this.getAudioTrackRaw(trackId);
@@ -496,8 +593,12 @@ export class PpmFile extends FlipnoteFileBase {
     return dst;
   }
 
-  // returns decoded PCM samples as an Int16Array, resampled to dstFrq sample rate
-  public getAudioTrackPcm(trackId: FlipnoteAudioTrack, dstFreq: number = DS_SAMPLE_RATE) {
+  /** 
+   * Get the decoded audio data for a given track, using the specified samplerate
+   * @returns Signed 16-bit PCM audio
+   * @category Audio
+  */
+  public getAudioTrackPcm(trackId: FlipnoteAudioTrack, dstFreq: number = PPM_OUTPUT_SAMPLE_RATE) {
     const srcPcm = this.decodeAudioTrack(trackId);
     let srcFreq = this.rawSampleRate;
     if (trackId === FlipnoteAudioTrack.BGM) {
@@ -509,8 +610,12 @@ export class PpmFile extends FlipnoteFileBase {
     return srcPcm;
   }
 
-  // merges BGM and sound effects into a single master audio track (as PCM Int16 array @ dstFreq sample rate)
-  public getAudioMasterPcm(dstFreq: number = DS_SAMPLE_RATE) {
+  /** 
+   * Get the full mixed audio for the Flipnote, using the specified samplerate
+   * @returns Signed 16-bit PCM audio
+   * @category Audio
+  */
+  public getAudioMasterPcm(dstFreq: number = PPM_OUTPUT_SAMPLE_RATE) {
     const duration = this.frameCount * (1 / this.framerate);
     const dstSize = Math.ceil(duration * dstFreq);
     const master = new Int16Array(dstSize);

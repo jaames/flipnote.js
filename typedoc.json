@@ -1,0 +1,9 @@
+{
+  "mode": "file",
+  "out": "docs",
+  "exclude": "src/components",
+  "excludePrivate": true,
+  "excludeProtected": true,
+  "excludeNotExported": true,
+  "stripInternal": true
+}

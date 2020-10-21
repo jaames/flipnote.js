@@ -1,3 +1,4 @@
+/** @internal */
 const _AudioContext = (window.AudioContext || (window as any).webkitAudioContext);
 
 export type PcmAudioBuffer = Int16Array | Float32Array;

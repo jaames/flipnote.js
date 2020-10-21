@@ -1,2 +1,2 @@
-export * from './GifEncoder';
-export * from './WavEncoder';
+export * from './GifImage';
+export * from './WavAudio';

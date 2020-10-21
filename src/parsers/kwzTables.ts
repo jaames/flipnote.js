@@ -1,6 +1,7 @@
 // Every possible sequence of pixels for each tile line
+/** @internal */
 export const KWZ_LINE_TABLE = new Uint8Array(6561 * 8);
-// const pixelValues = [0x0000, 0xFF00, 0x00FF];
+/** @internal */
 var offset = 0;
 for (let a = 0; a < 3; a++)
   for (let b = 0; b < 3; b++)
@@ -24,7 +25,9 @@ for (let a = 0; a < 3; a++)
               }
 
 // Line offsets, but the lines are shifted to the left by one pixel
+/** @internal */
 export const KWZ_LINE_TABLE_SHIFT = new Uint8Array(6561 * 8);
+/** @internal */
 var offset = 0;
 for (let a = 0; a < 2187; a += 729)
   for (let b = 0; b < 729; b += 243)
@@ -41,6 +44,7 @@ for (let a = 0; a < 2187; a += 729)
               }
 
 // Commonly occuring line offsets
+/** @internal */
 export const KWZ_LINE_TABLE_COMMON = new Uint8Array(32 * 8);
 [
   0x0000, 0x0CD0, 0x19A0, 0x02D9, 0x088B, 0x0051, 0x00F3, 0x0009,
@@ -53,6 +57,7 @@ export const KWZ_LINE_TABLE_COMMON = new Uint8Array(32 * 8);
 });
 
 // Commonly occuring line offsets, but the lines are shifted to the left by one pixel
+/** @internal */
 export const KWZ_LINE_TABLE_COMMON_SHIFT = new Uint8Array(32 * 8);
 [
   0x0000, 0x0CD0, 0x19A0, 0x0003, 0x02D9, 0x088B, 0x0051, 0x00F3, 

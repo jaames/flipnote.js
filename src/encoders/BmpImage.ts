@@ -1,15 +1,21 @@
 import { DataStream } from '../utils/dataStream';
 import { Flipnote } from '../parsers/index';
 
-// round number to nearest multiple of n
+/** 
+ * round number to nearest multiple of n
+ * @internal
+ */
 export function roundToNearest(value: number, n: number) {
   return Math.ceil(value / n) * n;
 }
-
-// simple bitmap class for rendering images
-// https://en.wikipedia.org/wiki/BMP_file_format
-
-export class BitmapEncoder {
+ 
+/** 
+ * Bitmap image encoder
+ * https://en.wikipedia.org/wiki/BMP_file_format
+ * @category File Encoder
+ * @internal
+ */
+export class BitmapImage {
 
   public width: number;
   public height: number;
@@ -52,7 +58,7 @@ export class BitmapEncoder {
   }
 
   static fromFlipnoteFrame(flipnote: Flipnote, frameIndex: number) {
-    const bmp = new BitmapEncoder(flipnote.width, flipnote.height, 8);
+    const bmp = new BitmapImage(flipnote.width, flipnote.height, 8);
     bmp.setPixels(flipnote.getFramePixels(frameIndex));
     bmp.setPalette(flipnote.getFramePalette(frameIndex));
     return bmp;

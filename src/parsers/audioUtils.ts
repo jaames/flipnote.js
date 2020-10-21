@@ -1,3 +1,4 @@
+/** @internal */
 export function clamp(n: number, l: number, h: number) {
   if (n < l)
     return l;
@@ -6,7 +7,11 @@ export function clamp(n: number, l: number, h: number) {
   return n;
 }
 
-// zero-order hold interpolation
+
+/** 
+ * zero-order hold interpolation
+ * @internal
+ */
 export function pcmDsAudioResample(src: Int16Array, srcFreq: number, dstFreq: number) {
   const srcDuration = src.length / srcFreq;
   const dstLength = srcDuration * dstFreq;
@@ -18,6 +23,7 @@ export function pcmDsAudioResample(src: Int16Array, srcFreq: number, dstFreq: nu
   return dst;
 }
 
+/** @internal */
 export function pcmAudioMix(src: Int16Array, dst: Int16Array, dstOffset: number = 0) {
   const srcSize = src.length;
   const dstSize = dst.length;
@@ -30,16 +36,21 @@ export function pcmAudioMix(src: Int16Array, dst: Int16Array, dstOffset: number 
   }
 }
 
+/** @internal */
 export const ADPCM_INDEX_TABLE_2BIT = new Int8Array([
   -1, 2, -1, 2
 ]);
 
+/** @internal */
 export const ADPCM_INDEX_TABLE_4BIT = new Int8Array([
   -1, -1, -1, -1, 2, 4, 6, 8,
   -1, -1, -1, -1, 2, 4, 6, 8
 ]);
 
-// note that this is a slight deviation from the normal adpcm table
+/** 
+ * note that this is a slight deviation from the normal adpcm table
+ * @internal 
+ */
 export const ADPCM_STEP_TABLE = new Int16Array([
   7, 8, 9, 10, 11, 12, 13, 14, 16, 17,
   19, 21, 23, 25, 28, 31, 34, 37, 41, 45,
@@ -52,6 +63,7 @@ export const ADPCM_STEP_TABLE = new Int16Array([
   15289, 16818, 18500, 20350, 22385, 24623, 27086, 29794, 32767, 0
 ]);
 
+/** @internal */
 export const ADPCM_SAMPLE_TABLE_2BIT = new Int16Array(90 * 4);
 for (let sample = 0; sample < 4; sample++) {
   for (let stepIndex = 0; stepIndex < 90; stepIndex++) {
@@ -63,6 +75,7 @@ for (let sample = 0; sample < 4; sample++) {
   }
 }
 
+/** @internal */
 export const ADPCM_SAMPLE_TABLE_4BIT = new Int16Array(90 * 16);
 for (let sample = 0; sample < 16; sample++) {
   for (let stepIndex = 0; stepIndex < 90; stepIndex++) {

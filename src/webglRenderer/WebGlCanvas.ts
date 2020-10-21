@@ -11,6 +11,10 @@ import quadShader from './shaders/quad.vert';
 import layerDrawShader from './shaders/drawLayer.frag';
 import postProcessShader from './shaders/postProcess_sharpBilinear.frag';
 
+/** 
+ * Keeps track of WebGl resources so they can be destroyed properly later
+ * @internal
+ */
 interface ResourceMap {
   programs: WebGLProgram[];
   shaders: WebGLShader[];
@@ -20,7 +24,7 @@ interface ResourceMap {
 };
 
 /** webgl canvas wrapper class */
-export class WebGlCanvas {
+export class WebglCanvas {
   public el: HTMLCanvasElement;
   public gl: WebGLRenderingContext;
   public screenWidth: number;
@@ -97,6 +101,7 @@ export class WebGlCanvas {
     return shader;
   }
 
+  // creating a subdivided quad seems to produce slightly nicer texture filtering
   private createScreenQuad(x0: number, y0: number, width: number, height: number, xSubdivs: number, ySubdivs: number) {
     const numVerts = (xSubdivs + 1) * (ySubdivs + 1);
     const numVertsAcross = xSubdivs + 1;

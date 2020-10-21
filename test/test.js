@@ -51,7 +51,7 @@ fetch('samples/pekira_beach.kwz')
     let gif;
     console.time('frame GIF x100')
     for (let i = 0; i < 100; i++) {
-      gif = flipnote.gifEncoder.fromFlipnoteFrame(note, i);
+      gif = flipnote.GifImage.fromFlipnoteFrame(note, i);
       // gif = flipnote.gifEncoder.fromFlipnote(note);
     }
     console.timeEnd('frame GIF x100')

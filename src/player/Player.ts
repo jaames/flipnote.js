@@ -1,17 +1,18 @@
 import {
   parseSource,
   Flipnote,
+  FlipnoteFormat,
   FlipnoteMeta,
 } from '../parsers';
 
 import {
-  WavEncoder,
-  GifEncoder,
-  GifEncoderPartialMeta
+  WavAudio,
+  GifImage,
+  GifEncoderSettings
 } from '../encoders';
 
 import {
-  WebGlCanvas
+  WebglCanvas
 } from '../webglRenderer';
 
 import { 
@@ -26,6 +27,7 @@ interface PlayerLayerVisibility {
   [key: number]: boolean;
 };
 
+/** @internal */
 interface PlayerState {
   noteType: 'PPM' | 'KWZ';
   isNoteOpen: boolean;
@@ -41,6 +43,7 @@ interface PlayerState {
   wasPlaying: boolean;
 };
 
+/** @internal */
 const saveData = (function () {
   var a = document.createElement("a");
   // document.body.appendChild(a);
@@ -57,10 +60,11 @@ const saveData = (function () {
 /** flipnote player API, based on HTMLMediaElement (https://developer.mozilla.org/en-US/docs/Web/API/HTMLMediaElement) */ 
 export class Player {
 
-  public canvas: WebGlCanvas;
+  public canvas: WebglCanvas;
   public audio: WebAudioPlayer;
   public el: HTMLCanvasElement;
-  public type: string;
+  public noteFormat: FlipnoteFormat;
+  public noteFormatString: string;
   public note: Flipnote;
   public meta: FlipnoteMeta;
   public loop: boolean = false;
@@ -102,7 +106,7 @@ export class Player {
   constructor(el: string | HTMLCanvasElement, width: number, height: number) {
     // if `el` is a string, use it to select an Element, else assume it's an element
     el = ('string' == typeof el) ? <HTMLCanvasElement>document.querySelector(el) : el;
-    this.canvas = new WebGlCanvas(el, width, height);
+    this.canvas = new WebglCanvas(el, width, height);
     this.audio = new WebAudioPlayer();
     this.el = this.canvas.el;
     this.customPalette = null;
@@ -174,6 +178,10 @@ export class Player {
     this.emit('state:change');
   }
 
+  /** 
+   * Open a Flipnote from a source
+   * @category Lifecycle
+   */
   public async open(source: any) {
     if (this.isOpen) this.close();
     return parseSource(source)
@@ -185,6 +193,10 @@ export class Player {
       });
   }
 
+  /** 
+   * Close the currently loaded Flipnote
+   * @category Lifecycle
+   */
   public close(): void {
     this.pause();
     this.note = null;
@@ -200,10 +212,15 @@ export class Player {
     // this.canvas.clearFrameBuffer();
   }
 
+  /** 
+   * Load a Flipnote into the player
+   * @category Lifecycle
+   */
   public load(note: Flipnote): void {
     this.note = note;
     this.meta = note.meta;
-    this.type = note.type;
+    this.noteFormat = note.format;
+    this.noteFormatString = note.formatString;
     this.loop = note.meta.loop;
     this.duration = (this.note.frameCount) * (1 / this.note.framerate);
     this.paused = true;
@@ -231,10 +248,23 @@ export class Player {
     this.audio.stop();
   }
 
+  /** 
+   * Toggle audio equalizer filter
+   * @category Audio Control
+   */
   toggleEq() {
     this.stopAudio();
     this.audio.useEq = !this.audio.useEq;
     this.playAudio();
+  }
+
+  /** 
+   * Toggle audio mute
+   * MUTE NOT CURRENTLY IMPLEMENTED
+   * @category Audio Control
+   */
+  toggleMute() {
+    this.muted = !this.muted;
   }
 
   private playbackLoop(timestamp: DOMHighResTimeStamp): void {
@@ -260,6 +290,10 @@ export class Player {
     requestAnimationFrame(this.playbackLoop.bind(this));
   }
 
+  /** 
+   * Begin playback starting at the current position
+   * @category Playback Control 
+   */
   public play(): void {
     (window as any).__activeFlipnotePlayer = this;
     if ((!this.isOpen) || (!this.paused))
@@ -274,6 +308,10 @@ export class Player {
     this.emit('playback:start');
   }
 
+  /** 
+   * Pause playback starting at the current position
+   * @category Playback Control 
+   */
   public pause(): void {
     if ((!this.isOpen) || (this.paused)) return null;
     this.paused = true;
@@ -281,6 +319,10 @@ export class Player {
     this.emit('playback:stop');
   }
 
+  /** 
+   * Resumes playback if paused, otherwise pauses
+   * @category Playback Control 
+   */
   public togglePlay(): void {
     if (this.paused) {
       this.play();
@@ -289,6 +331,10 @@ export class Player {
     }
   }
 
+  /** 
+   * Jump to a given Flipnote frame
+   * @category Frame Control 
+   */
   public setFrame(frameIndex: number): void {
     if ((this.isOpen) && (frameIndex !== this.currentFrame)) {
       // clamp frame index
@@ -303,6 +349,11 @@ export class Player {
     }
   }
 
+  /** 
+   * Jump to the next Flipnote frame
+   * If the Flipnote loops, and is currently on its last frame, it will wrap to the first frame
+   * @category Frame Control 
+   */
   public nextFrame(): void {
     if ((this.loop) && (this.currentFrame >= this.frameCount -1)) {
       this.currentFrame = 0;
@@ -311,6 +362,11 @@ export class Player {
     }
   }
 
+  /** 
+   * Jump to the next Flipnote frame
+   * If the Flipnote loops, and is currently on its first frame, it will wrap to the last frame
+   * @category Frame Control 
+   */
   public prevFrame(): void {
     if ((this.loop) && (this.currentFrame <= 0)) {
       this.currentFrame = this.frameCount - 1;
@@ -319,18 +375,34 @@ export class Player {
     }
   }
 
+  /** 
+   * Jump to the last Flipnote frame
+   * @category Frame Control 
+   */
   public lastFrame(): void {
     this.currentFrame = this.frameCount - 1;
   }
 
+  /** 
+   * Jump to the first Flipnote frame
+   * @category Frame Control 
+   */
   public firstFrame(): void {
     this.currentFrame = 0;
   }
 
+  /** 
+   * Jump to the thumbnail frame
+   * @category Frame Control 
+   */
   public thumbnailFrame(): void {
     this.currentFrame = this.note.thumbFrameIndex;
   }
 
+  /** 
+   * Begins a seek operation
+   * @category Playback Control 
+   */
   public startSeek(): void {
     if (!this.isSeeking) {
       this.wasPlaying = !this.paused;
@@ -339,12 +411,20 @@ export class Player {
     }
   }
 
+  /** 
+   * Seek the playback progress to a different position
+   * @category Playback Control 
+   */
   public seek(progress: number): void {
     if (this.isSeeking) {
       this.progress = progress;
     }
   }
 
+  /** 
+   * Ends a seek operation
+   * @category Playback Control 
+   */
   public endSeek(): void {
     if ((this.isSeeking) && (this.wasPlaying === true)) {
       this.play();
@@ -353,29 +433,53 @@ export class Player {
     this.isSeeking = false;
   }
 
+  /** 
+   * Returns the Flipnote's master audio as a WavEncoder object
+   * @category Quick Export
+   */
   public getMasterWav() {
-    return WavEncoder.fromFlipnote(this.note);;
+    return WavAudio.fromFlipnote(this.note);;
   }
 
+  /** 
+   * Saves the Flipnote's master audio as a WAV file
+   * @category Quick Export
+   */
   public saveMasterWav() {
     const wav = this.getMasterWav();
     saveData(wav.getBlob(), `${ this.meta.current.filename }.wav`);
   }
 
-  public getFrameGif(frameIndex: number, meta: GifEncoderPartialMeta = {}) {
-    return GifEncoder.fromFlipnoteFrame(this.note, frameIndex, meta);
+  /** 
+   * Returns a Flipnote frame as a GifEncoder object
+   * @category Quick Export
+   */
+  public getFrameGif(frameIndex: number, meta: Partial<GifEncoderSettings> = {}) {
+    return GifImage.fromFlipnoteFrame(this.note, frameIndex, meta);
   }
 
-  public saveFrameGif(frameIndex: number, meta: GifEncoderPartialMeta = {}) {
+  /** 
+   * Saves a Flipnote frame as a GIF file
+   * @category Quick Export
+   */
+  public saveFrameGif(frameIndex: number, meta: Partial<GifEncoderSettings> = {}) {
     const gif = this.getFrameGif(frameIndex, meta);
     saveData(gif.getBlob(), `${ this.meta.current.filename }_${ frameIndex.toString().padStart(3, '0') }.gif`);
   }
 
-  public getAnimatedGif(meta: GifEncoderPartialMeta = {}) {
-    return GifEncoder.fromFlipnote(this.note, meta);
+  /** 
+   * Returns the full Flipnote as an animated GifEncoder object
+   * @category Quick Export
+   */
+  public getAnimatedGif(meta: Partial<GifEncoderSettings> = {}) {
+    return GifImage.fromFlipnote(this.note, meta);
   }
 
-  public saveAnimatedGif(meta: GifEncoderPartialMeta = {}) {
+  /** 
+   * Saves the full Flipnote as an animated GIF file
+   * @category Quick Export
+   */
+  public saveAnimatedGif(meta: Partial<GifEncoderSettings> = {}) {
     const gif = this.getAnimatedGif(meta);
     saveData(gif.getBlob(), `${ this.meta.current.filename }.gif`);
   }
@@ -386,13 +490,13 @@ export class Player {
     // this.canvas.setPaperColor(colors[0]);
     this.canvas.setPalette(colors);
     this.canvas.clearFrameBuffer(colors[0]);
-    if (this.note.type === 'PPM') {
+    if (this.note.format === FlipnoteFormat.PPM) {
       if (this.layerVisibility[2]) // bottom
         this.canvas.drawPixels(layerBuffers[1], 1);
       if (this.layerVisibility[1]) // top
         this.canvas.drawPixels(layerBuffers[0], 0);
     } 
-    else if (this.note.type === 'KWZ') {
+    else if (this.note.format === FlipnoteFormat.KWZ) {
       // loop through each layer
       const order = this.note.getFrameLayerOrder(frameIndex)
       const layerIndexC = order[0];
@@ -434,16 +538,28 @@ export class Player {
   //   this.forceUpdate();
   // }
 
+  /** 
+   * Add an event callback
+   * @category Event API
+   */
   public on(eventType: string, callback: Function): void {
     const events = this.events;
     (events[eventType] || (events[eventType] = [])).push(callback);
   }
 
+  /** 
+   * Remove an event callback
+   * @category Event API
+   */
   public off(eventType: string, callback: Function): void {
     const callbackList = this.events[eventType];
     if (callbackList) callbackList.splice(callbackList.indexOf(callback), 1);
   }
 
+  /** 
+   * Emit an event - mostly used internally
+   * @category Event API
+   */
   public emit(eventType: string, ...args: any): void {
     var callbackList = this.events[eventType] || [];
     for (var i = 0; i < callbackList.length; i++) {
@@ -451,10 +567,18 @@ export class Player {
     }
   }
 
+  /** 
+   * Remove all registered event callbacks
+   * @category Event API
+   */
   public clearEvents(): void {
     this.events = {};
   }
 
+  /** 
+   * Destroy a Player instace
+   * @category Lifecycle
+   */
   public destroy(): void {
     this.close();
     this.canvas.destroy();

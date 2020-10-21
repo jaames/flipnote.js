@@ -1,15 +1,31 @@
 import { DataStream } from '../utils/index';
 import { Flipnote, FlipnoteAudioTrack } from '../parsers/index';
 
-export class WavEncoder {
+/** 
+ * WAV audio encoder
+ * 
+ * Creates WAV file containing uncompressed PCM audio data
+ * WAV info: https://en.wikipedia.org/wiki/WAV
+ * @category File Encoder
+ */
+export class WavAudio {
 
+  /** Audio samplerate */
   public sampleRate: number;
+  /** Number of audio channels */
   public channels: number;
+  /** Number of bits per sample */
   public bitsPerSample: number;
 
   private header: DataStream;
   private pcmData: Int16Array;
 
+  /**
+   * Create a WAV audio file
+   * @param sampleRate audio samplerate
+   * @param channels number of audio channels
+   * @param bitsPerSample number of bits per sample
+   */
   constructor(sampleRate: number, channels=1, bitsPerSample=16) {
     this.sampleRate = sampleRate;
     this.channels = channels;
@@ -48,22 +64,36 @@ export class WavEncoder {
     this.pcmData = null;
   }
 
+  /**
+   * Create a WAV audio file from a Flipnote's master audio track
+   * @param flipnote {@link PpmParser} or {@link KwzParser} instance
+   * @param trackId {@link FlipnoteAudioTrack}
+   */
   static fromFlipnote(note: Flipnote) {
     const sampleRate = note.sampleRate;
-    const wav = new WavEncoder(sampleRate, 1, 16);
+    const wav = new WavAudio(sampleRate, 1, 16);
     const pcm = note.getAudioMasterPcm(sampleRate);
     wav.writeFrames(pcm);
     return wav;
   }
 
-  static fromFlipnoteTrack(note: Flipnote, trackId: FlipnoteAudioTrack) {
-    const sampleRate = note.sampleRate;
-    const wav = new WavEncoder(sampleRate, 1, 16);
-    const pcm = note.getAudioTrackPcm(trackId, sampleRate);
+  /**
+   * Create a WAV audio file from a given Flipnote audio track
+   * @param flipnote {@link PpmParser} or {@link KwzParser} instance
+   * @param trackId {@link FlipnoteAudioTrack}
+   */
+  static fromFlipnoteTrack(flipnote: Flipnote, trackId: FlipnoteAudioTrack) {
+    const sampleRate = flipnote.sampleRate;
+    const wav = new WavAudio(sampleRate, 1, 16);
+    const pcm = flipnote.getAudioTrackPcm(trackId, sampleRate);
     wav.writeFrames(pcm);
     return wav;
   }
 
+  /**
+   * Add PCM audio frames to the WAV
+   * @param pcmData signed int16 PCM audio samples
+   */
   public writeFrames(pcmData: Int16Array) {
     let header = this.header;
     // fill in filesize
@@ -74,7 +104,12 @@ export class WavEncoder {
     header.writeUint32(pcmData.byteLength);
     this.pcmData = pcmData;
   }
-
+  
+  /**
+   * Returns the GIF image data as a file blob
+   * 
+   * Blob API: https://developer.mozilla.org/en-US/docs/Web/API/Blob
+   */
   public getBlob() {
     return new Blob([this.header.buffer, this.pcmData.buffer], {type: 'audio/wav'});
   }

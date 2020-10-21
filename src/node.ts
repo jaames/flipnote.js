@@ -2,25 +2,25 @@
 
 import { 
   parseSource, 
-  KwzFile, 
-  PpmFile
+  KwzParser, 
+  PpmParser
 } from './parsers/index'; 
 
 import {
-  GifEncoder,
-  WavEncoder
+  GifImage,
+  WavAudio
 } from './encoders/index';
 
 export default {
   version: VERSION,
   parseSource,
-  KwzFile: KwzFile,
-  PpmFile: PpmFile,
-  GifEncoder: GifEncoder,
-  WavEncoder: WavEncoder,
+  KwzFile: KwzParser,
+  PpmFile: PpmParser,
+  GifEncoder: GifImage,
+  WavEncoder: WavAudio,
   // legacy
-  kwzParser: KwzFile,
-  ppmParser: PpmFile,
-  gifEncoder: GifEncoder,
-  wavEncoder: WavEncoder,
+  kwzParser: KwzParser,
+  ppmParser: PpmParser,
+  gifEncoder: GifImage,
+  wavEncoder: WavAudio,
 };
