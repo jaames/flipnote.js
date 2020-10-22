@@ -434,8 +434,8 @@ export class KwzParser extends FlipnoteParserBase<KwzMeta> {
     return [
       (soundFlags & 0x1) !== 0,
       (soundFlags & 0x2) !== 0,
-      (soundFlags & 0x3) !== 0,
       (soundFlags & 0x4) !== 0,
+      (soundFlags & 0x8) !== 0,
     ];
   }
 
