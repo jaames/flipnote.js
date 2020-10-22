@@ -838,7 +838,7 @@ export class KwzParser extends FlipnoteParserBase<KwzMeta> {
   */
   public getAudioMasterPcm(dstFreq: number = KWZ_OUTPUT_SAMPLE_RATE) {
     const duration = this.frameCount * (1 / this.framerate);
-    const dstSize = Math.floor(duration * dstFreq);
+    const dstSize = Math.ceil(duration * dstFreq);
     const master = new Int16Array(dstSize);
     const hasBgm = this.hasAudioTrack(FlipnoteAudioTrack.BGM);
     const hasSe1 = this.hasAudioTrack(FlipnoteAudioTrack.SE1);

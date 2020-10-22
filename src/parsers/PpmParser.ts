@@ -602,7 +602,7 @@ export class PpmParser extends FlipnoteParserBase<PpmMeta> {
     const srcPcm = this.decodeAudioTrack(trackId);
     let srcFreq = this.rawSampleRate;
     if (trackId === FlipnoteAudioTrack.BGM) {
-      const bgmAdjust = Math.round(this.framerate / this.bgmrate);
+      const bgmAdjust = (1 / this.bgmrate) / (1 / this.framerate);
       srcFreq = this.rawSampleRate * bgmAdjust;
     }
     if (srcFreq !== dstFreq)
