@@ -73,19 +73,20 @@ export class LzwCompressor {
   private ClearCode: number = undefined;
   private EOFCode: number = undefined;
 
-  constructor(width: number, height: number, pixels: Uint8Array, colorDepth: number) {
+  constructor(width: number, height: number, colorDepth: number) {
     this.width = width;
     this.height = height;
-    this.pixels = pixels;
     this.colorDepth = colorDepth;
+    this.reset();
+  }
+
+  reset() {
     this.initCodeSize = Math.max(2, this.colorDepth);
-    this.accum = new Uint8Array(256);
-    this.htab = new Int32Array(HSIZE);
-    this.codetab = new Int32Array(HSIZE);
+    this.accum.fill(0);
+    this.htab.fill(0);
+    this.codetab.fill(0);
     this.cur_accum = 0;
     this.cur_bits = 0;
-    this.a_count;
-    this.remaining;
     this.curPixel = 0;
     this.free_ent = 0; // first unused entry
     this.maxcode;
@@ -162,11 +163,16 @@ export class LzwCompressor {
       if (this.htab[i] === fcode) {
         ent = this.codetab[i];
         continue;
-      } else if (this.htab[i] >= 0) { // non-empty slot
+      } 
+      else if (this.htab[i] >= 0) { // non-empty slot
         disp = hsize_reg - i; // secondary hash (after G. Knott)
-        if (i === 0) disp = 1;
+        if (i === 0) {
+          disp = 1;
+        }
         do {
-          if ((i -= disp) < 0) i += hsize_reg;
+          if ((i -= disp) < 0) {
+            i += hsize_reg;
+          }
           if (this.htab[i] === fcode) {
             ent = this.codetab[i];
             continue outer_loop;
@@ -188,7 +194,8 @@ export class LzwCompressor {
     this.output(this.EOFCode, outs);
   }
 
-  encode(outs: ByteArray) {
+  encode(pixels: Uint8Array, outs: ByteArray) {
+    this.pixels = pixels;
     outs.writeByte(this.initCodeSize); // write 'initial code size' byte
     this.remaining = this.width * this.height; // reset navigation variables
     this.curPixel = 0;

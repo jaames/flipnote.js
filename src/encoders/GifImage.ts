@@ -56,8 +56,11 @@ export class GifImage {
   public palette: GifPaletteColor[];
   /** GIF image settings, such as whether it should loop, the delay between frames, etc */
   public settings: GifEncoderSettings;
+  /** Number of current GIF frames */
+  public numFrames: number = 0;
 
   private data: ByteArray;
+  private compressor: LzwCompressor;
 
   /**
    * Create a new GIF image object
@@ -70,6 +73,7 @@ export class GifImage {
     this.height = height;
     this.data = new ByteArray();
     this.settings = { ...GifImage.defaultSettings, ...settings };
+    this.compressor = new LzwCompressor(width, height, settings.colorDepth);
   }
 
   /**
@@ -86,7 +90,6 @@ export class GifImage {
       ...settings
     });
     gif.palette = flipnote.globalPalette;
-    gif.init();
     for (let frameIndex = 0; frameIndex < flipnote.frameCount; frameIndex++) {
       gif.writeFrame(flipnote.getFramePixels(frameIndex));
     }
@@ -107,20 +110,38 @@ export class GifImage {
       ...settings,
     });
     gif.palette = flipnote.globalPalette;
-    gif.init();
     gif.writeFrame(flipnote.getFramePixels(frameIndex));
     return gif;
   }
 
-  private init() {
+  /**
+   * Add a frame to the GIF image
+   * @param pixels Raw pixels to encode, must be an uncompressed 8bit array of palette indices with a size matching image width * image height
+   */
+  public writeFrame(pixels: Uint8Array) {
+    if (this.numFrames === 0)
+      this.writeFirstFrame(pixels);
+    else
+      this.writeAdditionalFrame(pixels);
+    this.numFrames += 1;
+  }
+
+  private writeFirstFrame(pixels: Uint8Array) {
     const paletteSize = this.palette.length;
     // calc colorDepth
     for (var p = 1; 1 << p < paletteSize; p += 1)
       continue;
-    this.settings.colorDepth = p;
+    this.settings.colorDepth = p
     this.writeHeader();
     this.writeColorTable();
     this.writeNetscapeExt();
+    this.writeFrameHeader();
+    this.writePixels(pixels);
+  }
+
+  private writeAdditionalFrame(pixels: Uint8Array) {
+    this.writeFrameHeader();
+    this.writePixels(pixels);
   }
 
   private writeHeader() {
@@ -192,17 +213,9 @@ export class GifImage {
   }
 
   private writePixels(pixels: Uint8Array) {
-    const lzw = new LzwCompressor(this.width, this.height, pixels, this.settings.colorDepth);
-    lzw.encode(this.data);
-  }
-
-  /**
-   * Add a frame to the GIF image
-   * @param pixels Raw pixels to encode, must be an uncompressed 8bit array of palette indices with a size matching image width * image height
-   */
-  public writeFrame(pixels: Uint8Array) {
-    this.writeFrameHeader();
-    this.writePixels(pixels);
+    this.compressor.colorDepth = this.settings.colorDepth;
+    this.compressor.reset();
+    this.compressor.encode(pixels, this.data);
   }
 
   /**

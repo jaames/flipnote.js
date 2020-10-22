@@ -438,7 +438,7 @@ export class Player {
    * @category Quick Export
    */
   public getMasterWav() {
-    return WavAudio.fromFlipnote(this.note);;
+    return WavAudio.fromFlipnote(this.note);
   }
 
   /** 
@@ -497,7 +497,6 @@ export class Player {
         this.canvas.drawPixels(layerBuffers[0], 0);
     } 
     else if (this.note.format === FlipnoteFormat.KWZ) {
-      // loop through each layer
       const order = this.note.getFrameLayerOrder(frameIndex)
       const layerIndexC = order[0];
       const layerIndexB = order[1];

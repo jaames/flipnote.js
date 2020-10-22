@@ -37,19 +37,13 @@ export class ByteArray {
   }
   
   public writeByte(val: number) {
-    if (this.cursor >= ByteArray.pageSize)
+    if (this.cursor >= this.pageSize)
       this.newPage();
     this.currPage[this.cursor++] = val;
   }
 
   public writeBytes(bytes: Uint8Array | number[], offset?: number, length?: number) {
-    // if (this.cursor + array.length < this.pageSize) {
-    //   this.currPage.set(array, this.cursor);
-    //   this.cursor += array.length;
-    // }
-    // else {
-      for (let l = length || bytes.length, i = offset || 0; i < l; i++)
-        this.writeByte(bytes[i]);
-    // }
+    for (let l = length || bytes.length, i = offset || 0; i < l; i++)
+      this.writeByte(bytes[i]);
   }
 }
