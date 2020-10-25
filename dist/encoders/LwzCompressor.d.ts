@@ -21,12 +21,13 @@ export declare class LzwCompressor {
     private g_init_bits;
     private ClearCode;
     private EOFCode;
-    constructor(width: number, height: number, pixels: Uint8Array, colorDepth: number);
+    constructor(width: number, height: number, colorDepth: number);
+    reset(): void;
     char_out(c: number, outs: ByteArray): void;
     cl_block(outs: ByteArray): void;
     cl_hash(hsize: number): void;
     compress(init_bits: number, outs: ByteArray): void;
-    encode(outs: ByteArray): void;
+    encode(pixels: Uint8Array, outs: ByteArray): void;
     flush_char(outs: ByteArray): void;
     get_maxcode(n_bits: number): number;
     nextPixel(): number;

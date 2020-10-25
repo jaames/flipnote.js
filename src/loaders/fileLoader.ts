@@ -1,10 +1,12 @@
-export default {
+import { LoaderDefinition } from './loaderDefinition';
 
-  matches: function(source: any): boolean {
+const fileLoader: LoaderDefinition<File> = {
+
+  matches: function(source: any) {
     return (typeof File !== 'undefined' && source instanceof File);
   },
 
-  load: function(source: File, resolve: Function, reject: Function): void {
+  load: function(source: File, resolve: Function, reject: Function) {
     if (typeof FileReader !== 'undefined') {
       const reader = new FileReader();
       reader.onload = (event) => {
@@ -19,4 +21,6 @@ export default {
     }
   }
 
-}
+};
+
+export default fileLoader;

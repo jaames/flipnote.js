@@ -1,5 +1,5 @@
 /*!!
- flipnote.js v5.0.0 (webcomponent version)
+ flipnote.js v5.0.0 (webcomponent build)
  Javascript parsing and in-browser playback for the .PPM and .KWZ animation formats used by Flipnote Studio and Flipnote Studio 3D.
  Flipnote Studio is (c) Nintendo Co., Ltd. This project isn't endorsed by them in any way.
  2018 - 2021 James Daniel
@@ -586,32 +586,6 @@
         }
     };
 
-    var arrayBufferLoader = {
-        matches: function (source) {
-            return (source instanceof ArrayBuffer);
-        },
-        load: function (source, resolve, reject) {
-            resolve(source);
-        }
-    };
-
-    /** @internal */
-    var loaders = [
-        urlLoader,
-        fileLoader,
-        arrayBufferLoader
-    ];
-    /** @internal */
-    function loadSource(source) {
-        return new Promise(function (resolve, reject) {
-            loaders.forEach(function (loader) {
-                if (loader.matches(source)) {
-                    loader.load(source, resolve, reject);
-                }
-            });
-        });
-    }
-
     /** @internal */
     var ByteArray = /** @class */ (function () {
         function ByteArray() {
@@ -642,21 +616,15 @@
             return data.buffer;
         };
         ByteArray.prototype.writeByte = function (val) {
-            if (this.cursor >= ByteArray.pageSize)
+            if (this.cursor >= this.pageSize)
                 this.newPage();
             this.currPage[this.cursor++] = val;
         };
         ByteArray.prototype.writeBytes = function (bytes, offset, length) {
-            // if (this.cursor + array.length < this.pageSize) {
-            //   this.currPage.set(array, this.cursor);
-            //   this.cursor += array.length;
-            // }
-            // else {
             for (var l = length || bytes.length, i = offset || 0; i < l; i++)
                 this.writeByte(bytes[i]);
-            // }
         };
-        ByteArray.pageSize = 4096;
+        ByteArray.pageSize = 4096 * 4;
         return ByteArray;
     }());
 
@@ -808,6 +776,59 @@
         };
         return DataStream;
     }());
+
+    /**
+     * Utils to find out information about the current code execution environment
+     */
+    /**
+     * Is the code running in a browser environment?
+     * @internal
+     */
+    var isBrowser = typeof window !== 'undefined'
+        && typeof window.document !== 'undefined';
+    /**
+     * Is the code running in a Node environment?
+     * @internal
+     */
+    var isNode = typeof process !== 'undefined'
+        && process.versions != null
+        && process.versions.node != null;
+
+    var nodeBufferLoader = {
+        matches: function (source) {
+            return isNode && (source instanceof Buffer);
+        },
+        load: function (source, resolve, reject) {
+            resolve(source.buffer);
+        }
+    };
+
+    var arrayBufferLoader = {
+        matches: function (source) {
+            return (source instanceof ArrayBuffer);
+        },
+        load: function (source, resolve, reject) {
+            resolve(source);
+        }
+    };
+
+    /** @internal */
+    var loaders = [
+        urlLoader,
+        fileLoader,
+        nodeBufferLoader,
+        arrayBufferLoader
+    ];
+    /** @internal */
+    function loadSource(source) {
+        return new Promise(function (resolve, reject) {
+            loaders.forEach(function (loader) {
+                if (loader.matches(source)) {
+                    loader.load(source, resolve, reject);
+                }
+            });
+        });
+    }
 
     var _a;
     /** Identifies which animation format a Flipnote uses */
@@ -1012,6 +1033,8 @@
          */
         function PpmParser(arrayBuffer, settings) {
             var _this = _super.call(this, arrayBuffer) || this;
+            /** File format type, reflects {@link PpmParser.format} */
+            _this.format = FlipnoteFormat.PPM;
             /** Animation frame width, reflects {@link PpmParser.width} */
             _this.width = PpmParser.width;
             /** Animation frame height, reflects {@link PpmParser.height} */
@@ -1440,7 +1463,7 @@
             var srcPcm = this.decodeAudioTrack(trackId);
             var srcFreq = this.rawSampleRate;
             if (trackId === exports.FlipnoteAudioTrack.BGM) {
-                var bgmAdjust = Math.round(this.framerate / this.bgmrate);
+                var bgmAdjust = (1 / this.bgmrate) / (1 / this.framerate);
                 srcFreq = this.rawSampleRate * bgmAdjust;
             }
             if (srcFreq !== dstFreq)
@@ -1490,6 +1513,8 @@
         };
         /** Default PPM parser settings */
         PpmParser.defaultSettings = {};
+        /** File format type */
+        PpmParser.format = FlipnoteFormat.PPM;
         /** Animation frame width */
         PpmParser.width = 256;
         /** Animation frame height */
@@ -1618,6 +1643,8 @@
         function KwzParser(arrayBuffer, settings) {
             if (settings === void 0) { settings = {}; }
             var _this = _super.call(this, arrayBuffer) || this;
+            /** File format type, reflects {@link KwzParser.format} */
+            _this.format = FlipnoteFormat.KWZ;
             /** Animation frame width, reflects {@link KwzParser.width} */
             _this.width = KwzParser.width;
             /** Animation frame height, reflects {@link KwzParser.height} */
@@ -1839,8 +1866,8 @@
             return [
                 (soundFlags & 0x1) !== 0,
                 (soundFlags & 0x2) !== 0,
-                (soundFlags & 0x3) !== 0,
                 (soundFlags & 0x4) !== 0,
+                (soundFlags & 0x8) !== 0,
             ];
         };
         /**
@@ -2220,7 +2247,7 @@
         KwzParser.prototype.getAudioMasterPcm = function (dstFreq) {
             if (dstFreq === void 0) { dstFreq = KWZ_OUTPUT_SAMPLE_RATE; }
             var duration = this.frameCount * (1 / this.framerate);
-            var dstSize = Math.floor(duration * dstFreq);
+            var dstSize = Math.ceil(duration * dstFreq);
             var master = new Int16Array(dstSize);
             var hasBgm = this.hasAudioTrack(exports.FlipnoteAudioTrack.BGM);
             var hasSe1 = this.hasAudioTrack(exports.FlipnoteAudioTrack.SE1);
@@ -2259,6 +2286,8 @@
             quickMeta: false,
             dsiGalleryNote: false,
         };
+        /** File format type */
+        KwzParser.format = FlipnoteFormat.KWZ;
         /** Animation frame width */
         KwzParser.width = 320;
         /** Animation frame height */
@@ -2335,7 +2364,7 @@
     ];
     /** @internal */
     var LzwCompressor = /** @class */ (function () {
-        function LzwCompressor(width, height, pixels, colorDepth) {
+        function LzwCompressor(width, height, colorDepth) {
             this.accum = new Uint8Array(256);
             this.htab = new Int32Array(HSIZE);
             this.codetab = new Int32Array(HSIZE);
@@ -2362,16 +2391,16 @@
             this.EOFCode = undefined;
             this.width = width;
             this.height = height;
-            this.pixels = pixels;
             this.colorDepth = colorDepth;
+            this.reset();
+        }
+        LzwCompressor.prototype.reset = function () {
             this.initCodeSize = Math.max(2, this.colorDepth);
-            this.accum = new Uint8Array(256);
-            this.htab = new Int32Array(HSIZE);
-            this.codetab = new Int32Array(HSIZE);
+            this.accum.fill(0);
+            this.htab.fill(0);
+            this.codetab.fill(0);
             this.cur_accum = 0;
             this.cur_bits = 0;
-            this.a_count;
-            this.remaining;
             this.curPixel = 0;
             this.free_ent = 0; // first unused entry
             this.maxcode;
@@ -2392,7 +2421,7 @@
             this.g_init_bits = undefined;
             this.ClearCode = undefined;
             this.EOFCode = undefined;
-        }
+        };
         // Add a character to the end of the current packet, and if it is 254
         // characters, flush the packet to disk.
         LzwCompressor.prototype.char_out = function (c, outs) {
@@ -2442,11 +2471,13 @@
                 }
                 else if (this.htab[i] >= 0) { // non-empty slot
                     disp = hsize_reg - i; // secondary hash (after G. Knott)
-                    if (i === 0)
+                    if (i === 0) {
                         disp = 1;
+                    }
                     do {
-                        if ((i -= disp) < 0)
+                        if ((i -= disp) < 0) {
                             i += hsize_reg;
+                        }
                         if (this.htab[i] === fcode) {
                             ent = this.codetab[i];
                             continue outer_loop;
@@ -2467,7 +2498,8 @@
             this.output(ent, outs);
             this.output(this.EOFCode, outs);
         };
-        LzwCompressor.prototype.encode = function (outs) {
+        LzwCompressor.prototype.encode = function (pixels, outs) {
+            this.pixels = pixels;
             outs.writeByte(this.initCodeSize); // write 'initial code size' byte
             this.remaining = this.width * this.height; // reset navigation variables
             this.curPixel = 0;
@@ -2548,10 +2580,13 @@
          */
         function GifImage(width, height, settings) {
             if (settings === void 0) { settings = {}; }
+            /** Number of current GIF frames */
+            this.numFrames = 0;
             this.width = width;
             this.height = height;
             this.data = new ByteArray();
             this.settings = __assign(__assign({}, GifImage.defaultSettings), settings);
+            this.compressor = new LzwCompressor(width, height, settings.colorDepth);
         }
         /**
          * Create an animated GIF image from a Flipnote
@@ -2564,7 +2599,6 @@
             if (settings === void 0) { settings = {}; }
             var gif = new GifImage(flipnote.width, flipnote.height, __assign({ delay: 100 / flipnote.framerate, repeat: flipnote.meta.loop ? -1 : 0 }, settings));
             gif.palette = flipnote.globalPalette;
-            gif.init();
             for (var frameIndex = 0; frameIndex < flipnote.frameCount; frameIndex++) {
                 gif.writeFrame(flipnote.getFramePixels(frameIndex));
             }
@@ -2582,11 +2616,21 @@
                 // TODO: look at ideal delay and repeat settings for single frame GIF
                 delay: 100 / flipnote.framerate, repeat: -1 }, settings));
             gif.palette = flipnote.globalPalette;
-            gif.init();
             gif.writeFrame(flipnote.getFramePixels(frameIndex));
             return gif;
         };
-        GifImage.prototype.init = function () {
+        /**
+         * Add a frame to the GIF image
+         * @param pixels Raw pixels to encode, must be an uncompressed 8bit array of palette indices with a size matching image width * image height
+         */
+        GifImage.prototype.writeFrame = function (pixels) {
+            if (this.numFrames === 0)
+                this.writeFirstFrame(pixels);
+            else
+                this.writeAdditionalFrame(pixels);
+            this.numFrames += 1;
+        };
+        GifImage.prototype.writeFirstFrame = function (pixels) {
             var paletteSize = this.palette.length;
             // calc colorDepth
             for (var p = 1; 1 << p < paletteSize; p += 1)
@@ -2595,6 +2639,12 @@
             this.writeHeader();
             this.writeColorTable();
             this.writeNetscapeExt();
+            this.writeFrameHeader();
+            this.writePixels(pixels);
+        };
+        GifImage.prototype.writeAdditionalFrame = function (pixels) {
+            this.writeFrameHeader();
+            this.writePixels(pixels);
         };
         GifImage.prototype.writeHeader = function () {
             var header = new DataStream(new ArrayBuffer(13));
@@ -2660,22 +2710,28 @@
             this.data.writeBytes(new Uint8Array(fHeader.buffer));
         };
         GifImage.prototype.writePixels = function (pixels) {
-            var lzw = new LzwCompressor(this.width, this.height, pixels, this.settings.colorDepth);
-            lzw.encode(this.data);
-        };
-        /**
-         * Add a frame to the GIF image
-         * @param pixels Raw pixels to encode, must be an uncompressed 8bit array of palette indices with a size matching image width * image height
-         */
-        GifImage.prototype.writeFrame = function (pixels) {
-            this.writeFrameHeader();
-            this.writePixels(pixels);
+            this.compressor.colorDepth = this.settings.colorDepth;
+            this.compressor.reset();
+            this.compressor.encode(pixels, this.data);
         };
         /**
          * Returns the GIF image data as an ArrayBuffer
          */
-        GifImage.prototype.getBuffer = function () {
+        GifImage.prototype.getArrayBuffer = function () {
             return this.data.getBuffer();
+        };
+        /**
+         * Returns the GIF image data as a NodeJS Buffer
+         *
+         * Note: This method does not work outside of node.js environments
+         *
+         * Buffer API: https://nodejs.org/api/buffer.html
+         */
+        GifImage.prototype.getBuffer = function () {
+            if (isNode) {
+                return Buffer.from(this.getArrayBuffer());
+            }
+            throw new Error('The Buffer object only available in Node.js environments');
         };
         /**
          * Returns the GIF image data as a file blob
@@ -2683,25 +2739,38 @@
          * Blob API: https://developer.mozilla.org/en-US/docs/Web/API/Blob
          */
         GifImage.prototype.getBlob = function () {
-            return new Blob([this.getBuffer()], { type: 'image/gif' });
+            if (isBrowser) {
+                return new Blob([this.getArrayBuffer()], { type: 'image/gif' });
+            }
+            throw new Error('The Blob object is only available in browser environments');
         };
         /**
          * Returns the GIF image data as an object URL
          *
+         * Note: This method does not work outside of browser environments
+         *
          * Object URL API: https://developer.mozilla.org/en-US/docs/Web/API/URL/createObjectURL
          */
         GifImage.prototype.getUrl = function () {
-            return window.URL.createObjectURL(this.getBlob());
+            if (isBrowser) {
+                return window.URL.createObjectURL(this.getBlob());
+            }
+            throw new Error('Data URLs is only available in browser environments');
         };
         /**
          * Returns the GIF image data as an Image object
          *
+         * Note: This method does not work outside of browser environments
+         *
          * Image API: https://developer.mozilla.org/en-US/docs/Web/API/HTMLImageElement/Image
          */
         GifImage.prototype.getImage = function () {
-            var img = new Image(this.width, this.height);
-            img.src = this.getUrl();
-            return img;
+            if (isBrowser) {
+                var img = new Image(this.width, this.height);
+                img.src = this.getUrl();
+                return img;
+            }
+            throw new Error('Image objects are only available in browser environments');
         };
         /**
          * Default GIF encoder settings
@@ -2807,12 +2876,42 @@
             this.pcmData = pcmData;
         };
         /**
+         * Returns the WAV audio data as an ArrayBuffer
+         */
+        WavAudio.prototype.getArrayBuffer = function () {
+            var headerBytes = this.header.bytes;
+            var pcmBytes = new Uint8Array(this.pcmData.buffer);
+            var resultBytes = new Uint8Array(this.header.byteLength + this.pcmData.byteLength);
+            resultBytes.set(headerBytes);
+            resultBytes.set(pcmBytes, headerBytes.byteLength);
+            return resultBytes.buffer;
+        };
+        /**
+         * Returns the WAV audio data as a NodeJS Buffer
+         *
+         * Note: This method does not work outside of node.js environments
+         *
+         * Buffer API: https://nodejs.org/api/buffer.html
+         */
+        WavAudio.prototype.getBuffer = function () {
+            if (isNode) {
+                return Buffer.from(this.getArrayBuffer());
+            }
+            throw new Error('The Buffer object is only available in Node.js environments');
+        };
+        /**
          * Returns the GIF image data as a file blob
+         *
+         * Note: This method will not work outside of browser environments
          *
          * Blob API: https://developer.mozilla.org/en-US/docs/Web/API/Blob
          */
         WavAudio.prototype.getBlob = function () {
-            return new Blob([this.header.buffer, this.pcmData.buffer], { type: 'audio/wav' });
+            if (isBrowser) {
+                var buffer = this.getArrayBuffer();
+                return new Blob([buffer], { type: 'audio/wav' });
+            }
+            throw new Error('The Blob object is only available in browser environments');
         };
         return WavAudio;
     }());
@@ -4421,6 +4520,9 @@
                 buffers: [],
                 framebuffers: []
             };
+            if (!isBrowser) {
+                throw new Error('The WebGL renderer is only available in browser environments');
+            }
             var gl = el.getContext('webgl', {
                 antialias: false,
                 alpha: true
@@ -4673,7 +4775,11 @@
     }());
 
     /** @internal */
-    var _AudioContext = (window.AudioContext || window.webkitAudioContext);
+    var _AudioContext = (function () {
+        if (isBrowser)
+            return (window.AudioContext || window.webkitAudioContext);
+        return null;
+    })();
     var WebAudioPlayer = /** @class */ (function () {
         function WebAudioPlayer() {
             this.useEq = false;
@@ -4690,6 +4796,9 @@
                 [16000, 5.1]
             ];
             this._volume = 1;
+            if (!isBrowser) {
+                throw new Error('The WebAudio player is only available in browser environments');
+            }
             this.ctx = new _AudioContext();
         }
         Object.defineProperty(WebAudioPlayer.prototype, "volume", {
@@ -4772,6 +4881,9 @@
 
     /** @internal */
     var saveData = (function () {
+        if (!isBrowser) {
+            return function () { };
+        }
         var a = document.createElement("a");
         // document.body.appendChild(a);
         // a.style.display = "none";
@@ -4782,7 +4894,7 @@
             a.click();
             window.URL.revokeObjectURL(url);
         };
-    }());
+    })();
     /** flipnote player API, based on HTMLMediaElement (https://developer.mozilla.org/en-US/docs/Web/API/HTMLMediaElement) */
     var Player = /** @class */ (function () {
         function Player(el, width, height) {
@@ -5197,7 +5309,6 @@
                     this.canvas.drawPixels(layerBuffers[0], 0);
             }
             else if (this.note.format === FlipnoteFormat.KWZ) {
-                // loop through each layer
                 var order = this.note.getFrameLayerOrder(frameIndex);
                 var layerIndexC = order[0];
                 var layerIndexB = order[1];

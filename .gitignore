@@ -5,6 +5,9 @@ dist/demo
 demo/samples
 test/samples
 
+# Docpage stuff
+www
+
 yarn.lock
 package-lock.json
 

@@ -87,7 +87,7 @@ export declare class KwzParser extends FlipnoteParserBase<KwzMeta> {
     /** Default KWZ parser settings */
     static defaultSettings: KwzParserSettings;
     /** File format type */
-    static format: FlipnoteFormat.KWZ;
+    static format: FlipnoteFormat;
     /** Animation frame width */
     static width: number;
     /** Animation frame height */
@@ -99,7 +99,7 @@ export declare class KwzParser extends FlipnoteParserBase<KwzMeta> {
     /** Global animation frame color palette */
     static globalPalette: import("./FlipnoteParserBase").FlipnotePaletteColor[];
     /** File format type, reflects {@link KwzParser.format} */
-    format: FlipnoteFormat.KWZ;
+    format: FlipnoteFormat;
     /** Animation frame width, reflects {@link KwzParser.width} */
     width: number;
     /** Animation frame height, reflects {@link KwzParser.height} */

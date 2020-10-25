@@ -1,10 +1,13 @@
-export default {
+import { isBrowser } from '../utils';
+import { LoaderDefinition } from './loaderDefinition';
 
-  matches: function(source: any): boolean {
-    return typeof source === 'string';
+const webUrlLoader: LoaderDefinition<string> = {
+
+  matches: function(source: any) {
+    return isBrowser && typeof source === 'string';
   },
 
-  load: function(source: string, resolve: Function, reject: Function): void {
+  load: function(source: string, resolve: Function, reject: Function) {
     const xhr = new XMLHttpRequest();
     xhr.open('GET', source, true);
     xhr.responseType = 'arraybuffer'; 
@@ -24,4 +27,6 @@ export default {
     xhr.send(null);
   }
 
-}
+};
+
+export default webUrlLoader;

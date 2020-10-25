@@ -1,3 +1,4 @@
+/// <reference types="node" />
 import { Flipnote } from '../parsers/index';
 /**
  * GIF RGBA palette color definition
@@ -43,7 +44,10 @@ export declare class GifImage {
     palette: GifPaletteColor[];
     /** GIF image settings, such as whether it should loop, the delay between frames, etc */
     settings: GifEncoderSettings;
+    /** Number of current GIF frames */
+    numFrames: number;
     private data;
+    private compressor;
     /**
      * Create a new GIF image object
      * @param width image width
@@ -66,21 +70,30 @@ export declare class GifImage {
      * @param settings image settings, such as whether it should loop, the delay between frames, etc
      */
     static fromFlipnoteFrame(flipnote: Flipnote, frameIndex: number, settings?: Partial<GifEncoderSettings>): GifImage;
-    private init;
+    /**
+     * Add a frame to the GIF image
+     * @param pixels Raw pixels to encode, must be an uncompressed 8bit array of palette indices with a size matching image width * image height
+     */
+    writeFrame(pixels: Uint8Array): void;
+    private writeFirstFrame;
+    private writeAdditionalFrame;
     private writeHeader;
     private writeColorTable;
     private writeNetscapeExt;
     private writeFrameHeader;
     private writePixels;
     /**
-     * Add a frame to the GIF image
-     * @param pixels Raw pixels to encode, must be an uncompressed 8bit array of palette indices with a size matching image width * image height
-     */
-    writeFrame(pixels: Uint8Array): void;
-    /**
      * Returns the GIF image data as an ArrayBuffer
      */
-    getBuffer(): ArrayBufferLike;
+    getArrayBuffer(): ArrayBuffer;
+    /**
+     * Returns the GIF image data as a NodeJS Buffer
+     *
+     * Note: This method does not work outside of node.js environments
+     *
+     * Buffer API: https://nodejs.org/api/buffer.html
+     */
+    getBuffer(): Buffer;
     /**
      * Returns the GIF image data as a file blob
      *
@@ -90,11 +103,15 @@ export declare class GifImage {
     /**
      * Returns the GIF image data as an object URL
      *
+     * Note: This method does not work outside of browser environments
+     *
      * Object URL API: https://developer.mozilla.org/en-US/docs/Web/API/URL/createObjectURL
      */
     getUrl(): string;
     /**
      * Returns the GIF image data as an Image object
+     *
+     * Note: This method does not work outside of browser environments
      *
      * Image API: https://developer.mozilla.org/en-US/docs/Web/API/HTMLImageElement/Image
      */

@@ -1,3 +1,4 @@
+/// <reference types="node" />
 import { Flipnote, FlipnoteAudioTrack } from '../parsers/index';
 /**
  * WAV audio encoder
@@ -40,7 +41,21 @@ export declare class WavAudio {
      */
     writeFrames(pcmData: Int16Array): void;
     /**
+     * Returns the WAV audio data as an ArrayBuffer
+     */
+    getArrayBuffer(): ArrayBufferLike;
+    /**
+     * Returns the WAV audio data as a NodeJS Buffer
+     *
+     * Note: This method does not work outside of node.js environments
+     *
+     * Buffer API: https://nodejs.org/api/buffer.html
+     */
+    getBuffer(): Buffer;
+    /**
      * Returns the GIF image data as a file blob
+     *
+     * Note: This method will not work outside of browser environments
      *
      * Blob API: https://developer.mozilla.org/en-US/docs/Web/API/Blob
      */

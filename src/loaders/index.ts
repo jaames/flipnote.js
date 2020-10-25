@@ -1,11 +1,14 @@
-import urlLoader from './urlLoader';
+import { LoaderDefinition } from './loaderDefinition';
+import webUrlLoader from './webUrlLoader';
+import nodeUrlLoader from './nodeUrlLoader';
 import fileLoader from './fileLoader';
 import nodeBufferLoader from './nodeBufferLoader';
 import arrayBufferLoader from './arrayBufferLoader';
 
 /** @internal */
-const loaders = [
-  urlLoader,
+const loaders: LoaderDefinition<any>[] = [
+  webUrlLoader,
+  nodeUrlLoader,
   fileLoader,
   nodeBufferLoader,
   arrayBufferLoader

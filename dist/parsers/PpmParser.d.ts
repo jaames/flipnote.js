@@ -77,7 +77,7 @@ export declare class PpmParser extends FlipnoteParserBase<PpmMeta> {
     /** Default PPM parser settings */
     static defaultSettings: PpmParserSettings;
     /** File format type */
-    static format: FlipnoteFormat.PPM;
+    static format: FlipnoteFormat;
     /** Animation frame width */
     static width: number;
     /** Animation frame height */
@@ -89,7 +89,7 @@ export declare class PpmParser extends FlipnoteParserBase<PpmMeta> {
     /** Global animation frame color palette */
     static globalPalette: import("./FlipnoteParserBase").FlipnotePaletteColor[];
     /** File format type, reflects {@link PpmParser.format} */
-    format: FlipnoteFormat.PPM;
+    format: FlipnoteFormat;
     /** Animation frame width, reflects {@link PpmParser.width} */
     width: number;
     /** Animation frame height, reflects {@link PpmParser.height} */
