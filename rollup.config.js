@@ -18,11 +18,10 @@ const devserver = process.env.DEV_SERVER || false;
 const isEsmoduleBuild = process.env.ES_MODULE || false;
 const isProdBuild = build === 'production';
 const isTargetWeb = target === 'web';
-const isTargetNode = target === 'node';
 const isTargetWebcomponent = target === 'webcomponent';
 
 const banner = `/*!!
- flipnote.js v${ version } (${ target } version)
+ flipnote.js v${ version } (${ target } build)
  Javascript parsing and in-browser playback for the .PPM and .KWZ animation formats used by Flipnote Studio and Flipnote Studio 3D.
  Flipnote Studio is (c) Nintendo Co., Ltd. This project isn't endorsed by them in any way.
  2018 - 2021 James Daniel
@@ -34,19 +33,9 @@ const banner = `/*!!
 module.exports = {
   input: [
     (isTargetWeb) ? 'src/flipnote.ts' : false,
-    (isTargetNode) ? 'src/node.ts' : false,
     (isTargetWebcomponent) ? 'src/webcomponent.ts' : false,
   ].filter(Boolean).join(''),
   output: [
-    (isTargetNode) ? {
-      file: 'dist/node.js',
-      format: 'es',
-      name: 'flipnote',
-      exports: 'named',
-      banner: banner,
-      sourcemap: devserver ? true : false,
-      sourcemapFile: 'dist/node.map'
-    } : false,
     (isTargetWeb) && (isEsmoduleBuild) ? {
       file: 'dist/flipnote.es.js',
       format: 'es',

@@ -7,6 +7,8 @@ import {
   setUniforms,
 } from 'twgl.js';
 
+import { isBrowser } from '../utils';
+
 import quadShader from './shaders/quad.vert';
 import layerDrawShader from './shaders/drawLayer.frag';
 import postProcessShader from './shaders/postProcess_sharpBilinear.frag';
@@ -48,6 +50,10 @@ export class WebglCanvas {
   };
 
   constructor(el: HTMLCanvasElement, width=640, height=480) {
+    if (!isBrowser) {
+      console.warn(`WebGL renderer is only available in browser environments`);
+      return;
+    }
     const gl = <WebGLRenderingContext>el.getContext('webgl', {
       antialias: false,
       alpha: true

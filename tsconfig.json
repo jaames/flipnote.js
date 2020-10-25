@@ -8,11 +8,11 @@
     "target": "es5",
     "lib": [
       "ES2020",
-      "dom"
+      "dom",
     ],
     "jsx": "react",
     "allowJs": false,
-    "types": ["@pyoner/svelte-types"],
+    "types": ["@pyoner/svelte-types", "node"],
     "allowSyntheticDefaultImports": true,
     "esModuleInterop": true,
     "paths": {

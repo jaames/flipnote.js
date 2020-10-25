@@ -19,6 +19,10 @@ import {
   WebAudioPlayer
 } from '../webaudio';
 
+import {
+  isBrowser
+} from '../utils';
+
 interface PlayerEvents {
   [key: string]: Function[];
 };
@@ -45,6 +49,9 @@ interface PlayerState {
 
 /** @internal */
 const saveData = (function () {
+  if (!isBrowser) {
+    return function(){}
+  }
   var a = document.createElement("a");
   // document.body.appendChild(a);
   // a.style.display = "none";
@@ -55,7 +62,7 @@ const saveData = (function () {
     a.click();
     window.URL.revokeObjectURL(url);
   };
-}());
+})();
 
 /** flipnote player API, based on HTMLMediaElement (https://developer.mozilla.org/en-US/docs/Web/API/HTMLMediaElement) */ 
 export class Player {

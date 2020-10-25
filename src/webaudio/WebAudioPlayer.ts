@@ -1,5 +1,11 @@
+import { isBrowser } from '../utils';
+
 /** @internal */
-const _AudioContext = (window.AudioContext || (window as any).webkitAudioContext);
+const _AudioContext = (function() {
+  if (isBrowser)
+    return (window.AudioContext || (window as any).webkitAudioContext);
+  return null;
+})();
 
 export type PcmAudioBuffer = Int16Array | Float32Array;
 
@@ -27,6 +33,10 @@ export class WebAudioPlayer {
   private source: AudioBufferSourceNode;
 
   constructor() {
+    if (!isBrowser) {
+      console.warn(`WebAudio player is only available in browser environments`);
+      return;
+    }
     this.ctx = new _AudioContext();
   }
 
