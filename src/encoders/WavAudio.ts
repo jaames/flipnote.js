@@ -1,5 +1,6 @@
 import { DataStream } from '../utils/index';
 import { Flipnote, FlipnoteAudioTrack } from '../parsers/index';
+import { isNode, isBrowser } from '../utils';
 
 /** 
  * WAV audio encoder
@@ -106,11 +107,44 @@ export class WavAudio {
   }
   
   /**
+   * Returns the WAV audio data as an ArrayBuffer
+   */
+  public getArrayBuffer() {
+    const headerBytes = this.header.bytes;
+    const pcmBytes = new Uint8Array(this.pcmData.buffer);
+    const resultBytes = new Uint8Array(this.header.byteLength + this.pcmData.byteLength);
+    resultBytes.set(headerBytes);
+    resultBytes.set(pcmBytes, headerBytes.byteLength);
+    return resultBytes.buffer;
+  }
+
+  /**
+   * Returns the WAV audio data as a NodeJS Buffer
+   * 
+   * Note: This method does not work outside of node.js environments
+   * 
+   * Buffer API: https://nodejs.org/api/buffer.html
+   */
+  public getBuffer(): Buffer {
+    if (isNode) {
+      return Buffer.from(this.getArrayBuffer());
+    }
+    throw new Error('The Buffer object is only available in Node.js environments');
+  }
+
+
+  /**
    * Returns the GIF image data as a file blob
+   * 
+   * Note: This method will not work outside of browser environments
    * 
    * Blob API: https://developer.mozilla.org/en-US/docs/Web/API/Blob
    */
   public getBlob() {
-    return new Blob([this.header.buffer, this.pcmData.buffer], {type: 'audio/wav'});
+    if (isBrowser) {   
+      const buffer = this.getArrayBuffer();
+      return new Blob([buffer], {type: 'audio/wav'});
+    }
+    throw new Error('The Blob object is only available in browser environments');
   }
 }

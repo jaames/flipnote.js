@@ -51,8 +51,7 @@ export class WebglCanvas {
 
   constructor(el: HTMLCanvasElement, width=640, height=480) {
     if (!isBrowser) {
-      console.warn(`WebGL renderer is only available in browser environments`);
-      return;
+      throw new Error('The WebGL renderer is only available in browser environments');
     }
     const gl = <WebGLRenderingContext>el.getContext('webgl', {
       antialias: false,

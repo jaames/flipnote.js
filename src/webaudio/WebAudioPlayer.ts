@@ -34,8 +34,7 @@ export class WebAudioPlayer {
 
   constructor() {
     if (!isBrowser) {
-      console.warn(`WebAudio player is only available in browser environments`);
-      return;
+      throw new Error('The WebAudio player is only available in browser environments');
     }
     this.ctx = new _AudioContext();
   }

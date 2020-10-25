@@ -1,6 +1,7 @@
 import { DataStream, ByteArray } from '../utils/index';
 import { LzwCompressor } from './LwzCompressor';
 import { Flipnote } from '../parsers/index';
+import { isNode, isBrowser } from '../utils';
 
 /**
  * GIF RGBA palette color definition
@@ -221,8 +222,22 @@ export class GifImage {
   /**
    * Returns the GIF image data as an ArrayBuffer
    */
-  public getBuffer() {
+  public getArrayBuffer(): ArrayBuffer {
     return this.data.getBuffer();
+  }
+
+  /**
+   * Returns the GIF image data as a NodeJS Buffer
+   * 
+   * Note: This method does not work outside of node.js environments
+   * 
+   * Buffer API: https://nodejs.org/api/buffer.html
+   */
+  public getBuffer(): Buffer {
+    if (isNode) {
+      return Buffer.from(this.getArrayBuffer());
+    }
+    throw new Error('The Buffer object only available in Node.js environments');
   }
 
   /**
@@ -230,27 +245,40 @@ export class GifImage {
    * 
    * Blob API: https://developer.mozilla.org/en-US/docs/Web/API/Blob
    */
-  public getBlob() {
-    return new Blob([this.getBuffer()], {type: 'image/gif'});
+  public getBlob(): Blob {
+    if (isBrowser) {
+      return new Blob([this.getArrayBuffer()], {type: 'image/gif'});
+    }
+    throw new Error('The Blob object is only available in browser environments');
   }
 
   /**
    * Returns the GIF image data as an object URL
    * 
+   * Note: This method does not work outside of browser environments
+   * 
    * Object URL API: https://developer.mozilla.org/en-US/docs/Web/API/URL/createObjectURL
    */
-  public getUrl() {
-    return window.URL.createObjectURL(this.getBlob());
+  public getUrl(): string {
+    if (isBrowser) {
+      return window.URL.createObjectURL(this.getBlob());
+    }
+    throw new Error('Data URLs is only available in browser environments');
   }
 
   /**
    * Returns the GIF image data as an Image object
    * 
+   * Note: This method does not work outside of browser environments
+   * 
    * Image API: https://developer.mozilla.org/en-US/docs/Web/API/HTMLImageElement/Image
    */
-  public getImage() {
-    const img = new Image(this.width, this.height);
-    img.src = this.getUrl();
-    return img;
+  public getImage(): HTMLImageElement {
+    if (isBrowser) {
+      const img = new Image(this.width, this.height);
+      img.src = this.getUrl();
+      return img;
+    }
+    throw new Error('Image objects are only available in browser environments');
   }
 }

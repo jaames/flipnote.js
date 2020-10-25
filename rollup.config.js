@@ -33,7 +33,7 @@ const banner = `/*!!
 module.exports = {
   input: [
     (isTargetWeb) ? 'src/flipnote.ts' : false,
-    (isTargetWebcomponent) ? 'src/webcomponent.ts' : false,
+    (isTargetWebcomponent) ? 'src/flipnote.webcomponent.ts' : false,
   ].filter(Boolean).join(''),
   output: [
     (isTargetWeb) && (isEsmoduleBuild) ? {

@@ -1,7 +1,7 @@
 /** @internal */
 export class ByteArray {
 
-  static pageSize: number = 4096;
+  static pageSize: number = 4096 * 4;
 
   private pageSize = ByteArray.pageSize;
   private currPageIndex: number = -1;
