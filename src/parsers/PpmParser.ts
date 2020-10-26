@@ -113,13 +113,15 @@ export class PpmParser extends FlipnoteParserBase<PpmMeta> {
   /** File format type */
   static format = FlipnoteFormat.PPM;
   /** Animation frame width */
-  static width: number = 256;
+  static width = 256;
   /** Animation frame height */
-  static height: number = 192;
+  static height = 192;
+  /** Number of animation frame layers */
+  static numLayers = 2;
   /** Audio track base sample rate */
-  static rawSampleRate: number = 8192;
+  static rawSampleRate = 8192;
   /** Nintendo DSi audui output rate */
-  static sampleRate: number = PPM_OUTPUT_SAMPLE_RATE; 
+  static sampleRate = PPM_OUTPUT_SAMPLE_RATE; 
   /** Global animation frame color palette */
   static globalPalette = [
     PPM_PALETTE.WHITE,
@@ -131,9 +133,11 @@ export class PpmParser extends FlipnoteParserBase<PpmMeta> {
   /** File format type, reflects {@link PpmParser.format} */
   public format = FlipnoteFormat.PPM;
   /** Animation frame width, reflects {@link PpmParser.width} */
-  public width: number = PpmParser.width;
+  public width = PpmParser.width;
   /** Animation frame height, reflects {@link PpmParser.height} */
-  public height: number = PpmParser.height;
+  public height = PpmParser.height;
+  /** Number of animation frame layers, reflects {@link PpmParser.numLayers} */
+  public numLayers = PpmParser.numLayers;
   /** Audio track base sample rate, reflects {@link PpmParser.rawSampleRate} */
   public rawSampleRate = PpmParser.rawSampleRate;
   /** Audio output sample rate, reflects {@link PpmParser.sampleRate} */
@@ -224,6 +228,11 @@ export class PpmParser extends FlipnoteParserBase<PpmMeta> {
     this.seek(0x06A6);
     const flags = this.readUint16();
     this.thumbFrameIndex = thumbIndex;
+    this.layerVisibility = {
+      1: (flags & 0x800) === 0,
+      2: (flags & 0x400) === 0,
+      3: false
+    };
     this.meta = {
       lock: lock === 1,
       loop: (flags >> 1 & 0x01) === 1,

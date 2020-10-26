@@ -149,13 +149,15 @@ export class KwzParser extends FlipnoteParserBase<KwzMeta> {
   /** File format type */
   static format = FlipnoteFormat.KWZ;
   /** Animation frame width */
-  static width: number = 320;
+  static width = 320;
   /** Animation frame height */
-  static height: number = 240;
+  static height = 240;
+  /** Number of animation frame layers */
+  static numLayers = 3;
   /** Audio track base sample rate */
-  static rawSampleRate: number = 16364;
+  static rawSampleRate = 16364;
   /** Audio output sample rate. NOTE: probably isn't accurate, full KWZ audio stack is still on the todo */
-  static sampleRate: number = KWZ_OUTPUT_SAMPLE_RATE;
+  static sampleRate = KWZ_OUTPUT_SAMPLE_RATE;
   /** Global animation frame color palette */
   static globalPalette = [
     KWZ_PALETTE.WHITE,
@@ -170,9 +172,11 @@ export class KwzParser extends FlipnoteParserBase<KwzMeta> {
   /** File format type, reflects {@link KwzParser.format} */
   public format = FlipnoteFormat.KWZ;
   /** Animation frame width, reflects {@link KwzParser.width} */
-  public width: number = KwzParser.width;
+  public width = KwzParser.width;
   /** Animation frame height, reflects {@link KwzParser.height} */
-  public height: number = KwzParser.height;
+  public height = KwzParser.height;
+  /** Number of animation frame layers, reflects {@link KwzParser.numLayers} */
+  public numLayers = KwzParser.numLayers;
   /** Audio track base sample rate, reflects {@link KwzParser.rawSampleRate} */
   public rawSampleRate = KwzParser.rawSampleRate;
   /** Audio output sample rate, reflects {@link KwzParser.sampleRate} */
@@ -272,6 +276,11 @@ export class KwzParser extends FlipnoteParserBase<KwzMeta> {
     this.thumbFrameIndex = thumbIndex;
     this.frameSpeed = frameSpeed;
     this.framerate = KWZ_FRAMERATES[frameSpeed];
+    this.layerVisibility = {
+      1: (layerFlags & 0x1) === 0,
+      2: (layerFlags & 0x2) === 0,
+      3: (layerFlags & 0x3) === 0,
+    };
     this.meta = {
       lock: (flags & 0x1) !== 0,
       loop: (flags & 0x2) !== 0,

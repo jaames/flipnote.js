@@ -53,6 +53,15 @@ export type FlipnoteAudioTrackInfo = {
   }
 }
 
+/**
+ * Flipnote layer visibility 
+ */
+export type FlipnoteLayerVisibility = {
+  1: boolean,
+  2: boolean,
+  3: boolean
+};
+
 /** 
  * Base Flipnote parser class
  * 
@@ -68,6 +77,8 @@ export abstract class FlipnoteParserBase<Meta> extends DataStream {
   static width: number;
   /** Animation frame height */
   static height: number;
+  /** Number of animation frame layers */
+  static numLayers: number;
   /** Audio track base sample rate */
   static rawSampleRate: number;
   /** Audio output sample rate */
@@ -85,6 +96,8 @@ export abstract class FlipnoteParserBase<Meta> extends DataStream {
   public width: number;
   /** Animation frame height, reflects {@link FlipnoteParserBase.height} */
   public height: number;
+  /** Number of animation frame layers, reflects {@link FlipnoteParserBase.numLayers} */
+  public numLayers = FlipnoteParserBase.numLayers;
   /** Audio track base sample rate, reflects {@link FlipnoteParserBase.rawSampleRate} */
   public rawSampleRate: number;
   /** Audio output sample rate, reflects {@link FlipnoteParserBase.sampleRate} */
@@ -97,6 +110,8 @@ export abstract class FlipnoteParserBase<Meta> extends DataStream {
   public meta: Meta;
   /** File audio track info, see {@link FlipnoteAudioTrackInfo} */
   public soundMeta: FlipnoteAudioTrackInfo;
+  /** Animation frame global layer visibility */
+  public layerVisibility: FlipnoteLayerVisibility;
 
   /** Animation frame count */
   public frameCount: number;

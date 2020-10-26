@@ -3,6 +3,8 @@ import {
   Flipnote,
   FlipnoteFormat,
   FlipnoteMeta,
+  FlipnoteLayerVisibility, 
+  FlipnoteParserBase
 } from '../parsers';
 
 import {
@@ -12,8 +14,8 @@ import {
 } from '../encoders';
 
 import {
-  WebglCanvas
-} from '../webglRenderer';
+  WebglRenderer
+} from '../webgl';
 
 import { 
   WebAudioPlayer
@@ -27,9 +29,7 @@ interface PlayerEvents {
   [key: string]: Function[];
 };
 
-interface PlayerLayerVisibility {
-  [key: number]: boolean;
-};
+type PlayerLayerVisibility = Record<number, boolean>;
 
 /** @internal */
 interface PlayerState {
@@ -67,7 +67,7 @@ const saveData = (function () {
 /** flipnote player API, based on HTMLMediaElement (https://developer.mozilla.org/en-US/docs/Web/API/HTMLMediaElement) */ 
 export class Player {
 
-  public canvas: WebglCanvas;
+  public canvas: WebglRenderer;
   public audio: WebAudioPlayer;
   public el: HTMLCanvasElement;
   public noteFormat: FlipnoteFormat;
@@ -113,7 +113,7 @@ export class Player {
   constructor(el: string | HTMLCanvasElement, width: number, height: number) {
     // if `el` is a string, use it to select an Element, else assume it's an element
     el = ('string' == typeof el) ? <HTMLCanvasElement>document.querySelector(el) : el;
-    this.canvas = new WebglCanvas(el, width, height);
+    this.canvas = new WebglRenderer(el, width, height);
     this.audio = new WebAudioPlayer();
     this.el = this.canvas.el;
     this.customPalette = null;
@@ -233,11 +233,7 @@ export class Player {
     this.paused = true;
     this.isOpen = true;
     this.hasPlaybackStarted = false;
-    this.layerVisibility = {
-      1: true,
-      2: true,
-      3: true
-    };
+    this.layerVisibility = this.note.layerVisibility;
     const sampleRate = this.note.sampleRate;
     const pcm = note.getAudioMasterPcm();
     this.audio.setSamples(pcm, sampleRate);

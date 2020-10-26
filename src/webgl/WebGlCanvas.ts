@@ -26,7 +26,7 @@ interface ResourceMap {
 };
 
 /** webgl canvas wrapper class */
-export class WebglCanvas {
+export class WebglRenderer {
   public el: HTMLCanvasElement;
   public gl: WebGLRenderingContext;
   public screenWidth: number;
