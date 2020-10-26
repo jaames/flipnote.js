@@ -125,7 +125,7 @@ export class WavAudio {
    * 
    * Buffer API: https://nodejs.org/api/buffer.html
    */
-  public getBuffer(): Buffer {
+  public getBuffer() {
     if (isNode) {
       return Buffer.from(this.getArrayBuffer());
     }

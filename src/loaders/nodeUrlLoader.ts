@@ -4,11 +4,11 @@ import { LoaderDefinition } from './loaderDefinition';
 
 const nodeUrlLoader: LoaderDefinition<string> = {
 
-  matches: function(source: any) {
+  matches: function(source) {
     return isNode && typeof source === 'string';
   },
 
-  load: function(source: string, resolve: Function, reject: Function) {
+  load: function(source, resolve, reject) {
     const http = require('https');
     http.get(source, (res: ServerResponse) => {
       const chunks: Buffer[] = [];

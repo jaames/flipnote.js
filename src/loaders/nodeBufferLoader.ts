@@ -3,11 +3,11 @@ import { LoaderDefinition } from './loaderDefinition';
 
 const nodeBufferLoader: LoaderDefinition<Buffer> = {
 
-  matches: function(source: any) {
+  matches: function(source) {
     return isNode && (source instanceof Buffer);
   },
 
-  load: function(source: Buffer, resolve: Function, reject: Function) {
+  load: function(source, resolve, rejec) {
     resolve(source.buffer);
   }
 

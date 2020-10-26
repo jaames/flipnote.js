@@ -3,11 +3,11 @@ import { LoaderDefinition } from './loaderDefinition';
 
 const webUrlLoader: LoaderDefinition<string> = {
 
-  matches: function(source: any) {
+  matches: function(source) {
     return isBrowser && typeof source === 'string';
   },
 
-  load: function(source: string, resolve: Function, reject: Function) {
+  load: function(source, resolve, reject) {
     const xhr = new XMLHttpRequest();
     xhr.open('GET', source, true);
     xhr.responseType = 'arraybuffer'; 

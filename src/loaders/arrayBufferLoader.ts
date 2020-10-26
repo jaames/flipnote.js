@@ -1,12 +1,16 @@
 import { LoaderDefinition } from './loaderDefinition';
 
+/** 
+ * Loader for ArrayBuffer objects
+ * @internal
+ */
 const arrayBufferLoader: LoaderDefinition<ArrayBuffer> = {
 
-  matches: function(source: any) {
+  matches: function(source) {
     return (source instanceof ArrayBuffer);
   },
 
-  load: function(source: ArrayBuffer, resolve: Function, reject: Function) {
+  load: function(source, resolve, reject) {
     resolve(source);
   }
 
