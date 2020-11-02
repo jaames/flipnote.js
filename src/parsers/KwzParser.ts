@@ -448,6 +448,16 @@ export class KwzParser extends FlipnoteParserBase<KwzMeta> {
     ];
   }
 
+  private getFrameCameraFlags(frameIndex: number) {
+    this.seek(this.frameMetaOffsets[frameIndex] + 0x1A);
+    const cameraFlags = this.readUint8();
+    return [
+      (cameraFlags & 0x1) !== 0,
+      (cameraFlags & 0x2) !== 0,
+      (cameraFlags & 0x4) !== 0,
+    ];
+  }
+
   /** 
    * Get the layer draw order for a given frame
    * @category Image
