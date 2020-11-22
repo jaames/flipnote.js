@@ -56,6 +56,39 @@ export type FlipnoteLayerVisibility = {
   3: boolean
 };
 
+export interface FlipnoteMeta {
+    /** File lock state. Locked Flipnotes cannot be edited by anyone other than the current author */
+    lock: boolean;
+    /** Playback loop state. If `true`, playback will loop once the end is reached */
+    loop: boolean;
+    /** Total number of animation frames */
+    frameCount: number;
+    /** In-app frame playback speed */
+    frameSpeed: number;
+    /** Index of the animation frame used as the Flipnote's thumbnail image */
+    thumbIndex: number;
+    /** Date representing when the file was last edited */
+    timestamp: Date;
+    /** Metadata about the author of the original Flipnote file */
+    root: {
+      filename: string;
+      username: string;
+      fsid: string;
+    };
+    /** Metadata about the previous author of the Flipnote file */
+    parent: {
+      filename: string;
+      username: string;
+      fsid: string;
+    };
+    /** Metadata about the current author of the Flipnote file */
+    current: {
+      filename: string;
+      username: string;
+      fsid: string;
+    };
+};
+
 /** 
  * Base Flipnote parser class
  * 
@@ -63,7 +96,7 @@ export type FlipnoteLayerVisibility = {
  * it just provides a consistent API for every format parser to implement.
  * @category File Parser
 */
-export abstract class FlipnoteParserBase<Meta> extends DataStream {
+export abstract class FlipnoteParser extends DataStream {
 
   /** File format type */
   static format: FlipnoteFormat;
@@ -99,12 +132,14 @@ export abstract class FlipnoteParserBase<Meta> extends DataStream {
   /** Flipnote palette */
   public palette: FlipnotePaletteDefinition;
   /** File metadata, see {@link FlipnoteMeta} for structure */
-  public meta: Meta;
+  public meta: FlipnoteMeta;
   /** File audio track info, see {@link FlipnoteAudioTrackInfo} */
   public soundMeta: FlipnoteAudioTrackInfo;
   /** Animation frame global layer visibility */
   public layerVisibility: FlipnoteLayerVisibility;
 
+  /** Spinoffs are remixes of another user's Flipnote */
+  public isSpinoff: boolean;
   /** Animation frame count */
   public frameCount: number;
   /** In-app animation playback speed */
@@ -193,9 +228,8 @@ export abstract class FlipnoteParserBase<Meta> extends DataStream {
    * @category Audio
   */
   public hasAudioTrack(trackId: FlipnoteAudioTrack): boolean {
-    if (this.soundMeta.hasOwnProperty(trackId) && this.soundMeta[trackId].length > 0) {
-      return true;
-    } 
+    if (this.soundMeta.hasOwnProperty(trackId) && this.soundMeta[trackId].length > 0)
+      return true
     return false;
   }
 }

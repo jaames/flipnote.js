@@ -4,7 +4,7 @@ import {
   FlipnoteFormat,
   FlipnoteMeta,
   FlipnoteLayerVisibility, 
-  FlipnoteParserBase
+  FlipnoteParser
 } from '../parsers';
 
 import {

@@ -2,8 +2,9 @@ import {
   FlipnoteFormat,
   FlipnotePaletteDefinition,
   FlipnoteAudioTrack,
-  FlipnoteParserBase
-} from './FlipnoteParserBase';
+  FlipnoteMeta,
+  FlipnoteParser
+} from './FlipnoteParserTypes';
 
 import {
   KWZ_LINE_TABLE,
@@ -38,8 +39,6 @@ const KWZ_PALETTE: FlipnotePaletteDefinition = {
   BLUE:   [0x00, 0x38, 0xce, 0xff],
   NONE:   [0xff, 0xff, 0xff, 0x00]
 };
-/** @internal */
-const KWZ_OUTPUT_SAMPLE_RATE = 32768; // probably wronng
 
 /** 
  * Pre computed bitmasks for readBits; done as a slight optimisation
@@ -70,39 +69,9 @@ export type KwzSectionMap = {
 /** 
  * KWZ file metadata, stores information about its playback, author details, etc
  */
-export interface KwzMeta {
-  /** Flipnote lock state. Locked Flipnotes cannot be edited by anyone other than the current author */
-  lock: boolean;
-  /** Playback loop state. If `true`, playback will loop once the end is reached */
-  loop: boolean;
-  /** Total number of animation frames */
-  frame_count: number;
-  /** In-app animation playback speed, range 0 to 10 */
-  frame_speed: number;
-  /** Index of the animation frame used as the Flipnote's thumbnail image */
-  thumb_index: number;
-  /** Date representing when the file was last edited */
-  timestamp: Date;
+export interface KwzMeta extends FlipnoteMeta {
   /** Date representing when the file was created */
-  creation_timestamp: Date;
-  /** Metadata about the author of the original Flipnote file */
-  root: {
-    filename: string;
-    username: string;
-    fsid: string;
-  },
-  /** Metadata about the previous author of the Flipnote file */
-  parent: {
-    filename: string;
-    username: string;
-    fsid: string;
-  },
-  /** Metadata about the current author of the Flipnote file */
-  current: {
-    filename: string;
-    username: string;
-    fsid: string;
-  },
+  creationTimestamp: Date;
 };
 
 /** 
@@ -128,11 +97,11 @@ export interface KwzFrameMeta {
  */
 export interface KwzParserSettings {
   /** Skip full metadata parsing for quickness */ 
-  quickMeta?: boolean;
+  quickMeta: boolean;
   /** Apply special cases for dsi gallery notes */ 
-  dsiGalleryNote?: boolean;
-  /** Apply minor audio fix, which is technically more correct but not accurate to the app's own adpcm decoder */
-  fixAdpcmStepIndex?: boolean;
+  dsiGalleryNote: boolean;
+  /** A minor audio fix is applied by default, since Flipnote 3D's own implementation is wrong. Enable this to use the "original" audio decoding setup */
+  originalAudioSettings: boolean;
 };
 
 /** 
@@ -141,12 +110,13 @@ export interface KwzParserSettings {
  * Format docs: https://github.com/Flipnote-Collective/flipnote-studio-3d-docs/wiki/KWZ-Format
  * @category File Parser
  */
-export class KwzParser extends FlipnoteParserBase<KwzMeta> {
+export class KwzParser extends FlipnoteParser {
 
   /** Default KWZ parser settings */
   static defaultSettings: KwzParserSettings = {
     quickMeta: false,
     dsiGalleryNote: false,
+    originalAudioSettings: false
   };
   /** File format type */
   static format = FlipnoteFormat.KWZ;
@@ -159,7 +129,7 @@ export class KwzParser extends FlipnoteParserBase<KwzMeta> {
   /** Audio track base sample rate */
   static rawSampleRate = 16364;
   /** Audio output sample rate. NOTE: probably isn't accurate, full KWZ audio stack is still on the todo */
-  static sampleRate = KWZ_OUTPUT_SAMPLE_RATE;
+  static sampleRate = 16364;
   /** Global animation frame color palette */
   static globalPalette = [
     KWZ_PALETTE.WHITE,
@@ -275,6 +245,7 @@ export class KwzParser extends FlipnoteParserBase<KwzMeta> {
           flags = this.readUint16(),
           frameSpeed = this.readUint8(),
           layerFlags = this.readUint8();
+    this.isSpinoff = (currentAuthorId !== parentAuthorId) || (currentAuthorId !== rootAuthorId);
     this.frameCount = frameCount;
     this.thumbFrameIndex = thumbIndex;
     this.frameSpeed = frameSpeed;
@@ -287,11 +258,11 @@ export class KwzParser extends FlipnoteParserBase<KwzMeta> {
     this.meta = {
       lock: (flags & 0x1) !== 0,
       loop: (flags & 0x2) !== 0,
-      frame_count: frameCount,
-      frame_speed: frameSpeed,
-      thumb_index: thumbIndex,
+      frameCount: frameCount,
+      frameSpeed: frameSpeed,
+      thumbIndex: thumbIndex,
       timestamp: modifiedTimestamp,
-      creation_timestamp: creationTimestamp,
+      creationTimestamp: creationTimestamp,
       root: {
         username: rootAuthorName,
         fsid: rootAuthorId,
@@ -793,11 +764,12 @@ export class KwzParser extends FlipnoteParserBase<KwzMeta> {
     const output = new Int16Array(16364 * 60);
     let outputOffset = 0;
     // initial decoder state
+    // Flipnote 3D's initial audio decoder state is actually bugged, so these aren't 1:1 to what the app does
     let prevDiff = 0;
-    let prevStepIndex = 40;
-    // Flipnote 3D's audio decoder is actually incorrect, so we can optionally trigger "correct" audio decoding here
-    if (this.settings.fixAdpcmStepIndex)
-      prevStepIndex = 0;
+    let prevStepIndex = 0;
+    // we can still optionally enable the original setup here
+    if (this.settings.originalAudioSettings)
+      prevStepIndex = 40;
     let sample: number;
     let diff: number;
     let stepIndex: number;
@@ -843,7 +815,7 @@ export class KwzParser extends FlipnoteParserBase<KwzMeta> {
    * @returns Signed 16-bit PCM audio
    * @category Audio
   */
-  public getAudioTrackPcm(trackId: FlipnoteAudioTrack, dstFreq: number = KWZ_OUTPUT_SAMPLE_RATE) {
+  public getAudioTrackPcm(trackId: FlipnoteAudioTrack, dstFreq = this.sampleRate) {
     const srcPcm = this.decodeAudioTrack(trackId);
     let srcFreq = this.rawSampleRate;
     if (trackId === FlipnoteAudioTrack.BGM) {
@@ -861,7 +833,7 @@ export class KwzParser extends FlipnoteParserBase<KwzMeta> {
    * @returns Signed 16-bit PCM audio
    * @category Audio
   */
-  public getAudioMasterPcm(dstFreq: number = KWZ_OUTPUT_SAMPLE_RATE) {
+  public getAudioMasterPcm(dstFreq = this.sampleRate) {
     const duration = this.frameCount * (1 / this.framerate);
     const dstSize = Math.ceil(duration * dstFreq);
     const master = new Int16Array(dstSize);

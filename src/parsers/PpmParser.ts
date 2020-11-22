@@ -26,8 +26,9 @@ import {
   FlipnoteFormat,
   FlipnotePaletteDefinition,
   FlipnoteAudioTrack,
-  FlipnoteParserBase
-} from './FlipnoteParserBase';
+  FlipnoteMeta,
+  FlipnoteParser
+} from './FlipnoteParserTypes';
 
 import {
   clamp,
@@ -51,47 +52,13 @@ const PPM_PALETTE: FlipnotePaletteDefinition = {
   RED:   [0xff, 0x2a, 0x2a, 0xff],
   BLUE:  [0x0a, 0x39, 0xff, 0xff]
 };
-/** @internal */
-const PPM_OUTPUT_SAMPLE_RATE = 32768;
 
 /** 
  * PPM file metadata, stores information about its playback, author details, etc
  */
-export interface PpmMeta {
-  /** File lock state. Locked Flipnotes cannot be edited by anyone other than the current author */
-  lock: boolean;
-  /** Playback loop state. If `true`, playback will loop once the end is reached */
-  loop: boolean;
-  /** Total number of animation frames */
-  frame_count: number;
-  /** In-app frame playback speed, range 1 to 8 */
-  frame_speed: number;
+export interface PpmMeta extends FlipnoteMeta {
   /** In-app frame playback speed when the BGM audio track was recorded */
-  bgm_speed: number;
-  /** Index of the animation frame used as the Flipnote's thumbnail image */
-  thumb_index: number;
-  /** Date representing when the file was last edited */
-  timestamp: Date;
-  /** Spinoffs are remixes of another user's Flipnote */
-  spinoff: boolean;
-  /** Metadata about the author of the original Flipnote file */
-  root: {
-    filename: string;
-    username: string;
-    fsid: string;
-  },
-  /** Metadata about the previous author of the Flipnote file */
-  parent: {
-    filename: string;
-    username: string;
-    fsid: string;
-  },
-  /** Metadata about the current author of the Flipnote file */
-  current: {
-    filename: string;
-    username: string;
-    fsid: string;
-  },
+  bgmSpeed: number;
 };
 
 /**
@@ -106,7 +73,7 @@ export interface PpmParserSettings {};
  * Format docs: https://github.com/Flipnote-Collective/flipnote-studio-docs/wiki/PPM-format
  * @category File Parser
  */
-export class PpmParser extends FlipnoteParserBase<PpmMeta> {
+export class PpmParser extends FlipnoteParser {
 
   /** Default PPM parser settings */
   static defaultSettings: PpmParserSettings = {};
@@ -120,8 +87,8 @@ export class PpmParser extends FlipnoteParserBase<PpmMeta> {
   static numLayers = 2;
   /** Audio track base sample rate */
   static rawSampleRate = 8192;
-  /** Nintendo DSi audui output rate */
-  static sampleRate = PPM_OUTPUT_SAMPLE_RATE; 
+  /** Nintendo DSi audio output rate */
+  static sampleRate = 32768; 
   /** Global animation frame color palette */
   static globalPalette = [
     PPM_PALETTE.WHITE,
@@ -234,15 +201,15 @@ export class PpmParser extends FlipnoteParserBase<PpmMeta> {
       2: (flags & 0x400) === 0,
       3: false
     };
+    this.isSpinoff = (currentAuthorId !== parentAuthorId) || (currentAuthorId !== rootAuthorId);
     this.meta = {
       lock: lock === 1,
       loop: (flags >> 1 & 0x01) === 1,
-      frame_count: this.frameCount,
-      frame_speed: this.frameSpeed,
-      bgm_speed: this.bgmSpeed,
-      thumb_index: thumbIndex,
+      frameCount: this.frameCount,
+      frameSpeed: this.frameSpeed,
+      bgmSpeed: this.bgmSpeed,
+      thumbIndex: thumbIndex,
       timestamp: timestamp,
-      spinoff: (currentAuthorId !== parentAuthorId) || (currentAuthorId !== rootAuthorId),
       root: {
         filename: null,
         username: rootAuthorName,
@@ -608,7 +575,7 @@ export class PpmParser extends FlipnoteParserBase<PpmMeta> {
    * @returns Signed 16-bit PCM audio
    * @category Audio
   */
-  public getAudioTrackPcm(trackId: FlipnoteAudioTrack, dstFreq: number = PPM_OUTPUT_SAMPLE_RATE) {
+  public getAudioTrackPcm(trackId: FlipnoteAudioTrack, dstFreq = this.sampleRate) {
     const srcPcm = this.decodeAudioTrack(trackId);
     let srcFreq = this.rawSampleRate;
     if (trackId === FlipnoteAudioTrack.BGM) {
@@ -625,7 +592,7 @@ export class PpmParser extends FlipnoteParserBase<PpmMeta> {
    * @returns Signed 16-bit PCM audio
    * @category Audio
   */
-  public getAudioMasterPcm(dstFreq: number = PPM_OUTPUT_SAMPLE_RATE) {
+  public getAudioMasterPcm(dstFreq = this.sampleRate) {
     const duration = this.frameCount * (1 / this.framerate);
     const dstSize = Math.ceil(duration * dstFreq);
     const master = new Int16Array(dstSize);

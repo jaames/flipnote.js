@@ -1,17 +1,16 @@
 import { loadSource } from '../loaders/index';
-import { FlipnoteParserBase } from './FlipnoteParserBase';
-import { PpmParser, PpmParserSettings, PpmMeta } from './PpmParser';
-import { KwzParser, KwzParserSettings, KwzMeta } from './KwzParser';
+import { FlipnoteParser } from './FlipnoteParserTypes';
+import { PpmParser, PpmParserSettings } from './PpmParser';
+import { KwzParser, KwzParserSettings } from './KwzParser';
 
 export * from './PpmParser';
 export * from './KwzParser';
-export * from './FlipnoteParserBase';
+export * from './FlipnoteParserTypes';
 
-export type FlipnoteParserConfig = PpmParserSettings | KwzParserSettings;
-export type FlipnoteMeta = PpmMeta | KwzMeta; 
-export type Flipnote = FlipnoteParserBase<FlipnoteMeta>;
+export type FlipnoteParserSettings = PpmParserSettings & KwzParserSettings;
+export type Flipnote = FlipnoteParser;
 
-export function parseSource(source: any, parserConfig?: FlipnoteParserConfig): Promise<Flipnote> {
+export function parseSource(source: any, parserConfig?: Partial<FlipnoteParserSettings>): Promise<Flipnote> {
   return loadSource(source)
   .then((arrayBuffer: ArrayBuffer) => {
     return new Promise((resolve, reject) => {
