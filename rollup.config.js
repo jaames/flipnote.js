@@ -1,6 +1,7 @@
 import { version } from './package.json';
 import alias from '@rollup/plugin-alias';
 import nodeResolve from '@rollup/plugin-node-resolve';
+import commonJs from '@rollup/plugin-commonjs';
 import replace from '@rollup/plugin-replace';
 import typescript from 'rollup-plugin-typescript2';
 import { terser } from 'rollup-plugin-terser';
@@ -32,11 +33,11 @@ const banner = `/*!!
 
 module.exports = {
   input: [
-    (isTargetWeb) ? 'src/flipnote.ts' : false,
-    (isTargetWebcomponent) ? 'src/flipnote.webcomponent.ts' : false,
+    isTargetWeb && 'src/flipnote.ts',
+    isTargetWebcomponent && 'src/flipnote.webcomponent.ts',
   ].filter(Boolean).join(''),
   output: [
-    (isTargetWeb) && (isEsmoduleBuild) ? {
+    (isTargetWeb) && (isEsmoduleBuild) && {
       file: 'dist/flipnote.es.js',
       format: 'es',
       name: 'flipnote',
@@ -44,8 +45,8 @@ module.exports = {
       banner: banner,
       sourcemap: devserver ? true : false,
       sourcemapFile: 'dist/flipnote.es.map'
-    } : false,
-    (isTargetWeb) && (!isEsmoduleBuild) ? {
+    },
+    (isTargetWeb) && (!isEsmoduleBuild) && {
       file: isProdBuild ? 'dist/flipnote.min.js' : 'dist/flipnote.js',
       format: 'umd',
       name: 'flipnote',
@@ -53,8 +54,8 @@ module.exports = {
       banner: banner,
       sourcemap: devserver ? true : false,
       sourcemapFile: isProdBuild ? 'dist/flipnote.min.js.map' : 'dist/flipnote.js.map'
-    } : false,
-    (isTargetWebcomponent) ? {
+    },
+    isTargetWebcomponent && {
       file: isProdBuild ? 'dist/flipnote.webcomponent.min.js' : 'dist/flipnote.webcomponent.js',
       format: 'umd',
       name: 'flipnote',
@@ -62,17 +63,17 @@ module.exports = {
       banner: banner,
       sourcemap: devserver ? true : false,
       sourcemapFile: isProdBuild ? 'dist/flipnote.webcomponent.min.js.map' : 'dist/flipnote.webcomponent.js.map'
-    } : false
+    }
   ].filter(Boolean),
   plugins: [
     // use svelte for webcomponent build
-    isTargetWebcomponent ? svelte({
+    isTargetWebcomponent && svelte({
       customElement: true,
 			// enable run-time checks when not in production
 			dev: !isProdBuild,
       preprocess: autoPreprocess()
-    }) : false,
-    isTargetWebcomponent ? svgo({
+    }),
+    isTargetWebcomponent && svgo({
       plugins: [
         {
           removeViewBox: false
@@ -84,12 +85,13 @@ module.exports = {
           removeUnknownsAndDefaults: true
         },
       ]
-    }) : false,
+    }),
     bundleSize(),
     nodeResolve({
-			browser: true,
-			dedupe: ['svelte']
-		}),
+      // browser: true,
+      dedupe: ['svelte']
+    }),
+    commonJs(),
     alias({
       resolve: ['.jsx', '.js', '.ts', '.tsx'],
     }),
@@ -111,14 +113,14 @@ module.exports = {
     }),
     glslify(),
     // devserver + livereload
-    devserver ? serve({
+    devserver && serve({
       contentBase: ['dist', 'test']
-    }) : false,
-    devserver ? livereload({
+    }),
+    devserver && livereload({
       watch: 'dist'
-    }) : false,
+    }),
     // only minify if we're producing a non-es production build
-    isProdBuild && !isEsmoduleBuild ? terser({
+    isProdBuild && !isEsmoduleBuild && terser({
       // mangle props starting with _, since they're usually not public parts of the API
       mangle: {
         properties: {
@@ -134,6 +136,6 @@ module.exports = {
           return false;
         }
       }
-    }) : false,
+    }),
   ].filter(Boolean)
 };

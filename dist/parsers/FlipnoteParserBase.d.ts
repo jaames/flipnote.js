@@ -6,8 +6,6 @@ export declare enum FlipnoteFormat {
     /** Animation format used by Flipnote Studio 3D (Nintendo 3DS) */
     KWZ = 1
 }
-/** Maps FlipnoteFormat enum types to strings */
-export declare const FlipnoteFormatStrings: Record<FlipnoteFormat, string>;
 /** RGBA color */
 export declare type FlipnotePaletteColor = [
 /** Red (0 to 255) */
@@ -43,6 +41,14 @@ export declare type FlipnoteAudioTrackInfo = {
     };
 };
 /**
+ * Flipnote layer visibility
+ */
+export declare type FlipnoteLayerVisibility = {
+    1: boolean;
+    2: boolean;
+    3: boolean;
+};
+/**
  * Base Flipnote parser class
  *
  * This doesn't implement any parsing functionality itself,
@@ -56,6 +62,8 @@ export declare abstract class FlipnoteParserBase<Meta> extends DataStream {
     static width: number;
     /** Animation frame height */
     static height: number;
+    /** Number of animation frame layers */
+    static numLayers: number;
     /** Audio track base sample rate */
     static rawSampleRate: number;
     /** Audio output sample rate */
@@ -65,11 +73,13 @@ export declare abstract class FlipnoteParserBase<Meta> extends DataStream {
     /** File format type, reflects {@link FlipnoteParserBase.format} */
     format: FlipnoteFormat;
     /** Flipnote Format as a string */
-    get formatString(): string;
+    formatString: string;
     /** Animation frame width, reflects {@link FlipnoteParserBase.width} */
     width: number;
     /** Animation frame height, reflects {@link FlipnoteParserBase.height} */
     height: number;
+    /** Number of animation frame layers, reflects {@link FlipnoteParserBase.numLayers} */
+    numLayers: number;
     /** Audio track base sample rate, reflects {@link FlipnoteParserBase.rawSampleRate} */
     rawSampleRate: number;
     /** Audio output sample rate, reflects {@link FlipnoteParserBase.sampleRate} */
@@ -82,6 +92,8 @@ export declare abstract class FlipnoteParserBase<Meta> extends DataStream {
     meta: Meta;
     /** File audio track info, see {@link FlipnoteAudioTrackInfo} */
     soundMeta: FlipnoteAudioTrackInfo;
+    /** Animation frame global layer visibility */
+    layerVisibility: FlipnoteLayerVisibility;
     /** Animation frame count */
     frameCount: number;
     /** In-app animation playback speed */

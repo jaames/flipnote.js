@@ -1,9 +1,26 @@
 {
   "mode": "file",
-  "out": "docs",
+  "inputFiles": ["./src"],
+  "out": "www",
   "exclude": "src/components",
   "excludePrivate": true,
   "excludeProtected": true,
   "excludeNotExported": true,
-  "stripInternal": true
+  "stripInternal": true,
+  "theme": "pages-plugin",
+  "pages": {
+    "groups": [
+      {
+        "title": "My Group",
+        "output": "my-group",
+        "pages": [
+          {
+            "title": "Recipes",
+            "source": "./docs/recipes.md"
+          }
+        ]
+      }
+    ]
+  }
+ 
 }

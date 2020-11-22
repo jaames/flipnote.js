@@ -1,10 +1,8 @@
 import { Flipnote, FlipnoteFormat, FlipnoteMeta } from '../parsers';
 import { WavAudio, GifImage, GifEncoderSettings } from '../encoders';
-import { WebglCanvas } from '../webglRenderer';
+import { WebglRenderer } from '../webgl';
 import { WebAudioPlayer } from '../webaudio';
-interface PlayerLayerVisibility {
-    [key: number]: boolean;
-}
+declare type PlayerLayerVisibility = Record<number, boolean>;
 /** @internal */
 interface PlayerState {
     noteType: 'PPM' | 'KWZ';
@@ -22,7 +20,7 @@ interface PlayerState {
 }
 /** flipnote player API, based on HTMLMediaElement (https://developer.mozilla.org/en-US/docs/Web/API/HTMLMediaElement) */
 export declare class Player {
-    canvas: WebglCanvas;
+    canvas: WebglRenderer;
     audio: WebAudioPlayer;
     el: HTMLCanvasElement;
     noteFormat: FlipnoteFormat;

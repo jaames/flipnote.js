@@ -7,7 +7,7 @@ const nodeBufferLoader: LoaderDefinition<Buffer> = {
     return isNode && (source instanceof Buffer);
   },
 
-  load: function(source, resolve, rejec) {
+  load: function(source, resolve, reject) {
     resolve(source.buffer);
   }
 

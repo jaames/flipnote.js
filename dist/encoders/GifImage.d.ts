@@ -48,6 +48,7 @@ export declare class GifImage {
     numFrames: number;
     private data;
     private compressor;
+    private dataUrl;
     /**
      * Create a new GIF image object
      * @param width image width
@@ -108,6 +109,14 @@ export declare class GifImage {
      * Object URL API: https://developer.mozilla.org/en-US/docs/Web/API/URL/createObjectURL
      */
     getUrl(): string;
+    /**
+     * Revokes this image's object URL if one has been created
+     *
+     * Note: This method does not work outside of browser environments
+     *
+     * Object URL API: https://developer.mozilla.org/en-US/docs/Web/API/URL/revokeObjectURL
+     */
+    revokeUrl(): void;
     /**
      * Returns the GIF image data as an Image object
      *

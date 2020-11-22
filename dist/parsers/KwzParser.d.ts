@@ -92,6 +92,8 @@ export declare class KwzParser extends FlipnoteParserBase<KwzMeta> {
     static width: number;
     /** Animation frame height */
     static height: number;
+    /** Number of animation frame layers */
+    static numLayers: number;
     /** Audio track base sample rate */
     static rawSampleRate: number;
     /** Audio output sample rate. NOTE: probably isn't accurate, full KWZ audio stack is still on the todo */
@@ -100,10 +102,13 @@ export declare class KwzParser extends FlipnoteParserBase<KwzMeta> {
     static globalPalette: import("./FlipnoteParserBase").FlipnotePaletteColor[];
     /** File format type, reflects {@link KwzParser.format} */
     format: FlipnoteFormat;
+    formatString: string;
     /** Animation frame width, reflects {@link KwzParser.width} */
     width: number;
     /** Animation frame height, reflects {@link KwzParser.height} */
     height: number;
+    /** Number of animation frame layers, reflects {@link KwzParser.numLayers} */
+    numLayers: number;
     /** Audio track base sample rate, reflects {@link KwzParser.rawSampleRate} */
     rawSampleRate: number;
     /** Audio output sample rate, reflects {@link KwzParser.sampleRate} */
@@ -167,6 +172,7 @@ export declare class KwzParser extends FlipnoteParserBase<KwzMeta> {
     private getFrameLayerDepths;
     private getFrameAuthor;
     private getFrameSoundFlags;
+    private getFrameCameraFlags;
     /**
      * Get the layer draw order for a given frame
      * @category Image

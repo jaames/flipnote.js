@@ -62,6 +62,7 @@ export class GifImage {
 
   private data: ByteArray;
   private compressor: LzwCompressor;
+  private dataUrl: string = null;
 
   /**
    * Create a new GIF image object
@@ -261,9 +262,28 @@ export class GifImage {
    */
   public getUrl(): string {
     if (isBrowser) {
+      if (this.dataUrl)
+        return this.dataUrl;
       return window.URL.createObjectURL(this.getBlob());
     }
-    throw new Error('Data URLs is only available in browser environments');
+    throw new Error('Data URLs are only available in browser environments');
+  }
+
+  /**
+   * Revokes this image's object URL if one has been created
+   * 
+   * Note: This method does not work outside of browser environments
+   * 
+   * Object URL API: https://developer.mozilla.org/en-US/docs/Web/API/URL/revokeObjectURL
+   */
+
+  public revokeUrl(): void {
+    if (isBrowser) {
+      if (this.dataUrl)
+        window.URL.revokeObjectURL(this.dataUrl);
+    } else {
+      throw new Error('Data URLs are only available in browser environments');
+    }
   }
 
   /**

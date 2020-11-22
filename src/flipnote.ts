@@ -2,6 +2,7 @@
 
 export {
   parseSource,
+  FlipnoteFormat,
   Flipnote,
   FlipnoteMeta,
   FlipnoteAudioTrack,

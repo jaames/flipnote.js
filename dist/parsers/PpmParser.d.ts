@@ -82,6 +82,8 @@ export declare class PpmParser extends FlipnoteParserBase<PpmMeta> {
     static width: number;
     /** Animation frame height */
     static height: number;
+    /** Number of animation frame layers */
+    static numLayers: number;
     /** Audio track base sample rate */
     static rawSampleRate: number;
     /** Nintendo DSi audui output rate */
@@ -90,10 +92,13 @@ export declare class PpmParser extends FlipnoteParserBase<PpmMeta> {
     static globalPalette: import("./FlipnoteParserBase").FlipnotePaletteColor[];
     /** File format type, reflects {@link PpmParser.format} */
     format: FlipnoteFormat;
+    formatString: string;
     /** Animation frame width, reflects {@link PpmParser.width} */
     width: number;
     /** Animation frame height, reflects {@link PpmParser.height} */
     height: number;
+    /** Number of animation frame layers, reflects {@link PpmParser.numLayers} */
+    numLayers: number;
     /** Audio track base sample rate, reflects {@link PpmParser.rawSampleRate} */
     rawSampleRate: number;
     /** Audio output sample rate, reflects {@link PpmParser.sampleRate} */

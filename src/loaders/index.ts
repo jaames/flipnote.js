@@ -19,9 +19,11 @@ export function loadSource(source: any): Promise<ArrayBuffer> {
   return new Promise((resolve, reject) => {
     for (let i = 0; i < loaders.length; i++) {
       const loader = loaders[i];
-      if (loader.matches(source))
+      if (loader.matches(source)) {
         loader.load(source, resolve, reject);
-        break;
+        return;
+      }
     }
+    reject('No loader available for source type');
   });
 }

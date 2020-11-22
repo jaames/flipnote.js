@@ -265,9 +265,13 @@
       }
   };
 
+  /**
+   * Loader for File objects (browser only)
+   * @internal
+   */
   var fileLoader = {
       matches: function (source) {
-          return (typeof File !== 'undefined' && source instanceof File);
+          return isBrowser && typeof File !== 'undefined' && source instanceof File;
       },
       load: function (source, resolve, reject) {
           if (typeof FileReader !== 'undefined') {
@@ -295,6 +299,10 @@
       }
   };
 
+  /**
+   * Loader for ArrayBuffer objects
+   * @internal
+   */
   var arrayBufferLoader = {
       matches: function (source) {
           return (source instanceof ArrayBuffer);
@@ -315,11 +323,14 @@
   /** @internal */
   function loadSource(source) {
       return new Promise(function (resolve, reject) {
-          loaders.forEach(function (loader) {
+          for (var i = 0; i < loaders.length; i++) {
+              var loader = loaders[i];
               if (loader.matches(source)) {
                   loader.load(source, resolve, reject);
+                  return;
               }
-          });
+          }
+          reject('No loader available for source type');
       });
   }
 
@@ -401,20 +412,12 @@
       }
   }
 
-  var _a;
-  /** Identifies which animation format a Flipnote uses */
-  var FlipnoteFormat;
   (function (FlipnoteFormat) {
       /** Animation format used by Flipnote Studio (Nintendo DSiWare) */
       FlipnoteFormat[FlipnoteFormat["PPM"] = 0] = "PPM";
       /** Animation format used by Flipnote Studio 3D (Nintendo 3DS) */
       FlipnoteFormat[FlipnoteFormat["KWZ"] = 1] = "KWZ";
-  })(FlipnoteFormat || (FlipnoteFormat = {}));
-  /** Maps FlipnoteFormat enum types to strings */
-  var FlipnoteFormatStrings = (_a = {},
-      _a[FlipnoteFormat.PPM] = "PPM",
-      _a[FlipnoteFormat.KWZ] = "KWZ",
-      _a);
+  })(exports.FlipnoteFormat || (exports.FlipnoteFormat = {}));
   (function (FlipnoteAudioTrack) {
       /** Background music track */
       FlipnoteAudioTrack[FlipnoteAudioTrack["BGM"] = 0] = "BGM";
@@ -439,14 +442,6 @@
       function FlipnoteParserBase() {
           return _super !== null && _super.apply(this, arguments) || this;
       }
-      Object.defineProperty(FlipnoteParserBase.prototype, "formatString", {
-          /** Flipnote Format as a string */
-          get: function () {
-              return FlipnoteFormatStrings[this.format];
-          },
-          enumerable: false,
-          configurable: true
-      });
       /**
        * Does an audio track exist in the Flipnote?
        * @category Audio
@@ -605,11 +600,14 @@
       function PpmParser(arrayBuffer, settings) {
           var _this = _super.call(this, arrayBuffer) || this;
           /** File format type, reflects {@link PpmParser.format} */
-          _this.format = FlipnoteFormat.PPM;
+          _this.format = exports.FlipnoteFormat.PPM;
+          _this.formatString = 'PPM';
           /** Animation frame width, reflects {@link PpmParser.width} */
           _this.width = PpmParser.width;
           /** Animation frame height, reflects {@link PpmParser.height} */
           _this.height = PpmParser.height;
+          /** Number of animation frame layers, reflects {@link PpmParser.numLayers} */
+          _this.numLayers = PpmParser.numLayers;
           /** Audio track base sample rate, reflects {@link PpmParser.rawSampleRate} */
           _this.rawSampleRate = PpmParser.rawSampleRate;
           /** Audio output sample rate, reflects {@link PpmParser.sampleRate} */
@@ -669,6 +667,11 @@
           this.seek(0x06A6);
           var flags = this.readUint16();
           this.thumbFrameIndex = thumbIndex;
+          this.layerVisibility = {
+              1: (flags & 0x800) === 0,
+              2: (flags & 0x400) === 0,
+              3: false
+          };
           this.meta = {
               lock: lock === 1,
               loop: (flags >> 1 & 0x01) === 1,
@@ -1085,11 +1088,13 @@
       /** Default PPM parser settings */
       PpmParser.defaultSettings = {};
       /** File format type */
-      PpmParser.format = FlipnoteFormat.PPM;
+      PpmParser.format = exports.FlipnoteFormat.PPM;
       /** Animation frame width */
       PpmParser.width = 256;
       /** Animation frame height */
       PpmParser.height = 192;
+      /** Number of animation frame layers */
+      PpmParser.numLayers = 2;
       /** Audio track base sample rate */
       PpmParser.rawSampleRate = 8192;
       /** Nintendo DSi audui output rate */
@@ -1215,11 +1220,14 @@
           if (settings === void 0) { settings = {}; }
           var _this = _super.call(this, arrayBuffer) || this;
           /** File format type, reflects {@link KwzParser.format} */
-          _this.format = FlipnoteFormat.KWZ;
+          _this.format = exports.FlipnoteFormat.KWZ;
+          _this.formatString = 'KWZ';
           /** Animation frame width, reflects {@link KwzParser.width} */
           _this.width = KwzParser.width;
           /** Animation frame height, reflects {@link KwzParser.height} */
           _this.height = KwzParser.height;
+          /** Number of animation frame layers, reflects {@link KwzParser.numLayers} */
+          _this.numLayers = KwzParser.numLayers;
           /** Audio track base sample rate, reflects {@link KwzParser.rawSampleRate} */
           _this.rawSampleRate = KwzParser.rawSampleRate;
           /** Audio output sample rate, reflects {@link KwzParser.sampleRate} */
@@ -1283,6 +1291,11 @@
           this.thumbFrameIndex = thumbIndex;
           this.frameSpeed = frameSpeed;
           this.framerate = KWZ_FRAMERATES[frameSpeed];
+          this.layerVisibility = {
+              1: (layerFlags & 0x1) === 0,
+              2: (layerFlags & 0x2) === 0,
+              3: (layerFlags & 0x3) === 0,
+          };
           this.meta = {
               lock: (flags & 0x1) !== 0,
               loop: (flags & 0x2) !== 0,
@@ -1439,6 +1452,15 @@
               (soundFlags & 0x2) !== 0,
               (soundFlags & 0x4) !== 0,
               (soundFlags & 0x8) !== 0,
+          ];
+      };
+      KwzParser.prototype.getFrameCameraFlags = function (frameIndex) {
+          this.seek(this.frameMetaOffsets[frameIndex] + 0x1A);
+          var cameraFlags = this.readUint8();
+          return [
+              (cameraFlags & 0x1) !== 0,
+              (cameraFlags & 0x2) !== 0,
+              (cameraFlags & 0x4) !== 0,
           ];
       };
       /**
@@ -1858,11 +1880,13 @@
           dsiGalleryNote: false,
       };
       /** File format type */
-      KwzParser.format = FlipnoteFormat.KWZ;
+      KwzParser.format = exports.FlipnoteFormat.KWZ;
       /** Animation frame width */
       KwzParser.width = 320;
       /** Animation frame height */
       KwzParser.height = 240;
+      /** Number of animation frame layers */
+      KwzParser.numLayers = 3;
       /** Audio track base sample rate */
       KwzParser.rawSampleRate = 16364;
       /** Audio output sample rate. NOTE: probably isn't accurate, full KWZ audio stack is still on the todo */
@@ -2153,6 +2177,7 @@
           if (settings === void 0) { settings = {}; }
           /** Number of current GIF frames */
           this.numFrames = 0;
+          this.dataUrl = null;
           this.width = width;
           this.height = height;
           this.data = new ByteArray();
@@ -2324,9 +2349,27 @@
        */
       GifImage.prototype.getUrl = function () {
           if (isBrowser) {
+              if (this.dataUrl)
+                  return this.dataUrl;
               return window.URL.createObjectURL(this.getBlob());
           }
-          throw new Error('Data URLs is only available in browser environments');
+          throw new Error('Data URLs are only available in browser environments');
+      };
+      /**
+       * Revokes this image's object URL if one has been created
+       *
+       * Note: This method does not work outside of browser environments
+       *
+       * Object URL API: https://developer.mozilla.org/en-US/docs/Web/API/URL/revokeObjectURL
+       */
+      GifImage.prototype.revokeUrl = function () {
+          if (isBrowser) {
+              if (this.dataUrl)
+                  window.URL.revokeObjectURL(this.dataUrl);
+          }
+          else {
+              throw new Error('Data URLs are only available in browser environments');
+          }
       };
       /**
        * Returns the GIF image data as an Image object
@@ -4080,8 +4123,8 @@
   var postProcessShader = "precision highp float;\n#define GLSLIFY 1\nvarying vec2 v_uv;uniform sampler2D u_tex;varying float v_scale;uniform vec2 u_textureSize;uniform vec2 u_screenSize;void main(){vec2 v_texel=v_uv*u_textureSize;vec2 texel_floored=floor(v_texel);vec2 s=fract(v_texel);float region_range=0.5-0.5/v_scale;vec2 center_dist=s-0.5;vec2 f=(center_dist-clamp(center_dist,-region_range,region_range))*v_scale+0.5;vec2 mod_texel=texel_floored+f;vec2 coord=mod_texel.xy/u_textureSize.xy;gl_FragColor=texture2D(u_tex,coord);}"; // eslint-disable-line
 
   /** webgl canvas wrapper class */
-  var WebglCanvas = /** @class */ (function () {
-      function WebglCanvas(el, width, height) {
+  var WebglRenderer = /** @class */ (function () {
+      function WebglRenderer(el, width, height) {
           if (width === void 0) { width = 640; }
           if (height === void 0) { height = 480; }
           this.refs = {
@@ -4111,7 +4154,7 @@
           this.frameBuffer = this.createFrameBuffer(this.frameTexture);
           this.setCanvasSize(width, height);
       }
-      WebglCanvas.prototype.createProgram = function (vertexShaderSource, fragmentShaderSource) {
+      WebglRenderer.prototype.createProgram = function (vertexShaderSource, fragmentShaderSource) {
           var gl = this.gl;
           var vert = this.createShader(gl.VERTEX_SHADER, vertexShaderSource);
           var frag = this.createShader(gl.FRAGMENT_SHADER, fragmentShaderSource);
@@ -4130,7 +4173,7 @@
           this.refs.programs.push(program);
           return programInfo;
       };
-      WebglCanvas.prototype.createShader = function (type, source) {
+      WebglRenderer.prototype.createShader = function (type, source) {
           var gl = this.gl;
           var shader = gl.createShader(type);
           gl.shaderSource(shader, source);
@@ -4145,7 +4188,7 @@
           return shader;
       };
       // creating a subdivided quad seems to produce slightly nicer texture filtering
-      WebglCanvas.prototype.createScreenQuad = function (x0, y0, width, height, xSubdivs, ySubdivs) {
+      WebglRenderer.prototype.createScreenQuad = function (x0, y0, width, height, xSubdivs, ySubdivs) {
           var numVerts = (xSubdivs + 1) * (ySubdivs + 1);
           var numVertsAcross = xSubdivs + 1;
           var positions = new Float32Array(numVerts * 2);
@@ -4193,12 +4236,12 @@
           }
           return bufferInfo;
       };
-      WebglCanvas.prototype.setBuffersAndAttribs = function (program, buffer) {
+      WebglRenderer.prototype.setBuffersAndAttribs = function (program, buffer) {
           var gl = this.gl;
           setAttributes(program.attribSetters, buffer.attribs);
           gl.bindBuffer(gl.ELEMENT_ARRAY_BUFFER, buffer.indices);
       };
-      WebglCanvas.prototype.createTexture = function (type, minMag, wrap, width, height) {
+      WebglRenderer.prototype.createTexture = function (type, minMag, wrap, width, height) {
           if (width === void 0) { width = 1; }
           if (height === void 0) { height = 1; }
           var gl = this.gl;
@@ -4212,7 +4255,7 @@
           this.refs.textures.push(tex);
           return tex;
       };
-      WebglCanvas.prototype.createFrameBuffer = function (colorTexture) {
+      WebglRenderer.prototype.createFrameBuffer = function (colorTexture) {
           var gl = this.gl;
           var fb = gl.createFramebuffer();
           gl.bindFramebuffer(gl.FRAMEBUFFER, fb);
@@ -4225,7 +4268,7 @@
           this.refs.framebuffers.push(fb);
           return fb;
       };
-      WebglCanvas.prototype.setCanvasSize = function (width, height) {
+      WebglRenderer.prototype.setCanvasSize = function (width, height) {
           var dpi = window.devicePixelRatio || 1;
           var internalWidth = width * dpi;
           var internalHeight = height * dpi;
@@ -4236,7 +4279,7 @@
           this.el.style.width = width + "px";
           this.el.style.height = height + "px";
       };
-      WebglCanvas.prototype.setTextureSize = function (width, height) {
+      WebglRenderer.prototype.setTextureSize = function (width, height) {
           var gl = this.gl;
           this.textureWidth = width;
           this.textureHeight = height;
@@ -4244,7 +4287,7 @@
           gl.bindTexture(gl.TEXTURE_2D, this.frameTexture);
           gl.texImage2D(gl.TEXTURE_2D, 0, gl.RGBA, this.textureWidth, this.textureHeight, 0, gl.RGBA, gl.UNSIGNED_BYTE, null);
       };
-      WebglCanvas.prototype.clearFrameBuffer = function (paperColor) {
+      WebglRenderer.prototype.clearFrameBuffer = function (paperColor) {
           var gl = this.gl;
           // bind to the frame buffer
           gl.bindFramebuffer(gl.FRAMEBUFFER, this.frameBuffer);
@@ -4254,7 +4297,7 @@
           gl.clearColor(r / 255, g / 255, b / 255, a / 255);
           gl.clear(gl.COLOR_BUFFER_BIT);
       };
-      WebglCanvas.prototype.setPalette = function (colors) {
+      WebglRenderer.prototype.setPalette = function (colors) {
           var gl = this.gl;
           var data = new Uint8Array(256 * 4);
           var dataPtr = 0;
@@ -4269,7 +4312,7 @@
           gl.bindTexture(gl.TEXTURE_2D, this.paletteTexture);
           gl.texImage2D(gl.TEXTURE_2D, 0, gl.RGBA, 256, 1, 0, gl.RGBA, gl.UNSIGNED_BYTE, data);
       };
-      WebglCanvas.prototype.drawPixels = function (pixels, paletteOffset) {
+      WebglRenderer.prototype.drawPixels = function (pixels, paletteOffset) {
           var _a = this, gl = _a.gl, layerDrawProgram = _a.layerDrawProgram, layerTexture = _a.layerTexture, textureWidth = _a.textureWidth, textureHeight = _a.textureHeight;
           // we wanna draw to the frame buffer
           gl.bindFramebuffer(gl.FRAMEBUFFER, this.frameBuffer);
@@ -4290,7 +4333,7 @@
           // draw screen quad
           gl.drawElements(gl.TRIANGLES, this.quadBuffer.numElements, this.quadBuffer.elementType, 0);
       };
-      WebglCanvas.prototype.composite = function () {
+      WebglRenderer.prototype.composite = function () {
           var gl = this.gl;
           // setting gl.FRAMEBUFFER will draw directly to the screen
           gl.bindFramebuffer(gl.FRAMEBUFFER, null);
@@ -4309,12 +4352,12 @@
           // draw screen quad
           gl.drawElements(gl.TRIANGLES, this.quadBuffer.numElements, this.quadBuffer.elementType, 0);
       };
-      WebglCanvas.prototype.resize = function (width, height) {
+      WebglRenderer.prototype.resize = function (width, height) {
           if (width === void 0) { width = 640; }
           if (height === void 0) { height = 480; }
           this.setCanvasSize(width, height);
       };
-      WebglCanvas.prototype.destroy = function () {
+      WebglRenderer.prototype.destroy = function () {
           // free resources
           var refs = this.refs;
           var gl = this.gl;
@@ -4342,7 +4385,7 @@
           gl.canvas.width = 1;
           gl.canvas.height = 1;
       };
-      return WebglCanvas;
+      return WebglRenderer;
   }());
 
   /** @internal */
@@ -4482,7 +4525,7 @@
           this.isSeeking = false;
           // if `el` is a string, use it to select an Element, else assume it's an element
           el = ('string' == typeof el) ? document.querySelector(el) : el;
-          this.canvas = new WebglCanvas(el, width, height);
+          this.canvas = new WebglRenderer(el, width, height);
           this.audio = new WebAudioPlayer();
           this.el = this.canvas.el;
           this.customPalette = null;
@@ -4623,11 +4666,7 @@
           this.paused = true;
           this.isOpen = true;
           this.hasPlaybackStarted = false;
-          this.layerVisibility = {
-              1: true,
-              2: true,
-              3: true
-          };
+          this.layerVisibility = this.note.layerVisibility;
           var sampleRate = this.note.sampleRate;
           var pcm = note.getAudioMasterPcm();
           this.audio.setSamples(pcm, sampleRate);
@@ -4873,13 +4912,13 @@
           // this.canvas.setPaperColor(colors[0]);
           this.canvas.setPalette(colors);
           this.canvas.clearFrameBuffer(colors[0]);
-          if (this.note.format === FlipnoteFormat.PPM) {
+          if (this.note.format === exports.FlipnoteFormat.PPM) {
               if (this.layerVisibility[2]) // bottom
                   this.canvas.drawPixels(layerBuffers[1], 1);
               if (this.layerVisibility[1]) // top
                   this.canvas.drawPixels(layerBuffers[0], 0);
           }
-          else if (this.note.format === FlipnoteFormat.KWZ) {
+          else if (this.note.format === exports.FlipnoteFormat.KWZ) {
               var order = this.note.getFrameLayerOrder(frameIndex);
               var layerIndexC = order[0];
               var layerIndexB = order[1];
@@ -4981,12 +5020,16 @@
       return Player;
   }());
 
+  // Main entrypoint for web
+  var version = "5.0.0"; // replaced by @rollup/plugin-replace; see rollup.config.js
+
   exports.GifImage = GifImage;
   exports.KwzParser = KwzParser;
   exports.Player = Player;
   exports.PpmParser = PpmParser;
   exports.WavAudio = WavAudio;
   exports.parseSource = parseSource;
+  exports.version = version;
 
   Object.defineProperty(exports, '__esModule', { value: true });
 

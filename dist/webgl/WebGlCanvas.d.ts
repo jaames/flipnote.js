@@ -1,5 +1,5 @@
 /** webgl canvas wrapper class */
-export declare class WebglCanvas {
+export declare class WebglRenderer {
     el: HTMLCanvasElement;
     gl: WebGLRenderingContext;
     screenWidth: number;

@@ -132,6 +132,7 @@ export class PpmParser extends FlipnoteParserBase<PpmMeta> {
 
   /** File format type, reflects {@link PpmParser.format} */
   public format = FlipnoteFormat.PPM;
+  public formatString = 'PPM';
   /** Animation frame width, reflects {@link PpmParser.width} */
   public width = PpmParser.width;
   /** Animation frame height, reflects {@link PpmParser.height} */

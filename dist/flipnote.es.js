@@ -239,9 +239,13 @@ const nodeUrlLoader = {
     }
 };
 
+/**
+ * Loader for File objects (browser only)
+ * @internal
+ */
 const fileLoader = {
     matches: function (source) {
-        return (typeof File !== 'undefined' && source instanceof File);
+        return isBrowser && typeof File !== 'undefined' && source instanceof File;
     },
     load: function (source, resolve, reject) {
         if (typeof FileReader !== 'undefined') {
@@ -269,6 +273,10 @@ const nodeBufferLoader = {
     }
 };
 
+/**
+ * Loader for ArrayBuffer objects
+ * @internal
+ */
 const arrayBufferLoader = {
     matches: function (source) {
         return (source instanceof ArrayBuffer);
@@ -288,12 +296,15 @@ const loaders = [
 ];
 /** @internal */
 function loadSource(source) {
-    return new Promise(function (resolve, reject) {
-        loaders.forEach(loader => {
+    return new Promise((resolve, reject) => {
+        for (let i = 0; i < loaders.length; i++) {
+            const loader = loaders[i];
             if (loader.matches(source)) {
                 loader.load(source, resolve, reject);
+                return;
             }
-        });
+        }
+        reject('No loader available for source type');
     });
 }
 
@@ -305,11 +316,6 @@ var FlipnoteFormat;
     /** Animation format used by Flipnote Studio 3D (Nintendo 3DS) */
     FlipnoteFormat[FlipnoteFormat["KWZ"] = 1] = "KWZ";
 })(FlipnoteFormat || (FlipnoteFormat = {}));
-/** Maps FlipnoteFormat enum types to strings */
-const FlipnoteFormatStrings = {
-    [FlipnoteFormat.PPM]: "PPM",
-    [FlipnoteFormat.KWZ]: "KWZ"
-};
 /** Identifies a Flipnote audio track type */
 var FlipnoteAudioTrack;
 (function (FlipnoteAudioTrack) {
@@ -332,10 +338,6 @@ var FlipnoteAudioTrack;
  * @category File Parser
 */
 class FlipnoteParserBase extends DataStream {
-    /** Flipnote Format as a string */
-    get formatString() {
-        return FlipnoteFormatStrings[this.format];
-    }
     /**
      * Does an audio track exist in the Flipnote?
      * @category Audio
@@ -492,10 +494,13 @@ class PpmParser extends FlipnoteParserBase {
         super(arrayBuffer);
         /** File format type, reflects {@link PpmParser.format} */
         this.format = FlipnoteFormat.PPM;
+        this.formatString = 'PPM';
         /** Animation frame width, reflects {@link PpmParser.width} */
         this.width = PpmParser.width;
         /** Animation frame height, reflects {@link PpmParser.height} */
         this.height = PpmParser.height;
+        /** Number of animation frame layers, reflects {@link PpmParser.numLayers} */
+        this.numLayers = PpmParser.numLayers;
         /** Audio track base sample rate, reflects {@link PpmParser.rawSampleRate} */
         this.rawSampleRate = PpmParser.rawSampleRate;
         /** Audio output sample rate, reflects {@link PpmParser.sampleRate} */
@@ -554,6 +559,11 @@ class PpmParser extends FlipnoteParserBase {
         this.seek(0x06A6);
         const flags = this.readUint16();
         this.thumbFrameIndex = thumbIndex;
+        this.layerVisibility = {
+            1: (flags & 0x800) === 0,
+            2: (flags & 0x400) === 0,
+            3: false
+        };
         this.meta = {
             lock: lock === 1,
             loop: (flags >> 1 & 0x01) === 1,
@@ -972,6 +982,8 @@ PpmParser.format = FlipnoteFormat.PPM;
 PpmParser.width = 256;
 /** Animation frame height */
 PpmParser.height = 192;
+/** Number of animation frame layers */
+PpmParser.numLayers = 2;
 /** Audio track base sample rate */
 PpmParser.rawSampleRate = 8192;
 /** Nintendo DSi audui output rate */
@@ -1094,10 +1106,13 @@ class KwzParser extends FlipnoteParserBase {
         super(arrayBuffer);
         /** File format type, reflects {@link KwzParser.format} */
         this.format = FlipnoteFormat.KWZ;
+        this.formatString = 'KWZ';
         /** Animation frame width, reflects {@link KwzParser.width} */
         this.width = KwzParser.width;
         /** Animation frame height, reflects {@link KwzParser.height} */
         this.height = KwzParser.height;
+        /** Number of animation frame layers, reflects {@link KwzParser.numLayers} */
+        this.numLayers = KwzParser.numLayers;
         /** Audio track base sample rate, reflects {@link KwzParser.rawSampleRate} */
         this.rawSampleRate = KwzParser.rawSampleRate;
         /** Audio output sample rate, reflects {@link KwzParser.sampleRate} */
@@ -1160,6 +1175,11 @@ class KwzParser extends FlipnoteParserBase {
         this.thumbFrameIndex = thumbIndex;
         this.frameSpeed = frameSpeed;
         this.framerate = KWZ_FRAMERATES[frameSpeed];
+        this.layerVisibility = {
+            1: (layerFlags & 0x1) === 0,
+            2: (layerFlags & 0x2) === 0,
+            3: (layerFlags & 0x3) === 0,
+        };
         this.meta = {
             lock: (flags & 0x1) !== 0,
             loop: (flags & 0x2) !== 0,
@@ -1314,6 +1334,15 @@ class KwzParser extends FlipnoteParserBase {
             (soundFlags & 0x2) !== 0,
             (soundFlags & 0x4) !== 0,
             (soundFlags & 0x8) !== 0,
+        ];
+    }
+    getFrameCameraFlags(frameIndex) {
+        this.seek(this.frameMetaOffsets[frameIndex] + 0x1A);
+        const cameraFlags = this.readUint8();
+        return [
+            (cameraFlags & 0x1) !== 0,
+            (cameraFlags & 0x2) !== 0,
+            (cameraFlags & 0x4) !== 0,
         ];
     }
     /**
@@ -1735,6 +1764,8 @@ KwzParser.format = FlipnoteFormat.KWZ;
 KwzParser.width = 320;
 /** Animation frame height */
 KwzParser.height = 240;
+/** Number of animation frame layers */
+KwzParser.numLayers = 3;
 /** Audio track base sample rate */
 KwzParser.rawSampleRate = 16364;
 /** Audio output sample rate. NOTE: probably isn't accurate, full KWZ audio stack is still on the todo */
@@ -2021,6 +2052,7 @@ class GifImage {
     constructor(width, height, settings = {}) {
         /** Number of current GIF frames */
         this.numFrames = 0;
+        this.dataUrl = null;
         this.width = width;
         this.height = height;
         this.data = new ByteArray();
@@ -2197,9 +2229,27 @@ class GifImage {
      */
     getUrl() {
         if (isBrowser) {
+            if (this.dataUrl)
+                return this.dataUrl;
             return window.URL.createObjectURL(this.getBlob());
         }
-        throw new Error('Data URLs is only available in browser environments');
+        throw new Error('Data URLs are only available in browser environments');
+    }
+    /**
+     * Revokes this image's object URL if one has been created
+     *
+     * Note: This method does not work outside of browser environments
+     *
+     * Object URL API: https://developer.mozilla.org/en-US/docs/Web/API/URL/revokeObjectURL
+     */
+    revokeUrl() {
+        if (isBrowser) {
+            if (this.dataUrl)
+                window.URL.revokeObjectURL(this.dataUrl);
+        }
+        else {
+            throw new Error('Data URLs are only available in browser environments');
+        }
     }
     /**
      * Returns the GIF image data as an Image object
@@ -3949,7 +3999,7 @@ var layerDrawShader = "precision highp float;\n#define GLSLIFY 1\nvarying vec2 v
 var postProcessShader = "precision highp float;\n#define GLSLIFY 1\nvarying vec2 v_uv;uniform sampler2D u_tex;varying float v_scale;uniform vec2 u_textureSize;uniform vec2 u_screenSize;void main(){vec2 v_texel=v_uv*u_textureSize;vec2 texel_floored=floor(v_texel);vec2 s=fract(v_texel);float region_range=0.5-0.5/v_scale;vec2 center_dist=s-0.5;vec2 f=(center_dist-clamp(center_dist,-region_range,region_range))*v_scale+0.5;vec2 mod_texel=texel_floored+f;vec2 coord=mod_texel.xy/u_textureSize.xy;gl_FragColor=texture2D(u_tex,coord);}"; // eslint-disable-line
 
 /** webgl canvas wrapper class */
-class WebglCanvas {
+class WebglRenderer {
     constructor(el, width = 640, height = 480) {
         this.refs = {
             programs: [],
@@ -4338,7 +4388,7 @@ class Player {
         this.isSeeking = false;
         // if `el` is a string, use it to select an Element, else assume it's an element
         el = ('string' == typeof el) ? document.querySelector(el) : el;
-        this.canvas = new WebglCanvas(el, width, height);
+        this.canvas = new WebglRenderer(el, width, height);
         this.audio = new WebAudioPlayer();
         this.el = this.canvas.el;
         this.customPalette = null;
@@ -4442,11 +4492,7 @@ class Player {
         this.paused = true;
         this.isOpen = true;
         this.hasPlaybackStarted = false;
-        this.layerVisibility = {
-            1: true,
-            2: true,
-            3: true
-        };
+        this.layerVisibility = this.note.layerVisibility;
         const sampleRate = this.note.sampleRate;
         const pcm = note.getAudioMasterPcm();
         this.audio.setSamples(pcm, sampleRate);
@@ -4791,4 +4837,7 @@ Player.defaultState = {
     wasPlaying: false,
 };
 
-export { FlipnoteAudioTrack, GifImage, KwzParser, Player, PpmParser, WavAudio, parseSource };
+// Main entrypoint for web
+const version = "5.0.0"; // replaced by @rollup/plugin-replace; see rollup.config.js
+
+export { FlipnoteAudioTrack, FlipnoteFormat, GifImage, KwzParser, Player, PpmParser, WavAudio, parseSource, version };

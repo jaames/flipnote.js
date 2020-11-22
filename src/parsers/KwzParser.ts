@@ -129,8 +129,10 @@ export interface KwzFrameMeta {
 export interface KwzParserSettings {
   /** Skip full metadata parsing for quickness */ 
   quickMeta?: boolean;
-  /** apply special cases for dsi gallery notes */ 
+  /** Apply special cases for dsi gallery notes */ 
   dsiGalleryNote?: boolean;
+  /** Apply minor audio fix, which is technically more correct but not accurate to the app's own adpcm decoder */
+  fixAdpcmStepIndex?: boolean;
 };
 
 /** 
@@ -171,6 +173,7 @@ export class KwzParser extends FlipnoteParserBase<KwzMeta> {
   
   /** File format type, reflects {@link KwzParser.format} */
   public format = FlipnoteFormat.KWZ;
+  public formatString = 'KWZ';
   /** Animation frame width, reflects {@link KwzParser.width} */
   public width = KwzParser.width;
   /** Animation frame height, reflects {@link KwzParser.height} */
@@ -792,6 +795,9 @@ export class KwzParser extends FlipnoteParserBase<KwzMeta> {
     // initial decoder state
     let prevDiff = 0;
     let prevStepIndex = 40;
+    // Flipnote 3D's audio decoder is actually incorrect, so we can optionally trigger "correct" audio decoding here
+    if (this.settings.fixAdpcmStepIndex)
+      prevStepIndex = 0;
     let sample: number;
     let diff: number;
     let stepIndex: number;

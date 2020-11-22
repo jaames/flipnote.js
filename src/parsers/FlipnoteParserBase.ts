@@ -8,12 +8,6 @@ export enum FlipnoteFormat {
   KWZ
 };
 
-/** Maps FlipnoteFormat enum types to strings */
-export const FlipnoteFormatStrings: Record<FlipnoteFormat, string> = {
-  [FlipnoteFormat.PPM]: "PPM",
-  [FlipnoteFormat.KWZ]: "KWZ"
-};
-
 /** RGBA color */
 export type FlipnotePaletteColor = [
   /** Red (0 to 255) */
@@ -89,15 +83,13 @@ export abstract class FlipnoteParserBase<Meta> extends DataStream {
   /** File format type, reflects {@link FlipnoteParserBase.format} */
   public format: FlipnoteFormat;
   /** Flipnote Format as a string */
-  get formatString () {
-    return FlipnoteFormatStrings[this.format];
-  }
+  public formatString: string;
   /** Animation frame width, reflects {@link FlipnoteParserBase.width} */
   public width: number;
   /** Animation frame height, reflects {@link FlipnoteParserBase.height} */
   public height: number;
   /** Number of animation frame layers, reflects {@link FlipnoteParserBase.numLayers} */
-  public numLayers = FlipnoteParserBase.numLayers;
+  public numLayers: number;
   /** Audio track base sample rate, reflects {@link FlipnoteParserBase.rawSampleRate} */
   public rawSampleRate: number;
   /** Audio output sample rate, reflects {@link FlipnoteParserBase.sampleRate} */
