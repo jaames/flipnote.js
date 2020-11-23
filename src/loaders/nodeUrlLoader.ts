@@ -2,6 +2,10 @@ import { isNode } from '../utils';
 import { ServerResponse } from 'http';
 import { LoaderDefinition } from './loaderDefinition';
 
+/** 
+ * Loader for web url strings (Node only)
+ * @internal
+ */
 const nodeUrlLoader: LoaderDefinition<string> = {
 
   matches: function(source) {

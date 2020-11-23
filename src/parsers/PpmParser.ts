@@ -197,14 +197,14 @@ export class PpmParser extends FlipnoteParser {
     const flags = this.readUint16();
     this.thumbFrameIndex = thumbIndex;
     this.layerVisibility = {
-      1: (flags & 0x800) === 0,
-      2: (flags & 0x400) === 0,
+      1: (flags & 0x10) === 0,
+      2: (flags & 0x20) === 0,
       3: false
     };
     this.isSpinoff = (currentAuthorId !== parentAuthorId) || (currentAuthorId !== rootAuthorId);
     this.meta = {
       lock: lock === 1,
-      loop: (flags >> 1 & 0x01) === 1,
+      loop: (flags >> 1 & 0x1) === 1,
       frameCount: this.frameCount,
       frameSpeed: this.frameSpeed,
       bgmSpeed: this.bgmSpeed,

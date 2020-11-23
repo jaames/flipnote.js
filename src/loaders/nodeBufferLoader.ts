@@ -1,6 +1,10 @@
 import { isNode } from '../utils';
 import { LoaderDefinition } from './loaderDefinition';
 
+/** 
+ * Loader for Buffer objects (Node only)
+ * @internal
+ */
 const nodeBufferLoader: LoaderDefinition<Buffer> = {
 
   matches: function(source) {

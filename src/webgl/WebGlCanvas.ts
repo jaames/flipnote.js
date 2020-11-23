@@ -25,11 +25,25 @@ interface ResourceMap {
   framebuffers: WebGLFramebuffer[];
 };
 
-/** webgl canvas wrapper class */
+/**
+ * Animation frame renderer, built around the {@link https://developer.mozilla.org/en-US/docs/Web/API/WebGL_API WebGL} API
+ * 
+ * Only available in browser contexts
+ */
 export class WebglRenderer {
+  /** Canvas HTML element being used as a rendering surface */
   public el: HTMLCanvasElement;
+  /** Rendering context - see {@link https://developer.mozilla.org/en-US/docs/Web/API/WebGLRenderingContext} */
   public gl: WebGLRenderingContext;
+  /** 
+   * Backing canvas width (pixels)
+   * Note that this factors in device pixel ratio, so it may not reflect the size of the canvas in CSS pixels
+   */
   public screenWidth: number;
+  /** 
+   * Backing canvas height (pixels)
+   * Note that this factors in device pixel ratio, so it may not reflect the size of the canvas in CSS pixels
+   */
   public screenHeight: number;
 
   private layerDrawProgram: ProgramInfo; // for drawing layers to a renderbuffer
@@ -49,6 +63,14 @@ export class WebglRenderer {
     framebuffers: []
   };
 
+  /**
+   * Creates a new WebGlCanvas instance
+   * @param el - Canvas HTML element to use as a rendering surface
+   * @param width - Canvas width in CSS pixels
+   * @param height - Canvas height in CSS pixels
+   * 
+   * The ratio between `width` and `height` should be 3:4 for best results
+   */
   constructor(el: HTMLCanvasElement, width=640, height=480) {
     if (!isBrowser) {
       throw new Error('The WebGL renderer is only available in browser environments');
@@ -189,6 +211,13 @@ export class WebglRenderer {
     return fb;
   }
 
+  /**
+   * Resize the canvas surface
+   * @param width - New canvas width, in CSS pixels
+   * @param height - New canvas height, in CSS pixels
+   * 
+   * The ratio between `width` and `height` should be 3:4 for best results
+   */
   public setCanvasSize(width: number, height: number) {
     const dpi = window.devicePixelRatio || 1;
     const internalWidth = width * dpi;
@@ -201,7 +230,12 @@ export class WebglRenderer {
     this.el.style.height = `${ height }px`;
   }
 
-  public setTextureSize(width: number, height: number) {
+  /**
+   * Sets the size of the input pixel arrays
+   * @param width 
+   * @param height 
+   */
+  public setInputSize(width: number, height: number) {
     const gl = this.gl;
     this.textureWidth = width;
     this.textureHeight = height;
@@ -210,6 +244,10 @@ export class WebglRenderer {
     gl.texImage2D(gl.TEXTURE_2D, 0, gl.RGBA, this.textureWidth, this.textureHeight, 0, gl.RGBA, gl.UNSIGNED_BYTE, null);
   }
 
+  /**
+   * Clear frame buffer
+   * @param colors - Paper color as `[R, G, B, A]`
+   */
   public clearFrameBuffer(paperColor: number[]) {
     const gl = this.gl;
     // bind to the frame buffer
@@ -221,6 +259,10 @@ export class WebglRenderer {
     gl.clear(gl.COLOR_BUFFER_BIT);
   }
 
+  /**
+   * Set the color palette to use for the next {@link drawPixels} call
+   * @param colors - Array of colors as `[R, G, B, A]`
+   */
   public setPalette(colors: number[][]) {
     const gl = this.gl;
     const data = new Uint8Array(256 * 4);
@@ -237,6 +279,13 @@ export class WebglRenderer {
     gl.texImage2D(gl.TEXTURE_2D, 0, gl.RGBA, 256, 1, 0, gl.RGBA, gl.UNSIGNED_BYTE, data);
   }
 
+  /**
+   * Draw pixels to the frame buffer
+   * 
+   * Note: use {@link composite} to draw the frame buffer to the canvas
+   * @param pixels - Array of color indices for every pixl
+   * @param paletteOffset - Palette offset index for the pixels being drawn
+   */
   public drawPixels(pixels: Uint8Array, paletteOffset: number) {
     const {
       gl,
@@ -265,6 +314,9 @@ export class WebglRenderer {
     gl.drawElements(gl.TRIANGLES, this.quadBuffer.numElements, this.quadBuffer.elementType, 0);
   }
 
+  /**
+   * Composites the current frame buffer into the canvas, applying post-processing effects like scaling filters if enabled
+   */
   public composite() {
     const gl = this.gl;
     // setting gl.FRAMEBUFFER will draw directly to the screen
@@ -289,8 +341,10 @@ export class WebglRenderer {
     this.setCanvasSize(width, height);
   }
 
+  /**
+   * Frees any resources used by this canvas instance
+   */
   public destroy() {
-    // free resources
     const refs = this.refs;
     const gl = this.gl;
     refs.shaders.forEach((shader) => {

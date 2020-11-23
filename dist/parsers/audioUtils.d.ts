@@ -1,22 +1,20 @@
 /** @internal */
 export declare function clamp(n: number, l: number, h: number): number;
 /**
- * zero-order hold interpolation
+ * Zero-order hold interpolation
+ * Credit to SimonTime for the original C version
  * @internal
  */
 export declare function pcmDsAudioResample(src: Int16Array, srcFreq: number, dstFreq: number): Int16Array;
 /** @internal */
-export declare function pcmAudioMix(src: Int16Array, dst: Int16Array, dstOffset?: number): void;
-/** @internal */
 export declare const ADPCM_INDEX_TABLE_2BIT: Int8Array;
 /** @internal */
 export declare const ADPCM_INDEX_TABLE_4BIT: Int8Array;
+/** @internal */
+export declare const ADPCM_STEP_TABLE: Int16Array;
 /**
- * note that this is a slight deviation from the normal adpcm table
+ * Get a ratio of how many audio samples hit the pcm_s16_le clipping bounds
+ * This can be used to detect corrupted audio
  * @internal
  */
-export declare const ADPCM_STEP_TABLE: Int16Array;
-/** @internal */
-export declare const ADPCM_SAMPLE_TABLE_2BIT: Int16Array;
-/** @internal */
-export declare const ADPCM_SAMPLE_TABLE_4BIT: Int16Array;
+export declare function pcmGetClippingRatio(src: Int16Array): number;

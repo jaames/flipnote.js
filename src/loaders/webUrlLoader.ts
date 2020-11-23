@@ -1,6 +1,10 @@
 import { isBrowser } from '../utils';
 import { LoaderDefinition } from './loaderDefinition';
 
+/** 
+ * Loader for web url strings (Browser only)
+ * @internal
+ */
 const webUrlLoader: LoaderDefinition<string> = {
 
   matches: function(source) {

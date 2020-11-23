@@ -7,14 +7,23 @@ const _AudioContext = (function() {
   return null;
 })();
 
+/** PCM audio buffer types. Supports s16_le, or float32_le with a range of -1.0 to 1.0 */
 export type PcmAudioBuffer = Int16Array | Float32Array;
 
+/**
+ * Audio player built around the {@link https://developer.mozilla.org/en-US/docs/Web/API/Web_Audio_API | Web Audio API}
+ * 
+ * Capable of playing PCM streams, with volume adjustment and an optional equalizer. Only available in browser contexts
+ */
 export class WebAudioPlayer {
 
+  /** Audio context, see {@link https://developer.mozilla.org/en-US/docs/Web/API/BaseAudioContext | BaseAudioContext} */
   public ctx: BaseAudioContext;
+  /** Audio sample rate */
   public sampleRate: number;
-  public useEq: boolean = false;
-  // Thanks to Sudomemo for the default settings
+  /** Whether the audio is being run through an equalizer or not */
+  public useEq: boolean = false
+  /** Equalizer settings. Credit to {@link https://www.sudomemo.net/ | Sudomemo} */
   public eqSettings: [number, number][] = [
     [31.25, 4.1],
     [62.5, 1.2],
@@ -39,6 +48,7 @@ export class WebAudioPlayer {
     this.ctx = new _AudioContext();
   }
 
+  /** Sets the audio output volume */
   set volume(value: number) {
     this.setVolume(value);
   }
@@ -47,15 +57,20 @@ export class WebAudioPlayer {
     return this._volume;
   }
 
-  setSamples(sampleData: PcmAudioBuffer, sampleRate: number) {
-    const numSamples = sampleData.length;
+  /**
+   * Set the audio buffer to play
+   * @param inputBuffer 
+   * @param sampleRate - For best results, this should be a multiple of 16364
+   */
+  setBuffer(inputBuffer: PcmAudioBuffer, sampleRate: number) {
+    const numSamples = inputBuffer.length;
     const audioBuffer = this.ctx.createBuffer(1, numSamples, sampleRate);
     const channelData = audioBuffer.getChannelData(0);
-    if (sampleData instanceof Float32Array)
-      channelData.set(sampleData, 0);
-    else if (sampleData instanceof Int16Array) {
+    if (inputBuffer instanceof Float32Array)
+      channelData.set(inputBuffer, 0);
+    else if (inputBuffer instanceof Int16Array) {
       for (let i = 0; i < numSamples; i++) {
-        channelData[i] = sampleData[i] / 32767;
+        channelData[i] = inputBuffer[i] / 32767;
       }
     }
     this.buffer = audioBuffer;
@@ -99,6 +114,10 @@ export class WebAudioPlayer {
     this.setVolume(this._volume);
   }
 
+  /**
+   * Sets the audio volume level
+   * @param value - range is 0 to 1
+   */
   setVolume(value: number) {
     this._volume = value;
     if (this.gainNode) {
@@ -108,13 +127,21 @@ export class WebAudioPlayer {
     }
   }
 
-  stop() {
-    this.source.stop(0);
-  }
-
+  /**
+   * Begin playback from a specific point
+   * 
+   * Note that the WebAudioPlayer doesn't keep track of audio playback itself. We rely on the {@link Player} API for that.
+   * @param currentTime initial playback position, in seconds
+   */
   playFrom(currentTime: number) {
     this.initNodes();
     this.source.start(0, currentTime);
   }
 
+  /**
+   * Stops the audio playback
+   */
+  stop() {
+    this.source.stop(0);
+  }
 }

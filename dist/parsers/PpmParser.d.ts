@@ -21,45 +21,13 @@
  *  Lastly, a huge thanks goes to Nintendo for creating Flipnote Studio,
  *  and to Hatena for providing the Flipnote Hatena online service, both of which inspired so many c:
 */
-import { FlipnoteFormat, FlipnoteAudioTrack, FlipnoteParserBase } from './FlipnoteParserBase';
+import { FlipnoteFormat, FlipnoteAudioTrack, FlipnoteMeta, FlipnoteParser } from './FlipnoteParserTypes';
 /**
  * PPM file metadata, stores information about its playback, author details, etc
  */
-export interface PpmMeta {
-    /** File lock state. Locked Flipnotes cannot be edited by anyone other than the current author */
-    lock: boolean;
-    /** Playback loop state. If `true`, playback will loop once the end is reached */
-    loop: boolean;
-    /** Total number of animation frames */
-    frame_count: number;
-    /** In-app frame playback speed, range 1 to 8 */
-    frame_speed: number;
+export interface PpmMeta extends FlipnoteMeta {
     /** In-app frame playback speed when the BGM audio track was recorded */
-    bgm_speed: number;
-    /** Index of the animation frame used as the Flipnote's thumbnail image */
-    thumb_index: number;
-    /** Date representing when the file was last edited */
-    timestamp: Date;
-    /** Spinoffs are remixes of another user's Flipnote */
-    spinoff: boolean;
-    /** Metadata about the author of the original Flipnote file */
-    root: {
-        filename: string;
-        username: string;
-        fsid: string;
-    };
-    /** Metadata about the previous author of the Flipnote file */
-    parent: {
-        filename: string;
-        username: string;
-        fsid: string;
-    };
-    /** Metadata about the current author of the Flipnote file */
-    current: {
-        filename: string;
-        username: string;
-        fsid: string;
-    };
+    bgmSpeed: number;
 }
 /**
  * PPM parser options for enabling optimisations and other extra features.
@@ -73,7 +41,7 @@ export interface PpmParserSettings {
  * Format docs: https://github.com/Flipnote-Collective/flipnote-studio-docs/wiki/PPM-format
  * @category File Parser
  */
-export declare class PpmParser extends FlipnoteParserBase<PpmMeta> {
+export declare class PpmParser extends FlipnoteParser {
     /** Default PPM parser settings */
     static defaultSettings: PpmParserSettings;
     /** File format type */
@@ -86,10 +54,10 @@ export declare class PpmParser extends FlipnoteParserBase<PpmMeta> {
     static numLayers: number;
     /** Audio track base sample rate */
     static rawSampleRate: number;
-    /** Nintendo DSi audui output rate */
+    /** Nintendo DSi audio output rate */
     static sampleRate: number;
     /** Global animation frame color palette */
-    static globalPalette: import("./FlipnoteParserBase").FlipnotePaletteColor[];
+    static globalPalette: import("./FlipnoteParserTypes").FlipnotePaletteColor[];
     /** File format type, reflects {@link PpmParser.format} */
     format: FlipnoteFormat;
     formatString: string;
@@ -104,7 +72,7 @@ export declare class PpmParser extends FlipnoteParserBase<PpmMeta> {
     /** Audio output sample rate, reflects {@link PpmParser.sampleRate} */
     sampleRate: number;
     /** Global animation frame color palette, reflects {@link PpmParser.globalPalette} */
-    globalPalette: import("./FlipnoteParserBase").FlipnotePaletteColor[];
+    globalPalette: import("./FlipnoteParserTypes").FlipnotePaletteColor[];
     /** File metadata, see {@link PpmMeta} for structure */
     meta: PpmMeta;
     /** File format version; always the same as far as we know */
@@ -160,7 +128,7 @@ export declare class PpmParser extends FlipnoteParserBase<PpmMeta> {
      *  - index 2 is the layer 2 color
      * @category Image
      */
-    getFramePalette(frameIndex: number): import("./FlipnoteParserBase").FlipnotePaletteColor[];
+    getFramePalette(frameIndex: number): import("./FlipnoteParserTypes").FlipnotePaletteColor[];
     /**
      * Get the pixels for a given frame layer
      * @category Image
@@ -194,6 +162,7 @@ export declare class PpmParser extends FlipnoteParserBase<PpmMeta> {
      * @category Audio
     */
     getAudioTrackPcm(trackId: FlipnoteAudioTrack, dstFreq?: number): Int16Array;
+    private pcmAudioMix;
     /**
      * Get the full mixed audio for the Flipnote, using the specified samplerate
      * @returns Signed 16-bit PCM audio

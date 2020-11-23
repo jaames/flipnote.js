@@ -48,6 +48,38 @@ export declare type FlipnoteLayerVisibility = {
     2: boolean;
     3: boolean;
 };
+export interface FlipnoteMeta {
+    /** File lock state. Locked Flipnotes cannot be edited by anyone other than the current author */
+    lock: boolean;
+    /** Playback loop state. If `true`, playback will loop once the end is reached */
+    loop: boolean;
+    /** Total number of animation frames */
+    frameCount: number;
+    /** In-app frame playback speed */
+    frameSpeed: number;
+    /** Index of the animation frame used as the Flipnote's thumbnail image */
+    thumbIndex: number;
+    /** Date representing when the file was last edited */
+    timestamp: Date;
+    /** Metadata about the author of the original Flipnote file */
+    root: {
+        filename: string;
+        username: string;
+        fsid: string;
+    };
+    /** Metadata about the previous author of the Flipnote file */
+    parent: {
+        filename: string;
+        username: string;
+        fsid: string;
+    };
+    /** Metadata about the current author of the Flipnote file */
+    current: {
+        filename: string;
+        username: string;
+        fsid: string;
+    };
+}
 /**
  * Base Flipnote parser class
  *
@@ -55,7 +87,7 @@ export declare type FlipnoteLayerVisibility = {
  * it just provides a consistent API for every format parser to implement.
  * @category File Parser
 */
-export declare abstract class FlipnoteParserBase<Meta> extends DataStream {
+export declare abstract class FlipnoteParser extends DataStream {
     /** File format type */
     static format: FlipnoteFormat;
     /** Animation frame width */
@@ -89,11 +121,13 @@ export declare abstract class FlipnoteParserBase<Meta> extends DataStream {
     /** Flipnote palette */
     palette: FlipnotePaletteDefinition;
     /** File metadata, see {@link FlipnoteMeta} for structure */
-    meta: Meta;
+    meta: FlipnoteMeta;
     /** File audio track info, see {@link FlipnoteAudioTrackInfo} */
     soundMeta: FlipnoteAudioTrackInfo;
     /** Animation frame global layer visibility */
     layerVisibility: FlipnoteLayerVisibility;
+    /** Spinoffs are remixes of another user's Flipnote */
+    isSpinoff: boolean;
     /** Animation frame count */
     frameCount: number;
     /** In-app animation playback speed */
@@ -106,6 +140,8 @@ export declare abstract class FlipnoteParserBase<Meta> extends DataStream {
     bgmrate: number;
     /** Index of the animation frame used as the Flipnote's thumbnail image */
     thumbFrameIndex: number;
+    /** Get the amount of clipping in the master audio track, useful for determining if a Flipnote's audio is corrupted. Closer to 1.0 = more clipping. Only available after {@link getAudioMasterPcm} has been called */
+    audioClipRatio: number;
     /**
      * Decode a frame, returning the raw pixel buffers for each layer
      * @category Image

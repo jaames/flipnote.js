@@ -20,7 +20,7 @@ type GifPaletteColor = [
 /**
  * Optional GIF encoder settings
  */
-export interface GifEncoderSettings {
+export interface GifImageSettings {
   /** Use transparency */
   transparentBg: boolean;
   /** Delay between animated GIF frames, measured in milliseconds */
@@ -42,7 +42,7 @@ export class GifImage {
   /**
    * Default GIF encoder settings
    */
-  static defaultSettings: GifEncoderSettings = {
+  static defaultSettings: GifImageSettings = {
     transparentBg: false,
     delay: 100,
     repeat: -1,
@@ -56,9 +56,9 @@ export class GifImage {
   /** GIF global RGBA color palette. Max 256 colors, alpha channel is ignored */
   public palette: GifPaletteColor[];
   /** GIF image settings, such as whether it should loop, the delay between frames, etc */
-  public settings: GifEncoderSettings;
+  public settings: GifImageSettings;
   /** Number of current GIF frames */
-  public numFrames: number = 0;
+  public frameCount: number = 0;
 
   private data: ByteArray;
   private compressor: LzwCompressor;
@@ -68,9 +68,9 @@ export class GifImage {
    * Create a new GIF image object
    * @param width image width
    * @param height image height
-   * @param settings image settings, such as whether it should loop, the delay between frames, etc
+   * @param settings whether the gif should loop, the delay between frames, etc. See {@link GifEncoderSettings}
    */
-  constructor(width: number, height: number, settings: Partial<GifEncoderSettings> = {}) {
+  constructor(width: number, height: number, settings: Partial<GifImageSettings> = {}) {
     this.width = width;
     this.height = height;
     this.data = new ByteArray();
@@ -82,10 +82,10 @@ export class GifImage {
    * Create an animated GIF image from a Flipnote
    * 
    * This will encode the entire animation, so depending on the number of frames it could take a while to return.
-   * @param flipnote {@link PpmParser} or {@link KwzParser} instance
-   * @param settings image settings, such as whether it should loop, the delay between frames, etc
+   * @param flipnote {@link Flipnote} object ({@link PpmParser} or {@link KwzParser} instance)
+   * @param settings whether the gif should loop, the delay between frames, etc. See {@link GifEncoderSettings}
    */
-  static fromFlipnote(flipnote: Flipnote, settings: Partial<GifEncoderSettings> = {}) {
+  static fromFlipnote(flipnote: Flipnote, settings: Partial<GifImageSettings> = {}) {
     const gif = new GifImage(flipnote.width, flipnote.height, {
       delay: 100 / flipnote.framerate,
       repeat: flipnote.meta.loop ? -1 : 0,
@@ -100,11 +100,11 @@ export class GifImage {
 
   /**
    * Create an GIF image from a single Flipnote frame
-   * @param flipnote {@link PpmParser} or {@link KwzParser} instance
+   * @param flipnote
    * @param frameIndex animation frame index to encode
-   * @param settings image settings, such as whether it should loop, the delay between frames, etc
+   * @param settings whether the gif should loop, the delay between frames, etc. See {@link GifEncoderSettings}
    */
-  static fromFlipnoteFrame(flipnote: Flipnote, frameIndex: number, settings: Partial<GifEncoderSettings> = {}) {
+  static fromFlipnoteFrame(flipnote: Flipnote, frameIndex: number, settings: Partial<GifImageSettings> = {}) {
     const gif = new GifImage(flipnote.width, flipnote.height, {
       // TODO: look at ideal delay and repeat settings for single frame GIF
       delay: 100 / flipnote.framerate,
@@ -121,11 +121,11 @@ export class GifImage {
    * @param pixels Raw pixels to encode, must be an uncompressed 8bit array of palette indices with a size matching image width * image height
    */
   public writeFrame(pixels: Uint8Array) {
-    if (this.numFrames === 0)
+    if (this.frameCount === 0)
       this.writeFirstFrame(pixels);
     else
       this.writeAdditionalFrame(pixels);
-    this.numFrames += 1;
+    this.frameCount += 1;
   }
 
   private writeFirstFrame(pixels: Uint8Array) {
@@ -221,30 +221,26 @@ export class GifImage {
   }
 
   /**
-   * Returns the GIF image data as an ArrayBuffer
+   * Returns the GIF image data as an {@link https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/ArrayBuffer | ArrayBuffer}
    */
   public getArrayBuffer(): ArrayBuffer {
     return this.data.getBuffer();
   }
 
   /**
-   * Returns the GIF image data as a NodeJS Buffer
+   * Returns the GIF image data as a NodeJS {@link https://nodejs.org/api/buffer.html | Buffer}
    * 
-   * Note: This method does not work outside of node.js environments
-   * 
-   * Buffer API: https://nodejs.org/api/buffer.html
+   * Note: This method does not work outside of NodeJS environments
    */
   public getBuffer(): Buffer {
     if (isNode) {
       return Buffer.from(this.getArrayBuffer());
     }
-    throw new Error('The Buffer object only available in Node.js environments');
+    throw new Error('The Buffer object only available in NodeJS environments');
   }
 
   /**
-   * Returns the GIF image data as a file blob
-   * 
-   * Blob API: https://developer.mozilla.org/en-US/docs/Web/API/Blob
+   * Returns the GIF image data as a file {@link https://developer.mozilla.org/en-US/docs/Web/API/Blob | Blob}
    */
   public getBlob(): Blob {
     if (isBrowser) {
@@ -254,11 +250,9 @@ export class GifImage {
   }
 
   /**
-   * Returns the GIF image data as an object URL
+   * Returns the GIF image data as an {@link https://developer.mozilla.org/en-US/docs/Web/API/URL/createObjectURL | Object URL}
    * 
    * Note: This method does not work outside of browser environments
-   * 
-   * Object URL API: https://developer.mozilla.org/en-US/docs/Web/API/URL/createObjectURL
    */
   public getUrl(): string {
     if (isBrowser) {
@@ -270,11 +264,9 @@ export class GifImage {
   }
 
   /**
-   * Revokes this image's object URL if one has been created
+   * Revokes this image's {@link https://developer.mozilla.org/en-US/docs/Web/API/URL/createObjectURL | Object URL} if one has been created, use this when the url created with {@link getUrl} is no longer needed, to preserve memory.
    * 
    * Note: This method does not work outside of browser environments
-   * 
-   * Object URL API: https://developer.mozilla.org/en-US/docs/Web/API/URL/revokeObjectURL
    */
 
   public revokeUrl(): void {
@@ -287,11 +279,9 @@ export class GifImage {
   }
 
   /**
-   * Returns the GIF image data as an Image object
+   * Returns the GIF image data as an {@link https://developer.mozilla.org/en-US/docs/Web/API/HTMLImageElement/Image | Image} object
    * 
    * Note: This method does not work outside of browser environments
-   * 
-   * Image API: https://developer.mozilla.org/en-US/docs/Web/API/HTMLImageElement/Image
    */
   public getImage(): HTMLImageElement {
     if (isBrowser) {

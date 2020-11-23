@@ -1,10 +1,6 @@
-import { FlipnoteParserBase } from './FlipnoteParserBase';
-import { PpmParserSettings, PpmMeta } from './PpmParser';
-import { KwzParserSettings, KwzMeta } from './KwzParser';
+export * from './FlipnoteParserTypes';
+export * from './FlipnoteTypes';
+export * from './parseSource';
+export * from './audioUtils';
 export * from './PpmParser';
 export * from './KwzParser';
-export * from './FlipnoteParserBase';
-export declare type FlipnoteParserConfig = PpmParserSettings | KwzParserSettings;
-export declare type FlipnoteMeta = PpmMeta | KwzMeta;
-export declare type Flipnote = FlipnoteParserBase<FlipnoteMeta>;
-export declare function parseSource(source: any, parserConfig?: FlipnoteParserConfig): Promise<Flipnote>;

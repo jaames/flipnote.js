@@ -8,8 +8,8 @@ export function clamp(n: number, l: number, h: number) {
 }
 
 /** 
- * zero-order hold interpolation
- * credit to simontime
+ * Zero-order hold interpolation
+ * Credit to SimonTime for the original C version
  * @internal
  */
 export function pcmDsAudioResample(src: Int16Array, srcFreq: number, dstFreq: number) {

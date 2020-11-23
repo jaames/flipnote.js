@@ -3,10 +3,10 @@ import { Flipnote, FlipnoteAudioTrack } from '../parsers/index';
 import { isNode, isBrowser } from '../utils';
 
 /** 
- * WAV audio encoder
+ * Wav audio object. Used to create a {@link https://en.wikipedia.org/wiki/WAV | WAV} file from a PCM audio stream or a {@link Flipnote} object. 
  * 
- * Creates WAV file containing uncompressed PCM audio data
- * WAV info: https://en.wikipedia.org/wiki/WAV
+ * Currently only supports PCM s16_le audio encoding.
+ * 
  * @category File Encoder
  */
 export class WavAudio {
@@ -22,7 +22,7 @@ export class WavAudio {
   private pcmData: Int16Array;
 
   /**
-   * Create a WAV audio file
+   * Create a new WAV audio object
    * @param sampleRate audio samplerate
    * @param channels number of audio channels
    * @param bitsPerSample number of bits per sample
@@ -67,8 +67,8 @@ export class WavAudio {
 
   /**
    * Create a WAV audio file from a Flipnote's master audio track
-   * @param flipnote {@link PpmParser} or {@link KwzParser} instance
-   * @param trackId {@link FlipnoteAudioTrack}
+   * @param flipnote
+   * @param trackId
    */
   static fromFlipnote(note: Flipnote) {
     const sampleRate = note.sampleRate;
@@ -80,8 +80,8 @@ export class WavAudio {
 
   /**
    * Create a WAV audio file from a given Flipnote audio track
-   * @param flipnote {@link PpmParser} or {@link KwzParser} instance
-   * @param trackId {@link FlipnoteAudioTrack}
+   * @param flipnote
+   * @param trackId
    */
   static fromFlipnoteTrack(flipnote: Flipnote, trackId: FlipnoteAudioTrack) {
     const sampleRate = flipnote.sampleRate;
@@ -107,7 +107,7 @@ export class WavAudio {
   }
   
   /**
-   * Returns the WAV audio data as an ArrayBuffer
+   * Returns the WAV audio data as an {@link https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/ArrayBuffer | ArrayBuffer}
    */
   public getArrayBuffer() {
     const headerBytes = this.header.bytes;
@@ -119,26 +119,22 @@ export class WavAudio {
   }
 
   /**
-   * Returns the WAV audio data as a NodeJS Buffer
+   * Returns the WAV audio data as a NodeJS {@link https://nodejs.org/api/buffer.html | Buffer}
    * 
-   * Note: This method does not work outside of node.js environments
-   * 
-   * Buffer API: https://nodejs.org/api/buffer.html
+   * Note: This method does not work outside of NodeJS environments
    */
   public getBuffer() {
     if (isNode) {
       return Buffer.from(this.getArrayBuffer());
     }
-    throw new Error('The Buffer object is only available in Node.js environments');
+    throw new Error('The Buffer object is only available in NodeJS environments');
   }
 
 
   /**
-   * Returns the GIF image data as a file blob
+   * Returns the GIF image data as a file {@link https://developer.mozilla.org/en-US/docs/Web/API/Blob | Blob}
    * 
    * Note: This method will not work outside of browser environments
-   * 
-   * Blob API: https://developer.mozilla.org/en-US/docs/Web/API/Blob
    */
   public getBlob() {
     if (isBrowser) {   

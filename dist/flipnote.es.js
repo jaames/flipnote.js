@@ -195,6 +195,51 @@ const isNode = typeof process !== 'undefined'
     && process.versions != null
     && process.versions.node != null;
 
+/** Identifies which animation format a Flipnote uses */
+var FlipnoteFormat;
+(function (FlipnoteFormat) {
+    /** Animation format used by Flipnote Studio (Nintendo DSiWare) */
+    FlipnoteFormat[FlipnoteFormat["PPM"] = 0] = "PPM";
+    /** Animation format used by Flipnote Studio 3D (Nintendo 3DS) */
+    FlipnoteFormat[FlipnoteFormat["KWZ"] = 1] = "KWZ";
+})(FlipnoteFormat || (FlipnoteFormat = {}));
+/** Identifies a Flipnote audio track type */
+var FlipnoteAudioTrack;
+(function (FlipnoteAudioTrack) {
+    /** Background music track */
+    FlipnoteAudioTrack[FlipnoteAudioTrack["BGM"] = 0] = "BGM";
+    /** Sound effect 1 track */
+    FlipnoteAudioTrack[FlipnoteAudioTrack["SE1"] = 1] = "SE1";
+    /** Sound effect 2 track */
+    FlipnoteAudioTrack[FlipnoteAudioTrack["SE2"] = 2] = "SE2";
+    /** Sound effect 3 track */
+    FlipnoteAudioTrack[FlipnoteAudioTrack["SE3"] = 3] = "SE3";
+    /** Sound effect 4 track (only used by KWZ files) */
+    FlipnoteAudioTrack[FlipnoteAudioTrack["SE4"] = 4] = "SE4";
+})(FlipnoteAudioTrack || (FlipnoteAudioTrack = {}));
+/**
+ * Base Flipnote parser class
+ *
+ * This doesn't implement any parsing functionality itself,
+ * it just provides a consistent API for every format parser to implement.
+ * @category File Parser
+*/
+class FlipnoteParser extends DataStream {
+    /**
+     * Does an audio track exist in the Flipnote?
+     * @category Audio
+    */
+    hasAudioTrack(trackId) {
+        if (this.soundMeta.hasOwnProperty(trackId) && this.soundMeta[trackId].length > 0)
+            return true;
+        return false;
+    }
+}
+
+/**
+ * Loader for web url strings (Browser only)
+ * @internal
+ */
 const webUrlLoader = {
     matches: function (source) {
         return isBrowser && typeof source === 'string';
@@ -221,6 +266,10 @@ const webUrlLoader = {
     }
 };
 
+/**
+ * Loader for web url strings (Node only)
+ * @internal
+ */
 const nodeUrlLoader = {
     matches: function (source) {
         return isNode && typeof source === 'string';
@@ -264,6 +313,10 @@ const fileLoader = {
     }
 };
 
+/**
+ * Loader for Buffer objects (Node only)
+ * @internal
+ */
 const nodeBufferLoader = {
     matches: function (source) {
         return isNode && (source instanceof Buffer);
@@ -308,48 +361,6 @@ function loadSource(source) {
     });
 }
 
-/** Identifies which animation format a Flipnote uses */
-var FlipnoteFormat;
-(function (FlipnoteFormat) {
-    /** Animation format used by Flipnote Studio (Nintendo DSiWare) */
-    FlipnoteFormat[FlipnoteFormat["PPM"] = 0] = "PPM";
-    /** Animation format used by Flipnote Studio 3D (Nintendo 3DS) */
-    FlipnoteFormat[FlipnoteFormat["KWZ"] = 1] = "KWZ";
-})(FlipnoteFormat || (FlipnoteFormat = {}));
-/** Identifies a Flipnote audio track type */
-var FlipnoteAudioTrack;
-(function (FlipnoteAudioTrack) {
-    /** Background music track */
-    FlipnoteAudioTrack[FlipnoteAudioTrack["BGM"] = 0] = "BGM";
-    /** Sound effect 1 track */
-    FlipnoteAudioTrack[FlipnoteAudioTrack["SE1"] = 1] = "SE1";
-    /** Sound effect 2 track */
-    FlipnoteAudioTrack[FlipnoteAudioTrack["SE2"] = 2] = "SE2";
-    /** Sound effect 3 track */
-    FlipnoteAudioTrack[FlipnoteAudioTrack["SE3"] = 3] = "SE3";
-    /** Sound effect 4 track (only used by KWZ files) */
-    FlipnoteAudioTrack[FlipnoteAudioTrack["SE4"] = 4] = "SE4";
-})(FlipnoteAudioTrack || (FlipnoteAudioTrack = {}));
-/**
- * Base Flipnote parser class
- *
- * This doesn't implement any parsing functionality itself,
- * it just provides a consistent API for every format parser to implement.
- * @category File Parser
-*/
-class FlipnoteParserBase extends DataStream {
-    /**
-     * Does an audio track exist in the Flipnote?
-     * @category Audio
-    */
-    hasAudioTrack(trackId) {
-        if (this.soundMeta.hasOwnProperty(trackId) && this.soundMeta[trackId].length > 0) {
-            return true;
-        }
-        return false;
-    }
-}
-
 /** @internal */
 function clamp(n, l, h) {
     if (n < l)
@@ -359,7 +370,8 @@ function clamp(n, l, h) {
     return n;
 }
 /**
- * zero-order hold interpolation
+ * Zero-order hold interpolation
+ * Credit to SimonTime for the original C version
  * @internal
  */
 function pcmDsAudioResample(src, srcFreq, dstFreq) {
@@ -373,18 +385,6 @@ function pcmDsAudioResample(src, srcFreq, dstFreq) {
     return dst;
 }
 /** @internal */
-function pcmAudioMix(src, dst, dstOffset = 0) {
-    const srcSize = src.length;
-    const dstSize = dst.length;
-    for (let n = 0; n < srcSize; n++) {
-        if (dstOffset + n > dstSize)
-            break;
-        // half src volume
-        const samp = dst[dstOffset + n] + (src[n] / 2);
-        dst[dstOffset + n] = clamp(samp, -32768, 32767);
-    }
-}
-/** @internal */
 const ADPCM_INDEX_TABLE_2BIT = new Int8Array([
     -1, 2, -1, 2
 ]);
@@ -393,10 +393,7 @@ const ADPCM_INDEX_TABLE_4BIT = new Int8Array([
     -1, -1, -1, -1, 2, 4, 6, 8,
     -1, -1, -1, -1, 2, 4, 6, 8
 ]);
-/**
- * note that this is a slight deviation from the normal adpcm table
- * @internal
- */
+/** @internal */
 const ADPCM_STEP_TABLE = new Int16Array([
     7, 8, 9, 10, 11, 12, 13, 14, 16, 17,
     19, 21, 23, 25, 28, 31, 34, 37, 41, 45,
@@ -408,35 +405,20 @@ const ADPCM_STEP_TABLE = new Int16Array([
     5894, 6484, 7132, 7845, 8630, 9493, 10442, 11487, 12635, 13899,
     15289, 16818, 18500, 20350, 22385, 24623, 27086, 29794, 32767, 0
 ]);
-/** @internal */
-const ADPCM_SAMPLE_TABLE_2BIT = new Int16Array(90 * 4);
-for (let sample = 0; sample < 4; sample++) {
-    for (let stepIndex = 0; stepIndex < 90; stepIndex++) {
-        let step = ADPCM_STEP_TABLE[stepIndex];
-        let diff = step >> 3;
-        if (sample & 1)
-            diff += step;
-        if (sample & 2)
-            diff = -diff;
-        ADPCM_SAMPLE_TABLE_2BIT[sample + 4 * stepIndex] = diff;
+/**
+ * Get a ratio of how many audio samples hit the pcm_s16_le clipping bounds
+ * This can be used to detect corrupted audio
+ * @internal
+ */
+function pcmGetClippingRatio(src) {
+    const numSamples = src.length;
+    let numClippedSamples = 0;
+    for (let i = 0; i < numSamples; i++) {
+        const sample = src[i];
+        if (sample == -32768 || sample == 32767)
+            numClippedSamples += 1;
     }
-}
-/** @internal */
-const ADPCM_SAMPLE_TABLE_4BIT = new Int16Array(90 * 16);
-for (let sample = 0; sample < 16; sample++) {
-    for (let stepIndex = 0; stepIndex < 90; stepIndex++) {
-        let step = ADPCM_STEP_TABLE[stepIndex];
-        let diff = step >> 3;
-        if (sample & 4)
-            diff += step;
-        if (sample & 2)
-            diff += step >> 1;
-        if (sample & 1)
-            diff += step >> 2;
-        if (sample & 8)
-            diff = -diff;
-        ADPCM_SAMPLE_TABLE_4BIT[sample + 16 * stepIndex] = diff;
-    }
+    return numClippedSamples / numSamples;
 }
 
 /**
@@ -476,15 +458,13 @@ const PPM_PALETTE = {
     RED: [0xff, 0x2a, 0x2a, 0xff],
     BLUE: [0x0a, 0x39, 0xff, 0xff]
 };
-/** @internal */
-const PPM_OUTPUT_SAMPLE_RATE = 32768;
 /**
  * Parser class for (DSiWare) Flipnote Studio's PPM animation format.
  *
  * Format docs: https://github.com/Flipnote-Collective/flipnote-studio-docs/wiki/PPM-format
  * @category File Parser
  */
-class PpmParser extends FlipnoteParserBase {
+class PpmParser extends FlipnoteParser {
     /**
      * Create a new PPM file parser instance
      * @param arrayBuffer an ArrayBuffer containing file data
@@ -564,15 +544,15 @@ class PpmParser extends FlipnoteParserBase {
             2: (flags & 0x400) === 0,
             3: false
         };
+        this.isSpinoff = (currentAuthorId !== parentAuthorId) || (currentAuthorId !== rootAuthorId);
         this.meta = {
             lock: lock === 1,
             loop: (flags >> 1 & 0x01) === 1,
-            frame_count: this.frameCount,
-            frame_speed: this.frameSpeed,
-            bgm_speed: this.bgmSpeed,
-            thumb_index: thumbIndex,
+            frameCount: this.frameCount,
+            frameSpeed: this.frameSpeed,
+            bgmSpeed: this.bgmSpeed,
+            thumbIndex: thumbIndex,
             timestamp: timestamp,
-            spinoff: (currentAuthorId !== parentAuthorId) || (currentAuthorId !== rootAuthorId),
             root: {
                 filename: null,
                 username: rootAuthorName,
@@ -922,7 +902,7 @@ class PpmParser extends FlipnoteParserBase {
      * @returns Signed 16-bit PCM audio
      * @category Audio
     */
-    getAudioTrackPcm(trackId, dstFreq = PPM_OUTPUT_SAMPLE_RATE) {
+    getAudioTrackPcm(trackId, dstFreq = this.sampleRate) {
         const srcPcm = this.decodeAudioTrack(trackId);
         let srcFreq = this.rawSampleRate;
         if (trackId === FlipnoteAudioTrack.BGM) {
@@ -933,12 +913,23 @@ class PpmParser extends FlipnoteParserBase {
             return pcmDsAudioResample(srcPcm, srcFreq, dstFreq);
         return srcPcm;
     }
+    pcmAudioMix(src, dst, dstOffset = 0) {
+        const srcSize = src.length;
+        const dstSize = dst.length;
+        for (let n = 0; n < srcSize; n++) {
+            if (dstOffset + n > dstSize)
+                break;
+            // half src volume
+            const samp = dst[dstOffset + n] + (src[n] / 2);
+            dst[dstOffset + n] = clamp(samp, -32768, 32767);
+        }
+    }
     /**
      * Get the full mixed audio for the Flipnote, using the specified samplerate
      * @returns Signed 16-bit PCM audio
      * @category Audio
     */
-    getAudioMasterPcm(dstFreq = PPM_OUTPUT_SAMPLE_RATE) {
+    getAudioMasterPcm(dstFreq = this.sampleRate) {
         const duration = this.frameCount * (1 / this.framerate);
         const dstSize = Math.ceil(duration * dstFreq);
         const master = new Int16Array(dstSize);
@@ -949,28 +940,27 @@ class PpmParser extends FlipnoteParserBase {
         // Mix background music
         if (hasBgm) {
             const bgmPcm = this.getAudioTrackPcm(FlipnoteAudioTrack.BGM, dstFreq);
-            pcmAudioMix(bgmPcm, master, 0);
+            this.pcmAudioMix(bgmPcm, master, 0);
         }
         // Mix sound effects
         if (hasSe1 || hasSe2 || hasSe3) {
-            const seFlags = this.decodeSoundFlags();
+            const samplesPerFrame = dstFreq / this.framerate;
             const se1Pcm = hasSe1 ? this.getAudioTrackPcm(FlipnoteAudioTrack.SE1, dstFreq) : null;
             const se2Pcm = hasSe2 ? this.getAudioTrackPcm(FlipnoteAudioTrack.SE2, dstFreq) : null;
             const se3Pcm = hasSe3 ? this.getAudioTrackPcm(FlipnoteAudioTrack.SE3, dstFreq) : null;
-            const adjFreq = dstFreq / this.rawSampleRate;
-            const samplesPerFrame = Math.round(this.rawSampleRate / this.framerate) * adjFreq;
+            const seFlags = this.decodeSoundFlags();
             for (let frame = 0; frame < this.frameCount; frame++) {
-                // places sound effect halfway through frame
-                const seOffset = (frame + .5) * samplesPerFrame;
+                const seOffset = Math.ceil(frame * samplesPerFrame);
                 const flag = seFlags[frame];
                 if (hasSe1 && flag[0])
-                    pcmAudioMix(se1Pcm, master, seOffset);
+                    this.pcmAudioMix(se1Pcm, master, seOffset);
                 if (hasSe2 && flag[1])
-                    pcmAudioMix(se2Pcm, master, seOffset);
+                    this.pcmAudioMix(se2Pcm, master, seOffset);
                 if (hasSe3 && flag[2])
-                    pcmAudioMix(se3Pcm, master, seOffset);
+                    this.pcmAudioMix(se3Pcm, master, seOffset);
             }
         }
+        this.audioClipRatio = pcmGetClippingRatio(master);
         return master;
     }
 }
@@ -986,8 +976,8 @@ PpmParser.height = 192;
 PpmParser.numLayers = 2;
 /** Audio track base sample rate */
 PpmParser.rawSampleRate = 8192;
-/** Nintendo DSi audui output rate */
-PpmParser.sampleRate = PPM_OUTPUT_SAMPLE_RATE;
+/** Nintendo DSi audio output rate */
+PpmParser.sampleRate = 32768;
 /** Global animation frame color palette */
 PpmParser.globalPalette = [
     PPM_PALETTE.WHITE,
@@ -996,6 +986,30 @@ PpmParser.globalPalette = [
     PPM_PALETTE.BLUE
 ];
 
+/**
+ * KWZ framerates in frames per second, indexed by the in-app frame speed
+ */
+const KWZ_FRAMERATES = [.2, .5, 1, 2, 4, 6, 8, 12, 20, 24, 30];
+/**
+ * KWZ color defines (red, green, blue, alpha)
+ */
+const KWZ_PALETTE = {
+    WHITE: [0xff, 0xff, 0xff, 0xff],
+    BLACK: [0x10, 0x10, 0x10, 0xff],
+    RED: [0xff, 0x10, 0x10, 0xff],
+    YELLOW: [0xff, 0xe7, 0x00, 0xff],
+    GREEN: [0x00, 0x86, 0x31, 0xff],
+    BLUE: [0x00, 0x38, 0xce, 0xff],
+    NONE: [0xff, 0xff, 0xff, 0x00]
+};
+/**
+ * Pre computed bitmasks for readBits; done as a slight optimisation
+ * @internal
+ */
+const BITMASKS = new Uint16Array(16);
+for (let i = 0; i < 16; i++) {
+    BITMASKS[i] = (1 << i) - 1;
+}
 // Every possible sequence of pixels for each tile line
 /** @internal */
 const KWZ_LINE_TABLE = new Uint8Array(6561 * 8);
@@ -1063,40 +1077,13 @@ const KWZ_LINE_TABLE_COMMON_SHIFT = new Uint8Array(32 * 8);
     const pixels = KWZ_LINE_TABLE.subarray(lineTableIndex * 8, lineTableIndex * 8 + 8);
     KWZ_LINE_TABLE_COMMON_SHIFT.set(pixels, index * 8);
 });
-
-/**
- * KWZ framerates in frames per second, indexed by the in-app frame speed
- */
-const KWZ_FRAMERATES = [.2, .5, 1, 2, 4, 6, 8, 12, 20, 24, 30];
-/**
- * KWZ color defines (red, green, blue, alpha)
- */
-const KWZ_PALETTE = {
-    WHITE: [0xff, 0xff, 0xff, 0xff],
-    BLACK: [0x10, 0x10, 0x10, 0xff],
-    RED: [0xff, 0x10, 0x10, 0xff],
-    YELLOW: [0xff, 0xe7, 0x00, 0xff],
-    GREEN: [0x00, 0x86, 0x31, 0xff],
-    BLUE: [0x00, 0x38, 0xce, 0xff],
-    NONE: [0xff, 0xff, 0xff, 0x00]
-};
-/** @internal */
-const KWZ_OUTPUT_SAMPLE_RATE = 32768; // probably wronng
-/**
- * Pre computed bitmasks for readBits; done as a slight optimisation
- * @internal
- */
-const BITMASKS = new Uint16Array(16);
-for (let i = 0; i < 16; i++) {
-    BITMASKS[i] = (1 << i) - 1;
-}
 /**
  * Parser class for Flipnote Studio 3D's KWZ animation format
  *
  * Format docs: https://github.com/Flipnote-Collective/flipnote-studio-3d-docs/wiki/KWZ-Format
  * @category File Parser
  */
-class KwzParser extends FlipnoteParserBase {
+class KwzParser extends FlipnoteParser {
     /**
      * Create a new KWZ file parser instance
      * @param arrayBuffer an ArrayBuffer containing file data
@@ -1171,6 +1158,7 @@ class KwzParser extends FlipnoteParserBase {
     decodeMeta() {
         this.seek(this.sections['KFH'].offset + 12);
         const creationTimestamp = new Date((this.readUint32() + 946684800) * 1000), modifiedTimestamp = new Date((this.readUint32() + 946684800) * 1000), appVersion = this.readUint32(), rootAuthorId = this.readHex(10), parentAuthorId = this.readHex(10), currentAuthorId = this.readHex(10), rootAuthorName = this.readWideChars(11), parentAuthorName = this.readWideChars(11), currentAuthorName = this.readWideChars(11), rootFilename = this.readChars(28), parentFilename = this.readChars(28), currentFilename = this.readChars(28), frameCount = this.readUint16(), thumbIndex = this.readUint16(), flags = this.readUint16(), frameSpeed = this.readUint8(), layerFlags = this.readUint8();
+        this.isSpinoff = (currentAuthorId !== parentAuthorId) || (currentAuthorId !== rootAuthorId);
         this.frameCount = frameCount;
         this.thumbFrameIndex = thumbIndex;
         this.frameSpeed = frameSpeed;
@@ -1183,11 +1171,11 @@ class KwzParser extends FlipnoteParserBase {
         this.meta = {
             lock: (flags & 0x1) !== 0,
             loop: (flags & 0x2) !== 0,
-            frame_count: frameCount,
-            frame_speed: frameSpeed,
-            thumb_index: thumbIndex,
+            frameCount: frameCount,
+            frameSpeed: frameSpeed,
+            thumbIndex: thumbIndex,
             timestamp: modifiedTimestamp,
-            creation_timestamp: creationTimestamp,
+            creationTimestamp: creationTimestamp,
             root: {
                 username: rootAuthorName,
                 fsid: rootAuthorId,
@@ -1651,55 +1639,69 @@ class KwzParser extends FlipnoteParserBase {
     decodeAudioTrack(trackId) {
         const adpcm = this.getAudioTrackRaw(trackId);
         const output = new Int16Array(16364 * 60);
-        let outputOffset = 0;
+        let outputPtr = 0;
         // initial decoder state
-        let prevDiff = 0;
-        let prevStepIndex = 40;
-        let sample;
-        let diff;
-        let stepIndex;
+        // Flipnote 3D's initial values are actually buggy, so these aren't 1:1
+        let predictor = 0;
+        let stepIndex = 0;
+        let sample = 0;
+        let step = 0;
+        let diff = 0;
+        // we can still optionally enable the in-app values here
+        if (this.settings.originalAudioSettings)
+            stepIndex = 40;
         // loop through each byte in the raw adpcm data
-        for (let adpcmOffset = 0; adpcmOffset < adpcm.length; adpcmOffset++) {
-            const byte = adpcm[adpcmOffset];
-            let bitPos = 0;
-            while (bitPos < 8) {
-                if (prevStepIndex < 18 || bitPos == 6) {
-                    // isolate 2-bit sample
-                    sample = (byte >> bitPos) & 0x3;
-                    // get diff
-                    diff = prevDiff + ADPCM_SAMPLE_TABLE_2BIT[sample + 4 * prevStepIndex];
-                    // get step index
-                    stepIndex = prevStepIndex + ADPCM_INDEX_TABLE_2BIT[sample];
-                    bitPos += 2;
+        for (let adpcmPtr = 0; adpcmPtr < adpcm.length; adpcmPtr++) {
+            let currByte = adpcm[adpcmPtr];
+            let currBit = 0;
+            while (currBit < 8) {
+                // 2 bit sample
+                if (stepIndex < 18 || currBit > 4) {
+                    sample = currByte & 0x3;
+                    step = ADPCM_STEP_TABLE[stepIndex];
+                    diff = step >> 3;
+                    if (sample & 1)
+                        diff += step;
+                    if (sample & 2)
+                        diff = -diff;
+                    predictor += diff;
+                    stepIndex += ADPCM_INDEX_TABLE_2BIT[sample];
+                    currByte >>= 2;
+                    currBit += 2;
                 }
+                // 4 bit sample
                 else {
-                    // isolate 4-bit sample
-                    sample = (byte >> bitPos) & 0xF;
-                    // get diff
-                    diff = prevDiff + ADPCM_SAMPLE_TABLE_4BIT[sample + 16 * prevStepIndex];
-                    // get step index
-                    stepIndex = prevStepIndex + ADPCM_INDEX_TABLE_4BIT[sample];
-                    bitPos += 4;
+                    sample = currByte & 0xf;
+                    step = ADPCM_STEP_TABLE[stepIndex];
+                    diff = step >> 3;
+                    if (sample & 1)
+                        diff += step >> 2;
+                    if (sample & 2)
+                        diff += step >> 1;
+                    if (sample & 4)
+                        diff += step;
+                    if (sample & 8)
+                        diff = -diff;
+                    predictor += diff;
+                    stepIndex += ADPCM_INDEX_TABLE_4BIT[sample];
+                    currByte >>= 4;
+                    currBit += 4;
                 }
-                // clamp step index and diff
                 stepIndex = clamp(stepIndex, 0, 79);
-                diff = clamp(diff, -2047, 2047);
-                // add result to output buffer
-                output[outputOffset] = (diff * 16);
-                outputOffset += 1;
-                // set prev decoder state
-                prevStepIndex = stepIndex;
-                prevDiff = diff;
+                // clamp as 12 bit then scale to 16
+                predictor = clamp(predictor, -2048, 2047);
+                output[outputPtr] = predictor * 16;
+                outputPtr += 1;
             }
         }
-        return output.slice(0, outputOffset);
+        return output.slice(0, outputPtr);
     }
     /**
      * Get the decoded audio data for a given track, using the specified samplerate
      * @returns Signed 16-bit PCM audio
      * @category Audio
     */
-    getAudioTrackPcm(trackId, dstFreq = KWZ_OUTPUT_SAMPLE_RATE) {
+    getAudioTrackPcm(trackId, dstFreq = this.sampleRate) {
         const srcPcm = this.decodeAudioTrack(trackId);
         let srcFreq = this.rawSampleRate;
         if (trackId === FlipnoteAudioTrack.BGM) {
@@ -1711,12 +1713,23 @@ class KwzParser extends FlipnoteParserBase {
         }
         return srcPcm;
     }
+    pcmAudioMix(src, dst, dstOffset = 0) {
+        const srcSize = src.length;
+        const dstSize = dst.length;
+        for (let n = 0; n < srcSize; n++) {
+            if (dstOffset + n > dstSize)
+                break;
+            // half src volume
+            const samp = dst[dstOffset + n] + src[n];
+            dst[dstOffset + n] = clamp(samp, -32768, 32767);
+        }
+    }
     /**
      * Get the full mixed audio for the Flipnote, using the specified samplerate
      * @returns Signed 16-bit PCM audio
      * @category Audio
     */
-    getAudioMasterPcm(dstFreq = KWZ_OUTPUT_SAMPLE_RATE) {
+    getAudioMasterPcm(dstFreq = this.sampleRate) {
         const duration = this.frameCount * (1 / this.framerate);
         const dstSize = Math.ceil(duration * dstFreq);
         const master = new Int16Array(dstSize);
@@ -1728,28 +1741,29 @@ class KwzParser extends FlipnoteParserBase {
         // Mix background music
         if (hasBgm) {
             const bgmPcm = this.getAudioTrackPcm(FlipnoteAudioTrack.BGM, dstFreq);
-            pcmAudioMix(bgmPcm, master, 0);
+            this.pcmAudioMix(bgmPcm, master, 0);
         }
         // Mix sound effects
         if (hasSe1 || hasSe2 || hasSe3) {
-            const samplesPerFrame = Math.floor(dstFreq / this.framerate);
+            const samplesPerFrame = dstFreq / this.framerate;
             const se1Pcm = hasSe1 ? this.getAudioTrackPcm(FlipnoteAudioTrack.SE1, dstFreq) : null;
             const se2Pcm = hasSe2 ? this.getAudioTrackPcm(FlipnoteAudioTrack.SE2, dstFreq) : null;
             const se3Pcm = hasSe3 ? this.getAudioTrackPcm(FlipnoteAudioTrack.SE3, dstFreq) : null;
             const se4Pcm = hasSe4 ? this.getAudioTrackPcm(FlipnoteAudioTrack.SE4, dstFreq) : null;
             for (let i = 0; i < this.frameCount; i++) {
                 const seFlags = this.getFrameSoundFlags(i);
-                const seOffset = samplesPerFrame * i;
+                const seOffset = Math.ceil(i * samplesPerFrame);
                 if (hasSe1 && seFlags[0])
-                    pcmAudioMix(se1Pcm, master, seOffset);
+                    this.pcmAudioMix(se1Pcm, master, seOffset);
                 if (hasSe2 && seFlags[1])
-                    pcmAudioMix(se2Pcm, master, seOffset);
+                    this.pcmAudioMix(se2Pcm, master, seOffset);
                 if (hasSe3 && seFlags[2])
-                    pcmAudioMix(se3Pcm, master, seOffset);
+                    this.pcmAudioMix(se3Pcm, master, seOffset);
                 if (hasSe4 && seFlags[3])
-                    pcmAudioMix(se4Pcm, master, seOffset);
+                    this.pcmAudioMix(se4Pcm, master, seOffset);
             }
         }
+        this.audioClipRatio = pcmGetClippingRatio(master);
         return master;
     }
 }
@@ -1757,6 +1771,7 @@ class KwzParser extends FlipnoteParserBase {
 KwzParser.defaultSettings = {
     quickMeta: false,
     dsiGalleryNote: false,
+    originalAudioSettings: false
 };
 /** File format type */
 KwzParser.format = FlipnoteFormat.KWZ;
@@ -1769,7 +1784,7 @@ KwzParser.numLayers = 3;
 /** Audio track base sample rate */
 KwzParser.rawSampleRate = 16364;
 /** Audio output sample rate. NOTE: probably isn't accurate, full KWZ audio stack is still on the todo */
-KwzParser.sampleRate = KWZ_OUTPUT_SAMPLE_RATE;
+KwzParser.sampleRate = 16364;
 /** Global animation frame color palette */
 KwzParser.globalPalette = [
     KWZ_PALETTE.WHITE,
@@ -1781,6 +1796,16 @@ KwzParser.globalPalette = [
     KWZ_PALETTE.NONE,
 ];
 
+/**
+ * Load a Flipnote from a given source, returning a promise with a parser object
+ *
+ * @param source - Depending on the operating envionment, this can be:
+ * - A string representing a web URL
+ * - An {@link https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/ArrayBuffer | ArrayBuffer}
+ * - A {@link https://developer.mozilla.org/en-US/docs/Web/API/File | File} (Browser only)
+ * - A {@link https://nodejs.org/api/buffer.html | Buffer} (NodeJS only)
+ * @param parserConfig - Config settings to pass to the parser, see {@link FlipnoteParserSettings}
+ */
 function parseSource(source, parserConfig) {
     return loadSource(source)
         .then((arrayBuffer) => {
@@ -1794,6 +1819,7 @@ function parseSource(source, parserConfig) {
             // check if magic is KFH (kwz magic)
             else if ((magic & 0xFFFFFF00) === 0x4B464800)
                 resolve(new KwzParser(arrayBuffer, parserConfig));
+            // TODO: KIC (f3ds folder icon) magic check
             else
                 reject();
         });
@@ -2047,11 +2073,11 @@ class GifImage {
      * Create a new GIF image object
      * @param width image width
      * @param height image height
-     * @param settings image settings, such as whether it should loop, the delay between frames, etc
+     * @param settings whether the gif should loop, the delay between frames, etc. See {@link GifEncoderSettings}
      */
     constructor(width, height, settings = {}) {
         /** Number of current GIF frames */
-        this.numFrames = 0;
+        this.frameCount = 0;
         this.dataUrl = null;
         this.width = width;
         this.height = height;
@@ -2063,8 +2089,8 @@ class GifImage {
      * Create an animated GIF image from a Flipnote
      *
      * This will encode the entire animation, so depending on the number of frames it could take a while to return.
-     * @param flipnote {@link PpmParser} or {@link KwzParser} instance
-     * @param settings image settings, such as whether it should loop, the delay between frames, etc
+     * @param flipnote {@link Flipnote} object ({@link PpmParser} or {@link KwzParser} instance)
+     * @param settings whether the gif should loop, the delay between frames, etc. See {@link GifEncoderSettings}
      */
     static fromFlipnote(flipnote, settings = {}) {
         const gif = new GifImage(flipnote.width, flipnote.height, {
@@ -2080,9 +2106,9 @@ class GifImage {
     }
     /**
      * Create an GIF image from a single Flipnote frame
-     * @param flipnote {@link PpmParser} or {@link KwzParser} instance
+     * @param flipnote
      * @param frameIndex animation frame index to encode
-     * @param settings image settings, such as whether it should loop, the delay between frames, etc
+     * @param settings whether the gif should loop, the delay between frames, etc. See {@link GifEncoderSettings}
      */
     static fromFlipnoteFrame(flipnote, frameIndex, settings = {}) {
         const gif = new GifImage(flipnote.width, flipnote.height, {
@@ -2100,11 +2126,11 @@ class GifImage {
      * @param pixels Raw pixels to encode, must be an uncompressed 8bit array of palette indices with a size matching image width * image height
      */
     writeFrame(pixels) {
-        if (this.numFrames === 0)
+        if (this.frameCount === 0)
             this.writeFirstFrame(pixels);
         else
             this.writeAdditionalFrame(pixels);
-        this.numFrames += 1;
+        this.frameCount += 1;
     }
     writeFirstFrame(pixels) {
         const paletteSize = this.palette.length;
@@ -2191,28 +2217,24 @@ class GifImage {
         this.compressor.encode(pixels, this.data);
     }
     /**
-     * Returns the GIF image data as an ArrayBuffer
+     * Returns the GIF image data as an {@link https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/ArrayBuffer | ArrayBuffer}
      */
     getArrayBuffer() {
         return this.data.getBuffer();
     }
     /**
-     * Returns the GIF image data as a NodeJS Buffer
+     * Returns the GIF image data as a NodeJS {@link https://nodejs.org/api/buffer.html | Buffer}
      *
-     * Note: This method does not work outside of node.js environments
-     *
-     * Buffer API: https://nodejs.org/api/buffer.html
+     * Note: This method does not work outside of NodeJS environments
      */
     getBuffer() {
         if (isNode) {
             return Buffer.from(this.getArrayBuffer());
         }
-        throw new Error('The Buffer object only available in Node.js environments');
+        throw new Error('The Buffer object only available in NodeJS environments');
     }
     /**
-     * Returns the GIF image data as a file blob
-     *
-     * Blob API: https://developer.mozilla.org/en-US/docs/Web/API/Blob
+     * Returns the GIF image data as a file {@link https://developer.mozilla.org/en-US/docs/Web/API/Blob | Blob}
      */
     getBlob() {
         if (isBrowser) {
@@ -2221,11 +2243,9 @@ class GifImage {
         throw new Error('The Blob object is only available in browser environments');
     }
     /**
-     * Returns the GIF image data as an object URL
+     * Returns the GIF image data as an {@link https://developer.mozilla.org/en-US/docs/Web/API/URL/createObjectURL | Object URL}
      *
      * Note: This method does not work outside of browser environments
-     *
-     * Object URL API: https://developer.mozilla.org/en-US/docs/Web/API/URL/createObjectURL
      */
     getUrl() {
         if (isBrowser) {
@@ -2236,11 +2256,9 @@ class GifImage {
         throw new Error('Data URLs are only available in browser environments');
     }
     /**
-     * Revokes this image's object URL if one has been created
+     * Revokes this image's {@link https://developer.mozilla.org/en-US/docs/Web/API/URL/createObjectURL | Object URL} if one has been created, use this when the url created with {@link getUrl} is no longer needed, to preserve memory.
      *
      * Note: This method does not work outside of browser environments
-     *
-     * Object URL API: https://developer.mozilla.org/en-US/docs/Web/API/URL/revokeObjectURL
      */
     revokeUrl() {
         if (isBrowser) {
@@ -2252,11 +2270,9 @@ class GifImage {
         }
     }
     /**
-     * Returns the GIF image data as an Image object
+     * Returns the GIF image data as an {@link https://developer.mozilla.org/en-US/docs/Web/API/HTMLImageElement/Image | Image} object
      *
      * Note: This method does not work outside of browser environments
-     *
-     * Image API: https://developer.mozilla.org/en-US/docs/Web/API/HTMLImageElement/Image
      */
     getImage() {
         if (isBrowser) {
@@ -2278,15 +2294,15 @@ GifImage.defaultSettings = {
 };
 
 /**
- * WAV audio encoder
+ * Wav audio object. Used to create a {@link https://en.wikipedia.org/wiki/WAV | WAV} file from a PCM audio stream or a {@link Flipnote} object.
  *
- * Creates WAV file containing uncompressed PCM audio data
- * WAV info: https://en.wikipedia.org/wiki/WAV
+ * Currently only supports PCM s16_le audio encoding.
+ *
  * @category File Encoder
  */
 class WavAudio {
     /**
-     * Create a WAV audio file
+     * Create a new WAV audio object
      * @param sampleRate audio samplerate
      * @param channels number of audio channels
      * @param bitsPerSample number of bits per sample
@@ -2330,8 +2346,8 @@ class WavAudio {
     }
     /**
      * Create a WAV audio file from a Flipnote's master audio track
-     * @param flipnote {@link PpmParser} or {@link KwzParser} instance
-     * @param trackId {@link FlipnoteAudioTrack}
+     * @param flipnote
+     * @param trackId
      */
     static fromFlipnote(note) {
         const sampleRate = note.sampleRate;
@@ -2342,8 +2358,8 @@ class WavAudio {
     }
     /**
      * Create a WAV audio file from a given Flipnote audio track
-     * @param flipnote {@link PpmParser} or {@link KwzParser} instance
-     * @param trackId {@link FlipnoteAudioTrack}
+     * @param flipnote
+     * @param trackId
      */
     static fromFlipnoteTrack(flipnote, trackId) {
         const sampleRate = flipnote.sampleRate;
@@ -2367,7 +2383,7 @@ class WavAudio {
         this.pcmData = pcmData;
     }
     /**
-     * Returns the WAV audio data as an ArrayBuffer
+     * Returns the WAV audio data as an {@link https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/ArrayBuffer | ArrayBuffer}
      */
     getArrayBuffer() {
         const headerBytes = this.header.bytes;
@@ -2378,24 +2394,20 @@ class WavAudio {
         return resultBytes.buffer;
     }
     /**
-     * Returns the WAV audio data as a NodeJS Buffer
+     * Returns the WAV audio data as a NodeJS {@link https://nodejs.org/api/buffer.html | Buffer}
      *
-     * Note: This method does not work outside of node.js environments
-     *
-     * Buffer API: https://nodejs.org/api/buffer.html
+     * Note: This method does not work outside of NodeJS environments
      */
     getBuffer() {
         if (isNode) {
             return Buffer.from(this.getArrayBuffer());
         }
-        throw new Error('The Buffer object is only available in Node.js environments');
+        throw new Error('The Buffer object is only available in NodeJS environments');
     }
     /**
-     * Returns the GIF image data as a file blob
+     * Returns the GIF image data as a file {@link https://developer.mozilla.org/en-US/docs/Web/API/Blob | Blob}
      *
      * Note: This method will not work outside of browser environments
-     *
-     * Blob API: https://developer.mozilla.org/en-US/docs/Web/API/Blob
      */
     getBlob() {
         if (isBrowser) {
@@ -3998,8 +4010,20 @@ var layerDrawShader = "precision highp float;\n#define GLSLIFY 1\nvarying vec2 v
 
 var postProcessShader = "precision highp float;\n#define GLSLIFY 1\nvarying vec2 v_uv;uniform sampler2D u_tex;varying float v_scale;uniform vec2 u_textureSize;uniform vec2 u_screenSize;void main(){vec2 v_texel=v_uv*u_textureSize;vec2 texel_floored=floor(v_texel);vec2 s=fract(v_texel);float region_range=0.5-0.5/v_scale;vec2 center_dist=s-0.5;vec2 f=(center_dist-clamp(center_dist,-region_range,region_range))*v_scale+0.5;vec2 mod_texel=texel_floored+f;vec2 coord=mod_texel.xy/u_textureSize.xy;gl_FragColor=texture2D(u_tex,coord);}"; // eslint-disable-line
 
-/** webgl canvas wrapper class */
+/**
+ * Animation frame renderer, built around the {@link https://developer.mozilla.org/en-US/docs/Web/API/WebGL_API WebGL} API
+ *
+ * Only available in browser contexts
+ */
 class WebglRenderer {
+    /**
+     * Creates a new WebGlCanvas instance
+     * @param el - Canvas HTML element to use as a rendering surface
+     * @param width - Canvas width in CSS pixels
+     * @param height - Canvas height in CSS pixels
+     *
+     * The ratio between `width` and `height` should be 3:4 for best results
+     */
     constructor(el, width = 640, height = 480) {
         this.refs = {
             programs: [],
@@ -4140,6 +4164,13 @@ class WebglRenderer {
         this.refs.framebuffers.push(fb);
         return fb;
     }
+    /**
+     * Resize the canvas surface
+     * @param width - New canvas width, in CSS pixels
+     * @param height - New canvas height, in CSS pixels
+     *
+     * The ratio between `width` and `height` should be 3:4 for best results
+     */
     setCanvasSize(width, height) {
         const dpi = window.devicePixelRatio || 1;
         const internalWidth = width * dpi;
@@ -4151,7 +4182,12 @@ class WebglRenderer {
         this.el.style.width = `${width}px`;
         this.el.style.height = `${height}px`;
     }
-    setTextureSize(width, height) {
+    /**
+     * Sets the size of the input pixel arrays
+     * @param width
+     * @param height
+     */
+    setInputSize(width, height) {
         const gl = this.gl;
         this.textureWidth = width;
         this.textureHeight = height;
@@ -4159,6 +4195,10 @@ class WebglRenderer {
         gl.bindTexture(gl.TEXTURE_2D, this.frameTexture);
         gl.texImage2D(gl.TEXTURE_2D, 0, gl.RGBA, this.textureWidth, this.textureHeight, 0, gl.RGBA, gl.UNSIGNED_BYTE, null);
     }
+    /**
+     * Clear frame buffer
+     * @param colors - Paper color as `[R, G, B, A]`
+     */
     clearFrameBuffer(paperColor) {
         const gl = this.gl;
         // bind to the frame buffer
@@ -4169,6 +4209,10 @@ class WebglRenderer {
         gl.clearColor(r / 255, g / 255, b / 255, a / 255);
         gl.clear(gl.COLOR_BUFFER_BIT);
     }
+    /**
+     * Set the color palette to use for the next {@link drawPixels} call
+     * @param colors - Array of colors as `[R, G, B, A]`
+     */
     setPalette(colors) {
         const gl = this.gl;
         const data = new Uint8Array(256 * 4);
@@ -4184,6 +4228,13 @@ class WebglRenderer {
         gl.bindTexture(gl.TEXTURE_2D, this.paletteTexture);
         gl.texImage2D(gl.TEXTURE_2D, 0, gl.RGBA, 256, 1, 0, gl.RGBA, gl.UNSIGNED_BYTE, data);
     }
+    /**
+     * Draw pixels to the frame buffer
+     *
+     * Note: use {@link composite} to draw the frame buffer to the canvas
+     * @param pixels - Array of color indices for every pixl
+     * @param paletteOffset - Palette offset index for the pixels being drawn
+     */
     drawPixels(pixels, paletteOffset) {
         const { gl, layerDrawProgram, layerTexture, textureWidth, textureHeight, } = this;
         // we wanna draw to the frame buffer
@@ -4205,6 +4256,9 @@ class WebglRenderer {
         // draw screen quad
         gl.drawElements(gl.TRIANGLES, this.quadBuffer.numElements, this.quadBuffer.elementType, 0);
     }
+    /**
+     * Composites the current frame buffer into the canvas, applying post-processing effects like scaling filters if enabled
+     */
     composite() {
         const gl = this.gl;
         // setting gl.FRAMEBUFFER will draw directly to the screen
@@ -4227,8 +4281,10 @@ class WebglRenderer {
     resize(width = 640, height = 480) {
         this.setCanvasSize(width, height);
     }
+    /**
+     * Frees any resources used by this canvas instance
+     */
     destroy() {
-        // free resources
         const refs = this.refs;
         const gl = this.gl;
         refs.shaders.forEach((shader) => {
@@ -4263,10 +4319,16 @@ const _AudioContext = (function () {
         return (window.AudioContext || window.webkitAudioContext);
     return null;
 })();
+/**
+ * Audio player built around the {@link https://developer.mozilla.org/en-US/docs/Web/API/Web_Audio_API | Web Audio API}
+ *
+ * Capable of playing PCM streams, with volume adjustment and an optional equalizer. Only available in browser contexts
+ */
 class WebAudioPlayer {
     constructor() {
+        /** Whether the audio is being run through an equalizer or not */
         this.useEq = false;
-        // Thanks to Sudomemo for the default settings
+        /** Equalizer settings. Credit to {@link https://www.sudomemo.net/ | Sudomemo} */
         this.eqSettings = [
             [31.25, 4.1],
             [62.5, 1.2],
@@ -4284,21 +4346,27 @@ class WebAudioPlayer {
         }
         this.ctx = new _AudioContext();
     }
+    /** Sets the audio output volume */
     set volume(value) {
         this.setVolume(value);
     }
     get volume() {
         return this._volume;
     }
-    setSamples(sampleData, sampleRate) {
-        const numSamples = sampleData.length;
+    /**
+     * Set the audio buffer to play
+     * @param inputBuffer
+     * @param sampleRate - For best results, this should be a multiple of 16364
+     */
+    setBuffer(inputBuffer, sampleRate) {
+        const numSamples = inputBuffer.length;
         const audioBuffer = this.ctx.createBuffer(1, numSamples, sampleRate);
         const channelData = audioBuffer.getChannelData(0);
-        if (sampleData instanceof Float32Array)
-            channelData.set(sampleData, 0);
-        else if (sampleData instanceof Int16Array) {
+        if (inputBuffer instanceof Float32Array)
+            channelData.set(inputBuffer, 0);
+        else if (inputBuffer instanceof Int16Array) {
             for (let i = 0; i < numSamples; i++) {
-                channelData[i] = sampleData[i] / 32767;
+                channelData[i] = inputBuffer[i] / 32767;
             }
         }
         this.buffer = audioBuffer;
@@ -4339,6 +4407,10 @@ class WebAudioPlayer {
         this.gainNode = gainNode;
         this.setVolume(this._volume);
     }
+    /**
+     * Sets the audio volume level
+     * @param value - range is 0 to 1
+     */
     setVolume(value) {
         this._volume = value;
         if (this.gainNode) {
@@ -4347,12 +4419,21 @@ class WebAudioPlayer {
             this.gainNode.gain.value = Math.pow(value, 2);
         }
     }
-    stop() {
-        this.source.stop(0);
-    }
+    /**
+     * Begin playback from a specific point
+     *
+     * Note that the WebAudioPlayer doesn't keep track of audio playback itself. We rely on the {@link Player} API for that.
+     * @param currentTime initial playback position, in seconds
+     */
     playFrom(currentTime) {
         this.initNodes();
         this.source.start(0, currentTime);
+    }
+    /**
+     * Stops the audio playback
+     */
+    stop() {
+        this.source.stop(0);
     }
 }
 
@@ -4372,11 +4453,29 @@ const saveData = (function () {
         window.URL.revokeObjectURL(url);
     };
 })();
-/** flipnote player API, based on HTMLMediaElement (https://developer.mozilla.org/en-US/docs/Web/API/HTMLMediaElement) */
+/**
+ * Flipnote Player API (exported as `flipnote.Player`)
+ *
+ * This loads and plays Flipnotes in a web browser, taking a lot of inspiration from the {@link https://developer.mozilla.org/en-US/docs/Web/API/HTMLMediaElement | MediaElement} API
+ *
+ * Note: playback is only available in browser contexts for the time being
+ */
 class Player {
+    /**
+     * Create a new Player instance
+     *
+     * @param el - Canvas element (or CSS selector matching a canvas element) to use as a rendering surface
+     * @param width - Canvas width (pixels)
+     * @param height - Canvas height (pixels)
+     *
+     * The ratio between `width` and `height` should be 3:4 for best results
+     */
     constructor(el, width, height) {
+        /** Indicates whether playback should loop once the end is reached */
         this.loop = false;
+        /** Indicates whether playback is currently paused */
         this.paused = true;
+        /** Animation duration, in seconds */
         this.duration = 0;
         this.isOpen = false;
         this.events = {};
@@ -4394,12 +4493,14 @@ class Player {
         this.customPalette = null;
         this.state = { ...Player.defaultState };
     }
+    /** Current animation frame index */
     get currentFrame() {
         return this._frame;
     }
     set currentFrame(frameIndex) {
         this.setFrame(frameIndex);
     }
+    /** Current animation playback position, in seconds */
     get currentTime() {
         return this.isOpen ? this._time : null;
     }
@@ -4410,18 +4511,25 @@ class Player {
             this.emit('progress', this.progress);
         }
     }
+    /** Current animation playback progress, as a percentage out of 100 */
     get progress() {
         return this.isOpen ? (this._time / this.duration) * 100 : 0;
     }
     set progress(value) {
         this.currentTime = this.duration * (value / 100);
     }
+    /** Audio volume, range `0` to `1` */
     get volume() {
         return this.audio.volume;
     }
     set volume(value) {
         this.audio.volume = value;
     }
+    /**
+     * Audio mute state
+     * TODO: implement
+     * @internal
+    */
     get muted() {
         // return this.audioTracks[3].audio.muted;
         return false;
@@ -4431,12 +4539,15 @@ class Player {
         //   this.audioTracks[i].audio.muted = value;
         // }
     }
+    /** Animation frame rate, measured in frames per second */
     get framerate() {
         return this.note.framerate;
     }
+    /** Animation frame count */
     get frameCount() {
         return this.note.frameCount;
     }
+    /** Animation frame speed */
     get frameSpeed() {
         return this.note.frameSpeed;
     }
@@ -4495,8 +4606,8 @@ class Player {
         this.layerVisibility = this.note.layerVisibility;
         const sampleRate = this.note.sampleRate;
         const pcm = note.getAudioMasterPcm();
-        this.audio.setSamples(pcm, sampleRate);
-        this.canvas.setTextureSize(note.width, note.height);
+        this.audio.setBuffer(pcm, sampleRate);
+        this.canvas.setInputSize(note.width, note.height);
         this.setFrame(this.note.thumbFrameIndex);
         this._time = 0;
         this.emit('load');
@@ -4518,7 +4629,8 @@ class Player {
     }
     /**
      * Toggle audio mute
-     * MUTE NOT CURRENTLY IMPLEMENTED
+     * TODO: MUTE NOT CURRENTLY IMPLEMENTED
+     * @internal
      * @category Audio Control
      */
     toggleMute() {
@@ -4549,7 +4661,7 @@ class Player {
         requestAnimationFrame(this.playbackLoop.bind(this));
     }
     /**
-     * Begin playback starting at the current position
+     * Begin animation playback starting at the current position
      * @category Playback Control
      */
     play() {
@@ -4566,7 +4678,7 @@ class Player {
         this.emit('playback:start');
     }
     /**
-     * Pause playback starting at the current position
+     * Pause animation playback at the current position
      * @category Playback Control
      */
     pause() {
@@ -4577,7 +4689,7 @@ class Player {
         this.emit('playback:stop');
     }
     /**
-     * Resumes playback if paused, otherwise pauses
+     * Resumes animation playback if paused, otherwise pauses
      * @category Playback Control
      */
     togglePlay() {
@@ -4589,7 +4701,7 @@ class Player {
         }
     }
     /**
-     * Jump to a given Flipnote frame
+     * Jump to a given animation frame
      * @category Frame Control
      */
     setFrame(frameIndex) {
@@ -4606,8 +4718,8 @@ class Player {
         }
     }
     /**
-     * Jump to the next Flipnote frame
-     * If the Flipnote loops, and is currently on its last frame, it will wrap to the first frame
+     * Jump to the next animation frame
+     * If the animation loops, and is currently on its last frame, it will wrap to the first frame
      * @category Frame Control
      */
     nextFrame() {
@@ -4619,8 +4731,8 @@ class Player {
         }
     }
     /**
-     * Jump to the next Flipnote frame
-     * If the Flipnote loops, and is currently on its first frame, it will wrap to the last frame
+     * Jump to the next animation frame
+     * If the animation loops, and is currently on its first frame, it will wrap to the last frame
      * @category Frame Control
      */
     prevFrame() {
@@ -4632,14 +4744,14 @@ class Player {
         }
     }
     /**
-     * Jump to the last Flipnote frame
+     * Jump to the last animation frame
      * @category Frame Control
      */
     lastFrame() {
         this.currentFrame = this.frameCount - 1;
     }
     /**
-     * Jump to the first Flipnote frame
+     * Jump to the first animation frame
      * @category Frame Control
      */
     firstFrame() {
@@ -4684,14 +4796,14 @@ class Player {
         this.isSeeking = false;
     }
     /**
-     * Returns the Flipnote's master audio as a WavEncoder object
+     * Returns the master audio as a {@link WavAudio} object
      * @category Quick Export
      */
     getMasterWav() {
         return WavAudio.fromFlipnote(this.note);
     }
     /**
-     * Saves the Flipnote's master audio as a WAV file
+     * Saves the master audio track as a WAV file
      * @category Quick Export
      */
     saveMasterWav() {
@@ -4699,14 +4811,14 @@ class Player {
         saveData(wav.getBlob(), `${this.meta.current.filename}.wav`);
     }
     /**
-     * Returns a Flipnote frame as a GifEncoder object
+     * Returns an animation frame as a {@link GifImage} object
      * @category Quick Export
      */
     getFrameGif(frameIndex, meta = {}) {
         return GifImage.fromFlipnoteFrame(this.note, frameIndex, meta);
     }
     /**
-     * Saves a Flipnote frame as a GIF file
+     * Saves an animation frame as a GIF file
      * @category Quick Export
      */
     saveFrameGif(frameIndex, meta = {}) {
@@ -4714,20 +4826,24 @@ class Player {
         saveData(gif.getBlob(), `${this.meta.current.filename}_${frameIndex.toString().padStart(3, '0')}.gif`);
     }
     /**
-     * Returns the full Flipnote as an animated GifEncoder object
+     * Returns the full animation as a {@link GifImage} object
      * @category Quick Export
      */
     getAnimatedGif(meta = {}) {
         return GifImage.fromFlipnote(this.note, meta);
     }
     /**
-     * Saves the full Flipnote as an animated GIF file
+     * Saves the full animation as a GIF file
      * @category Quick Export
      */
     saveAnimatedGif(meta = {}) {
         const gif = this.getAnimatedGif(meta);
         saveData(gif.getBlob(), `${this.meta.current.filename}.gif`);
     }
+    /**
+     * Draws the specified animation frame to the canvas
+     * @param frameIndex
+     */
     drawFrame(frameIndex) {
         const colors = this.note.getFramePalette(frameIndex);
         const layerBuffers = this.note.decodeFrame(frameIndex);
@@ -4754,19 +4870,43 @@ class Player {
         }
         this.canvas.composite();
     }
+    /**
+     * Forces the current animation frame to be redrawn
+     */
     forceUpdate() {
         if (this.isOpen) {
             this.drawFrame(this.currentFrame);
         }
     }
+    /**
+     * Resize the playback canvas to a new size
+     * @param width - new canvas width (pixels)
+     * @param height - new canvas height (pixels)
+     *
+     * The ratio between `width` and `height` should be 3:4 for best results
+     *
+     * @category Display Control
+     */
     resize(width, height) {
         this.canvas.resize(width, height);
         this.forceUpdate();
     }
-    setLayerVisibility(layerIndex, value) {
-        this.layerVisibility[layerIndex] = value;
+    /**
+     * Sets whether an animation layer should be visible throughout the entire animation
+     * @param layer - layer index, starting at 1
+     * @param value - `true` for visible, `false` for invisible
+     *
+     * @category Display Control
+     */
+    setLayerVisibility(layer, value) {
+        this.layerVisibility[layer] = value;
         this.forceUpdate();
     }
+    /**
+     * Toggles whether an animation layer should be visible throughout the entire animation
+     *
+     * @category Display Control
+     */
     toggleLayerVisibility(layerIndex) {
         this.setLayerVisibility(layerIndex, !this.layerVisibility[layerIndex]);
     }
@@ -4818,6 +4958,7 @@ class Player {
         this.canvas.destroy();
     }
 }
+/** @internal (not implemented yet) */
 Player.defaultState = {
     noteType: null,
     isNoteOpen: false,
@@ -4838,6 +4979,7 @@ Player.defaultState = {
 };
 
 // Main entrypoint for web
+//* flipnote.js library version (exported as `flipnote.version`) */
 const version = "5.0.0"; // replaced by @rollup/plugin-replace; see rollup.config.js
 
 export { FlipnoteAudioTrack, FlipnoteFormat, GifImage, KwzParser, Player, PpmParser, WavAudio, parseSource, version };

@@ -3,33 +3,17 @@ import {
   Flipnote,
   FlipnoteFormat,
   FlipnoteMeta,
-  FlipnoteLayerVisibility, 
-  FlipnoteParser
 } from '../parsers';
 
-import {
-  WavAudio,
-  GifImage,
-  GifEncoderSettings
-} from '../encoders';
-
-import {
-  WebglRenderer
-} from '../webgl';
-
-import { 
-  WebAudioPlayer
-} from '../webaudio';
-
-import {
-  isBrowser
-} from '../utils';
-
-interface PlayerEvents {
-  [key: string]: Function[];
-};
+import { WavAudio, GifImage, GifImageSettings } from '../encoders';
+import { WebglRenderer } from '../webgl'
+import { WebAudioPlayer } from '../webaudio';
+import { isBrowser } from '../utils';
 
 type PlayerLayerVisibility = Record<number, boolean>;
+
+/** @internal */
+type PlayerEvents = Record<string, Function[]>;
 
 /** @internal */
 interface PlayerState {
@@ -64,21 +48,39 @@ const saveData = (function () {
   };
 })();
 
-/** flipnote player API, based on HTMLMediaElement (https://developer.mozilla.org/en-US/docs/Web/API/HTMLMediaElement) */ 
+/**
+ * Flipnote Player API (exported as `flipnote.Player`)
+ * 
+ * This loads and plays Flipnotes in a web browser, taking a lot of inspiration from the {@link https://developer.mozilla.org/en-US/docs/Web/API/HTMLMediaElement | MediaElement} API
+ * 
+ * Note: playback is only available in browser contexts for the time being
+ */
 export class Player {
 
+  /** Rendering canvas */
   public canvas: WebglRenderer;
+  /** Audio player */
   public audio: WebAudioPlayer;
+  /** Canvas HTML element */
   public el: HTMLCanvasElement;
-  public noteFormat: FlipnoteFormat;
-  public noteFormatString: string;
+  /** Currently loaded Flipnote */
   public note: Flipnote;
+  /** Format of the currently loaded Flipnote */
+  public noteFormat: FlipnoteFormat;
+  /** Format of the currently loaded Flipnote, as a string (`'PPM'` or `'KWZ'`) */
+  public noteFormatString: string;
+  /** Metadata for the currently loaded Flipnote */
   public meta: FlipnoteMeta;
+  /** Indicates whether playback should loop once the end is reached */
   public loop: boolean = false;
+  /** Indicates whether playback is currently paused */
   public paused: boolean = true;
+  /** Animation duration, in seconds */
   public duration: number = 0;
+  /** Animation layer visibility */
   public layerVisibility: PlayerLayerVisibility;
 
+  /** @internal (not implemented yet) */
   static defaultState: PlayerState = {
     noteType: null,
     isNoteOpen: false,
@@ -98,6 +100,7 @@ export class Player {
     wasPlaying: false,
   };
 
+  /** @internal (not implemented yet) */
   public state: PlayerState;
   
   private isOpen: boolean = false;
@@ -110,6 +113,15 @@ export class Player {
   private wasPlaying: boolean = false;
   private isSeeking: boolean = false;
 
+  /**
+   * Create a new Player instance
+   * 
+   * @param el - Canvas element (or CSS selector matching a canvas element) to use as a rendering surface
+   * @param width - Canvas width (pixels)
+   * @param height - Canvas height (pixels)
+   * 
+   * The ratio between `width` and `height` should be 3:4 for best results
+   */
   constructor(el: string | HTMLCanvasElement, width: number, height: number) {
     // if `el` is a string, use it to select an Element, else assume it's an element
     el = ('string' == typeof el) ? <HTMLCanvasElement>document.querySelector(el) : el;
@@ -120,6 +132,7 @@ export class Player {
     this.state = {...Player.defaultState};
   }
 
+  /** Current animation frame index */
   get currentFrame() {
     return this._frame;
   }
@@ -128,6 +141,7 @@ export class Player {
     this.setFrame(frameIndex);
   }
 
+  /** Current animation playback position, in seconds */
   get currentTime() {
     return this.isOpen ? this._time : null;
   }
@@ -140,6 +154,7 @@ export class Player {
     }
   }
 
+  /** Current animation playback progress, as a percentage out of 100 */
   get progress() {
     return this.isOpen ? (this._time / this.duration) * 100 : 0;
   }
@@ -148,6 +163,7 @@ export class Player {
     this.currentTime = this.duration * (value / 100);
   }
 
+  /** Audio volume, range `0` to `1` */
   get volume() {
     return this.audio.volume;
   }
@@ -156,6 +172,11 @@ export class Player {
     this.audio.volume = value;
   }
 
+  /** 
+   * Audio mute state
+   * TODO: implement
+   * @internal
+  */
   get muted() {
     // return this.audioTracks[3].audio.muted;
     return false;
@@ -167,14 +188,17 @@ export class Player {
     // }
   }
 
+  /** Animation frame rate, measured in frames per second */
   get framerate() {
     return this.note.framerate;
   }
 
+  /** Animation frame count */
   get frameCount() {
     return this.note.frameCount;
   }
 
+  /** Animation frame speed */
   get frameSpeed() {
     return this.note.frameSpeed;
   }
@@ -236,8 +260,8 @@ export class Player {
     this.layerVisibility = this.note.layerVisibility;
     const sampleRate = this.note.sampleRate;
     const pcm = note.getAudioMasterPcm();
-    this.audio.setSamples(pcm, sampleRate);
-    this.canvas.setTextureSize(note.width, note.height);
+    this.audio.setBuffer(pcm, sampleRate);
+    this.canvas.setInputSize(note.width, note.height);
     this.setFrame(this.note.thumbFrameIndex);
     this._time = 0;
     this.emit('load');
@@ -263,7 +287,8 @@ export class Player {
 
   /** 
    * Toggle audio mute
-   * MUTE NOT CURRENTLY IMPLEMENTED
+   * TODO: MUTE NOT CURRENTLY IMPLEMENTED
+   * @internal
    * @category Audio Control
    */
   toggleMute() {
@@ -294,7 +319,7 @@ export class Player {
   }
 
   /** 
-   * Begin playback starting at the current position
+   * Begin animation playback starting at the current position
    * @category Playback Control 
    */
   public play(): void {
@@ -312,7 +337,7 @@ export class Player {
   }
 
   /** 
-   * Pause playback starting at the current position
+   * Pause animation playback at the current position
    * @category Playback Control 
    */
   public pause(): void {
@@ -323,7 +348,7 @@ export class Player {
   }
 
   /** 
-   * Resumes playback if paused, otherwise pauses
+   * Resumes animation playback if paused, otherwise pauses
    * @category Playback Control 
    */
   public togglePlay(): void {
@@ -335,7 +360,7 @@ export class Player {
   }
 
   /** 
-   * Jump to a given Flipnote frame
+   * Jump to a given animation frame
    * @category Frame Control 
    */
   public setFrame(frameIndex: number): void {
@@ -353,8 +378,8 @@ export class Player {
   }
 
   /** 
-   * Jump to the next Flipnote frame
-   * If the Flipnote loops, and is currently on its last frame, it will wrap to the first frame
+   * Jump to the next animation frame
+   * If the animation loops, and is currently on its last frame, it will wrap to the first frame
    * @category Frame Control 
    */
   public nextFrame(): void {
@@ -366,8 +391,8 @@ export class Player {
   }
 
   /** 
-   * Jump to the next Flipnote frame
-   * If the Flipnote loops, and is currently on its first frame, it will wrap to the last frame
+   * Jump to the next animation frame
+   * If the animation loops, and is currently on its first frame, it will wrap to the last frame
    * @category Frame Control 
    */
   public prevFrame(): void {
@@ -379,7 +404,7 @@ export class Player {
   }
 
   /** 
-   * Jump to the last Flipnote frame
+   * Jump to the last animation frame
    * @category Frame Control 
    */
   public lastFrame(): void {
@@ -387,7 +412,7 @@ export class Player {
   }
 
   /** 
-   * Jump to the first Flipnote frame
+   * Jump to the first animation frame
    * @category Frame Control 
    */
   public firstFrame(): void {
@@ -437,7 +462,7 @@ export class Player {
   }
 
   /** 
-   * Returns the Flipnote's master audio as a WavEncoder object
+   * Returns the master audio as a {@link WavAudio} object
    * @category Quick Export
    */
   public getMasterWav() {
@@ -445,7 +470,7 @@ export class Player {
   }
 
   /** 
-   * Saves the Flipnote's master audio as a WAV file
+   * Saves the master audio track as a WAV file
    * @category Quick Export
    */
   public saveMasterWav() {
@@ -454,39 +479,43 @@ export class Player {
   }
 
   /** 
-   * Returns a Flipnote frame as a GifEncoder object
+   * Returns an animation frame as a {@link GifImage} object
    * @category Quick Export
    */
-  public getFrameGif(frameIndex: number, meta: Partial<GifEncoderSettings> = {}) {
+  public getFrameGif(frameIndex: number, meta: Partial<GifImageSettings> = {}) {
     return GifImage.fromFlipnoteFrame(this.note, frameIndex, meta);
   }
 
   /** 
-   * Saves a Flipnote frame as a GIF file
+   * Saves an animation frame as a GIF file
    * @category Quick Export
    */
-  public saveFrameGif(frameIndex: number, meta: Partial<GifEncoderSettings> = {}) {
+  public saveFrameGif(frameIndex: number, meta: Partial<GifImageSettings> = {}) {
     const gif = this.getFrameGif(frameIndex, meta);
     saveData(gif.getBlob(), `${ this.meta.current.filename }_${ frameIndex.toString().padStart(3, '0') }.gif`);
   }
 
   /** 
-   * Returns the full Flipnote as an animated GifEncoder object
+   * Returns the full animation as a {@link GifImage} object
    * @category Quick Export
    */
-  public getAnimatedGif(meta: Partial<GifEncoderSettings> = {}) {
+  public getAnimatedGif(meta: Partial<GifImageSettings> = {}) {
     return GifImage.fromFlipnote(this.note, meta);
   }
 
   /** 
-   * Saves the full Flipnote as an animated GIF file
+   * Saves the full animation as a GIF file
    * @category Quick Export
    */
-  public saveAnimatedGif(meta: Partial<GifEncoderSettings> = {}) {
+  public saveAnimatedGif(meta: Partial<GifImageSettings> = {}) {
     const gif = this.getAnimatedGif(meta);
     saveData(gif.getBlob(), `${ this.meta.current.filename }.gif`);
   }
 
+  /**
+   * Draws the specified animation frame to the canvas
+   * @param frameIndex 
+   */
   public drawFrame(frameIndex: number): void {
     const colors = this.note.getFramePalette(frameIndex);
     const layerBuffers = this.note.decodeFrame(frameIndex);
@@ -514,22 +543,46 @@ export class Player {
     this.canvas.composite();
   }
 
+  /**
+   * Forces the current animation frame to be redrawn
+   */
   public forceUpdate(): void {
     if (this.isOpen) {
       this.drawFrame(this.currentFrame);
     }
   }
 
+  /**
+   * Resize the playback canvas to a new size
+   * @param width - new canvas width (pixels)
+   * @param height - new canvas height (pixels)
+   * 
+   * The ratio between `width` and `height` should be 3:4 for best results
+   * 
+   * @category Display Control 
+   */
   public resize(width: number, height: number): void {
     this.canvas.resize(width, height);
     this.forceUpdate();
   }
 
-  public setLayerVisibility(layerIndex: number, value: boolean): void {
-    this.layerVisibility[layerIndex] = value;
+  /**
+   * Sets whether an animation layer should be visible throughout the entire animation
+   * @param layer - layer index, starting at 1
+   * @param value - `true` for visible, `false` for invisible
+   * 
+   * @category Display Control 
+   */
+  public setLayerVisibility(layer: number, value: boolean): void {
+    this.layerVisibility[layer] = value;
     this.forceUpdate();
   }
 
+  /**
+   * Toggles whether an animation layer should be visible throughout the entire animation
+   * 
+   * @category Display Control 
+   */
   public toggleLayerVisibility(layerIndex: number) : void {
     this.setLayerVisibility(layerIndex, !this.layerVisibility[layerIndex]);
   }

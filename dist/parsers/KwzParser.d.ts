@@ -1,4 +1,4 @@
-import { FlipnoteFormat, FlipnoteAudioTrack, FlipnoteParserBase } from './FlipnoteParserBase';
+import { FlipnoteFormat, FlipnoteAudioTrack, FlipnoteMeta, FlipnoteParser } from './FlipnoteParserTypes';
 /**
  * KWZ section types
  * @internal
@@ -17,39 +17,9 @@ export declare type KwzSectionMap = {
 /**
  * KWZ file metadata, stores information about its playback, author details, etc
  */
-export interface KwzMeta {
-    /** Flipnote lock state. Locked Flipnotes cannot be edited by anyone other than the current author */
-    lock: boolean;
-    /** Playback loop state. If `true`, playback will loop once the end is reached */
-    loop: boolean;
-    /** Total number of animation frames */
-    frame_count: number;
-    /** In-app animation playback speed, range 0 to 10 */
-    frame_speed: number;
-    /** Index of the animation frame used as the Flipnote's thumbnail image */
-    thumb_index: number;
-    /** Date representing when the file was last edited */
-    timestamp: Date;
+export interface KwzMeta extends FlipnoteMeta {
     /** Date representing when the file was created */
-    creation_timestamp: Date;
-    /** Metadata about the author of the original Flipnote file */
-    root: {
-        filename: string;
-        username: string;
-        fsid: string;
-    };
-    /** Metadata about the previous author of the Flipnote file */
-    parent: {
-        filename: string;
-        username: string;
-        fsid: string;
-    };
-    /** Metadata about the current author of the Flipnote file */
-    current: {
-        filename: string;
-        username: string;
-        fsid: string;
-    };
+    creationTimestamp: Date;
 }
 /**
  * KWZ frame metadata, stores information about each frame, like layer depths sound effect usage
@@ -73,9 +43,11 @@ export interface KwzFrameMeta {
  */
 export interface KwzParserSettings {
     /** Skip full metadata parsing for quickness */
-    quickMeta?: boolean;
-    /** apply special cases for dsi gallery notes */
-    dsiGalleryNote?: boolean;
+    quickMeta: boolean;
+    /** Apply special cases for dsi gallery notes */
+    dsiGalleryNote: boolean;
+    /** A minor audio fix is applied by default, since Flipnote 3D's own implementation is wrong. Enable this to use the "original" audio decoding setup */
+    originalAudioSettings: boolean;
 }
 /**
  * Parser class for Flipnote Studio 3D's KWZ animation format
@@ -83,7 +55,7 @@ export interface KwzParserSettings {
  * Format docs: https://github.com/Flipnote-Collective/flipnote-studio-3d-docs/wiki/KWZ-Format
  * @category File Parser
  */
-export declare class KwzParser extends FlipnoteParserBase<KwzMeta> {
+export declare class KwzParser extends FlipnoteParser {
     /** Default KWZ parser settings */
     static defaultSettings: KwzParserSettings;
     /** File format type */
@@ -99,7 +71,7 @@ export declare class KwzParser extends FlipnoteParserBase<KwzMeta> {
     /** Audio output sample rate. NOTE: probably isn't accurate, full KWZ audio stack is still on the todo */
     static sampleRate: number;
     /** Global animation frame color palette */
-    static globalPalette: import("./FlipnoteParserBase").FlipnotePaletteColor[];
+    static globalPalette: import("./FlipnoteParserTypes").FlipnotePaletteColor[];
     /** File format type, reflects {@link KwzParser.format} */
     format: FlipnoteFormat;
     formatString: string;
@@ -114,7 +86,7 @@ export declare class KwzParser extends FlipnoteParserBase<KwzMeta> {
     /** Audio output sample rate, reflects {@link KwzParser.sampleRate} */
     sampleRate: number;
     /** Global animation frame color palette, reflects {@link KwzParser.globalPalette} */
-    globalPalette: import("./FlipnoteParserBase").FlipnotePaletteColor[];
+    globalPalette: import("./FlipnoteParserTypes").FlipnotePaletteColor[];
     /** File metadata, see {@link KwzMeta} for structure */
     meta: KwzMeta;
     private settings;
@@ -166,7 +138,7 @@ export declare class KwzParser extends FlipnoteParserBase<KwzMeta> {
      *  - index 6 is the layer C color 2
      * @category Image
     */
-    getFramePalette(frameIndex: number): import("./FlipnoteParserBase").FlipnotePaletteColor[];
+    getFramePalette(frameIndex: number): import("./FlipnoteParserTypes").FlipnotePaletteColor[];
     private getFrameDiffingFlag;
     private getFrameLayerSizes;
     private getFrameLayerDepths;
@@ -217,6 +189,7 @@ export declare class KwzParser extends FlipnoteParserBase<KwzMeta> {
      * @category Audio
     */
     getAudioTrackPcm(trackId: FlipnoteAudioTrack, dstFreq?: number): Int16Array;
+    private pcmAudioMix;
     /**
      * Get the full mixed audio for the Flipnote, using the specified samplerate
      * @returns Signed 16-bit PCM audio
