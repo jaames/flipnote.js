@@ -7,20 +7,12 @@ import {
 } from './FlipnoteParserTypes';
 
 import {
-  KWZ_LINE_TABLE,
-  KWZ_LINE_TABLE_SHIFT,
-  KWZ_LINE_TABLE_COMMON,
-  KWZ_LINE_TABLE_COMMON_SHIFT
-} from './kwzTables';
-
-import {
   clamp,
   pcmDsAudioResample,
-  pcmAudioMix,
+  pcmGetClippingRatio,
+  ADPCM_STEP_TABLE,
   ADPCM_INDEX_TABLE_2BIT,
-  ADPCM_INDEX_TABLE_4BIT,
-  ADPCM_SAMPLE_TABLE_2BIT,
-  ADPCM_SAMPLE_TABLE_4BIT
+  ADPCM_INDEX_TABLE_4BIT
 } from './audioUtils';
 
 /** 
@@ -48,6 +40,77 @@ const BITMASKS = new Uint16Array(16);
 for (let i = 0; i < 16; i++) {
   BITMASKS[i] = (1 << i) - 1;
 }
+
+// Every possible sequence of pixels for each tile line
+/** @internal */
+const KWZ_LINE_TABLE = new Uint8Array(6561 * 8);
+/** @internal */
+var offset = 0;
+for (let a = 0; a < 3; a++)
+  for (let b = 0; b < 3; b++)
+    for (let c = 0; c < 3; c++)
+      for (let d = 0; d < 3; d++)
+        for (let e = 0; e < 3; e++)
+          for (let f = 0; f < 3; f++)
+            for (let g = 0; g < 3; g++)
+              for (let h = 0; h < 3; h++) {
+                KWZ_LINE_TABLE.set([
+                  b, 
+                  a, 
+                  d, 
+                  c, 
+                  f, 
+                  e, 
+                  h, 
+                  g
+                ], offset);
+                offset += 8;
+              }
+
+// Line offsets, but the lines are shifted to the left by one pixel
+/** @internal */
+const KWZ_LINE_TABLE_SHIFT = new Uint8Array(6561 * 8);
+/** @internal */
+var offset = 0;
+for (let a = 0; a < 2187; a += 729)
+  for (let b = 0; b < 729; b += 243)
+    for (let c = 0; c < 243; c += 81)
+      for (let d = 0; d < 81; d += 27)
+        for (let e = 0; e < 27; e += 9)
+          for (let f = 0; f < 9; f += 3)
+            for (let g = 0; g < 3; g += 1)
+              for (let h = 0; h < 6561; h += 2187) {
+                const lineTableIndex = a + b + c + d + e + f + g + h;
+                const pixels = KWZ_LINE_TABLE.subarray(lineTableIndex * 8, lineTableIndex * 8 + 8);
+                KWZ_LINE_TABLE_SHIFT.set(pixels, offset);
+                offset += 8;
+              }
+
+// Commonly occuring line offsets
+/** @internal */
+const KWZ_LINE_TABLE_COMMON = new Uint8Array(32 * 8);
+[
+  0x0000, 0x0CD0, 0x19A0, 0x02D9, 0x088B, 0x0051, 0x00F3, 0x0009,
+  0x001B, 0x0001, 0x0003, 0x05B2, 0x1116, 0x00A2, 0x01E6, 0x0012,
+  0x0036, 0x0002, 0x0006, 0x0B64, 0x08DC, 0x0144, 0x00FC, 0x0024,
+  0x001C, 0x0004, 0x0334, 0x099C, 0x0668, 0x1338, 0x1004, 0x166C
+].forEach((lineTableIndex, index) => {
+  const pixels = KWZ_LINE_TABLE.subarray(lineTableIndex * 8, lineTableIndex * 8 + 8);
+  KWZ_LINE_TABLE_COMMON.set(pixels, index * 8);
+});
+
+// Commonly occuring line offsets, but the lines are shifted to the left by one pixel
+/** @internal */
+const KWZ_LINE_TABLE_COMMON_SHIFT = new Uint8Array(32 * 8);
+[
+  0x0000, 0x0CD0, 0x19A0, 0x0003, 0x02D9, 0x088B, 0x0051, 0x00F3, 
+  0x0009, 0x001B, 0x0001, 0x0006, 0x05B2, 0x1116, 0x00A2, 0x01E6, 
+  0x0012, 0x0036, 0x0002, 0x02DC, 0x0B64, 0x08DC, 0x0144, 0x00FC, 
+  0x0024, 0x001C, 0x099C, 0x0334, 0x1338, 0x0668, 0x166C, 0x1004
+].forEach((lineTableIndex, index) => {
+  const pixels = KWZ_LINE_TABLE.subarray(lineTableIndex * 8, lineTableIndex * 8 + 8);
+  KWZ_LINE_TABLE_COMMON_SHIFT.set(pixels, index * 8);
+});
 
 /** 
  * KWZ section types
@@ -762,52 +825,64 @@ export class KwzParser extends FlipnoteParser {
   public decodeAudioTrack(trackId: FlipnoteAudioTrack) {
     const adpcm = this.getAudioTrackRaw(trackId);
     const output = new Int16Array(16364 * 60);
-    let outputOffset = 0;
+    let outputPtr = 0;
     // initial decoder state
-    // Flipnote 3D's initial audio decoder state is actually bugged, so these aren't 1:1 to what the app does
-    let prevDiff = 0;
-    let prevStepIndex = 0;
-    // we can still optionally enable the original setup here
+    // Flipnote 3D's initial values are actually buggy, so these aren't 1:1
+    let predictor = 0;
+    let stepIndex = 0;
+    let sample = 0;
+    let step = 0;
+    let diff = 0;
+    // we can still optionally enable the in-app values here
     if (this.settings.originalAudioSettings)
-      prevStepIndex = 40;
-    let sample: number;
-    let diff: number;
-    let stepIndex: number;
+      stepIndex = 40;
     // loop through each byte in the raw adpcm data
-    for (let adpcmOffset = 0; adpcmOffset < adpcm.length; adpcmOffset++) {
-      const byte = adpcm[adpcmOffset];
-      let bitPos = 0;
-      while (bitPos < 8) {
-        if (prevStepIndex < 18 || bitPos == 6) {
-          // isolate 2-bit sample
-          sample = (byte >> bitPos) & 0x3;
-          // get diff
-          diff = prevDiff + ADPCM_SAMPLE_TABLE_2BIT[sample + 4 * prevStepIndex];
-          // get step index
-          stepIndex = prevStepIndex + ADPCM_INDEX_TABLE_2BIT[sample];
-          bitPos += 2;
+    for (let adpcmPtr = 0; adpcmPtr < adpcm.length; adpcmPtr++) {
+      let currByte = adpcm[adpcmPtr];
+      let currBit = 0;
+      while (currBit < 8) {
+        // 2 bit sample
+        if (stepIndex < 18 || currBit > 4) {
+          sample = currByte & 0x3;
+
+          step = ADPCM_STEP_TABLE[stepIndex];
+          diff = step >> 3;
+
+          if (sample & 1) diff += step;
+          if (sample & 2) diff = -diff;
+
+          predictor += diff;
+          stepIndex += ADPCM_INDEX_TABLE_2BIT[sample];
+
+          currByte >>= 2;
+          currBit += 2;
         }
+        // 4 bit sample
         else {
-          // isolate 4-bit sample
-          sample = (byte >> bitPos) & 0xF;
-          // get diff
-          diff = prevDiff + ADPCM_SAMPLE_TABLE_4BIT[sample + 16 * prevStepIndex];
-          // get step index
-          stepIndex = prevStepIndex + ADPCM_INDEX_TABLE_4BIT[sample];
-          bitPos += 4;
+          sample = currByte & 0xf;
+
+          step = ADPCM_STEP_TABLE[stepIndex];
+          diff = step >> 3;
+
+          if (sample & 1) diff += step >> 2;
+          if (sample & 2) diff += step >> 1;
+          if (sample & 4) diff += step;
+          if (sample & 8) diff = -diff;
+
+          predictor += diff;
+          stepIndex += ADPCM_INDEX_TABLE_4BIT[sample];
+
+          currByte >>= 4;
+          currBit += 4;
         }
-        // clamp step index and diff
         stepIndex = clamp(stepIndex, 0, 79);
-        diff = clamp(diff, -2047, 2047);
-        // add result to output buffer
-        output[outputOffset] = (diff * 16);
-        outputOffset += 1;
-        // set prev decoder state
-        prevStepIndex = stepIndex;
-        prevDiff = diff;
+        // clamp as 12 bit then scale to 16
+        predictor = clamp(predictor, -2048, 2047);
+        output[outputPtr] = predictor * 16;
+        outputPtr += 1;
       }
     }
-    return output.slice(0, outputOffset);
+    return output.slice(0, outputPtr);
   }
 
   /** 
@@ -828,6 +903,18 @@ export class KwzParser extends FlipnoteParser {
     return srcPcm;
   }
 
+  private pcmAudioMix(src: Int16Array, dst: Int16Array, dstOffset: number = 0) {
+    const srcSize = src.length;
+    const dstSize = dst.length;
+    for (let n = 0; n < srcSize; n++) {
+      if (dstOffset + n > dstSize)
+        break;
+      // half src volume
+      const samp = dst[dstOffset + n] + src[n];
+      dst[dstOffset + n] = clamp(samp, -32768, 32767);
+    }
+  }
+
   /** 
    * Get the full mixed audio for the Flipnote, using the specified samplerate
    * @returns Signed 16-bit PCM audio
@@ -845,28 +932,29 @@ export class KwzParser extends FlipnoteParser {
     // Mix background music
     if (hasBgm) {
       const bgmPcm = this.getAudioTrackPcm(FlipnoteAudioTrack.BGM, dstFreq);
-      pcmAudioMix(bgmPcm, master, 0);
+      this.pcmAudioMix(bgmPcm, master, 0);
     }
     // Mix sound effects
     if (hasSe1 || hasSe2 || hasSe3) {
-      const samplesPerFrame = Math.floor(dstFreq / this.framerate);
+      const samplesPerFrame = dstFreq / this.framerate;
       const se1Pcm = hasSe1 ? this.getAudioTrackPcm(FlipnoteAudioTrack.SE1, dstFreq) : null;
       const se2Pcm = hasSe2 ? this.getAudioTrackPcm(FlipnoteAudioTrack.SE2, dstFreq) : null;
       const se3Pcm = hasSe3 ? this.getAudioTrackPcm(FlipnoteAudioTrack.SE3, dstFreq) : null;
       const se4Pcm = hasSe4 ? this.getAudioTrackPcm(FlipnoteAudioTrack.SE4, dstFreq) : null;
       for (let i = 0; i < this.frameCount; i++) {
         const seFlags = this.getFrameSoundFlags(i);
-        const seOffset = samplesPerFrame * i;
+        const seOffset = Math.ceil(i * samplesPerFrame);
         if (hasSe1 && seFlags[0])
-          pcmAudioMix(se1Pcm, master, seOffset);
+          this.pcmAudioMix(se1Pcm, master, seOffset);
         if (hasSe2 && seFlags[1])
-          pcmAudioMix(se2Pcm, master, seOffset);
+          this.pcmAudioMix(se2Pcm, master, seOffset);
         if (hasSe3 && seFlags[2])
-          pcmAudioMix(se3Pcm, master, seOffset);
+          this.pcmAudioMix(se3Pcm, master, seOffset);
         if (hasSe4 && seFlags[3])
-          pcmAudioMix(se4Pcm, master, seOffset);
+          this.pcmAudioMix(se4Pcm, master, seOffset);
       }
     }
+    this.audioClipRatio = pcmGetClippingRatio(master);
     return master;
   }
 }

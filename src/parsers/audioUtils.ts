@@ -7,9 +7,9 @@ export function clamp(n: number, l: number, h: number) {
   return n;
 }
 
-
 /** 
  * zero-order hold interpolation
+ * credit to simontime
  * @internal
  */
 export function pcmDsAudioResample(src: Int16Array, srcFreq: number, dstFreq: number) {
@@ -24,19 +24,6 @@ export function pcmDsAudioResample(src: Int16Array, srcFreq: number, dstFreq: nu
 }
 
 /** @internal */
-export function pcmAudioMix(src: Int16Array, dst: Int16Array, dstOffset: number = 0) {
-  const srcSize = src.length;
-  const dstSize = dst.length;
-  for (let n = 0; n < srcSize; n++) {
-    if (dstOffset + n > dstSize)
-      break;
-    // half src volume
-    const samp = dst[dstOffset + n] + (src[n] / 2);
-    dst[dstOffset + n] = clamp(samp, -32768, 32767);
-  }
-}
-
-/** @internal */
 export const ADPCM_INDEX_TABLE_2BIT = new Int8Array([
   -1, 2, -1, 2
 ]);
@@ -47,10 +34,7 @@ export const ADPCM_INDEX_TABLE_4BIT = new Int8Array([
   -1, -1, -1, -1, 2, 4, 6, 8
 ]);
 
-/** 
- * note that this is a slight deviation from the normal adpcm table
- * @internal 
- */
+/** @internal */
 export const ADPCM_STEP_TABLE = new Int16Array([
   7, 8, 9, 10, 11, 12, 13, 14, 16, 17,
   19, 21, 23, 25, 28, 31, 34, 37, 41, 45,
@@ -63,28 +47,22 @@ export const ADPCM_STEP_TABLE = new Int16Array([
   15289, 16818, 18500, 20350, 22385, 24623, 27086, 29794, 32767, 0
 ]);
 
-/** @internal */
-export const ADPCM_SAMPLE_TABLE_2BIT = new Int16Array(90 * 4);
-for (let sample = 0; sample < 4; sample++) {
-  for (let stepIndex = 0; stepIndex < 90; stepIndex++) {
-    let step = ADPCM_STEP_TABLE[stepIndex];
-    let diff = step >> 3;
-    if (sample & 1) diff += step;
-    if (sample & 2) diff = -diff;
-    ADPCM_SAMPLE_TABLE_2BIT[sample + 4 * stepIndex] = diff;
-  }
-}
+/** 
+ * Get a ratio of how many audio samples hit the pcm_s16_le clipping bounds
+ * This can be used to detect corrupted audio
+ * @internal
+ */
+export function pcmGetClippingRatio(src: Int16Array) {
+  
+  const numSamples = src.length;
+  let numClippedSamples = 0;
 
-/** @internal */
-export const ADPCM_SAMPLE_TABLE_4BIT = new Int16Array(90 * 16);
-for (let sample = 0; sample < 16; sample++) {
-  for (let stepIndex = 0; stepIndex < 90; stepIndex++) {
-    let step = ADPCM_STEP_TABLE[stepIndex];
-    let diff = step >> 3;
-    if (sample & 4) diff += step;
-    if (sample & 2) diff += step >> 1;
-    if (sample & 1) diff += step >> 2;
-    if (sample & 8) diff = -diff;
-    ADPCM_SAMPLE_TABLE_4BIT[sample + 16 * stepIndex] = diff;
+  for (let i = 0; i < numSamples; i++) {
+    const sample = src[i];
+    if (sample == -32768 || sample == 32767)
+      numClippedSamples += 1;
   }
+
+  return numClippedSamples / numSamples;
+
 }

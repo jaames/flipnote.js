@@ -153,6 +153,9 @@ export abstract class FlipnoteParser extends DataStream {
   /** Index of the animation frame used as the Flipnote's thumbnail image */
   public thumbFrameIndex: number;
 
+  /** Get the amount of clipping in the master audio track, useful for determining if a Flipnote's audio is corrupted. Closer to 1.0 = more clipping. Only available after {@link getAudioMasterPcm} has been called */
+  public audioClipRatio: number;
+
   /** 
    * Decode a frame, returning the raw pixel buffers for each layer
    * @category Image

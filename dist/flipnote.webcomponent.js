@@ -912,6 +912,7 @@
     }
     /**
      * zero-order hold interpolation
+     * credit to simontime
      * @internal
      */
     function pcmDsAudioResample(src, srcFreq, dstFreq) {
@@ -925,19 +926,6 @@
         return dst;
     }
     /** @internal */
-    function pcmAudioMix(src, dst, dstOffset) {
-        if (dstOffset === void 0) { dstOffset = 0; }
-        var srcSize = src.length;
-        var dstSize = dst.length;
-        for (var n = 0; n < srcSize; n++) {
-            if (dstOffset + n > dstSize)
-                break;
-            // half src volume
-            var samp = dst[dstOffset + n] + (src[n] / 2);
-            dst[dstOffset + n] = clamp(samp, -32768, 32767);
-        }
-    }
-    /** @internal */
     var ADPCM_INDEX_TABLE_2BIT = new Int8Array([
         -1, 2, -1, 2
     ]);
@@ -946,10 +934,7 @@
         -1, -1, -1, -1, 2, 4, 6, 8,
         -1, -1, -1, -1, 2, 4, 6, 8
     ]);
-    /**
-     * note that this is a slight deviation from the normal adpcm table
-     * @internal
-     */
+    /** @internal */
     var ADPCM_STEP_TABLE = new Int16Array([
         7, 8, 9, 10, 11, 12, 13, 14, 16, 17,
         19, 21, 23, 25, 28, 31, 34, 37, 41, 45,
@@ -961,35 +946,20 @@
         5894, 6484, 7132, 7845, 8630, 9493, 10442, 11487, 12635, 13899,
         15289, 16818, 18500, 20350, 22385, 24623, 27086, 29794, 32767, 0
     ]);
-    /** @internal */
-    var ADPCM_SAMPLE_TABLE_2BIT = new Int16Array(90 * 4);
-    for (var sample = 0; sample < 4; sample++) {
-        for (var stepIndex = 0; stepIndex < 90; stepIndex++) {
-            var step = ADPCM_STEP_TABLE[stepIndex];
-            var diff = step >> 3;
-            if (sample & 1)
-                diff += step;
-            if (sample & 2)
-                diff = -diff;
-            ADPCM_SAMPLE_TABLE_2BIT[sample + 4 * stepIndex] = diff;
+    /**
+     * Get a ratio of how many audio samples hit the pcm_s16_le clipping bounds
+     * This can be used to detect corrupted audio
+     * @internal
+     */
+    function pcmGetClippingRatio(src) {
+        var numSamples = src.length;
+        var numClippedSamples = 0;
+        for (var i = 0; i < numSamples; i++) {
+            var sample = src[i];
+            if (sample == -32768 || sample == 32767)
+                numClippedSamples += 1;
         }
-    }
-    /** @internal */
-    var ADPCM_SAMPLE_TABLE_4BIT = new Int16Array(90 * 16);
-    for (var sample = 0; sample < 16; sample++) {
-        for (var stepIndex = 0; stepIndex < 90; stepIndex++) {
-            var step = ADPCM_STEP_TABLE[stepIndex];
-            var diff = step >> 3;
-            if (sample & 4)
-                diff += step;
-            if (sample & 2)
-                diff += step >> 1;
-            if (sample & 1)
-                diff += step >> 2;
-            if (sample & 8)
-                diff = -diff;
-            ADPCM_SAMPLE_TABLE_4BIT[sample + 16 * stepIndex] = diff;
-        }
+        return numClippedSamples / numSamples;
     }
 
     /**
@@ -1489,6 +1459,18 @@
                 return pcmDsAudioResample(srcPcm, srcFreq, dstFreq);
             return srcPcm;
         };
+        PpmParser.prototype.pcmAudioMix = function (src, dst, dstOffset) {
+            if (dstOffset === void 0) { dstOffset = 0; }
+            var srcSize = src.length;
+            var dstSize = dst.length;
+            for (var n = 0; n < srcSize; n++) {
+                if (dstOffset + n > dstSize)
+                    break;
+                // half src volume
+                var samp = dst[dstOffset + n] + (src[n] / 2);
+                dst[dstOffset + n] = clamp(samp, -32768, 32767);
+            }
+        };
         /**
          * Get the full mixed audio for the Flipnote, using the specified samplerate
          * @returns Signed 16-bit PCM audio
@@ -1506,28 +1488,27 @@
             // Mix background music
             if (hasBgm) {
                 var bgmPcm = this.getAudioTrackPcm(exports.FlipnoteAudioTrack.BGM, dstFreq);
-                pcmAudioMix(bgmPcm, master, 0);
+                this.pcmAudioMix(bgmPcm, master, 0);
             }
             // Mix sound effects
             if (hasSe1 || hasSe2 || hasSe3) {
-                var seFlags = this.decodeSoundFlags();
+                var samplesPerFrame = dstFreq / this.framerate;
                 var se1Pcm = hasSe1 ? this.getAudioTrackPcm(exports.FlipnoteAudioTrack.SE1, dstFreq) : null;
                 var se2Pcm = hasSe2 ? this.getAudioTrackPcm(exports.FlipnoteAudioTrack.SE2, dstFreq) : null;
                 var se3Pcm = hasSe3 ? this.getAudioTrackPcm(exports.FlipnoteAudioTrack.SE3, dstFreq) : null;
-                var adjFreq = dstFreq / this.rawSampleRate;
-                var samplesPerFrame = Math.round(this.rawSampleRate / this.framerate) * adjFreq;
+                var seFlags = this.decodeSoundFlags();
                 for (var frame = 0; frame < this.frameCount; frame++) {
-                    // places sound effect halfway through frame
-                    var seOffset = (frame + .5) * samplesPerFrame;
+                    var seOffset = Math.ceil(frame * samplesPerFrame);
                     var flag = seFlags[frame];
                     if (hasSe1 && flag[0])
-                        pcmAudioMix(se1Pcm, master, seOffset);
+                        this.pcmAudioMix(se1Pcm, master, seOffset);
                     if (hasSe2 && flag[1])
-                        pcmAudioMix(se2Pcm, master, seOffset);
+                        this.pcmAudioMix(se2Pcm, master, seOffset);
                     if (hasSe3 && flag[2])
-                        pcmAudioMix(se3Pcm, master, seOffset);
+                        this.pcmAudioMix(se3Pcm, master, seOffset);
                 }
             }
+            this.audioClipRatio = pcmGetClippingRatio(master);
             return master;
         };
         /** Default PPM parser settings */
@@ -1554,6 +1535,30 @@
         return PpmParser;
     }(FlipnoteParser));
 
+    /**
+     * KWZ framerates in frames per second, indexed by the in-app frame speed
+     */
+    var KWZ_FRAMERATES = [.2, .5, 1, 2, 4, 6, 8, 12, 20, 24, 30];
+    /**
+     * KWZ color defines (red, green, blue, alpha)
+     */
+    var KWZ_PALETTE = {
+        WHITE: [0xff, 0xff, 0xff, 0xff],
+        BLACK: [0x10, 0x10, 0x10, 0xff],
+        RED: [0xff, 0x10, 0x10, 0xff],
+        YELLOW: [0xff, 0xe7, 0x00, 0xff],
+        GREEN: [0x00, 0x86, 0x31, 0xff],
+        BLUE: [0x00, 0x38, 0xce, 0xff],
+        NONE: [0xff, 0xff, 0xff, 0x00]
+    };
+    /**
+     * Pre computed bitmasks for readBits; done as a slight optimisation
+     * @internal
+     */
+    var BITMASKS = new Uint16Array(16);
+    for (var i = 0; i < 16; i++) {
+        BITMASKS[i] = (1 << i) - 1;
+    }
     // Every possible sequence of pixels for each tile line
     /** @internal */
     var KWZ_LINE_TABLE = new Uint8Array(6561 * 8);
@@ -1621,31 +1626,6 @@
         var pixels = KWZ_LINE_TABLE.subarray(lineTableIndex * 8, lineTableIndex * 8 + 8);
         KWZ_LINE_TABLE_COMMON_SHIFT.set(pixels, index * 8);
     });
-
-    /**
-     * KWZ framerates in frames per second, indexed by the in-app frame speed
-     */
-    var KWZ_FRAMERATES = [.2, .5, 1, 2, 4, 6, 8, 12, 20, 24, 30];
-    /**
-     * KWZ color defines (red, green, blue, alpha)
-     */
-    var KWZ_PALETTE = {
-        WHITE: [0xff, 0xff, 0xff, 0xff],
-        BLACK: [0x10, 0x10, 0x10, 0xff],
-        RED: [0xff, 0x10, 0x10, 0xff],
-        YELLOW: [0xff, 0xe7, 0x00, 0xff],
-        GREEN: [0x00, 0x86, 0x31, 0xff],
-        BLUE: [0x00, 0x38, 0xce, 0xff],
-        NONE: [0xff, 0xff, 0xff, 0x00]
-    };
-    /**
-     * Pre computed bitmasks for readBits; done as a slight optimisation
-     * @internal
-     */
-    var BITMASKS = new Uint16Array(16);
-    for (var i = 0; i < 16; i++) {
-        BITMASKS[i] = (1 << i) - 1;
-    }
     /**
      * Parser class for Flipnote Studio 3D's KWZ animation format
      *
@@ -1804,18 +1784,18 @@
         KwzParser.prototype.decodeSoundHeader = function () {
             var _a;
             if (this.sections.hasOwnProperty('KSN')) {
-                var offset = this.sections['KSN'].offset + 8;
-                this.seek(offset);
+                var offset_1 = this.sections['KSN'].offset + 8;
+                this.seek(offset_1);
                 var bgmSpeed = this.readUint32();
                 this.bgmSpeed = bgmSpeed;
                 this.bgmrate = KWZ_FRAMERATES[bgmSpeed];
-                var trackSizes = new Uint32Array(this.buffer, offset + 4, 20);
+                var trackSizes = new Uint32Array(this.buffer, offset_1 + 4, 20);
                 this.soundMeta = (_a = {},
-                    _a[exports.FlipnoteAudioTrack.BGM] = { offset: offset += 28, length: trackSizes[0] },
-                    _a[exports.FlipnoteAudioTrack.SE1] = { offset: offset += trackSizes[0], length: trackSizes[1] },
-                    _a[exports.FlipnoteAudioTrack.SE2] = { offset: offset += trackSizes[1], length: trackSizes[2] },
-                    _a[exports.FlipnoteAudioTrack.SE3] = { offset: offset += trackSizes[2], length: trackSizes[3] },
-                    _a[exports.FlipnoteAudioTrack.SE4] = { offset: offset += trackSizes[3], length: trackSizes[4] },
+                    _a[exports.FlipnoteAudioTrack.BGM] = { offset: offset_1 += 28, length: trackSizes[0] },
+                    _a[exports.FlipnoteAudioTrack.SE1] = { offset: offset_1 += trackSizes[0], length: trackSizes[1] },
+                    _a[exports.FlipnoteAudioTrack.SE2] = { offset: offset_1 += trackSizes[1], length: trackSizes[2] },
+                    _a[exports.FlipnoteAudioTrack.SE3] = { offset: offset_1 += trackSizes[2], length: trackSizes[3] },
+                    _a[exports.FlipnoteAudioTrack.SE4] = { offset: offset_1 += trackSizes[3], length: trackSizes[4] },
                     _a);
             }
         };
@@ -2215,52 +2195,62 @@
         KwzParser.prototype.decodeAudioTrack = function (trackId) {
             var adpcm = this.getAudioTrackRaw(trackId);
             var output = new Int16Array(16364 * 60);
-            var outputOffset = 0;
+            var outputPtr = 0;
             // initial decoder state
-            // Flipnote 3D's initial audio decoder state is actually bugged, so these aren't 1:1 to what the app does
-            var prevDiff = 0;
-            var prevStepIndex = 0;
-            // we can still optionally enable the original setup here
+            // Flipnote 3D's initial values are actually buggy, so these aren't 1:1
+            var predictor = 0;
+            var stepIndex = 0;
+            var sample = 0;
+            var step = 0;
+            var diff = 0;
+            // we can still optionally enable the in-app values here
             if (this.settings.originalAudioSettings)
-                prevStepIndex = 40;
-            var sample;
-            var diff;
-            var stepIndex;
+                stepIndex = 40;
             // loop through each byte in the raw adpcm data
-            for (var adpcmOffset = 0; adpcmOffset < adpcm.length; adpcmOffset++) {
-                var byte = adpcm[adpcmOffset];
-                var bitPos = 0;
-                while (bitPos < 8) {
-                    if (prevStepIndex < 18 || bitPos == 6) {
-                        // isolate 2-bit sample
-                        sample = (byte >> bitPos) & 0x3;
-                        // get diff
-                        diff = prevDiff + ADPCM_SAMPLE_TABLE_2BIT[sample + 4 * prevStepIndex];
-                        // get step index
-                        stepIndex = prevStepIndex + ADPCM_INDEX_TABLE_2BIT[sample];
-                        bitPos += 2;
+            for (var adpcmPtr = 0; adpcmPtr < adpcm.length; adpcmPtr++) {
+                var currByte = adpcm[adpcmPtr];
+                var currBit = 0;
+                while (currBit < 8) {
+                    // 2 bit sample
+                    if (stepIndex < 18 || currBit > 4) {
+                        sample = currByte & 0x3;
+                        step = ADPCM_STEP_TABLE[stepIndex];
+                        diff = step >> 3;
+                        if (sample & 1)
+                            diff += step;
+                        if (sample & 2)
+                            diff = -diff;
+                        predictor += diff;
+                        stepIndex += ADPCM_INDEX_TABLE_2BIT[sample];
+                        currByte >>= 2;
+                        currBit += 2;
                     }
+                    // 4 bit sample
                     else {
-                        // isolate 4-bit sample
-                        sample = (byte >> bitPos) & 0xF;
-                        // get diff
-                        diff = prevDiff + ADPCM_SAMPLE_TABLE_4BIT[sample + 16 * prevStepIndex];
-                        // get step index
-                        stepIndex = prevStepIndex + ADPCM_INDEX_TABLE_4BIT[sample];
-                        bitPos += 4;
+                        sample = currByte & 0xf;
+                        step = ADPCM_STEP_TABLE[stepIndex];
+                        diff = step >> 3;
+                        if (sample & 1)
+                            diff += step >> 2;
+                        if (sample & 2)
+                            diff += step >> 1;
+                        if (sample & 4)
+                            diff += step;
+                        if (sample & 8)
+                            diff = -diff;
+                        predictor += diff;
+                        stepIndex += ADPCM_INDEX_TABLE_4BIT[sample];
+                        currByte >>= 4;
+                        currBit += 4;
                     }
-                    // clamp step index and diff
                     stepIndex = clamp(stepIndex, 0, 79);
-                    diff = clamp(diff, -2047, 2047);
-                    // add result to output buffer
-                    output[outputOffset] = (diff * 16);
-                    outputOffset += 1;
-                    // set prev decoder state
-                    prevStepIndex = stepIndex;
-                    prevDiff = diff;
+                    // clamp as 12 bit then scale to 16
+                    predictor = clamp(predictor, -2048, 2047);
+                    output[outputPtr] = predictor * 16;
+                    outputPtr += 1;
                 }
             }
-            return output.slice(0, outputOffset);
+            return output.slice(0, outputPtr);
         };
         /**
          * Get the decoded audio data for a given track, using the specified samplerate
@@ -2280,6 +2270,18 @@
             }
             return srcPcm;
         };
+        KwzParser.prototype.pcmAudioMix = function (src, dst, dstOffset) {
+            if (dstOffset === void 0) { dstOffset = 0; }
+            var srcSize = src.length;
+            var dstSize = dst.length;
+            for (var n = 0; n < srcSize; n++) {
+                if (dstOffset + n > dstSize)
+                    break;
+                // half src volume
+                var samp = dst[dstOffset + n] + src[n];
+                dst[dstOffset + n] = clamp(samp, -32768, 32767);
+            }
+        };
         /**
          * Get the full mixed audio for the Flipnote, using the specified samplerate
          * @returns Signed 16-bit PCM audio
@@ -2298,28 +2300,29 @@
             // Mix background music
             if (hasBgm) {
                 var bgmPcm = this.getAudioTrackPcm(exports.FlipnoteAudioTrack.BGM, dstFreq);
-                pcmAudioMix(bgmPcm, master, 0);
+                this.pcmAudioMix(bgmPcm, master, 0);
             }
             // Mix sound effects
             if (hasSe1 || hasSe2 || hasSe3) {
-                var samplesPerFrame = Math.floor(dstFreq / this.framerate);
+                var samplesPerFrame = dstFreq / this.framerate;
                 var se1Pcm = hasSe1 ? this.getAudioTrackPcm(exports.FlipnoteAudioTrack.SE1, dstFreq) : null;
                 var se2Pcm = hasSe2 ? this.getAudioTrackPcm(exports.FlipnoteAudioTrack.SE2, dstFreq) : null;
                 var se3Pcm = hasSe3 ? this.getAudioTrackPcm(exports.FlipnoteAudioTrack.SE3, dstFreq) : null;
                 var se4Pcm = hasSe4 ? this.getAudioTrackPcm(exports.FlipnoteAudioTrack.SE4, dstFreq) : null;
                 for (var i = 0; i < this.frameCount; i++) {
                     var seFlags = this.getFrameSoundFlags(i);
-                    var seOffset = samplesPerFrame * i;
+                    var seOffset = Math.ceil(i * samplesPerFrame);
                     if (hasSe1 && seFlags[0])
-                        pcmAudioMix(se1Pcm, master, seOffset);
+                        this.pcmAudioMix(se1Pcm, master, seOffset);
                     if (hasSe2 && seFlags[1])
-                        pcmAudioMix(se2Pcm, master, seOffset);
+                        this.pcmAudioMix(se2Pcm, master, seOffset);
                     if (hasSe3 && seFlags[2])
-                        pcmAudioMix(se3Pcm, master, seOffset);
+                        this.pcmAudioMix(se3Pcm, master, seOffset);
                     if (hasSe4 && seFlags[3])
-                        pcmAudioMix(se4Pcm, master, seOffset);
+                        this.pcmAudioMix(se4Pcm, master, seOffset);
                 }
             }
+            this.audioClipRatio = pcmGetClippingRatio(master);
             return master;
         };
         /** Default KWZ parser settings */

@@ -33,7 +33,7 @@ import {
 import {
   clamp,
   pcmDsAudioResample,
-  pcmAudioMix,
+  pcmGetClippingRatio,
   ADPCM_INDEX_TABLE_4BIT,
   ADPCM_STEP_TABLE
 } from './audioUtils';
@@ -587,6 +587,18 @@ export class PpmParser extends FlipnoteParser {
     return srcPcm;
   }
 
+  private pcmAudioMix(src: Int16Array, dst: Int16Array, dstOffset: number = 0) {
+    const srcSize = src.length;
+    const dstSize = dst.length;
+    for (let n = 0; n < srcSize; n++) {
+      if (dstOffset + n > dstSize)
+        break;
+      // half src volume
+      const samp = dst[dstOffset + n] + (src[n] / 2);
+      dst[dstOffset + n] = clamp(samp, -32768, 32767);
+    }
+  }
+
   /** 
    * Get the full mixed audio for the Flipnote, using the specified samplerate
    * @returns Signed 16-bit PCM audio
@@ -603,28 +615,27 @@ export class PpmParser extends FlipnoteParser {
     // Mix background music
     if (hasBgm) {
       const bgmPcm = this.getAudioTrackPcm(FlipnoteAudioTrack.BGM, dstFreq);
-      pcmAudioMix(bgmPcm, master, 0);
+      this.pcmAudioMix(bgmPcm, master, 0);
     }
     // Mix sound effects
     if (hasSe1 || hasSe2 || hasSe3) {
-      const seFlags = this.decodeSoundFlags();
+      const samplesPerFrame = dstFreq / this.framerate;
       const se1Pcm = hasSe1 ? this.getAudioTrackPcm(FlipnoteAudioTrack.SE1, dstFreq) : null;
       const se2Pcm = hasSe2 ? this.getAudioTrackPcm(FlipnoteAudioTrack.SE2, dstFreq) : null;
       const se3Pcm = hasSe3 ? this.getAudioTrackPcm(FlipnoteAudioTrack.SE3, dstFreq) : null;
-      const adjFreq = dstFreq / this.rawSampleRate;
-      const samplesPerFrame = Math.round(this.rawSampleRate / this.framerate) * adjFreq;
+      const seFlags = this.decodeSoundFlags();
       for (let frame = 0; frame < this.frameCount; frame++) {
-        // places sound effect halfway through frame
-        const seOffset = (frame + .5) * samplesPerFrame;
+        const seOffset = Math.ceil(frame * samplesPerFrame);
         const flag = seFlags[frame];
         if (hasSe1 && flag[0])
-          pcmAudioMix(se1Pcm, master, seOffset);
+          this.pcmAudioMix(se1Pcm, master, seOffset);
         if (hasSe2 && flag[1])
-          pcmAudioMix(se2Pcm, master, seOffset);
+          this.pcmAudioMix(se2Pcm, master, seOffset);
         if (hasSe3 && flag[2])
-          pcmAudioMix(se3Pcm, master, seOffset);
+          this.pcmAudioMix(se3Pcm, master, seOffset);
       }
     }
+    this.audioClipRatio = pcmGetClippingRatio(master);
     return master;
   }
 }
