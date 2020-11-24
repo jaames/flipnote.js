@@ -44,47 +44,25 @@ for (let i = 0; i < 16; i++) {
 // Every possible sequence of pixels for each tile line
 /** @internal */
 const KWZ_LINE_TABLE = new Uint8Array(6561 * 8);
+// Same lines as KWZ_LINE_TABLE, but the pixels are rotated to the left by one place
+/** @internal */
+const KWZ_LINE_TABLE_SHIFT = new Uint8Array(6561 * 8);
+
 /** @internal */
 var offset = 0;
 for (let a = 0; a < 3; a++)
-  for (let b = 0; b < 3; b++)
-    for (let c = 0; c < 3; c++)
-      for (let d = 0; d < 3; d++)
-        for (let e = 0; e < 3; e++)
-          for (let f = 0; f < 3; f++)
-            for (let g = 0; g < 3; g++)
-              for (let h = 0; h < 3; h++) {
-                KWZ_LINE_TABLE.set([
-                  b, 
-                  a, 
-                  d, 
-                  c, 
-                  f, 
-                  e, 
-                  h, 
-                  g
-                ], offset);
-                offset += 8;
-              }
-
-// Line offsets, but the lines are shifted to the left by one pixel
-/** @internal */
-const KWZ_LINE_TABLE_SHIFT = new Uint8Array(6561 * 8);
-/** @internal */
-var offset = 0;
-for (let a = 0; a < 2187; a += 729)
-  for (let b = 0; b < 729; b += 243)
-    for (let c = 0; c < 243; c += 81)
-      for (let d = 0; d < 81; d += 27)
-        for (let e = 0; e < 27; e += 9)
-          for (let f = 0; f < 9; f += 3)
-            for (let g = 0; g < 3; g += 1)
-              for (let h = 0; h < 6561; h += 2187) {
-                const lineTableIndex = a + b + c + d + e + f + g + h;
-                const pixels = KWZ_LINE_TABLE.subarray(lineTableIndex * 8, lineTableIndex * 8 + 8);
-                KWZ_LINE_TABLE_SHIFT.set(pixels, offset);
-                offset += 8;
-              }
+for (let b = 0; b < 3; b++)
+for (let c = 0; c < 3; c++)
+for (let d = 0; d < 3; d++)
+for (let e = 0; e < 3; e++)
+for (let f = 0; f < 3; f++)
+for (let g = 0; g < 3; g++)
+for (let h = 0; h < 3; h++)
+{
+  KWZ_LINE_TABLE.set([b, a, d, c, f, e, h, g], offset);
+  KWZ_LINE_TABLE_SHIFT.set([a, d, c, f, e, h, g, b], offset);
+  offset += 8;
+}
 
 // Commonly occuring line offsets
 /** @internal */
