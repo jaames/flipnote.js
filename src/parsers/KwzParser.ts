@@ -41,11 +41,16 @@ for (let i = 0; i < 16; i++) {
   BITMASKS[i] = (1 << i) - 1;
 }
 
-// Every possible sequence of pixels for each tile line
-/** @internal */
+/** 
+ * Every possible sequence of pixels for each tile line
+ * @internal 
+ */
 const KWZ_LINE_TABLE = new Uint8Array(6561 * 8);
-// Same lines as KWZ_LINE_TABLE, but the pixels are rotated to the left by one place
-/** @internal */
+
+/** 
+ * Same lines as KWZ_LINE_TABLE, but the pixels are rotated to the left by one place
+ * @internal
+ */
 const KWZ_LINE_TABLE_SHIFT = new Uint8Array(6561 * 8);
 
 /** @internal */
@@ -148,7 +153,7 @@ export interface KwzParserSettings {
 /** 
  * Parser class for Flipnote Studio 3D's KWZ animation format
  * 
- * Format docs: https://github.com/Flipnote-Collective/flipnote-studio-3d-docs/wiki/KWZ-Format
+ * KWZ format docs: https://github.com/Flipnote-Collective/flipnote-studio-3d-docs/wiki/KWZ-Format
  * @category File Parser
  */
 export class KwzParser extends FlipnoteParser {

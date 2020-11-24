@@ -52,7 +52,7 @@ export interface KwzParserSettings {
 /**
  * Parser class for Flipnote Studio 3D's KWZ animation format
  *
- * Format docs: https://github.com/Flipnote-Collective/flipnote-studio-3d-docs/wiki/KWZ-Format
+ * KWZ format docs: https://github.com/Flipnote-Collective/flipnote-studio-3d-docs/wiki/KWZ-Format
  * @category File Parser
  */
 export declare class KwzParser extends FlipnoteParser {

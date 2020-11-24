@@ -129,7 +129,7 @@
             for (var l = length || bytes.length, i = offset || 0; i < l; i++)
                 this.writeByte(bytes[i]);
         };
-        ByteArray.pageSize = 4096 * 4;
+        ByteArray.pageSize = 2048;
         return ByteArray;
     }());
 
@@ -647,14 +647,14 @@
             var flags = this.readUint16();
             this.thumbFrameIndex = thumbIndex;
             this.layerVisibility = {
-                1: (flags & 0x800) === 0,
-                2: (flags & 0x400) === 0,
+                1: (flags & 0x10) === 0,
+                2: (flags & 0x20) === 0,
                 3: false
             };
             this.isSpinoff = (currentAuthorId !== parentAuthorId) || (currentAuthorId !== rootAuthorId);
             this.meta = {
                 lock: lock === 1,
-                loop: (flags >> 1 & 0x01) === 1,
+                loop: (flags >> 1 & 0x1) === 1,
                 frameCount: this.frameCount,
                 frameSpeed: this.frameSpeed,
                 bgmSpeed: this.bgmSpeed,
@@ -1123,9 +1123,16 @@
     for (var i = 0; i < 16; i++) {
         BITMASKS[i] = (1 << i) - 1;
     }
-    // Every possible sequence of pixels for each tile line
-    /** @internal */
+    /**
+     * Every possible sequence of pixels for each tile line
+     * @internal
+     */
     var KWZ_LINE_TABLE = new Uint8Array(6561 * 8);
+    /**
+     * Same lines as KWZ_LINE_TABLE, but the pixels are rotated to the left by one place
+     * @internal
+     */
+    var KWZ_LINE_TABLE_SHIFT = new Uint8Array(6561 * 8);
     /** @internal */
     var offset = 0;
     for (var a = 0; a < 3; a++)
@@ -1136,34 +1143,8 @@
                         for (var f = 0; f < 3; f++)
                             for (var g = 0; g < 3; g++)
                                 for (var h = 0; h < 3; h++) {
-                                    KWZ_LINE_TABLE.set([
-                                        b,
-                                        a,
-                                        d,
-                                        c,
-                                        f,
-                                        e,
-                                        h,
-                                        g
-                                    ], offset);
-                                    offset += 8;
-                                }
-    // Line offsets, but the lines are shifted to the left by one pixel
-    /** @internal */
-    var KWZ_LINE_TABLE_SHIFT = new Uint8Array(6561 * 8);
-    /** @internal */
-    var offset = 0;
-    for (var a = 0; a < 2187; a += 729)
-        for (var b = 0; b < 729; b += 243)
-            for (var c = 0; c < 243; c += 81)
-                for (var d = 0; d < 81; d += 27)
-                    for (var e = 0; e < 27; e += 9)
-                        for (var f = 0; f < 9; f += 3)
-                            for (var g = 0; g < 3; g += 1)
-                                for (var h = 0; h < 6561; h += 2187) {
-                                    var lineTableIndex = a + b + c + d + e + f + g + h;
-                                    var pixels = KWZ_LINE_TABLE.subarray(lineTableIndex * 8, lineTableIndex * 8 + 8);
-                                    KWZ_LINE_TABLE_SHIFT.set(pixels, offset);
+                                    KWZ_LINE_TABLE.set([b, a, d, c, f, e, h, g], offset);
+                                    KWZ_LINE_TABLE_SHIFT.set([a, d, c, f, e, h, g, b], offset);
                                     offset += 8;
                                 }
     // Commonly occuring line offsets
@@ -1193,7 +1174,7 @@
     /**
      * Parser class for Flipnote Studio 3D's KWZ animation format
      *
-     * Format docs: https://github.com/Flipnote-Collective/flipnote-studio-3d-docs/wiki/KWZ-Format
+     * KWZ format docs: https://github.com/Flipnote-Collective/flipnote-studio-3d-docs/wiki/KWZ-Format
      * @category File Parser
      */
     var KwzParser = /** @class */ (function (_super) {

@@ -11,12 +11,20 @@
   "pages": {
     "groups": [
       {
-        "title": "My Group",
-        "output": "my-group",
+        "title": "Docs",
+        "output": "docs",
         "pages": [
+          {
+            "title": "Getting Started",
+            "source": "./docs/get-started.md"
+          },
           {
             "title": "Recipes",
             "source": "./docs/recipes.md"
+          },
+          {
+            "title": "Acknowledgements",
+            "source": "./docs/acknowledgements.md"
           }
         ]
       }

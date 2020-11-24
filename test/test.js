@@ -49,20 +49,11 @@ fetch('samples/pekira_beach.kwz')
   }).then(note => {
     console.timeEnd('kwz parse')
     let gif;
-    console.time('frame GIF x100')
+    console.time('animated GIF export')
     gif = flipnote.GifImage.fromFlipnote(note);
-    // for (let i = 0; i < 100; i++) {
-    //   gif = flipnote.GifImage.fromFlipnoteFrame(note, i);
-    //   // gif = flipnote.gifEncoder.fromFlipnote(note);
-    // }
-    console.timeEnd('frame GIF x100')
+    console.timeEnd('animated GIF export')
     let img = gif.getImage();
     testEl.appendChild(img);
-    // console.time('anim GIF')
-    // gif = flipnote.GifImage.fromFlipnote(note);
-    // console.timeEnd('anim GIF')
-    // img = gif.getImage();
-    // testEl.appendChild(img);
   })
 })
 
