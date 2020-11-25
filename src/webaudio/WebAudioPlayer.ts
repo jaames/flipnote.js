@@ -70,7 +70,7 @@ export class WebAudioPlayer {
       channelData.set(inputBuffer, 0);
     else if (inputBuffer instanceof Int16Array) {
       for (let i = 0; i < numSamples; i++) {
-        channelData[i] = inputBuffer[i] / 32767;
+        channelData[i] = inputBuffer[i] / 32768;
       }
     }
     this.buffer = audioBuffer;
