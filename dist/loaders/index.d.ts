@@ -1,1 +1,2 @@
-export declare function loadSource(source: any): Promise<unknown>;
+/** @internal */
+export declare function loadSource(source: any): Promise<ArrayBuffer>;

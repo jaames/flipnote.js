@@ -1,1 +1,1 @@
-export * from './canvas';
+export * from './WebGlCanvas';

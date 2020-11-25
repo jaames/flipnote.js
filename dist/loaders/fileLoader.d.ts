@@ -1,5 +1,7 @@
-declare const _default: {
-    matches: (source: any) => boolean;
-    load: (source: File, resolve: Function, reject: Function) => void;
-};
-export default _default;
+import { LoaderDefinition } from './loaderDefinition';
+/**
+ * Loader for File objects (browser only)
+ * @internal
+ */
+declare const fileLoader: LoaderDefinition<File>;
+export default fileLoader;

@@ -1,0 +1,34 @@
+{
+  "mode": "file",
+  "inputFiles": ["./src"],
+  "out": "www",
+  "exclude": "src/components",
+  "excludePrivate": true,
+  "excludeProtected": true,
+  "excludeNotExported": true,
+  "stripInternal": true,
+  "theme": "pages-plugin",
+  "pages": {
+    "groups": [
+      {
+        "title": "Docs",
+        "output": "docs",
+        "pages": [
+          {
+            "title": "Getting Started",
+            "source": "./docs/get-started.md"
+          },
+          {
+            "title": "Recipes",
+            "source": "./docs/recipes.md"
+          },
+          {
+            "title": "Acknowledgements",
+            "source": "./docs/acknowledgements.md"
+          }
+        ]
+      }
+    ]
+  }
+ 
+}

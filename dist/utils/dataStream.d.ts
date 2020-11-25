@@ -1,13 +1,15 @@
 /** datastream serves as a wrapper around the DataView API to help keep track of the offset into the stream */
+/** @internal */
 export declare const enum SeekOrigin {
     Begin = 0,
     Current = 1,
     End = 2
 }
+/** @internal */
 export declare class DataStream {
     buffer: ArrayBuffer;
+    cursor: number;
     private data;
-    private cursor;
     constructor(arrayBuffer: ArrayBuffer);
     get bytes(): Uint8Array;
     get byteLength(): number;
@@ -27,7 +29,7 @@ export declare class DataStream {
     readBytes(count: number): Uint8Array;
     writeBytes(bytes: number[] | Uint8Array): void;
     readHex(count: number, reverse?: boolean): string;
-    readUtf8(count: number): string;
-    writeUtf8(string: string): void;
-    readUtf16(count: number): string;
+    readChars(count: number): string;
+    writeChars(string: string): void;
+    readWideChars(count: number): string;
 }

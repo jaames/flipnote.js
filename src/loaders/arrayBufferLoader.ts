@@ -1,11 +1,19 @@
-export default {
+import { LoaderDefinition } from './loaderDefinition';
 
-  matches: function(source: any): boolean {
+/** 
+ * Loader for ArrayBuffer objects
+ * @internal
+ */
+const arrayBufferLoader: LoaderDefinition<ArrayBuffer> = {
+
+  matches: function(source) {
     return (source instanceof ArrayBuffer);
   },
 
-  load: function(source: ArrayBuffer, resolve: Function, reject: Function): void {
+  load: function(source, resolve, reject) {
     resolve(source);
   }
 
-}
+};
+
+export default arrayBufferLoader;

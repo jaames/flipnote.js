@@ -1,14 +1,21 @@
-export default {
+import { isBrowser } from '../utils';
+import { LoaderDefinition } from './loaderDefinition';
 
-  matches: function(source: any): boolean {
-    return (typeof File !== 'undefined' && source instanceof File);
+/** 
+ * Loader for File objects (browser only)
+ * @internal
+ */
+const fileLoader: LoaderDefinition<File> = {
+
+  matches: function(source) {
+    return isBrowser && typeof File !== 'undefined' && source instanceof File;
   },
 
-  load: function(source: File, resolve: Function, reject: Function): void {
+  load: function(source, resolve, reject) {
     if (typeof FileReader !== 'undefined') {
       const reader = new FileReader();
       reader.onload = (event) => {
-        resolve(reader.result);
+        resolve(reader.result as ArrayBuffer);
       };
       reader.onerror = (event) => {
         reject({type: 'fileReadError'});
@@ -19,4 +26,6 @@ export default {
     }
   }
 
-}
+};
+
+export default fileLoader;

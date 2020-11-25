@@ -1,6 +1,6 @@
 {
   "name": "flipnote.js",
-  "version": "4.1.2",
+  "version": "5.0.0",
   "description": "API for handling Flipnote Studio's animation formats, capable of real-time playback using webGL",
   "module": "dist/flipnote.es.js",
   "main": "dist/flipnote.js",
@@ -9,11 +9,11 @@
     "prepublishOnly": "npm run build",
     "start": "rollup -c --watch --environment DEV_SERVER,TARGET:webcomponent,BUILD:development",
     "dev": "rollup -c --environment BUILD:development",
-    "build": "npm run dev && npm run build:min && npm run build:es && npm run build:webcomponent && npm run build:node",
+    "build": "npm run dev && npm run build:min && npm run build:es && npm run build:webcomponent",
     "build:min": "rollup -c --environment TARGET:web,BUILD:production",
     "build:es": "rollup -c --environment TARGET:web,ES_MODULE,BUILD:production",
     "build:webcomponent": "rollup -c --environment TARGET:webcomponent,BUILD:production",
-    "build:node": "rollup -c --environment TARGET:node,ES_MODULE"
+    "docs": "typedoc"
   },
   "files": [
     "dist/**/*"
@@ -44,9 +44,10 @@
   "devDependencies": {
     "@pyoner/svelte-types": "^3.4.4-2",
     "@rollup/plugin-alias": "^3.1.1",
-    "@rollup/plugin-commonjs": "^13.0.0",
+    "@rollup/plugin-commonjs": "^13.0.2",
     "@rollup/plugin-node-resolve": "^8.0.1",
     "@rollup/plugin-replace": "^2.3.3",
+    "@types/node": "^14.14.2",
     "rollup": "^2.15.0",
     "rollup-plugin-bundle-size": "^1.0.3",
     "rollup-plugin-copy": "^3.3.0",
@@ -60,7 +61,11 @@
     "rollup-plugin-uglify": "^6.0.4",
     "svelte": "^3.24.0",
     "svelte-preprocess": "^4.0.6",
+    "typedoc": "^0.19.2",
+    "typedoc-plugin-pages": "^1.0.1",
     "typescript": "^3.5.3"
   },
-  "dependencies": {}
+  "dependencies": {
+    "twgl.js": "^4.15.2"
+  }
 }

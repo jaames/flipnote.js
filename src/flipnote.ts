@@ -1,51 +1,25 @@
 // Main entrypoint for web
 
-import {
-  parseSource as _parseSource,
-  Flipnote as _Flipnote,
-  FlipnoteMeta as _FlipnoteMeta,
-  FlipnoteAudioTrack as _FlipnoteAudioTrack,
+export {
+  parseSource,
+  FlipnoteFormat,
+  Flipnote,
+  FlipnoteMeta,
+  FlipnoteAudioTrack,
   KwzParser,
   PpmParser,
-} from './parsers/index';
+} from './parsers';
 
-import {
+export {
   Player
-} from './player/index';
+} from './player';
 
-import {
-  GifEncoder,
-  WavEncoder,
+export {
+  GifImage,
+  WavAudio,
   // bitmap encoder is deprecated in favor of gif
   // BitmapEncoder
-} from './encoders/index';
+} from './encoders';
 
-namespace api {
-  export const version = VERSION; // replaced by @rollup/plugin-replace; see rollup.config.js
-
-  export type Flipnote = _Flipnote;
-  export type FlipnoteMeta = _FlipnoteMeta;
-  export type FlipnoteAudioTrack = _FlipnoteAudioTrack;
-  
-  export const player = Player;
-  export const parseSource = _parseSource;
-  export const kwzParser = KwzParser;
-  export const ppmParser = PpmParser;
-  export const gifEncoder = GifEncoder;
-  export const wavEncoder = WavEncoder;
-}
-
-export default api;
-
-export const version = VERSION;
-
-export type Flipnote = _Flipnote;
-export type FlipnoteMeta = _FlipnoteMeta;
-export type FlipnoteAudioTrack = _FlipnoteAudioTrack;
-
-export const player = Player;
-export const parseSource = _parseSource;
-export const kwzParser = KwzParser;
-export const ppmParser = PpmParser;
-export const gifEncoder = GifEncoder;
-export const wavEncoder = WavEncoder;
+//* flipnote.js library version (exported as `flipnote.version`) */
+export const version = VERSION; // replaced by @rollup/plugin-replace; see rollup.config.js
