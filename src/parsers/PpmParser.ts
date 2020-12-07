@@ -205,9 +205,11 @@ export class PpmParser extends FlipnoteParser {
     this.meta = {
       lock: lock === 1,
       loop: (flags >> 1 & 0x1) === 1,
+      isSpinoff: this.isSpinoff,
       frameCount: this.frameCount,
       frameSpeed: this.frameSpeed,
       bgmSpeed: this.bgmSpeed,
+      duration: this.duration,
       thumbIndex: thumbIndex,
       timestamp: timestamp,
       root: {
@@ -260,6 +262,7 @@ export class PpmParser extends FlipnoteParser {
     this.bgmSpeed = 8 - this.readUint8();
     offset += 32;
     this.framerate = PPM_FRAMERATES[this.frameSpeed];
+    this.duration = this.frameCount * (1 / this.framerate);
     this.bgmrate = PPM_FRAMERATES[this.bgmSpeed];
     this.soundMeta = {
       [FlipnoteAudioTrack.BGM]: {offset: offset,           length: bgmLen},

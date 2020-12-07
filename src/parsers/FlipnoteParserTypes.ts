@@ -61,6 +61,8 @@ export interface FlipnoteMeta {
     lock: boolean;
     /** Playback loop state. If `true`, playback will loop once the end is reached */
     loop: boolean;
+    /** Spinoffs are remixes of another user's Flipnote */
+    isSpinoff: boolean;
     /** Total number of animation frames */
     frameCount: number;
     /** In-app frame playback speed */
@@ -69,6 +71,8 @@ export interface FlipnoteMeta {
     thumbIndex: number;
     /** Date representing when the file was last edited */
     timestamp: Date;
+    /** Flipnote duration measured in seconds, assuming normal playback speed */
+    duration: number;
     /** Metadata about the author of the original Flipnote file */
     root: {
       filename: string;
@@ -144,6 +148,8 @@ export abstract class FlipnoteParser extends DataStream {
   public frameCount: number;
   /** In-app animation playback speed */
   public frameSpeed: number;
+  /** Animation duration, in seconds */
+  public duration: number;
   /** In-app animation playback speed when the BGM track was recorded */
   public bgmSpeed: number;
   /** Animation framerate, measured as frames per second */
