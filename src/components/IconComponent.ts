@@ -50,6 +50,7 @@ export class IconComponent extends LitElement {
   @property({ type: String })
   icon: string = 'loader';
 
+  /** @internal */
   public render() {
     return html`${ unsafeSVG(iconMap[this.icon]) }`;
   }

@@ -49,6 +49,7 @@ export class WebglRenderer {
   private layerDrawProgram: ProgramInfo; // for drawing layers to a renderbuffer
   private postProcessProgram: ProgramInfo; // for drawing renderbuffer w/ filtering
   private quadBuffer: BufferInfo;
+  private paletteData: Uint8Array;
   private paletteTexture: WebGLTexture;
   private layerTexture: WebGLTexture;
   private frameTexture: WebGLTexture;
@@ -86,7 +87,8 @@ export class WebglRenderer {
     this.quadBuffer = this.createScreenQuad(-1, -1, 2, 2, 8, 8);
     this.setBuffersAndAttribs(this.layerDrawProgram, this.quadBuffer);
     this.setBuffersAndAttribs(this.postProcessProgram, this.quadBuffer);
-    this.paletteTexture = this.createTexture(gl.RGBA, gl.NEAREST, gl.CLAMP_TO_EDGE, 256, 1);
+    this.paletteData = new Uint8Array(8 * 4);
+    this.paletteTexture = this.createTexture(gl.RGBA, gl.NEAREST, gl.CLAMP_TO_EDGE, 8, 1);
     this.layerTexture = this.createTexture(gl.ALPHA, gl.NEAREST, gl.CLAMP_TO_EDGE);
     this.frameTexture = this.createTexture(gl.RGBA, gl.LINEAR, gl.CLAMP_TO_EDGE);
     this.frameBuffer = this.createFrameBuffer(this.frameTexture);
@@ -265,8 +267,9 @@ export class WebglRenderer {
    */
   public setPalette(colors: number[][]) {
     const gl = this.gl;
-    const data = new Uint8Array(256 * 4);
+    const data = this.paletteData;
     let dataPtr = 0;
+    data.fill(0);
     for (let i = 0; i < colors.length; i++) {
       const [r, g, b, a] = colors[i];
       data[dataPtr++] = r;
@@ -276,7 +279,7 @@ export class WebglRenderer {
     }
     // update layer texture pixels
     gl.bindTexture(gl.TEXTURE_2D, this.paletteTexture);
-    gl.texImage2D(gl.TEXTURE_2D, 0, gl.RGBA, 256, 1, 0, gl.RGBA, gl.UNSIGNED_BYTE, data);
+    gl.texImage2D(gl.TEXTURE_2D, 0, gl.RGBA, 8, 1, 0, gl.RGBA, gl.UNSIGNED_BYTE, data);
   }
 
   /**
@@ -344,7 +347,7 @@ export class WebglRenderer {
   /**
    * Frees any resources used by this canvas instance
    */
-  public destroy() {
+  public async destroy() {
     const refs = this.refs;
     const gl = this.gl;
     refs.shaders.forEach((shader) => {
@@ -367,6 +370,7 @@ export class WebglRenderer {
       gl.deleteProgram(program);
     });
     refs.programs = [];
+    this.paletteData = null;
     // shrink the canvas to reduce memory usage until it is garbage collected
     gl.canvas.width = 1;
     gl.canvas.height = 1;

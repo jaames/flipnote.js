@@ -1,52 +1,10 @@
-import {
-  parseSource,
-  Flipnote,
-  FlipnoteFormat,
-  FlipnoteMeta,
-} from '../parsers';
-
-import { WavAudio, GifImage, GifImageSettings } from '../encoders';
-import { WebglRenderer } from '../webgl'
+import { parseSource, Flipnote, FlipnoteFormat, FlipnoteMeta } from '../parsers';
+import { PlayerEvent, PlayerEventMap, supportedEvents } from './PlayerEvent';
+import { createTimeRanges } from './playerUtils';
+import { WebglRenderer } from '../webgl';
 import { WebAudioPlayer } from '../webaudio';
-import { isBrowser } from '../utils';
 
 type PlayerLayerVisibility = Record<number, boolean>;
-
-/** @internal */
-type PlayerEvents = Record<string, Function[]>;
-
-/** @internal */
-interface PlayerState {
-  noteType: 'PPM' | 'KWZ';
-  isNoteOpen: boolean;
-  hasPlaybackStarted: boolean;
-  paused: boolean;
-  frame: number,
-  time: number,
-  loop: boolean;
-  volume: number;
-  muted: boolean;
-  layerVisibility: PlayerLayerVisibility;
-  isSeeking: boolean;
-  wasPlaying: boolean;
-};
-
-/** @internal */
-const saveData = (function () {
-  if (!isBrowser) {
-    return function(){}
-  }
-  var a = document.createElement("a");
-  // document.body.appendChild(a);
-  // a.style.display = "none";
-  return function (blob: Blob, filename:string) {
-    const url = window.URL.createObjectURL(blob);
-    a.href = url;
-    a.download = filename;
-    a.click();
-    window.URL.revokeObjectURL(url);
-  };
-})();
 
 /**
  * Flipnote Player API (exported as `flipnote.Player`)
@@ -62,56 +20,50 @@ export class Player {
   /** Audio player */
   public audio: WebAudioPlayer;
   /** Canvas HTML element */
-  public el: HTMLCanvasElement;
+  public canvasEl: HTMLCanvasElement;
   /** Currently loaded Flipnote */
   public note: Flipnote;
   /** Format of the currently loaded Flipnote */
   public noteFormat: FlipnoteFormat;
-  /** Format of the currently loaded Flipnote, as a string (`'PPM'` or `'KWZ'`) */
-  public noteFormatString: string;
   /** Metadata for the currently loaded Flipnote */
   public meta: FlipnoteMeta;
-  /** Indicates whether playback should loop once the end is reached */
-  public loop: boolean = false;
-  /** Indicates whether playback is currently paused */
-  public paused: boolean = true;
   /** Animation duration, in seconds */
   public duration: number = 0;
   /** Animation layer visibility */
   public layerVisibility: PlayerLayerVisibility;
+  /** Automatically begin playback after a Flipnote is loaded */
+  public autoplay: boolean = false;
+  /** Array of events supported by this player */
+  public supportedEvents = supportedEvents;
 
-  /** @internal (not implemented yet) */
-  static defaultState: PlayerState = {
-    noteType: null,
-    isNoteOpen: false,
-    paused: false,
-    hasPlaybackStarted: false,
-    frame: -1,
-    time: -1,
-    loop: false,
-    volume: 1,
-    muted: false,
-    layerVisibility: {
-      1: true,
-      2: true,
-      3: true
-    },
-    isSeeking: false,
-    wasPlaying: false,
-  };
-
-  /** @internal (not implemented yet) */
-  public state: PlayerState;
-  
-  private isOpen: boolean = false;
-  private customPalette: {};
-  private events: PlayerEvents = {};
-  private _lastTick: number = -1;
-  private _frame: number = -1;
-  private _time: number = -1;
-  private hasPlaybackStarted: boolean = false;
-  private wasPlaying: boolean = false;
-  private isSeeking: boolean = false;
+  /** @internal */
+  public _src: any = null;
+  /** @internal */
+  public _loop: boolean = false;
+  /** @internal */
+  public _volume: number = 1;
+  /** @internal */
+  public _muted: boolean = false;
+  /** @internal */
+  public isNoteLoaded: boolean = false;
+  /** @internal */
+  public events: PlayerEventMap = new Map();
+  /** @internal */
+  public playbackStartTime: number = 0;
+  /** @internal */
+  public playbackTime: number = 0;
+  /** @internal */
+  public playbackLoopId: number = null;
+  /** @internal */
+  public showThumbnail: boolean = true;
+  /** @internal */
+  public hasPlaybackStarted: boolean = false;
+  /** @internal */
+  public isPlaying: boolean = false;
+  /** @internal */
+  public wasPlaying: boolean = false;
+  /** @internal */
+  public isSeeking: boolean = false;
 
   /**
    * Create a new Player instance
@@ -127,65 +79,78 @@ export class Player {
     el = ('string' == typeof el) ? <HTMLCanvasElement>document.querySelector(el) : el;
     this.canvas = new WebglRenderer(el, width, height);
     this.audio = new WebAudioPlayer();
-    this.el = this.canvas.el;
-    this.customPalette = null;
-    this.state = {...Player.defaultState};
+    this.canvasEl = this.canvas.el;
+  }
+
+  /** The currently loaded Flipnote source, if there is one. Can be overridden to load another Flipnote */
+  get src() {
+    return this._src;
+  }
+  set src(source: any) {
+    this.load(source);
+  }
+
+  /** Indicates whether playback is currently paused */
+  get paused() {
+    return !this.isPlaying;
+  }
+  set paused(isPaused: boolean) {
+    if (isPaused)
+      this.pause();
+    else
+      this.play();
   }
 
   /** Current animation frame index */
   get currentFrame() {
-    return this._frame;
+    return this.isNoteLoaded ? Math.floor(this.playbackTime / (1 / this.framerate)) : null;
   }
-
-  set currentFrame(frameIndex) {
-    this.setFrame(frameIndex);
+  set currentFrame(frameIndex: number) {
+    this.setCurrentFrame(frameIndex);
   }
 
   /** Current animation playback position, in seconds */
   get currentTime() {
-    return this.isOpen ? this._time : null;
+    return this.isNoteLoaded ? this.playbackTime : null;
   }
-
   set currentTime(value) {
-    if ((this.isOpen) && (value <= this.duration) && (value >= 0)) {
-      this.setFrame(Math.round(value / (1 / this.framerate)));
-      this._time = value;
-      this.emit('progress', this.progress);
-    }
+    this.setCurrentTime(value);
   }
 
   /** Current animation playback progress, as a percentage out of 100 */
   get progress() {
-    return this.isOpen ? (this._time / this.duration) * 100 : 0;
+    return this.isNoteLoaded ? (this.playbackTime / this.duration) * 100 : null;
   }
-
   set progress(value) {
-    this.currentTime = this.duration * (value / 100);
+    this.setProgress(value);
   }
 
   /** Audio volume, range `0` to `1` */
   get volume() {
-    return this.audio.volume;
+    return this._volume;
   }
 
   set volume(value) {
-    this.audio.volume = value;
+    this.assertValueRange(value, 0, 1);
+    this.setVolume(value);
   }
 
-  /** 
-   * Audio mute state
-   * TODO: implement
-   * @internal
-  */
+  /** Audio mute state */
   get muted() {
-    // return this.audioTracks[3].audio.muted;
-    return false;
+    return this._muted;
   }
 
-  set muted(value) {
-    // for (let i = 0; i < this.audioTracks.length; i++) {
-    //   this.audioTracks[i].audio.muted = value;
-    // }
+  set muted(value: boolean) {
+    this.setMuted(value);
+  }
+
+  /** Indicates whether playback should loop once the end is reached */
+  get loop() {
+    return this._loop;
+  }
+
+  set loop(value: boolean) {
+    this.setLoop(value);
   }
 
   /** Animation frame rate, measured in frames per second */
@@ -203,24 +168,67 @@ export class Player {
     return this.note.frameSpeed;
   }
 
-  private setState(newState: Partial<PlayerState>) {
-    newState = {...this.state, ...newState};
-    const oldState = this.state;
-    this.emit('state:change');
+  /**
+   * Implementation of the `HTMLMediaElement` {@link https://developer.mozilla.org/en-US/docs/Web/API/HTMLMediaElement/buffered | buffered } property
+   * @category HTMLVideoElement compatibility
+   */
+  get buffered() {
+    return createTimeRanges([[0, this.duration]]);
+  }
+
+  /**
+   * Implementation of the `HTMLMediaElement` {@link https://developer.mozilla.org/en-US/docs/Web/API/HTMLMediaElement/seekable | seekable} property
+   * @category HTMLVideoElement compatibility
+   */
+  get seekable() {
+    return createTimeRanges([[0, this.duration]]);
+  }
+
+  /**
+   * Implementation of the `HTMLMediaElement` {@link https://developer.mozilla.org/en-US/docs/Web/API/HTMLMediaElement/currentSrc | currentSrc} property
+   * @category HTMLVideoElement compatibility
+   */
+  get currentSrc() {
+    return this._src;
+  }
+
+  /**
+   * Implementation of the `HTMLVideoElement` {@link https://developer.mozilla.org/en-US/docs/Web/API/HTMLVideoElement/videoWidth | videoWidth} property
+   * @category HTMLVideoElement compatibility
+   */
+  get videoWidth() {
+    return this.isNoteLoaded ? this.note.width : 0;
+  }
+
+  /**
+   * Implementation of the `HTMLVideoElement` {@link https://developer.mozilla.org/en-US/docs/Web/API/HTMLVideoElement/videoHeight | videoHeight} property
+   * @category HTMLVideoElement compatibility
+   */
+  get videoHeight() {
+    return this.isNoteLoaded ? this.note.height : 0;
   }
 
   /** 
    * Open a Flipnote from a source
    * @category Lifecycle
    */
-  public async open(source: any) {
-    if (this.isOpen) this.close();
+  public async load(source: any) {
+    // close currently open note first
+    if (this.isNoteLoaded) 
+      this.closeNote();
+    // if no source specified, just reset everything
+    if (!source)
+      return this.openNote(this._src);
+    // otherwise do a normal load
+    this.emit(PlayerEvent.LoadStart);
     return parseSource(source)
-      .then((note: Flipnote) => this.load(note))
+      .then((note: Flipnote) => {
+        this.openNote(note);
+        this._src = source;
+      })
       .catch((err: any) => {
-        this.emit('error', err);
-        console.error('Error loading Flipnote:', err);
-        throw 'Error loading Flipnote';
+        this.emit(PlayerEvent.Error, err);
+        throw new Error(`Error loading Flipnote: ${ err.message }`);
       });
   }
 
@@ -228,153 +236,220 @@ export class Player {
    * Close the currently loaded Flipnote
    * @category Lifecycle
    */
-  public close(): void {
+  public closeNote() {
     this.pause();
     this.note = null;
-    this.isOpen = false;
-    this.paused = true;
-    this.loop = null;
+    this.isNoteLoaded = false;
     this.meta = null;
-    this._frame = null;
-    this._time = null;
-    this.duration = null;
-    this.loop = null;
-    this.hasPlaybackStarted = null;
-    // this.canvas.clearFrameBuffer();
+    this._src = null;
+    // this.playbackFrame = null;
+    this.playbackTime = 0;
+    this.duration = 0;
+    this.loop = false;
+    this.isPlaying = false;
+    this.wasPlaying = false;
+    this.hasPlaybackStarted = false;
+    this.showThumbnail = true;
+    this.canvas.clearFrameBuffer([0,0,0,0]);
   }
 
   /** 
-   * Load a Flipnote into the player
+   * Open a Flipnote into the player
    * @category Lifecycle
    */
-  public load(note: Flipnote): void {
+  public openNote(note: Flipnote) {
+    if (this.isNoteLoaded)
+      this.closeNote();
     this.note = note;
     this.meta = note.meta;
+    this.emit(PlayerEvent.LoadedMeta);
     this.noteFormat = note.format;
-    this.noteFormatString = note.formatString;
-    this.loop = note.meta.loop;
-    this.duration = (this.note.frameCount) * (1 / this.note.framerate);
-    this.paused = true;
-    this.isOpen = true;
+    this.duration = note.duration;
+    this.isNoteLoaded = true;
+    this.isPlaying = false;
+    this.wasPlaying = false;
     this.hasPlaybackStarted = false;
-    this.layerVisibility = this.note.layerVisibility;
-    const sampleRate = this.note.sampleRate;
-    const pcm = note.getAudioMasterPcm();
-    this.audio.setBuffer(pcm, sampleRate);
+    this.layerVisibility = note.layerVisibility;
+    this.showThumbnail = true;
+    this.audio.setBuffer(note.getAudioMasterPcm(), note.sampleRate);
+    this.emit(PlayerEvent.CanPlay);
+    this.emit(PlayerEvent.CanPlayThrough);
+    this.setLoop(note.meta.loop);
     this.canvas.setInputSize(note.width, note.height);
-    this.setFrame(this.note.thumbFrameIndex);
-    this._time = 0;
-    this.emit('load');
+    this.drawFrame(note.thumbFrameIndex);
+    this.playbackTime = 0;
+    this.emit(PlayerEvent.LoadedData);
+    this.emit(PlayerEvent.Load);
+    this.emit(PlayerEvent.Ready);
+    if (this.autoplay)
+      this.play();
   }
 
-  private playAudio(): void {
-    this.audio.playFrom(this.currentTime);
-  }
-
-  private stopAudio(): void {
-    this.audio.stop();
-  }
-
-  /** 
-   * Toggle audio equalizer filter
-   * @category Audio Control
+  /**
+   * Playback animation loop
+   * @public
+   * @category Playback Control 
    */
-  toggleEq() {
-    this.stopAudio();
-    this.audio.useEq = !this.audio.useEq;
-    this.playAudio();
-  }
-
-  /** 
-   * Toggle audio mute
-   * TODO: MUTE NOT CURRENTLY IMPLEMENTED
-   * @internal
-   * @category Audio Control
-   */
-  toggleMute() {
-    this.muted = !this.muted;
-  }
-
-  private playbackLoop(timestamp: DOMHighResTimeStamp): void {
-    if (this.paused) { // break loop if paused is set to true
-      this.stopAudio();
-      return null;
-    }
-    const time = timestamp / 1000;
-    const progress = time - this._lastTick;
-    if (progress > this.duration) {
+  public playbackLoop = (timestamp: DOMHighResTimeStamp) => {
+    if (!this.isPlaying)
+      return;
+    const now = timestamp / 1000;
+    const currPlaybackTime = now - this.playbackStartTime;
+    if (currPlaybackTime >= this.duration) {
       if (this.loop) {
-        this.currentTime = 0;
-        this.playAudio();
-        this._lastTick = time;
-        this.emit('playback:loop');
-      } else {
-        this.pause();
-        this.emit('playback:end');
+        this.playbackStartTime = now;
+        this.emit(PlayerEvent.Loop);
       }
-    } else {
-      this.currentTime = progress;
+      else {
+        this.pause();
+        this.emit(PlayerEvent.Ended);
+      }
     }
-    requestAnimationFrame(this.playbackLoop.bind(this));
+    this.currentTime = currPlaybackTime % this.duration;
+    this.playbackLoopId = requestAnimationFrame(this.playbackLoop);
+  }
+
+  /**
+   * Set the current playback time
+   * @category Playback Control 
+   */
+  public setCurrentTime(value: number) {
+    this.assertNoteLoaded();
+    const i = Math.floor(value / (1 / this.framerate));
+    this.setCurrentFrame(i);
+    this.playbackTime = value;
+    this.emit(PlayerEvent.Progress, this.progress);
+  }
+
+  /**
+   * Get the current playback time
+   * @category Playback Control 
+   */
+  public getCurrentTime() {
+    return this.currentTime;
+  }
+
+  /**
+   * Set the current playback progress as a percentage (0 to 100)
+   * @category Playback Control
+   */
+  public setProgress(value: number) {
+    this.assertNoteLoaded();
+    this.assertValueRange(value, 0, 100);
+    this.currentTime = this.duration * (value / 100);
+  }
+
+  /**
+   * Get the current playback progress as a percentage (0 to 100)
+   * @category Playback Control 
+   */
+  public getProgress() {
+    return this.progress;
   }
 
   /** 
    * Begin animation playback starting at the current position
    * @category Playback Control 
    */
-  public play(): void {
-    (window as any).__activeFlipnotePlayer = this;
-    if ((!this.isOpen) || (!this.paused))
-      return null;
-    if ((!this.hasPlaybackStarted) || ((!this.loop) && (this.currentFrame == this.frameCount - 1)))
-      this._time = 0;
-    this.paused = false;
+  public async play() {
+    this.assertNoteLoaded();
+    if (this.isPlaying)
+      return;
+    // if ((!this.hasPlaybackStarted) || ((!this.loop) && (this.currentFrame == this.frameCount - 1)))
+    //   this.playbackTime = 0;
+    this.isPlaying = true;
     this.hasPlaybackStarted = true;
-    this._lastTick = (performance.now() / 1000) - this.currentTime;
+    const now = performance.now();
+    this.playbackStartTime = (now / 1000) - this.playbackTime;
     this.playAudio();
-    requestAnimationFrame(this.playbackLoop.bind(this));
-    this.emit('playback:start');
+    this.playbackLoop(now);
+    this.emit(PlayerEvent.Play);
   }
 
   /** 
    * Pause animation playback at the current position
    * @category Playback Control 
    */
-  public pause(): void {
-    if ((!this.isOpen) || (this.paused)) return null;
-    this.paused = true;
+  public pause() {
+    if (!this.isPlaying)
+      return;
+    this.isPlaying = false;
+    if (this.playbackLoopId !== null) 
+      cancelAnimationFrame(this.playbackLoopId);
     this.stopAudio();
-    this.emit('playback:stop');
+    this.emit(PlayerEvent.Pause);
   }
 
   /** 
    * Resumes animation playback if paused, otherwise pauses
    * @category Playback Control 
    */
-  public togglePlay(): void {
-    if (this.paused) {
+  public togglePlay() {
+    if (!this.isPlaying)
       this.play();
-    } else {
+    else
       this.pause();
-    }
+  }
+
+  /** 
+   * Determines if playback is currently paused
+   * @category Playback Control 
+   */
+  public getPaused() {
+    return !this.isPlaying;
+  }
+
+  /** 
+   * Get the duration of the Flipnote in seconds
+   * @category Playback Control 
+   */
+  public getDuration() {
+    return this.duration;
+  }
+
+  /** 
+   * Determines if playback is looped
+   * @category Playback Control 
+   */
+  public getLoop() {
+    return this._loop;
+  }
+
+  /** 
+   * Set the playback loop
+   * @category Playback Control 
+   */
+  public setLoop(loop: boolean) {
+    this._loop = loop;
+    this.audio.loop = loop;
+  }
+
+  /** 
+   * Switch the playback loop between on and off
+   * @category Playback Control 
+   */
+  public toggleLoop() {
+    this.setLoop(!this._loop);
   }
 
   /** 
    * Jump to a given animation frame
    * @category Frame Control 
    */
-  public setFrame(frameIndex: number): void {
-    if ((this.isOpen) && (frameIndex !== this.currentFrame)) {
-      // clamp frame index
-      frameIndex = Math.max(0, Math.min(Math.floor(frameIndex), this.frameCount - 1));
-      this.drawFrame(frameIndex);
-      this._frame = frameIndex;
-      if (this.paused) {
-        this._time = frameIndex * (1 / this.framerate);
-        this.emit('progress', this.progress);
-      } 
-      this.emit('frame:update', this.currentFrame);
-    }
+  public setCurrentFrame(newFrameValue: number) {
+    this.assertNoteLoaded();
+    const newFrameIndex = Math.max(0, Math.min(Math.floor(newFrameValue), this.frameCount - 1));
+    if (newFrameIndex === this.currentFrame && !this.showThumbnail)
+      return;
+    this.drawFrame(newFrameIndex);
+    this.showThumbnail = false;
+    if (!this.isPlaying) {
+      this.playbackTime = newFrameIndex * (1 / this.framerate);
+      this.emit(PlayerEvent.SeekEnd);
+    } 
+    this.emit(PlayerEvent.FrameUpdate, this.currentFrame);
+    this.emit(PlayerEvent.Progress, this.progress);
+    this.emit(PlayerEvent.TimeUpdate, this.currentFrame);
   }
 
   /** 
@@ -382,12 +457,12 @@ export class Player {
    * If the animation loops, and is currently on its last frame, it will wrap to the first frame
    * @category Frame Control 
    */
-  public nextFrame(): void {
-    if ((this.loop) && (this.currentFrame >= this.frameCount -1)) {
+  public nextFrame() {
+    if ((this.loop) && (this.currentFrame === this.frameCount -1))
       this.currentFrame = 0;
-    } else {
+    else
       this.currentFrame += 1;
-    }
+    this.emit(PlayerEvent.FrameNext);
   }
 
   /** 
@@ -395,35 +470,37 @@ export class Player {
    * If the animation loops, and is currently on its first frame, it will wrap to the last frame
    * @category Frame Control 
    */
-  public prevFrame(): void {
-    if ((this.loop) && (this.currentFrame <= 0)) {
+  public prevFrame() {
+    if ((this.loop) && (this.currentFrame === 0))
       this.currentFrame = this.frameCount - 1;
-    } else {
+    else
       this.currentFrame -= 1;
-    }
+    this.emit(PlayerEvent.FramePrev);
   }
 
   /** 
    * Jump to the last animation frame
    * @category Frame Control 
    */
-  public lastFrame(): void {
+  public lastFrame() {
     this.currentFrame = this.frameCount - 1;
+    this.emit(PlayerEvent.FrameLast);
   }
 
   /** 
    * Jump to the first animation frame
    * @category Frame Control 
    */
-  public firstFrame(): void {
+  public firstFrame() {
     this.currentFrame = 0;
+    this.emit(PlayerEvent.FrameFirst);
   }
 
   /** 
    * Jump to the thumbnail frame
    * @category Frame Control 
    */
-  public thumbnailFrame(): void {
+  public thumbnailFrame() {
     this.currentFrame = this.note.thumbFrameIndex;
   }
 
@@ -431,9 +508,10 @@ export class Player {
    * Begins a seek operation
    * @category Playback Control 
    */
-  public startSeek(): void {
+  public startSeek() {
     if (!this.isSeeking) {
-      this.wasPlaying = !this.paused;
+      this.emit(PlayerEvent.SeekStart);
+      this.wasPlaying = this.isPlaying;
       this.pause();
       this.isSeeking = true;
     }
@@ -441,115 +519,67 @@ export class Player {
 
   /** 
    * Seek the playback progress to a different position
+   * @param position - animation playback position, range `0` to `1`
    * @category Playback Control 
    */
-  public seek(progress: number): void {
-    if (this.isSeeking) {
-      this.progress = progress;
-    }
+  public seek(position: number) {
+    if (this.isSeeking)
+      this.progress = position * 100;
   }
 
   /** 
    * Ends a seek operation
    * @category Playback Control 
    */
-  public endSeek(): void {
-    if ((this.isSeeking) && (this.wasPlaying === true)) {
+  public endSeek() {
+    if (this.isSeeking && this.wasPlaying === true)
       this.play();
-    }
     this.wasPlaying = false;
     this.isSeeking = false;
   }
 
-  /** 
-   * Returns the master audio as a {@link WavAudio} object
-   * @category Quick Export
-   */
-  public getMasterWav() {
-    return WavAudio.fromFlipnote(this.note);
-  }
-
-  /** 
-   * Saves the master audio track as a WAV file
-   * @category Quick Export
-   */
-  public saveMasterWav() {
-    const wav = this.getMasterWav();
-    saveData(wav.getBlob(), `${ this.meta.current.filename }.wav`);
-  }
-
-  /** 
-   * Returns an animation frame as a {@link GifImage} object
-   * @category Quick Export
-   */
-  public getFrameGif(frameIndex: number, meta: Partial<GifImageSettings> = {}) {
-    return GifImage.fromFlipnoteFrame(this.note, frameIndex, meta);
-  }
-
-  /** 
-   * Saves an animation frame as a GIF file
-   * @category Quick Export
-   */
-  public saveFrameGif(frameIndex: number, meta: Partial<GifImageSettings> = {}) {
-    const gif = this.getFrameGif(frameIndex, meta);
-    saveData(gif.getBlob(), `${ this.meta.current.filename }_${ frameIndex.toString().padStart(3, '0') }.gif`);
-  }
-
-  /** 
-   * Returns the full animation as a {@link GifImage} object
-   * @category Quick Export
-   */
-  public getAnimatedGif(meta: Partial<GifImageSettings> = {}) {
-    return GifImage.fromFlipnote(this.note, meta);
-  }
-
-  /** 
-   * Saves the full animation as a GIF file
-   * @category Quick Export
-   */
-  public saveAnimatedGif(meta: Partial<GifImageSettings> = {}) {
-    const gif = this.getAnimatedGif(meta);
-    saveData(gif.getBlob(), `${ this.meta.current.filename }.gif`);
-  }
-
   /**
-   * Draws the specified animation frame to the canvas
+   * Draws the specified animation frame to the canvas. Note that this doesn't update the playback time or anything, it simply decodes a given frame and displays it.
    * @param frameIndex 
+   * @category Display Control 
    */
-  public drawFrame(frameIndex: number): void {
-    const colors = this.note.getFramePalette(frameIndex);
-    const layerBuffers = this.note.decodeFrame(frameIndex);
+  public drawFrame(frameIndex: number) {
+    const note = this.note;
+    const canvas = this.canvas;
+    const colors = note.getFramePalette(frameIndex);
+    const layerBuffers = note.decodeFrame(frameIndex);
+    const layerVisibility = this.layerVisibility;
     // this.canvas.setPaperColor(colors[0]);
-    this.canvas.setPalette(colors);
-    this.canvas.clearFrameBuffer(colors[0]);
-    if (this.note.format === FlipnoteFormat.PPM) {
-      if (this.layerVisibility[2]) // bottom
-        this.canvas.drawPixels(layerBuffers[1], 1);
-      if (this.layerVisibility[1]) // top
-        this.canvas.drawPixels(layerBuffers[0], 0);
+    canvas.setPalette(colors);
+    canvas.clearFrameBuffer(colors[0]);
+    if (note.format === FlipnoteFormat.PPM) {
+      if (layerVisibility[2]) // bottom
+        canvas.drawPixels(layerBuffers[1], 1);
+      if (layerVisibility[1]) // top
+        canvas.drawPixels(layerBuffers[0], 0);
     } 
-    else if (this.note.format === FlipnoteFormat.KWZ) {
-      const order = this.note.getFrameLayerOrder(frameIndex)
+    else if (note.format === FlipnoteFormat.KWZ) {
+      const order = note.getFrameLayerOrder(frameIndex)
       const layerIndexC = order[0];
       const layerIndexB = order[1];
       const layerIndexA = order[2];
-      if (this.layerVisibility[layerIndexC + 1]) // bottom
-        this.canvas.drawPixels(layerBuffers[layerIndexC], layerIndexC * 2);
-      if (this.layerVisibility[layerIndexB + 1]) // middle
-        this.canvas.drawPixels(layerBuffers[layerIndexB], layerIndexB * 2);
-      if (this.layerVisibility[layerIndexA + 1]) // top
-        this.canvas.drawPixels(layerBuffers[layerIndexA], layerIndexA * 2);
+      if (layerVisibility[layerIndexC + 1]) // bottom
+        canvas.drawPixels(layerBuffers[layerIndexC], layerIndexC * 2);
+      if (layerVisibility[layerIndexB + 1]) // middle
+        canvas.drawPixels(layerBuffers[layerIndexB], layerIndexB * 2);
+      if (layerVisibility[layerIndexA + 1]) // top
+        canvas.drawPixels(layerBuffers[layerIndexA], layerIndexA * 2);
     }
-    this.canvas.composite();
+    canvas.composite();
   }
 
   /**
    * Forces the current animation frame to be redrawn
+   * @category Display Control 
    */
-  public forceUpdate(): void {
-    if (this.isOpen) {
+  public forceUpdate() {
+    if (this.isNoteLoaded)
       this.drawFrame(this.currentFrame);
-    }
   }
 
   /**
@@ -561,7 +591,9 @@ export class Player {
    * 
    * @category Display Control 
    */
-  public resize(width: number, height: number): void {
+  public resize(width: number, height: number) {
+    if (height !== width * .75)
+      console.warn(`Canvas width to height ratio should be 3:4 for best results (got ${width}x${height})`);
     this.canvas.resize(width, height);
     this.forceUpdate();
   }
@@ -573,9 +605,19 @@ export class Player {
    * 
    * @category Display Control 
    */
-  public setLayerVisibility(layer: number, value: boolean): void {
+  public setLayerVisibility(layer: number, value: boolean) {
     this.layerVisibility[layer] = value;
     this.forceUpdate();
+  }
+
+  /**
+   * Returns the visibility state for a given layer
+   * @param layer - layer index, starting at 1
+   * 
+   * @category Display Control
+   */
+  public getLayerVisibility(layer: number) {
+    return this.layerVisibility[layer];
   }
 
   /**
@@ -583,42 +625,209 @@ export class Player {
    * 
    * @category Display Control 
    */
-  public toggleLayerVisibility(layerIndex: number) : void {
+  public toggleLayerVisibility(layerIndex: number) {
     this.setLayerVisibility(layerIndex, !this.layerVisibility[layerIndex]);
   }
 
-  // public setPalette(palette: any): void {
-  //   this.customPalette = palette;
-  //   this.note.palette = palette;
-  //   this.forceUpdate();
-  // }
+  public playAudio() {
+    this.audio.playFrom(this.currentTime);
+  }
+
+  public stopAudio() {
+    this.audio.stop();
+  }
+
+  /** 
+   * Toggle audio Sudomemo equalizer filter
+   * @category Audio Control
+   */
+  public toggleAudioEq() {
+    this.setAudioEq(!this.audio.useEq);
+  }
+
+  /** 
+   * Turn audio Sudomemo equalizer filter on or off
+   * @category Audio Control
+   */
+  public setAudioEq(state: boolean) {
+    if (this.isPlaying) {
+      this.wasPlaying = true;
+      this.stopAudio();
+    }
+    this.audio.useEq = state;
+    if (this.wasPlaying) {
+      this.wasPlaying = false;
+      this.playAudio();
+    }
+  }
+
+  /**
+   * Turn the audio off
+   * @category Audio Control
+   */
+  public mute() {
+    this.setMuted(true);
+  }
+
+  /**
+   * Turn the audio on
+   * @category Audio Control
+   */
+  public unmute() {
+    this.setMuted(false);
+  }
+
+  /**
+   * Turn the audio on or off
+   * @category Audio Control
+   */
+  public setMuted(isMute: boolean) {
+    if (isMute)
+      this.audio.volume = 0;
+    else
+      this.audio.volume = this._volume;
+    this._muted = isMute;
+    this.emit(PlayerEvent.VolumeChange, this.audio.volume);
+  }
+
+  /**
+   * Get the audio mute state
+   * @category Audio Control
+   */
+  public getMuted() {
+    return this._muted;
+  }
+
+  /** 
+   * Switch the audio between muted and unmuted
+   * @category Audio Control
+   */
+  public toggleMuted() {
+    this.setMuted(!this._muted);
+  }
+
+  /**
+   * Set the audio volume
+   * @category Audio Control
+   */
+  public setVolume(volume: number) {
+    this._volume = volume;
+    this.audio.volume = volume;
+    this.emit(PlayerEvent.VolumeChange, this.audio.volume);
+  }
+
+  /**
+   * Implementation of the `HTMLVideoElement` {@link https://developer.mozilla.org/en-US/docs/Web/API/HTMLVideoElement/seekToNextFrame | seekToNextFrame} method
+   * @category HTMLVideoElement compatibility
+   */
+  public seekToNextFrame() {
+    this.nextFrame();
+  }
+
+  /**
+   * Implementation of the `HTMLMediaElement` {@link https://developer.mozilla.org/en-US/docs/Web/API/HTMLMediaElement/fastSeek | fastSeek} method
+   * @category HTMLVideoElement compatibility
+   */
+  public fastSeek(time: number) {
+    this.currentTime = time;
+  }
+
+  /**
+   * Implementation of the `HTMLVideoElement` {@link https://developer.mozilla.org/en-US/docs/Web/API/HTMLVideoElement/getVideoPlaybackQuality | getVideoPlaybackQuality } method
+   * @category HTMLVideoElement compatibility
+   */
+  public canPlayType(mediaType: string) {
+    switch (mediaType) {
+      case 'application/x-ppm':
+      case 'application/x-kwz':
+      case 'video/x-ppm':
+      case 'video/x-kwz':
+      // lauren is planning on registering these officially
+      case 'video/vnd.nintendo.ugomemo.ppm':
+      case 'video/vnd.nintendo.ugomemo.kwz':
+        return 'probably';
+      case 'application/octet-stream':
+        return 'maybe';
+      // and koizumi is planning his revenge
+      case 'video/vnd.nintendo.ugomemo.fykt':
+      default:
+        return '';
+    }
+  }
+
+  /**
+   * Implementation of the `HTMLVideoElement` [https://developer.mozilla.org/en-US/docs/Web/API/HTMLVideoElement/getVideoPlaybackQuality](getVideoPlaybackQuality) method
+   * @category HTMLVideoElement compatibility
+   */
+  public getVideoPlaybackQuality() {
+    const quality: VideoPlaybackQuality = {
+      creationTime: 0,
+      droppedVideoFrames: 0,
+      totalVideoFrames: this.frameCount
+    };
+    return quality;
+  }
+
+  /**
+   * Implementation of the `HTMLVideoElement` [https://developer.mozilla.org/en-US/docs/Web/API/HTMLVideoElement/requestPictureInPicture](requestPictureInPicture) method. Not currently working, only a stub.
+   * @category HTMLVideoElement compatibility
+   */
+  public requestPictureInPicture() {
+    throw new Error('Not implemented');
+  }
+
+  /**
+   * Implementation of the `HTMLVideoElement` [https://developer.mozilla.org/en-US/docs/Web/API/HTMLVideoElement/captureStream](captureStream) method. Not currently working, only a stub.
+   * @category HTMLVideoElement compatibility
+   */
+  public captureStream() {
+    throw new Error('Not implemented');
+  }
 
   /** 
    * Add an event callback
    * @category Event API
    */
-  public on(eventType: string, callback: Function): void {
+  public on(eventType: PlayerEvent | PlayerEvent[], callback: Function) {
     const events = this.events;
-    (events[eventType] || (events[eventType] = [])).push(callback);
+    const eventList = Array.isArray(eventType) ? eventType : [eventType];
+    eventList.forEach(eventType => {
+      if (!events.has(eventType))
+        events.set(eventType, [callback]);
+      else
+        events.get(eventType).push(callback);
+    });
   }
 
   /** 
    * Remove an event callback
    * @category Event API
    */
-  public off(eventType: string, callback: Function): void {
-    const callbackList = this.events[eventType];
-    if (callbackList) callbackList.splice(callbackList.indexOf(callback), 1);
+  public off(eventType: PlayerEvent | PlayerEvent[], callback: Function) {
+    const events = this.events;
+    const eventList = Array.isArray(eventType) ? eventType : [eventType];
+    eventList.forEach(eventType => {
+      if (!events.has(eventType))
+        return;
+      const callbackList = events.get(eventType);
+      events.set(eventType, callbackList.splice(callbackList.indexOf(callback), 1));
+    });
   }
 
   /** 
    * Emit an event - mostly used internally
    * @category Event API
    */
-  public emit(eventType: string, ...args: any): void {
-    var callbackList = this.events[eventType] || [];
-    for (var i = 0; i < callbackList.length; i++) {
-      callbackList[i].apply(null, args); 
+  public emit(eventType: PlayerEvent, ...args: any) {
+    const events = this.events;
+    if (events.has(eventType)) {
+      const callbackList = events.get(eventType);
+      callbackList.forEach(callback => callback.apply(null, args));
+    }
+    // "any" event listeners fire for all events, and receive eventType as their first param
+    if (events.has(PlayerEvent.__Any)) {
+      const callbackList = events.get(PlayerEvent.__Any);
+      callbackList.forEach(callback => callback.apply(null, [eventType, ...args]));
     }
   }
 
@@ -626,17 +835,40 @@ export class Player {
    * Remove all registered event callbacks
    * @category Event API
    */
-  public clearEvents(): void {
-    this.events = {};
+  public clearEvents() {
+    this.events.clear();
   }
 
   /** 
    * Destroy a Player instace
    * @category Lifecycle
    */
-  public destroy(): void {
-    this.close();
-    this.canvas.destroy();
+  public async destroy() {
+    this.clearEvents();
+    this.closeNote();
+    await this.canvas.destroy();
+    await this.audio.destroy();
+  }
+
+  /** 
+   * Returns true if the player supports a given event or method name
+   */
+  public supports(name: string) {
+    const isEvent = this.supportedEvents.includes(name as PlayerEvent);
+    const isMethod = typeof (this as any)[name] === 'function';
+    return isEvent || isMethod;
+  }
+
+  /** @internal */
+  public assertNoteLoaded() {
+    if (!this.isNoteLoaded)
+      throw new Error('No Flipnote is currently loaded in this player');
+  }
+
+  /** @internal */
+  public assertValueRange(value: number, min: number, max: number) {
+    if (value < min || value > max)
+      throw new Error(`Value ${value} must be between ${min} and ${max}`);
   }
 
 }

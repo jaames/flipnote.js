@@ -94,6 +94,7 @@ export class PlayerComponent extends PlayerMixin(LitElement) {
     super();
   }
 
+  /** @internal */
   render() {
     return html`
       <div class="Player" @keydown=${ this.handleKeyInput }>
@@ -117,6 +118,7 @@ export class PlayerComponent extends PlayerMixin(LitElement) {
     `;
   }
 
+  /** @internal */
   firstUpdated(changedProperties: PropertyValues) {
     const player = new Player(this.playerCanvas, 640, 480);
     player.on(PlayerEvent.Progress, () => {
@@ -135,10 +137,10 @@ export class PlayerComponent extends PlayerMixin(LitElement) {
     this._isPlayerAvailable = true;
   }
 
+  /** @internal */
   disconnectedCallback() {
     // clean up webgl and buffer stuff if this element is removed from DOM
-    this.player.destroy();
-    this.player.clearEvents();
+    this.destroy();
   }
 
   private handleKeyInput = (e: KeyboardEvent) => {

@@ -15,13 +15,17 @@ export declare class WebAudioPlayer {
     /** Equalizer settings. Credit to {@link https://www.sudomemo.net/ | Sudomemo} */
     eqSettings: [number, number][];
     private _volume;
+    private _loop;
     private buffer;
     private gainNode;
     private source;
     constructor();
-    /** Sets the audio output volume */
+    /** The audio output volume. Range is 0 to 1 */
     set volume(value: number);
     get volume(): number;
+    /** Whether the audio should loop after it has ended */
+    set loop(value: boolean);
+    get loop(): boolean;
     /**
      * Set the audio buffer to play
      * @param inputBuffer
