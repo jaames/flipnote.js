@@ -60,7 +60,6 @@ export declare class PpmParser extends FlipnoteParser {
     static globalPalette: import("./FlipnoteParserTypes").FlipnotePaletteColor[];
     /** File format type, reflects {@link PpmParser.format} */
     format: FlipnoteFormat;
-    formatString: string;
     /** Animation frame width, reflects {@link PpmParser.width} */
     width: number;
     /** Animation frame height, reflects {@link PpmParser.height} */

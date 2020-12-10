@@ -8,12 +8,10 @@ export declare type KwzSectionMagic = 'KFH' | 'KTN' | 'KMC' | 'KMI' | 'KSN' | 'I
  * KWZ section map, tracking their offset and length
  * @internal
  */
-export declare type KwzSectionMap = {
-    [k in KwzSectionMagic]?: {
-        offset: number;
-        length: number;
-    };
-};
+export declare type KwzSectionMap = Map<KwzSectionMagic, {
+    offset: number;
+    length: number;
+}>;
 /**
  * KWZ file metadata, stores information about its playback, author details, etc
  */
@@ -74,7 +72,6 @@ export declare class KwzParser extends FlipnoteParser {
     static globalPalette: import("./FlipnoteParserTypes").FlipnotePaletteColor[];
     /** File format type, reflects {@link KwzParser.format} */
     format: FlipnoteFormat;
-    formatString: string;
     /** Animation frame width, reflects {@link KwzParser.width} */
     width: number;
     /** Animation frame height, reflects {@link KwzParser.height} */
@@ -90,7 +87,7 @@ export declare class KwzParser extends FlipnoteParser {
     /** File metadata, see {@link KwzMeta} for structure */
     meta: KwzMeta;
     private settings;
-    private sections;
+    private sectionMap;
     private layers;
     private prevFrameIndex;
     private frameMeta;
