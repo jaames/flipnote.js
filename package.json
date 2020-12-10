@@ -20,13 +20,14 @@
   ],
   "keywords": [
     "flipnote",
-    "studio",
+    "flipnotestudio",
     "3D",
     "ugomemo",
     "ppm",
     "kwz",
     "animation",
     "decoder",
+    "converter",
     "nintendo",
     "webGL",
     "うごメモ",
@@ -59,13 +60,13 @@
     "rollup-plugin-terser": "^6.1.0",
     "rollup-plugin-typescript2": "^0.27.1",
     "rollup-plugin-uglify": "^6.0.4",
-    "svelte": "^3.24.0",
-    "svelte-preprocess": "^4.0.6",
+    "ts-lit-plugin": "^1.2.1",
     "typedoc": "^0.19.2",
     "typedoc-plugin-pages": "^1.0.1",
     "typescript": "^3.5.3"
   },
   "dependencies": {
+    "lit-element": "^2.4.0",
     "twgl.js": "^4.15.2"
   }
 }
