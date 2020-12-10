@@ -3,9 +3,9 @@ import { DataStream } from '../utils/index';
 /** Identifies which animation format a Flipnote uses */
 export enum FlipnoteFormat {
   /** Animation format used by Flipnote Studio (Nintendo DSiWare) */
-  PPM,
+  PPM = 'PPM',
   /** Animation format used by Flipnote Studio 3D (Nintendo 3DS) */
-  KWZ
+  KWZ = 'KWZ'
 };
 
 /** RGBA color */
@@ -119,8 +119,6 @@ export abstract class FlipnoteParser extends DataStream {
 
   /** File format type, reflects {@link FlipnoteParserBase.format} */
   public format: FlipnoteFormat;
-  /** Flipnote Format as a string */
-  public formatString: string;
   /** Animation frame width, reflects {@link FlipnoteParserBase.width} */
   public width: number;
   /** Animation frame height, reflects {@link FlipnoteParserBase.height} */

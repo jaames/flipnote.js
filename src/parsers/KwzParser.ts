@@ -187,7 +187,6 @@ export class KwzParser extends FlipnoteParser {
   
   /** File format type, reflects {@link KwzParser.format} */
   public format = FlipnoteFormat.KWZ;
-  public formatString = 'KWZ';
   /** Animation frame width, reflects {@link KwzParser.width} */
   public width = KwzParser.width;
   /** Animation frame height, reflects {@link KwzParser.height} */
