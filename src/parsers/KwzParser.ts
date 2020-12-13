@@ -69,31 +69,24 @@ for (let h = 0; h < 3; h++)
   offset += 8;
 }
 
-// Commonly occuring line offsets
 /** @internal */
 const KWZ_LINE_TABLE_COMMON = new Uint8Array(32 * 8);
-[
+/** @internal */
+const KWZ_LINE_TABLE_COMMON_SHIFT = new Uint8Array(32 * 8);
+/** @internal */
+const commonOffsets = [
   0x0000, 0x0CD0, 0x19A0, 0x02D9, 0x088B, 0x0051, 0x00F3, 0x0009,
   0x001B, 0x0001, 0x0003, 0x05B2, 0x1116, 0x00A2, 0x01E6, 0x0012,
   0x0036, 0x0002, 0x0006, 0x0B64, 0x08DC, 0x0144, 0x00FC, 0x0024,
   0x001C, 0x0004, 0x0334, 0x099C, 0x0668, 0x1338, 0x1004, 0x166C
-].forEach((lineTableIndex, index) => {
-  const pixels = KWZ_LINE_TABLE.subarray(lineTableIndex * 8, lineTableIndex * 8 + 8);
-  KWZ_LINE_TABLE_COMMON.set(pixels, index * 8);
-});
-
-// Commonly occuring line offsets, but the lines are shifted to the left by one pixel
-/** @internal */
-const KWZ_LINE_TABLE_COMMON_SHIFT = new Uint8Array(32 * 8);
-[
-  0x0000, 0x0CD0, 0x19A0, 0x0003, 0x02D9, 0x088B, 0x0051, 0x00F3, 
-  0x0009, 0x001B, 0x0001, 0x0006, 0x05B2, 0x1116, 0x00A2, 0x01E6, 
-  0x0012, 0x0036, 0x0002, 0x02DC, 0x0B64, 0x08DC, 0x0144, 0x00FC, 
-  0x0024, 0x001C, 0x099C, 0x0334, 0x1338, 0x0668, 0x166C, 0x1004
-].forEach((lineTableIndex, index) => {
-  const pixels = KWZ_LINE_TABLE.subarray(lineTableIndex * 8, lineTableIndex * 8 + 8);
-  KWZ_LINE_TABLE_COMMON_SHIFT.set(pixels, index * 8);
-});
+];
+for (let i = 0; i < 32; i++) {
+  const lineTablePtr = commonOffsets[i] * 8;
+  const pixels = KWZ_LINE_TABLE.subarray(lineTablePtr, lineTablePtr + 8);
+  const shiftPixels = KWZ_LINE_TABLE_SHIFT.subarray(lineTablePtr, lineTablePtr + 8);
+  KWZ_LINE_TABLE_COMMON.set(pixels, i * 8);
+  KWZ_LINE_TABLE_COMMON_SHIFT.set(shiftPixels, i * 8);
+}
 
 /** 
  * KWZ section types

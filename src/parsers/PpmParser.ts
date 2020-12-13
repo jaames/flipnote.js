@@ -369,14 +369,14 @@ export class PpmParser extends FlipnoteParser {
             // so on the next loop cycle the next bit will be checked
             // and if the line header equals 0, no more bits are set, 
             // the rest of the line is empty and can be skipped
-            for (let i = 0; lineHeader !== 0; i++) {
+            for (; lineHeader !== 0; lineHeader <<= 1, pixelBufferPtr += 8) {
               // if the bit is set, this 8-pix wide chunk is stored
               // else we can just leave it blank and move on to the next chunk
               if (lineHeader & 0x80000000) {
                 let chunk = this.readUint8();
                 // unpack chunk bits
-                for (let i = 0; i < 8; i++, chunk >>= 1)
-                  pixelBuffer[pixelBufferPtr + i] = chunk & 0x1;
+                for (let pixel = 0; pixel < 8; pixel++, chunk >>= 1)
+                  pixelBuffer[pixelBufferPtr + pixel] = chunk & 0x1;
               }
             }
             break;
