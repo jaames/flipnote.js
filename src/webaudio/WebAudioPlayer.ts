@@ -24,7 +24,7 @@ export class WebAudioPlayer {
   public sampleRate: number;
   /** Whether the audio is being run through an equalizer or not */
   public useEq: boolean = false
-  /** Equalizer settings. Credit to {@link https://www.sudomemo.net/ | Sudomemo} */
+  /** Default equalizer settings. Credit to {@link https://www.sudomemo.net/ | Sudomemo} for these */
   public eqSettings: [number, number][] = [
     [31.25, 4.1],
     [62.5, 1.2],
@@ -71,14 +71,21 @@ export class WebAudioPlayer {
     return this._loop;
   }
 
+  private getCtx() {
+    if (!this.ctx)
+      this.ctx = new _AudioContext();
+    return this.ctx;
+  }
+
   /**
    * Set the audio buffer to play
    * @param inputBuffer 
    * @param sampleRate - For best results, this should be a multiple of 16364
    */
   setBuffer(inputBuffer: PcmAudioBuffer, sampleRate: number) {
+    const ctx = this.getCtx();
     const numSamples = inputBuffer.length;
-    const audioBuffer = this.ctx.createBuffer(1, numSamples, sampleRate);
+    const audioBuffer = ctx.createBuffer(1, numSamples, sampleRate);
     const channelData = audioBuffer.getChannelData(0);
     if (inputBuffer instanceof Float32Array)
       channelData.set(inputBuffer, 0);
@@ -92,7 +99,8 @@ export class WebAudioPlayer {
   }
 
   private connectEqNodesTo(inNode: AudioNode) {
-    const { ctx, eqSettings } = this;
+    const ctx = this.getCtx();
+    const eqSettings = this.eqSettings;
     let lastNode = inNode;
     eqSettings.forEach(([ frequency, gain ], index) => {
       const node = ctx.createBiquadFilter();
@@ -112,7 +120,7 @@ export class WebAudioPlayer {
   }
 
   private initNodes() {
-    const { ctx } = this;
+    const ctx = this.getCtx();
     this.nodeRefs = [];
     const source = ctx.createBufferSource();
     this.nodeRefs.push(source);

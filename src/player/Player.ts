@@ -1,4 +1,4 @@
-import { parseSource, Flipnote, FlipnoteFormat, FlipnoteMeta } from '../parsers';
+import { parseSource, FlipnoteSource, Flipnote, FlipnoteFormat, FlipnoteMeta } from '../parsers';
 import { PlayerEvent, PlayerEventMap, supportedEvents } from './PlayerEvent';
 import { createTimeRanges } from './playerUtils';
 import { WebglRenderer } from '../webgl';
@@ -37,7 +37,7 @@ export class Player {
   public supportedEvents = supportedEvents;
 
   /** @internal */
-  public _src: any = null;
+  public _src: FlipnoteSource = null;
   /** @internal */
   public _loop: boolean = false;
   /** @internal */
@@ -86,7 +86,7 @@ export class Player {
   get src() {
     return this._src;
   }
-  set src(source: any) {
+  set src(source: FlipnoteSource) {
     this.load(source);
   }
 
@@ -218,7 +218,7 @@ export class Player {
       this.closeNote();
     // if no source specified, just reset everything
     if (!source)
-      return this.openNote(this._src);
+      return this.openNote(this.note);
     // otherwise do a normal load
     this.emit(PlayerEvent.LoadStart);
     return parseSource(source)
@@ -265,6 +265,7 @@ export class Player {
     this.emit(PlayerEvent.LoadedMeta);
     this.noteFormat = note.format;
     this.duration = note.duration;
+    this.playbackTime = 0;
     this.isNoteLoaded = true;
     this.isPlaying = false;
     this.wasPlaying = false;
@@ -277,7 +278,6 @@ export class Player {
     this.setLoop(note.meta.loop);
     this.canvas.setInputSize(note.width, note.height);
     this.drawFrame(note.thumbFrameIndex);
-    this.playbackTime = 0;
     this.emit(PlayerEvent.LoadedData);
     this.emit(PlayerEvent.Load);
     this.emit(PlayerEvent.Ready);
@@ -305,7 +305,7 @@ export class Player {
         this.emit(PlayerEvent.Ended);
       }
     }
-    this.currentTime = currPlaybackTime % this.duration;
+    this.setCurrentTime(currPlaybackTime % this.duration);
     this.playbackLoopId = requestAnimationFrame(this.playbackLoop);
   }
 
