@@ -1,4 +1,3 @@
-/** datastream serves as a wrapper around the DataView API to help keep track of the offset into the stream */
 /** @internal */
 export const enum SeekOrigin {
   Begin,
@@ -6,7 +5,11 @@ export const enum SeekOrigin {
   End
 };
 
-/** @internal */
+/** 
+ * Wrapper around the DataView API to keep track of the offset into the data
+ * also provides some utils for reading ascii strings etc
+ * @internal
+ */
 export class DataStream {
 
   public buffer: ArrayBuffer;

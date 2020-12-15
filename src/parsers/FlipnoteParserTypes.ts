@@ -42,7 +42,7 @@ export enum FlipnoteAudioTrack {
  */
 export type FlipnoteAudioTrackInfo = {
   [key in FlipnoteAudioTrack]?: {
-    offset: number,
+    ptr: number,
     length: number
   }
 }

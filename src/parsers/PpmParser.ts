@@ -38,6 +38,8 @@ import {
   ADPCM_STEP_TABLE
 } from './audioUtils';
 
+import { assert, dateFromNintendoTimestamp } from '../utils';
+
 /** 
  * PPM framerates in frames per second, indexed by the in-app frame speed.
  * Frame speed 0 is never noramally used
@@ -164,6 +166,7 @@ export class PpmParser extends FlipnoteParser {
   }
 
   private decodeHeader() {
+    assert(16 < this.byteLength);
     this.seek(4);
     // decode header
     // https://github.com/Flipnote-Collective/flipnote-studio-docs/wiki/PPM-format#header
@@ -183,19 +186,20 @@ export class PpmParser extends FlipnoteParser {
 
   private decodeMeta() {
     // https://github.com/Flipnote-Collective/flipnote-studio-docs/wiki/PPM-format#metadata
+    assert(0x06A8 < this.byteLength);
     this.seek(0x10);
-    const lock = this.readUint16(),
-          thumbIndex = this.readInt16(),
-          rootAuthorName = this.readWideChars(11),
-          parentAuthorName = this.readWideChars(11),
-          currentAuthorName = this.readWideChars(11),
-          parentAuthorId = this.readHex(8, true),
-          currentAuthorId = this.readHex(8, true),
-          parentFilename = this.readFilename(),
-          currentFilename = this.readFilename(),
-          rootAuthorId = this.readHex(8, true);
+    const lock = this.readUint16();
+    const thumbIndex = this.readInt16();
+    const rootAuthorName = this.readWideChars(11);
+    const parentAuthorName = this.readWideChars(11);
+    const currentAuthorName = this.readWideChars(11);
+    const parentAuthorId = this.readHex(8, true);
+    const currentAuthorId = this.readHex(8, true);
+    const parentFilename = this.readFilename();
+    const currentFilename = this.readFilename();
+    const rootAuthorId = this.readHex(8, true);
     this.seek(0x9A);
-    const timestamp = new Date((this.readUint32() + 946684800) * 1000);
+    const timestamp = dateFromNintendoTimestamp(this.readInt32());
     this.seek(0x06A6);
     const flags = this.readUint16();
     this.thumbFrameIndex = thumbIndex;
@@ -239,12 +243,15 @@ export class PpmParser extends FlipnoteParser {
     this.seek(0x06A0);
     const offsetTableLength = this.readUint16();
     const numOffsets = offsetTableLength / 4;
+    assert(numOffsets <= this.frameCount);
     // skip padding + flags
     this.seek(0x06A8);
     // read frame offsets and build them into a table
     const frameOffsets = new Uint32Array(numOffsets);
     for (let n = 0; n < numOffsets; n++) {
-      frameOffsets[n] = 0x06A8 + offsetTableLength + this.readUint32();
+      const ptr = 0x06A8 + offsetTableLength + this.readUint32();
+      assert(ptr < this.byteLength, `Frame ${ n } pointer is out of bounds`);
+      frameOffsets[n] = ptr;
     }
     this.frameOffsets = frameOffsets;
   }
@@ -252,26 +259,28 @@ export class PpmParser extends FlipnoteParser {
   private decodeSoundHeader() {
     // https://github.com/Flipnote-Collective/flipnote-studio-docs/wiki/PPM-format#sound-header
     // offset = frame data offset + frame data length + sound effect flags
-    let offset = 0x06A0 + this.frameDataLength + this.frameCount;
-    // account for multiple-of-4 padding
-    if (offset % 4 != 0)
-      offset += 4 - (offset % 4);
-    this.seek(offset);
+    let ptr = 0x06A0 + this.frameDataLength + this.frameCount;
+    assert(ptr < this.byteLength);
+    // align offset
+    if (ptr % 4 != 0)
+      ptr += 4 - (ptr % 4);
+    this.seek(ptr);
     const bgmLen = this.readUint32();
     const se1Len = this.readUint32();
     const se2Len = this.readUint32();
     const se3Len = this.readUint32();
     this.frameSpeed = 8 - this.readUint8();
     this.bgmSpeed = 8 - this.readUint8();
-    offset += 32;
+    assert(this.frameSpeed <= 8 && this.bgmSpeed <= 8);
+    ptr += 32;
     this.framerate = PPM_FRAMERATES[this.frameSpeed];
     this.duration = this.frameCount * (1 / this.framerate);
     this.bgmrate = PPM_FRAMERATES[this.bgmSpeed];
     this.soundMeta = {
-      [FlipnoteAudioTrack.BGM]: {offset: offset,           length: bgmLen},
-      [FlipnoteAudioTrack.SE1]: {offset: offset += bgmLen, length: se1Len},
-      [FlipnoteAudioTrack.SE2]: {offset: offset += se1Len, length: se2Len},
-      [FlipnoteAudioTrack.SE3]: {offset: offset += se2Len, length: se3Len},
+      [FlipnoteAudioTrack.BGM]: {ptr: ptr,           length: bgmLen},
+      [FlipnoteAudioTrack.SE1]: {ptr: ptr += bgmLen, length: se1Len},
+      [FlipnoteAudioTrack.SE2]: {ptr: ptr += se1Len, length: se2Len},
+      [FlipnoteAudioTrack.SE3]: {ptr: ptr += se2Len, length: se3Len},
     };
   }
 
@@ -286,6 +295,7 @@ export class PpmParser extends FlipnoteParser {
    * @category Image
   */
   public decodeFrame(frameIndex: number) {
+    assert(frameIndex > -1 && frameIndex < this.frameCount, `Frame index ${ frameIndex } out of bounds`);
     if (this.prevDecodedFrame !== frameIndex - 1 && (!this.isNewFrame(frameIndex)) && frameIndex !== 0)
       this.decodeFrame(frameIndex - 1);
     this.prevDecodedFrame = frameIndex;
@@ -527,6 +537,7 @@ export class PpmParser extends FlipnoteParser {
    * @category Audio
   */
   public decodeSoundFlags() {
+    assert(0x06A0 + this.frameDataLength < this.byteLength);
     // https://github.com/Flipnote-Collective/flipnote-studio-docs/wiki/PPM-format#sound-effect-flags
     this.seek(0x06A0 + this.frameDataLength);
     const numFlags = this.frameCount;
@@ -550,7 +561,8 @@ export class PpmParser extends FlipnoteParser {
   */
   public getAudioTrackRaw(trackId: FlipnoteAudioTrack) {
     const trackMeta = this.soundMeta[trackId];
-    this.seek(trackMeta.offset);
+    assert(trackMeta.ptr + trackMeta.length < this.byteLength);
+    this.seek(trackMeta.ptr);
     return this.readBytes(trackMeta.length);
   }
   

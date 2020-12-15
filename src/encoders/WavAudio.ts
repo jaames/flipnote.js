@@ -1,6 +1,6 @@
 import { DataStream } from '../utils/index';
 import { Flipnote, FlipnoteAudioTrack } from '../parsers/index';
-import { isNode, isBrowser } from '../utils';
+import { assert, assertNodeEnv, assertBrowserEnv } from '../utils';
 
 /** 
  * Wav audio object. Used to create a {@link https://en.wikipedia.org/wiki/WAV | WAV} file from a PCM audio stream or a {@link Flipnote} object. 
@@ -33,8 +33,8 @@ export class WavAudio {
     this.bitsPerSample = bitsPerSample;
     // Write WAV file header
     // Reference: http://www.topherlee.com/software/pcm-tut-wavformat.html
-    let headerBuffer = new ArrayBuffer(44);
-    let header = new DataStream(headerBuffer);
+    const headerBuffer = new ArrayBuffer(44);
+    const header = new DataStream(headerBuffer);
     // 'RIFF' indent
     header.writeChars('RIFF');
     // filesize (set later)
@@ -124,10 +124,8 @@ export class WavAudio {
    * Note: This method does not work outside of NodeJS environments
    */
   public getBuffer() {
-    if (isNode) {
-      return Buffer.from(this.getArrayBuffer());
-    }
-    throw new Error('The Buffer object is only available in NodeJS environments');
+    assertNodeEnv();
+    return Buffer.from(this.getArrayBuffer());
   }
 
 
@@ -137,10 +135,8 @@ export class WavAudio {
    * Note: This method will not work outside of browser environments
    */
   public getBlob() {
-    if (isBrowser) {   
-      const buffer = this.getArrayBuffer();
-      return new Blob([buffer], {type: 'audio/wav'});
-    }
-    throw new Error('The Blob object is only available in browser environments');
+    assertBrowserEnv(); 
+    const buffer = this.getArrayBuffer();
+    return new Blob([buffer], {type: 'audio/wav'});
   }
 }

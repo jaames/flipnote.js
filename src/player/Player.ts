@@ -3,6 +3,7 @@ import { PlayerEvent, PlayerEventMap, supportedEvents } from './PlayerEvent';
 import { createTimeRanges } from './playerUtils';
 import { WebglRenderer } from '../webgl';
 import { WebAudioPlayer } from '../webaudio';
+import { assert, assertRange, assertBrowserEnv } from '../utils';
 
 type PlayerLayerVisibility = Record<number, boolean>;
 
@@ -75,6 +76,7 @@ export class Player {
    * The ratio between `width` and `height` should be 3:4 for best results
    */
   constructor(el: string | HTMLCanvasElement, width: number, height: number) {
+    assertBrowserEnv();
     // if `el` is a string, use it to select an Element, else assume it's an element
     el = ('string' == typeof el) ? <HTMLCanvasElement>document.querySelector(el) : el;
     this.canvas = new WebglRenderer(el, width, height);
@@ -131,7 +133,6 @@ export class Player {
   }
 
   set volume(value) {
-    this.assertValueRange(value, 0, 1);
     this.setVolume(value);
   }
 
@@ -335,7 +336,7 @@ export class Player {
    */
   public setProgress(value: number) {
     this.assertNoteLoaded();
-    this.assertValueRange(value, 0, 100);
+    assertRange(value, 0, 100, 'progress');
     this.currentTime = this.duration * (value / 100);
   }
 
@@ -711,6 +712,7 @@ export class Player {
    * @category Audio Control
    */
   public setVolume(volume: number) {
+    assertRange(volume, 0, 1, 'volume');
     this._volume = volume;
     this.audio.volume = volume;
     this.emit(PlayerEvent.VolumeChange, this.audio.volume);
@@ -861,14 +863,7 @@ export class Player {
 
   /** @internal */
   public assertNoteLoaded() {
-    if (!this.isNoteLoaded)
-      throw new Error('No Flipnote is currently loaded in this player');
-  }
-
-  /** @internal */
-  public assertValueRange(value: number, min: number, max: number) {
-    if (value < min || value > max)
-      throw new Error(`Value ${value} must be between ${min} and ${max}`);
+    assert(this.isNoteLoaded, 'No Flipnote is currently loaded in this player');
   }
 
 }

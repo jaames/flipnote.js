@@ -1,5 +1,4 @@
-import { type } from 'os';
-import { isBrowser } from '../utils';
+import { isBrowser, assertBrowserEnv } from '../utils';
 
 /** @internal */
 const _AudioContext = (() => {
@@ -23,7 +22,7 @@ export class WebAudioPlayer {
   /** Audio sample rate */
   public sampleRate: number;
   /** Whether the audio is being run through an equalizer or not */
-  public useEq: boolean = false
+  public useEq = false;
   /** Default equalizer settings. Credit to {@link https://www.sudomemo.net/ | Sudomemo} for these */
   public eqSettings: [number, number][] = [
     [31.25, 4.1],
@@ -37,18 +36,15 @@ export class WebAudioPlayer {
     [16000, 5.1]
   ];
 
-  private _volume: number = 1;
-  private _loop: boolean = false;
+  private _volume = 1;
+  private _loop = false;
   private nodeRefs: AudioNode[] = [];
   private buffer: AudioBuffer;
   private gainNode: GainNode;
   private source: AudioBufferSourceNode;
 
   constructor() {
-    if (!isBrowser) {
-      throw new Error('The WebAudio player is only available in browser environments');
-    }
-    this.ctx = new _AudioContext();
+    assertBrowserEnv();
   }
 
   /** The audio output volume. Range is 0 to 1 */
@@ -181,7 +177,7 @@ export class WebAudioPlayer {
  */
   public async destroy() {
     this.stop();
-    const ctx = this.ctx;
+    const ctx = this.getCtx();
     this.nodeRefs.forEach(node => node.disconnect());
     this.nodeRefs = [];
     if (ctx.state !== 'closed' && typeof ctx.close === 'function')

@@ -7,7 +7,7 @@ import {
   setUniforms,
 } from 'twgl.js';
 
-import { isBrowser } from '../utils';
+import { assert, assertBrowserEnv } from '../utils';
 
 import quadShader from './shaders/quad.vert';
 import layerDrawShader from './shaders/drawLayer.frag';
@@ -73,10 +73,8 @@ export class WebglRenderer {
    * The ratio between `width` and `height` should be 3:4 for best results
    */
   constructor(el: HTMLCanvasElement, width=640, height=480) {
-    if (!isBrowser) {
-      throw new Error('The WebGL renderer is only available in browser environments');
-    }
-    const gl = <WebGLRenderingContext>el.getContext('webgl', {
+    assertBrowserEnv();
+    const gl = el.getContext('webgl', {
       antialias: false,
       alpha: true
     });
@@ -174,9 +172,8 @@ export class WebglRenderer {
       indices: indices
     });
     // collect references to buffer objects
-    for (let name in bufferInfo.attribs) {
+    for (let name in bufferInfo.attribs)
       this.refs.buffers.push(bufferInfo.attribs[name].buffer);
-    }
     return bufferInfo;
   }
 
@@ -266,10 +263,10 @@ export class WebglRenderer {
    * @param colors - Array of colors as `[R, G, B, A]`
    */
   public setPalette(colors: number[][]) {
+    assert(colors.length < 16);
     const gl = this.gl;
-    const data = this.paletteData;
+    const data = this.paletteData.fill(0);
     let dataPtr = 0;
-    data.fill(0);
     for (let i = 0; i < colors.length; i++) {
       const [r, g, b, a] = colors[i];
       data[dataPtr++] = r;
@@ -297,6 +294,7 @@ export class WebglRenderer {
       textureWidth,
       textureHeight,
     } = this;
+    assert(pixels.length === textureWidth * textureHeight);
     // we wanna draw to the frame buffer
     gl.bindFramebuffer(gl.FRAMEBUFFER, this.frameBuffer);
     gl.viewport(0, 0, textureWidth, textureHeight);
