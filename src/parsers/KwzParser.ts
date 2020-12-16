@@ -292,7 +292,8 @@ export class KwzParser extends FlipnoteParser {
     this.frameCount = frameCount;
     this.frameSpeed = frameSpeed;
     this.framerate = KWZ_FRAMERATES[frameSpeed];
-    this.duration = frameCount * (1 / this.framerate);
+    // multiply and devide by 100 to get around floating precision issues
+    this.duration = ((this.frameCount * 100) * (1 / this.framerate)) / 100;
     this.thumbFrameIndex = thumbIndex;
     this.layerVisibility = {
       1: (layerFlags & 0x1) === 0,
@@ -620,7 +621,7 @@ export class KwzParser extends FlipnoteParser {
                     const linePtr = this.readBits(5) * 8;
                     const pixels = KWZ_LINE_TABLE_COMMON.subarray(linePtr, linePtr + 8);
                     pixelBuffer.set(pixels, pixelBufferPtr);
-                  } 
+                  }
                   else {
                     const linePtr = this.readBits(13) * 8;
                     const pixels = KWZ_LINE_TABLE.subarray(linePtr, linePtr + 8);
@@ -904,8 +905,7 @@ export class KwzParser extends FlipnoteParser {
    * @category Audio
   */
   public getAudioMasterPcm(dstFreq = this.sampleRate) {
-    const duration = this.frameCount * (1 / this.framerate);
-    const dstSize = Math.ceil(duration * dstFreq);
+    const dstSize = Math.ceil(this.duration * dstFreq);
     const master = new Int16Array(dstSize);
     const hasBgm = this.hasAudioTrack(FlipnoteAudioTrack.BGM);
     const hasSe1 = this.hasAudioTrack(FlipnoteAudioTrack.SE1);

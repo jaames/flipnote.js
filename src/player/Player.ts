@@ -1,8 +1,8 @@
 import { parseSource, FlipnoteSource, Flipnote, FlipnoteFormat, FlipnoteMeta } from '../parsers';
 import { PlayerEvent, PlayerEventMap, supportedEvents } from './PlayerEvent';
-import { createTimeRanges } from './playerUtils';
 import { WebglRenderer } from '../webgl';
 import { WebAudioPlayer } from '../webaudio';
+import { createTimeRanges, padNumber, formatTime } from './playerUtils';
 import { assert, assertRange, assertBrowserEnv } from '../utils';
 
 type PlayerLayerVisibility = Record<number, boolean>;
@@ -45,6 +45,8 @@ export class Player {
   public _volume: number = 1;
   /** @internal */
   public _muted: boolean = false;
+  /** @internal */
+  public _frame: number = null;
   /** @internal */
   public isNoteLoaded: boolean = false;
   /** @internal */
@@ -105,7 +107,7 @@ export class Player {
 
   /** Current animation frame index */
   get currentFrame() {
-    return this.isNoteLoaded ? Math.floor(this.playbackTime / (1 / this.framerate)) : null;
+    return this._frame;
   }
   set currentFrame(frameIndex: number) {
     this.setCurrentFrame(frameIndex);
@@ -243,6 +245,7 @@ export class Player {
     this.isNoteLoaded = false;
     this.meta = null;
     this._src = null;
+    this._frame = 0;
     // this.playbackFrame = null;
     this.playbackTime = 0;
     this.duration = 0;
@@ -267,6 +270,7 @@ export class Player {
     this.noteFormat = note.format;
     this.duration = note.duration;
     this.playbackTime = 0;
+    this._frame = 0;
     this.isNoteLoaded = true;
     this.isPlaying = false;
     this.wasPlaying = false;
@@ -328,6 +332,26 @@ export class Player {
    */
   public getCurrentTime() {
     return this.currentTime;
+  }
+
+  /**
+   * Get the current time as a counter string, like `0:00 / 1:00`
+   * @category Playback Control
+   */
+  public getTimeCounter() {
+    const currentTime = formatTime(this.currentTime);
+    const duration = formatTime(this.duration);
+    return `${ currentTime } / ${ duration }`;
+  }
+
+  /**
+   * Get the current frame index as a counter string, like `001/999`
+   * @category Playback Control
+   */
+  public getFrameCounter() {
+    const frame = padNumber(this.currentFrame + 1, 3);
+    const total = padNumber(this.frameCount, 3);
+    return `${ frame } / ${ total }`;
   }
 
   /**
@@ -442,6 +466,7 @@ export class Player {
     const newFrameIndex = Math.max(0, Math.min(Math.floor(newFrameValue), this.frameCount - 1));
     if (newFrameIndex === this.currentFrame && !this.showThumbnail)
       return;
+    this._frame = newFrameIndex;
     this.drawFrame(newFrameIndex);
     this.showThumbnail = false;
     if (!this.isPlaying) {

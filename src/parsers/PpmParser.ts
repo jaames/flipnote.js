@@ -274,7 +274,8 @@ export class PpmParser extends FlipnoteParser {
     assert(this.frameSpeed <= 8 && this.bgmSpeed <= 8);
     ptr += 32;
     this.framerate = PPM_FRAMERATES[this.frameSpeed];
-    this.duration = this.frameCount * (1 / this.framerate);
+    // multiply and devide by 100 to get around floating precision issues
+    this.duration = ((this.frameCount * 100) * (1 / this.framerate)) / 100;
     this.bgmrate = PPM_FRAMERATES[this.bgmSpeed];
     this.soundMeta = {
       [FlipnoteAudioTrack.BGM]: {ptr: ptr,           length: bgmLen},
@@ -647,8 +648,7 @@ export class PpmParser extends FlipnoteParser {
    * @category Audio
   */
   public getAudioMasterPcm(dstFreq = this.sampleRate) {
-    const duration = this.frameCount * (1 / this.framerate);
-    const dstSize = Math.ceil(duration * dstFreq);
+    const dstSize = Math.ceil(this.duration * dstFreq);
     const master = new Int16Array(dstSize);
     const hasBgm = this.hasAudioTrack(FlipnoteAudioTrack.BGM);
     const hasSe1 = this.hasAudioTrack(FlipnoteAudioTrack.SE1);
