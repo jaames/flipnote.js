@@ -15,7 +15,11 @@ import {
   ADPCM_INDEX_TABLE_4BIT
 } from './audioUtils';
 
-import { assert, dateFromNintendoTimestamp } from '../utils';
+import {
+  assert,
+  dateFromNintendoTimestamp,
+  timeGetNoteDuration
+} from '../utils';
 
 /** 
  * KWZ framerates in frames per second, indexed by the in-app frame speed
@@ -292,8 +296,7 @@ export class KwzParser extends FlipnoteParser {
     this.frameCount = frameCount;
     this.frameSpeed = frameSpeed;
     this.framerate = KWZ_FRAMERATES[frameSpeed];
-    // multiply and devide by 100 to get around floating precision issues
-    this.duration = ((this.frameCount * 100) * (1 / this.framerate)) / 100;
+    this.duration = timeGetNoteDuration(this.frameCount, this.framerate);
     this.thumbFrameIndex = thumbIndex;
     this.layerVisibility = {
       1: (layerFlags & 0x1) === 0,
@@ -340,6 +343,12 @@ export class KwzParser extends FlipnoteParser {
     this.thumbFrameIndex = thumbFrameIndex;
     this.frameSpeed = frameSpeed;
     this.framerate = KWZ_FRAMERATES[frameSpeed];
+    this.duration = timeGetNoteDuration(this.frameCount, this.framerate);
+    this.layerVisibility = {
+      1: (layerFlags & 0x1) === 0,
+      2: (layerFlags & 0x2) === 0,
+      3: (layerFlags & 0x3) === 0,
+    };
   }
 
   private getFrameOffsets() {

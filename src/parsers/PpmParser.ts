@@ -38,7 +38,11 @@ import {
   ADPCM_STEP_TABLE
 } from './audioUtils';
 
-import { assert, dateFromNintendoTimestamp } from '../utils';
+import {
+  assert,
+  dateFromNintendoTimestamp,
+  timeGetNoteDuration
+} from '../utils';
 
 /** 
  * PPM framerates in frames per second, indexed by the in-app frame speed.
@@ -274,8 +278,7 @@ export class PpmParser extends FlipnoteParser {
     assert(this.frameSpeed <= 8 && this.bgmSpeed <= 8);
     ptr += 32;
     this.framerate = PPM_FRAMERATES[this.frameSpeed];
-    // multiply and devide by 100 to get around floating precision issues
-    this.duration = ((this.frameCount * 100) * (1 / this.framerate)) / 100;
+    this.duration = timeGetNoteDuration(this.frameCount, this.framerate);
     this.bgmrate = PPM_FRAMERATES[this.bgmSpeed];
     this.soundMeta = {
       [FlipnoteAudioTrack.BGM]: {ptr: ptr,           length: bgmLen},

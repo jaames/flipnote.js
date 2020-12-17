@@ -51,12 +51,75 @@ export class PlayerComponent extends PlayerMixin(LitElement) {
       }
 
       .PlayerControls__playButton {
-    height: 32px;
-    width: 32px;
-    padding: 2px;
-  }
+        height: 32px;
+        width: 32px;
+        padding: 2px;
+      }
+
+      .PlayerControls {
+        background: var(--flipnote-player-controls-background, none);
+      }
+
+      .PlayerControls__muteIcon {
+        width: 28px;
+        height: 28px;
+      }
+
+      .PlayerControls__row,
+      .PlayerControls__groupLeft,
+      .PlayerControls__groupRight {
+        display: flex;
+        align-items: center;
+      }
+
+      .PlayerControls__groupLeft {
+        margin-right: auto;
+      }
+
+      .PlayerControls__groupRight {
+        margin-left: auto;
+      }
+
+      .PlayerControls__playButton {
+        height: 32px;
+        width: 32px;
+        padding: 2px;
+      }
+
+      .PlayerControls__muteIcon {
+        width: 28px;
+        height: 28px;
+      }
+
+      .PlayerControls__frameCounter {
+        font-variant-numeric: tabular-nums;
+      }
+
+      .PlayerControls__progressBar {
+        flex: 1;
+      }
+
+      .PlayerControls--compact .PlayerControls__playButton {
+        margin-right: 8px;
+      }
+
+      .PlayerControls--compact .PlayerControls__progressBar {
+        flex: 1;
+      }
+
+      .PlayerControls--default .PlayerControls__playButton {
+        margin-right: 8px;
+      }
+
+      .PlayerControls--default .PlayerControls__volumeBar {
+        width: 70px;
+        margin-left: 8px;
+      }
     `;
   }
+
+  @property({ type: String })
+  public controls: string;
 
   @property({ type: String })
   get src() {
@@ -82,7 +145,16 @@ export class PlayerComponent extends PlayerMixin(LitElement) {
   private _progress = 0;
 
   @internalProperty()
+  private _counter = '';
+
+  @internalProperty()
   private _isPlaying = false;
+
+  @internalProperty()
+  private _isMuted = false;
+
+  @internalProperty()
+  private _volumeLevel = 0;
 
   private _isPlayerAvailable = false;
   private _playerSrc: any;
@@ -95,40 +167,92 @@ export class PlayerComponent extends PlayerMixin(LitElement) {
   }
 
   /** @internal */
+  renderControls() {
+    if (this.controls === 'compact') {
+      return html`
+        <div class="PlayerControls PlayerControls--compact PlayerControls__row">
+          <button @click=${ this.togglePlay } class="Button PlayerControls__playButton">
+            <flipnote-player-icon icon=${ this._isPlaying ? 'pause' : 'play' }></flipnote-player-icon>
+          </button>
+          <flipnote-player-slider 
+            class="PlayerControls__progressBar"
+            value=${ this._progress }
+            @change=${ this.handleProgressSliderChange }
+            @inputstart=${ this.handleProgressSliderInputStart }
+            @inputend=${ this.handleProgressSliderInputEnd }
+          />
+          </flipnote-player-slider>
+        </div>
+      `;
+    }
+    else {
+      return html`
+        <div class="PlayerControls PlayerControls--default">
+          <flipnote-player-slider 
+            class="PlayerControls__progressBar"
+            value=${ this._progress }
+            @change=${ this.handleProgressSliderChange }
+            @inputstart=${ this.handleProgressSliderInputStart }
+            @inputend=${ this.handleProgressSliderInputEnd }
+          />
+          </flipnote-player-slider>
+          <div class="PlayerControls__row">
+            <div class="PlayerControls__groupLeft">
+              <button @click=${ this.togglePlay } class="Button PlayerControls__playButton">
+                <flipnote-player-icon icon=${ this._isPlaying ? 'pause' : 'play' }></flipnote-player-icon>
+              </button>
+              <span class="PlayerControls__frameCounter">
+                ${ this._counter }
+              </span>
+            </div>
+            <div class="PlayerControls__groupRight">
+              <flipnote-player-icon 
+                class="PlayerControls__muteIcon"
+                @click=${ this.toggleMuted }
+                icon=${ (this._muted || this._volumeLevel === 0) ? 'volumeOff' : 'volumeOn' }
+              >
+              </flipnote-player-icon>
+              <flipnote-player-slider
+                class="PlayerControls__volumeBar"
+                value=${ this._muted ? 0 : this._volumeLevel }
+                @change=${ this.handleVolumeBarChange }
+              >
+              </flipnote-player-slider>
+            </div>
+          </div>
+        </div>
+      `;
+    }
+  }
+
+  /** @internal */
   render() {
     return html`
       <div class="Player" @keydown=${ this.handleKeyInput }>
         <div class="Player__canvasArea">
           <canvas class="Player__canvas" id="canvas"></canvas>
         </div>
-        <flipnote-player-slider 
-          value=${ this._progress }
-          @change=${ this.handleProgressSliderChange }
-          @inputstart=${ this.handleProgressSliderInputStart }
-          @inputend=${ this.handleProgressSliderInputEnd }
-        />
-        </flipnote-player-slider>
-        <div class="PlayerControls">
-
-        </div>
-        <button @click=${ this.togglePlay } class="Button PlayerControls__playButton">
-          <flipnote-player-icon icon=${ this._isPlaying ? 'pause' : 'play' }></flipnote-player-icon>
-        </button>
+        ${ this.renderControls() }
       </div>
     `;
   }
 
   /** @internal */
   firstUpdated(changedProperties: PropertyValues) {
-    const player = new Player(this.playerCanvas, 640, 480);
-    player.on(PlayerEvent.Progress, () => {
+    const player = new Player(this.playerCanvas, 320, 240);
+    player.on([PlayerEvent.Load, PlayerEvent.Close, PlayerEvent.Progress], () => {
       this._progress = player.getProgress() / 100;
+      this._counter = player.getTimeCounter();
     });
     player.on(PlayerEvent.Play, () => {
       this._isPlaying = true;
     });
     player.on(PlayerEvent.Pause, () => {
       this._isPlaying = false;
+    });
+    player.on(PlayerEvent.VolumeChange, () => {
+      this._volumeLevel = player.volume;
+      this._muted = player.muted;
     });
     if (this._playerSrc) {
       player.load(this._playerSrc);
@@ -176,6 +300,10 @@ export class PlayerComponent extends PlayerMixin(LitElement) {
 
   private handleProgressSliderInputEnd = () => {
     this.endSeek();
+  }
+
+  private handleVolumeBarChange = (e: CustomEvent) => {
+    this.setVolume(e.detail.value);
   }
 
 }
