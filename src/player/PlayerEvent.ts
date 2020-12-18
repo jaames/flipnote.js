@@ -25,6 +25,7 @@ export enum PlayerEvent {
   Emptied = 'emptied',
   Close = 'close',
   Error = 'error',
+  Destroy = 'destroy',
 }
 
 export type PlayerEventMap = Map<PlayerEvent, Function[]>;

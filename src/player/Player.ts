@@ -81,7 +81,10 @@ export class Player {
     assertBrowserEnv();
     // if `el` is a string, use it to select an Element, else assume it's an element
     el = ('string' == typeof el) ? <HTMLCanvasElement>document.querySelector(el) : el;
-    this.canvas = new WebglRenderer(el, width, height);
+    this.canvas = new WebglRenderer(el, width, height, {
+      onlost: () => this.emit(PlayerEvent.Error),
+      onrestored: () => this.load()
+    });
     this.audio = new WebAudioPlayer();
     this.canvasEl = this.canvas.el;
   }
@@ -131,7 +134,7 @@ export class Player {
 
   /** Audio volume, range `0` to `1` */
   get volume() {
-    return this._volume;
+    return this.getVolume();
   }
 
   set volume(value) {
@@ -140,7 +143,7 @@ export class Player {
 
   /** Audio mute state */
   get muted() {
-    return this._muted;
+    return this.getMuted();
   }
 
   set muted(value: boolean) {
@@ -149,7 +152,7 @@ export class Player {
 
   /** Indicates whether playback should loop once the end is reached */
   get loop() {
-    return this._loop;
+    return this.getLoop();
   }
 
   set loop(value: boolean) {
@@ -215,7 +218,7 @@ export class Player {
    * Open a Flipnote from a source
    * @category Lifecycle
    */
-  public async load(source: any) {
+  public async load(source: any = null) {
     // close currently open note first
     if (this.isNoteLoaded) 
       this.closeNote();
@@ -339,7 +342,7 @@ export class Player {
    * @category Playback Control
    */
   public getTimeCounter() {
-    const currentTime = formatTime(this.currentTime);
+    const currentTime = formatTime(Math.max(this.currentTime, 0));
     const duration = formatTime(this.duration);
     return `${ currentTime } / ${ duration }`;
   }
@@ -620,7 +623,7 @@ export class Player {
   public resize(width: number, height: number) {
     if (height !== width * .75)
       console.warn(`Canvas width to height ratio should be 3:4 for best results (got ${width}x${height})`);
-    this.canvas.resize(width, height);
+    this.canvas.setCanvasSize(width, height);
     this.forceUpdate();
   }
 
@@ -721,7 +724,7 @@ export class Player {
    * @category Audio Control
    */
   public getMuted() {
-    return this._muted;
+    return this.volume === 0 ? true : this._muted;
   }
 
   /** 
@@ -741,6 +744,14 @@ export class Player {
     this._volume = volume;
     this.audio.volume = volume;
     this.emit(PlayerEvent.VolumeChange, this.audio.volume);
+  }
+
+  /**
+   * Get the current audio volume
+   * @category Audio Control
+   */
+  public getVolume() {
+    return this._muted ? 0 : this._volume;
   }
 
   /**
@@ -872,6 +883,7 @@ export class Player {
    */
   public async destroy() {
     this.clearEvents();
+    this.emit(PlayerEvent.Destroy);
     this.closeNote();
     await this.canvas.destroy();
     await this.audio.destroy();

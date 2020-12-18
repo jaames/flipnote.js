@@ -209,12 +209,12 @@ export class PlayerComponent extends PlayerMixin(LitElement) {
               <flipnote-player-icon 
                 class="PlayerControls__muteIcon"
                 @click=${ this.toggleMuted }
-                icon=${ (this._muted || this._volumeLevel === 0) ? 'volumeOff' : 'volumeOn' }
+                icon=${ this._isMuted ? 'volumeOff' : 'volumeOn' }
               >
               </flipnote-player-icon>
               <flipnote-player-slider
                 class="PlayerControls__volumeBar"
-                value=${ this._muted ? 0 : this._volumeLevel }
+                value=${ this._volumeLevel }
                 @change=${ this.handleVolumeBarChange }
               >
               </flipnote-player-slider>
@@ -242,7 +242,7 @@ export class PlayerComponent extends PlayerMixin(LitElement) {
     const player = new Player(this.playerCanvas, 320, 240);
     player.on([PlayerEvent.Load, PlayerEvent.Close, PlayerEvent.Progress], () => {
       this._progress = player.getProgress() / 100;
-      this._counter = player.getTimeCounter();
+      this._counter = player.getFrameCounter();
     });
     player.on(PlayerEvent.Play, () => {
       this._isPlaying = true;
@@ -250,9 +250,16 @@ export class PlayerComponent extends PlayerMixin(LitElement) {
     player.on(PlayerEvent.Pause, () => {
       this._isPlaying = false;
     });
-    player.on(PlayerEvent.VolumeChange, () => {
+    player.on([PlayerEvent.Load, PlayerEvent.VolumeChange], () => {
       this._volumeLevel = player.volume;
-      this._muted = player.muted;
+      this._isMuted = player.muted;
+    });
+    player.on([PlayerEvent.Error], () => {
+      console.log('err!')
+    });
+    // catch any player event and dispatch it as a DOM event
+    player.on(PlayerEvent.__Any, (eventName: string, args: any[]) => {
+      this.dispatchEvent(new Event(eventName));
     });
     if (this._playerSrc) {
       player.load(this._playerSrc);

@@ -2,9 +2,11 @@
  * Assert condition is true
  * @internal
  */
-export function assert(condition: boolean, errMsg: string = ''): asserts condition {
-  if (!condition)
-    throw new Error(errMsg ? errMsg : 'Assert failed');
+export function assert(condition: boolean, errMsg: string = 'Assert failed'): asserts condition {
+  if (!condition) {
+    console.trace(errMsg);
+    throw new Error(errMsg);
+  }
 }
 
 /**
