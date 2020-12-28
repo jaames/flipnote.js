@@ -1,3 +1,5 @@
+/// <reference types="resize-observer-browser" /> 
+
 import { 
   LitElement,
   html,
@@ -11,6 +13,7 @@ import {
 
 import { Player, PlayerEvent } from '../player';
 import { PlayerMixin } from './PlayerMixin';
+import { nextPaint } from './nextPaint';
 
 import { SliderComponent } from './SliderComponent';
 import { IconComponent } from './IconComponent';
@@ -23,23 +26,9 @@ export class PlayerComponent extends PlayerMixin(LitElement) {
 
   static get styles() {
     return css`
-      .Button {
-        border: 0;
-        padding: 0;
-        outline: 0;
-        -webkit-appearance: none;
-        display: block;
-        font-family: inherit;
-        font-size: inherit;
-        text-align: center;
-        cursor: pointer;
-        background: var(--flipnote-player-button-background, #FFD3A6);
-        color: var(--flipnote-player-button-color, #F36A2D);
-        border-radius: 4px;
-      }
 
-      .Button flipnote-player-icon {
-        display: block;
+      :host { 
+        display: inline-block; 
       }
 
       .Player {
@@ -154,6 +143,25 @@ export class PlayerComponent extends PlayerMixin(LitElement) {
         width: 70px;
         margin-left: 8px;
       }
+
+      .Button {
+        border: 0;
+        padding: 0;
+        outline: 0;
+        -webkit-appearance: none;
+        display: block;
+        font-family: inherit;
+        font-size: inherit;
+        text-align: center;
+        cursor: pointer;
+        background: var(--flipnote-player-button-background, #FFD3A6);
+        color: var(--flipnote-player-button-color, #F36A2D);
+        border-radius: 4px;
+      }
+
+      .Button flipnote-player-icon {
+        display: block;
+      }
     `;
   }
 
@@ -161,14 +169,31 @@ export class PlayerComponent extends PlayerMixin(LitElement) {
   public controls: string;
 
   @property({ type: String })
+  get width() {
+    return this._width;
+  }
+
+  set width(value: number | string) {
+    const oldValue = this._width;
+    this._width = value;
+    // wrangle plain width value to CSS pixel units if possible
+    this._cssWidth = (!isNaN(+value)) ? `${value}px` : value;
+    // wait for the next browser paint (when the CSS value is applied) to handle updating the canvas
+    nextPaint(() => this.updateCanvasSize());
+    this.requestUpdate('width', oldValue);
+  }
+
+  @property({ type: String })
   get src() {
-    return this.player.src;
+    return this._playerSrc;
   }
 
   set src(src: any) {
+    const oldValue = this._playerSrc;
     if (this._isPlayerAvailable)
       this.player.src = src;
     this._playerSrc = src;
+    this.requestUpdate('src', oldValue);
   }
 
   @property({ type: Boolean })
@@ -177,8 +202,16 @@ export class PlayerComponent extends PlayerMixin(LitElement) {
   }
 
   set autoplay(value: boolean) {
+    const oldValue = this.player.autoplay;
     this.player.autoplay = value;
+    this.requestUpdate('autoplay', oldValue);
   }
+
+  @internalProperty()
+  private _width: string | number = 'auto';
+
+  @internalProperty()
+  private _cssWidth: string | number = 'auto';
 
   @internalProperty()
   private _progress = 0;
@@ -201,21 +234,28 @@ export class PlayerComponent extends PlayerMixin(LitElement) {
   @internalProperty()
   private _volumeLevel = 0;
 
-  private _isPlayerAvailable = false;
-  private _playerSrc: any;
-
   @query('#canvas')
   private playerCanvas: HTMLCanvasElement;
+
+  private _isPlayerAvailable = false;
+  private _playerSrc: any;
+  private _resizeObserver: ResizeObserver;
   
   constructor() {
     super();
+    this._resizeObserver = new ResizeObserver(this.handleResize);
   }
 
   /** @internal */
   render() {
     return html`
+      <style>
+        :host {
+          width: ${ this._cssWidth }
+        }
+      </style>
       <div class="Player" @keydown=${ this.handleKeyInput }>
-        <div class="CanvasArea">
+        <div class="CanvasArea" @click=${ this.togglePlay }>
           <canvas class="PlayerCanvas" id="canvas"></canvas>
           ${ this._isLoading ?
             html`<div class="Overlay">
@@ -296,9 +336,18 @@ export class PlayerComponent extends PlayerMixin(LitElement) {
 
   /** @internal */
   firstUpdated(changedProperties: PropertyValues) {
-    const player = new Player(this.playerCanvas, 320, 240);
+    const player = new Player(this.playerCanvas, 256, 192);
+    this._resizeObserver.observe(this);
+    this.player = player;
     player.on(PlayerEvent.LoadStart, () => {
       this._isLoading = true;
+    });
+    player.on(PlayerEvent.Load, () => {
+      this.updateCanvasSize();
+    });
+    player.on(PlayerEvent.Error, () => {
+      this._isLoading = false;
+      this._isError = true;
     });
     player.on([PlayerEvent.Load, PlayerEvent.Close, PlayerEvent.Progress], () => {
       this._isLoading = false;
@@ -316,25 +365,43 @@ export class PlayerComponent extends PlayerMixin(LitElement) {
       this._volumeLevel = player.volume;
       this._isMuted = player.muted;
     });
-    player.on([PlayerEvent.Error], () => {
-      this._isLoading = false;
-      this._isError = true;
-    });
     // catch any player event and dispatch it as a DOM event
     player.on(PlayerEvent.__Any, (eventName: string, args: any[]) => {
       this.dispatchEvent(new Event(eventName));
     });
-    if (this._playerSrc) {
+    if (this._playerSrc)
       player.load(this._playerSrc);
-    }
-    this.player = player;
     this._isPlayerAvailable = true;
   }
 
   /** @internal */
   disconnectedCallback() {
+    // disable resize observer
+    this._resizeObserver.disconnect();
     // clean up webgl and buffer stuff if this element is removed from DOM
     this.destroy();
+  }
+
+  private updateCanvasSize() {
+    const isPlayerAvailable = this._isPlayerAvailable;
+    // default width is DSi note size
+    let canvasWidth = 256;
+    // use the Flipnote's native width
+    if (this._width === 'auto' && isPlayerAvailable && this.player.isNoteLoaded) {
+      canvasWidth = this.player.note.width;
+    }
+    // expand to fill the full container width
+    else if (this._width !== 'auto') {
+      canvasWidth = this.getBoundingClientRect().width;
+    }
+    // only resize the canvas if it's actually available
+    // TODO: initialise canvas right away then mount into DOM later?
+    if (isPlayerAvailable)
+      this.player.resize(canvasWidth, canvasWidth * .75);
+  }
+
+  private handleResize = (entries: ResizeObserverEntry[]) => {
+    this.updateCanvasSize();
   }
 
   private handleKeyInput = (e: KeyboardEvent) => {

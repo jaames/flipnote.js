@@ -66,6 +66,7 @@
     "typescript": "^3.5.3"
   },
   "dependencies": {
+    "@types/resize-observer-browser": "^0.1.4",
     "lit-element": "^2.4.0",
     "twgl.js": "^4.15.2"
   }
