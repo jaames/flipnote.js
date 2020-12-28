@@ -271,6 +271,30 @@ export class KwzParser extends FlipnoteParser {
     return result;
   }
 
+  private readFsid() {
+    if (this.settings.dsiGalleryNote) { // format as DSi PPM FSID
+      const hex = this.readHex(10, true);
+      return hex.slice(2, 18);
+    }
+    const hex = this.readHex(10);
+    return `${hex.slice(0, 4)}-${hex.slice(4, 8)}-${hex.slice(8, 12)}-${hex.slice(12, 18)}`.toLowerCase();
+  }
+
+  private readFilename() {
+    const ptr = this.pointer;
+    const chars = this.readChars(28);
+    if (chars.length === 28)
+      return chars;
+    // Otherwise, this is likely a DSi Library note, 
+    // where sometimes Nintendo's buggy PPM converter includes the original packed PPM filename
+    this.seek(ptr);
+    const mac = this.readHex(3);
+    const random = this.readChars(13);
+    const edits = this.readUint16().toString().padStart(3, '0');
+    this.seek(ptr + 28);
+    return `${ mac }_${ random }_${ edits }`;
+  }
+
   private decodeMeta() {
     assert(this.sectionMap.has('KFH'));
     this.seek(this.sectionMap.get('KFH').ptr + 12);
@@ -278,15 +302,15 @@ export class KwzParser extends FlipnoteParser {
     const modifiedTime = dateFromNintendoTimestamp(this.readUint32());
     // const simonTime = 
     const appVersion = this.readUint32();
-    const rootAuthorId = this.readHex(10);
-    const parentAuthorId = this.readHex(10);
-    const currentAuthorId = this.readHex(10);
+    const rootAuthorId = this.readFsid();
+    const parentAuthorId = this.readFsid();
+    const currentAuthorId = this.readFsid();
     const rootAuthorName = this.readWideChars(11);
     const parentAuthorName = this.readWideChars(11);
     const currentAuthorName = this.readWideChars(11);
-    const rootFilename = this.readChars(28);
-    const parentFilename = this.readChars(28);
-    const currentFilename = this.readChars(28);
+    const rootFilename = this.readFilename();
+    const parentFilename = this.readFilename();
+    const currentFilename = this.readFilename();
     const frameCount = this.readUint16();
     const thumbIndex = this.readUint16();
     const flags = this.readUint16();
@@ -317,16 +341,19 @@ export class KwzParser extends FlipnoteParser {
         username: rootAuthorName,
         fsid: rootAuthorId,
         filename: rootFilename,
+        isDsiFilename: rootFilename.length !== 28
       },
       parent: {
         username: parentAuthorName,
         fsid: parentAuthorId,
         filename: parentFilename,
+        isDsiFilename: parentFilename.length !== 28
       },
       current: {
         username: currentAuthorName,
         fsid: currentAuthorId,
         filename: currentFilename,
+        isDsiFilename: currentFilename.length !== 28
       },
     };
   }
@@ -518,6 +545,7 @@ export class KwzParser extends FlipnoteParser {
       if (diffingFlag !== 0)
         this.decodeFrame(frameIndex - 1, diffingFlag, true);
     }
+    
     let framePtr = this.frameDataOffsets[frameIndex];
     const layerSizes = this.frameLayerSizes[frameIndex];
 
@@ -927,7 +955,7 @@ export class KwzParser extends FlipnoteParser {
       this.pcmAudioMix(bgmPcm, master, 0);
     }
     // Mix sound effects
-    if (hasSe1 || hasSe2 || hasSe3) {
+    if (hasSe1 || hasSe2 || hasSe3 || hasSe4) {
       const samplesPerFrame = dstFreq / this.framerate;
       const se1Pcm = hasSe1 ? this.getAudioTrackPcm(FlipnoteAudioTrack.SE1, dstFreq) : null;
       const se2Pcm = hasSe2 ? this.getAudioTrackPcm(FlipnoteAudioTrack.SE2, dstFreq) : null;

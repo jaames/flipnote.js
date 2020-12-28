@@ -181,11 +181,10 @@ export class PpmParser extends FlipnoteParser {
   }
 
   private readFilename() {
-    return [
-      this.readHex(3),
-      this.readChars(13),
-      this.readUint16().toString().padStart(3, '0')
-    ].join('_');
+    const mac = this.readHex(3);
+    const random = this.readChars(13);
+    const edits = this.readUint16().toString().padStart(3, '0');
+    return `${ mac }_${ random }_${ edits }`;
   }
 
   private decodeMeta() {
