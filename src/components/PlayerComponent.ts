@@ -255,7 +255,7 @@ export class PlayerComponent extends PlayerMixin(LitElement) {
         }
       </style>
       <div class="Player" @keydown=${ this.handleKeyInput }>
-        <div class="CanvasArea" @click=${ this.togglePlay }>
+        <div class="CanvasArea" @click=${ this.handlePlayToggle }>
           <canvas class="PlayerCanvas" id="canvas"></canvas>
           ${ this._isLoading ?
             html`<div class="Overlay">
@@ -280,7 +280,7 @@ export class PlayerComponent extends PlayerMixin(LitElement) {
     if (this.controls === 'compact') {
       return html`
         <div class="Controls Controls--compact Controls__row">
-          <button @click=${ this.togglePlay } class="Button Controls__playButton">
+          <button @click=${ this.handlePlayToggle } class="Button Controls__playButton">
             <flipnote-player-icon icon=${ this._isPlaying ? 'pause' : 'play' }></flipnote-player-icon>
           </button>
           <flipnote-player-slider 
@@ -307,7 +307,7 @@ export class PlayerComponent extends PlayerMixin(LitElement) {
           </flipnote-player-slider>
           <div class="Controls__row">
             <div class="Controls__groupLeft">
-              <button @click=${ this.togglePlay } class="Button Controls__playButton">
+              <button @click=${ this.handlePlayToggle } class="Button Controls__playButton">
                 <flipnote-player-icon icon=${ this._isPlaying ? 'pause' : 'play' }></flipnote-player-icon>
               </button>
               <span class="Controls__frameCounter">
@@ -317,7 +317,7 @@ export class PlayerComponent extends PlayerMixin(LitElement) {
             <div class="Controls__groupRight">
               <flipnote-player-icon 
                 class="MuteIcon"
-                @click=${ this.toggleMuted }
+                @click=${ this.handleMuteToggle }
                 icon=${ this._isMuted ? 'volumeOff' : 'volumeOn' }
               >
               </flipnote-player-icon>
@@ -394,8 +394,8 @@ export class PlayerComponent extends PlayerMixin(LitElement) {
     else if (this._width !== 'auto') {
       canvasWidth = this.getBoundingClientRect().width;
     }
-    // only resize the canvas if it's actually available
     // TODO: initialise canvas right away then mount into DOM later?
+    // 4:3 aspect ratio is forced
     if (isPlayerAvailable)
       this.player.resize(canvasWidth, canvasWidth * .75);
   }
@@ -427,20 +427,34 @@ export class PlayerComponent extends PlayerMixin(LitElement) {
     }
   }
 
+  private handlePlayToggle = (e: InputEvent) => {
+    this.togglePlay();
+    this.focus();
+  }
+
+  private handleMuteToggle = (e: InputEvent) => {
+    this.toggleMuted();
+    this.focus();
+  }
+
   private handleProgressSliderChange = (e: CustomEvent) => {
     this.seek(e.detail.value);
+    this.focus();
   }
 
   private handleProgressSliderInputStart = () => {
     this.startSeek();
+    this.focus();
   }
 
   private handleProgressSliderInputEnd = () => {
     this.endSeek();
+    this.focus();
   }
 
   private handleVolumeBarChange = (e: CustomEvent) => {
     this.setVolume(e.detail.value);
+    this.focus();
   }
 
 }
