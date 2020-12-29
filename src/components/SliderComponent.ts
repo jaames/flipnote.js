@@ -11,10 +11,12 @@ import {
 import { classMap } from 'lit-html/directives/class-map.js';
 import { styleMap } from 'lit-html/directives/style-map.js';
 
+/** @internal */
 type SliderOrientation = 'horizontal' | 'vertical';
 
 /**
  * @category Web Component
+ * @internal
  */
 @customElement('flipnote-player-slider')
 export class SliderComponent extends LitElement {

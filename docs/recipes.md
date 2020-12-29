@@ -1,4 +1,4 @@
-This page provides some basic recipes for achieving common tasks with flipnote.js -- it assumes you have installed the library via one of the methods listed on the {@page Getting Started} guide.
+This page provides some basic recipes for achieving common tasks with flipnote.js -- it assumes you have installed the library via one of the methods listed on the {@page Getting Started} guide, and have very basic working knowledge of JavaScript.
 
 - [Opening a Flipnote](#opening-a-flipnote)
 - [Flipnote GIF export](#flipnote-gif-export)
@@ -56,7 +56,7 @@ See also: [Using files from web applications](https://developer.mozilla.org/en-U
 
 ## Flipnote GIF export
 
-This section assumes you have already opened your Flipnote as a {@link Flipnote} object called `note`.
+flipnote.js comes with a built-in GIF exporter, which is the easiest way to convert a single Flipnote frame - or the whole animation sequence - into a standard image format. This section assumes you have already opened your Flipnote as a {@link Flipnote} object called `note`.
 
 ### Encode GIF (web, node)
 
@@ -76,7 +76,7 @@ const gif = flipnote.GifImage.fromFlipnote(note);
 
 ### Save GIF (web)
 
-In browser enviornments, it's recommended to use a library like {@link https://github.com/eligrey/FileSaver.js/ | FileSaver.js} to trigger an instant download of the GIF:
+In browser enviornments, it's recommended to use the `saveAs` function from the {@link https://github.com/eligrey/FileSaver.js/ | FileSaver.js} library to trigger an instant download of the GIF:
 
 ```js
 saveAs(gif.getBlob(), this.meta.current.filename + '.gif');
@@ -98,6 +98,7 @@ fs.writeFile(this.meta.current.filename + '.gif', buffer);
 
 ## Flipnote WAV export
 
+flipnote.js also comes with a built-in WAV encoder, for converting Flipnote audio tracks into a standard audio format.x
 This section assumes you have already opened your Flipnote as a {@link Flipnote} object called `note`.
 
 ### Encode WAV (web, node)
@@ -123,7 +124,7 @@ const wav = flipnoteWavAudio.fromFlipnote(note);
 
 ### Save WAV (web)
 
-In browser enviornments, it's recommended to use a library like {@link https://github.com/eligrey/FileSaver.js/ | FileSaver.js} to trigger an instant download of the WAV:
+In browser enviornments, it's recommended to use the `saveAs` function from the {@link https://github.com/eligrey/FileSaver.js/ | FileSaver.js} library to trigger an instant download of the WAV:
 
 ```js
 saveAs(wav.getBlob(), this.meta.current.filename + '.wav');

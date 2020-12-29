@@ -1,3 +1,7 @@
+/** 
+ * Player event types
+ * @internal
+ */
 export enum PlayerEvent {
   __Any = 'any', // special event, gets called on everything
   Play = 'play',
@@ -28,8 +32,10 @@ export enum PlayerEvent {
   Destroy = 'destroy',
 }
 
+/** @internal */
 export type PlayerEventMap = Map<PlayerEvent, Function[]>;
 
+/** @internal */
 export const supportedEvents: PlayerEvent[] = [
   PlayerEvent.Play,
   PlayerEvent.Pause,

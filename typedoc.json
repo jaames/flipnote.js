@@ -6,7 +6,7 @@
   "excludeProtected": true,
   "excludeNotExported": true,
   "stripInternal": true,
-  "theme": "pages-plugin",
+  "theme": "./docs/theme",
   "pages": {
     "groups": [
       {

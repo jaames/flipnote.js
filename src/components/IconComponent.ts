@@ -25,6 +25,7 @@ const iconMap: Record<string, string> = {
  * Flipnote player icon component
  * 
  * @category Web Component
+ * @internal
  */
 @customElement('flipnote-player-icon')
 export class IconComponent extends LitElement {

@@ -1,6 +1,6 @@
 {
   "name": "flipnote.js",
-  "version": "5.0.0",
+  "version": "5.1.0",
   "description": "API for handling Flipnote Studio's animation formats, capable of real-time playback using webGL",
   "module": "dist/flipnote.es.js",
   "main": "dist/flipnote.js",
@@ -13,7 +13,11 @@
     "build:min": "rollup -c --environment TARGET:web,BUILD:production",
     "build:es": "rollup -c --environment TARGET:web,ES_MODULE,BUILD:production",
     "build:webcomponent": "rollup -c --environment TARGET:webcomponent,BUILD:production",
-    "docs": "typedoc"
+    "docs": "typedoc && npm run docs:copyjs && npm run docs:copyppm && npm run docs:copykwz",
+    "docs:copyppm": "mkdir -p ./www/assets/notes && yes | cp ./test/samples/*.ppm ./www/assets/notes",
+    "docs:copykwz": "mkdir -p ./www/assets/notes && yes | cp ./test/samples/*.kwz ./www/assets/notes",
+    "docs:copyjs": "yes | cp ./dist/*.js ./www/assets/js",
+    "docs:dev": "npm run docs && static www -p 9000"
   },
   "files": [
     "dist/**/*"
@@ -49,6 +53,7 @@
     "@rollup/plugin-node-resolve": "^8.0.1",
     "@rollup/plugin-replace": "^2.3.3",
     "@types/node": "^14.14.2",
+    "node-static": "^0.7.11",
     "rollup": "^2.15.0",
     "rollup-plugin-bundle-size": "^1.0.3",
     "rollup-plugin-copy": "^3.3.0",

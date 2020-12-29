@@ -20,6 +20,7 @@ import { IconComponent } from './IconComponent';
 
 /**
  * @category Web Component
+ * @internal
  */
 @customElement('flipnote-player')
 export class PlayerComponent extends PlayerMixin(LitElement) {
@@ -120,6 +121,7 @@ export class PlayerComponent extends PlayerMixin(LitElement) {
       }
 
       .Controls__frameCounter {
+        min-width: 90px;
         font-variant-numeric: tabular-nums;
       }
 

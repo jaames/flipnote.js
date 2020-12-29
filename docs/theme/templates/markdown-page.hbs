@@ -1,0 +1,32 @@
+{{> header}}
+
+<div class="container container-main page-markdown">
+    <div class="row">
+        <div class="col-8 col-content">
+            <div class="tsd-panel tsd-typography">
+                <div>
+                    {{#markdown}}{{{model.pagesPlugin.item.contents}}}{{/markdown}}
+                </div>
+            </div>
+        </div>
+        <div class="col-4 col-menu menu-sticky-wrap menu-highlight">
+            <nav class="tsd-navigation primary">
+                <ul>
+                    {{#each navigation.children}}
+                        {{> navigation}}
+                    {{/each}}
+                </ul>
+            </nav>
+
+            <nav class="tsd-navigation secondary menu-sticky">
+                <ul class="before-current">
+                    {{#each toc.children}}
+                        {{> toc.root}}
+                    {{/each}}
+                </ul>
+            </nav>
+        </div>
+    </div>
+</div>
+
+{{> footer}}

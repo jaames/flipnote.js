@@ -119,12 +119,6 @@ module.exports = {
     }),
     // only minify if we're producing a non-es production build
     isProdBuild && !isEsmoduleBuild && terser({
-      // mangle props starting with _, since they're usually not public parts of the API
-      mangle: {
-        properties: {
-          regex: /^_/
-        },
-      },
       // preserve banner comment
       output: {
         comments: function(node, comment) {
