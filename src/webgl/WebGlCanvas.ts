@@ -7,7 +7,7 @@ import {
   setUniforms,
 } from 'twgl.js';
 
-import { isBrowser } from '../utils';
+import { assert, assertBrowserEnv } from '../utils';
 
 import quadShader from './shaders/quad.vert';
 import layerDrawShader from './shaders/drawLayer.frag';
@@ -25,30 +25,48 @@ interface ResourceMap {
   framebuffers: WebGLFramebuffer[];
 };
 
+interface WebglRendererOptions {
+  /** Function to be called if the context is lost */
+  onlost: () => void;
+  /** Function to be called if the context is restored */
+  onrestored: () => void;
+};
+
 /**
  * Animation frame renderer, built around the {@link https://developer.mozilla.org/en-US/docs/Web/API/WebGL_API WebGL} API
  * 
  * Only available in browser contexts
  */
 export class WebglRenderer {
+
+  static defaultOptions: WebglRendererOptions = {
+    onlost: () => {},
+    onrestored: () => {},
+  };
   /** Canvas HTML element being used as a rendering surface */
   public el: HTMLCanvasElement;
   /** Rendering context - see {@link https://developer.mozilla.org/en-US/docs/Web/API/WebGLRenderingContext} */
   public gl: WebGLRenderingContext;
+  /** View width (CSS pixels) */
+  public width: number;
+  /** View height (CSS pixels) */
+  public height: number;
   /** 
-   * Backing canvas width (pixels)
+   * Backing canvas width (real pixels)
    * Note that this factors in device pixel ratio, so it may not reflect the size of the canvas in CSS pixels
    */
   public screenWidth: number;
   /** 
-   * Backing canvas height (pixels)
+   * Backing canvas height (real pixels)
    * Note that this factors in device pixel ratio, so it may not reflect the size of the canvas in CSS pixels
    */
   public screenHeight: number;
 
+  private options: WebglRendererOptions;
   private layerDrawProgram: ProgramInfo; // for drawing layers to a renderbuffer
   private postProcessProgram: ProgramInfo; // for drawing renderbuffer w/ filtering
   private quadBuffer: BufferInfo;
+  private paletteData: Uint8Array;
   private paletteTexture: WebGLTexture;
   private layerTexture: WebGLTexture;
   private frameTexture: WebGLTexture;
@@ -62,6 +80,7 @@ export class WebglRenderer {
     buffers: [],
     framebuffers: []
   };
+  private isCtxLost = false;
 
   /**
    * Creates a new WebGlCanvas instance
@@ -71,29 +90,38 @@ export class WebglRenderer {
    * 
    * The ratio between `width` and `height` should be 3:4 for best results
    */
-  constructor(el: HTMLCanvasElement, width=640, height=480) {
-    if (!isBrowser) {
-      throw new Error('The WebGL renderer is only available in browser environments');
-    }
-    const gl = <WebGLRenderingContext>el.getContext('webgl', {
+  constructor(el: HTMLCanvasElement, width=640, height=480, options: Partial<WebglRendererOptions> = {}) {
+    assertBrowserEnv();
+    this.el = el;
+    this.width = width;
+    this.height = height;
+    this.options = { ...WebglRenderer.defaultOptions, ...options };
+    el.addEventListener('webglcontextlost', this.handleContextLoss, false);
+    el.addEventListener('webglcontextrestored', this.handleContextRestored, false);
+    this.gl = el.getContext('webgl', {
       antialias: false,
       alpha: true
     });
-    this.el = el;
-    this.gl = gl;
+    this.init();
+  }
+
+  public init() {
+    const gl = this.gl;
     this.layerDrawProgram = this.createProgram(quadShader, layerDrawShader);
     this.postProcessProgram = this.createProgram(quadShader, postProcessShader);
     this.quadBuffer = this.createScreenQuad(-1, -1, 2, 2, 8, 8);
     this.setBuffersAndAttribs(this.layerDrawProgram, this.quadBuffer);
     this.setBuffersAndAttribs(this.postProcessProgram, this.quadBuffer);
-    this.paletteTexture = this.createTexture(gl.RGBA, gl.NEAREST, gl.CLAMP_TO_EDGE, 256, 1);
+    this.paletteData = new Uint8Array(8 * 4);
+    this.paletteTexture = this.createTexture(gl.RGBA, gl.NEAREST, gl.CLAMP_TO_EDGE, 8, 1);
     this.layerTexture = this.createTexture(gl.ALPHA, gl.NEAREST, gl.CLAMP_TO_EDGE);
     this.frameTexture = this.createTexture(gl.RGBA, gl.LINEAR, gl.CLAMP_TO_EDGE);
     this.frameBuffer = this.createFrameBuffer(this.frameTexture);
-    this.setCanvasSize(width, height);
+    this.setCanvasSize(this.width, this.height);
   }
 
   private createProgram(vertexShaderSource: string, fragmentShaderSource: string) {
+    assert(!this.isCtxLost);
     const gl = this.gl;
     const vert = this.createShader(gl.VERTEX_SHADER, vertexShaderSource);
     const frag = this.createShader(gl.FRAGMENT_SHADER, fragmentShaderSource);
@@ -104,7 +132,7 @@ export class WebglRenderer {
     // link program
     gl.linkProgram(program);
     if (!gl.getProgramParameter(program, gl.LINK_STATUS)) {
-      let log = gl.getProgramInfoLog(program);
+      const log = gl.getProgramInfoLog(program);
       gl.deleteProgram(program);
       throw new Error(log);
     }
@@ -114,6 +142,7 @@ export class WebglRenderer {
   }
 
   private createShader(type: number, source: string) {
+    assert(!this.isCtxLost);
     const gl = this.gl;
     const shader = gl.createShader(type);
     gl.shaderSource(shader, source);
@@ -130,6 +159,7 @@ export class WebglRenderer {
 
   // creating a subdivided quad seems to produce slightly nicer texture filtering
   private createScreenQuad(x0: number, y0: number, width: number, height: number, xSubdivs: number, ySubdivs: number) {
+    assert(!this.isCtxLost);
     const numVerts = (xSubdivs + 1) * (ySubdivs + 1);
     const numVertsAcross = xSubdivs + 1;
     const positions = new Float32Array(numVerts * 2);
@@ -172,9 +202,8 @@ export class WebglRenderer {
       indices: indices
     });
     // collect references to buffer objects
-    for (let name in bufferInfo.attribs) {
+    for (let name in bufferInfo.attribs)
       this.refs.buffers.push(bufferInfo.attribs[name].buffer);
-    }
     return bufferInfo;
   }
 
@@ -185,6 +214,7 @@ export class WebglRenderer {
   }
 
   private createTexture(type: number, minMag: number, wrap: number, width = 1, height = 1) {
+    assert(!this.isCtxLost);
     const gl = this.gl;
     const tex = gl.createTexture();
     gl.bindTexture(gl.TEXTURE_2D, tex);
@@ -198,6 +228,7 @@ export class WebglRenderer {
   }
 
   private createFrameBuffer(colorTexture: WebGLTexture) {
+    assert(!this.isCtxLost);
     const gl = this.gl;
     const fb = gl.createFramebuffer();
     gl.bindFramebuffer(gl.FRAMEBUFFER, fb);
@@ -219,9 +250,12 @@ export class WebglRenderer {
    * The ratio between `width` and `height` should be 3:4 for best results
    */
   public setCanvasSize(width: number, height: number) {
+    assert(!this.isCtxLost);
     const dpi = window.devicePixelRatio || 1;
     const internalWidth = width * dpi;
     const internalHeight = height * dpi;
+    this.width = width;
+    this.height = height;
     this.el.width = internalWidth;
     this.el.height = internalHeight;
     this.screenWidth = internalWidth;
@@ -249,6 +283,7 @@ export class WebglRenderer {
    * @param colors - Paper color as `[R, G, B, A]`
    */
   public clearFrameBuffer(paperColor: number[]) {
+    assert(!this.isCtxLost);
     const gl = this.gl;
     // bind to the frame buffer
     gl.bindFramebuffer(gl.FRAMEBUFFER, this.frameBuffer);
@@ -264,8 +299,10 @@ export class WebglRenderer {
    * @param colors - Array of colors as `[R, G, B, A]`
    */
   public setPalette(colors: number[][]) {
+    assert(!this.isCtxLost);
+    assert(colors.length < 16);
     const gl = this.gl;
-    const data = new Uint8Array(256 * 4);
+    const data = this.paletteData.fill(0);
     let dataPtr = 0;
     for (let i = 0; i < colors.length; i++) {
       const [r, g, b, a] = colors[i];
@@ -276,7 +313,7 @@ export class WebglRenderer {
     }
     // update layer texture pixels
     gl.bindTexture(gl.TEXTURE_2D, this.paletteTexture);
-    gl.texImage2D(gl.TEXTURE_2D, 0, gl.RGBA, 256, 1, 0, gl.RGBA, gl.UNSIGNED_BYTE, data);
+    gl.texImage2D(gl.TEXTURE_2D, 0, gl.RGBA, 8, 1, 0, gl.RGBA, gl.UNSIGNED_BYTE, data);
   }
 
   /**
@@ -294,6 +331,8 @@ export class WebglRenderer {
       textureWidth,
       textureHeight,
     } = this;
+    assert(!this.isCtxLost);
+    assert(pixels.length === textureWidth * textureHeight);
     // we wanna draw to the frame buffer
     gl.bindFramebuffer(gl.FRAMEBUFFER, this.frameBuffer);
     gl.viewport(0, 0, textureWidth, textureHeight);
@@ -319,6 +358,7 @@ export class WebglRenderer {
    */
   public composite() {
     const gl = this.gl;
+    assert(!this.isCtxLost);
     // setting gl.FRAMEBUFFER will draw directly to the screen
     gl.bindFramebuffer(gl.FRAMEBUFFER, null);
     gl.viewport(0, 0, gl.drawingBufferWidth, gl.drawingBufferHeight);
@@ -337,14 +377,40 @@ export class WebglRenderer {
     gl.drawElements(gl.TRIANGLES, this.quadBuffer.numElements, this.quadBuffer.elementType, 0);
   }
 
-  public resize(width=640, height=480) {
-    this.setCanvasSize(width, height);
+  /**
+   * Returns true if the webGL context has returned an error
+   */
+  public isErrorState() {
+    const gl = this.gl;
+    const error = gl.getError();
+    return error != gl.NO_ERROR && error != gl.CONTEXT_LOST_WEBGL;
+  }
+
+  /**
+   * Only a certain number of WebGL contexts can be added to a single page before the browser will start culling old contexts. 
+   * This method returns true if it has been culled, false if not
+   */
+  public isLost() {
+    return this.gl.isContextLost();
+  }
+
+  private handleContextLoss = (e: Event) => {
+    e.preventDefault();
+    this.destroy();
+    this.isCtxLost = true;
+    this.options.onlost();
+  }
+
+  private handleContextRestored = (e: Event) => {
+    this.isCtxLost = false;
+    this.init();
+    this.options.onrestored();
   }
 
   /**
    * Frees any resources used by this canvas instance
    */
-  public destroy() {
+  public async destroy() {
     const refs = this.refs;
     const gl = this.gl;
     refs.shaders.forEach((shader) => {
@@ -367,6 +433,7 @@ export class WebglRenderer {
       gl.deleteProgram(program);
     });
     refs.programs = [];
+    this.paletteData = null;
     // shrink the canvas to reduce memory usage until it is garbage collected
     gl.canvas.width = 1;
     gl.canvas.height = 1;

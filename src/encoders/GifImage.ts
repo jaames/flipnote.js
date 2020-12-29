@@ -1,7 +1,7 @@
 import { DataStream, ByteArray } from '../utils/index';
 import { LzwCompressor } from './LwzCompressor';
 import { Flipnote } from '../parsers/index';
-import { isNode, isBrowser } from '../utils';
+import { assert, assertNodeEnv, assertBrowserEnv } from '../utils';
 
 /**
  * GIF RGBA palette color definition
@@ -91,10 +91,12 @@ export class GifImage {
       repeat: flipnote.meta.loop ? -1 : 0,
       ...settings
     });
+
     gif.palette = flipnote.globalPalette;
-    for (let frameIndex = 0; frameIndex < flipnote.frameCount; frameIndex++) {
+
+    for (let frameIndex = 0; frameIndex < flipnote.frameCount; frameIndex++)
       gif.writeFrame(flipnote.getFramePixels(frameIndex));
-    }
+
     return gif;
   }
 
@@ -133,7 +135,8 @@ export class GifImage {
     // calc colorDepth
     for (var p = 1; 1 << p < paletteSize; p += 1)
       continue;
-    this.settings.colorDepth = p
+
+    this.settings.colorDepth = p;
     this.writeHeader();
     this.writeColorTable();
     this.writeNetscapeExt();
@@ -165,12 +168,12 @@ export class GifImage {
 
   private writeColorTable() {
     const palette = new Uint8Array(3 * Math.pow(2, this.settings.colorDepth));
-    let offset = 0;
+    let ptr = 0;
     for(let index = 0; index < this.palette.length; index += 1) {
       const [r, g, b, a] = this.palette[index];
-      palette[offset++] = r;
-      palette[offset++] = g;
-      palette[offset++] = b;
+      palette[ptr++] = r;
+      palette[ptr++] = g;
+      palette[ptr++] = b;
     }
     this.data.writeBytes(palette);
   }
@@ -233,20 +236,16 @@ export class GifImage {
    * Note: This method does not work outside of NodeJS environments
    */
   public getBuffer(): Buffer {
-    if (isNode) {
-      return Buffer.from(this.getArrayBuffer());
-    }
-    throw new Error('The Buffer object only available in NodeJS environments');
+    assertNodeEnv();
+    return Buffer.from(this.getArrayBuffer());
   }
 
   /**
    * Returns the GIF image data as a file {@link https://developer.mozilla.org/en-US/docs/Web/API/Blob | Blob}
    */
   public getBlob(): Blob {
-    if (isBrowser) {
-      return new Blob([this.getArrayBuffer()], {type: 'image/gif'});
-    }
-    throw new Error('The Blob object is only available in browser environments');
+    assertBrowserEnv();
+    return new Blob([this.getArrayBuffer()], {type: 'image/gif'});
   }
 
   /**
@@ -255,12 +254,10 @@ export class GifImage {
    * Note: This method does not work outside of browser environments
    */
   public getUrl(): string {
-    if (isBrowser) {
-      if (this.dataUrl)
-        return this.dataUrl;
-      return window.URL.createObjectURL(this.getBlob());
-    }
-    throw new Error('Data URLs are only available in browser environments');
+    assertBrowserEnv();
+    if (this.dataUrl)
+      return this.dataUrl;
+    return window.URL.createObjectURL(this.getBlob());
   }
 
   /**
@@ -270,12 +267,9 @@ export class GifImage {
    */
 
   public revokeUrl(): void {
-    if (isBrowser) {
-      if (this.dataUrl)
-        window.URL.revokeObjectURL(this.dataUrl);
-    } else {
-      throw new Error('Data URLs are only available in browser environments');
-    }
+    assertBrowserEnv();
+    if (this.dataUrl)
+      window.URL.revokeObjectURL(this.dataUrl);
   }
 
   /**
@@ -284,11 +278,9 @@ export class GifImage {
    * Note: This method does not work outside of browser environments
    */
   public getImage(): HTMLImageElement {
-    if (isBrowser) {
-      const img = new Image(this.width, this.height);
-      img.src = this.getUrl();
-      return img;
-    }
-    throw new Error('Image objects are only available in browser environments');
+    assertBrowserEnv();
+    const img = new Image(this.width, this.height);
+    img.src = this.getUrl();
+    return img;
   }
 }

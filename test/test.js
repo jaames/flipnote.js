@@ -1,11 +1,16 @@
-const testEl = document.getElementById('test');
+// var player = new flipnote.Player("#canvas", 640, 480);
+
+// player.on('any', (type, ...args) => {
+//   console.log('EVENT', type, args);
+// });
+
+// player.load("samples/bee.ppm");
 
 // let canvas = document.createElement("canvas");
 // canvas.id = "canvas";
 // document.body.appendChild(canvas);
 
-// var player = new flipnote.player("#canvas", 512, 384);
-// player.open("samples/bee.ppm");
+
 
 // player.on('load', () => {
 //   const note = player.note;
@@ -39,23 +44,23 @@ const testEl = document.getElementById('test');
 //   testEl.appendChild(img);
 // })
 
-fetch('samples/pekira_beach.kwz')
-.then(resp => resp.arrayBuffer())
-.then(data => {
-  console.time('kwz parse')
-  flipnote.parseSource(data, {
-    dsiGalleryNote: true,
-    quickParse: true,
-  }).then(note => {
-    console.timeEnd('kwz parse')
-    let gif;
-    console.time('animated GIF export')
-    gif = flipnote.GifImage.fromFlipnote(note);
-    console.timeEnd('animated GIF export')
-    let img = gif.getImage();
-    testEl.appendChild(img);
-  })
-})
+// fetch('samples/pekira_beach.kwz')
+// .then(resp => resp.arrayBuffer())
+// .then(data => {
+//   console.time('kwz parse')
+//   flipnote.parseSource(data, {
+//     dsiGalleryNote: true,
+//     quickParse: true,
+//   }).then(note => {
+//     console.timeEnd('kwz parse')
+//     let gif;
+//     console.time('animated GIF export')
+//     gif = flipnote.GifImage.fromFlipnote(note);
+//     console.timeEnd('animated GIF export')
+//     let img = gif.getImage();
+//     testEl.appendChild(img);
+//   })
+// })
 
 
 

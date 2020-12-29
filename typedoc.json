@@ -2,12 +2,11 @@
   "mode": "file",
   "inputFiles": ["./src"],
   "out": "www",
-  "exclude": "src/components",
   "excludePrivate": true,
   "excludeProtected": true,
   "excludeNotExported": true,
   "stripInternal": true,
-  "theme": "pages-plugin",
+  "theme": "./docs/theme",
   "pages": {
     "groups": [
       {

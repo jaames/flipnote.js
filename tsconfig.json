@@ -12,11 +12,18 @@
     ],
     "jsx": "react",
     "allowJs": false,
-    "types": ["@pyoner/svelte-types", "node"],
+    "types": ["node"],
     "allowSyntheticDefaultImports": true,
+    "experimentalDecorators": true,
     "esModuleInterop": true,
     "paths": {
       "*" : ["src/types/*"]
-    }
+    },
+    "plugins": [
+      {
+        "name": "ts-lit-plugin",
+        "strict": true
+      }
+    ]
   }
 }

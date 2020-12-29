@@ -9,9 +9,7 @@ import serve from 'rollup-plugin-serve';
 import livereload from 'rollup-plugin-livereload';
 import bundleSize from 'rollup-plugin-bundle-size';
 import glslify from 'rollup-plugin-glslify';
-import svelte from 'rollup-plugin-svelte';
 import svgo from 'rollup-plugin-svgo';
-import autoPreprocess from 'svelte-preprocess';
 
 const target = process.env.TARGET || 'web';
 const build = process.env.BUILD || 'development';
@@ -28,8 +26,7 @@ const banner = `/*!!
  2018 - 2021 James Daniel
  github.com/jaames/flipnote.js
  Keep on Flipnoting!
-*/
-`
+*/`;
 
 module.exports = {
   input: [
@@ -66,13 +63,6 @@ module.exports = {
     }
   ].filter(Boolean),
   plugins: [
-    // use svelte for webcomponent build
-    isTargetWebcomponent && svelte({
-      customElement: true,
-			// enable run-time checks when not in production
-			dev: !isProdBuild,
-      preprocess: autoPreprocess()
-    }),
     isTargetWebcomponent && svgo({
       plugins: [
         {
@@ -88,8 +78,7 @@ module.exports = {
     }),
     bundleSize(),
     nodeResolve({
-      // browser: true,
-      dedupe: ['svelte']
+      // browser: true
     }),
     commonJs(),
     alias({
@@ -98,14 +87,23 @@ module.exports = {
     replace({
       VERSION: JSON.stringify(version),
       PROD: isProdBuild ? 'true' : 'false',
-      DEV_SERVER: devserver ? 'true' : 'false'
+      DEV_SERVER: devserver ? 'true' : 'false',
+      // https://github.com/PolymerLabs/lit-element-starter-ts/blob/master/rollup.config.js
+      'Reflect.decorate': 'undefined'
     }),
     typescript({
       abortOnError: false,
       typescript: require('typescript'),
       tsconfigOverride: {
         compilerOptions: {
-          target: isEsmoduleBuild ? 'esnext' : 'es5',
+          target: (() => {
+            if (isTargetWebcomponent)
+              return 'es2017';
+            else if (isEsmoduleBuild)
+              return 'esnext';
+            else
+              return 'es5';
+          })(),
           declaration: !devserver ? true : false,
           sourceMap: devserver ? true : false,
         },
@@ -121,12 +119,6 @@ module.exports = {
     }),
     // only minify if we're producing a non-es production build
     isProdBuild && !isEsmoduleBuild && terser({
-      // mangle props starting with _, since they're usually not public parts of the API
-      mangle: {
-        properties: {
-          regex: /^_/
-        },
-      },
       // preserve banner comment
       output: {
         comments: function(node, comment) {

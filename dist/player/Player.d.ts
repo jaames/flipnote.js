@@ -1,23 +1,8 @@
-import { Flipnote, FlipnoteFormat, FlipnoteMeta } from '../parsers';
-import { WavAudio, GifImage, GifImageSettings } from '../encoders';
+import { FlipnoteSource, Flipnote, FlipnoteFormat, FlipnoteMeta } from '../parsers';
+import { PlayerEvent, PlayerEventMap } from './PlayerEvent';
 import { WebglRenderer } from '../webgl';
 import { WebAudioPlayer } from '../webaudio';
 declare type PlayerLayerVisibility = Record<number, boolean>;
-/** @internal */
-interface PlayerState {
-    noteType: 'PPM' | 'KWZ';
-    isNoteOpen: boolean;
-    hasPlaybackStarted: boolean;
-    paused: boolean;
-    frame: number;
-    time: number;
-    loop: boolean;
-    volume: number;
-    muted: boolean;
-    layerVisibility: PlayerLayerVisibility;
-    isSeeking: boolean;
-    wasPlaying: boolean;
-}
 /**
  * Flipnote Player API (exported as `flipnote.Player`)
  *
@@ -31,36 +16,51 @@ export declare class Player {
     /** Audio player */
     audio: WebAudioPlayer;
     /** Canvas HTML element */
-    el: HTMLCanvasElement;
+    canvasEl: HTMLCanvasElement;
     /** Currently loaded Flipnote */
     note: Flipnote;
     /** Format of the currently loaded Flipnote */
     noteFormat: FlipnoteFormat;
-    /** Format of the currently loaded Flipnote, as a string (`'PPM'` or `'KWZ'`) */
-    noteFormatString: string;
     /** Metadata for the currently loaded Flipnote */
     meta: FlipnoteMeta;
-    /** Indicates whether playback should loop once the end is reached */
-    loop: boolean;
-    /** Indicates whether playback is currently paused */
-    paused: boolean;
     /** Animation duration, in seconds */
     duration: number;
     /** Animation layer visibility */
     layerVisibility: PlayerLayerVisibility;
-    /** @internal (not implemented yet) */
-    static defaultState: PlayerState;
-    /** @internal (not implemented yet) */
-    state: PlayerState;
-    private isOpen;
-    private customPalette;
-    private events;
-    private _lastTick;
-    private _frame;
-    private _time;
-    private hasPlaybackStarted;
-    private wasPlaying;
-    private isSeeking;
+    /** Automatically begin playback after a Flipnote is loaded */
+    autoplay: boolean;
+    /** Array of events supported by this player */
+    supportedEvents: PlayerEvent[];
+    /** @internal */
+    _src: FlipnoteSource;
+    /** @internal */
+    _loop: boolean;
+    /** @internal */
+    _volume: number;
+    /** @internal */
+    _muted: boolean;
+    /** @internal */
+    _frame: number;
+    /** @internal */
+    isNoteLoaded: boolean;
+    /** @internal */
+    events: PlayerEventMap;
+    /** @internal */
+    playbackStartTime: number;
+    /** @internal */
+    playbackTime: number;
+    /** @internal */
+    playbackLoopId: number;
+    /** @internal */
+    showThumbnail: boolean;
+    /** @internal */
+    hasPlaybackStarted: boolean;
+    /** @internal */
+    isPlaying: boolean;
+    /** @internal */
+    wasPlaying: boolean;
+    /** @internal */
+    isSeeking: boolean;
     /**
      * Create a new Player instance
      *
@@ -71,6 +71,12 @@ export declare class Player {
      * The ratio between `width` and `height` should be 3:4 for best results
      */
     constructor(el: string | HTMLCanvasElement, width: number, height: number);
+    /** The currently loaded Flipnote source, if there is one. Can be overridden to load another Flipnote */
+    get src(): FlipnoteSource;
+    set src(source: FlipnoteSource);
+    /** Indicates whether playback is currently paused */
+    get paused(): boolean;
+    set paused(isPaused: boolean);
     /** Current animation frame index */
     get currentFrame(): number;
     set currentFrame(frameIndex: number);
@@ -83,55 +89,99 @@ export declare class Player {
     /** Audio volume, range `0` to `1` */
     get volume(): number;
     set volume(value: number);
-    /**
-     * Audio mute state
-     * TODO: implement
-     * @internal
-    */
+    /** Audio mute state */
     get muted(): boolean;
     set muted(value: boolean);
+    /** Indicates whether playback should loop once the end is reached */
+    get loop(): boolean;
+    set loop(value: boolean);
     /** Animation frame rate, measured in frames per second */
     get framerate(): number;
     /** Animation frame count */
     get frameCount(): number;
     /** Animation frame speed */
     get frameSpeed(): number;
-    private setState;
+    /**
+     * Implementation of the `HTMLMediaElement` {@link https://developer.mozilla.org/en-US/docs/Web/API/HTMLMediaElement/buffered | buffered } property
+     * @category HTMLVideoElement compatibility
+     */
+    get buffered(): TimeRanges;
+    /**
+     * Implementation of the `HTMLMediaElement` {@link https://developer.mozilla.org/en-US/docs/Web/API/HTMLMediaElement/seekable | seekable} property
+     * @category HTMLVideoElement compatibility
+     */
+    get seekable(): TimeRanges;
+    /**
+     * Implementation of the `HTMLMediaElement` {@link https://developer.mozilla.org/en-US/docs/Web/API/HTMLMediaElement/currentSrc | currentSrc} property
+     * @category HTMLVideoElement compatibility
+     */
+    get currentSrc(): FlipnoteSource;
+    /**
+     * Implementation of the `HTMLVideoElement` {@link https://developer.mozilla.org/en-US/docs/Web/API/HTMLVideoElement/videoWidth | videoWidth} property
+     * @category HTMLVideoElement compatibility
+     */
+    get videoWidth(): number;
+    /**
+     * Implementation of the `HTMLVideoElement` {@link https://developer.mozilla.org/en-US/docs/Web/API/HTMLVideoElement/videoHeight | videoHeight} property
+     * @category HTMLVideoElement compatibility
+     */
+    get videoHeight(): number;
     /**
      * Open a Flipnote from a source
      * @category Lifecycle
      */
-    open(source: any): Promise<void>;
+    load(source?: any): Promise<void>;
     /**
      * Close the currently loaded Flipnote
      * @category Lifecycle
      */
-    close(): void;
+    closeNote(): void;
     /**
-     * Load a Flipnote into the player
+     * Open a Flipnote into the player
      * @category Lifecycle
      */
-    load(note: Flipnote): void;
-    private playAudio;
-    private stopAudio;
+    openNote(note: Flipnote): void;
     /**
-     * Toggle audio equalizer filter
-     * @category Audio Control
+     * Playback animation loop
+     * @public
+     * @category Playback Control
      */
-    toggleEq(): void;
+    playbackLoop: (timestamp: DOMHighResTimeStamp) => void;
     /**
-     * Toggle audio mute
-     * TODO: MUTE NOT CURRENTLY IMPLEMENTED
-     * @internal
-     * @category Audio Control
+     * Set the current playback time
+     * @category Playback Control
      */
-    toggleMute(): void;
-    private playbackLoop;
+    setCurrentTime(value: number): void;
+    /**
+     * Get the current playback time
+     * @category Playback Control
+     */
+    getCurrentTime(): number;
+    /**
+     * Get the current time as a counter string, like `0:00 / 1:00`
+     * @category Playback Control
+     */
+    getTimeCounter(): string;
+    /**
+     * Get the current frame index as a counter string, like `001/999`
+     * @category Playback Control
+     */
+    getFrameCounter(): string;
+    /**
+     * Set the current playback progress as a percentage (0 to 100)
+     * @category Playback Control
+     */
+    setProgress(value: number): void;
+    /**
+     * Get the current playback progress as a percentage (0 to 100)
+     * @category Playback Control
+     */
+    getProgress(): number;
     /**
      * Begin animation playback starting at the current position
      * @category Playback Control
      */
-    play(): void;
+    play(): Promise<void>;
     /**
      * Pause animation playback at the current position
      * @category Playback Control
@@ -143,10 +193,35 @@ export declare class Player {
      */
     togglePlay(): void;
     /**
+     * Determines if playback is currently paused
+     * @category Playback Control
+     */
+    getPaused(): boolean;
+    /**
+     * Get the duration of the Flipnote in seconds
+     * @category Playback Control
+     */
+    getDuration(): number;
+    /**
+     * Determines if playback is looped
+     * @category Playback Control
+     */
+    getLoop(): boolean;
+    /**
+     * Set the playback loop
+     * @category Playback Control
+     */
+    setLoop(loop: boolean): void;
+    /**
+     * Switch the playback loop between on and off
+     * @category Playback Control
+     */
+    toggleLoop(): void;
+    /**
      * Jump to a given animation frame
      * @category Frame Control
      */
-    setFrame(frameIndex: number): void;
+    setCurrentFrame(newFrameValue: number): void;
     /**
      * Jump to the next animation frame
      * If the animation loops, and is currently on its last frame, it will wrap to the first frame
@@ -181,51 +256,24 @@ export declare class Player {
     startSeek(): void;
     /**
      * Seek the playback progress to a different position
+     * @param position - animation playback position, range `0` to `1`
      * @category Playback Control
      */
-    seek(progress: number): void;
+    seek(position: number): void;
     /**
      * Ends a seek operation
      * @category Playback Control
      */
     endSeek(): void;
     /**
-     * Returns the master audio as a {@link WavAudio} object
-     * @category Quick Export
-     */
-    getMasterWav(): WavAudio;
-    /**
-     * Saves the master audio track as a WAV file
-     * @category Quick Export
-     */
-    saveMasterWav(): void;
-    /**
-     * Returns an animation frame as a {@link GifImage} object
-     * @category Quick Export
-     */
-    getFrameGif(frameIndex: number, meta?: Partial<GifImageSettings>): GifImage;
-    /**
-     * Saves an animation frame as a GIF file
-     * @category Quick Export
-     */
-    saveFrameGif(frameIndex: number, meta?: Partial<GifImageSettings>): void;
-    /**
-     * Returns the full animation as a {@link GifImage} object
-     * @category Quick Export
-     */
-    getAnimatedGif(meta?: Partial<GifImageSettings>): GifImage;
-    /**
-     * Saves the full animation as a GIF file
-     * @category Quick Export
-     */
-    saveAnimatedGif(meta?: Partial<GifImageSettings>): void;
-    /**
-     * Draws the specified animation frame to the canvas
+     * Draws the specified animation frame to the canvas. Note that this doesn't update the playback time or anything, it simply decodes a given frame and displays it.
      * @param frameIndex
+     * @category Display Control
      */
     drawFrame(frameIndex: number): void;
     /**
      * Forces the current animation frame to be redrawn
+     * @category Display Control
      */
     forceUpdate(): void;
     /**
@@ -247,26 +295,110 @@ export declare class Player {
      */
     setLayerVisibility(layer: number, value: boolean): void;
     /**
+     * Returns the visibility state for a given layer
+     * @param layer - layer index, starting at 1
+     *
+     * @category Display Control
+     */
+    getLayerVisibility(layer: number): boolean;
+    /**
      * Toggles whether an animation layer should be visible throughout the entire animation
      *
      * @category Display Control
      */
     toggleLayerVisibility(layerIndex: number): void;
+    playAudio(): void;
+    stopAudio(): void;
+    /**
+     * Toggle audio Sudomemo equalizer filter
+     * @category Audio Control
+     */
+    toggleAudioEq(): void;
+    /**
+     * Turn audio Sudomemo equalizer filter on or off
+     * @category Audio Control
+     */
+    setAudioEq(state: boolean): void;
+    /**
+     * Turn the audio off
+     * @category Audio Control
+     */
+    mute(): void;
+    /**
+     * Turn the audio on
+     * @category Audio Control
+     */
+    unmute(): void;
+    /**
+     * Turn the audio on or off
+     * @category Audio Control
+     */
+    setMuted(isMute: boolean): void;
+    /**
+     * Get the audio mute state
+     * @category Audio Control
+     */
+    getMuted(): boolean;
+    /**
+     * Switch the audio between muted and unmuted
+     * @category Audio Control
+     */
+    toggleMuted(): void;
+    /**
+     * Set the audio volume
+     * @category Audio Control
+     */
+    setVolume(volume: number): void;
+    /**
+     * Get the current audio volume
+     * @category Audio Control
+     */
+    getVolume(): number;
+    /**
+     * Implementation of the `HTMLVideoElement` {@link https://developer.mozilla.org/en-US/docs/Web/API/HTMLVideoElement/seekToNextFrame | seekToNextFrame} method
+     * @category HTMLVideoElement compatibility
+     */
+    seekToNextFrame(): void;
+    /**
+     * Implementation of the `HTMLMediaElement` {@link https://developer.mozilla.org/en-US/docs/Web/API/HTMLMediaElement/fastSeek | fastSeek} method
+     * @category HTMLVideoElement compatibility
+     */
+    fastSeek(time: number): void;
+    /**
+     * Implementation of the `HTMLVideoElement` {@link https://developer.mozilla.org/en-US/docs/Web/API/HTMLVideoElement/getVideoPlaybackQuality | getVideoPlaybackQuality } method
+     * @category HTMLVideoElement compatibility
+     */
+    canPlayType(mediaType: string): "" | "probably" | "maybe";
+    /**
+     * Implementation of the `HTMLVideoElement` [https://developer.mozilla.org/en-US/docs/Web/API/HTMLVideoElement/getVideoPlaybackQuality](getVideoPlaybackQuality) method
+     * @category HTMLVideoElement compatibility
+     */
+    getVideoPlaybackQuality(): VideoPlaybackQuality;
+    /**
+     * Implementation of the `HTMLVideoElement` [https://developer.mozilla.org/en-US/docs/Web/API/HTMLVideoElement/requestPictureInPicture](requestPictureInPicture) method. Not currently working, only a stub.
+     * @category HTMLVideoElement compatibility
+     */
+    requestPictureInPicture(): void;
+    /**
+     * Implementation of the `HTMLVideoElement` [https://developer.mozilla.org/en-US/docs/Web/API/HTMLVideoElement/captureStream](captureStream) method. Not currently working, only a stub.
+     * @category HTMLVideoElement compatibility
+     */
+    captureStream(): void;
     /**
      * Add an event callback
      * @category Event API
      */
-    on(eventType: string, callback: Function): void;
+    on(eventType: PlayerEvent | PlayerEvent[], callback: Function): void;
     /**
      * Remove an event callback
      * @category Event API
      */
-    off(eventType: string, callback: Function): void;
+    off(eventType: PlayerEvent | PlayerEvent[], callback: Function): void;
     /**
      * Emit an event - mostly used internally
      * @category Event API
      */
-    emit(eventType: string, ...args: any): void;
+    emit(eventType: PlayerEvent, ...args: any): void;
     /**
      * Remove all registered event callbacks
      * @category Event API
@@ -276,6 +408,12 @@ export declare class Player {
      * Destroy a Player instace
      * @category Lifecycle
      */
-    destroy(): void;
+    destroy(): Promise<void>;
+    /**
+     * Returns true if the player supports a given event or method name
+     */
+    supports(name: string): boolean;
+    /** @internal */
+    assertNoteLoaded(): void;
 }
 export {};

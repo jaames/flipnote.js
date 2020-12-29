@@ -17,15 +17,14 @@ const webUrlLoader: LoaderDefinition<string> = {
     xhr.responseType = 'arraybuffer'; 
     xhr.onreadystatechange = function (e) {
       if (xhr.readyState === 4) {
-        if (xhr.status >= 200 && xhr.status < 300) {
+        if (xhr.status >= 200 && xhr.status < 300)
           resolve(xhr.response);
-        } else {
+        else
           reject({
             type: 'httpError',
             status: xhr.status,
             statusText: xhr.statusText
           });
-        }
       }
     };
     xhr.send(null);

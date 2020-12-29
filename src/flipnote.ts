@@ -1,4 +1,4 @@
-// Main entrypoint for web
+// Entrypoint for web and node
 
 export {
   parseSource,

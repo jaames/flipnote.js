@@ -19,7 +19,7 @@ You can also download the latest version of the library and self-host it on your
 [**Development version**](https://raw.githubusercontent.com/jaames/flipnote.js/master/dist/flipnote.js)<br/>
 Uncompressed, with source comments included. Intended for debugging.
 
-[**Production version**](https://raw.githubusercontent.com/jaames/flipnote.js/master/dist/flipnote.js)<br/>
+[**Production version**](https://raw.githubusercontent.com/jaames/flipnote.js/master/dist/flipnote.min.js)<br/>
 Minified and optimized version.
 
 When including the library this way, it will be globally available on `window.flipnote`.

@@ -1,7 +1,7 @@
-import { isBrowser } from '../utils';
+import { isBrowser, assertBrowserEnv } from '../utils';
 
 /** @internal */
-const _AudioContext = (function() {
+const _AudioContext = (() => {
   if (isBrowser)
     return (window.AudioContext || (window as any).webkitAudioContext);
   return null;
@@ -17,13 +17,13 @@ export type PcmAudioBuffer = Int16Array | Float32Array;
  */
 export class WebAudioPlayer {
 
-  /** Audio context, see {@link https://developer.mozilla.org/en-US/docs/Web/API/BaseAudioContext | BaseAudioContext} */
-  public ctx: BaseAudioContext;
+  /** Audio context, see {@link https://developer.mozilla.org/en-US/docs/Web/API/AudioContext | AudioContext} */
+  public ctx: AudioContext;
   /** Audio sample rate */
   public sampleRate: number;
   /** Whether the audio is being run through an equalizer or not */
-  public useEq: boolean = false
-  /** Equalizer settings. Credit to {@link https://www.sudomemo.net/ | Sudomemo} */
+  public useEq = false;
+  /** Default equalizer settings. Credit to {@link https://www.sudomemo.net/ | Sudomemo} for these */
   public eqSettings: [number, number][] = [
     [31.25, 4.1],
     [62.5, 1.2],
@@ -36,19 +36,18 @@ export class WebAudioPlayer {
     [16000, 5.1]
   ];
 
-  private _volume: number = 1;
+  private _volume = 1;
+  private _loop = false;
+  private nodeRefs: AudioNode[] = [];
   private buffer: AudioBuffer;
   private gainNode: GainNode;
   private source: AudioBufferSourceNode;
 
   constructor() {
-    if (!isBrowser) {
-      throw new Error('The WebAudio player is only available in browser environments');
-    }
-    this.ctx = new _AudioContext();
+    assertBrowserEnv();
   }
 
-  /** Sets the audio output volume */
+  /** The audio output volume. Range is 0 to 1 */
   set volume(value: number) {
     this.setVolume(value);
   }
@@ -57,14 +56,32 @@ export class WebAudioPlayer {
     return this._volume;
   }
 
+  /** Whether the audio should loop after it has ended */
+  set loop(value: boolean) {
+    this._loop = value;
+    if (this.source)
+      this.source.loop = value;
+  }
+
+  get loop() {
+    return this._loop;
+  }
+
+  private getCtx() {
+    if (!this.ctx)
+      this.ctx = new _AudioContext();
+    return this.ctx;
+  }
+
   /**
    * Set the audio buffer to play
    * @param inputBuffer 
    * @param sampleRate - For best results, this should be a multiple of 16364
    */
   setBuffer(inputBuffer: PcmAudioBuffer, sampleRate: number) {
+    const ctx = this.getCtx();
     const numSamples = inputBuffer.length;
-    const audioBuffer = this.ctx.createBuffer(1, numSamples, sampleRate);
+    const audioBuffer = ctx.createBuffer(1, numSamples, sampleRate);
     const channelData = audioBuffer.getChannelData(0);
     if (inputBuffer instanceof Float32Array)
       channelData.set(inputBuffer, 0);
@@ -78,10 +95,12 @@ export class WebAudioPlayer {
   }
 
   private connectEqNodesTo(inNode: AudioNode) {
-    const { ctx, eqSettings } = this;
+    const ctx = this.getCtx();
+    const eqSettings = this.eqSettings;
     let lastNode = inNode;
     eqSettings.forEach(([ frequency, gain ], index) => {
-      let node = ctx.createBiquadFilter();
+      const node = ctx.createBiquadFilter();
+      this.nodeRefs.push(node);
       node.frequency.value = frequency;
       node.gain.value = gain;
       if (index === 0)
@@ -97,16 +116,22 @@ export class WebAudioPlayer {
   }
 
   private initNodes() {
-    const { ctx } = this;
+    const ctx = this.getCtx();
+    this.nodeRefs = [];
     const source = ctx.createBufferSource();
+    this.nodeRefs.push(source);
     source.buffer = this.buffer;
+
     const gainNode = ctx.createGain();
+    this.nodeRefs.push(gainNode);
+
     if (this.useEq) {
       const eq = this.connectEqNodesTo(source);
       eq.connect(gainNode);
     }
     else
       source.connect(gainNode);
+
     source.connect(gainNode);
     gainNode.connect(ctx.destination);
     this.source = source;
@@ -135,6 +160,7 @@ export class WebAudioPlayer {
    */
   playFrom(currentTime: number) {
     this.initNodes();
+    this.source.loop = this._loop;
     this.source.start(0, currentTime);
   }
 
@@ -142,6 +168,20 @@ export class WebAudioPlayer {
    * Stops the audio playback
    */
   stop() {
-    this.source.stop(0);
+    if (this.source)
+      this.source.stop(0);
+  }
+
+  /**
+ * Frees any resources used by this canvas instance
+ */
+  public async destroy() {
+    this.stop();
+    const ctx = this.getCtx();
+    this.nodeRefs.forEach(node => node.disconnect());
+    this.nodeRefs = [];
+    if (ctx.state !== 'closed' && typeof ctx.close === 'function')
+      await ctx.close();
+    this.buffer = null;
   }
 }

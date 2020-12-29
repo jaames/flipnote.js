@@ -3,9 +3,9 @@ import { DataStream } from '../utils/index';
 /** Identifies which animation format a Flipnote uses */
 export enum FlipnoteFormat {
   /** Animation format used by Flipnote Studio (Nintendo DSiWare) */
-  PPM,
+  PPM = 'PPM',
   /** Animation format used by Flipnote Studio 3D (Nintendo 3DS) */
-  KWZ
+  KWZ = 'KWZ'
 };
 
 /** RGBA color */
@@ -42,7 +42,7 @@ export enum FlipnoteAudioTrack {
  */
 export type FlipnoteAudioTrackInfo = {
   [key in FlipnoteAudioTrack]?: {
-    offset: number,
+    ptr: number,
     length: number
   }
 }
@@ -56,11 +56,30 @@ export type FlipnoteLayerVisibility = {
   3: boolean
 };
 
+/**
+ * Flipnote version info - provides details about a particular Flipnote version and its author
+ */
+export interface FlipnoteVersion {
+  /** Flipnote unique filename */
+  filename: string;
+  /** Author's username */
+  username: string;
+  /** Author's unique ID */
+  fsid: string;
+  /** KWZ only - sometimes DSi library notes incorrectly use the PPM filename format instead */
+  isDsiFilename?: boolean;
+}
+
+/**
+ * Flipnote details
+ */
 export interface FlipnoteMeta {
     /** File lock state. Locked Flipnotes cannot be edited by anyone other than the current author */
     lock: boolean;
     /** Playback loop state. If `true`, playback will loop once the end is reached */
     loop: boolean;
+    /** Spinoffs are remixes of another user's Flipnote */
+    isSpinoff: boolean;
     /** Total number of animation frames */
     frameCount: number;
     /** In-app frame playback speed */
@@ -69,24 +88,14 @@ export interface FlipnoteMeta {
     thumbIndex: number;
     /** Date representing when the file was last edited */
     timestamp: Date;
+    /** Flipnote duration measured in seconds, assuming normal playback speed */
+    duration: number;
     /** Metadata about the author of the original Flipnote file */
-    root: {
-      filename: string;
-      username: string;
-      fsid: string;
-    };
+    root: FlipnoteVersion;
     /** Metadata about the previous author of the Flipnote file */
-    parent: {
-      filename: string;
-      username: string;
-      fsid: string;
-    };
+    parent: FlipnoteVersion;
     /** Metadata about the current author of the Flipnote file */
-    current: {
-      filename: string;
-      username: string;
-      fsid: string;
-    };
+    current: FlipnoteVersion;
 };
 
 /** 
@@ -115,8 +124,6 @@ export abstract class FlipnoteParser extends DataStream {
 
   /** File format type, reflects {@link FlipnoteParserBase.format} */
   public format: FlipnoteFormat;
-  /** Flipnote Format as a string */
-  public formatString: string;
   /** Animation frame width, reflects {@link FlipnoteParserBase.width} */
   public width: number;
   /** Animation frame height, reflects {@link FlipnoteParserBase.height} */
@@ -144,6 +151,8 @@ export abstract class FlipnoteParser extends DataStream {
   public frameCount: number;
   /** In-app animation playback speed */
   public frameSpeed: number;
+  /** Animation duration, in seconds */
+  public duration: number;
   /** In-app animation playback speed when the BGM track was recorded */
   public bgmSpeed: number;
   /** Animation framerate, measured as frames per second */

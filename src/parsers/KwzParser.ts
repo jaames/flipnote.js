@@ -15,6 +15,12 @@ import {
   ADPCM_INDEX_TABLE_4BIT
 } from './audioUtils';
 
+import {
+  assert,
+  dateFromNintendoTimestamp,
+  timeGetNoteDuration
+} from '../utils';
+
 /** 
  * KWZ framerates in frames per second, indexed by the in-app frame speed
  */
@@ -42,13 +48,12 @@ for (let i = 0; i < 16; i++) {
 }
 
 /** 
- * Every possible sequence of pixels for each tile line
+ * Every possible sequence of pixels for each 8-pixel line
  * @internal 
  */
 const KWZ_LINE_TABLE = new Uint8Array(6561 * 8);
-
 /** 
- * Same lines as KWZ_LINE_TABLE, but the pixels are rotated to the left by one place
+ * Same lines as KWZ_LINE_TABLE, but the pixels are shift-rotated to the left by one place
  * @internal
  */
 const KWZ_LINE_TABLE_SHIFT = new Uint8Array(6561 * 8);
@@ -69,30 +74,29 @@ for (let h = 0; h < 3; h++)
   offset += 8;
 }
 
-// Commonly occuring line offsets
-/** @internal */
+/**
+ * Commonly used lines - represents lines where all the pixels are empty, full, 
+ * or include a pattern produced by the paint tool, etc
+ * @internal
+ */
 const KWZ_LINE_TABLE_COMMON = new Uint8Array(32 * 8);
+/** 
+ * Same lines as common line table, but shift-rotates one place to the left
+ * @internal
+ */
+const KWZ_LINE_TABLE_COMMON_SHIFT = new Uint8Array(32 * 8);
+
 [
   0x0000, 0x0CD0, 0x19A0, 0x02D9, 0x088B, 0x0051, 0x00F3, 0x0009,
   0x001B, 0x0001, 0x0003, 0x05B2, 0x1116, 0x00A2, 0x01E6, 0x0012,
   0x0036, 0x0002, 0x0006, 0x0B64, 0x08DC, 0x0144, 0x00FC, 0x0024,
   0x001C, 0x0004, 0x0334, 0x099C, 0x0668, 0x1338, 0x1004, 0x166C
-].forEach((lineTableIndex, index) => {
-  const pixels = KWZ_LINE_TABLE.subarray(lineTableIndex * 8, lineTableIndex * 8 + 8);
-  KWZ_LINE_TABLE_COMMON.set(pixels, index * 8);
-});
-
-// Commonly occuring line offsets, but the lines are shifted to the left by one pixel
-/** @internal */
-const KWZ_LINE_TABLE_COMMON_SHIFT = new Uint8Array(32 * 8);
-[
-  0x0000, 0x0CD0, 0x19A0, 0x0003, 0x02D9, 0x088B, 0x0051, 0x00F3, 
-  0x0009, 0x001B, 0x0001, 0x0006, 0x05B2, 0x1116, 0x00A2, 0x01E6, 
-  0x0012, 0x0036, 0x0002, 0x02DC, 0x0B64, 0x08DC, 0x0144, 0x00FC, 
-  0x0024, 0x001C, 0x099C, 0x0334, 0x1338, 0x0668, 0x166C, 0x1004
-].forEach((lineTableIndex, index) => {
-  const pixels = KWZ_LINE_TABLE.subarray(lineTableIndex * 8, lineTableIndex * 8 + 8);
-  KWZ_LINE_TABLE_COMMON_SHIFT.set(pixels, index * 8);
+].forEach((value, i) => {
+  const lineTablePtr = value * 8;
+  const pixels = KWZ_LINE_TABLE.subarray(lineTablePtr, lineTablePtr + 8);
+  const shiftPixels = KWZ_LINE_TABLE_SHIFT.subarray(lineTablePtr, lineTablePtr + 8);
+  KWZ_LINE_TABLE_COMMON.set(pixels, i * 8);
+  KWZ_LINE_TABLE_COMMON_SHIFT.set(shiftPixels, i * 8);
 });
 
 /** 
@@ -105,12 +109,10 @@ export type KwzSectionMagic = 'KFH' | 'KTN' | 'KMC' | 'KMI' | 'KSN' | 'ICO';
  * KWZ section map, tracking their offset and length
  * @internal
  */
-export type KwzSectionMap = {
-  [k in KwzSectionMagic]?: {
-    offset: number, 
-    length: number
-  }
-};
+export type KwzSectionMap = Map<KwzSectionMagic, {
+  ptr: number, 
+  length: number
+}>;
 
 /** 
  * KWZ file metadata, stores information about its playback, author details, etc
@@ -189,7 +191,6 @@ export class KwzParser extends FlipnoteParser {
   
   /** File format type, reflects {@link KwzParser.format} */
   public format = FlipnoteFormat.KWZ;
-  public formatString = 'KWZ';
   /** Animation frame width, reflects {@link KwzParser.width} */
   public width = KwzParser.width;
   /** Animation frame height, reflects {@link KwzParser.height} */
@@ -206,15 +207,15 @@ export class KwzParser extends FlipnoteParser {
   public meta: KwzMeta;
 
   private settings: KwzParserSettings;
-  private sections: KwzSectionMap;
+  private sectionMap: KwzSectionMap;
   private layers: [Uint8Array, Uint8Array, Uint8Array];
   private prevFrameIndex: number = null;
   private frameMeta: Map<number, KwzFrameMeta>;
   private frameMetaOffsets: Uint32Array;
   private frameDataOffsets: Uint32Array;
   private frameLayerSizes: [number, number, number][];
-  private bitIndex: number = 0;
-  private bitValue: number = 0;
+  private bitIndex = 0;
+  private bitValue = 0;
 
   /**
    * Create a new KWZ file parser instance
@@ -229,8 +230,6 @@ export class KwzParser extends FlipnoteParser {
       new Uint8Array(KwzParser.width * KwzParser.height),
       new Uint8Array(KwzParser.width * KwzParser.height),
     ];
-    this.bitIndex = 0;
-    this.bitValue = 0;
     this.buildSectionMap();
     if (!this.settings.quickMeta)
       this.decodeMeta();
@@ -242,25 +241,25 @@ export class KwzParser extends FlipnoteParser {
   
   private buildSectionMap() {
     this.seek(0);
-    this.sections = {};
     const fileSize = this.byteLength - 256;
-    let offset = 0;
+    const sectionMap = new Map();
     let sectionCount = 0;
+    let ptr = 0;
     // counting sections should mitigate against one of mrnbayoh's notehax exploits
-    while ((offset < fileSize) && (sectionCount < 6)) {
-      this.seek(offset);
-      const sectionMagic = <KwzSectionMagic>this.readChars(4).substring(0, 3);
-      const sectionLength = this.readUint32();
-      this.sections[sectionMagic] = {
-        offset: offset,
-        length: sectionLength
-      };
-      offset += sectionLength + 8;
+    while ((ptr < fileSize) && (sectionCount < 6)) {
+      this.seek(ptr);
+      const magic = this.readChars(4).substring(0, 3) as KwzSectionMagic;
+      const length = this.readUint32();
+      sectionMap.set(magic, { ptr, length });
+      ptr += length + 8;
       sectionCount += 1;
     }
+    this.sectionMap = sectionMap;
+    assert(sectionMap.has('KMC') && sectionMap.has('KMI'));
   }
 
   private readBits(num: number) {
+    // assert(num < 16);
     if (this.bitIndex + num > 16) {
       const nextBits = this.readUint16();
       this.bitValue |= nextBits << (16 - this.bitIndex);
@@ -272,30 +271,57 @@ export class KwzParser extends FlipnoteParser {
     return result;
   }
 
+  private readFsid() {
+    if (this.settings.dsiGalleryNote) { // format as DSi PPM FSID
+      const hex = this.readHex(10, true);
+      return hex.slice(2, 18);
+    }
+    const hex = this.readHex(10);
+    return `${hex.slice(0, 4)}-${hex.slice(4, 8)}-${hex.slice(8, 12)}-${hex.slice(12, 18)}`.toLowerCase();
+  }
+
+  private readFilename() {
+    const ptr = this.pointer;
+    const chars = this.readChars(28);
+    if (chars.length === 28)
+      return chars;
+    // Otherwise, this is likely a DSi Library note, 
+    // where sometimes Nintendo's buggy PPM converter includes the original packed PPM filename
+    this.seek(ptr);
+    const mac = this.readHex(3);
+    const random = this.readChars(13);
+    const edits = this.readUint16().toString().padStart(3, '0');
+    this.seek(ptr + 28);
+    return `${ mac }_${ random }_${ edits }`;
+  }
+
   private decodeMeta() {
-    this.seek(this.sections['KFH'].offset + 12);
-    const creationTimestamp = new Date((this.readUint32() + 946684800) * 1000),
-          modifiedTimestamp = new Date((this.readUint32() + 946684800) * 1000),
-          appVersion = this.readUint32(),
-          rootAuthorId = this.readHex(10),
-          parentAuthorId = this.readHex(10),
-          currentAuthorId = this.readHex(10),
-          rootAuthorName = this.readWideChars(11),
-          parentAuthorName = this.readWideChars(11),
-          currentAuthorName = this.readWideChars(11),
-          rootFilename = this.readChars(28),
-          parentFilename = this.readChars(28),
-          currentFilename = this.readChars(28),
-          frameCount = this.readUint16(),
-          thumbIndex = this.readUint16(),
-          flags = this.readUint16(),
-          frameSpeed = this.readUint8(),
-          layerFlags = this.readUint8();
+    assert(this.sectionMap.has('KFH'));
+    this.seek(this.sectionMap.get('KFH').ptr + 12);
+    const creationTime = dateFromNintendoTimestamp(this.readUint32());
+    const modifiedTime = dateFromNintendoTimestamp(this.readUint32());
+    // const simonTime = 
+    const appVersion = this.readUint32();
+    const rootAuthorId = this.readFsid();
+    const parentAuthorId = this.readFsid();
+    const currentAuthorId = this.readFsid();
+    const rootAuthorName = this.readWideChars(11);
+    const parentAuthorName = this.readWideChars(11);
+    const currentAuthorName = this.readWideChars(11);
+    const rootFilename = this.readFilename();
+    const parentFilename = this.readFilename();
+    const currentFilename = this.readFilename();
+    const frameCount = this.readUint16();
+    const thumbIndex = this.readUint16();
+    const flags = this.readUint16();
+    const frameSpeed = this.readUint8();
+    const layerFlags = this.readUint8();
     this.isSpinoff = (currentAuthorId !== parentAuthorId) || (currentAuthorId !== rootAuthorId);
     this.frameCount = frameCount;
-    this.thumbFrameIndex = thumbIndex;
     this.frameSpeed = frameSpeed;
     this.framerate = KWZ_FRAMERATES[frameSpeed];
+    this.duration = timeGetNoteDuration(this.frameCount, this.framerate);
+    this.thumbFrameIndex = thumbIndex;
     this.layerVisibility = {
       1: (layerFlags & 0x1) === 0,
       2: (layerFlags & 0x2) === 0,
@@ -304,31 +330,37 @@ export class KwzParser extends FlipnoteParser {
     this.meta = {
       lock: (flags & 0x1) !== 0,
       loop: (flags & 0x2) !== 0,
+      isSpinoff: this.isSpinoff,
       frameCount: frameCount,
       frameSpeed: frameSpeed,
+      duration: this.duration,
       thumbIndex: thumbIndex,
-      timestamp: modifiedTimestamp,
-      creationTimestamp: creationTimestamp,
+      timestamp: modifiedTime,
+      creationTimestamp: creationTime,
       root: {
         username: rootAuthorName,
         fsid: rootAuthorId,
         filename: rootFilename,
+        isDsiFilename: rootFilename.length !== 28
       },
       parent: {
         username: parentAuthorName,
         fsid: parentAuthorId,
         filename: parentFilename,
+        isDsiFilename: parentFilename.length !== 28
       },
       current: {
         username: currentAuthorName,
         fsid: currentAuthorId,
         filename: currentFilename,
+        isDsiFilename: currentFilename.length !== 28
       },
     };
   }
 
   private decodeMetaQuick() {
-    this.seek(this.sections['KFH'].offset + 0x8 + 0xC4);
+    assert(this.sectionMap.has('KFH'));
+    this.seek(this.sectionMap.get('KFH').ptr + 0x8 + 0xC4);
     const frameCount = this.readUint16();
     const thumbFrameIndex = this.readUint16();
     const flags = this.readUint16();
@@ -338,49 +370,58 @@ export class KwzParser extends FlipnoteParser {
     this.thumbFrameIndex = thumbFrameIndex;
     this.frameSpeed = frameSpeed;
     this.framerate = KWZ_FRAMERATES[frameSpeed];
+    this.duration = timeGetNoteDuration(this.frameCount, this.framerate);
+    this.layerVisibility = {
+      1: (layerFlags & 0x1) === 0,
+      2: (layerFlags & 0x2) === 0,
+      3: (layerFlags & 0x3) === 0,
+    };
   }
 
   private getFrameOffsets() {
+    assert(this.sectionMap.has('KMI') && this.sectionMap.has('KMC'));
     const numFrames = this.frameCount;
-    const kmiSection = this.sections['KMI'];
-    const kmcSection = this.sections['KMC'];
+    const kmiSection = this.sectionMap.get('KMI');
+    const kmcSection = this.sectionMap.get('KMC');
+    assert(kmiSection.length / 28 >= numFrames);
     const frameMetaOffsets = new Uint32Array(numFrames);
     const frameDataOffsets = new Uint32Array(numFrames);
-    const frameLayerSizes = [];
-    let frameMetaOffset = kmiSection.offset + 8;
-    let frameDataOffset = kmcSection.offset + 12;
+    const frameLayerSizes: [number, number, number][] = [];
+    let frameMetaPtr = kmiSection.ptr + 8;
+    let frameDataPtr = kmcSection.ptr + 12;
     for (let frameIndex = 0; frameIndex < numFrames; frameIndex++) {
-      this.seek(frameMetaOffset + 4);
+      this.seek(frameMetaPtr + 4);
       const layerASize = this.readUint16();
       const layerBSize = this.readUint16();
       const layerCSize = this.readUint16();
-      frameMetaOffsets[frameIndex] = frameMetaOffset
-      frameDataOffsets[frameIndex] = frameDataOffset;
-      frameMetaOffset += 28;
-      frameDataOffset += layerASize + layerBSize + layerCSize;
+      frameMetaOffsets[frameIndex] = frameMetaPtr
+      frameDataOffsets[frameIndex] = frameDataPtr;
+      frameMetaPtr += 28;
+      frameDataPtr += layerASize + layerBSize + layerCSize;
+      assert(frameMetaPtr < this.byteLength, `frame${ frameIndex } meta pointer out of bounds`);
+      assert(frameDataPtr < this.byteLength, `frame${ frameIndex } data pointer out of bounds`);
       frameLayerSizes.push([layerASize, layerBSize, layerCSize]);
     }
     this.frameMetaOffsets = frameMetaOffsets;
     this.frameDataOffsets = frameDataOffsets;
-    this.frameLayerSizes = frameLayerSizes as [number, number, number][];
+    this.frameLayerSizes = frameLayerSizes;
   }
 
   private decodeSoundHeader() {
-    if (this.sections.hasOwnProperty('KSN')) {
-      let offset = this.sections['KSN'].offset + 8;
-      this.seek(offset);
-      const bgmSpeed = this.readUint32();
-      this.bgmSpeed = bgmSpeed;
-      this.bgmrate = KWZ_FRAMERATES[bgmSpeed];
-      const trackSizes = new Uint32Array(this.buffer, offset + 4, 20);
-      this.soundMeta = {
-        [FlipnoteAudioTrack.BGM]: {offset: offset += 28,            length: trackSizes[0]},
-        [FlipnoteAudioTrack.SE1]: {offset: offset += trackSizes[0], length: trackSizes[1]},
-        [FlipnoteAudioTrack.SE2]: {offset: offset += trackSizes[1], length: trackSizes[2]},
-        [FlipnoteAudioTrack.SE3]: {offset: offset += trackSizes[2], length: trackSizes[3]},
-        [FlipnoteAudioTrack.SE4]: {offset: offset += trackSizes[3], length: trackSizes[4]},
-      };
-    }
+    assert(this.sectionMap.has('KSN'));
+    let ptr = this.sectionMap.get('KSN').ptr + 8;
+    this.seek(ptr);
+    this.bgmSpeed = this.readUint32();
+    assert(this.bgmSpeed <= 10);
+    this.bgmrate = KWZ_FRAMERATES[this.bgmSpeed];
+    const trackSizes = new Uint32Array(this.buffer, ptr + 4, 20);
+    this.soundMeta = {
+      [FlipnoteAudioTrack.BGM]: {ptr: ptr += 28,            length: trackSizes[0]},
+      [FlipnoteAudioTrack.SE1]: {ptr: ptr += trackSizes[0], length: trackSizes[1]},
+      [FlipnoteAudioTrack.SE2]: {ptr: ptr += trackSizes[1], length: trackSizes[2]},
+      [FlipnoteAudioTrack.SE3]: {ptr: ptr += trackSizes[2], length: trackSizes[3]},
+      [FlipnoteAudioTrack.SE4]: {ptr: ptr += trackSizes[3], length: trackSizes[4]},
+    };
   }
 
   /** 
@@ -493,6 +534,7 @@ export class KwzParser extends FlipnoteParser {
    * @category Image
   */
   public decodeFrame(frameIndex: number, diffingFlag = 0x7, isPrevFrame = false) {
+    assert(frameIndex > -1 && frameIndex < this.frameCount, `Frame index ${ frameIndex } out of bounds`);
     // the prevDecodedFrame check is an optimisation for decoding frames in full sequence
     if (this.prevFrameIndex !== frameIndex - 1 && frameIndex !== 0) {
       // if this frame is being decoded as a prev frame, then we only want to decode the layers necessary
@@ -503,7 +545,8 @@ export class KwzParser extends FlipnoteParser {
       if (diffingFlag !== 0)
         this.decodeFrame(frameIndex - 1, diffingFlag, true);
     }
-    let ptr = this.frameDataOffsets[frameIndex];
+    
+    let framePtr = this.frameDataOffsets[frameIndex];
     const layerSizes = this.frameLayerSizes[frameIndex];
 
     for (let layerIndex = 0; layerIndex < 3; layerIndex++) {
@@ -511,9 +554,10 @@ export class KwzParser extends FlipnoteParser {
       if (this.settings.dsiGalleryNote && layerIndex === 3)
         break;
 
-      this.seek(ptr);
-      const layerSize = layerSizes[layerIndex];
-      ptr += layerSize;
+      this.seek(framePtr);
+      let layerSize = layerSizes[layerIndex];
+      framePtr += layerSize;
+      const pixelBuffer = this.layers[layerIndex];
 
       // if the layer is 38 bytes then it hasn't changed at all since the previous frame, so we can skip it
       if (layerSize === 38)
@@ -528,168 +572,163 @@ export class KwzParser extends FlipnoteParser {
       this.bitValue = 0;
 
       // tile skip counter
-      let skip = 0;
+      let skipTileCounter = 0;
 
-      for (let tileOffsetY = 0; tileOffsetY < KwzParser.height; tileOffsetY += 128) {
-        for (let tileOffsetX = 0; tileOffsetX < KwzParser.width; tileOffsetX += 128) {
+      for (let tileOffsetY = 0; tileOffsetY < 240; tileOffsetY += 128) {
+        for (let tileOffsetX = 0; tileOffsetX < 320; tileOffsetX += 128) {
           // loop small tiles
           for (let subTileOffsetY = 0; subTileOffsetY < 128; subTileOffsetY += 8) {
             const y = tileOffsetY + subTileOffsetY;
-            if (y >= KwzParser.height)
+            if (y >= 240)
               break;
 
             for (let subTileOffsetX = 0; subTileOffsetX < 128; subTileOffsetX += 8) {
               const x = tileOffsetX + subTileOffsetX;
-              if (x >= KwzParser.width)
+              if (x >= 320)
                 break;
 
-              if (skip > 0) {
-                skip -= 1;
+              // continue to next tile loop if skipTileCounter is > 0
+              if (skipTileCounter > 0) {
+                skipTileCounter -= 1;
                 continue;
               }
 
-              const pixelOffset = y * KwzParser.width + x;
-              const pixelBuffer = this.layers[layerIndex];
+              let pixelBufferPtr = y * KwzParser.width + x;
+              const tileType = this.readBits(3);
 
-              const type = this.readBits(3);
-
-              if (type == 0) {
-                const lineIndex = this.readBits(5);
-                const pixels = KWZ_LINE_TABLE_COMMON.subarray(lineIndex * 8, lineIndex * 8 + 8);
-                pixelBuffer.set(pixels, pixelOffset);
-                pixelBuffer.set(pixels, pixelOffset + 320);
-                pixelBuffer.set(pixels, pixelOffset + 640);
-                pixelBuffer.set(pixels, pixelOffset + 960);
-                pixelBuffer.set(pixels, pixelOffset + 1280);
-                pixelBuffer.set(pixels, pixelOffset + 1600);
-                pixelBuffer.set(pixels, pixelOffset + 1920);
-                pixelBuffer.set(pixels, pixelOffset + 2240);
+              if (tileType === 0) {
+                const linePtr = this.readBits(5) * 8;
+                const pixels = KWZ_LINE_TABLE_COMMON.subarray(linePtr, linePtr + 8);
+                pixelBuffer.set(pixels, pixelBufferPtr);
+                pixelBuffer.set(pixels, pixelBufferPtr += 320);
+                pixelBuffer.set(pixels, pixelBufferPtr += 320);
+                pixelBuffer.set(pixels, pixelBufferPtr += 320);
+                pixelBuffer.set(pixels, pixelBufferPtr += 320);
+                pixelBuffer.set(pixels, pixelBufferPtr += 320);
+                pixelBuffer.set(pixels, pixelBufferPtr += 320);
+                pixelBuffer.set(pixels, pixelBufferPtr += 320);
               } 
 
-              else if (type == 1) {
-                const lineIndex = this.readBits(13);
-                const pixels = KWZ_LINE_TABLE.subarray(lineIndex * 8, lineIndex * 8 + 8);
-                pixelBuffer.set(pixels, pixelOffset);
-                pixelBuffer.set(pixels, pixelOffset + 320);
-                pixelBuffer.set(pixels, pixelOffset + 640);
-                pixelBuffer.set(pixels, pixelOffset + 960);
-                pixelBuffer.set(pixels, pixelOffset + 1280);
-                pixelBuffer.set(pixels, pixelOffset + 1600);
-                pixelBuffer.set(pixels, pixelOffset + 1920);
-                pixelBuffer.set(pixels, pixelOffset + 2240);
+              else if (tileType === 1) {
+                const linePtr = this.readBits(13) * 8;
+                const pixels = KWZ_LINE_TABLE.subarray(linePtr, linePtr + 8);
+                pixelBuffer.set(pixels, pixelBufferPtr);
+                pixelBuffer.set(pixels, pixelBufferPtr += 320);
+                pixelBuffer.set(pixels, pixelBufferPtr += 320);
+                pixelBuffer.set(pixels, pixelBufferPtr += 320);
+                pixelBuffer.set(pixels, pixelBufferPtr += 320);
+                pixelBuffer.set(pixels, pixelBufferPtr += 320);
+                pixelBuffer.set(pixels, pixelBufferPtr += 320);
+                pixelBuffer.set(pixels, pixelBufferPtr += 320);
               } 
               
-              else if (type == 2) {
-                const lineValue = this.readBits(5);
-                const a = KWZ_LINE_TABLE_COMMON.subarray(lineValue * 8, lineValue * 8 + 8);
-                const b = KWZ_LINE_TABLE_COMMON_SHIFT.subarray(lineValue * 8, lineValue * 8 + 8);
-                pixelBuffer.set(a, pixelOffset);
-                pixelBuffer.set(b, pixelOffset + 320);
-                pixelBuffer.set(a, pixelOffset + 640);
-                pixelBuffer.set(b, pixelOffset + 960);
-                pixelBuffer.set(a, pixelOffset + 1280);
-                pixelBuffer.set(b, pixelOffset + 1600);
-                pixelBuffer.set(a, pixelOffset + 1920);
-                pixelBuffer.set(b, pixelOffset + 2240);
+              else if (tileType === 2) {
+                const linePtr = this.readBits(5) * 8;
+                const a = KWZ_LINE_TABLE_COMMON.subarray(linePtr, linePtr + 8);
+                const b = KWZ_LINE_TABLE_COMMON_SHIFT.subarray(linePtr, linePtr + 8);
+                pixelBuffer.set(a, pixelBufferPtr);
+                pixelBuffer.set(b, pixelBufferPtr += 320);
+                pixelBuffer.set(a, pixelBufferPtr += 320);
+                pixelBuffer.set(b, pixelBufferPtr += 320);
+                pixelBuffer.set(a, pixelBufferPtr += 320);
+                pixelBuffer.set(b, pixelBufferPtr += 320);
+                pixelBuffer.set(a, pixelBufferPtr += 320);
+                pixelBuffer.set(b, pixelBufferPtr += 320);
               } 
               
-              else if (type == 3) {
-                const lineValue = this.readBits(13);
-                const a = KWZ_LINE_TABLE.subarray(lineValue * 8, lineValue * 8 + 8);
-                const b = KWZ_LINE_TABLE_SHIFT.subarray(lineValue * 8, lineValue * 8 + 8);
-                pixelBuffer.set(a, pixelOffset);
-                pixelBuffer.set(b, pixelOffset + 320);
-                pixelBuffer.set(a, pixelOffset + 640);
-                pixelBuffer.set(b, pixelOffset + 960);
-                pixelBuffer.set(a, pixelOffset + 1280);
-                pixelBuffer.set(b, pixelOffset + 1600);
-                pixelBuffer.set(a, pixelOffset + 1920);
-                pixelBuffer.set(b, pixelOffset + 2240);
+              else if (tileType === 3) {
+                const linePtr = this.readBits(13) * 8;
+                const a = KWZ_LINE_TABLE.subarray(linePtr, linePtr + 8);
+                const b = KWZ_LINE_TABLE_SHIFT.subarray(linePtr, linePtr + 8);
+                pixelBuffer.set(a, pixelBufferPtr);
+                pixelBuffer.set(b, pixelBufferPtr += 320);
+                pixelBuffer.set(a, pixelBufferPtr += 320);
+                pixelBuffer.set(b, pixelBufferPtr += 320);
+                pixelBuffer.set(a, pixelBufferPtr += 320);
+                pixelBuffer.set(b, pixelBufferPtr += 320);
+                pixelBuffer.set(a, pixelBufferPtr += 320);
+                pixelBuffer.set(b, pixelBufferPtr += 320);
               }
 
               // most common tile type
-              else if (type == 4) {
-                let mask = this.readBits(8);
-                let ptr = pixelOffset;
-                for (let line = 0; line < 8; line++) {
-                  if ((mask & 0x1) !== 0) {
-                    const lineIndex = this.readBits(5);
-                    const pixels = KWZ_LINE_TABLE_COMMON.subarray(lineIndex * 8, lineIndex * 8 + 8);
-                    pixelBuffer.set(pixels, ptr);
-                  } 
-                  else {
-                    const lineIndex = this.readBits(13);
-                    const pixels = KWZ_LINE_TABLE.subarray(lineIndex * 8, lineIndex * 8 + 8);
-                    pixelBuffer.set(pixels, ptr);
+              else if (tileType === 4) {
+                const flags = this.readBits(8);
+                for (let mask = 1; mask < 0xFF; mask <<= 1) {
+                  if (flags & mask) {
+                    const linePtr = this.readBits(5) * 8;
+                    const pixels = KWZ_LINE_TABLE_COMMON.subarray(linePtr, linePtr + 8);
+                    pixelBuffer.set(pixels, pixelBufferPtr);
                   }
-                  mask >>= 1;
-                  ptr += 320;
+                  else {
+                    const linePtr = this.readBits(13) * 8;
+                    const pixels = KWZ_LINE_TABLE.subarray(linePtr, linePtr + 8);
+                    pixelBuffer.set(pixels, pixelBufferPtr);
+                  }
+                  pixelBufferPtr += 320;
                 }
               }
 
-              else if (type == 5) {
-                skip = this.readBits(5);
+              else if (tileType === 5) {
+                skipTileCounter = this.readBits(5);
                 continue;
               }
 
               // type 6 doesnt exist
 
-              else if (type == 7) {
+              else if (tileType === 7) {
                 let pattern = this.readBits(2);
                 let useCommonLines = this.readBits(1);
-
-                let a;
-                let b;
+                let a, b;
 
                 if (useCommonLines !== 0) {
-                  const lineIndexA = this.readBits(5);
-                  const lineIndexB = this.readBits(5);
-                  a = KWZ_LINE_TABLE_COMMON.subarray(lineIndexA * 8, lineIndexA * 8 + 8);
-                  b = KWZ_LINE_TABLE_COMMON.subarray(lineIndexB * 8, lineIndexB * 8 + 8);
+                  const linePtrA = this.readBits(5) * 8;
+                  const linePtrB = this.readBits(5) * 8;
+                  a = KWZ_LINE_TABLE_COMMON.subarray(linePtrA, linePtrA + 8);
+                  b = KWZ_LINE_TABLE_COMMON.subarray(linePtrB, linePtrB + 8);
                   pattern = (pattern + 1) % 4;
                 } else {
-                  const lineIndexA = this.readBits(13);
-                  const lineIndexB = this.readBits(13);
-                  a = KWZ_LINE_TABLE.subarray(lineIndexA * 8, lineIndexA * 8 + 8);
-                  b = KWZ_LINE_TABLE.subarray(lineIndexB * 8, lineIndexB * 8 + 8);
+                  const linePtrA = this.readBits(13) * 8;
+                  const linePtrB = this.readBits(13) * 8;
+                  a = KWZ_LINE_TABLE.subarray(linePtrA, linePtrA + 8);
+                  b = KWZ_LINE_TABLE.subarray(linePtrB, linePtrB + 8);
                 }
 
-                if (pattern == 0) {
-                  pixelBuffer.set(a, pixelOffset);
-                  pixelBuffer.set(b, pixelOffset + 320);
-                  pixelBuffer.set(a, pixelOffset + 640);
-                  pixelBuffer.set(b, pixelOffset + 960);
-                  pixelBuffer.set(a, pixelOffset + 1280);
-                  pixelBuffer.set(b, pixelOffset + 1600);
-                  pixelBuffer.set(a, pixelOffset + 1920);
-                  pixelBuffer.set(b, pixelOffset + 2240);
-                } else if (pattern == 1) {
-                  pixelBuffer.set(a, pixelOffset);
-                  pixelBuffer.set(a, pixelOffset + 320);
-                  pixelBuffer.set(b, pixelOffset + 640);
-                  pixelBuffer.set(a, pixelOffset + 960);
-                  pixelBuffer.set(a, pixelOffset + 1280);
-                  pixelBuffer.set(b, pixelOffset + 1600);
-                  pixelBuffer.set(a, pixelOffset + 1920);
-                  pixelBuffer.set(a, pixelOffset + 2240);
-                } else if (pattern == 2) {
-                  pixelBuffer.set(a, pixelOffset);
-                  pixelBuffer.set(b, pixelOffset + 320);
-                  pixelBuffer.set(a, pixelOffset + 640);
-                  pixelBuffer.set(a, pixelOffset + 960);
-                  pixelBuffer.set(b, pixelOffset + 1280);
-                  pixelBuffer.set(a, pixelOffset + 1600);
-                  pixelBuffer.set(a, pixelOffset + 1920);
-                  pixelBuffer.set(b, pixelOffset + 2240);
-                } else if (pattern == 3) {
-                  pixelBuffer.set(a, pixelOffset);
-                  pixelBuffer.set(b, pixelOffset + 320);
-                  pixelBuffer.set(b, pixelOffset + 640);
-                  pixelBuffer.set(a, pixelOffset + 960);
-                  pixelBuffer.set(b, pixelOffset + 1280);
-                  pixelBuffer.set(b, pixelOffset + 1600);
-                  pixelBuffer.set(a, pixelOffset + 1920);
-                  pixelBuffer.set(b, pixelOffset + 2240);
+                if (pattern === 0) {
+                  pixelBuffer.set(a, pixelBufferPtr);
+                  pixelBuffer.set(b, pixelBufferPtr += 320);
+                  pixelBuffer.set(a, pixelBufferPtr += 320);
+                  pixelBuffer.set(b, pixelBufferPtr += 320);
+                  pixelBuffer.set(a, pixelBufferPtr += 320);
+                  pixelBuffer.set(b, pixelBufferPtr += 320);
+                  pixelBuffer.set(a, pixelBufferPtr += 320);
+                  pixelBuffer.set(b, pixelBufferPtr += 320);
+                } else if (pattern === 1) {
+                  pixelBuffer.set(a, pixelBufferPtr);
+                  pixelBuffer.set(a, pixelBufferPtr += 320);
+                  pixelBuffer.set(b, pixelBufferPtr += 320);
+                  pixelBuffer.set(a, pixelBufferPtr += 320);
+                  pixelBuffer.set(a, pixelBufferPtr += 320);
+                  pixelBuffer.set(b, pixelBufferPtr += 320);
+                  pixelBuffer.set(a, pixelBufferPtr += 320);
+                  pixelBuffer.set(a, pixelBufferPtr += 320);
+                } else if (pattern === 2) {
+                  pixelBuffer.set(a, pixelBufferPtr);
+                  pixelBuffer.set(b, pixelBufferPtr += 320);
+                  pixelBuffer.set(a, pixelBufferPtr += 320);
+                  pixelBuffer.set(a, pixelBufferPtr += 320);
+                  pixelBuffer.set(b, pixelBufferPtr += 320);
+                  pixelBuffer.set(a, pixelBufferPtr += 320);
+                  pixelBuffer.set(a, pixelBufferPtr += 320);
+                  pixelBuffer.set(b, pixelBufferPtr += 320);
+                } else if (pattern === 3) {
+                  pixelBuffer.set(a, pixelBufferPtr);
+                  pixelBuffer.set(b, pixelBufferPtr += 320);
+                  pixelBuffer.set(b, pixelBufferPtr += 320);
+                  pixelBuffer.set(a, pixelBufferPtr += 320);
+                  pixelBuffer.set(b, pixelBufferPtr += 320);
+                  pixelBuffer.set(b, pixelBufferPtr += 320);
+                  pixelBuffer.set(a, pixelBufferPtr += 320);
+                  pixelBuffer.set(b, pixelBufferPtr += 320);
                 }
               }
             }
@@ -797,7 +836,8 @@ export class KwzParser extends FlipnoteParser {
   */
   public getAudioTrackRaw(trackId: FlipnoteAudioTrack) {
     const trackMeta = this.soundMeta[trackId];
-    return new Uint8Array(this.buffer, trackMeta.offset, trackMeta.length);
+    assert(trackMeta.ptr + trackMeta.length < this.byteLength);
+    return new Uint8Array(this.buffer, trackMeta.ptr, trackMeta.length);
   }
 
   /** 
@@ -827,34 +867,32 @@ export class KwzParser extends FlipnoteParser {
         // 2 bit sample
         if (stepIndex < 18 || currBit > 4) {
           sample = currByte & 0x3;
-
           step = ADPCM_STEP_TABLE[stepIndex];
           diff = step >> 3;
-
-          if (sample & 1) diff += step;
-          if (sample & 2) diff = -diff;
-
+          if (sample & 1)
+            diff += step;
+          if (sample & 2)
+            diff = -diff;
           predictor += diff;
           stepIndex += ADPCM_INDEX_TABLE_2BIT[sample];
-
           currByte >>= 2;
           currBit += 2;
         }
         // 4 bit sample
         else {
           sample = currByte & 0xf;
-
           step = ADPCM_STEP_TABLE[stepIndex];
           diff = step >> 3;
-
-          if (sample & 1) diff += step >> 2;
-          if (sample & 2) diff += step >> 1;
-          if (sample & 4) diff += step;
-          if (sample & 8) diff = -diff;
-
+          if (sample & 1) 
+            diff += step >> 2;
+          if (sample & 2) 
+            diff += step >> 1;
+          if (sample & 4)
+            diff += step;
+          if (sample & 8)
+            diff = -diff;
           predictor += diff;
           stepIndex += ADPCM_INDEX_TABLE_4BIT[sample];
-
           currByte >>= 4;
           currBit += 4;
         }
@@ -880,9 +918,9 @@ export class KwzParser extends FlipnoteParser {
       const bgmAdjust = (1 / this.bgmrate) / (1 / this.framerate);
       srcFreq = this.rawSampleRate * bgmAdjust;
     }
-    if (srcFreq !== dstFreq) {
+    if (srcFreq !== dstFreq)
       return pcmDsAudioResample(srcPcm, srcFreq, dstFreq);
-    }
+
     return srcPcm;
   }
 
@@ -904,8 +942,7 @@ export class KwzParser extends FlipnoteParser {
    * @category Audio
   */
   public getAudioMasterPcm(dstFreq = this.sampleRate) {
-    const duration = this.frameCount * (1 / this.framerate);
-    const dstSize = Math.ceil(duration * dstFreq);
+    const dstSize = Math.ceil(this.duration * dstFreq);
     const master = new Int16Array(dstSize);
     const hasBgm = this.hasAudioTrack(FlipnoteAudioTrack.BGM);
     const hasSe1 = this.hasAudioTrack(FlipnoteAudioTrack.SE1);
@@ -918,7 +955,7 @@ export class KwzParser extends FlipnoteParser {
       this.pcmAudioMix(bgmPcm, master, 0);
     }
     // Mix sound effects
-    if (hasSe1 || hasSe2 || hasSe3) {
+    if (hasSe1 || hasSe2 || hasSe3 || hasSe4) {
       const samplesPerFrame = dstFreq / this.framerate;
       const se1Pcm = hasSe1 ? this.getAudioTrackPcm(FlipnoteAudioTrack.SE1, dstFreq) : null;
       const se2Pcm = hasSe2 ? this.getAudioTrackPcm(FlipnoteAudioTrack.SE2, dstFreq) : null;

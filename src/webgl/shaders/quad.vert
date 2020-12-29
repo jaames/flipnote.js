@@ -11,7 +11,8 @@ void main() {
   v_uv = texcoord;
   v_scale = floor(u_screenSize.y / u_textureSize.y + 0.01);
   gl_Position = position;
-  if (u_flipY) {
+  if (u_flipY) 
+  {
     gl_Position.y *= -1.;
   }
 }
