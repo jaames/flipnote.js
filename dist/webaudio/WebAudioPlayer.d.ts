@@ -6,16 +6,17 @@ export declare type PcmAudioBuffer = Int16Array | Float32Array;
  * Capable of playing PCM streams, with volume adjustment and an optional equalizer. Only available in browser contexts
  */
 export declare class WebAudioPlayer {
-    /** Audio context, see {@link https://developer.mozilla.org/en-US/docs/Web/API/BaseAudioContext | BaseAudioContext} */
-    ctx: BaseAudioContext;
+    /** Audio context, see {@link https://developer.mozilla.org/en-US/docs/Web/API/AudioContext | AudioContext} */
+    ctx: AudioContext;
     /** Audio sample rate */
     sampleRate: number;
     /** Whether the audio is being run through an equalizer or not */
     useEq: boolean;
-    /** Equalizer settings. Credit to {@link https://www.sudomemo.net/ | Sudomemo} */
+    /** Default equalizer settings. Credit to {@link https://www.sudomemo.net/ | Sudomemo} for these */
     eqSettings: [number, number][];
     private _volume;
     private _loop;
+    private nodeRefs;
     private buffer;
     private gainNode;
     private source;
@@ -26,6 +27,7 @@ export declare class WebAudioPlayer {
     /** Whether the audio should loop after it has ended */
     set loop(value: boolean);
     get loop(): boolean;
+    private getCtx;
     /**
      * Set the audio buffer to play
      * @param inputBuffer
@@ -50,4 +52,8 @@ export declare class WebAudioPlayer {
      * Stops the audio playback
      */
     stop(): void;
+    /**
+   * Frees any resources used by this canvas instance
+   */
+    destroy(): Promise<void>;
 }

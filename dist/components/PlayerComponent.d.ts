@@ -13,10 +13,11 @@ declare const PlayerComponent_base: {
         readonly layerVisibility: Record<number, boolean>;
         autoplay: boolean;
         supportedEvents: PlayerEvent[];
-        _src: any;
+        _src: import("../parsers").FlipnoteSource;
         _loop: boolean;
         _volume: number;
         _muted: boolean;
+        _frame: number;
         isNoteLoaded: boolean;
         events: import("../player").PlayerEventMap;
         playbackStartTime: number;
@@ -27,7 +28,7 @@ declare const PlayerComponent_base: {
         isPlaying: boolean;
         wasPlaying: boolean;
         isSeeking: boolean;
-        src: any;
+        src: import("../parsers").FlipnoteSource;
         paused: boolean;
         currentFrame: number;
         currentTime: number;
@@ -40,15 +41,17 @@ declare const PlayerComponent_base: {
         readonly frameSpeed: number;
         readonly buffered: TimeRanges;
         readonly seekable: TimeRanges;
-        readonly currentSrc: any;
+        readonly currentSrc: import("../parsers").FlipnoteSource;
         readonly videoWidth: number;
         readonly videoHeight: number;
-        load(source: any): Promise<void>;
+        load(source?: any): Promise<void>;
         closeNote(): void;
         openNote(note: import("../parsers").FlipnoteParser): void;
         playbackLoop: (timestamp: number) => void;
         setCurrentTime(value: number): void;
         getCurrentTime(): number;
+        getTimeCounter(): string;
+        getFrameCounter(): string;
         setProgress(value: number): void;
         getProgress(): number;
         play(): Promise<void>;
@@ -84,9 +87,10 @@ declare const PlayerComponent_base: {
         getMuted(): boolean;
         toggleMuted(): void;
         setVolume(volume: number): void;
+        getVolume(): number;
         seekToNextFrame(): void;
         fastSeek(time: number): void;
-        canPlayType(mediaType: string): "probably" | "maybe" | "";
+        canPlayType(mediaType: string): "" | "probably" | "maybe";
         getVideoPlaybackQuality(): VideoPlaybackQuality;
         requestPictureInPicture(): void;
         captureStream(): void;
@@ -94,26 +98,54 @@ declare const PlayerComponent_base: {
         off(eventType: PlayerEvent | PlayerEvent[], callback: Function): void;
         emit(eventType: PlayerEvent, ...args: any): void;
         clearEvents(): void;
-        destroy(): void;
+        destroy(): Promise<void>;
         supports(name: string): boolean;
         assertNoteLoaded(): void;
-        assertValueRange(value: number, min: number, max: number): void;
     };
 } & typeof LitElement;
 /**
  * @category Web Component
+ * @internal
  */
 export declare class PlayerComponent extends PlayerComponent_base {
     static get styles(): import("lit-element").CSSResult;
+    controls: string;
+    get width(): number | string;
+    set width(value: number | string);
+    get src(): any;
+    set src(src: any);
+    get autoplay(): boolean;
+    set autoplay(value: boolean);
+    private _width;
+    private _cssWidth;
     private _progress;
+    private _counter;
+    private _isLoading;
+    private _isError;
     private _isPlaying;
+    private _isMuted;
+    private _volumeLevel;
     private playerCanvas;
+    private _isPlayerAvailable;
+    private _playerSrc;
+    private _resizeObserver;
     constructor();
+    /** @internal */
     render(): import("lit-element").TemplateResult;
+    /** @internal */
+    renderControls(): import("lit-element").TemplateResult;
+    /** @internal */
     firstUpdated(changedProperties: PropertyValues): void;
+    /** @internal */
     disconnectedCallback(): void;
-    private onProgressSliderChange;
-    private onProgressSliderInputStart;
-    private onProgressSliderInputEnd;
+    private updateCanvasSize;
+    private handleResize;
+    private handleKeyInput;
+    private handlePlayToggle;
+    private handleMuteToggle;
+    private handleProgressSliderChange;
+    private handleProgressSliderInputStart;
+    private handleProgressSliderInputEnd;
+    private handleVolumeBarChange;
 }
 export {};

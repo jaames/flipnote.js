@@ -1,7 +1,9 @@
 import { LitElement } from 'lit-element';
+/** @internal */
 declare type SliderOrientation = 'horizontal' | 'vertical';
 /**
  * @category Web Component
+ * @internal
  */
 export declare class SliderComponent extends LitElement {
     static get styles(): import("lit-element").CSSResult;

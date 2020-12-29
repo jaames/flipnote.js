@@ -36,7 +36,7 @@ export declare enum FlipnoteAudioTrack {
  */
 export declare type FlipnoteAudioTrackInfo = {
     [key in FlipnoteAudioTrack]?: {
-        offset: number;
+        ptr: number;
         length: number;
     };
 };
@@ -48,6 +48,22 @@ export declare type FlipnoteLayerVisibility = {
     2: boolean;
     3: boolean;
 };
+/**
+ * Flipnote version info - provides details about a particular Flipnote version and its author
+ */
+export interface FlipnoteVersion {
+    /** Flipnote unique filename */
+    filename: string;
+    /** Author's username */
+    username: string;
+    /** Author's unique ID */
+    fsid: string;
+    /** KWZ only - sometimes DSi library notes incorrectly use the PPM filename format instead */
+    isDsiFilename?: boolean;
+}
+/**
+ * Flipnote details
+ */
 export interface FlipnoteMeta {
     /** File lock state. Locked Flipnotes cannot be edited by anyone other than the current author */
     lock: boolean;
@@ -66,23 +82,11 @@ export interface FlipnoteMeta {
     /** Flipnote duration measured in seconds, assuming normal playback speed */
     duration: number;
     /** Metadata about the author of the original Flipnote file */
-    root: {
-        filename: string;
-        username: string;
-        fsid: string;
-    };
+    root: FlipnoteVersion;
     /** Metadata about the previous author of the Flipnote file */
-    parent: {
-        filename: string;
-        username: string;
-        fsid: string;
-    };
+    parent: FlipnoteVersion;
     /** Metadata about the current author of the Flipnote file */
-    current: {
-        filename: string;
-        username: string;
-        fsid: string;
-    };
+    current: FlipnoteVersion;
 }
 /**
  * Base Flipnote parser class

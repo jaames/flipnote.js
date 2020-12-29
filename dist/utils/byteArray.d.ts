@@ -5,7 +5,7 @@ export declare class ByteArray {
     private currPageIndex;
     private pages;
     private currPage;
-    private cursor;
+    private pointer;
     constructor();
     private newPage;
     getData(): Uint8Array;

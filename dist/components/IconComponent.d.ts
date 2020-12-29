@@ -3,6 +3,7 @@ import { LitElement } from 'lit-element';
  * Flipnote player icon component
  *
  * @category Web Component
+ * @internal
  */
 export declare class IconComponent extends LitElement {
     static get styles(): import("lit-element").CSSResult;
@@ -14,6 +15,7 @@ export declare class IconComponent extends LitElement {
      * - `volumeOn`
      * - `volumeOff`
      */
-    iconName: string;
+    icon: string;
+    /** @internal */
     render(): import("lit-element").TemplateResult;
 }

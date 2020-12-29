@@ -1,26 +1,39 @@
+interface WebglRendererOptions {
+    /** Function to be called if the context is lost */
+    onlost: () => void;
+    /** Function to be called if the context is restored */
+    onrestored: () => void;
+}
 /**
  * Animation frame renderer, built around the {@link https://developer.mozilla.org/en-US/docs/Web/API/WebGL_API WebGL} API
  *
  * Only available in browser contexts
  */
 export declare class WebglRenderer {
+    static defaultOptions: WebglRendererOptions;
     /** Canvas HTML element being used as a rendering surface */
     el: HTMLCanvasElement;
     /** Rendering context - see {@link https://developer.mozilla.org/en-US/docs/Web/API/WebGLRenderingContext} */
     gl: WebGLRenderingContext;
+    /** View width (CSS pixels) */
+    width: number;
+    /** View height (CSS pixels) */
+    height: number;
     /**
-     * Backing canvas width (pixels)
+     * Backing canvas width (real pixels)
      * Note that this factors in device pixel ratio, so it may not reflect the size of the canvas in CSS pixels
      */
     screenWidth: number;
     /**
-     * Backing canvas height (pixels)
+     * Backing canvas height (real pixels)
      * Note that this factors in device pixel ratio, so it may not reflect the size of the canvas in CSS pixels
      */
     screenHeight: number;
+    private options;
     private layerDrawProgram;
     private postProcessProgram;
     private quadBuffer;
+    private paletteData;
     private paletteTexture;
     private layerTexture;
     private frameTexture;
@@ -28,6 +41,7 @@ export declare class WebglRenderer {
     private textureWidth;
     private textureHeight;
     private refs;
+    private isCtxLost;
     /**
      * Creates a new WebGlCanvas instance
      * @param el - Canvas HTML element to use as a rendering surface
@@ -36,7 +50,8 @@ export declare class WebglRenderer {
      *
      * The ratio between `width` and `height` should be 3:4 for best results
      */
-    constructor(el: HTMLCanvasElement, width?: number, height?: number);
+    constructor(el: HTMLCanvasElement, width?: number, height?: number, options?: Partial<WebglRendererOptions>);
+    init(): void;
     private createProgram;
     private createShader;
     private createScreenQuad;
@@ -79,9 +94,20 @@ export declare class WebglRenderer {
      * Composites the current frame buffer into the canvas, applying post-processing effects like scaling filters if enabled
      */
     composite(): void;
-    resize(width?: number, height?: number): void;
+    /**
+     * Returns true if the webGL context has returned an error
+     */
+    isErrorState(): boolean;
+    /**
+     * Only a certain number of WebGL contexts can be added to a single page before the browser will start culling old contexts.
+     * This method returns true if it has been culled, false if not
+     */
+    isLost(): boolean;
+    private handleContextLoss;
+    private handleContextRestored;
     /**
      * Frees any resources used by this canvas instance
      */
-    destroy(): void;
+    destroy(): Promise<void>;
 }
+export {};

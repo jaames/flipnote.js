@@ -9,7 +9,7 @@ export declare type KwzSectionMagic = 'KFH' | 'KTN' | 'KMC' | 'KMI' | 'KSN' | 'I
  * @internal
  */
 export declare type KwzSectionMap = Map<KwzSectionMagic, {
-    offset: number;
+    ptr: number;
     length: number;
 }>;
 /**
@@ -104,6 +104,8 @@ export declare class KwzParser extends FlipnoteParser {
     constructor(arrayBuffer: ArrayBuffer, settings?: Partial<KwzParserSettings>);
     private buildSectionMap;
     private readBits;
+    private readFsid;
+    private readFilename;
     private decodeMeta;
     private decodeMetaQuick;
     private getFrameOffsets;

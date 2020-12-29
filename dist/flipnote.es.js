@@ -1,32 +1,31 @@
 /*!!
- flipnote.js v5.0.0 (web build)
+ flipnote.js v5.1.0 (web build)
  Javascript parsing and in-browser playback for the .PPM and .KWZ animation formats used by Flipnote Studio and Flipnote Studio 3D.
  Flipnote Studio is (c) Nintendo Co., Ltd. This project isn't endorsed by them in any way.
  2018 - 2021 James Daniel
  github.com/jaames/flipnote.js
  Keep on Flipnoting!
 */
-
 /** @internal */
 class ByteArray {
     constructor() {
         this.pageSize = ByteArray.pageSize;
         this.currPageIndex = -1;
         this.pages = [];
-        this.cursor = 0;
+        this.pointer = 0;
         this.newPage();
     }
     newPage() {
         this.pages[++this.currPageIndex] = new Uint8Array(this.pageSize);
         this.currPage = this.pages[this.currPageIndex];
-        this.cursor = 0;
+        this.pointer = 0;
     }
     getData() {
-        const data = new Uint8Array(this.currPageIndex * this.pageSize + this.cursor);
+        const data = new Uint8Array(this.currPageIndex * this.pageSize + this.pointer);
         for (let index = 0; index < this.pages.length; index++) {
             const page = this.pages[index];
             if (index === this.currPageIndex)
-                data.set(page.slice(0, this.cursor), index * this.pageSize);
+                data.set(page.slice(0, this.pointer), index * this.pageSize);
             else
                 data.set(page, index * this.pageSize);
         }
@@ -37,9 +36,9 @@ class ByteArray {
         return data.buffer;
     }
     writeByte(val) {
-        if (this.cursor >= this.pageSize)
+        if (this.pointer >= this.pageSize)
             this.newPage();
-        this.currPage[this.cursor++] = val;
+        this.currPage[this.pointer++] = val;
     }
     writeBytes(bytes, offset, length) {
         for (let l = length || bytes.length, i = offset || 0; i < l; i++)
@@ -48,12 +47,16 @@ class ByteArray {
 }
 ByteArray.pageSize = 2048;
 
-/** @internal */
+/**
+ * Wrapper around the DataView API to keep track of the offset into the data
+ * also provides some utils for reading ascii strings etc
+ * @internal
+ */
 class DataStream {
     constructor(arrayBuffer) {
         this.buffer = arrayBuffer;
         this.data = new DataView(arrayBuffer);
-        this.cursor = 0;
+        this.pointer = 0;
     }
     get bytes() {
         return new Uint8Array(this.buffer);
@@ -64,74 +67,74 @@ class DataStream {
     seek(offset, whence) {
         switch (whence) {
             case 2 /* End */:
-                this.cursor = this.data.byteLength + offset;
+                this.pointer = this.data.byteLength + offset;
                 break;
             case 1 /* Current */:
-                this.cursor += offset;
+                this.pointer += offset;
                 break;
             case 0 /* Begin */:
             default:
-                this.cursor = offset;
+                this.pointer = offset;
                 break;
         }
     }
     readUint8() {
-        const val = this.data.getUint8(this.cursor);
-        this.cursor += 1;
+        const val = this.data.getUint8(this.pointer);
+        this.pointer += 1;
         return val;
     }
     writeUint8(value) {
-        this.data.setUint8(this.cursor, value);
-        this.cursor += 1;
+        this.data.setUint8(this.pointer, value);
+        this.pointer += 1;
     }
     readInt8() {
-        const val = this.data.getInt8(this.cursor);
-        this.cursor += 1;
+        const val = this.data.getInt8(this.pointer);
+        this.pointer += 1;
         return val;
     }
     writeInt8(value) {
-        this.data.setInt8(this.cursor, value);
-        this.cursor += 1;
+        this.data.setInt8(this.pointer, value);
+        this.pointer += 1;
     }
     readUint16(littleEndian = true) {
-        const val = this.data.getUint16(this.cursor, littleEndian);
-        this.cursor += 2;
+        const val = this.data.getUint16(this.pointer, littleEndian);
+        this.pointer += 2;
         return val;
     }
     writeUint16(value, littleEndian = true) {
-        this.data.setUint16(this.cursor, value, littleEndian);
-        this.cursor += 2;
+        this.data.setUint16(this.pointer, value, littleEndian);
+        this.pointer += 2;
     }
     readInt16(littleEndian = true) {
-        const val = this.data.getInt16(this.cursor, littleEndian);
-        this.cursor += 2;
+        const val = this.data.getInt16(this.pointer, littleEndian);
+        this.pointer += 2;
         return val;
     }
     writeInt16(value, littleEndian = true) {
-        this.data.setInt16(this.cursor, value, littleEndian);
-        this.cursor += 2;
+        this.data.setInt16(this.pointer, value, littleEndian);
+        this.pointer += 2;
     }
     readUint32(littleEndian = true) {
-        const val = this.data.getUint32(this.cursor, littleEndian);
-        this.cursor += 4;
+        const val = this.data.getUint32(this.pointer, littleEndian);
+        this.pointer += 4;
         return val;
     }
     writeUint32(value, littleEndian = true) {
-        this.data.setUint32(this.cursor, value, littleEndian);
-        this.cursor += 4;
+        this.data.setUint32(this.pointer, value, littleEndian);
+        this.pointer += 4;
     }
     readInt32(littleEndian = true) {
-        const val = this.data.getInt32(this.cursor, littleEndian);
-        this.cursor += 4;
+        const val = this.data.getInt32(this.pointer, littleEndian);
+        this.pointer += 4;
         return val;
     }
     writeInt32(value, littleEndian = true) {
-        this.data.setInt32(this.cursor, value, littleEndian);
-        this.cursor += 4;
+        this.data.setInt32(this.pointer, value, littleEndian);
+        this.pointer += 4;
     }
     readBytes(count) {
-        const bytes = new Uint8Array(this.data.buffer, this.cursor, count);
-        this.cursor += bytes.byteLength;
+        const bytes = new Uint8Array(this.data.buffer, this.pointer, count);
+        this.pointer += bytes.byteLength;
         return bytes;
     }
     writeBytes(bytes) {
@@ -165,7 +168,7 @@ class DataStream {
         }
     }
     readWideChars(count) {
-        const chars = new Uint16Array(this.data.buffer, this.cursor, count);
+        const chars = new Uint16Array(this.data.buffer, this.pointer, count);
         let str = '';
         for (let i = 0; i < chars.length; i++) {
             const char = chars[i];
@@ -173,9 +176,27 @@ class DataStream {
                 break;
             str += String.fromCharCode(char);
         }
-        this.cursor += chars.byteLength;
+        this.pointer += chars.byteLength;
         return str;
     }
+}
+
+/**
+ * Assert condition is true
+ * @internal
+ */
+function assert(condition, errMsg = 'Assert failed') {
+    if (!condition) {
+        console.trace(errMsg);
+        throw new Error(errMsg);
+    }
+}
+/**
+ * Assert that a numberical value is between upper and lower bounds
+ * @internal
+ */
+function assertRange(value, min, max, name = '') {
+    assert(value >= min && value <= max, `Value ${name} should be between ${min} and ${max}`);
 }
 
 /**
@@ -188,20 +209,72 @@ class DataStream {
 const isBrowser = typeof window !== 'undefined'
     && typeof window.document !== 'undefined';
 /**
+ * Assert that the current environment should support browser APIs
+ * @internal
+ */
+function assertBrowserEnv() {
+    return assert(isBrowser, 'This feature is only available in browser environments');
+}
+/**
  * Is the code running in a Node environment?
  * @internal
  */
 const isNode = typeof process !== 'undefined'
     && process.versions != null
     && process.versions.node != null;
+/**
+ * Assert that the current environment should support NodeJS APIs
+ * @internal
+ */
+function assertNodeEnv() {
+    return assert(isNode, 'This feature is only available in NodeJS environments');
+}
+
+/**
+ * Number of seconds between the UNIX timestamp epoch (jan 1 1970) and the Nintendo timestamp epoch (jan 1 2000)
+ * @internal
+ */
+const UNIX_EPOCH_2000 = 946684800;
+/**
+ * Convert a Nintendo DS or 3DS timestamp int to a JS Date object
+ * @internal
+ */
+function dateFromNintendoTimestamp(timestamp) {
+    return new Date((timestamp + UNIX_EPOCH_2000) * 1000);
+}
+/**
+ * Get the duration (in seconds) of a number of framres running at a specified framerate
+ * @internal
+ */
+function timeGetNoteDuration(frameCount, framerate) {
+    // multiply and devide by 100 to get around floating precision issues
+    return ((frameCount * 100) * (1 / framerate)) / 100;
+}
+
+/** @internal */
+const saveData = (function () {
+    if (!isBrowser) {
+        return function () { };
+    }
+    var a = document.createElement("a");
+    // document.body.appendChild(a);
+    // a.style.display = "none";
+    return function (blob, filename) {
+        const url = window.URL.createObjectURL(blob);
+        a.href = url;
+        a.download = filename;
+        a.click();
+        window.URL.revokeObjectURL(url);
+    };
+})();
 
 /** Identifies which animation format a Flipnote uses */
 var FlipnoteFormat;
 (function (FlipnoteFormat) {
     /** Animation format used by Flipnote Studio (Nintendo DSiWare) */
-    FlipnoteFormat[FlipnoteFormat["PPM"] = 0] = "PPM";
+    FlipnoteFormat["PPM"] = "PPM";
     /** Animation format used by Flipnote Studio 3D (Nintendo 3DS) */
-    FlipnoteFormat[FlipnoteFormat["KWZ"] = 1] = "KWZ";
+    FlipnoteFormat["KWZ"] = "KWZ";
 })(FlipnoteFormat || (FlipnoteFormat = {}));
 /** Identifies a Flipnote audio track type */
 var FlipnoteAudioTrack;
@@ -250,16 +323,14 @@ const webUrlLoader = {
         xhr.responseType = 'arraybuffer';
         xhr.onreadystatechange = function (e) {
             if (xhr.readyState === 4) {
-                if (xhr.status >= 200 && xhr.status < 300) {
+                if (xhr.status >= 200 && xhr.status < 300)
                     resolve(xhr.response);
-                }
-                else {
+                else
                     reject({
                         type: 'httpError',
                         status: xhr.status,
                         statusText: xhr.statusText
                     });
-                }
             }
         };
         xhr.send(null);
@@ -297,19 +368,15 @@ const fileLoader = {
         return isBrowser && typeof File !== 'undefined' && source instanceof File;
     },
     load: function (source, resolve, reject) {
-        if (typeof FileReader !== 'undefined') {
-            const reader = new FileReader();
-            reader.onload = (event) => {
-                resolve(reader.result);
-            };
-            reader.onerror = (event) => {
-                reject({ type: 'fileReadError' });
-            };
-            reader.readAsArrayBuffer(source);
-        }
-        else {
-            reject();
-        }
+        assert(typeof FileReader !== 'undefined');
+        const reader = new FileReader();
+        reader.onload = (event) => {
+            resolve(reader.result);
+        };
+        reader.onerror = (event) => {
+            reject({ type: 'fileReadError' });
+        };
+        reader.readAsArrayBuffer(source);
     }
 };
 
@@ -352,10 +419,8 @@ function loadSource(source) {
     return new Promise((resolve, reject) => {
         for (let i = 0; i < loaders.length; i++) {
             const loader = loaders[i];
-            if (loader.matches(source)) {
-                loader.load(source, resolve, reject);
-                return;
-            }
+            if (loader.matches(source))
+                return loader.load(source, resolve, reject);
         }
         reject('No loader available for source type');
     });
@@ -474,7 +539,6 @@ class PpmParser extends FlipnoteParser {
         super(arrayBuffer);
         /** File format type, reflects {@link PpmParser.format} */
         this.format = FlipnoteFormat.PPM;
-        this.formatString = 'PPM';
         /** Animation frame width, reflects {@link PpmParser.width} */
         this.width = PpmParser.width;
         /** Animation frame height, reflects {@link PpmParser.height} */
@@ -497,13 +561,17 @@ class PpmParser extends FlipnoteParser {
             this.decodeMeta();
         }
         // create image buffers
-        this.layers = [
+        this.layerBuffers = [
             new Uint8Array(PpmParser.width * PpmParser.height),
             new Uint8Array(PpmParser.width * PpmParser.height)
         ];
-        this.prevLayers = [
+        this.prevLayerBuffers = [
             new Uint8Array(PpmParser.width * PpmParser.height),
             new Uint8Array(PpmParser.width * PpmParser.height)
+        ];
+        this.lineEncodingBuffers = [
+            new Uint8Array(PpmParser.height),
+            new Uint8Array(PpmParser.height)
         ];
         this.prevDecodedFrame = null;
     }
@@ -514,28 +582,37 @@ class PpmParser extends FlipnoteParser {
         return /[0-9A-F]{6}_[0-9A-F]{13}_[0-9]{3}/.test(filename);
     }
     decodeHeader() {
-        this.seek(0);
+        assert(16 < this.byteLength);
+        this.seek(4);
         // decode header
         // https://github.com/Flipnote-Collective/flipnote-studio-docs/wiki/PPM-format#header
-        let magic = this.readUint32();
         this.frameDataLength = this.readUint32();
         this.soundDataLength = this.readUint32();
         this.frameCount = this.readUint16() + 1;
         this.version = this.readUint16();
     }
     readFilename() {
-        return [
-            this.readHex(3),
-            this.readChars(13),
-            this.readUint16().toString().padStart(3, '0')
-        ].join('_');
+        const mac = this.readHex(3);
+        const random = this.readChars(13);
+        const edits = this.readUint16().toString().padStart(3, '0');
+        return `${mac}_${random}_${edits}`;
     }
     decodeMeta() {
         // https://github.com/Flipnote-Collective/flipnote-studio-docs/wiki/PPM-format#metadata
+        assert(0x06A8 < this.byteLength);
         this.seek(0x10);
-        const lock = this.readUint16(), thumbIndex = this.readInt16(), rootAuthorName = this.readWideChars(11), parentAuthorName = this.readWideChars(11), currentAuthorName = this.readWideChars(11), parentAuthorId = this.readHex(8, true), currentAuthorId = this.readHex(8, true), parentFilename = this.readFilename(), currentFilename = this.readFilename(), rootAuthorId = this.readHex(8, true);
+        const lock = this.readUint16();
+        const thumbIndex = this.readInt16();
+        const rootAuthorName = this.readWideChars(11);
+        const parentAuthorName = this.readWideChars(11);
+        const currentAuthorName = this.readWideChars(11);
+        const parentAuthorId = this.readHex(8, true);
+        const currentAuthorId = this.readHex(8, true);
+        const parentFilename = this.readFilename();
+        const currentFilename = this.readFilename();
+        const rootAuthorId = this.readHex(8, true);
         this.seek(0x9A);
-        const timestamp = new Date((this.readUint32() + 946684800) * 1000);
+        const timestamp = dateFromNintendoTimestamp(this.readInt32());
         this.seek(0x06A6);
         const flags = this.readUint16();
         this.thumbFrameIndex = thumbIndex;
@@ -548,9 +625,11 @@ class PpmParser extends FlipnoteParser {
         this.meta = {
             lock: lock === 1,
             loop: (flags >> 1 & 0x1) === 1,
+            isSpinoff: this.isSpinoff,
             frameCount: this.frameCount,
             frameSpeed: this.frameSpeed,
             bgmSpeed: this.bgmSpeed,
+            duration: this.duration,
             thumbIndex: thumbIndex,
             timestamp: timestamp,
             root: {
@@ -576,37 +655,43 @@ class PpmParser extends FlipnoteParser {
         this.seek(0x06A0);
         const offsetTableLength = this.readUint16();
         const numOffsets = offsetTableLength / 4;
+        assert(numOffsets <= this.frameCount);
         // skip padding + flags
         this.seek(0x06A8);
         // read frame offsets and build them into a table
         const frameOffsets = new Uint32Array(numOffsets);
         for (let n = 0; n < numOffsets; n++) {
-            frameOffsets[n] = 0x06A8 + offsetTableLength + this.readUint32();
+            const ptr = 0x06A8 + offsetTableLength + this.readUint32();
+            assert(ptr < this.byteLength, `Frame ${n} pointer is out of bounds`);
+            frameOffsets[n] = ptr;
         }
         this.frameOffsets = frameOffsets;
     }
     decodeSoundHeader() {
         // https://github.com/Flipnote-Collective/flipnote-studio-docs/wiki/PPM-format#sound-header
         // offset = frame data offset + frame data length + sound effect flags
-        let offset = 0x06A0 + this.frameDataLength + this.frameCount;
-        // account for multiple-of-4 padding
-        if (offset % 4 != 0)
-            offset += 4 - (offset % 4);
-        this.seek(offset);
+        let ptr = 0x06A0 + this.frameDataLength + this.frameCount;
+        assert(ptr < this.byteLength);
+        // align offset
+        if (ptr % 4 != 0)
+            ptr += 4 - (ptr % 4);
+        this.seek(ptr);
         const bgmLen = this.readUint32();
         const se1Len = this.readUint32();
         const se2Len = this.readUint32();
         const se3Len = this.readUint32();
         this.frameSpeed = 8 - this.readUint8();
         this.bgmSpeed = 8 - this.readUint8();
-        offset += 32;
+        assert(this.frameSpeed <= 8 && this.bgmSpeed <= 8);
+        ptr += 32;
         this.framerate = PPM_FRAMERATES[this.frameSpeed];
+        this.duration = timeGetNoteDuration(this.frameCount, this.framerate);
         this.bgmrate = PPM_FRAMERATES[this.bgmSpeed];
         this.soundMeta = {
-            [FlipnoteAudioTrack.BGM]: { offset: offset, length: bgmLen },
-            [FlipnoteAudioTrack.SE1]: { offset: offset += bgmLen, length: se1Len },
-            [FlipnoteAudioTrack.SE2]: { offset: offset += se1Len, length: se2Len },
-            [FlipnoteAudioTrack.SE3]: { offset: offset += se2Len, length: se3Len },
+            [FlipnoteAudioTrack.BGM]: { ptr: ptr, length: bgmLen },
+            [FlipnoteAudioTrack.SE1]: { ptr: ptr += bgmLen, length: se1Len },
+            [FlipnoteAudioTrack.SE2]: { ptr: ptr += se1Len, length: se2Len },
+            [FlipnoteAudioTrack.SE3]: { ptr: ptr += se2Len, length: se3Len },
         };
     }
     isNewFrame(frameIndex) {
@@ -614,95 +699,120 @@ class PpmParser extends FlipnoteParser {
         const header = this.readUint8();
         return (header >> 7) & 0x1;
     }
-    readLineEncoding() {
-        const unpacked = new Uint8Array(PpmParser.height);
-        let unpackedPtr = 0;
-        for (var byteIndex = 0; byteIndex < 48; byteIndex++) {
-            const byte = this.readUint8();
-            // each line's encoding type is stored as a 2-bit value
-            for (var bitOffset = 0; bitOffset < 8; bitOffset += 2) {
-                unpacked[unpackedPtr++] = (byte >> bitOffset) & 0x03;
-            }
-        }
-        return unpacked;
-    }
     /**
      * Decode a frame, returning the raw pixel buffers for each layer
      * @category Image
     */
     decodeFrame(frameIndex) {
-        if ((this.prevDecodedFrame !== frameIndex - 1) && (!this.isNewFrame(frameIndex) && (frameIndex !== 0)))
+        assert(frameIndex > -1 && frameIndex < this.frameCount, `Frame index ${frameIndex} out of bounds`);
+        if (this.prevDecodedFrame !== frameIndex - 1 && (!this.isNewFrame(frameIndex)) && frameIndex !== 0)
             this.decodeFrame(frameIndex - 1);
+        this.prevDecodedFrame = frameIndex;
         // https://github.com/Flipnote-Collective/flipnote-studio-docs/wiki/PPM-format#animation-data
         this.seek(this.frameOffsets[frameIndex]);
         const header = this.readUint8();
         const isNewFrame = (header >> 7) & 0x1;
         const isTranslated = (header >> 5) & 0x3;
+        // reset current layer buffers
+        this.layerBuffers[0].fill(0);
+        this.layerBuffers[1].fill(0);
         let translateX = 0;
         let translateY = 0;
-        this.prevDecodedFrame = frameIndex;
-        // reset current layer buffers
-        this.layers[0].fill(0);
-        this.layers[1].fill(0);
         if (isTranslated) {
             translateX = this.readInt8();
             translateY = this.readInt8();
         }
-        const layerEncoding = [
-            this.readLineEncoding(),
-            this.readLineEncoding(),
-        ];
-        // start decoding layer bitmaps
-        for (let layer = 0; layer < 2; layer++) {
-            const layerBitmap = this.layers[layer];
-            for (let line = 0; line < PpmParser.height; line++) {
-                const lineType = layerEncoding[layer][line];
-                let lineOffset = line * PpmParser.width;
+        // unpack line encodings for each layer
+        for (let layerIndex = 0; layerIndex < 2; layerIndex++) {
+            const lineEncodingBuffer = this.lineEncodingBuffers[layerIndex];
+            lineEncodingBuffer.fill(0);
+            for (let ptr = 0; ptr < lineEncodingBuffer.length;) {
+                let byte = this.readUint8();
+                // the 4 lines in this byte are all empty (type 0) - skip
+                if (byte === 0) {
+                    ptr += 4;
+                    continue;
+                }
+                // unpack 4 line types from the current byte
+                lineEncodingBuffer[ptr++] = byte & 0x03;
+                lineEncodingBuffer[ptr++] = (byte >> 2) & 0x03;
+                lineEncodingBuffer[ptr++] = (byte >> 4) & 0x03;
+                lineEncodingBuffer[ptr++] = (byte >> 6) & 0x03;
+            }
+        }
+        // unpack layer bitmaps
+        for (let layerIndex = 0; layerIndex < 2; layerIndex++) {
+            const pixelBuffer = this.layerBuffers[layerIndex];
+            const lineEncodingBuffer = this.lineEncodingBuffers[layerIndex];
+            for (let y = 0; y < PpmParser.height; y++) {
+                let pixelBufferPtr = y * PpmParser.width;
+                const lineType = lineEncodingBuffer[y];
                 switch (lineType) {
                     // line type 0 = blank line, decode nothing
                     case 0:
                         break;
-                    // line types 1 + 2 = compressed bitmap line
+                    // line type 1 = compressed bitmap line
                     case 1:
-                    case 2:
-                        let lineHeader = this.readUint32(false);
-                        // line type 2 starts as an inverted line
-                        if (lineType == 2)
-                            layerBitmap.fill(1, lineOffset, lineOffset + PpmParser.width);
+                        // read lineHeader as a big-endian int
+                        var lineHeader = this.readUint32(false);
                         // loop through each bit in the line header
-                        while (lineHeader & 0xFFFFFFFF) {
+                        // shift lineheader to the left by 1 bit every interation, 
+                        // so on the next loop cycle the next bit will be checked
+                        // and if the line header equals 0, no more bits are set, 
+                        // the rest of the line is empty and can be skipped
+                        for (; lineHeader !== 0; lineHeader <<= 1, pixelBufferPtr += 8) {
                             // if the bit is set, this 8-pix wide chunk is stored
                             // else we can just leave it blank and move on to the next chunk
                             if (lineHeader & 0x80000000) {
-                                const chunk = this.readUint8();
+                                let chunk = this.readUint8();
                                 // unpack chunk bits
-                                for (let pixel = 0; pixel < 8; pixel++) {
-                                    layerBitmap[lineOffset + pixel] = chunk >> pixel & 0x1;
-                                }
+                                // the chunk if shifted right 1 bit on every loop
+                                // if the chunk equals 0, no more bits are set, 
+                                // so the rest of the chunk is empty and can be skipped
+                                for (let pixel = 0; chunk !== 0; pixel++, chunk >>= 1)
+                                    pixelBuffer[pixelBufferPtr + pixel] = chunk & 0x1;
                             }
-                            lineOffset += 8;
-                            // shift lineheader to the left by 1 bit, now on the next loop cycle the next bit will be checked
-                            lineHeader <<= 1;
+                        }
+                        break;
+                    // line type 2 = compressed bitmap line like type 1, but all pixels are set to 1 first
+                    case 2:
+                        // line type 2 starts as an inverted line
+                        pixelBuffer.fill(1, pixelBufferPtr, pixelBufferPtr + PpmParser.width);
+                        // read lineHeader as a big-endian int
+                        var lineHeader = this.readUint32(false);
+                        // loop through each bit in the line header
+                        // shift lineheader to the left by 1 bit every interation, 
+                        // so on the next loop cycle the next bit will be checked
+                        // and if the line header equals 0, no more bits are set, 
+                        // the rest of the line is empty and can be skipped
+                        for (; lineHeader !== 0; lineHeader <<= 1, pixelBufferPtr += 8) {
+                            // if the bit is set, this 8-pix wide chunk is stored
+                            // else we can just leave it blank and move on to the next chunk
+                            if (lineHeader & 0x80000000) {
+                                let chunk = this.readUint8();
+                                // unpack chunk bits
+                                for (let pixel = 0; pixel < 8; pixel++, chunk >>= 1)
+                                    pixelBuffer[pixelBufferPtr + pixel] = chunk & 0x1;
+                            }
                         }
                         break;
                     // line type 3 = raw bitmap line
                     case 3:
-                        while (lineOffset < (line + 1) * PpmParser.width) {
-                            const chunk = this.readUint8();
-                            for (let pixel = 0; pixel < 8; pixel++) {
-                                layerBitmap[lineOffset + pixel] = chunk >> pixel & 0x1;
-                            }
-                            lineOffset += 8;
+                        for (let chunk = 0, i = 0; i < PpmParser.width; i++) {
+                            if (i % 8 === 0)
+                                chunk = this.readUint8();
+                            pixelBuffer[pixelBufferPtr++] = chunk & 0x1;
+                            chunk >>= 1;
                         }
                         break;
                 }
             }
         }
         // if the current frame is based on changes from the preivous one, merge them by XORing their values
-        const layer1 = this.layers[0];
-        const layer2 = this.layers[1];
-        const layer1Prev = this.prevLayers[0];
-        const layer2Prev = this.prevLayers[1];
+        const layer1 = this.layerBuffers[0];
+        const layer2 = this.layerBuffers[1];
+        const layer1Prev = this.prevLayerBuffers[0];
+        const layer2Prev = this.prevLayerBuffers[1];
         if (!isNewFrame) {
             let dest, src;
             // loop through each line
@@ -730,9 +840,9 @@ class PpmParser extends FlipnoteParser {
             }
         }
         // copy the current layer buffers to the previous ones
-        this.prevLayers[0].set(this.layers[0]);
-        this.prevLayers[1].set(this.layers[1]);
-        return this.layers;
+        this.prevLayerBuffers[0].set(this.layerBuffers[0]);
+        this.prevLayerBuffers[1].set(this.layerBuffers[1]);
+        return this.layerBuffers;
     }
     /**
      * Get the layer draw order for a given frame
@@ -789,7 +899,7 @@ class PpmParser extends FlipnoteParser {
             this.decodeFrame(frameIndex);
         }
         const palette = this.getFramePaletteIndices(frameIndex);
-        const layer = this.layers[layerIndex];
+        const layer = this.layerBuffers[layerIndex];
         const image = new Uint8Array(PpmParser.width * PpmParser.height);
         const layerColor = palette[layerIndex + 1];
         for (let pixel = 0; pixel < image.length; pixel++) {
@@ -827,6 +937,7 @@ class PpmParser extends FlipnoteParser {
      * @category Audio
     */
     decodeSoundFlags() {
+        assert(0x06A0 + this.frameDataLength < this.byteLength);
         // https://github.com/Flipnote-Collective/flipnote-studio-docs/wiki/PPM-format#sound-effect-flags
         this.seek(0x06A0 + this.frameDataLength);
         const numFlags = this.frameCount;
@@ -849,7 +960,8 @@ class PpmParser extends FlipnoteParser {
     */
     getAudioTrackRaw(trackId) {
         const trackMeta = this.soundMeta[trackId];
-        this.seek(trackMeta.offset);
+        assert(trackMeta.ptr + trackMeta.length < this.byteLength);
+        this.seek(trackMeta.ptr);
         return this.readBytes(trackMeta.length);
     }
     /**
@@ -872,8 +984,8 @@ class PpmParser extends FlipnoteParser {
         let predictor = 0;
         let lowNibble = true;
         while (srcPtr < srcSize) {
-            // switch between hi and lo nibble each loop iteration
-            // increments srcPtr after every hi nibble
+            // switch between high and low nibble each loop iteration
+            // increments srcPtr after every high nibble
             if (lowNibble)
                 sample = src[srcPtr] & 0xF;
             else
@@ -930,8 +1042,7 @@ class PpmParser extends FlipnoteParser {
      * @category Audio
     */
     getAudioMasterPcm(dstFreq = this.sampleRate) {
-        const duration = this.frameCount * (1 / this.framerate);
-        const dstSize = Math.ceil(duration * dstFreq);
+        const dstSize = Math.ceil(this.duration * dstFreq);
         const master = new Int16Array(dstSize);
         const hasBgm = this.hasAudioTrack(FlipnoteAudioTrack.BGM);
         const hasSe1 = this.hasAudioTrack(FlipnoteAudioTrack.SE1);
@@ -1011,12 +1122,12 @@ for (let i = 0; i < 16; i++) {
     BITMASKS[i] = (1 << i) - 1;
 }
 /**
- * Every possible sequence of pixels for each tile line
+ * Every possible sequence of pixels for each 8-pixel line
  * @internal
  */
 const KWZ_LINE_TABLE = new Uint8Array(6561 * 8);
 /**
- * Same lines as KWZ_LINE_TABLE, but the pixels are rotated to the left by one place
+ * Same lines as KWZ_LINE_TABLE, but the pixels are shift-rotated to the left by one place
  * @internal
  */
 const KWZ_LINE_TABLE_SHIFT = new Uint8Array(6561 * 8);
@@ -1034,29 +1145,28 @@ for (let a = 0; a < 3; a++)
                                 KWZ_LINE_TABLE_SHIFT.set([a, d, c, f, e, h, g, b], offset);
                                 offset += 8;
                             }
-// Commonly occuring line offsets
-/** @internal */
+/**
+ * Commonly used lines - represents lines where all the pixels are empty, full,
+ * or include a pattern produced by the paint tool, etc
+ * @internal
+ */
 const KWZ_LINE_TABLE_COMMON = new Uint8Array(32 * 8);
+/**
+ * Same lines as common line table, but shift-rotates one place to the left
+ * @internal
+ */
+const KWZ_LINE_TABLE_COMMON_SHIFT = new Uint8Array(32 * 8);
 [
     0x0000, 0x0CD0, 0x19A0, 0x02D9, 0x088B, 0x0051, 0x00F3, 0x0009,
     0x001B, 0x0001, 0x0003, 0x05B2, 0x1116, 0x00A2, 0x01E6, 0x0012,
     0x0036, 0x0002, 0x0006, 0x0B64, 0x08DC, 0x0144, 0x00FC, 0x0024,
     0x001C, 0x0004, 0x0334, 0x099C, 0x0668, 0x1338, 0x1004, 0x166C
-].forEach((lineTableIndex, index) => {
-    const pixels = KWZ_LINE_TABLE.subarray(lineTableIndex * 8, lineTableIndex * 8 + 8);
-    KWZ_LINE_TABLE_COMMON.set(pixels, index * 8);
-});
-// Commonly occuring line offsets, but the lines are shifted to the left by one pixel
-/** @internal */
-const KWZ_LINE_TABLE_COMMON_SHIFT = new Uint8Array(32 * 8);
-[
-    0x0000, 0x0CD0, 0x19A0, 0x0003, 0x02D9, 0x088B, 0x0051, 0x00F3,
-    0x0009, 0x001B, 0x0001, 0x0006, 0x05B2, 0x1116, 0x00A2, 0x01E6,
-    0x0012, 0x0036, 0x0002, 0x02DC, 0x0B64, 0x08DC, 0x0144, 0x00FC,
-    0x0024, 0x001C, 0x099C, 0x0334, 0x1338, 0x0668, 0x166C, 0x1004
-].forEach((lineTableIndex, index) => {
-    const pixels = KWZ_LINE_TABLE.subarray(lineTableIndex * 8, lineTableIndex * 8 + 8);
-    KWZ_LINE_TABLE_COMMON_SHIFT.set(pixels, index * 8);
+].forEach((value, i) => {
+    const lineTablePtr = value * 8;
+    const pixels = KWZ_LINE_TABLE.subarray(lineTablePtr, lineTablePtr + 8);
+    const shiftPixels = KWZ_LINE_TABLE_SHIFT.subarray(lineTablePtr, lineTablePtr + 8);
+    KWZ_LINE_TABLE_COMMON.set(pixels, i * 8);
+    KWZ_LINE_TABLE_COMMON_SHIFT.set(shiftPixels, i * 8);
 });
 /**
  * Parser class for Flipnote Studio 3D's KWZ animation format
@@ -1074,7 +1184,6 @@ class KwzParser extends FlipnoteParser {
         super(arrayBuffer);
         /** File format type, reflects {@link KwzParser.format} */
         this.format = FlipnoteFormat.KWZ;
-        this.formatString = 'KWZ';
         /** Animation frame width, reflects {@link KwzParser.width} */
         this.width = KwzParser.width;
         /** Animation frame height, reflects {@link KwzParser.height} */
@@ -1096,8 +1205,6 @@ class KwzParser extends FlipnoteParser {
             new Uint8Array(KwzParser.width * KwzParser.height),
             new Uint8Array(KwzParser.width * KwzParser.height),
         ];
-        this.bitIndex = 0;
-        this.bitValue = 0;
         this.buildSectionMap();
         if (!this.settings.quickMeta)
             this.decodeMeta();
@@ -1108,24 +1215,24 @@ class KwzParser extends FlipnoteParser {
     }
     buildSectionMap() {
         this.seek(0);
-        this.sections = {};
         const fileSize = this.byteLength - 256;
-        let offset = 0;
+        const sectionMap = new Map();
         let sectionCount = 0;
+        let ptr = 0;
         // counting sections should mitigate against one of mrnbayoh's notehax exploits
-        while ((offset < fileSize) && (sectionCount < 6)) {
-            this.seek(offset);
-            const sectionMagic = this.readChars(4).substring(0, 3);
-            const sectionLength = this.readUint32();
-            this.sections[sectionMagic] = {
-                offset: offset,
-                length: sectionLength
-            };
-            offset += sectionLength + 8;
+        while ((ptr < fileSize) && (sectionCount < 6)) {
+            this.seek(ptr);
+            const magic = this.readChars(4).substring(0, 3);
+            const length = this.readUint32();
+            sectionMap.set(magic, { ptr, length });
+            ptr += length + 8;
             sectionCount += 1;
         }
+        this.sectionMap = sectionMap;
+        assert(sectionMap.has('KMC') && sectionMap.has('KMI'));
     }
     readBits(num) {
+        // assert(num < 16);
         if (this.bitIndex + num > 16) {
             const nextBits = this.readUint16();
             this.bitValue |= nextBits << (16 - this.bitIndex);
@@ -1136,14 +1243,55 @@ class KwzParser extends FlipnoteParser {
         this.bitIndex += num;
         return result;
     }
+    readFsid() {
+        if (this.settings.dsiGalleryNote) { // format as DSi PPM FSID
+            const hex = this.readHex(10, true);
+            return hex.slice(2, 18);
+        }
+        const hex = this.readHex(10);
+        return `${hex.slice(0, 4)}-${hex.slice(4, 8)}-${hex.slice(8, 12)}-${hex.slice(12, 18)}`.toLowerCase();
+    }
+    readFilename() {
+        const ptr = this.pointer;
+        const chars = this.readChars(28);
+        if (chars.length === 28)
+            return chars;
+        // Otherwise, this is likely a DSi Library note, 
+        // where sometimes Nintendo's buggy PPM converter includes the original packed PPM filename
+        this.seek(ptr);
+        const mac = this.readHex(3);
+        const random = this.readChars(13);
+        const edits = this.readUint16().toString().padStart(3, '0');
+        this.seek(ptr + 28);
+        return `${mac}_${random}_${edits}`;
+    }
     decodeMeta() {
-        this.seek(this.sections['KFH'].offset + 12);
-        const creationTimestamp = new Date((this.readUint32() + 946684800) * 1000), modifiedTimestamp = new Date((this.readUint32() + 946684800) * 1000), appVersion = this.readUint32(), rootAuthorId = this.readHex(10), parentAuthorId = this.readHex(10), currentAuthorId = this.readHex(10), rootAuthorName = this.readWideChars(11), parentAuthorName = this.readWideChars(11), currentAuthorName = this.readWideChars(11), rootFilename = this.readChars(28), parentFilename = this.readChars(28), currentFilename = this.readChars(28), frameCount = this.readUint16(), thumbIndex = this.readUint16(), flags = this.readUint16(), frameSpeed = this.readUint8(), layerFlags = this.readUint8();
+        assert(this.sectionMap.has('KFH'));
+        this.seek(this.sectionMap.get('KFH').ptr + 12);
+        const creationTime = dateFromNintendoTimestamp(this.readUint32());
+        const modifiedTime = dateFromNintendoTimestamp(this.readUint32());
+        // const simonTime = 
+        const appVersion = this.readUint32();
+        const rootAuthorId = this.readFsid();
+        const parentAuthorId = this.readFsid();
+        const currentAuthorId = this.readFsid();
+        const rootAuthorName = this.readWideChars(11);
+        const parentAuthorName = this.readWideChars(11);
+        const currentAuthorName = this.readWideChars(11);
+        const rootFilename = this.readFilename();
+        const parentFilename = this.readFilename();
+        const currentFilename = this.readFilename();
+        const frameCount = this.readUint16();
+        const thumbIndex = this.readUint16();
+        const flags = this.readUint16();
+        const frameSpeed = this.readUint8();
+        const layerFlags = this.readUint8();
         this.isSpinoff = (currentAuthorId !== parentAuthorId) || (currentAuthorId !== rootAuthorId);
         this.frameCount = frameCount;
-        this.thumbFrameIndex = thumbIndex;
         this.frameSpeed = frameSpeed;
         this.framerate = KWZ_FRAMERATES[frameSpeed];
+        this.duration = timeGetNoteDuration(this.frameCount, this.framerate);
+        this.thumbFrameIndex = thumbIndex;
         this.layerVisibility = {
             1: (layerFlags & 0x1) === 0,
             2: (layerFlags & 0x2) === 0,
@@ -1152,30 +1300,36 @@ class KwzParser extends FlipnoteParser {
         this.meta = {
             lock: (flags & 0x1) !== 0,
             loop: (flags & 0x2) !== 0,
+            isSpinoff: this.isSpinoff,
             frameCount: frameCount,
             frameSpeed: frameSpeed,
+            duration: this.duration,
             thumbIndex: thumbIndex,
-            timestamp: modifiedTimestamp,
-            creationTimestamp: creationTimestamp,
+            timestamp: modifiedTime,
+            creationTimestamp: creationTime,
             root: {
                 username: rootAuthorName,
                 fsid: rootAuthorId,
                 filename: rootFilename,
+                isDsiFilename: rootFilename.length !== 28
             },
             parent: {
                 username: parentAuthorName,
                 fsid: parentAuthorId,
                 filename: parentFilename,
+                isDsiFilename: parentFilename.length !== 28
             },
             current: {
                 username: currentAuthorName,
                 fsid: currentAuthorId,
                 filename: currentFilename,
+                isDsiFilename: currentFilename.length !== 28
             },
         };
     }
     decodeMetaQuick() {
-        this.seek(this.sections['KFH'].offset + 0x8 + 0xC4);
+        assert(this.sectionMap.has('KFH'));
+        this.seek(this.sectionMap.get('KFH').ptr + 0x8 + 0xC4);
         const frameCount = this.readUint16();
         const thumbFrameIndex = this.readUint16();
         const flags = this.readUint16();
@@ -1185,25 +1339,35 @@ class KwzParser extends FlipnoteParser {
         this.thumbFrameIndex = thumbFrameIndex;
         this.frameSpeed = frameSpeed;
         this.framerate = KWZ_FRAMERATES[frameSpeed];
+        this.duration = timeGetNoteDuration(this.frameCount, this.framerate);
+        this.layerVisibility = {
+            1: (layerFlags & 0x1) === 0,
+            2: (layerFlags & 0x2) === 0,
+            3: (layerFlags & 0x3) === 0,
+        };
     }
     getFrameOffsets() {
+        assert(this.sectionMap.has('KMI') && this.sectionMap.has('KMC'));
         const numFrames = this.frameCount;
-        const kmiSection = this.sections['KMI'];
-        const kmcSection = this.sections['KMC'];
+        const kmiSection = this.sectionMap.get('KMI');
+        const kmcSection = this.sectionMap.get('KMC');
+        assert(kmiSection.length / 28 >= numFrames);
         const frameMetaOffsets = new Uint32Array(numFrames);
         const frameDataOffsets = new Uint32Array(numFrames);
         const frameLayerSizes = [];
-        let frameMetaOffset = kmiSection.offset + 8;
-        let frameDataOffset = kmcSection.offset + 12;
+        let frameMetaPtr = kmiSection.ptr + 8;
+        let frameDataPtr = kmcSection.ptr + 12;
         for (let frameIndex = 0; frameIndex < numFrames; frameIndex++) {
-            this.seek(frameMetaOffset + 4);
+            this.seek(frameMetaPtr + 4);
             const layerASize = this.readUint16();
             const layerBSize = this.readUint16();
             const layerCSize = this.readUint16();
-            frameMetaOffsets[frameIndex] = frameMetaOffset;
-            frameDataOffsets[frameIndex] = frameDataOffset;
-            frameMetaOffset += 28;
-            frameDataOffset += layerASize + layerBSize + layerCSize;
+            frameMetaOffsets[frameIndex] = frameMetaPtr;
+            frameDataOffsets[frameIndex] = frameDataPtr;
+            frameMetaPtr += 28;
+            frameDataPtr += layerASize + layerBSize + layerCSize;
+            assert(frameMetaPtr < this.byteLength, `frame${frameIndex} meta pointer out of bounds`);
+            assert(frameDataPtr < this.byteLength, `frame${frameIndex} data pointer out of bounds`);
             frameLayerSizes.push([layerASize, layerBSize, layerCSize]);
         }
         this.frameMetaOffsets = frameMetaOffsets;
@@ -1211,21 +1375,20 @@ class KwzParser extends FlipnoteParser {
         this.frameLayerSizes = frameLayerSizes;
     }
     decodeSoundHeader() {
-        if (this.sections.hasOwnProperty('KSN')) {
-            let offset = this.sections['KSN'].offset + 8;
-            this.seek(offset);
-            const bgmSpeed = this.readUint32();
-            this.bgmSpeed = bgmSpeed;
-            this.bgmrate = KWZ_FRAMERATES[bgmSpeed];
-            const trackSizes = new Uint32Array(this.buffer, offset + 4, 20);
-            this.soundMeta = {
-                [FlipnoteAudioTrack.BGM]: { offset: offset += 28, length: trackSizes[0] },
-                [FlipnoteAudioTrack.SE1]: { offset: offset += trackSizes[0], length: trackSizes[1] },
-                [FlipnoteAudioTrack.SE2]: { offset: offset += trackSizes[1], length: trackSizes[2] },
-                [FlipnoteAudioTrack.SE3]: { offset: offset += trackSizes[2], length: trackSizes[3] },
-                [FlipnoteAudioTrack.SE4]: { offset: offset += trackSizes[3], length: trackSizes[4] },
-            };
-        }
+        assert(this.sectionMap.has('KSN'));
+        let ptr = this.sectionMap.get('KSN').ptr + 8;
+        this.seek(ptr);
+        this.bgmSpeed = this.readUint32();
+        assert(this.bgmSpeed <= 10);
+        this.bgmrate = KWZ_FRAMERATES[this.bgmSpeed];
+        const trackSizes = new Uint32Array(this.buffer, ptr + 4, 20);
+        this.soundMeta = {
+            [FlipnoteAudioTrack.BGM]: { ptr: ptr += 28, length: trackSizes[0] },
+            [FlipnoteAudioTrack.SE1]: { ptr: ptr += trackSizes[0], length: trackSizes[1] },
+            [FlipnoteAudioTrack.SE2]: { ptr: ptr += trackSizes[1], length: trackSizes[2] },
+            [FlipnoteAudioTrack.SE3]: { ptr: ptr += trackSizes[2], length: trackSizes[3] },
+            [FlipnoteAudioTrack.SE4]: { ptr: ptr += trackSizes[3], length: trackSizes[4] },
+        };
     }
     /**
      * Get the color palette indices for a given frame. RGBA colors for these values can be indexed from {@link KwzParser.globalPalette}
@@ -1328,6 +1491,7 @@ class KwzParser extends FlipnoteParser {
      * @category Image
     */
     decodeFrame(frameIndex, diffingFlag = 0x7, isPrevFrame = false) {
+        assert(frameIndex > -1 && frameIndex < this.frameCount, `Frame index ${frameIndex} out of bounds`);
         // the prevDecodedFrame check is an optimisation for decoding frames in full sequence
         if (this.prevFrameIndex !== frameIndex - 1 && frameIndex !== 0) {
             // if this frame is being decoded as a prev frame, then we only want to decode the layers necessary
@@ -1338,15 +1502,16 @@ class KwzParser extends FlipnoteParser {
             if (diffingFlag !== 0)
                 this.decodeFrame(frameIndex - 1, diffingFlag, true);
         }
-        let ptr = this.frameDataOffsets[frameIndex];
+        let framePtr = this.frameDataOffsets[frameIndex];
         const layerSizes = this.frameLayerSizes[frameIndex];
         for (let layerIndex = 0; layerIndex < 3; layerIndex++) {
             // dsi gallery conversions don't use the third layer, so it can be skipped if this is set
             if (this.settings.dsiGalleryNote && layerIndex === 3)
                 break;
-            this.seek(ptr);
-            const layerSize = layerSizes[layerIndex];
-            ptr += layerSize;
+            this.seek(framePtr);
+            let layerSize = layerSizes[layerIndex];
+            framePtr += layerSize;
+            const pixelBuffer = this.layers[layerIndex];
             // if the layer is 38 bytes then it hasn't changed at all since the previous frame, so we can skip it
             if (layerSize === 38)
                 continue;
@@ -1357,156 +1522,153 @@ class KwzParser extends FlipnoteParser {
             this.bitIndex = 16;
             this.bitValue = 0;
             // tile skip counter
-            let skip = 0;
-            for (let tileOffsetY = 0; tileOffsetY < KwzParser.height; tileOffsetY += 128) {
-                for (let tileOffsetX = 0; tileOffsetX < KwzParser.width; tileOffsetX += 128) {
+            let skipTileCounter = 0;
+            for (let tileOffsetY = 0; tileOffsetY < 240; tileOffsetY += 128) {
+                for (let tileOffsetX = 0; tileOffsetX < 320; tileOffsetX += 128) {
                     // loop small tiles
                     for (let subTileOffsetY = 0; subTileOffsetY < 128; subTileOffsetY += 8) {
                         const y = tileOffsetY + subTileOffsetY;
-                        if (y >= KwzParser.height)
+                        if (y >= 240)
                             break;
                         for (let subTileOffsetX = 0; subTileOffsetX < 128; subTileOffsetX += 8) {
                             const x = tileOffsetX + subTileOffsetX;
-                            if (x >= KwzParser.width)
+                            if (x >= 320)
                                 break;
-                            if (skip > 0) {
-                                skip -= 1;
+                            // continue to next tile loop if skipTileCounter is > 0
+                            if (skipTileCounter > 0) {
+                                skipTileCounter -= 1;
                                 continue;
                             }
-                            const pixelOffset = y * KwzParser.width + x;
-                            const pixelBuffer = this.layers[layerIndex];
-                            const type = this.readBits(3);
-                            if (type == 0) {
-                                const lineIndex = this.readBits(5);
-                                const pixels = KWZ_LINE_TABLE_COMMON.subarray(lineIndex * 8, lineIndex * 8 + 8);
-                                pixelBuffer.set(pixels, pixelOffset);
-                                pixelBuffer.set(pixels, pixelOffset + 320);
-                                pixelBuffer.set(pixels, pixelOffset + 640);
-                                pixelBuffer.set(pixels, pixelOffset + 960);
-                                pixelBuffer.set(pixels, pixelOffset + 1280);
-                                pixelBuffer.set(pixels, pixelOffset + 1600);
-                                pixelBuffer.set(pixels, pixelOffset + 1920);
-                                pixelBuffer.set(pixels, pixelOffset + 2240);
+                            let pixelBufferPtr = y * KwzParser.width + x;
+                            const tileType = this.readBits(3);
+                            if (tileType === 0) {
+                                const linePtr = this.readBits(5) * 8;
+                                const pixels = KWZ_LINE_TABLE_COMMON.subarray(linePtr, linePtr + 8);
+                                pixelBuffer.set(pixels, pixelBufferPtr);
+                                pixelBuffer.set(pixels, pixelBufferPtr += 320);
+                                pixelBuffer.set(pixels, pixelBufferPtr += 320);
+                                pixelBuffer.set(pixels, pixelBufferPtr += 320);
+                                pixelBuffer.set(pixels, pixelBufferPtr += 320);
+                                pixelBuffer.set(pixels, pixelBufferPtr += 320);
+                                pixelBuffer.set(pixels, pixelBufferPtr += 320);
+                                pixelBuffer.set(pixels, pixelBufferPtr += 320);
                             }
-                            else if (type == 1) {
-                                const lineIndex = this.readBits(13);
-                                const pixels = KWZ_LINE_TABLE.subarray(lineIndex * 8, lineIndex * 8 + 8);
-                                pixelBuffer.set(pixels, pixelOffset);
-                                pixelBuffer.set(pixels, pixelOffset + 320);
-                                pixelBuffer.set(pixels, pixelOffset + 640);
-                                pixelBuffer.set(pixels, pixelOffset + 960);
-                                pixelBuffer.set(pixels, pixelOffset + 1280);
-                                pixelBuffer.set(pixels, pixelOffset + 1600);
-                                pixelBuffer.set(pixels, pixelOffset + 1920);
-                                pixelBuffer.set(pixels, pixelOffset + 2240);
+                            else if (tileType === 1) {
+                                const linePtr = this.readBits(13) * 8;
+                                const pixels = KWZ_LINE_TABLE.subarray(linePtr, linePtr + 8);
+                                pixelBuffer.set(pixels, pixelBufferPtr);
+                                pixelBuffer.set(pixels, pixelBufferPtr += 320);
+                                pixelBuffer.set(pixels, pixelBufferPtr += 320);
+                                pixelBuffer.set(pixels, pixelBufferPtr += 320);
+                                pixelBuffer.set(pixels, pixelBufferPtr += 320);
+                                pixelBuffer.set(pixels, pixelBufferPtr += 320);
+                                pixelBuffer.set(pixels, pixelBufferPtr += 320);
+                                pixelBuffer.set(pixels, pixelBufferPtr += 320);
                             }
-                            else if (type == 2) {
-                                const lineValue = this.readBits(5);
-                                const a = KWZ_LINE_TABLE_COMMON.subarray(lineValue * 8, lineValue * 8 + 8);
-                                const b = KWZ_LINE_TABLE_COMMON_SHIFT.subarray(lineValue * 8, lineValue * 8 + 8);
-                                pixelBuffer.set(a, pixelOffset);
-                                pixelBuffer.set(b, pixelOffset + 320);
-                                pixelBuffer.set(a, pixelOffset + 640);
-                                pixelBuffer.set(b, pixelOffset + 960);
-                                pixelBuffer.set(a, pixelOffset + 1280);
-                                pixelBuffer.set(b, pixelOffset + 1600);
-                                pixelBuffer.set(a, pixelOffset + 1920);
-                                pixelBuffer.set(b, pixelOffset + 2240);
+                            else if (tileType === 2) {
+                                const linePtr = this.readBits(5) * 8;
+                                const a = KWZ_LINE_TABLE_COMMON.subarray(linePtr, linePtr + 8);
+                                const b = KWZ_LINE_TABLE_COMMON_SHIFT.subarray(linePtr, linePtr + 8);
+                                pixelBuffer.set(a, pixelBufferPtr);
+                                pixelBuffer.set(b, pixelBufferPtr += 320);
+                                pixelBuffer.set(a, pixelBufferPtr += 320);
+                                pixelBuffer.set(b, pixelBufferPtr += 320);
+                                pixelBuffer.set(a, pixelBufferPtr += 320);
+                                pixelBuffer.set(b, pixelBufferPtr += 320);
+                                pixelBuffer.set(a, pixelBufferPtr += 320);
+                                pixelBuffer.set(b, pixelBufferPtr += 320);
                             }
-                            else if (type == 3) {
-                                const lineValue = this.readBits(13);
-                                const a = KWZ_LINE_TABLE.subarray(lineValue * 8, lineValue * 8 + 8);
-                                const b = KWZ_LINE_TABLE_SHIFT.subarray(lineValue * 8, lineValue * 8 + 8);
-                                pixelBuffer.set(a, pixelOffset);
-                                pixelBuffer.set(b, pixelOffset + 320);
-                                pixelBuffer.set(a, pixelOffset + 640);
-                                pixelBuffer.set(b, pixelOffset + 960);
-                                pixelBuffer.set(a, pixelOffset + 1280);
-                                pixelBuffer.set(b, pixelOffset + 1600);
-                                pixelBuffer.set(a, pixelOffset + 1920);
-                                pixelBuffer.set(b, pixelOffset + 2240);
+                            else if (tileType === 3) {
+                                const linePtr = this.readBits(13) * 8;
+                                const a = KWZ_LINE_TABLE.subarray(linePtr, linePtr + 8);
+                                const b = KWZ_LINE_TABLE_SHIFT.subarray(linePtr, linePtr + 8);
+                                pixelBuffer.set(a, pixelBufferPtr);
+                                pixelBuffer.set(b, pixelBufferPtr += 320);
+                                pixelBuffer.set(a, pixelBufferPtr += 320);
+                                pixelBuffer.set(b, pixelBufferPtr += 320);
+                                pixelBuffer.set(a, pixelBufferPtr += 320);
+                                pixelBuffer.set(b, pixelBufferPtr += 320);
+                                pixelBuffer.set(a, pixelBufferPtr += 320);
+                                pixelBuffer.set(b, pixelBufferPtr += 320);
                             }
                             // most common tile type
-                            else if (type == 4) {
-                                let mask = this.readBits(8);
-                                let ptr = pixelOffset;
-                                for (let line = 0; line < 8; line++) {
-                                    if ((mask & 0x1) !== 0) {
-                                        const lineIndex = this.readBits(5);
-                                        const pixels = KWZ_LINE_TABLE_COMMON.subarray(lineIndex * 8, lineIndex * 8 + 8);
-                                        pixelBuffer.set(pixels, ptr);
+                            else if (tileType === 4) {
+                                const flags = this.readBits(8);
+                                for (let mask = 1; mask < 0xFF; mask <<= 1) {
+                                    if (flags & mask) {
+                                        const linePtr = this.readBits(5) * 8;
+                                        const pixels = KWZ_LINE_TABLE_COMMON.subarray(linePtr, linePtr + 8);
+                                        pixelBuffer.set(pixels, pixelBufferPtr);
                                     }
                                     else {
-                                        const lineIndex = this.readBits(13);
-                                        const pixels = KWZ_LINE_TABLE.subarray(lineIndex * 8, lineIndex * 8 + 8);
-                                        pixelBuffer.set(pixels, ptr);
+                                        const linePtr = this.readBits(13) * 8;
+                                        const pixels = KWZ_LINE_TABLE.subarray(linePtr, linePtr + 8);
+                                        pixelBuffer.set(pixels, pixelBufferPtr);
                                     }
-                                    mask >>= 1;
-                                    ptr += 320;
+                                    pixelBufferPtr += 320;
                                 }
                             }
-                            else if (type == 5) {
-                                skip = this.readBits(5);
+                            else if (tileType === 5) {
+                                skipTileCounter = this.readBits(5);
                                 continue;
                             }
                             // type 6 doesnt exist
-                            else if (type == 7) {
+                            else if (tileType === 7) {
                                 let pattern = this.readBits(2);
                                 let useCommonLines = this.readBits(1);
-                                let a;
-                                let b;
+                                let a, b;
                                 if (useCommonLines !== 0) {
-                                    const lineIndexA = this.readBits(5);
-                                    const lineIndexB = this.readBits(5);
-                                    a = KWZ_LINE_TABLE_COMMON.subarray(lineIndexA * 8, lineIndexA * 8 + 8);
-                                    b = KWZ_LINE_TABLE_COMMON.subarray(lineIndexB * 8, lineIndexB * 8 + 8);
+                                    const linePtrA = this.readBits(5) * 8;
+                                    const linePtrB = this.readBits(5) * 8;
+                                    a = KWZ_LINE_TABLE_COMMON.subarray(linePtrA, linePtrA + 8);
+                                    b = KWZ_LINE_TABLE_COMMON.subarray(linePtrB, linePtrB + 8);
                                     pattern = (pattern + 1) % 4;
                                 }
                                 else {
-                                    const lineIndexA = this.readBits(13);
-                                    const lineIndexB = this.readBits(13);
-                                    a = KWZ_LINE_TABLE.subarray(lineIndexA * 8, lineIndexA * 8 + 8);
-                                    b = KWZ_LINE_TABLE.subarray(lineIndexB * 8, lineIndexB * 8 + 8);
+                                    const linePtrA = this.readBits(13) * 8;
+                                    const linePtrB = this.readBits(13) * 8;
+                                    a = KWZ_LINE_TABLE.subarray(linePtrA, linePtrA + 8);
+                                    b = KWZ_LINE_TABLE.subarray(linePtrB, linePtrB + 8);
                                 }
-                                if (pattern == 0) {
-                                    pixelBuffer.set(a, pixelOffset);
-                                    pixelBuffer.set(b, pixelOffset + 320);
-                                    pixelBuffer.set(a, pixelOffset + 640);
-                                    pixelBuffer.set(b, pixelOffset + 960);
-                                    pixelBuffer.set(a, pixelOffset + 1280);
-                                    pixelBuffer.set(b, pixelOffset + 1600);
-                                    pixelBuffer.set(a, pixelOffset + 1920);
-                                    pixelBuffer.set(b, pixelOffset + 2240);
+                                if (pattern === 0) {
+                                    pixelBuffer.set(a, pixelBufferPtr);
+                                    pixelBuffer.set(b, pixelBufferPtr += 320);
+                                    pixelBuffer.set(a, pixelBufferPtr += 320);
+                                    pixelBuffer.set(b, pixelBufferPtr += 320);
+                                    pixelBuffer.set(a, pixelBufferPtr += 320);
+                                    pixelBuffer.set(b, pixelBufferPtr += 320);
+                                    pixelBuffer.set(a, pixelBufferPtr += 320);
+                                    pixelBuffer.set(b, pixelBufferPtr += 320);
                                 }
-                                else if (pattern == 1) {
-                                    pixelBuffer.set(a, pixelOffset);
-                                    pixelBuffer.set(a, pixelOffset + 320);
-                                    pixelBuffer.set(b, pixelOffset + 640);
-                                    pixelBuffer.set(a, pixelOffset + 960);
-                                    pixelBuffer.set(a, pixelOffset + 1280);
-                                    pixelBuffer.set(b, pixelOffset + 1600);
-                                    pixelBuffer.set(a, pixelOffset + 1920);
-                                    pixelBuffer.set(a, pixelOffset + 2240);
+                                else if (pattern === 1) {
+                                    pixelBuffer.set(a, pixelBufferPtr);
+                                    pixelBuffer.set(a, pixelBufferPtr += 320);
+                                    pixelBuffer.set(b, pixelBufferPtr += 320);
+                                    pixelBuffer.set(a, pixelBufferPtr += 320);
+                                    pixelBuffer.set(a, pixelBufferPtr += 320);
+                                    pixelBuffer.set(b, pixelBufferPtr += 320);
+                                    pixelBuffer.set(a, pixelBufferPtr += 320);
+                                    pixelBuffer.set(a, pixelBufferPtr += 320);
                                 }
-                                else if (pattern == 2) {
-                                    pixelBuffer.set(a, pixelOffset);
-                                    pixelBuffer.set(b, pixelOffset + 320);
-                                    pixelBuffer.set(a, pixelOffset + 640);
-                                    pixelBuffer.set(a, pixelOffset + 960);
-                                    pixelBuffer.set(b, pixelOffset + 1280);
-                                    pixelBuffer.set(a, pixelOffset + 1600);
-                                    pixelBuffer.set(a, pixelOffset + 1920);
-                                    pixelBuffer.set(b, pixelOffset + 2240);
+                                else if (pattern === 2) {
+                                    pixelBuffer.set(a, pixelBufferPtr);
+                                    pixelBuffer.set(b, pixelBufferPtr += 320);
+                                    pixelBuffer.set(a, pixelBufferPtr += 320);
+                                    pixelBuffer.set(a, pixelBufferPtr += 320);
+                                    pixelBuffer.set(b, pixelBufferPtr += 320);
+                                    pixelBuffer.set(a, pixelBufferPtr += 320);
+                                    pixelBuffer.set(a, pixelBufferPtr += 320);
+                                    pixelBuffer.set(b, pixelBufferPtr += 320);
                                 }
-                                else if (pattern == 3) {
-                                    pixelBuffer.set(a, pixelOffset);
-                                    pixelBuffer.set(b, pixelOffset + 320);
-                                    pixelBuffer.set(b, pixelOffset + 640);
-                                    pixelBuffer.set(a, pixelOffset + 960);
-                                    pixelBuffer.set(b, pixelOffset + 1280);
-                                    pixelBuffer.set(b, pixelOffset + 1600);
-                                    pixelBuffer.set(a, pixelOffset + 1920);
-                                    pixelBuffer.set(b, pixelOffset + 2240);
+                                else if (pattern === 3) {
+                                    pixelBuffer.set(a, pixelBufferPtr);
+                                    pixelBuffer.set(b, pixelBufferPtr += 320);
+                                    pixelBuffer.set(b, pixelBufferPtr += 320);
+                                    pixelBuffer.set(a, pixelBufferPtr += 320);
+                                    pixelBuffer.set(b, pixelBufferPtr += 320);
+                                    pixelBuffer.set(b, pixelBufferPtr += 320);
+                                    pixelBuffer.set(a, pixelBufferPtr += 320);
+                                    pixelBuffer.set(b, pixelBufferPtr += 320);
                                 }
                             }
                         }
@@ -1610,7 +1772,8 @@ class KwzParser extends FlipnoteParser {
     */
     getAudioTrackRaw(trackId) {
         const trackMeta = this.soundMeta[trackId];
-        return new Uint8Array(this.buffer, trackMeta.offset, trackMeta.length);
+        assert(trackMeta.ptr + trackMeta.length < this.byteLength);
+        return new Uint8Array(this.buffer, trackMeta.ptr, trackMeta.length);
     }
     /**
      * Get the decoded audio data for a given track, using the track's native samplerate
@@ -1689,9 +1852,8 @@ class KwzParser extends FlipnoteParser {
             const bgmAdjust = (1 / this.bgmrate) / (1 / this.framerate);
             srcFreq = this.rawSampleRate * bgmAdjust;
         }
-        if (srcFreq !== dstFreq) {
+        if (srcFreq !== dstFreq)
             return pcmDsAudioResample(srcPcm, srcFreq, dstFreq);
-        }
         return srcPcm;
     }
     pcmAudioMix(src, dst, dstOffset = 0) {
@@ -1711,8 +1873,7 @@ class KwzParser extends FlipnoteParser {
      * @category Audio
     */
     getAudioMasterPcm(dstFreq = this.sampleRate) {
-        const duration = this.frameCount * (1 / this.framerate);
-        const dstSize = Math.ceil(duration * dstFreq);
+        const dstSize = Math.ceil(this.duration * dstFreq);
         const master = new Int16Array(dstSize);
         const hasBgm = this.hasAudioTrack(FlipnoteAudioTrack.BGM);
         const hasSe1 = this.hasAudioTrack(FlipnoteAudioTrack.SE1);
@@ -1725,7 +1886,7 @@ class KwzParser extends FlipnoteParser {
             this.pcmAudioMix(bgmPcm, master, 0);
         }
         // Mix sound effects
-        if (hasSe1 || hasSe2 || hasSe3) {
+        if (hasSe1 || hasSe2 || hasSe3 || hasSe4) {
             const samplesPerFrame = dstFreq / this.framerate;
             const se1Pcm = hasSe1 ? this.getAudioTrackPcm(FlipnoteAudioTrack.SE1, dstFreq) : null;
             const se2Pcm = hasSe2 ? this.getAudioTrackPcm(FlipnoteAudioTrack.SE2, dstFreq) : null;
@@ -1780,11 +1941,7 @@ KwzParser.globalPalette = [
 /**
  * Load a Flipnote from a given source, returning a promise with a parser object
  *
- * @param source - Depending on the operating envionment, this can be:
- * - A string representing a web URL
- * - An {@link https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/ArrayBuffer | ArrayBuffer}
- * - A {@link https://developer.mozilla.org/en-US/docs/Web/API/File | File} (Browser only)
- * - A {@link https://nodejs.org/api/buffer.html | Buffer} (NodeJS only)
+ * @param source
  * @param parserConfig - Config settings to pass to the parser, see {@link FlipnoteParserSettings}
  */
 function parseSource(source, parserConfig) {
@@ -1807,597 +1964,68 @@ function parseSource(source, parserConfig) {
     });
 }
 
-/*
-  LZWEncoder.js
-
-  Authors
-  Kevin Weiner (original Java version - kweiner@fmsware.com)
-  Thibault Imbert (AS3 version - bytearray.org)
-  Johan Nordberg (JS version - code@johan-nordberg.com)
-  James Daniel (ES6/TS version)
-
-  Acknowledgements
-  GIFCOMPR.C - GIF Image compression routines
-  Lempel-Ziv compression based on 'compress'. GIF modifications by
-  David Rowley (mgardi@watdcsu.waterloo.edu)
-  GIF Image compression - modified 'compress'
-  Based on: compress.c - File compression ala IEEE Computer, June 1984.
-  By Authors: Spencer W. Thomas (decvax!harpo!utah-cs!utah-gr!thomas)
-  Jim McKie (decvax!mcvax!jim)
-  Steve Davies (decvax!vax135!petsd!peora!srd)
-  Ken Turkowski (decvax!decwrl!turtlevax!ken)
-  James A. Woods (decvax!ihnp4!ames!jaw)
-  Joe Orost (decvax!vax135!petsd!joe)
-*/
+/**
+ * Player event types
+ * @internal
+ */
+var PlayerEvent;
+(function (PlayerEvent) {
+    PlayerEvent["__Any"] = "any";
+    PlayerEvent["Play"] = "play";
+    PlayerEvent["Pause"] = "pause";
+    PlayerEvent["CanPlay"] = "canplay";
+    PlayerEvent["CanPlayThrough"] = "canplaythrough";
+    PlayerEvent["SeekStart"] = "seeking";
+    PlayerEvent["SeekEnd"] = "seeked";
+    PlayerEvent["Duration"] = "durationchange";
+    PlayerEvent["Loop"] = "loop";
+    PlayerEvent["Ended"] = "ended";
+    PlayerEvent["VolumeChange"] = "volumechange";
+    PlayerEvent["Progress"] = "progress";
+    PlayerEvent["TimeUpdate"] = "timeupdate";
+    PlayerEvent["FrameUpdate"] = "frameupdate";
+    PlayerEvent["FrameNext"] = "framenext";
+    PlayerEvent["FramePrev"] = "frameprev";
+    PlayerEvent["FrameFirst"] = "framefirst";
+    PlayerEvent["FrameLast"] = "framelast";
+    PlayerEvent["Ready"] = "ready";
+    PlayerEvent["Load"] = "load";
+    PlayerEvent["LoadStart"] = "loadstart";
+    PlayerEvent["LoadedData"] = "loadeddata";
+    PlayerEvent["LoadedMeta"] = "loadedmetadata";
+    PlayerEvent["Emptied"] = "emptied";
+    PlayerEvent["Close"] = "close";
+    PlayerEvent["Error"] = "error";
+    PlayerEvent["Destroy"] = "destroy";
+})(PlayerEvent || (PlayerEvent = {}));
 /** @internal */
-const EOF = -1;
-/** @internal */
-const BITS = 12;
-/** @internal */
-const HSIZE = 5003; // 80% occupancy
-/** @internal */
-const masks = [
-    0x0000, 0x0001, 0x0003, 0x0007, 0x000F, 0x001F,
-    0x003F, 0x007F, 0x00FF, 0x01FF, 0x03FF, 0x07FF,
-    0x0FFF, 0x1FFF, 0x3FFF, 0x7FFF, 0xFFFF
+const supportedEvents = [
+    PlayerEvent.Play,
+    PlayerEvent.Pause,
+    PlayerEvent.CanPlay,
+    PlayerEvent.CanPlayThrough,
+    PlayerEvent.SeekStart,
+    PlayerEvent.SeekEnd,
+    PlayerEvent.Duration,
+    PlayerEvent.Loop,
+    PlayerEvent.Ended,
+    PlayerEvent.VolumeChange,
+    PlayerEvent.Progress,
+    PlayerEvent.TimeUpdate,
+    PlayerEvent.FrameUpdate,
+    PlayerEvent.FrameNext,
+    PlayerEvent.FramePrev,
+    PlayerEvent.FrameFirst,
+    PlayerEvent.FrameLast,
+    PlayerEvent.Ready,
+    PlayerEvent.Load,
+    PlayerEvent.LoadStart,
+    PlayerEvent.LoadedData,
+    PlayerEvent.LoadedMeta,
+    PlayerEvent.Emptied,
+    PlayerEvent.Close,
+    PlayerEvent.Error,
 ];
-/** @internal */
-class LzwCompressor {
-    constructor(width, height, colorDepth) {
-        this.accum = new Uint8Array(256);
-        this.htab = new Int32Array(HSIZE);
-        this.codetab = new Int32Array(HSIZE);
-        this.cur_accum = 0;
-        this.cur_bits = 0;
-        this.curPixel = 0;
-        this.free_ent = 0; // first unused entry
-        // block compression parameters -- after all codes are used up,
-        // and compression rate changes, start over.
-        this.clear_flg = false;
-        // Algorithm: use open addressing double hashing (no chaining) on the
-        // prefix code / next character combination. We do a variant of Knuth's
-        // algorithm D (vol. 3, sec. 6.4) along with G. Knott's relatively-prime
-        // secondary probe. Here, the modular division first probe is gives way
-        // to a faster exclusive-or manipulation. Also do block compression with
-        // an adaptive reset, whereby the code table is cleared when the compression
-        // ratio decreases, but after the table fills. The variable-length output
-        // codes are re-sized at this point, and a special CLEAR code is generated
-        // for the decompressor. Late addition: construct the table according to
-        // file size for noticeable speed improvement on small files. Please direct
-        // questions about this implementation to ames!jaw.
-        this.g_init_bits = undefined;
-        this.ClearCode = undefined;
-        this.EOFCode = undefined;
-        this.width = width;
-        this.height = height;
-        this.colorDepth = colorDepth;
-        this.reset();
-    }
-    reset() {
-        this.initCodeSize = Math.max(2, this.colorDepth);
-        this.accum.fill(0);
-        this.htab.fill(0);
-        this.codetab.fill(0);
-        this.cur_accum = 0;
-        this.cur_bits = 0;
-        this.curPixel = 0;
-        this.free_ent = 0; // first unused entry
-        this.maxcode;
-        // block compression parameters -- after all codes are used up,
-        // and compression rate changes, start over.
-        this.clear_flg = false;
-        // Algorithm: use open addressing double hashing (no chaining) on the
-        // prefix code / next character combination. We do a variant of Knuth's
-        // algorithm D (vol. 3, sec. 6.4) along with G. Knott's relatively-prime
-        // secondary probe. Here, the modular division first probe is gives way
-        // to a faster exclusive-or manipulation. Also do block compression with
-        // an adaptive reset, whereby the code table is cleared when the compression
-        // ratio decreases, but after the table fills. The variable-length output
-        // codes are re-sized at this point, and a special CLEAR code is generated
-        // for the decompressor. Late addition: construct the table according to
-        // file size for noticeable speed improvement on small files. Please direct
-        // questions about this implementation to ames!jaw.
-        this.g_init_bits = undefined;
-        this.ClearCode = undefined;
-        this.EOFCode = undefined;
-    }
-    // Add a character to the end of the current packet, and if it is 254
-    // characters, flush the packet to disk.
-    char_out(c, outs) {
-        this.accum[this.a_count++] = c;
-        if (this.a_count >= 254)
-            this.flush_char(outs);
-    }
-    // Clear out the hash table
-    // table clear for block compress
-    cl_block(outs) {
-        this.cl_hash(HSIZE);
-        this.free_ent = this.ClearCode + 2;
-        this.clear_flg = true;
-        this.output(this.ClearCode, outs);
-    }
-    // Reset code table
-    cl_hash(hsize) {
-        for (var i = 0; i < hsize; ++i)
-            this.htab[i] = -1;
-    }
-    compress(init_bits, outs) {
-        var fcode, c, i, ent, disp, hsize_reg, hshift;
-        // Set up the globals: this.g_init_bits - initial number of bits
-        this.g_init_bits = init_bits;
-        // Set up the necessary values
-        this.clear_flg = false;
-        this.n_bits = this.g_init_bits;
-        this.maxcode = this.get_maxcode(this.n_bits);
-        this.ClearCode = 1 << (init_bits - 1);
-        this.EOFCode = this.ClearCode + 1;
-        this.free_ent = this.ClearCode + 2;
-        this.a_count = 0; // clear packet
-        ent = this.nextPixel();
-        hshift = 0;
-        for (fcode = HSIZE; fcode < 65536; fcode *= 2)
-            ++hshift;
-        hshift = 8 - hshift; // set hash code range bound
-        hsize_reg = HSIZE;
-        this.cl_hash(hsize_reg); // clear hash table
-        this.output(this.ClearCode, outs);
-        outer_loop: while ((c = this.nextPixel()) != EOF) {
-            fcode = (c << BITS) + ent;
-            i = (c << hshift) ^ ent; // xor hashing
-            if (this.htab[i] === fcode) {
-                ent = this.codetab[i];
-                continue;
-            }
-            else if (this.htab[i] >= 0) { // non-empty slot
-                disp = hsize_reg - i; // secondary hash (after G. Knott)
-                if (i === 0) {
-                    disp = 1;
-                }
-                do {
-                    if ((i -= disp) < 0) {
-                        i += hsize_reg;
-                    }
-                    if (this.htab[i] === fcode) {
-                        ent = this.codetab[i];
-                        continue outer_loop;
-                    }
-                } while (this.htab[i] >= 0);
-            }
-            this.output(ent, outs);
-            ent = c;
-            if (this.free_ent < 1 << BITS) {
-                this.codetab[i] = this.free_ent++; // code -> hasthis.htable
-                this.htab[i] = fcode;
-            }
-            else {
-                this.cl_block(outs);
-            }
-        }
-        // Put out the final code.
-        this.output(ent, outs);
-        this.output(this.EOFCode, outs);
-    }
-    encode(pixels, outs) {
-        this.pixels = pixels;
-        outs.writeByte(this.initCodeSize); // write 'initial code size' byte
-        this.remaining = this.width * this.height; // reset navigation variables
-        this.curPixel = 0;
-        this.compress(this.initCodeSize + 1, outs); // compress and write the pixel data
-        outs.writeByte(0); // write block terminator
-    }
-    // Flush the packet to disk, and reset the this.accumulator
-    flush_char(outs) {
-        if (this.a_count > 0) {
-            outs.writeByte(this.a_count);
-            outs.writeBytes(this.accum, 0, this.a_count);
-            this.a_count = 0;
-        }
-    }
-    get_maxcode(n_bits) {
-        return (1 << n_bits) - 1;
-    }
-    // Return the next pixel from the image
-    nextPixel() {
-        if (this.remaining === 0)
-            return EOF;
-        --this.remaining;
-        var pix = this.pixels[this.curPixel++];
-        return pix & 0xff;
-    }
-    output(code, outs) {
-        this.cur_accum &= masks[this.cur_bits];
-        if (this.cur_bits > 0)
-            this.cur_accum |= (code << this.cur_bits);
-        else
-            this.cur_accum = code;
-        this.cur_bits += this.n_bits;
-        while (this.cur_bits >= 8) {
-            this.char_out((this.cur_accum & 0xff), outs);
-            this.cur_accum >>= 8;
-            this.cur_bits -= 8;
-        }
-        // If the next entry is going to be too big for the code size,
-        // then increase it, if possible.
-        if (this.free_ent > this.maxcode || this.clear_flg) {
-            if (this.clear_flg) {
-                this.maxcode = this.get_maxcode(this.n_bits = this.g_init_bits);
-                this.clear_flg = false;
-            }
-            else {
-                ++this.n_bits;
-                if (this.n_bits == BITS)
-                    this.maxcode = 1 << BITS;
-                else
-                    this.maxcode = this.get_maxcode(this.n_bits);
-            }
-        }
-        if (code == this.EOFCode) {
-            // At EOF, write the rest of the buffer.
-            while (this.cur_bits > 0) {
-                this.char_out((this.cur_accum & 0xff), outs);
-                this.cur_accum >>= 8;
-                this.cur_bits -= 8;
-            }
-            this.flush_char(outs);
-        }
-    }
-}
-
-/**
- * GIF image encoder
- *
- * Supports static single-frame GIF export as well as animated GIF
- * @category File Encoder
- */
-class GifImage {
-    /**
-     * Create a new GIF image object
-     * @param width image width
-     * @param height image height
-     * @param settings whether the gif should loop, the delay between frames, etc. See {@link GifEncoderSettings}
-     */
-    constructor(width, height, settings = {}) {
-        /** Number of current GIF frames */
-        this.frameCount = 0;
-        this.dataUrl = null;
-        this.width = width;
-        this.height = height;
-        this.data = new ByteArray();
-        this.settings = { ...GifImage.defaultSettings, ...settings };
-        this.compressor = new LzwCompressor(width, height, settings.colorDepth);
-    }
-    /**
-     * Create an animated GIF image from a Flipnote
-     *
-     * This will encode the entire animation, so depending on the number of frames it could take a while to return.
-     * @param flipnote {@link Flipnote} object ({@link PpmParser} or {@link KwzParser} instance)
-     * @param settings whether the gif should loop, the delay between frames, etc. See {@link GifEncoderSettings}
-     */
-    static fromFlipnote(flipnote, settings = {}) {
-        const gif = new GifImage(flipnote.width, flipnote.height, {
-            delay: 100 / flipnote.framerate,
-            repeat: flipnote.meta.loop ? -1 : 0,
-            ...settings
-        });
-        gif.palette = flipnote.globalPalette;
-        for (let frameIndex = 0; frameIndex < flipnote.frameCount; frameIndex++) {
-            gif.writeFrame(flipnote.getFramePixels(frameIndex));
-        }
-        return gif;
-    }
-    /**
-     * Create an GIF image from a single Flipnote frame
-     * @param flipnote
-     * @param frameIndex animation frame index to encode
-     * @param settings whether the gif should loop, the delay between frames, etc. See {@link GifEncoderSettings}
-     */
-    static fromFlipnoteFrame(flipnote, frameIndex, settings = {}) {
-        const gif = new GifImage(flipnote.width, flipnote.height, {
-            // TODO: look at ideal delay and repeat settings for single frame GIF
-            delay: 100 / flipnote.framerate,
-            repeat: -1,
-            ...settings,
-        });
-        gif.palette = flipnote.globalPalette;
-        gif.writeFrame(flipnote.getFramePixels(frameIndex));
-        return gif;
-    }
-    /**
-     * Add a frame to the GIF image
-     * @param pixels Raw pixels to encode, must be an uncompressed 8bit array of palette indices with a size matching image width * image height
-     */
-    writeFrame(pixels) {
-        if (this.frameCount === 0)
-            this.writeFirstFrame(pixels);
-        else
-            this.writeAdditionalFrame(pixels);
-        this.frameCount += 1;
-    }
-    writeFirstFrame(pixels) {
-        const paletteSize = this.palette.length;
-        // calc colorDepth
-        for (var p = 1; 1 << p < paletteSize; p += 1)
-            continue;
-        this.settings.colorDepth = p;
-        this.writeHeader();
-        this.writeColorTable();
-        this.writeNetscapeExt();
-        this.writeFrameHeader();
-        this.writePixels(pixels);
-    }
-    writeAdditionalFrame(pixels) {
-        this.writeFrameHeader();
-        this.writePixels(pixels);
-    }
-    writeHeader() {
-        const header = new DataStream(new ArrayBuffer(13));
-        header.writeChars('GIF89a');
-        // Logical Screen Descriptor
-        header.writeUint16(this.width);
-        header.writeUint16(this.height);
-        header.writeUint8(0x80 | // 1 : global color table flag = 1 (gct used)
-            (this.settings.colorDepth - 1) // 6-8 : gct size
-        );
-        header.writeBytes([
-            0x0,
-            0x0
-        ]);
-        this.data.writeBytes(new Uint8Array(header.buffer));
-    }
-    writeColorTable() {
-        const palette = new Uint8Array(3 * Math.pow(2, this.settings.colorDepth));
-        let offset = 0;
-        for (let index = 0; index < this.palette.length; index += 1) {
-            const [r, g, b, a] = this.palette[index];
-            palette[offset++] = r;
-            palette[offset++] = g;
-            palette[offset++] = b;
-        }
-        this.data.writeBytes(palette);
-    }
-    writeNetscapeExt() {
-        const netscapeExt = new DataStream(new ArrayBuffer(19));
-        netscapeExt.writeBytes([
-            0x21,
-            0xFF,
-            11,
-        ]);
-        netscapeExt.writeChars('NETSCAPE2.0');
-        netscapeExt.writeUint8(3); // subblock size
-        netscapeExt.writeUint8(1); // loop subblock id
-        netscapeExt.writeUint16(this.settings.repeat); // loop flag
-        this.data.writeBytes(new Uint8Array(netscapeExt.buffer));
-    }
-    writeFrameHeader() {
-        const fHeader = new DataStream(new ArrayBuffer(18));
-        // graphics control ext block
-        const transparentFlag = this.settings.transparentBg ? 0x1 : 0x0;
-        fHeader.writeBytes([
-            0x21,
-            0xF9,
-            0x4,
-            0x0 | transparentFlag // bitflags
-        ]);
-        fHeader.writeUint16(this.settings.delay); // loop flag
-        fHeader.writeBytes([
-            0x0,
-            0x0
-        ]);
-        // image desc block
-        fHeader.writeUint8(0x2C);
-        fHeader.writeUint16(0); // image left
-        fHeader.writeUint16(0); // image top
-        fHeader.writeUint16(this.width);
-        fHeader.writeUint16(this.height);
-        fHeader.writeUint8(0);
-        this.data.writeBytes(new Uint8Array(fHeader.buffer));
-    }
-    writePixels(pixels) {
-        this.compressor.colorDepth = this.settings.colorDepth;
-        this.compressor.reset();
-        this.compressor.encode(pixels, this.data);
-    }
-    /**
-     * Returns the GIF image data as an {@link https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/ArrayBuffer | ArrayBuffer}
-     */
-    getArrayBuffer() {
-        return this.data.getBuffer();
-    }
-    /**
-     * Returns the GIF image data as a NodeJS {@link https://nodejs.org/api/buffer.html | Buffer}
-     *
-     * Note: This method does not work outside of NodeJS environments
-     */
-    getBuffer() {
-        if (isNode) {
-            return Buffer.from(this.getArrayBuffer());
-        }
-        throw new Error('The Buffer object only available in NodeJS environments');
-    }
-    /**
-     * Returns the GIF image data as a file {@link https://developer.mozilla.org/en-US/docs/Web/API/Blob | Blob}
-     */
-    getBlob() {
-        if (isBrowser) {
-            return new Blob([this.getArrayBuffer()], { type: 'image/gif' });
-        }
-        throw new Error('The Blob object is only available in browser environments');
-    }
-    /**
-     * Returns the GIF image data as an {@link https://developer.mozilla.org/en-US/docs/Web/API/URL/createObjectURL | Object URL}
-     *
-     * Note: This method does not work outside of browser environments
-     */
-    getUrl() {
-        if (isBrowser) {
-            if (this.dataUrl)
-                return this.dataUrl;
-            return window.URL.createObjectURL(this.getBlob());
-        }
-        throw new Error('Data URLs are only available in browser environments');
-    }
-    /**
-     * Revokes this image's {@link https://developer.mozilla.org/en-US/docs/Web/API/URL/createObjectURL | Object URL} if one has been created, use this when the url created with {@link getUrl} is no longer needed, to preserve memory.
-     *
-     * Note: This method does not work outside of browser environments
-     */
-    revokeUrl() {
-        if (isBrowser) {
-            if (this.dataUrl)
-                window.URL.revokeObjectURL(this.dataUrl);
-        }
-        else {
-            throw new Error('Data URLs are only available in browser environments');
-        }
-    }
-    /**
-     * Returns the GIF image data as an {@link https://developer.mozilla.org/en-US/docs/Web/API/HTMLImageElement/Image | Image} object
-     *
-     * Note: This method does not work outside of browser environments
-     */
-    getImage() {
-        if (isBrowser) {
-            const img = new Image(this.width, this.height);
-            img.src = this.getUrl();
-            return img;
-        }
-        throw new Error('Image objects are only available in browser environments');
-    }
-}
-/**
- * Default GIF encoder settings
- */
-GifImage.defaultSettings = {
-    transparentBg: false,
-    delay: 100,
-    repeat: -1,
-    colorDepth: 8
-};
-
-/**
- * Wav audio object. Used to create a {@link https://en.wikipedia.org/wiki/WAV | WAV} file from a PCM audio stream or a {@link Flipnote} object.
- *
- * Currently only supports PCM s16_le audio encoding.
- *
- * @category File Encoder
- */
-class WavAudio {
-    /**
-     * Create a new WAV audio object
-     * @param sampleRate audio samplerate
-     * @param channels number of audio channels
-     * @param bitsPerSample number of bits per sample
-     */
-    constructor(sampleRate, channels = 1, bitsPerSample = 16) {
-        this.sampleRate = sampleRate;
-        this.channels = channels;
-        this.bitsPerSample = bitsPerSample;
-        // Write WAV file header
-        // Reference: http://www.topherlee.com/software/pcm-tut-wavformat.html
-        let headerBuffer = new ArrayBuffer(44);
-        let header = new DataStream(headerBuffer);
-        // 'RIFF' indent
-        header.writeChars('RIFF');
-        // filesize (set later)
-        header.writeUint32(0);
-        // 'WAVE' indent
-        header.writeChars('WAVE');
-        // 'fmt ' section header
-        header.writeChars('fmt ');
-        // fmt section length
-        header.writeUint32(16);
-        // specify audio format is pcm (type 1)
-        header.writeUint16(1);
-        // number of audio channels
-        header.writeUint16(this.channels);
-        // audio sample rate
-        header.writeUint32(this.sampleRate);
-        // byterate = (sampleRate * bitsPerSample * channelCount) / 8
-        header.writeUint32((this.sampleRate * this.bitsPerSample * this.channels) / 8);
-        // blockalign = (bitsPerSample * channels) / 8
-        header.writeUint16((this.bitsPerSample * this.channels) / 8);
-        // bits per sample
-        header.writeUint16(this.bitsPerSample);
-        // 'data' section header
-        header.writeChars('data');
-        // data section length (set later)
-        header.writeUint32(0);
-        this.header = header;
-        this.pcmData = null;
-    }
-    /**
-     * Create a WAV audio file from a Flipnote's master audio track
-     * @param flipnote
-     * @param trackId
-     */
-    static fromFlipnote(note) {
-        const sampleRate = note.sampleRate;
-        const wav = new WavAudio(sampleRate, 1, 16);
-        const pcm = note.getAudioMasterPcm(sampleRate);
-        wav.writeFrames(pcm);
-        return wav;
-    }
-    /**
-     * Create a WAV audio file from a given Flipnote audio track
-     * @param flipnote
-     * @param trackId
-     */
-    static fromFlipnoteTrack(flipnote, trackId) {
-        const sampleRate = flipnote.sampleRate;
-        const wav = new WavAudio(sampleRate, 1, 16);
-        const pcm = flipnote.getAudioTrackPcm(trackId, sampleRate);
-        wav.writeFrames(pcm);
-        return wav;
-    }
-    /**
-     * Add PCM audio frames to the WAV
-     * @param pcmData signed int16 PCM audio samples
-     */
-    writeFrames(pcmData) {
-        let header = this.header;
-        // fill in filesize
-        header.seek(4);
-        header.writeUint32(header.byteLength + pcmData.byteLength);
-        // fill in data section length
-        header.seek(40);
-        header.writeUint32(pcmData.byteLength);
-        this.pcmData = pcmData;
-    }
-    /**
-     * Returns the WAV audio data as an {@link https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/ArrayBuffer | ArrayBuffer}
-     */
-    getArrayBuffer() {
-        const headerBytes = this.header.bytes;
-        const pcmBytes = new Uint8Array(this.pcmData.buffer);
-        const resultBytes = new Uint8Array(this.header.byteLength + this.pcmData.byteLength);
-        resultBytes.set(headerBytes);
-        resultBytes.set(pcmBytes, headerBytes.byteLength);
-        return resultBytes.buffer;
-    }
-    /**
-     * Returns the WAV audio data as a NodeJS {@link https://nodejs.org/api/buffer.html | Buffer}
-     *
-     * Note: This method does not work outside of NodeJS environments
-     */
-    getBuffer() {
-        if (isNode) {
-            return Buffer.from(this.getArrayBuffer());
-        }
-        throw new Error('The Buffer object is only available in NodeJS environments');
-    }
-    /**
-     * Returns the GIF image data as a file {@link https://developer.mozilla.org/en-US/docs/Web/API/Blob | Blob}
-     *
-     * Note: This method will not work outside of browser environments
-     */
-    getBlob() {
-        if (isBrowser) {
-            const buffer = this.getArrayBuffer();
-            return new Blob([buffer], { type: 'audio/wav' });
-        }
-        throw new Error('The Blob object is only available in browser environments');
-    }
-}
 
 /* @license twgl.js 4.15.2 Copyright (c) 2015, Gregg Tavares All Rights Reserved.
 Available via the MIT license.
@@ -3046,7 +2674,7 @@ function createBufferInfoFromArrays(gl, arrays, srcBufferInfo) {
  * @private
  */
 //function getVersionAsNumber(gl) {
-//  return parseFloat(gl.getParameter(gl."5.0.0").substr(6));
+//  return parseFloat(gl.getParameter(gl."5.1.0").substr(6));
 //}
 
 /**
@@ -3057,7 +2685,7 @@ function createBufferInfoFromArrays(gl, arrays, srcBufferInfo) {
  */
 function isWebGL2(gl) {
   // This is the correct check but it's slow
-  //  return gl.getParameter(gl."5.0.0").indexOf("WebGL 2.0") === 0;
+  //  return gl.getParameter(gl."5.1.0").indexOf("WebGL 2.0") === 0;
   // This might also be the correct check but I'm assuming it's slow-ish
   // return gl instanceof WebGL2RenderingContext;
   return !!gl.texStorage2D;
@@ -3987,7 +3615,7 @@ function createProgramInfoFromProgram(gl, program) {
 
 var quadShader = "#define GLSLIFY 1\nattribute vec4 position;attribute vec2 texcoord;varying vec2 v_texel;varying vec2 v_uv;varying float v_scale;uniform bool u_flipY;uniform vec2 u_textureSize;uniform vec2 u_screenSize;void main(){v_uv=texcoord;v_scale=floor(u_screenSize.y/u_textureSize.y+0.01);gl_Position=position;if(u_flipY){gl_Position.y*=-1.;}}"; // eslint-disable-line
 
-var layerDrawShader = "precision highp float;\n#define GLSLIFY 1\nvarying vec2 v_uv;uniform sampler2D u_palette;uniform sampler2D u_bitmap;uniform float u_paletteOffset;const vec4 transparent=vec4(0,0,0,0);void main(){float index=texture2D(u_bitmap,v_uv).a*255.;if(index>0.){gl_FragColor=texture2D(u_palette,vec2((u_paletteOffset+index)/255.,.5));}else{gl_FragColor=transparent;}}"; // eslint-disable-line
+var layerDrawShader = "precision highp float;\n#define GLSLIFY 1\nvarying vec2 v_uv;uniform sampler2D u_palette;uniform sampler2D u_bitmap;uniform float u_paletteOffset;const vec4 transparent=vec4(0,0,0,0);void main(){float index=texture2D(u_bitmap,v_uv).a*255.;if(index>0.){gl_FragColor=texture2D(u_palette,vec2((u_paletteOffset+index)/8.,.5));}else{gl_FragColor=transparent;}}"; // eslint-disable-line
 
 var postProcessShader = "precision highp float;\n#define GLSLIFY 1\nvarying vec2 v_uv;uniform sampler2D u_tex;varying float v_scale;uniform vec2 u_textureSize;uniform vec2 u_screenSize;void main(){vec2 v_texel=v_uv*u_textureSize;vec2 texel_floored=floor(v_texel);vec2 s=fract(v_texel);float region_range=0.5-0.5/v_scale;vec2 center_dist=s-0.5;vec2 f=(center_dist-clamp(center_dist,-region_range,region_range))*v_scale+0.5;vec2 mod_texel=texel_floored+f;vec2 coord=mod_texel.xy/u_textureSize.xy;gl_FragColor=texture2D(u_tex,coord);}"; // eslint-disable-line
 
@@ -4005,7 +3633,7 @@ class WebglRenderer {
      *
      * The ratio between `width` and `height` should be 3:4 for best results
      */
-    constructor(el, width = 640, height = 480) {
+    constructor(el, width = 640, height = 480, options = {}) {
         this.refs = {
             programs: [],
             shaders: [],
@@ -4013,27 +3641,47 @@ class WebglRenderer {
             buffers: [],
             framebuffers: []
         };
-        if (!isBrowser) {
-            throw new Error('The WebGL renderer is only available in browser environments');
-        }
-        const gl = el.getContext('webgl', {
+        this.isCtxLost = false;
+        this.handleContextLoss = (e) => {
+            e.preventDefault();
+            this.destroy();
+            this.isCtxLost = true;
+            this.options.onlost();
+        };
+        this.handleContextRestored = (e) => {
+            this.isCtxLost = false;
+            this.init();
+            this.options.onrestored();
+        };
+        assertBrowserEnv();
+        this.el = el;
+        this.width = width;
+        this.height = height;
+        this.options = { ...WebglRenderer.defaultOptions, ...options };
+        el.addEventListener('webglcontextlost', this.handleContextLoss, false);
+        el.addEventListener('webglcontextrestored', this.handleContextRestored, false);
+        this.gl = el.getContext('webgl', {
             antialias: false,
             alpha: true
         });
-        this.el = el;
-        this.gl = gl;
+        this.init();
+    }
+    init() {
+        const gl = this.gl;
         this.layerDrawProgram = this.createProgram(quadShader, layerDrawShader);
         this.postProcessProgram = this.createProgram(quadShader, postProcessShader);
         this.quadBuffer = this.createScreenQuad(-1, -1, 2, 2, 8, 8);
         this.setBuffersAndAttribs(this.layerDrawProgram, this.quadBuffer);
         this.setBuffersAndAttribs(this.postProcessProgram, this.quadBuffer);
-        this.paletteTexture = this.createTexture(gl.RGBA, gl.NEAREST, gl.CLAMP_TO_EDGE, 256, 1);
+        this.paletteData = new Uint8Array(8 * 4);
+        this.paletteTexture = this.createTexture(gl.RGBA, gl.NEAREST, gl.CLAMP_TO_EDGE, 8, 1);
         this.layerTexture = this.createTexture(gl.ALPHA, gl.NEAREST, gl.CLAMP_TO_EDGE);
         this.frameTexture = this.createTexture(gl.RGBA, gl.LINEAR, gl.CLAMP_TO_EDGE);
         this.frameBuffer = this.createFrameBuffer(this.frameTexture);
-        this.setCanvasSize(width, height);
+        this.setCanvasSize(this.width, this.height);
     }
     createProgram(vertexShaderSource, fragmentShaderSource) {
+        assert(!this.isCtxLost);
         const gl = this.gl;
         const vert = this.createShader(gl.VERTEX_SHADER, vertexShaderSource);
         const frag = this.createShader(gl.FRAGMENT_SHADER, fragmentShaderSource);
@@ -4044,7 +3692,7 @@ class WebglRenderer {
         // link program
         gl.linkProgram(program);
         if (!gl.getProgramParameter(program, gl.LINK_STATUS)) {
-            let log = gl.getProgramInfoLog(program);
+            const log = gl.getProgramInfoLog(program);
             gl.deleteProgram(program);
             throw new Error(log);
         }
@@ -4053,6 +3701,7 @@ class WebglRenderer {
         return programInfo;
     }
     createShader(type, source) {
+        assert(!this.isCtxLost);
         const gl = this.gl;
         const shader = gl.createShader(type);
         gl.shaderSource(shader, source);
@@ -4068,6 +3717,7 @@ class WebglRenderer {
     }
     // creating a subdivided quad seems to produce slightly nicer texture filtering
     createScreenQuad(x0, y0, width, height, xSubdivs, ySubdivs) {
+        assert(!this.isCtxLost);
         const numVerts = (xSubdivs + 1) * (ySubdivs + 1);
         const numVertsAcross = xSubdivs + 1;
         const positions = new Float32Array(numVerts * 2);
@@ -4110,9 +3760,8 @@ class WebglRenderer {
             indices: indices
         });
         // collect references to buffer objects
-        for (let name in bufferInfo.attribs) {
+        for (let name in bufferInfo.attribs)
             this.refs.buffers.push(bufferInfo.attribs[name].buffer);
-        }
         return bufferInfo;
     }
     setBuffersAndAttribs(program, buffer) {
@@ -4121,6 +3770,7 @@ class WebglRenderer {
         gl.bindBuffer(gl.ELEMENT_ARRAY_BUFFER, buffer.indices);
     }
     createTexture(type, minMag, wrap, width = 1, height = 1) {
+        assert(!this.isCtxLost);
         const gl = this.gl;
         const tex = gl.createTexture();
         gl.bindTexture(gl.TEXTURE_2D, tex);
@@ -4133,6 +3783,7 @@ class WebglRenderer {
         return tex;
     }
     createFrameBuffer(colorTexture) {
+        assert(!this.isCtxLost);
         const gl = this.gl;
         const fb = gl.createFramebuffer();
         gl.bindFramebuffer(gl.FRAMEBUFFER, fb);
@@ -4153,9 +3804,12 @@ class WebglRenderer {
      * The ratio between `width` and `height` should be 3:4 for best results
      */
     setCanvasSize(width, height) {
+        assert(!this.isCtxLost);
         const dpi = window.devicePixelRatio || 1;
         const internalWidth = width * dpi;
         const internalHeight = height * dpi;
+        this.width = width;
+        this.height = height;
         this.el.width = internalWidth;
         this.el.height = internalHeight;
         this.screenWidth = internalWidth;
@@ -4181,6 +3835,7 @@ class WebglRenderer {
      * @param colors - Paper color as `[R, G, B, A]`
      */
     clearFrameBuffer(paperColor) {
+        assert(!this.isCtxLost);
         const gl = this.gl;
         // bind to the frame buffer
         gl.bindFramebuffer(gl.FRAMEBUFFER, this.frameBuffer);
@@ -4195,8 +3850,10 @@ class WebglRenderer {
      * @param colors - Array of colors as `[R, G, B, A]`
      */
     setPalette(colors) {
+        assert(!this.isCtxLost);
+        assert(colors.length < 16);
         const gl = this.gl;
-        const data = new Uint8Array(256 * 4);
+        const data = this.paletteData.fill(0);
         let dataPtr = 0;
         for (let i = 0; i < colors.length; i++) {
             const [r, g, b, a] = colors[i];
@@ -4207,7 +3864,7 @@ class WebglRenderer {
         }
         // update layer texture pixels
         gl.bindTexture(gl.TEXTURE_2D, this.paletteTexture);
-        gl.texImage2D(gl.TEXTURE_2D, 0, gl.RGBA, 256, 1, 0, gl.RGBA, gl.UNSIGNED_BYTE, data);
+        gl.texImage2D(gl.TEXTURE_2D, 0, gl.RGBA, 8, 1, 0, gl.RGBA, gl.UNSIGNED_BYTE, data);
     }
     /**
      * Draw pixels to the frame buffer
@@ -4218,6 +3875,8 @@ class WebglRenderer {
      */
     drawPixels(pixels, paletteOffset) {
         const { gl, layerDrawProgram, layerTexture, textureWidth, textureHeight, } = this;
+        assert(!this.isCtxLost);
+        assert(pixels.length === textureWidth * textureHeight);
         // we wanna draw to the frame buffer
         gl.bindFramebuffer(gl.FRAMEBUFFER, this.frameBuffer);
         gl.viewport(0, 0, textureWidth, textureHeight);
@@ -4242,6 +3901,7 @@ class WebglRenderer {
      */
     composite() {
         const gl = this.gl;
+        assert(!this.isCtxLost);
         // setting gl.FRAMEBUFFER will draw directly to the screen
         gl.bindFramebuffer(gl.FRAMEBUFFER, null);
         gl.viewport(0, 0, gl.drawingBufferWidth, gl.drawingBufferHeight);
@@ -4259,13 +3919,25 @@ class WebglRenderer {
         // draw screen quad
         gl.drawElements(gl.TRIANGLES, this.quadBuffer.numElements, this.quadBuffer.elementType, 0);
     }
-    resize(width = 640, height = 480) {
-        this.setCanvasSize(width, height);
+    /**
+     * Returns true if the webGL context has returned an error
+     */
+    isErrorState() {
+        const gl = this.gl;
+        const error = gl.getError();
+        return error != gl.NO_ERROR && error != gl.CONTEXT_LOST_WEBGL;
+    }
+    /**
+     * Only a certain number of WebGL contexts can be added to a single page before the browser will start culling old contexts.
+     * This method returns true if it has been culled, false if not
+     */
+    isLost() {
+        return this.gl.isContextLost();
     }
     /**
      * Frees any resources used by this canvas instance
      */
-    destroy() {
+    async destroy() {
         const refs = this.refs;
         const gl = this.gl;
         refs.shaders.forEach((shader) => {
@@ -4288,14 +3960,19 @@ class WebglRenderer {
             gl.deleteProgram(program);
         });
         refs.programs = [];
+        this.paletteData = null;
         // shrink the canvas to reduce memory usage until it is garbage collected
         gl.canvas.width = 1;
         gl.canvas.height = 1;
     }
 }
+WebglRenderer.defaultOptions = {
+    onlost: () => { },
+    onrestored: () => { },
+};
 
 /** @internal */
-const _AudioContext = (function () {
+const _AudioContext = (() => {
     if (isBrowser)
         return (window.AudioContext || window.webkitAudioContext);
     return null;
@@ -4309,7 +3986,7 @@ class WebAudioPlayer {
     constructor() {
         /** Whether the audio is being run through an equalizer or not */
         this.useEq = false;
-        /** Equalizer settings. Credit to {@link https://www.sudomemo.net/ | Sudomemo} */
+        /** Default equalizer settings. Credit to {@link https://www.sudomemo.net/ | Sudomemo} for these */
         this.eqSettings = [
             [31.25, 4.1],
             [62.5, 1.2],
@@ -4322,17 +3999,30 @@ class WebAudioPlayer {
             [16000, 5.1]
         ];
         this._volume = 1;
-        if (!isBrowser) {
-            throw new Error('The WebAudio player is only available in browser environments');
-        }
-        this.ctx = new _AudioContext();
+        this._loop = false;
+        this.nodeRefs = [];
+        assertBrowserEnv();
     }
-    /** Sets the audio output volume */
+    /** The audio output volume. Range is 0 to 1 */
     set volume(value) {
         this.setVolume(value);
     }
     get volume() {
         return this._volume;
+    }
+    /** Whether the audio should loop after it has ended */
+    set loop(value) {
+        this._loop = value;
+        if (this.source)
+            this.source.loop = value;
+    }
+    get loop() {
+        return this._loop;
+    }
+    getCtx() {
+        if (!this.ctx)
+            this.ctx = new _AudioContext();
+        return this.ctx;
     }
     /**
      * Set the audio buffer to play
@@ -4340,24 +4030,27 @@ class WebAudioPlayer {
      * @param sampleRate - For best results, this should be a multiple of 16364
      */
     setBuffer(inputBuffer, sampleRate) {
+        const ctx = this.getCtx();
         const numSamples = inputBuffer.length;
-        const audioBuffer = this.ctx.createBuffer(1, numSamples, sampleRate);
+        const audioBuffer = ctx.createBuffer(1, numSamples, sampleRate);
         const channelData = audioBuffer.getChannelData(0);
         if (inputBuffer instanceof Float32Array)
             channelData.set(inputBuffer, 0);
         else if (inputBuffer instanceof Int16Array) {
             for (let i = 0; i < numSamples; i++) {
-                channelData[i] = inputBuffer[i] / 32767;
+                channelData[i] = inputBuffer[i] / 32768;
             }
         }
         this.buffer = audioBuffer;
         this.sampleRate = sampleRate;
     }
     connectEqNodesTo(inNode) {
-        const { ctx, eqSettings } = this;
+        const ctx = this.getCtx();
+        const eqSettings = this.eqSettings;
         let lastNode = inNode;
         eqSettings.forEach(([frequency, gain], index) => {
-            let node = ctx.createBiquadFilter();
+            const node = ctx.createBiquadFilter();
+            this.nodeRefs.push(node);
             node.frequency.value = frequency;
             node.gain.value = gain;
             if (index === 0)
@@ -4372,10 +4065,13 @@ class WebAudioPlayer {
         return lastNode;
     }
     initNodes() {
-        const { ctx } = this;
+        const ctx = this.getCtx();
+        this.nodeRefs = [];
         const source = ctx.createBufferSource();
+        this.nodeRefs.push(source);
         source.buffer = this.buffer;
         const gainNode = ctx.createGain();
+        this.nodeRefs.push(gainNode);
         if (this.useEq) {
             const eq = this.connectEqNodesTo(source);
             eq.connect(gainNode);
@@ -4408,32 +4104,49 @@ class WebAudioPlayer {
      */
     playFrom(currentTime) {
         this.initNodes();
+        this.source.loop = this._loop;
         this.source.start(0, currentTime);
     }
     /**
      * Stops the audio playback
      */
     stop() {
-        this.source.stop(0);
+        if (this.source)
+            this.source.stop(0);
+    }
+    /**
+   * Frees any resources used by this canvas instance
+   */
+    async destroy() {
+        this.stop();
+        const ctx = this.getCtx();
+        this.nodeRefs.forEach(node => node.disconnect());
+        this.nodeRefs = [];
+        if (ctx.state !== 'closed' && typeof ctx.close === 'function')
+            await ctx.close();
+        this.buffer = null;
     }
 }
 
 /** @internal */
-const saveData = (function () {
-    if (!isBrowser) {
-        return function () { };
-    }
-    var a = document.createElement("a");
-    // document.body.appendChild(a);
-    // a.style.display = "none";
-    return function (blob, filename) {
-        const url = window.URL.createObjectURL(blob);
-        a.href = url;
-        a.download = filename;
-        a.click();
-        window.URL.revokeObjectURL(url);
+function createTimeRanges(ranges) {
+    return {
+        length: ranges.length,
+        start: (i) => ranges[i][0],
+        end: (i) => ranges[i][1],
     };
-})();
+}
+/** @internal */
+function padNumber(num, strLength) {
+    return num.toString().padStart(strLength, '0');
+}
+/** @internal */
+function formatTime(seconds) {
+    const m = Math.floor((seconds % 3600) / 60);
+    const s = Math.floor(seconds % 60);
+    return `${m}:${padNumber(s, 2)}`;
+}
+
 /**
  * Flipnote Player API (exported as `flipnote.Player`)
  *
@@ -4452,73 +4165,133 @@ class Player {
      * The ratio between `width` and `height` should be 3:4 for best results
      */
     constructor(el, width, height) {
-        /** Indicates whether playback should loop once the end is reached */
-        this.loop = false;
-        /** Indicates whether playback is currently paused */
-        this.paused = true;
         /** Animation duration, in seconds */
         this.duration = 0;
-        this.isOpen = false;
-        this.events = {};
-        this._lastTick = -1;
-        this._frame = -1;
-        this._time = -1;
+        /** Automatically begin playback after a Flipnote is loaded */
+        this.autoplay = false;
+        /** Array of events supported by this player */
+        this.supportedEvents = supportedEvents;
+        /** @internal */
+        this._src = null;
+        /** @internal */
+        this._loop = false;
+        /** @internal */
+        this._volume = 1;
+        /** @internal */
+        this._muted = false;
+        /** @internal */
+        this._frame = null;
+        /** @internal */
+        this.isNoteLoaded = false;
+        /** @internal */
+        this.events = new Map();
+        /** @internal */
+        this.playbackStartTime = 0;
+        /** @internal */
+        this.playbackTime = 0;
+        /** @internal */
+        this.playbackLoopId = null;
+        /** @internal */
+        this.showThumbnail = true;
+        /** @internal */
         this.hasPlaybackStarted = false;
+        /** @internal */
+        this.isPlaying = false;
+        /** @internal */
         this.wasPlaying = false;
+        /** @internal */
         this.isSeeking = false;
+        /**
+         * Playback animation loop
+         * @public
+         * @category Playback Control
+         */
+        this.playbackLoop = (timestamp) => {
+            if (!this.isPlaying)
+                return;
+            const now = timestamp / 1000;
+            const currPlaybackTime = now - this.playbackStartTime;
+            if (currPlaybackTime >= this.duration) {
+                if (this.loop) {
+                    this.playbackStartTime = now;
+                    this.emit(PlayerEvent.Loop);
+                }
+                else {
+                    this.pause();
+                    this.emit(PlayerEvent.Ended);
+                }
+            }
+            this.setCurrentTime(currPlaybackTime % this.duration);
+            this.playbackLoopId = requestAnimationFrame(this.playbackLoop);
+        };
+        assertBrowserEnv();
         // if `el` is a string, use it to select an Element, else assume it's an element
         el = ('string' == typeof el) ? document.querySelector(el) : el;
-        this.canvas = new WebglRenderer(el, width, height);
+        this.canvas = new WebglRenderer(el, width, height, {
+            onlost: () => this.emit(PlayerEvent.Error),
+            onrestored: () => this.load()
+        });
         this.audio = new WebAudioPlayer();
-        this.el = this.canvas.el;
-        this.customPalette = null;
-        this.state = { ...Player.defaultState };
+        this.canvasEl = this.canvas.el;
+    }
+    /** The currently loaded Flipnote source, if there is one. Can be overridden to load another Flipnote */
+    get src() {
+        return this._src;
+    }
+    set src(source) {
+        this.load(source);
+    }
+    /** Indicates whether playback is currently paused */
+    get paused() {
+        return !this.isPlaying;
+    }
+    set paused(isPaused) {
+        if (isPaused)
+            this.pause();
+        else
+            this.play();
     }
     /** Current animation frame index */
     get currentFrame() {
         return this._frame;
     }
     set currentFrame(frameIndex) {
-        this.setFrame(frameIndex);
+        this.setCurrentFrame(frameIndex);
     }
     /** Current animation playback position, in seconds */
     get currentTime() {
-        return this.isOpen ? this._time : null;
+        return this.isNoteLoaded ? this.playbackTime : null;
     }
     set currentTime(value) {
-        if ((this.isOpen) && (value <= this.duration) && (value >= 0)) {
-            this.setFrame(Math.round(value / (1 / this.framerate)));
-            this._time = value;
-            this.emit('progress', this.progress);
-        }
+        this.setCurrentTime(value);
     }
     /** Current animation playback progress, as a percentage out of 100 */
     get progress() {
-        return this.isOpen ? (this._time / this.duration) * 100 : 0;
+        return this.isNoteLoaded ? (this.playbackTime / this.duration) * 100 : null;
     }
     set progress(value) {
-        this.currentTime = this.duration * (value / 100);
+        this.setProgress(value);
     }
     /** Audio volume, range `0` to `1` */
     get volume() {
-        return this.audio.volume;
+        return this.getVolume();
     }
     set volume(value) {
-        this.audio.volume = value;
+        this.setVolume(value);
     }
-    /**
-     * Audio mute state
-     * TODO: implement
-     * @internal
-    */
+    /** Audio mute state */
     get muted() {
-        // return this.audioTracks[3].audio.muted;
-        return false;
+        return this.getMuted();
     }
     set muted(value) {
-        // for (let i = 0; i < this.audioTracks.length; i++) {
-        //   this.audioTracks[i].audio.muted = value;
-        // }
+        this.setMuted(value);
+    }
+    /** Indicates whether playback should loop once the end is reached */
+    get loop() {
+        return this.getLoop();
+    }
+    set loop(value) {
+        this.setLoop(value);
     }
     /** Animation frame rate, measured in frames per second */
     get framerate() {
@@ -4532,171 +4305,265 @@ class Player {
     get frameSpeed() {
         return this.note.frameSpeed;
     }
-    setState(newState) {
-        newState = { ...this.state, ...newState };
-        const oldState = this.state;
-        this.emit('state:change');
+    /**
+     * Implementation of the `HTMLMediaElement` {@link https://developer.mozilla.org/en-US/docs/Web/API/HTMLMediaElement/buffered | buffered } property
+     * @category HTMLVideoElement compatibility
+     */
+    get buffered() {
+        return createTimeRanges([[0, this.duration]]);
+    }
+    /**
+     * Implementation of the `HTMLMediaElement` {@link https://developer.mozilla.org/en-US/docs/Web/API/HTMLMediaElement/seekable | seekable} property
+     * @category HTMLVideoElement compatibility
+     */
+    get seekable() {
+        return createTimeRanges([[0, this.duration]]);
+    }
+    /**
+     * Implementation of the `HTMLMediaElement` {@link https://developer.mozilla.org/en-US/docs/Web/API/HTMLMediaElement/currentSrc | currentSrc} property
+     * @category HTMLVideoElement compatibility
+     */
+    get currentSrc() {
+        return this._src;
+    }
+    /**
+     * Implementation of the `HTMLVideoElement` {@link https://developer.mozilla.org/en-US/docs/Web/API/HTMLVideoElement/videoWidth | videoWidth} property
+     * @category HTMLVideoElement compatibility
+     */
+    get videoWidth() {
+        return this.isNoteLoaded ? this.note.width : 0;
+    }
+    /**
+     * Implementation of the `HTMLVideoElement` {@link https://developer.mozilla.org/en-US/docs/Web/API/HTMLVideoElement/videoHeight | videoHeight} property
+     * @category HTMLVideoElement compatibility
+     */
+    get videoHeight() {
+        return this.isNoteLoaded ? this.note.height : 0;
     }
     /**
      * Open a Flipnote from a source
      * @category Lifecycle
      */
-    async open(source) {
-        if (this.isOpen)
-            this.close();
+    async load(source = null) {
+        // close currently open note first
+        if (this.isNoteLoaded)
+            this.closeNote();
+        // if no source specified, just reset everything
+        if (!source)
+            return this.openNote(this.note);
+        // otherwise do a normal load
+        this.emit(PlayerEvent.LoadStart);
         return parseSource(source)
-            .then((note) => this.load(note))
+            .then((note) => {
+            this.openNote(note);
+            this._src = source;
+        })
             .catch((err) => {
-            this.emit('error', err);
-            console.error('Error loading Flipnote:', err);
-            throw 'Error loading Flipnote';
+            this.emit(PlayerEvent.Error, err);
+            throw new Error(`Error loading Flipnote: ${err.message}`);
         });
     }
     /**
      * Close the currently loaded Flipnote
      * @category Lifecycle
      */
-    close() {
+    closeNote() {
         this.pause();
         this.note = null;
-        this.isOpen = false;
-        this.paused = true;
-        this.loop = null;
+        this.isNoteLoaded = false;
         this.meta = null;
-        this._frame = null;
-        this._time = null;
-        this.duration = null;
-        this.loop = null;
-        this.hasPlaybackStarted = null;
-        // this.canvas.clearFrameBuffer();
+        this._src = null;
+        this._frame = 0;
+        // this.playbackFrame = null;
+        this.playbackTime = 0;
+        this.duration = 0;
+        this.loop = false;
+        this.isPlaying = false;
+        this.wasPlaying = false;
+        this.hasPlaybackStarted = false;
+        this.showThumbnail = true;
+        this.canvas.clearFrameBuffer([0, 0, 0, 0]);
     }
     /**
-     * Load a Flipnote into the player
+     * Open a Flipnote into the player
      * @category Lifecycle
      */
-    load(note) {
+    openNote(note) {
+        if (this.isNoteLoaded)
+            this.closeNote();
         this.note = note;
         this.meta = note.meta;
+        this.emit(PlayerEvent.LoadedMeta);
         this.noteFormat = note.format;
-        this.noteFormatString = note.formatString;
-        this.loop = note.meta.loop;
-        this.duration = (this.note.frameCount) * (1 / this.note.framerate);
-        this.paused = true;
-        this.isOpen = true;
+        this.duration = note.duration;
+        this.playbackTime = 0;
+        this._frame = 0;
+        this.isNoteLoaded = true;
+        this.isPlaying = false;
+        this.wasPlaying = false;
         this.hasPlaybackStarted = false;
-        this.layerVisibility = this.note.layerVisibility;
-        const sampleRate = this.note.sampleRate;
-        const pcm = note.getAudioMasterPcm();
-        this.audio.setBuffer(pcm, sampleRate);
+        this.layerVisibility = note.layerVisibility;
+        this.showThumbnail = true;
+        this.audio.setBuffer(note.getAudioMasterPcm(), note.sampleRate);
+        this.emit(PlayerEvent.CanPlay);
+        this.emit(PlayerEvent.CanPlayThrough);
+        this.setLoop(note.meta.loop);
         this.canvas.setInputSize(note.width, note.height);
-        this.setFrame(this.note.thumbFrameIndex);
-        this._time = 0;
-        this.emit('load');
-    }
-    playAudio() {
-        this.audio.playFrom(this.currentTime);
-    }
-    stopAudio() {
-        this.audio.stop();
+        this.drawFrame(note.thumbFrameIndex);
+        this.emit(PlayerEvent.LoadedData);
+        this.emit(PlayerEvent.Load);
+        this.emit(PlayerEvent.Ready);
+        if (this.autoplay)
+            this.play();
     }
     /**
-     * Toggle audio equalizer filter
-     * @category Audio Control
+     * Set the current playback time
+     * @category Playback Control
      */
-    toggleEq() {
-        this.stopAudio();
-        this.audio.useEq = !this.audio.useEq;
-        this.playAudio();
+    setCurrentTime(value) {
+        this.assertNoteLoaded();
+        const i = Math.floor(value / (1 / this.framerate));
+        this.setCurrentFrame(i);
+        this.playbackTime = value;
+        this.emit(PlayerEvent.Progress, this.progress);
     }
     /**
-     * Toggle audio mute
-     * TODO: MUTE NOT CURRENTLY IMPLEMENTED
-     * @internal
-     * @category Audio Control
+     * Get the current playback time
+     * @category Playback Control
      */
-    toggleMute() {
-        this.muted = !this.muted;
+    getCurrentTime() {
+        return this.currentTime;
     }
-    playbackLoop(timestamp) {
-        if (this.paused) { // break loop if paused is set to true
-            this.stopAudio();
-            return null;
-        }
-        const time = timestamp / 1000;
-        const progress = time - this._lastTick;
-        if (progress > this.duration) {
-            if (this.loop) {
-                this.currentTime = 0;
-                this.playAudio();
-                this._lastTick = time;
-                this.emit('playback:loop');
-            }
-            else {
-                this.pause();
-                this.emit('playback:end');
-            }
-        }
-        else {
-            this.currentTime = progress;
-        }
-        requestAnimationFrame(this.playbackLoop.bind(this));
+    /**
+     * Get the current time as a counter string, like `0:00 / 1:00`
+     * @category Playback Control
+     */
+    getTimeCounter() {
+        const currentTime = formatTime(Math.max(this.currentTime, 0));
+        const duration = formatTime(this.duration);
+        return `${currentTime} / ${duration}`;
+    }
+    /**
+     * Get the current frame index as a counter string, like `001/999`
+     * @category Playback Control
+     */
+    getFrameCounter() {
+        const frame = padNumber(this.currentFrame + 1, 3);
+        const total = padNumber(this.frameCount, 3);
+        return `${frame} / ${total}`;
+    }
+    /**
+     * Set the current playback progress as a percentage (0 to 100)
+     * @category Playback Control
+     */
+    setProgress(value) {
+        this.assertNoteLoaded();
+        assertRange(value, 0, 100, 'progress');
+        this.currentTime = this.duration * (value / 100);
+    }
+    /**
+     * Get the current playback progress as a percentage (0 to 100)
+     * @category Playback Control
+     */
+    getProgress() {
+        return this.progress;
     }
     /**
      * Begin animation playback starting at the current position
      * @category Playback Control
      */
-    play() {
-        window.__activeFlipnotePlayer = this;
-        if ((!this.isOpen) || (!this.paused))
-            return null;
-        if ((!this.hasPlaybackStarted) || ((!this.loop) && (this.currentFrame == this.frameCount - 1)))
-            this._time = 0;
-        this.paused = false;
+    async play() {
+        this.assertNoteLoaded();
+        if (this.isPlaying)
+            return;
+        // if ((!this.hasPlaybackStarted) || ((!this.loop) && (this.currentFrame == this.frameCount - 1)))
+        //   this.playbackTime = 0;
+        this.isPlaying = true;
         this.hasPlaybackStarted = true;
-        this._lastTick = (performance.now() / 1000) - this.currentTime;
+        const now = performance.now();
+        this.playbackStartTime = (now / 1000) - this.playbackTime;
         this.playAudio();
-        requestAnimationFrame(this.playbackLoop.bind(this));
-        this.emit('playback:start');
+        this.playbackLoop(now);
+        this.emit(PlayerEvent.Play);
     }
     /**
      * Pause animation playback at the current position
      * @category Playback Control
      */
     pause() {
-        if ((!this.isOpen) || (this.paused))
-            return null;
-        this.paused = true;
+        if (!this.isPlaying)
+            return;
+        this.isPlaying = false;
+        if (this.playbackLoopId !== null)
+            cancelAnimationFrame(this.playbackLoopId);
         this.stopAudio();
-        this.emit('playback:stop');
+        this.emit(PlayerEvent.Pause);
     }
     /**
      * Resumes animation playback if paused, otherwise pauses
      * @category Playback Control
      */
     togglePlay() {
-        if (this.paused) {
+        if (!this.isPlaying)
             this.play();
-        }
-        else {
+        else
             this.pause();
-        }
+    }
+    /**
+     * Determines if playback is currently paused
+     * @category Playback Control
+     */
+    getPaused() {
+        return !this.isPlaying;
+    }
+    /**
+     * Get the duration of the Flipnote in seconds
+     * @category Playback Control
+     */
+    getDuration() {
+        return this.duration;
+    }
+    /**
+     * Determines if playback is looped
+     * @category Playback Control
+     */
+    getLoop() {
+        return this._loop;
+    }
+    /**
+     * Set the playback loop
+     * @category Playback Control
+     */
+    setLoop(loop) {
+        this._loop = loop;
+        this.audio.loop = loop;
+    }
+    /**
+     * Switch the playback loop between on and off
+     * @category Playback Control
+     */
+    toggleLoop() {
+        this.setLoop(!this._loop);
     }
     /**
      * Jump to a given animation frame
      * @category Frame Control
      */
-    setFrame(frameIndex) {
-        if ((this.isOpen) && (frameIndex !== this.currentFrame)) {
-            // clamp frame index
-            frameIndex = Math.max(0, Math.min(Math.floor(frameIndex), this.frameCount - 1));
-            this.drawFrame(frameIndex);
-            this._frame = frameIndex;
-            if (this.paused) {
-                this._time = frameIndex * (1 / this.framerate);
-                this.emit('progress', this.progress);
-            }
-            this.emit('frame:update', this.currentFrame);
+    setCurrentFrame(newFrameValue) {
+        this.assertNoteLoaded();
+        const newFrameIndex = Math.max(0, Math.min(Math.floor(newFrameValue), this.frameCount - 1));
+        if (newFrameIndex === this.currentFrame && !this.showThumbnail)
+            return;
+        this._frame = newFrameIndex;
+        this.drawFrame(newFrameIndex);
+        this.showThumbnail = false;
+        if (!this.isPlaying) {
+            this.playbackTime = newFrameIndex * (1 / this.framerate);
+            this.emit(PlayerEvent.SeekEnd);
         }
+        this.emit(PlayerEvent.FrameUpdate, this.currentFrame);
+        this.emit(PlayerEvent.Progress, this.progress);
+        this.emit(PlayerEvent.TimeUpdate, this.currentFrame);
     }
     /**
      * Jump to the next animation frame
@@ -4704,12 +4571,11 @@ class Player {
      * @category Frame Control
      */
     nextFrame() {
-        if ((this.loop) && (this.currentFrame >= this.frameCount - 1)) {
+        if ((this.loop) && (this.currentFrame === this.frameCount - 1))
             this.currentFrame = 0;
-        }
-        else {
+        else
             this.currentFrame += 1;
-        }
+        this.emit(PlayerEvent.FrameNext);
     }
     /**
      * Jump to the next animation frame
@@ -4717,12 +4583,11 @@ class Player {
      * @category Frame Control
      */
     prevFrame() {
-        if ((this.loop) && (this.currentFrame <= 0)) {
+        if ((this.loop) && (this.currentFrame === 0))
             this.currentFrame = this.frameCount - 1;
-        }
-        else {
+        else
             this.currentFrame -= 1;
-        }
+        this.emit(PlayerEvent.FramePrev);
     }
     /**
      * Jump to the last animation frame
@@ -4730,6 +4595,7 @@ class Player {
      */
     lastFrame() {
         this.currentFrame = this.frameCount - 1;
+        this.emit(PlayerEvent.FrameLast);
     }
     /**
      * Jump to the first animation frame
@@ -4737,6 +4603,7 @@ class Player {
      */
     firstFrame() {
         this.currentFrame = 0;
+        this.emit(PlayerEvent.FrameFirst);
     }
     /**
      * Jump to the thumbnail frame
@@ -4751,113 +4618,72 @@ class Player {
      */
     startSeek() {
         if (!this.isSeeking) {
-            this.wasPlaying = !this.paused;
+            this.emit(PlayerEvent.SeekStart);
+            this.wasPlaying = this.isPlaying;
             this.pause();
             this.isSeeking = true;
         }
     }
     /**
      * Seek the playback progress to a different position
+     * @param position - animation playback position, range `0` to `1`
      * @category Playback Control
      */
-    seek(progress) {
-        if (this.isSeeking) {
-            this.progress = progress;
-        }
+    seek(position) {
+        if (this.isSeeking)
+            this.progress = position * 100;
     }
     /**
      * Ends a seek operation
      * @category Playback Control
      */
     endSeek() {
-        if ((this.isSeeking) && (this.wasPlaying === true)) {
+        if (this.isSeeking && this.wasPlaying === true)
             this.play();
-        }
         this.wasPlaying = false;
         this.isSeeking = false;
     }
     /**
-     * Returns the master audio as a {@link WavAudio} object
-     * @category Quick Export
-     */
-    getMasterWav() {
-        return WavAudio.fromFlipnote(this.note);
-    }
-    /**
-     * Saves the master audio track as a WAV file
-     * @category Quick Export
-     */
-    saveMasterWav() {
-        const wav = this.getMasterWav();
-        saveData(wav.getBlob(), `${this.meta.current.filename}.wav`);
-    }
-    /**
-     * Returns an animation frame as a {@link GifImage} object
-     * @category Quick Export
-     */
-    getFrameGif(frameIndex, meta = {}) {
-        return GifImage.fromFlipnoteFrame(this.note, frameIndex, meta);
-    }
-    /**
-     * Saves an animation frame as a GIF file
-     * @category Quick Export
-     */
-    saveFrameGif(frameIndex, meta = {}) {
-        const gif = this.getFrameGif(frameIndex, meta);
-        saveData(gif.getBlob(), `${this.meta.current.filename}_${frameIndex.toString().padStart(3, '0')}.gif`);
-    }
-    /**
-     * Returns the full animation as a {@link GifImage} object
-     * @category Quick Export
-     */
-    getAnimatedGif(meta = {}) {
-        return GifImage.fromFlipnote(this.note, meta);
-    }
-    /**
-     * Saves the full animation as a GIF file
-     * @category Quick Export
-     */
-    saveAnimatedGif(meta = {}) {
-        const gif = this.getAnimatedGif(meta);
-        saveData(gif.getBlob(), `${this.meta.current.filename}.gif`);
-    }
-    /**
-     * Draws the specified animation frame to the canvas
+     * Draws the specified animation frame to the canvas. Note that this doesn't update the playback time or anything, it simply decodes a given frame and displays it.
      * @param frameIndex
+     * @category Display Control
      */
     drawFrame(frameIndex) {
-        const colors = this.note.getFramePalette(frameIndex);
-        const layerBuffers = this.note.decodeFrame(frameIndex);
+        const note = this.note;
+        const canvas = this.canvas;
+        const colors = note.getFramePalette(frameIndex);
+        const layerBuffers = note.decodeFrame(frameIndex);
+        const layerVisibility = this.layerVisibility;
         // this.canvas.setPaperColor(colors[0]);
-        this.canvas.setPalette(colors);
-        this.canvas.clearFrameBuffer(colors[0]);
-        if (this.note.format === FlipnoteFormat.PPM) {
-            if (this.layerVisibility[2]) // bottom
-                this.canvas.drawPixels(layerBuffers[1], 1);
-            if (this.layerVisibility[1]) // top
-                this.canvas.drawPixels(layerBuffers[0], 0);
+        canvas.setPalette(colors);
+        canvas.clearFrameBuffer(colors[0]);
+        if (note.format === FlipnoteFormat.PPM) {
+            if (layerVisibility[2]) // bottom
+                canvas.drawPixels(layerBuffers[1], 1);
+            if (layerVisibility[1]) // top
+                canvas.drawPixels(layerBuffers[0], 0);
         }
-        else if (this.note.format === FlipnoteFormat.KWZ) {
-            const order = this.note.getFrameLayerOrder(frameIndex);
+        else if (note.format === FlipnoteFormat.KWZ) {
+            const order = note.getFrameLayerOrder(frameIndex);
             const layerIndexC = order[0];
             const layerIndexB = order[1];
             const layerIndexA = order[2];
-            if (this.layerVisibility[layerIndexC + 1]) // bottom
-                this.canvas.drawPixels(layerBuffers[layerIndexC], layerIndexC * 2);
-            if (this.layerVisibility[layerIndexB + 1]) // middle
-                this.canvas.drawPixels(layerBuffers[layerIndexB], layerIndexB * 2);
-            if (this.layerVisibility[layerIndexA + 1]) // top
-                this.canvas.drawPixels(layerBuffers[layerIndexA], layerIndexA * 2);
+            if (layerVisibility[layerIndexC + 1]) // bottom
+                canvas.drawPixels(layerBuffers[layerIndexC], layerIndexC * 2);
+            if (layerVisibility[layerIndexB + 1]) // middle
+                canvas.drawPixels(layerBuffers[layerIndexB], layerIndexB * 2);
+            if (layerVisibility[layerIndexA + 1]) // top
+                canvas.drawPixels(layerBuffers[layerIndexA], layerIndexA * 2);
         }
-        this.canvas.composite();
+        canvas.composite();
     }
     /**
      * Forces the current animation frame to be redrawn
+     * @category Display Control
      */
     forceUpdate() {
-        if (this.isOpen) {
+        if (this.isNoteLoaded)
             this.drawFrame(this.currentFrame);
-        }
     }
     /**
      * Resize the playback canvas to a new size
@@ -4869,7 +4695,9 @@ class Player {
      * @category Display Control
      */
     resize(width, height) {
-        this.canvas.resize(width, height);
+        if (height !== width * .75)
+            console.warn(`Canvas width to height ratio should be 3:4 for best results (got ${width}x${height})`);
+        this.canvas.setCanvasSize(width, height);
         this.forceUpdate();
     }
     /**
@@ -4884,6 +4712,15 @@ class Player {
         this.forceUpdate();
     }
     /**
+     * Returns the visibility state for a given layer
+     * @param layer - layer index, starting at 1
+     *
+     * @category Display Control
+     */
+    getLayerVisibility(layer) {
+        return this.layerVisibility[layer];
+    }
+    /**
      * Toggles whether an animation layer should be visible throughout the entire animation
      *
      * @category Display Control
@@ -4891,36 +4728,195 @@ class Player {
     toggleLayerVisibility(layerIndex) {
         this.setLayerVisibility(layerIndex, !this.layerVisibility[layerIndex]);
     }
-    // public setPalette(palette: any): void {
-    //   this.customPalette = palette;
-    //   this.note.palette = palette;
-    //   this.forceUpdate();
-    // }
+    playAudio() {
+        this.audio.playFrom(this.currentTime);
+    }
+    stopAudio() {
+        this.audio.stop();
+    }
+    /**
+     * Toggle audio Sudomemo equalizer filter
+     * @category Audio Control
+     */
+    toggleAudioEq() {
+        this.setAudioEq(!this.audio.useEq);
+    }
+    /**
+     * Turn audio Sudomemo equalizer filter on or off
+     * @category Audio Control
+     */
+    setAudioEq(state) {
+        if (this.isPlaying) {
+            this.wasPlaying = true;
+            this.stopAudio();
+        }
+        this.audio.useEq = state;
+        if (this.wasPlaying) {
+            this.wasPlaying = false;
+            this.playAudio();
+        }
+    }
+    /**
+     * Turn the audio off
+     * @category Audio Control
+     */
+    mute() {
+        this.setMuted(true);
+    }
+    /**
+     * Turn the audio on
+     * @category Audio Control
+     */
+    unmute() {
+        this.setMuted(false);
+    }
+    /**
+     * Turn the audio on or off
+     * @category Audio Control
+     */
+    setMuted(isMute) {
+        if (isMute)
+            this.audio.volume = 0;
+        else
+            this.audio.volume = this._volume;
+        this._muted = isMute;
+        this.emit(PlayerEvent.VolumeChange, this.audio.volume);
+    }
+    /**
+     * Get the audio mute state
+     * @category Audio Control
+     */
+    getMuted() {
+        return this.volume === 0 ? true : this._muted;
+    }
+    /**
+     * Switch the audio between muted and unmuted
+     * @category Audio Control
+     */
+    toggleMuted() {
+        this.setMuted(!this._muted);
+    }
+    /**
+     * Set the audio volume
+     * @category Audio Control
+     */
+    setVolume(volume) {
+        assertRange(volume, 0, 1, 'volume');
+        this._volume = volume;
+        this.audio.volume = volume;
+        this.emit(PlayerEvent.VolumeChange, this.audio.volume);
+    }
+    /**
+     * Get the current audio volume
+     * @category Audio Control
+     */
+    getVolume() {
+        return this._muted ? 0 : this._volume;
+    }
+    /**
+     * Implementation of the `HTMLVideoElement` {@link https://developer.mozilla.org/en-US/docs/Web/API/HTMLVideoElement/seekToNextFrame | seekToNextFrame} method
+     * @category HTMLVideoElement compatibility
+     */
+    seekToNextFrame() {
+        this.nextFrame();
+    }
+    /**
+     * Implementation of the `HTMLMediaElement` {@link https://developer.mozilla.org/en-US/docs/Web/API/HTMLMediaElement/fastSeek | fastSeek} method
+     * @category HTMLVideoElement compatibility
+     */
+    fastSeek(time) {
+        this.currentTime = time;
+    }
+    /**
+     * Implementation of the `HTMLVideoElement` {@link https://developer.mozilla.org/en-US/docs/Web/API/HTMLVideoElement/getVideoPlaybackQuality | getVideoPlaybackQuality } method
+     * @category HTMLVideoElement compatibility
+     */
+    canPlayType(mediaType) {
+        switch (mediaType) {
+            case 'application/x-ppm':
+            case 'application/x-kwz':
+            case 'video/x-ppm':
+            case 'video/x-kwz':
+            // lauren is planning on registering these officially
+            case 'video/vnd.nintendo.ugomemo.ppm':
+            case 'video/vnd.nintendo.ugomemo.kwz':
+                return 'probably';
+            case 'application/octet-stream':
+                return 'maybe';
+            // and koizumi is planning his revenge
+            case 'video/vnd.nintendo.ugomemo.fykt':
+            default:
+                return '';
+        }
+    }
+    /**
+     * Implementation of the `HTMLVideoElement` [https://developer.mozilla.org/en-US/docs/Web/API/HTMLVideoElement/getVideoPlaybackQuality](getVideoPlaybackQuality) method
+     * @category HTMLVideoElement compatibility
+     */
+    getVideoPlaybackQuality() {
+        const quality = {
+            creationTime: 0,
+            droppedVideoFrames: 0,
+            totalVideoFrames: this.frameCount
+        };
+        return quality;
+    }
+    /**
+     * Implementation of the `HTMLVideoElement` [https://developer.mozilla.org/en-US/docs/Web/API/HTMLVideoElement/requestPictureInPicture](requestPictureInPicture) method. Not currently working, only a stub.
+     * @category HTMLVideoElement compatibility
+     */
+    requestPictureInPicture() {
+        throw new Error('Not implemented');
+    }
+    /**
+     * Implementation of the `HTMLVideoElement` [https://developer.mozilla.org/en-US/docs/Web/API/HTMLVideoElement/captureStream](captureStream) method. Not currently working, only a stub.
+     * @category HTMLVideoElement compatibility
+     */
+    captureStream() {
+        throw new Error('Not implemented');
+    }
     /**
      * Add an event callback
      * @category Event API
      */
     on(eventType, callback) {
         const events = this.events;
-        (events[eventType] || (events[eventType] = [])).push(callback);
+        const eventList = Array.isArray(eventType) ? eventType : [eventType];
+        eventList.forEach(eventType => {
+            if (!events.has(eventType))
+                events.set(eventType, [callback]);
+            else
+                events.get(eventType).push(callback);
+        });
     }
     /**
      * Remove an event callback
      * @category Event API
      */
     off(eventType, callback) {
-        const callbackList = this.events[eventType];
-        if (callbackList)
-            callbackList.splice(callbackList.indexOf(callback), 1);
+        const events = this.events;
+        const eventList = Array.isArray(eventType) ? eventType : [eventType];
+        eventList.forEach(eventType => {
+            if (!events.has(eventType))
+                return;
+            const callbackList = events.get(eventType);
+            events.set(eventType, callbackList.splice(callbackList.indexOf(callback), 1));
+        });
     }
     /**
      * Emit an event - mostly used internally
      * @category Event API
      */
     emit(eventType, ...args) {
-        var callbackList = this.events[eventType] || [];
-        for (var i = 0; i < callbackList.length; i++) {
-            callbackList[i].apply(null, args);
+        const events = this.events;
+        if (events.has(eventType)) {
+            const callbackList = events.get(eventType);
+            callbackList.forEach(callback => callback.apply(null, args));
+        }
+        // "any" event listeners fire for all events, and receive eventType as their first param
+        if (events.has(PlayerEvent.__Any)) {
+            const callbackList = events.get(PlayerEvent.__Any);
+            callbackList.forEach(callback => callback.apply(null, [eventType, ...args]));
         }
     }
     /**
@@ -4928,39 +4924,610 @@ class Player {
      * @category Event API
      */
     clearEvents() {
-        this.events = {};
+        this.events.clear();
     }
     /**
      * Destroy a Player instace
      * @category Lifecycle
      */
-    destroy() {
-        this.close();
-        this.canvas.destroy();
+    async destroy() {
+        this.clearEvents();
+        this.emit(PlayerEvent.Destroy);
+        this.closeNote();
+        await this.canvas.destroy();
+        await this.audio.destroy();
+    }
+    /**
+     * Returns true if the player supports a given event or method name
+     */
+    supports(name) {
+        const isEvent = this.supportedEvents.includes(name);
+        const isMethod = typeof this[name] === 'function';
+        return isEvent || isMethod;
+    }
+    /** @internal */
+    assertNoteLoaded() {
+        assert(this.isNoteLoaded, 'No Flipnote is currently loaded in this player');
     }
 }
-/** @internal (not implemented yet) */
-Player.defaultState = {
-    noteType: null,
-    isNoteOpen: false,
-    paused: false,
-    hasPlaybackStarted: false,
-    frame: -1,
-    time: -1,
-    loop: false,
-    volume: 1,
-    muted: false,
-    layerVisibility: {
-        1: true,
-        2: true,
-        3: true
-    },
-    isSeeking: false,
-    wasPlaying: false,
+
+/*
+  LZWEncoder.js
+
+  Authors
+  Kevin Weiner (original Java version - kweiner@fmsware.com)
+  Thibault Imbert (AS3 version - bytearray.org)
+  Johan Nordberg (JS version - code@johan-nordberg.com)
+  James Daniel (ES6/TS version)
+
+  Acknowledgements
+  GIFCOMPR.C - GIF Image compression routines
+  Lempel-Ziv compression based on 'compress'. GIF modifications by
+  David Rowley (mgardi@watdcsu.waterloo.edu)
+  GIF Image compression - modified 'compress'
+  Based on: compress.c - File compression ala IEEE Computer, June 1984.
+  By Authors: Spencer W. Thomas (decvax!harpo!utah-cs!utah-gr!thomas)
+  Jim McKie (decvax!mcvax!jim)
+  Steve Davies (decvax!vax135!petsd!peora!srd)
+  Ken Turkowski (decvax!decwrl!turtlevax!ken)
+  James A. Woods (decvax!ihnp4!ames!jaw)
+  Joe Orost (decvax!vax135!petsd!joe)
+*/
+/** @internal */
+const EOF = -1;
+/** @internal */
+const BITS = 12;
+/** @internal */
+const HSIZE = 5003; // 80% occupancy
+/** @internal */
+const masks = [
+    0x0000, 0x0001, 0x0003, 0x0007, 0x000F, 0x001F,
+    0x003F, 0x007F, 0x00FF, 0x01FF, 0x03FF, 0x07FF,
+    0x0FFF, 0x1FFF, 0x3FFF, 0x7FFF, 0xFFFF
+];
+/** @internal */
+class LzwCompressor {
+    constructor(width, height, colorDepth) {
+        this.accum = new Uint8Array(256);
+        this.htab = new Int32Array(HSIZE);
+        this.codetab = new Int32Array(HSIZE);
+        this.cur_accum = 0;
+        this.cur_bits = 0;
+        this.curPixel = 0;
+        this.free_ent = 0; // first unused entry
+        // block compression parameters -- after all codes are used up,
+        // and compression rate changes, start over.
+        this.clear_flg = false;
+        // Algorithm: use open addressing double hashing (no chaining) on the
+        // prefix code / next character combination. We do a variant of Knuth's
+        // algorithm D (vol. 3, sec. 6.4) along with G. Knott's relatively-prime
+        // secondary probe. Here, the modular division first probe is gives way
+        // to a faster exclusive-or manipulation. Also do block compression with
+        // an adaptive reset, whereby the code table is cleared when the compression
+        // ratio decreases, but after the table fills. The variable-length output
+        // codes are re-sized at this point, and a special CLEAR code is generated
+        // for the decompressor. Late addition: construct the table according to
+        // file size for noticeable speed improvement on small files. Please direct
+        // questions about this implementation to ames!jaw.
+        this.g_init_bits = undefined;
+        this.ClearCode = undefined;
+        this.EOFCode = undefined;
+        this.width = width;
+        this.height = height;
+        this.colorDepth = colorDepth;
+        this.reset();
+    }
+    reset() {
+        this.initCodeSize = Math.max(2, this.colorDepth);
+        this.accum.fill(0);
+        this.htab.fill(0);
+        this.codetab.fill(0);
+        this.cur_accum = 0;
+        this.cur_bits = 0;
+        this.curPixel = 0;
+        this.free_ent = 0; // first unused entry
+        this.maxcode;
+        // block compression parameters -- after all codes are used up,
+        // and compression rate changes, start over.
+        this.clear_flg = false;
+        // Algorithm: use open addressing double hashing (no chaining) on the
+        // prefix code / next character combination. We do a variant of Knuth's
+        // algorithm D (vol. 3, sec. 6.4) along with G. Knott's relatively-prime
+        // secondary probe. Here, the modular division first probe is gives way
+        // to a faster exclusive-or manipulation. Also do block compression with
+        // an adaptive reset, whereby the code table is cleared when the compression
+        // ratio decreases, but after the table fills. The variable-length output
+        // codes are re-sized at this point, and a special CLEAR code is generated
+        // for the decompressor. Late addition: construct the table according to
+        // file size for noticeable speed improvement on small files. Please direct
+        // questions about this implementation to ames!jaw.
+        this.g_init_bits = undefined;
+        this.ClearCode = undefined;
+        this.EOFCode = undefined;
+    }
+    // Add a character to the end of the current packet, and if it is 254
+    // characters, flush the packet to disk.
+    char_out(c, outs) {
+        this.accum[this.a_count++] = c;
+        if (this.a_count >= 254)
+            this.flush_char(outs);
+    }
+    // Clear out the hash table
+    // table clear for block compress
+    cl_block(outs) {
+        this.cl_hash(HSIZE);
+        this.free_ent = this.ClearCode + 2;
+        this.clear_flg = true;
+        this.output(this.ClearCode, outs);
+    }
+    // Reset code table
+    cl_hash(hsize) {
+        for (var i = 0; i < hsize; ++i)
+            this.htab[i] = -1;
+    }
+    compress(init_bits, outs) {
+        var fcode, c, i, ent, disp, hsize_reg, hshift;
+        // Set up the globals: this.g_init_bits - initial number of bits
+        this.g_init_bits = init_bits;
+        // Set up the necessary values
+        this.clear_flg = false;
+        this.n_bits = this.g_init_bits;
+        this.maxcode = this.get_maxcode(this.n_bits);
+        this.ClearCode = 1 << (init_bits - 1);
+        this.EOFCode = this.ClearCode + 1;
+        this.free_ent = this.ClearCode + 2;
+        this.a_count = 0; // clear packet
+        ent = this.nextPixel();
+        hshift = 0;
+        for (fcode = HSIZE; fcode < 65536; fcode *= 2)
+            ++hshift;
+        hshift = 8 - hshift; // set hash code range bound
+        hsize_reg = HSIZE;
+        this.cl_hash(hsize_reg); // clear hash table
+        this.output(this.ClearCode, outs);
+        outer_loop: while ((c = this.nextPixel()) != EOF) {
+            fcode = (c << BITS) + ent;
+            i = (c << hshift) ^ ent; // xor hashing
+            if (this.htab[i] === fcode) {
+                ent = this.codetab[i];
+                continue;
+            }
+            else if (this.htab[i] >= 0) { // non-empty slot
+                disp = hsize_reg - i; // secondary hash (after G. Knott)
+                if (i === 0) {
+                    disp = 1;
+                }
+                do {
+                    if ((i -= disp) < 0) {
+                        i += hsize_reg;
+                    }
+                    if (this.htab[i] === fcode) {
+                        ent = this.codetab[i];
+                        continue outer_loop;
+                    }
+                } while (this.htab[i] >= 0);
+            }
+            this.output(ent, outs);
+            ent = c;
+            if (this.free_ent < 1 << BITS) {
+                this.codetab[i] = this.free_ent++; // code -> hasthis.htable
+                this.htab[i] = fcode;
+            }
+            else {
+                this.cl_block(outs);
+            }
+        }
+        // Put out the final code.
+        this.output(ent, outs);
+        this.output(this.EOFCode, outs);
+    }
+    encode(pixels, outs) {
+        this.pixels = pixels;
+        outs.writeByte(this.initCodeSize); // write 'initial code size' byte
+        this.remaining = this.width * this.height; // reset navigation variables
+        this.curPixel = 0;
+        this.compress(this.initCodeSize + 1, outs); // compress and write the pixel data
+        outs.writeByte(0); // write block terminator
+    }
+    // Flush the packet to disk, and reset the this.accumulator
+    flush_char(outs) {
+        if (this.a_count > 0) {
+            outs.writeByte(this.a_count);
+            outs.writeBytes(this.accum, 0, this.a_count);
+            this.a_count = 0;
+        }
+    }
+    get_maxcode(n_bits) {
+        return (1 << n_bits) - 1;
+    }
+    // Return the next pixel from the image
+    nextPixel() {
+        if (this.remaining === 0)
+            return EOF;
+        --this.remaining;
+        var pix = this.pixels[this.curPixel++];
+        return pix & 0xff;
+    }
+    output(code, outs) {
+        this.cur_accum &= masks[this.cur_bits];
+        if (this.cur_bits > 0)
+            this.cur_accum |= (code << this.cur_bits);
+        else
+            this.cur_accum = code;
+        this.cur_bits += this.n_bits;
+        while (this.cur_bits >= 8) {
+            this.char_out((this.cur_accum & 0xff), outs);
+            this.cur_accum >>= 8;
+            this.cur_bits -= 8;
+        }
+        // If the next entry is going to be too big for the code size,
+        // then increase it, if possible.
+        if (this.free_ent > this.maxcode || this.clear_flg) {
+            if (this.clear_flg) {
+                this.maxcode = this.get_maxcode(this.n_bits = this.g_init_bits);
+                this.clear_flg = false;
+            }
+            else {
+                ++this.n_bits;
+                if (this.n_bits == BITS)
+                    this.maxcode = 1 << BITS;
+                else
+                    this.maxcode = this.get_maxcode(this.n_bits);
+            }
+        }
+        if (code == this.EOFCode) {
+            // At EOF, write the rest of the buffer.
+            while (this.cur_bits > 0) {
+                this.char_out((this.cur_accum & 0xff), outs);
+                this.cur_accum >>= 8;
+                this.cur_bits -= 8;
+            }
+            this.flush_char(outs);
+        }
+    }
+}
+
+/**
+ * GIF image encoder
+ *
+ * Supports static single-frame GIF export as well as animated GIF
+ * @category File Encoder
+ */
+class GifImage {
+    /**
+     * Create a new GIF image object
+     * @param width image width
+     * @param height image height
+     * @param settings whether the gif should loop, the delay between frames, etc. See {@link GifEncoderSettings}
+     */
+    constructor(width, height, settings = {}) {
+        /** Number of current GIF frames */
+        this.frameCount = 0;
+        this.dataUrl = null;
+        this.width = width;
+        this.height = height;
+        this.data = new ByteArray();
+        this.settings = { ...GifImage.defaultSettings, ...settings };
+        this.compressor = new LzwCompressor(width, height, settings.colorDepth);
+    }
+    /**
+     * Create an animated GIF image from a Flipnote
+     *
+     * This will encode the entire animation, so depending on the number of frames it could take a while to return.
+     * @param flipnote {@link Flipnote} object ({@link PpmParser} or {@link KwzParser} instance)
+     * @param settings whether the gif should loop, the delay between frames, etc. See {@link GifEncoderSettings}
+     */
+    static fromFlipnote(flipnote, settings = {}) {
+        const gif = new GifImage(flipnote.width, flipnote.height, {
+            delay: 100 / flipnote.framerate,
+            repeat: flipnote.meta.loop ? -1 : 0,
+            ...settings
+        });
+        gif.palette = flipnote.globalPalette;
+        for (let frameIndex = 0; frameIndex < flipnote.frameCount; frameIndex++)
+            gif.writeFrame(flipnote.getFramePixels(frameIndex));
+        return gif;
+    }
+    /**
+     * Create an GIF image from a single Flipnote frame
+     * @param flipnote
+     * @param frameIndex animation frame index to encode
+     * @param settings whether the gif should loop, the delay between frames, etc. See {@link GifEncoderSettings}
+     */
+    static fromFlipnoteFrame(flipnote, frameIndex, settings = {}) {
+        const gif = new GifImage(flipnote.width, flipnote.height, {
+            // TODO: look at ideal delay and repeat settings for single frame GIF
+            delay: 100 / flipnote.framerate,
+            repeat: -1,
+            ...settings,
+        });
+        gif.palette = flipnote.globalPalette;
+        gif.writeFrame(flipnote.getFramePixels(frameIndex));
+        return gif;
+    }
+    /**
+     * Add a frame to the GIF image
+     * @param pixels Raw pixels to encode, must be an uncompressed 8bit array of palette indices with a size matching image width * image height
+     */
+    writeFrame(pixels) {
+        if (this.frameCount === 0)
+            this.writeFirstFrame(pixels);
+        else
+            this.writeAdditionalFrame(pixels);
+        this.frameCount += 1;
+    }
+    writeFirstFrame(pixels) {
+        const paletteSize = this.palette.length;
+        // calc colorDepth
+        for (var p = 1; 1 << p < paletteSize; p += 1)
+            continue;
+        this.settings.colorDepth = p;
+        this.writeHeader();
+        this.writeColorTable();
+        this.writeNetscapeExt();
+        this.writeFrameHeader();
+        this.writePixels(pixels);
+    }
+    writeAdditionalFrame(pixels) {
+        this.writeFrameHeader();
+        this.writePixels(pixels);
+    }
+    writeHeader() {
+        const header = new DataStream(new ArrayBuffer(13));
+        header.writeChars('GIF89a');
+        // Logical Screen Descriptor
+        header.writeUint16(this.width);
+        header.writeUint16(this.height);
+        header.writeUint8(0x80 | // 1 : global color table flag = 1 (gct used)
+            (this.settings.colorDepth - 1) // 6-8 : gct size
+        );
+        header.writeBytes([
+            0x0,
+            0x0
+        ]);
+        this.data.writeBytes(new Uint8Array(header.buffer));
+    }
+    writeColorTable() {
+        const palette = new Uint8Array(3 * Math.pow(2, this.settings.colorDepth));
+        let ptr = 0;
+        for (let index = 0; index < this.palette.length; index += 1) {
+            const [r, g, b, a] = this.palette[index];
+            palette[ptr++] = r;
+            palette[ptr++] = g;
+            palette[ptr++] = b;
+        }
+        this.data.writeBytes(palette);
+    }
+    writeNetscapeExt() {
+        const netscapeExt = new DataStream(new ArrayBuffer(19));
+        netscapeExt.writeBytes([
+            0x21,
+            0xFF,
+            11,
+        ]);
+        netscapeExt.writeChars('NETSCAPE2.0');
+        netscapeExt.writeUint8(3); // subblock size
+        netscapeExt.writeUint8(1); // loop subblock id
+        netscapeExt.writeUint16(this.settings.repeat); // loop flag
+        this.data.writeBytes(new Uint8Array(netscapeExt.buffer));
+    }
+    writeFrameHeader() {
+        const fHeader = new DataStream(new ArrayBuffer(18));
+        // graphics control ext block
+        const transparentFlag = this.settings.transparentBg ? 0x1 : 0x0;
+        fHeader.writeBytes([
+            0x21,
+            0xF9,
+            0x4,
+            0x0 | transparentFlag // bitflags
+        ]);
+        fHeader.writeUint16(this.settings.delay); // loop flag
+        fHeader.writeBytes([
+            0x0,
+            0x0
+        ]);
+        // image desc block
+        fHeader.writeUint8(0x2C);
+        fHeader.writeUint16(0); // image left
+        fHeader.writeUint16(0); // image top
+        fHeader.writeUint16(this.width);
+        fHeader.writeUint16(this.height);
+        fHeader.writeUint8(0);
+        this.data.writeBytes(new Uint8Array(fHeader.buffer));
+    }
+    writePixels(pixels) {
+        this.compressor.colorDepth = this.settings.colorDepth;
+        this.compressor.reset();
+        this.compressor.encode(pixels, this.data);
+    }
+    /**
+     * Returns the GIF image data as an {@link https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/ArrayBuffer | ArrayBuffer}
+     */
+    getArrayBuffer() {
+        return this.data.getBuffer();
+    }
+    /**
+     * Returns the GIF image data as a NodeJS {@link https://nodejs.org/api/buffer.html | Buffer}
+     *
+     * Note: This method does not work outside of NodeJS environments
+     */
+    getBuffer() {
+        assertNodeEnv();
+        return Buffer.from(this.getArrayBuffer());
+    }
+    /**
+     * Returns the GIF image data as a file {@link https://developer.mozilla.org/en-US/docs/Web/API/Blob | Blob}
+     */
+    getBlob() {
+        assertBrowserEnv();
+        return new Blob([this.getArrayBuffer()], { type: 'image/gif' });
+    }
+    /**
+     * Returns the GIF image data as an {@link https://developer.mozilla.org/en-US/docs/Web/API/URL/createObjectURL | Object URL}
+     *
+     * Note: This method does not work outside of browser environments
+     */
+    getUrl() {
+        assertBrowserEnv();
+        if (this.dataUrl)
+            return this.dataUrl;
+        return window.URL.createObjectURL(this.getBlob());
+    }
+    /**
+     * Revokes this image's {@link https://developer.mozilla.org/en-US/docs/Web/API/URL/createObjectURL | Object URL} if one has been created, use this when the url created with {@link getUrl} is no longer needed, to preserve memory.
+     *
+     * Note: This method does not work outside of browser environments
+     */
+    revokeUrl() {
+        assertBrowserEnv();
+        if (this.dataUrl)
+            window.URL.revokeObjectURL(this.dataUrl);
+    }
+    /**
+     * Returns the GIF image data as an {@link https://developer.mozilla.org/en-US/docs/Web/API/HTMLImageElement/Image | Image} object
+     *
+     * Note: This method does not work outside of browser environments
+     */
+    getImage() {
+        assertBrowserEnv();
+        const img = new Image(this.width, this.height);
+        img.src = this.getUrl();
+        return img;
+    }
+}
+/**
+ * Default GIF encoder settings
+ */
+GifImage.defaultSettings = {
+    transparentBg: false,
+    delay: 100,
+    repeat: -1,
+    colorDepth: 8
 };
 
-// Main entrypoint for web
+/**
+ * Wav audio object. Used to create a {@link https://en.wikipedia.org/wiki/WAV | WAV} file from a PCM audio stream or a {@link Flipnote} object.
+ *
+ * Currently only supports PCM s16_le audio encoding.
+ *
+ * @category File Encoder
+ */
+class WavAudio {
+    /**
+     * Create a new WAV audio object
+     * @param sampleRate audio samplerate
+     * @param channels number of audio channels
+     * @param bitsPerSample number of bits per sample
+     */
+    constructor(sampleRate, channels = 1, bitsPerSample = 16) {
+        this.sampleRate = sampleRate;
+        this.channels = channels;
+        this.bitsPerSample = bitsPerSample;
+        // Write WAV file header
+        // Reference: http://www.topherlee.com/software/pcm-tut-wavformat.html
+        const headerBuffer = new ArrayBuffer(44);
+        const header = new DataStream(headerBuffer);
+        // 'RIFF' indent
+        header.writeChars('RIFF');
+        // filesize (set later)
+        header.writeUint32(0);
+        // 'WAVE' indent
+        header.writeChars('WAVE');
+        // 'fmt ' section header
+        header.writeChars('fmt ');
+        // fmt section length
+        header.writeUint32(16);
+        // specify audio format is pcm (type 1)
+        header.writeUint16(1);
+        // number of audio channels
+        header.writeUint16(this.channels);
+        // audio sample rate
+        header.writeUint32(this.sampleRate);
+        // byterate = (sampleRate * bitsPerSample * channelCount) / 8
+        header.writeUint32((this.sampleRate * this.bitsPerSample * this.channels) / 8);
+        // blockalign = (bitsPerSample * channels) / 8
+        header.writeUint16((this.bitsPerSample * this.channels) / 8);
+        // bits per sample
+        header.writeUint16(this.bitsPerSample);
+        // 'data' section header
+        header.writeChars('data');
+        // data section length (set later)
+        header.writeUint32(0);
+        this.header = header;
+        this.pcmData = null;
+    }
+    /**
+     * Create a WAV audio file from a Flipnote's master audio track
+     * @param flipnote
+     * @param trackId
+     */
+    static fromFlipnote(note) {
+        const sampleRate = note.sampleRate;
+        const wav = new WavAudio(sampleRate, 1, 16);
+        const pcm = note.getAudioMasterPcm(sampleRate);
+        wav.writeFrames(pcm);
+        return wav;
+    }
+    /**
+     * Create a WAV audio file from a given Flipnote audio track
+     * @param flipnote
+     * @param trackId
+     */
+    static fromFlipnoteTrack(flipnote, trackId) {
+        const sampleRate = flipnote.sampleRate;
+        const wav = new WavAudio(sampleRate, 1, 16);
+        const pcm = flipnote.getAudioTrackPcm(trackId, sampleRate);
+        wav.writeFrames(pcm);
+        return wav;
+    }
+    /**
+     * Add PCM audio frames to the WAV
+     * @param pcmData signed int16 PCM audio samples
+     */
+    writeFrames(pcmData) {
+        let header = this.header;
+        // fill in filesize
+        header.seek(4);
+        header.writeUint32(header.byteLength + pcmData.byteLength);
+        // fill in data section length
+        header.seek(40);
+        header.writeUint32(pcmData.byteLength);
+        this.pcmData = pcmData;
+    }
+    /**
+     * Returns the WAV audio data as an {@link https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/ArrayBuffer | ArrayBuffer}
+     */
+    getArrayBuffer() {
+        const headerBytes = this.header.bytes;
+        const pcmBytes = new Uint8Array(this.pcmData.buffer);
+        const resultBytes = new Uint8Array(this.header.byteLength + this.pcmData.byteLength);
+        resultBytes.set(headerBytes);
+        resultBytes.set(pcmBytes, headerBytes.byteLength);
+        return resultBytes.buffer;
+    }
+    /**
+     * Returns the WAV audio data as a NodeJS {@link https://nodejs.org/api/buffer.html | Buffer}
+     *
+     * Note: This method does not work outside of NodeJS environments
+     */
+    getBuffer() {
+        assertNodeEnv();
+        return Buffer.from(this.getArrayBuffer());
+    }
+    /**
+     * Returns the GIF image data as a file {@link https://developer.mozilla.org/en-US/docs/Web/API/Blob | Blob}
+     *
+     * Note: This method will not work outside of browser environments
+     */
+    getBlob() {
+        assertBrowserEnv();
+        const buffer = this.getArrayBuffer();
+        return new Blob([buffer], { type: 'audio/wav' });
+    }
+}
+
+// Entrypoint for web and node
 //* flipnote.js library version (exported as `flipnote.version`) */
-const version = "5.0.0"; // replaced by @rollup/plugin-replace; see rollup.config.js
+const version = "5.1.0"; // replaced by @rollup/plugin-replace; see rollup.config.js
 
 export { FlipnoteAudioTrack, FlipnoteFormat, GifImage, KwzParser, Player, PpmParser, WavAudio, parseSource, version };

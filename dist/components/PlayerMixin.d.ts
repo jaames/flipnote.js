@@ -1,7 +1,18 @@
 import { Player } from '../player';
 /** @internal */
 declare type Constructor<T = {}> = new (...args: any[]) => T;
-/** @internal */
+/**
+ * This is a bit of a hack to get a player component class to wrap a Player instance,
+ * while also inheriting all of the Player API's methods and properties.
+ *
+ * The resulting PlayerMixinClass will get a Player instance on this.player,
+ * and all of the Player API methods and properties applied as wrappers.
+ *
+ * e.g.
+ * - PlayerMixinClass.play() will have the same behaviour as Player.play(), but will call this.player.play() internally.
+ * - PlayerMixinClass.paused will have getters and setters to match it to this.player.paused.
+ * @internal
+ */
 export declare function PlayerMixin<TargetBase extends Constructor>(Target: TargetBase): {
     new (...args: any[]): {
         player: Player;
@@ -15,10 +26,11 @@ export declare function PlayerMixin<TargetBase extends Constructor>(Target: Targ
         readonly layerVisibility: Record<number, boolean>;
         autoplay: boolean;
         supportedEvents: import("../player").PlayerEvent[];
-        _src: any;
+        _src: import("../parsers").FlipnoteSource;
         _loop: boolean;
         _volume: number;
         _muted: boolean;
+        _frame: number;
         isNoteLoaded: boolean;
         events: import("../player").PlayerEventMap;
         playbackStartTime: number;
@@ -29,7 +41,7 @@ export declare function PlayerMixin<TargetBase extends Constructor>(Target: Targ
         isPlaying: boolean;
         wasPlaying: boolean;
         isSeeking: boolean;
-        src: any;
+        src: import("../parsers").FlipnoteSource;
         paused: boolean;
         currentFrame: number;
         currentTime: number;
@@ -42,15 +54,17 @@ export declare function PlayerMixin<TargetBase extends Constructor>(Target: Targ
         readonly frameSpeed: number;
         readonly buffered: TimeRanges;
         readonly seekable: TimeRanges;
-        readonly currentSrc: any;
+        readonly currentSrc: import("../parsers").FlipnoteSource;
         readonly videoWidth: number;
         readonly videoHeight: number;
-        load(source: any): Promise<void>;
+        load(source?: any): Promise<void>;
         closeNote(): void;
         openNote(note: import("../parsers").FlipnoteParser): void;
         playbackLoop: (timestamp: number) => void;
         setCurrentTime(value: number): void;
         getCurrentTime(): number;
+        getTimeCounter(): string;
+        getFrameCounter(): string;
         setProgress(value: number): void;
         getProgress(): number;
         play(): Promise<void>;
@@ -86,6 +100,7 @@ export declare function PlayerMixin<TargetBase extends Constructor>(Target: Targ
         getMuted(): boolean;
         toggleMuted(): void;
         setVolume(volume: number): void;
+        getVolume(): number;
         seekToNextFrame(): void;
         fastSeek(time: number): void;
         canPlayType(mediaType: string): "probably" | "maybe" | "";
@@ -96,10 +111,9 @@ export declare function PlayerMixin<TargetBase extends Constructor>(Target: Targ
         off(eventType: import("../player").PlayerEvent | import("../player").PlayerEvent[], callback: Function): void;
         emit(eventType: import("../player").PlayerEvent, ...args: any): void;
         clearEvents(): void;
-        destroy(): void;
+        destroy(): Promise<void>;
         supports(name: string): boolean;
         assertNoteLoaded(): void;
-        assertValueRange(value: number, min: number, max: number): void;
     };
 } & TargetBase;
 export {};

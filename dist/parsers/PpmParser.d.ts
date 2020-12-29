@@ -76,8 +76,9 @@ export declare class PpmParser extends FlipnoteParser {
     meta: PpmMeta;
     /** File format version; always the same as far as we know */
     version: number;
-    private layers;
-    private prevLayers;
+    private layerBuffers;
+    private prevLayerBuffers;
+    private lineEncodingBuffers;
     private prevDecodedFrame;
     private frameDataLength;
     private soundDataLength;
@@ -96,7 +97,6 @@ export declare class PpmParser extends FlipnoteParser {
     private decodeAnimationHeader;
     private decodeSoundHeader;
     private isNewFrame;
-    private readLineEncoding;
     /**
      * Decode a frame, returning the raw pixel buffers for each layer
      * @category Image
