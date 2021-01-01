@@ -1,14 +1,16 @@
-<h1 align="center"><a href="//iro.js.org" target="blank"><img width="838px" src="https://raw.githubusercontent.com/jaames/flipnote.js/master/assets/ghbanner@2x.png"/></h1>
+<h1 align="center"><a href="//flipnote.js.org" target="blank"><img width="838px" src="https://raw.githubusercontent.com/jaames/flipnote.js/master/assets/ghbanner@2x.png"/></a></h1>
 
 <p align="center">
   <b>A JavaScript library for parsing, converting, and in-browser playback of the proprietary animation formats used by Nintendo's Flipnote Studio and Flipnote Studio 3D apps. | <a href="//flipnote.js.org" target="blank">flipnote.js.org</a></b>
 </p>
 
 <p align="center">
-   <a href="#features">features</a> | <a href="#background">background</a> | <a href="https://flipnote.js.org/pages/docs/get-started.html">Get Started</a> | <a href="https://flipnote.js.org/pages/docs/web-components.html">Web Components</a> | <a href="https://flipnote.js.org/globals.html">API</a> | <a href="https://flipnote.js.org/pages/docs/acknowledgements.html">Special Thanks</a>
+   <a href="#features">Features</a> | <a href="#background">Background</a> | <a href="https://flipnote.js.org/pages/docs/get-started.html">Get Started</a> | <a href="https://flipnote.js.org/pages/docs/web-components.html">Web Components</a> | <a href="https://flipnote.js.org/globals.html">API</a> | <a href="https://flipnote.js.org/pages/docs/acknowledgements.html">Special Thanks</a>
 </p>
 
-Looking for an online Flipnote player and converter? Check out [Flipnote Player](https://flipnote.rakujira.jp/)!
+<p align="center">
+  Looking for an online Flipnote player and converter? Check out <a href="https://flipnote.rakujira.jp/">Flipnote Player</a>!
+</p>
 
 ## Features
 
