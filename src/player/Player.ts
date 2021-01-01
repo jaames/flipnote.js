@@ -8,16 +8,45 @@ import { assert, assertRange, assertBrowserEnv } from '../utils';
 type PlayerLayerVisibility = Record<number, boolean>;
 
 /**
- * Flipnote Player API (exported as `flipnote.Player`)
+ * Flipnote Player API (exported as `flipnote.Player`) - provides a {@link https://developer.mozilla.org/en-US/docs/Web/API/HTMLMediaElement | MediaElement}-like interface for loading Flipnotes and playing them. 
+ * This is intended for cases where you want to implement your own player UI, if you just want a pre-built player with some nice UI controls, check out the {@page Web Components} page instead!
  * 
- * This loads and plays Flipnotes in a web browser, taking a lot of inspiration from the {@link https://developer.mozilla.org/en-US/docs/Web/API/HTMLMediaElement | MediaElement} API
+ * ### Create a new player
  * 
- * Note: playback is only available in browser contexts for the time being
+ * You'll need a canvas element in your page's HTML:
+ * 
+ * ```html
+ *  <canvas id="player-canvas"></canvas>
+ * ```
+ * 
+ * Then you can create a new `Player` instance by passing a CSS selector that matches the canvas, plus the disired width and height.
+ * 
+ * ```js
+ *  const player = new flipnote.Player('#player-canvas', 320, 240);
+ * ```
+ * 
+ * ### Load a Flipnote
+ * 
+ * Load a Flipnote from a valid {@link FlipnoteSource}:
+ * 
+ * ```js
+ * player.load('./path/to/flipnote.ppm');
+ * ```
+ * 
+ * ### Listen to events
+ * 
+ * Use the {@link on} method to register event listeners:
+ * 
+ * ```js
+ *  player.on('play', function() {
+ *    // do something when the Flipnote starts playing...
+ *  });
+ * ```
  */
 export class Player {
 
-  /** Rendering canvas */
-  public canvas: WebglRenderer;
+  /** Frame renderer */
+  public renderer: WebglRenderer;
   /** Audio player */
   public audio: WebAudioPlayer;
   /** Canvas HTML element */
@@ -81,12 +110,12 @@ export class Player {
     assertBrowserEnv();
     // if `el` is a string, use it to select an Element, else assume it's an element
     el = ('string' == typeof el) ? <HTMLCanvasElement>document.querySelector(el) : el;
-    this.canvas = new WebglRenderer(el, width, height, {
+    this.renderer = new WebglRenderer(el, width, height, {
       onlost: () => this.emit(PlayerEvent.Error),
       onrestored: () => this.load()
     });
     this.audio = new WebAudioPlayer();
-    this.canvasEl = this.canvas.el;
+    this.canvasEl = this.renderer.el;
   }
 
   /** The currently loaded Flipnote source, if there is one. Can be overridden to load another Flipnote */
@@ -257,7 +286,7 @@ export class Player {
     this.wasPlaying = false;
     this.hasPlaybackStarted = false;
     this.showThumbnail = true;
-    this.canvas.clearFrameBuffer([0,0,0,0]);
+    this.renderer.clearFrameBuffer([0,0,0,0]);
   }
 
   /** 
@@ -284,7 +313,7 @@ export class Player {
     this.emit(PlayerEvent.CanPlay);
     this.emit(PlayerEvent.CanPlayThrough);
     this.setLoop(note.meta.loop);
-    this.canvas.setInputSize(note.width, note.height);
+    this.renderer.setInputSize(note.width, note.height);
     this.drawFrame(note.thumbFrameIndex);
     this.emit(PlayerEvent.LoadedData);
     this.emit(PlayerEvent.Load);
@@ -295,7 +324,7 @@ export class Player {
 
   /**
    * Playback animation loop
-   * @public
+   * @internal
    * @category Playback Control 
    */
   public playbackLoop = (timestamp: DOMHighResTimeStamp) => {
@@ -338,7 +367,7 @@ export class Player {
   }
 
   /**
-   * Get the current time as a counter string, like `0:00 / 1:00`
+   * Get the current time as a counter string, like `"0:00 / 1:00"`
    * @category Playback Control
    */
   public getTimeCounter() {
@@ -348,7 +377,7 @@ export class Player {
   }
 
   /**
-   * Get the current frame index as a counter string, like `001/999`
+   * Get the current frame index as a counter string, like `"001 / 999"`
    * @category Playback Control
    */
   public getFrameCounter() {
@@ -358,7 +387,7 @@ export class Player {
   }
 
   /**
-   * Set the current playback progress as a percentage (0 to 100)
+   * Set the current playback progress as a percentage (`0` to `100`)
    * @category Playback Control
    */
   public setProgress(value: number) {
@@ -574,7 +603,7 @@ export class Player {
    */
   public drawFrame(frameIndex: number) {
     const note = this.note;
-    const canvas = this.canvas;
+    const canvas = this.renderer;
     const colors = note.getFramePalette(frameIndex);
     const layerBuffers = note.decodeFrame(frameIndex);
     const layerVisibility = this.layerVisibility;
@@ -623,7 +652,7 @@ export class Player {
   public resize(width: number, height: number) {
     if (height !== width * .75)
       console.warn(`Canvas width to height ratio should be 3:4 for best results (got ${width}x${height})`);
-    this.canvas.setCanvasSize(width, height);
+    this.renderer.setCanvasSize(width, height);
     this.forceUpdate();
   }
 
@@ -822,18 +851,201 @@ export class Player {
     throw new Error('Not implemented');
   }
 
+
+  /**
+   * Fired when animation playback begins or is resumed
+   * @category playback
+   * @event play
+   */
+  public onplay: () => void;
+
+  /**
+   * Fired when animation playback is paused
+   * @category playback
+   * @event pause 
+   */
+  public onpause: () => void;
+
+  /**
+   * Fired when the Flipnote has loaded enough to begin animation play
+   * @category HTMLVideoElement compatibility
+   * @event canplay
+   */
+  public oncanplay: () => void;
+
+  /**
+   *Fired when the Flipnote has loaded enough to play successfully
+   * @category HTMLVideoElement compatibility
+   * @event canplaythrough
+   */
+  public oncanplaythrough: () => void;
+
+  /**
+   * Fired when a seek operation begins
+   * @category playback
+   * @event seeking
+   */
+  public onseeking: () => void;
+
+  /**
+   * Fired when a seek operation completes
+   * @category playback
+   * @event seeked
+   */
+  public onseeked: () => void;
+
+  /**
+   * Fired when the animation duration has changed
+   * @category HTMLVideoElement compatibility
+   * @event durationchange
+   */
+  public ondurationchange: () => void;
+
+  /**
+   * Fired when playbackc has looped after reaching the end
+   * @category playback
+   * @event loop
+   */
+  public onloop: () => void;
+
+  /**
+   * Fired when playback has ended
+   * @category playback
+   * @event ended
+   */
+  public onended: () => void;
+
+  /**
+   * Fired when the player audio volume or muted state has changed
+   * @category audio
+   * @event volumechange
+   */
+  public onvolumechane: (volume: number) => void;
+
+  /**
+   * Fired when playback progress has changed
+   * @category playback
+   * @event progress
+   */
+  public onprogress: (progress: number) => void;
+
+  /**
+   * Fired when the playback time has changed
+   * @category playback
+   * @event timeupdate
+   */
+  public ontimeupdate: (time: number) => void;
+
+  /**
+   * Fired when the current frame index has changed
+   * @category frame
+   * @event frameupdate
+   */
+  public onframeupdate: (frameIndex: number) => void;
+
+  /**
+   * Fired when {@link nextFrame} has been called
+   * @category frame
+   * @event framenext
+   */
+  public onframenext: () => void;
+
+  /**
+   * Fired when {@link prevFrame} has been called
+   * @category frame
+   * @event frameprev
+   */
+  public onframeprev: () => void;
+
+  /**
+   * Fired when {@link firstFrame} has been called
+   * @category frame
+   * @event framefirst
+   */
+  public onframefirst: () => void;
+
+  /**
+   * Fired when {@link lastFrame} has been called
+   * @category frame
+   * @event framelast
+   */
+  public onframelast: () => void;
+
+  /**
+   * Fired when a Flipnote is ready for playback
+   * @category lifecycle
+   * @event ready
+   */
+  public onready: () => void;
+
+  /**
+   * Fired when a Flipnote has finished loading
+   * @category lifecycle
+   * @event load
+   */
+  public onload: () => void;
+
+  /**
+   * Fired when a Flipnote has begun loading
+   * @category lifecycle
+   * @event loadstart
+   */
+  public onloadstart: () => void;
+
+  /**
+   * Fired when the Flipnote data has been loaded; implementation of the `HTMLMediaElement` [https://developer.mozilla.org/en-US/docs/Web/API/HTMLMediaElement/loadeddata_event](loadeddata) event.
+   * @category HTMLVideoElement compatibility
+   * @event loadeddata
+   */
+  public onloadeddata: () => void;
+
+  /**
+   * Fired when the Flipnote metadata has been loaded; implementation of the `HTMLMediaElement` [https://developer.mozilla.org/en-US/docs/Web/API/HTMLMediaElement/loadedmetadata_event](loadedmetadata) event.
+   * @category HTMLVideoElement compatibility
+   * @event loadedmetadata
+   */
+  public onloadedmetadata: () => void;
+
+  /**
+   * Fired when the media has become empty; implementation of the `HTMLMediaElement` [https://developer.mozilla.org/en-US/docs/Web/API/HTMLMediaElement/emptied_event](emptied) event.
+   * @category HTMLVideoElement compatibility
+   * @event emptied
+   */
+  public onemptied: () => void;
+
+  /**
+   * Fired after the Flipnote has been closed with {@link close}
+   * @category lifecycle
+   * @event close
+   */
+  public onclose: () => void;
+
+  /**
+   * Fired after a loading, parsing or playback error occurs
+   * @category lifecycle
+   * @event error
+   */
+  public onerror: (err?: Error) => void;
+
+  /**
+   * Fired just before the player has been destroyed, after calling {@link destroy}
+   * @category lifecycle
+   * @event destroy
+   */
+  public ondestroy: () => void;
+
   /** 
    * Add an event callback
    * @category Event API
    */
-  public on(eventType: PlayerEvent | PlayerEvent[], callback: Function) {
+  public on(eventType: PlayerEvent | PlayerEvent[], listener: Function) {
     const events = this.events;
     const eventList = Array.isArray(eventType) ? eventType : [eventType];
     eventList.forEach(eventType => {
       if (!events.has(eventType))
-        events.set(eventType, [callback]);
+        events.set(eventType, [listener]);
       else
-        events.get(eventType).push(callback);
+        events.get(eventType).push(listener);
     });
   }
 
@@ -858,9 +1070,14 @@ export class Player {
    */
   public emit(eventType: PlayerEvent, ...args: any) {
     const events = this.events;
-    if (events.has(eventType)) {
+    if (eventType !== PlayerEvent.__Any && events.has(eventType)) {
       const callbackList = events.get(eventType);
       callbackList.forEach(callback => callback.apply(null, args));
+      // call onwhatever() function for this event, if one has been added
+      const listenerName = `on${ eventType }`;
+      const thisAsAny = this as any;
+      if (typeof thisAsAny[listenerName] === 'function')
+        thisAsAny[listenerName].apply(null, args);
     }
     // "any" event listeners fire for all events, and receive eventType as their first param
     if (events.has(PlayerEvent.__Any)) {
@@ -885,7 +1102,7 @@ export class Player {
     this.clearEvents();
     this.emit(PlayerEvent.Destroy);
     this.closeNote();
-    await this.canvas.destroy();
+    await this.renderer.destroy();
     await this.audio.destroy();
   }
 

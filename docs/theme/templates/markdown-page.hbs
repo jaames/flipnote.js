@@ -15,14 +15,7 @@
                     {{#each navigation.children}}
                         {{> navigation}}
                     {{/each}}
-                </ul>
-            </nav>
-
-            <nav class="tsd-navigation secondary menu-sticky">
-                <ul class="before-current">
-                    {{#each toc.children}}
-                        {{> toc.root}}
-                    {{/each}}
+                    {{> quicklinks}}
                 </ul>
             </nav>
         </div>

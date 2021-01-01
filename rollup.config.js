@@ -21,10 +21,10 @@ const isTargetWebcomponent = target === 'webcomponent';
 
 const banner = `/*!!
  flipnote.js v${ version } (${ target } build)
- Javascript parsing and in-browser playback for the .PPM and .KWZ animation formats used by Flipnote Studio and Flipnote Studio 3D.
- Flipnote Studio is (c) Nintendo Co., Ltd. This project isn't endorsed by them in any way.
+ A JavaScript library for parsing, converting, and in-browser playback of the proprietary animation formats used by Nintendo's Flipnote Studio and Flipnote Studio 3D apps.
+ Flipnote Studio is (c) Nintendo Co., Ltd. This project isn't affiliated with or endorsed by them in any way.
  2018 - 2021 James Daniel
- github.com/jaames/flipnote.js
+ https://flipnote.js.org
  Keep on Flipnoting!
 */`;
 

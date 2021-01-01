@@ -1,9 +1,9 @@
 /*!!
- flipnote.js v5.1.0 (web build)
- Javascript parsing and in-browser playback for the .PPM and .KWZ animation formats used by Flipnote Studio and Flipnote Studio 3D.
- Flipnote Studio is (c) Nintendo Co., Ltd. This project isn't endorsed by them in any way.
+ flipnote.js v5.1.1 (web build)
+ A JavaScript library for parsing, converting, and in-browser playback of the proprietary animation formats used by Nintendo's Flipnote Studio and Flipnote Studio 3D apps.
+ Flipnote Studio is (c) Nintendo Co., Ltd. This project isn't affiliated with or endorsed by them in any way.
  2018 - 2021 James Daniel
- github.com/jaames/flipnote.js
+ https://flipnote.js.org
  Keep on Flipnoting!
 */
 (function (global, factory) {
@@ -2073,9 +2073,14 @@
     }(FlipnoteParser));
 
     /**
-     * Load a Flipnote from a given source, returning a promise with a parser object
+     * Load a Flipnote from a given source, returning a promise with a parser object.
+     * It will auto-detect the Flipnote format and return either a {@link PpmParser} or {@link KwzParser} accordingly.
      *
-     * @param source
+     * @param source - Source to load a Flipnote from. Depending on the operating envionment, this can be:
+     * - A string representing a web URL
+     * - An {@link https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/ArrayBuffer | ArrayBuffer}
+     * - A {@link https://developer.mozilla.org/en-US/docs/Web/API/File | File} object (Browser only)
+     * - A {@link https://nodejs.org/api/buffer.html | Buffer} object (NodeJS only)
      * @param parserConfig - Config settings to pass to the parser, see {@link FlipnoteParserSettings}
      */
     function parseSource(source, parserConfig) {
@@ -2808,7 +2813,7 @@
      * @private
      */
     //function getVersionAsNumber(gl) {
-    //  return parseFloat(gl.getParameter(gl."5.1.0").substr(6));
+    //  return parseFloat(gl.getParameter(gl."5.1.1").substr(6));
     //}
 
     /**
@@ -2819,7 +2824,7 @@
      */
     function isWebGL2(gl) {
       // This is the correct check but it's slow
-      //  return gl.getParameter(gl."5.1.0").indexOf("WebGL 2.0") === 0;
+      //  return gl.getParameter(gl."5.1.1").indexOf("WebGL 2.0") === 0;
       // This might also be the correct check but I'm assuming it's slow-ish
       // return gl instanceof WebGL2RenderingContext;
       return !!gl.texStorage2D;
@@ -4319,11 +4324,40 @@
     }
 
     /**
-     * Flipnote Player API (exported as `flipnote.Player`)
+     * Flipnote Player API (exported as `flipnote.Player`) - provides a {@link https://developer.mozilla.org/en-US/docs/Web/API/HTMLMediaElement | MediaElement}-like interface for loading Flipnotes and playing them.
+     * This is intended for cases where you want to implement your own player UI, if you just want a pre-built player with some nice UI controls, check out the {@page Web Components} page instead!
      *
-     * This loads and plays Flipnotes in a web browser, taking a lot of inspiration from the {@link https://developer.mozilla.org/en-US/docs/Web/API/HTMLMediaElement | MediaElement} API
+     * ### Create a new player
      *
-     * Note: playback is only available in browser contexts for the time being
+     * You'll need a canvas element in your page's HTML:
+     *
+     * ```html
+     *  <canvas id="player-canvas"></canvas>
+     * ```
+     *
+     * Then you can create a new `Player` instance by passing a CSS selector that matches the canvas, plus the disired width and height.
+     *
+     * ```js
+     *  const player = new flipnote.Player('#player-canvas', 320, 240);
+     * ```
+     *
+     * ### Load a Flipnote
+     *
+     * Load a Flipnote from a valid {@link FlipnoteSource}:
+     *
+     * ```js
+     * player.load('./path/to/flipnote.ppm');
+     * ```
+     *
+     * ### Listen to events
+     *
+     * Use the {@link on} method to register event listeners:
+     *
+     * ```js
+     *  player.on('play', function() {
+     *    // do something when the Flipnote starts playing...
+     *  });
+     * ```
      */
     var Player = /** @class */ (function () {
         /**
@@ -4375,7 +4409,7 @@
             this.isSeeking = false;
             /**
              * Playback animation loop
-             * @public
+             * @internal
              * @category Playback Control
              */
             this.playbackLoop = function (timestamp) {
@@ -4399,12 +4433,12 @@
             assertBrowserEnv();
             // if `el` is a string, use it to select an Element, else assume it's an element
             el = ('string' == typeof el) ? document.querySelector(el) : el;
-            this.canvas = new WebglRenderer(el, width, height, {
+            this.renderer = new WebglRenderer(el, width, height, {
                 onlost: function () { return _this.emit(PlayerEvent.Error); },
                 onrestored: function () { return _this.load(); }
             });
             this.audio = new WebAudioPlayer();
-            this.canvasEl = this.canvas.el;
+            this.canvasEl = this.renderer.el;
         }
         Object.defineProperty(Player.prototype, "src", {
             /** The currently loaded Flipnote source, if there is one. Can be overridden to load another Flipnote */
@@ -4624,7 +4658,7 @@
             this.wasPlaying = false;
             this.hasPlaybackStarted = false;
             this.showThumbnail = true;
-            this.canvas.clearFrameBuffer([0, 0, 0, 0]);
+            this.renderer.clearFrameBuffer([0, 0, 0, 0]);
         };
         /**
          * Open a Flipnote into the player
@@ -4650,7 +4684,7 @@
             this.emit(PlayerEvent.CanPlay);
             this.emit(PlayerEvent.CanPlayThrough);
             this.setLoop(note.meta.loop);
-            this.canvas.setInputSize(note.width, note.height);
+            this.renderer.setInputSize(note.width, note.height);
             this.drawFrame(note.thumbFrameIndex);
             this.emit(PlayerEvent.LoadedData);
             this.emit(PlayerEvent.Load);
@@ -4677,7 +4711,7 @@
             return this.currentTime;
         };
         /**
-         * Get the current time as a counter string, like `0:00 / 1:00`
+         * Get the current time as a counter string, like `"0:00 / 1:00"`
          * @category Playback Control
          */
         Player.prototype.getTimeCounter = function () {
@@ -4686,7 +4720,7 @@
             return currentTime + " / " + duration;
         };
         /**
-         * Get the current frame index as a counter string, like `001/999`
+         * Get the current frame index as a counter string, like `"001 / 999"`
          * @category Playback Control
          */
         Player.prototype.getFrameCounter = function () {
@@ -4695,7 +4729,7 @@
             return frame + " / " + total;
         };
         /**
-         * Set the current playback progress as a percentage (0 to 100)
+         * Set the current playback progress as a percentage (`0` to `100`)
          * @category Playback Control
          */
         Player.prototype.setProgress = function (value) {
@@ -4898,7 +4932,7 @@
          */
         Player.prototype.drawFrame = function (frameIndex) {
             var note = this.note;
-            var canvas = this.canvas;
+            var canvas = this.renderer;
             var colors = note.getFramePalette(frameIndex);
             var layerBuffers = note.decodeFrame(frameIndex);
             var layerVisibility = this.layerVisibility;
@@ -4945,7 +4979,7 @@
         Player.prototype.resize = function (width, height) {
             if (height !== width * .75)
                 console.warn("Canvas width to height ratio should be 3:4 for best results (got " + width + "x" + height + ")");
-            this.canvas.setCanvasSize(width, height);
+            this.renderer.setCanvasSize(width, height);
             this.forceUpdate();
         };
         /**
@@ -5127,14 +5161,14 @@
          * Add an event callback
          * @category Event API
          */
-        Player.prototype.on = function (eventType, callback) {
+        Player.prototype.on = function (eventType, listener) {
             var events = this.events;
             var eventList = Array.isArray(eventType) ? eventType : [eventType];
             eventList.forEach(function (eventType) {
                 if (!events.has(eventType))
-                    events.set(eventType, [callback]);
+                    events.set(eventType, [listener]);
                 else
-                    events.get(eventType).push(callback);
+                    events.get(eventType).push(listener);
             });
         };
         /**
@@ -5161,9 +5195,14 @@
                 args[_i - 1] = arguments[_i];
             }
             var events = this.events;
-            if (events.has(eventType)) {
+            if (eventType !== PlayerEvent.__Any && events.has(eventType)) {
                 var callbackList = events.get(eventType);
                 callbackList.forEach(function (callback) { return callback.apply(null, args); });
+                // call onwhatever() function for this event, if one has been added
+                var listenerName = "on" + eventType;
+                var thisAsAny = this;
+                if (typeof thisAsAny[listenerName] === 'function')
+                    thisAsAny[listenerName].apply(null, args);
             }
             // "any" event listeners fire for all events, and receive eventType as their first param
             if (events.has(PlayerEvent.__Any)) {
@@ -5190,7 +5229,7 @@
                             this.clearEvents();
                             this.emit(PlayerEvent.Destroy);
                             this.closeNote();
-                            return [4 /*yield*/, this.canvas.destroy()];
+                            return [4 /*yield*/, this.renderer.destroy()];
                         case 1:
                             _a.sent();
                             return [4 /*yield*/, this.audio.destroy()];
@@ -5793,8 +5832,10 @@
     }());
 
     // Entrypoint for web and node
-    //* flipnote.js library version (exported as `flipnote.version`) */
-    var version = "5.1.0"; // replaced by @rollup/plugin-replace; see rollup.config.js
+    /**
+     * flipnote.js library version (exported as `flipnote.version`). You can find the latest version on the project's [NPM](https://www.npmjs.com/package/flipnote.js) page.
+     */
+    var version = "5.1.1"; // replaced by @rollup/plugin-replace; see rollup.config.js
 
     exports.GifImage = GifImage;
     exports.KwzParser = KwzParser;

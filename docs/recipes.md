@@ -1,8 +1,13 @@
-This page provides some basic recipes for achieving common tasks with flipnote.js -- it assumes you have installed the library via one of the methods listed on the {@page Getting Started} guide, and have very basic working knowledge of JavaScript.
+This page provides some basic recipes for achieving common tasks with the flipnote.js API. It assumes you have installed the library via one of the methods listed on the {@page Getting Started} guide, and have very basic working knowledge of HTML and JavaScript.
 
+- [Embedding a Flipnote player](#embedding-a-flipnote-player)
 - [Opening a Flipnote](#opening-a-flipnote)
-- [Flipnote GIF export](#flipnote-gif-export)
-- [Flipnote WAV export](#flipnote-wav-export)
+- [GIF conversion](#gif-conversion)
+- [WAV conversion](#wav-conversion)
+
+## Embedding a Flipnote player
+
+The Web Component version of Flipnote.js provides a custom `<flipnote-player>` HTML tag that can be used to easily embed a Flipnote player UI in any webpage. For more information about this, check out the {@page Web Components} page.
 
 ## Opening a Flipnote
 
@@ -54,7 +59,7 @@ function handleFiles() {
 
 See also: [Using files from web applications](https://developer.mozilla.org/en-US/docs/Web/API/File/Using_files_from_web_applications) on MDN.
 
-## Flipnote GIF export
+## GIF conversion
 
 flipnote.js comes with a built-in GIF exporter, which is the easiest way to convert a single Flipnote frame - or the whole animation sequence - into a standard image format. This section assumes you have already opened your Flipnote as a {@link Flipnote} object called `note`.
 
@@ -96,9 +101,9 @@ const buffer = gif.getBuffer();
 fs.writeFile(this.meta.current.filename + '.gif', buffer);
 ```
 
-## Flipnote WAV export
+## WAV conversion
 
-flipnote.js also comes with a built-in WAV encoder, for converting Flipnote audio tracks into a standard audio format.x
+flipnote.js also comes with a built-in WAV encoder, for converting Flipnote audio tracks into a standard audio format.
 This section assumes you have already opened your Flipnote as a {@link Flipnote} object called `note`.
 
 ### Encode WAV (web, node)
@@ -113,13 +118,13 @@ To create a {@link WavAudio} from a single audio track:
 // 2 = SE2
 // 3 = SE3
 // 4 = SE4
-const wav = flipnoteWavAudio.fromFlipnoteTrack(note, 0);
+const wav = flipnote.WavAudio.fromFlipnoteTrack(note, 0);
 ```
 
 To create a {@link WavAudio} from the mixed audio master:
 
 ```js
-const wav = flipnoteWavAudio.fromFlipnote(note);
+const wav = flipnote.WavAudio.fromFlipnote(note);
 ```
 
 ### Save WAV (web)

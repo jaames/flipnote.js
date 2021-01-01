@@ -22,8 +22,8 @@ export function PlayerMixin<TargetBase extends Constructor>(Target: TargetBase) 
 
     // Mixin needs to re-define all the normal player properties, but most should be made readonly anyway...
 
-    get canvas() {
-      return this.player.canvas;
+    get renderer() {
+      return this.player.renderer;
     }
 
     get audio() {

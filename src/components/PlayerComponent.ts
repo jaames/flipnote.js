@@ -120,6 +120,10 @@ export class PlayerComponent extends PlayerMixin(LitElement) {
         height: 40px;
       }
 
+      .Controls.Controls--compact {
+        margin: 6px 0;
+      }
+
       .Controls__frameCounter {
         min-width: 90px;
         font-variant-numeric: tabular-nums;

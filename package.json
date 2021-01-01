@@ -1,7 +1,7 @@
 {
   "name": "flipnote.js",
-  "version": "5.1.0",
-  "description": "API for handling Flipnote Studio's animation formats, capable of real-time playback using webGL",
+  "version": "5.1.1",
+  "description": "A JavaScript library for parsing, converting, and in-browser playback of the proprietary animation formats used by Nintendo's Flipnote Studio and Flipnote Studio 3D apps.",
   "module": "dist/flipnote.es.js",
   "main": "dist/flipnote.js",
   "types": "dist/flipnote.d.ts",
@@ -53,6 +53,7 @@
     "@rollup/plugin-node-resolve": "^8.0.1",
     "@rollup/plugin-replace": "^2.3.3",
     "@types/node": "^14.14.2",
+    "@wcardinal/typedoc-plugin-named-event": "^1.0.0",
     "node-static": "^0.7.11",
     "rollup": "^2.15.0",
     "rollup-plugin-bundle-size": "^1.0.3",

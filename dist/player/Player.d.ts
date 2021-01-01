@@ -4,15 +4,44 @@ import { WebglRenderer } from '../webgl';
 import { WebAudioPlayer } from '../webaudio';
 declare type PlayerLayerVisibility = Record<number, boolean>;
 /**
- * Flipnote Player API (exported as `flipnote.Player`)
+ * Flipnote Player API (exported as `flipnote.Player`) - provides a {@link https://developer.mozilla.org/en-US/docs/Web/API/HTMLMediaElement | MediaElement}-like interface for loading Flipnotes and playing them.
+ * This is intended for cases where you want to implement your own player UI, if you just want a pre-built player with some nice UI controls, check out the {@page Web Components} page instead!
  *
- * This loads and plays Flipnotes in a web browser, taking a lot of inspiration from the {@link https://developer.mozilla.org/en-US/docs/Web/API/HTMLMediaElement | MediaElement} API
+ * ### Create a new player
  *
- * Note: playback is only available in browser contexts for the time being
+ * You'll need a canvas element in your page's HTML:
+ *
+ * ```html
+ *  <canvas id="player-canvas"></canvas>
+ * ```
+ *
+ * Then you can create a new `Player` instance by passing a CSS selector that matches the canvas, plus the disired width and height.
+ *
+ * ```js
+ *  const player = new flipnote.Player('#player-canvas', 320, 240);
+ * ```
+ *
+ * ### Load a Flipnote
+ *
+ * Load a Flipnote from a valid {@link FlipnoteSource}:
+ *
+ * ```js
+ * player.load('./path/to/flipnote.ppm');
+ * ```
+ *
+ * ### Listen to events
+ *
+ * Use the {@link on} method to register event listeners:
+ *
+ * ```js
+ *  player.on('play', function() {
+ *    // do something when the Flipnote starts playing...
+ *  });
+ * ```
  */
 export declare class Player {
-    /** Rendering canvas */
-    canvas: WebglRenderer;
+    /** Frame renderer */
+    renderer: WebglRenderer;
     /** Audio player */
     audio: WebAudioPlayer;
     /** Canvas HTML element */
@@ -143,7 +172,7 @@ export declare class Player {
     openNote(note: Flipnote): void;
     /**
      * Playback animation loop
-     * @public
+     * @internal
      * @category Playback Control
      */
     playbackLoop: (timestamp: DOMHighResTimeStamp) => void;
@@ -158,17 +187,17 @@ export declare class Player {
      */
     getCurrentTime(): number;
     /**
-     * Get the current time as a counter string, like `0:00 / 1:00`
+     * Get the current time as a counter string, like `"0:00 / 1:00"`
      * @category Playback Control
      */
     getTimeCounter(): string;
     /**
-     * Get the current frame index as a counter string, like `001/999`
+     * Get the current frame index as a counter string, like `"001 / 999"`
      * @category Playback Control
      */
     getFrameCounter(): string;
     /**
-     * Set the current playback progress as a percentage (0 to 100)
+     * Set the current playback progress as a percentage (`0` to `100`)
      * @category Playback Control
      */
     setProgress(value: number): void;
@@ -385,10 +414,166 @@ export declare class Player {
      */
     captureStream(): void;
     /**
+     * Fired when animation playback begins or is resumed
+     * @category playback
+     * @event play
+     */
+    onplay: () => void;
+    /**
+     * Fired when animation playback is paused
+     * @category playback
+     * @event pause
+     */
+    onpause: () => void;
+    /**
+     * Fired when the Flipnote has loaded enough to begin animation play
+     * @category HTMLVideoElement compatibility
+     * @event canplay
+     */
+    oncanplay: () => void;
+    /**
+     *Fired when the Flipnote has loaded enough to play successfully
+     * @category HTMLVideoElement compatibility
+     * @event canplaythrough
+     */
+    oncanplaythrough: () => void;
+    /**
+     * Fired when a seek operation begins
+     * @category playback
+     * @event seeking
+     */
+    onseeking: () => void;
+    /**
+     * Fired when a seek operation completes
+     * @category playback
+     * @event seeked
+     */
+    onseeked: () => void;
+    /**
+     * Fired when the animation duration has changed
+     * @category HTMLVideoElement compatibility
+     * @event durationchange
+     */
+    ondurationchange: () => void;
+    /**
+     * Fired when playbackc has looped after reaching the end
+     * @category playback
+     * @event loop
+     */
+    onloop: () => void;
+    /**
+     * Fired when playback has ended
+     * @category playback
+     * @event ended
+     */
+    onended: () => void;
+    /**
+     * Fired when the player audio volume or muted state has changed
+     * @category audio
+     * @event volumechange
+     */
+    onvolumechane: (volume: number) => void;
+    /**
+     * Fired when playback progress has changed
+     * @category playback
+     * @event progress
+     */
+    onprogress: (progress: number) => void;
+    /**
+     * Fired when the playback time has changed
+     * @category playback
+     * @event timeupdate
+     */
+    ontimeupdate: (time: number) => void;
+    /**
+     * Fired when the current frame index has changed
+     * @category frame
+     * @event frameupdate
+     */
+    onframeupdate: (frameIndex: number) => void;
+    /**
+     * Fired when {@link nextFrame} has been called
+     * @category frame
+     * @event framenext
+     */
+    onframenext: () => void;
+    /**
+     * Fired when {@link prevFrame} has been called
+     * @category frame
+     * @event frameprev
+     */
+    onframeprev: () => void;
+    /**
+     * Fired when {@link firstFrame} has been called
+     * @category frame
+     * @event framefirst
+     */
+    onframefirst: () => void;
+    /**
+     * Fired when {@link lastFrame} has been called
+     * @category frame
+     * @event framelast
+     */
+    onframelast: () => void;
+    /**
+     * Fired when a Flipnote is ready for playback
+     * @category lifecycle
+     * @event ready
+     */
+    onready: () => void;
+    /**
+     * Fired when a Flipnote has finished loading
+     * @category lifecycle
+     * @event load
+     */
+    onload: () => void;
+    /**
+     * Fired when a Flipnote has begun loading
+     * @category lifecycle
+     * @event loadstart
+     */
+    onloadstart: () => void;
+    /**
+     * Fired when the Flipnote data has been loaded; implementation of the `HTMLMediaElement` [https://developer.mozilla.org/en-US/docs/Web/API/HTMLMediaElement/loadeddata_event](loadeddata) event.
+     * @category HTMLVideoElement compatibility
+     * @event loadeddata
+     */
+    onloadeddata: () => void;
+    /**
+     * Fired when the Flipnote metadata has been loaded; implementation of the `HTMLMediaElement` [https://developer.mozilla.org/en-US/docs/Web/API/HTMLMediaElement/loadedmetadata_event](loadedmetadata) event.
+     * @category HTMLVideoElement compatibility
+     * @event loadedmetadata
+     */
+    onloadedmetadata: () => void;
+    /**
+     * Fired when the media has become empty; implementation of the `HTMLMediaElement` [https://developer.mozilla.org/en-US/docs/Web/API/HTMLMediaElement/emptied_event](emptied) event.
+     * @category HTMLVideoElement compatibility
+     * @event emptied
+     */
+    onemptied: () => void;
+    /**
+     * Fired after the Flipnote has been closed with {@link close}
+     * @category lifecycle
+     * @event close
+     */
+    onclose: () => void;
+    /**
+     * Fired after a loading, parsing or playback error occurs
+     * @category lifecycle
+     * @event error
+     */
+    onerror: (err?: Error) => void;
+    /**
+     * Fired just before the player has been destroyed, after calling {@link destroy}
+     * @category lifecycle
+     * @event destroy
+     */
+    ondestroy: () => void;
+    /**
      * Add an event callback
      * @category Event API
      */
-    on(eventType: PlayerEvent | PlayerEvent[], callback: Function): void;
+    on(eventType: PlayerEvent | PlayerEvent[], listener: Function): void;
     /**
      * Remove an event callback
      * @category Event API
