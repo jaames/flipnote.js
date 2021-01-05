@@ -40,12 +40,19 @@ export interface KwzFrameMeta {
  * KWZ parser options for enabling optimisations and other extra features
  */
 export interface KwzParserSettings {
-    /** Skip full metadata parsing for quickness */
+    /**
+     * Skip full metadata parsing for quickness
+     */
     quickMeta: boolean;
-    /** Apply special cases for dsi gallery notes */
-    dsiGalleryNote: boolean;
-    /** A minor audio fix is applied by default, since Flipnote 3D's own implementation is wrong. Enable this to use the "original" audio decoding setup */
-    originalAudioSettings: boolean;
+    /**
+     * Apply special cases for DSi library notes
+     */
+    dsiLibraryNote: boolean;
+    /**
+     * Flipnote 3D's own implementation is slightly buggy.
+     * Enable this to use a more "correct" audio decoding setup that may produce cleaner audio for most 3DS notes
+     */
+    cleanerAudio: boolean;
 }
 /**
  * Parser class for Flipnote Studio 3D's KWZ animation format

@@ -144,12 +144,19 @@ export interface KwzFrameMeta {
  * KWZ parser options for enabling optimisations and other extra features
  */
 export interface KwzParserSettings {
-  /** Skip full metadata parsing for quickness */ 
+  /** 
+   * Skip full metadata parsing for quickness
+   */
   quickMeta: boolean;
-  /** Apply special cases for dsi gallery notes */ 
-  dsiGalleryNote: boolean;
-  /** A minor audio fix is applied by default, since Flipnote 3D's own implementation is wrong. Enable this to use the "original" audio decoding setup */
-  originalAudioSettings: boolean;
+  /** 
+   * Apply special cases for DSi library notes
+   */ 
+  dsiLibraryNote: boolean;
+  /** 
+   * Flipnote 3D's own implementation is slightly buggy. 
+   * Enable this to use a more "correct" audio decoding setup that may produce cleaner audio for most 3DS notes
+   */
+  cleanerAudio: boolean;
 };
 
 /** 
@@ -163,8 +170,8 @@ export class KwzParser extends FlipnoteParser {
   /** Default KWZ parser settings */
   static defaultSettings: KwzParserSettings = {
     quickMeta: false,
-    dsiGalleryNote: false,
-    originalAudioSettings: false
+    dsiLibraryNote: false,
+    cleanerAudio: false
   };
   /** File format type */
   static format = FlipnoteFormat.KWZ;
@@ -272,7 +279,7 @@ export class KwzParser extends FlipnoteParser {
   }
 
   private readFsid() {
-    if (this.settings.dsiGalleryNote) { // format as DSi PPM FSID
+    if (this.settings.dsiLibraryNote) { // format as DSi PPM FSID
       const hex = this.readHex(10, true);
       return hex.slice(2, 18);
     }
@@ -551,7 +558,7 @@ export class KwzParser extends FlipnoteParser {
 
     for (let layerIndex = 0; layerIndex < 3; layerIndex++) {
       // dsi gallery conversions don't use the third layer, so it can be skipped if this is set
-      if (this.settings.dsiGalleryNote && layerIndex === 3)
+      if (this.settings.dsiLibraryNote && layerIndex === 3)
         break;
 
       this.seek(framePtr);
@@ -776,7 +783,7 @@ export class KwzParser extends FlipnoteParser {
     const layerAOffset = layerOrder[2] * 2;
     const layerBOffset = layerOrder[1] * 2;
     const layerCOffset = layerOrder[0] * 2;
-    if (!this.settings.dsiGalleryNote) {
+    if (!this.settings.dsiLibraryNote) {
       const image = new Uint8Array(KwzParser.width * KwzParser.height);
       image.fill(palette[0]); // fill with paper color first
       for (let pixel = 0; pixel < image.length; pixel++) {
@@ -850,15 +857,15 @@ export class KwzParser extends FlipnoteParser {
     const output = new Int16Array(16364 * 60);
     let outputPtr = 0;
     // initial decoder state
-    // Flipnote 3D's initial values are actually buggy, so these aren't 1:1
     let predictor = 0;
-    let stepIndex = 0;
+    let stepIndex = 40;
     let sample = 0;
     let step = 0;
     let diff = 0;
-    // we can still optionally enable the in-app values here
-    if (this.settings.originalAudioSettings)
-      stepIndex = 40;
+    // Flipnote 3D's initial values are actually buggy, so stepIndex = 0 is technically more correct
+    // DSi Library notes, however, seem to only work with 40 (at least the correctly converted ones)
+    if (this.settings.cleanerAudio && !this.settings.dsiLibraryNote)
+      stepIndex = 0;
     // loop through each byte in the raw adpcm data
     for (let adpcmPtr = 0; adpcmPtr < adpcm.length; adpcmPtr++) {
       let currByte = adpcm[adpcmPtr];
