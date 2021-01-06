@@ -1,5 +1,5 @@
 /*!!
- flipnote.js v5.1.1 (webcomponent build)
+ flipnote.js v5.1.2 (webcomponent build)
  A JavaScript library for parsing, converting, and in-browser playback of the proprietary animation formats used by Nintendo's Flipnote Studio and Flipnote Studio 3D apps.
  Flipnote Studio is (c) Nintendo Co., Ltd. This project isn't affiliated with or endorsed by them in any way.
  2018 - 2021 James Daniel
@@ -1247,7 +1247,7 @@
           return result;
       }
       readFsid() {
-          if (this.settings.dsiGalleryNote) { // format as DSi PPM FSID
+          if (this.settings.dsiLibraryNote) { // format as DSi PPM FSID
               const hex = this.readHex(10, true);
               return hex.slice(2, 18);
           }
@@ -1509,7 +1509,7 @@
           const layerSizes = this.frameLayerSizes[frameIndex];
           for (let layerIndex = 0; layerIndex < 3; layerIndex++) {
               // dsi gallery conversions don't use the third layer, so it can be skipped if this is set
-              if (this.settings.dsiGalleryNote && layerIndex === 3)
+              if (this.settings.dsiLibraryNote && layerIndex === 3)
                   break;
               this.seek(framePtr);
               let layerSize = layerSizes[layerIndex];
@@ -1717,7 +1717,7 @@
           const layerAOffset = layerOrder[2] * 2;
           const layerBOffset = layerOrder[1] * 2;
           const layerCOffset = layerOrder[0] * 2;
-          if (!this.settings.dsiGalleryNote) {
+          if (!this.settings.dsiLibraryNote) {
               const image = new Uint8Array(KwzParser.width * KwzParser.height);
               image.fill(palette[0]); // fill with paper color first
               for (let pixel = 0; pixel < image.length; pixel++) {
@@ -1788,15 +1788,15 @@
           const output = new Int16Array(16364 * 60);
           let outputPtr = 0;
           // initial decoder state
-          // Flipnote 3D's initial values are actually buggy, so these aren't 1:1
           let predictor = 0;
-          let stepIndex = 0;
+          let stepIndex = 40;
           let sample = 0;
           let step = 0;
           let diff = 0;
-          // we can still optionally enable the in-app values here
-          if (this.settings.originalAudioSettings)
-              stepIndex = 40;
+          // Flipnote 3D's initial values are actually buggy, so stepIndex = 0 is technically more correct
+          // DSi Library notes, however, seem to only work with 40 (at least the correctly converted ones)
+          if (this.settings.cleanerAudio && !this.settings.dsiLibraryNote)
+              stepIndex = 0;
           // loop through each byte in the raw adpcm data
           for (let adpcmPtr = 0; adpcmPtr < adpcm.length; adpcmPtr++) {
               let currByte = adpcm[adpcmPtr];
@@ -1915,8 +1915,8 @@
   /** Default KWZ parser settings */
   KwzParser.defaultSettings = {
       quickMeta: false,
-      dsiGalleryNote: false,
-      originalAudioSettings: false
+      dsiLibraryNote: false,
+      cleanerAudio: false
   };
   /** File format type */
   KwzParser.format = exports.FlipnoteFormat.KWZ;
@@ -2682,7 +2682,7 @@
    * @private
    */
   //function getVersionAsNumber(gl) {
-  //  return parseFloat(gl.getParameter(gl."5.1.1").substr(6));
+  //  return parseFloat(gl.getParameter(gl."5.1.2").substr(6));
   //}
 
   /**
@@ -2693,7 +2693,7 @@
    */
   function isWebGL2(gl) {
     // This is the correct check but it's slow
-    //  return gl.getParameter(gl."5.1.1").indexOf("WebGL 2.0") === 0;
+    //  return gl.getParameter(gl."5.1.2").indexOf("WebGL 2.0") === 0;
     // This might also be the correct check but I'm assuming it's slow-ish
     // return gl instanceof WebGL2RenderingContext;
     return !!gl.texStorage2D;
@@ -5565,7 +5565,7 @@
   /**
    * flipnote.js library version (exported as `flipnote.version`). You can find the latest version on the project's [NPM](https://www.npmjs.com/package/flipnote.js) page.
    */
-  const version = "5.1.1"; // replaced by @rollup/plugin-replace; see rollup.config.js
+  const version = "5.1.2"; // replaced by @rollup/plugin-replace; see rollup.config.js
 
   /*! *****************************************************************************
   Copyright (c) Microsoft Corporation.
