@@ -1,12 +1,11 @@
 /*!!
- flipnote.js v5.1.2 (webcomponent build)
+ flipnote.js v5.1.4 (webcomponent build)
  A JavaScript library for parsing, converting, and in-browser playback of the proprietary animation formats used by Nintendo's Flipnote Studio and Flipnote Studio 3D apps.
  Flipnote Studio is (c) Nintendo Co., Ltd. This project isn't affiliated with or endorsed by them in any way.
  2018 - 2021 James Daniel
  https://flipnote.js.org
  Keep on Flipnoting!
 */
-(function(l, r) { if (l.getElementById('livereloadscript')) return; r = l.createElement('script'); r.async = 1; r.src = '//' + (window.location.host || 'localhost').split(':')[0] + ':35729/livereload.js?snipver=1'; r.id = 'livereloadscript'; l.getElementsByTagName('head')[0].appendChild(r) })(window.document);
 (function (global, factory) {
   typeof exports === 'object' && typeof module !== 'undefined' ? factory(exports) :
   typeof define === 'function' && define.amd ? define(['exports'], factory) :
@@ -430,29 +429,6 @@
   }
 
   /** @internal */
-  function clamp(n, l, h) {
-      if (n < l)
-          return l;
-      if (n > h)
-          return h;
-      return n;
-  }
-  /**
-   * Zero-order hold interpolation
-   * Credit to SimonTime for the original C version
-   * @internal
-   */
-  function pcmDsAudioResample(src, srcFreq, dstFreq) {
-      const srcDuration = src.length / srcFreq;
-      const dstLength = srcDuration * dstFreq;
-      const dst = new Int16Array(dstLength);
-      const adjFreq = (srcFreq) / dstFreq;
-      for (let n = 0; n < dst.length; n++) {
-          dst[n] = src[Math.floor(n * adjFreq)];
-      }
-      return dst;
-  }
-  /** @internal */
   const ADPCM_INDEX_TABLE_2BIT = new Int8Array([
       -1, 2, -1, 2
   ]);
@@ -473,6 +449,54 @@
       5894, 6484, 7132, 7845, 8630, 9493, 10442, 11487, 12635, 13899,
       15289, 16818, 18500, 20350, 22385, 24623, 27086, 29794, 32767, 0
   ]);
+  /** @internal */
+  function clamp(n, l, h) {
+      if (n < l)
+          return l;
+      if (n > h)
+          return h;
+      return n;
+  }
+  /** @internal */
+  function pcmGetSample(src, srcSize, srcPtr) {
+      if (srcPtr < 0 || srcPtr >= srcSize)
+          return 0;
+      return src[srcPtr];
+  }
+  /**
+   * Zero-order hold (nearest neighbour) audio interpolation
+   * Credit to SimonTime for the original C version
+   * @internal
+   */
+  function pcmResampleNearestNeighbour(src, srcFreq, dstFreq) {
+      const srcLength = src.length;
+      const srcDuration = srcLength / srcFreq;
+      const dstLength = srcDuration * dstFreq;
+      const dst = new Int16Array(dstLength);
+      const adjFreq = srcFreq / dstFreq;
+      for (let dstPtr = 0; dstPtr < dstLength; dstPtr++) {
+          dst[dstPtr] = pcmGetSample(src, srcLength, Math.floor(dstPtr * adjFreq));
+      }
+      return dst;
+  }
+  /**
+   * Simple linear audio interpolation
+   * @internal
+   */
+  function pcmResampleLinear(src, srcFreq, dstFreq) {
+      const srcLength = src.length;
+      const srcDuration = srcLength / srcFreq;
+      const dstLength = srcDuration * dstFreq;
+      const dst = new Int16Array(dstLength);
+      const adjFreq = srcFreq / dstFreq;
+      for (let dstPtr = 0, adj = 0, srcPtr = 0, weight = 0; dstPtr < dstLength; dstPtr++) {
+          adj = dstPtr * adjFreq;
+          srcPtr = Math.floor(adj);
+          weight = adj % 1;
+          dst[dstPtr] = (1 - weight) * pcmGetSample(src, srcLength, srcPtr) + weight * pcmGetSample(src, srcLength, srcPtr + 1);
+      }
+      return dst;
+  }
   /**
    * Get a ratio of how many audio samples hit the pcm_s16_le clipping bounds
    * This can be used to detect corrupted audio
@@ -1025,7 +1049,7 @@
               srcFreq = this.rawSampleRate * bgmAdjust;
           }
           if (srcFreq !== dstFreq)
-              return pcmDsAudioResample(srcPcm, srcFreq, dstFreq);
+              return pcmResampleNearestNeighbour(srcPcm, srcFreq, dstFreq);
           return srcPcm;
       }
       pcmAudioMix(src, dst, dstOffset = 0) {
@@ -1856,7 +1880,7 @@
               srcFreq = this.rawSampleRate * bgmAdjust;
           }
           if (srcFreq !== dstFreq)
-              return pcmDsAudioResample(srcPcm, srcFreq, dstFreq);
+              return pcmResampleLinear(srcPcm, srcFreq, dstFreq);
           return srcPcm;
       }
       pcmAudioMix(src, dst, dstOffset = 0) {
@@ -1929,7 +1953,7 @@
   /** Audio track base sample rate */
   KwzParser.rawSampleRate = 16364;
   /** Audio output sample rate. NOTE: probably isn't accurate, full KWZ audio stack is still on the todo */
-  KwzParser.sampleRate = 16364;
+  KwzParser.sampleRate = 32768;
   /** Global animation frame color palette */
   KwzParser.globalPalette = [
       KWZ_PALETTE.WHITE,
@@ -2682,7 +2706,7 @@
    * @private
    */
   //function getVersionAsNumber(gl) {
-  //  return parseFloat(gl.getParameter(gl."5.1.2").substr(6));
+  //  return parseFloat(gl.getParameter(gl."5.1.4").substr(6));
   //}
 
   /**
@@ -2693,7 +2717,7 @@
    */
   function isWebGL2(gl) {
     // This is the correct check but it's slow
-    //  return gl.getParameter(gl."5.1.2").indexOf("WebGL 2.0") === 0;
+    //  return gl.getParameter(gl."5.1.4").indexOf("WebGL 2.0") === 0;
     // This might also be the correct check but I'm assuming it's slow-ish
     // return gl instanceof WebGL2RenderingContext;
     return !!gl.texStorage2D;
@@ -5565,7 +5589,7 @@
   /**
    * flipnote.js library version (exported as `flipnote.version`). You can find the latest version on the project's [NPM](https://www.npmjs.com/package/flipnote.js) page.
    */
-  const version = "5.1.2"; // replaced by @rollup/plugin-replace; see rollup.config.js
+  const version = "5.1.4"; // replaced by @rollup/plugin-replace; see rollup.config.js
 
   /*! *****************************************************************************
   Copyright (c) Microsoft Corporation.
@@ -9364,4 +9388,3 @@
   Object.defineProperty(exports, '__esModule', { value: true });
 
 })));
-//# sourceMappingURL=flipnote.webcomponent.js.map

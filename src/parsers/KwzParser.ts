@@ -8,7 +8,7 @@ import {
 
 import {
   clamp,
-  pcmDsAudioResample,
+  pcmResampleLinear,
   pcmGetClippingRatio,
   ADPCM_STEP_TABLE,
   ADPCM_INDEX_TABLE_2BIT,
@@ -184,7 +184,7 @@ export class KwzParser extends FlipnoteParser {
   /** Audio track base sample rate */
   static rawSampleRate = 16364;
   /** Audio output sample rate. NOTE: probably isn't accurate, full KWZ audio stack is still on the todo */
-  static sampleRate = 16364;
+  static sampleRate = 32768;
   /** Global animation frame color palette */
   static globalPalette = [
     KWZ_PALETTE.WHITE,
@@ -926,7 +926,7 @@ export class KwzParser extends FlipnoteParser {
       srcFreq = this.rawSampleRate * bgmAdjust;
     }
     if (srcFreq !== dstFreq)
-      return pcmDsAudioResample(srcPcm, srcFreq, dstFreq);
+      return pcmResampleLinear(srcPcm, srcFreq, dstFreq);
 
     return srcPcm;
   }

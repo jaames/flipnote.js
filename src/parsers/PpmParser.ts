@@ -32,7 +32,7 @@ import {
 
 import {
   clamp,
-  pcmDsAudioResample,
+  pcmResampleNearestNeighbour,
   pcmGetClippingRatio,
   ADPCM_INDEX_TABLE_4BIT,
   ADPCM_STEP_TABLE
@@ -628,7 +628,7 @@ export class PpmParser extends FlipnoteParser {
       srcFreq = this.rawSampleRate * bgmAdjust;
     }
     if (srcFreq !== dstFreq)
-      return pcmDsAudioResample(srcPcm, srcFreq, dstFreq);
+      return pcmResampleNearestNeighbour(srcPcm, srcFreq, dstFreq);
     return srcPcm;
   }
 

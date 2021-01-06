@@ -1,29 +1,4 @@
 /** @internal */
-export function clamp(n: number, l: number, h: number) {
-  if (n < l)
-    return l;
-  if (n > h)
-    return h;
-  return n;
-}
-
-/** 
- * Zero-order hold interpolation
- * Credit to SimonTime for the original C version
- * @internal
- */
-export function pcmDsAudioResample(src: Int16Array, srcFreq: number, dstFreq: number) {
-  const srcDuration = src.length / srcFreq;
-  const dstLength = srcDuration * dstFreq;
-  const dst = new Int16Array(dstLength);
-  const adjFreq = (srcFreq) / dstFreq;
-  for (let n = 0; n < dst.length; n++) {
-    dst[n] = src[Math.floor(n * adjFreq)];
-  }
-  return dst;
-}
-
-/** @internal */
 export const ADPCM_INDEX_TABLE_2BIT = new Int8Array([
   -1, 2, -1, 2
 ]);
@@ -46,6 +21,59 @@ export const ADPCM_STEP_TABLE = new Int16Array([
   5894, 6484, 7132, 7845, 8630, 9493, 10442, 11487, 12635, 13899,
   15289, 16818, 18500, 20350, 22385, 24623, 27086, 29794, 32767, 0
 ]);
+
+
+/** @internal */
+export function clamp(n: number, l: number, h: number) {
+  if (n < l)
+    return l;
+  if (n > h)
+    return h;
+  return n;
+}
+
+/** @internal */
+export function pcmGetSample(src: Int16Array, srcSize: number, srcPtr: number) {
+  if (srcPtr < 0 || srcPtr >= srcSize)
+    return 0;
+  return src[srcPtr];
+}
+
+/** 
+ * Zero-order hold (nearest neighbour) audio interpolation
+ * Credit to SimonTime for the original C version
+ * @internal
+ */
+export function pcmResampleNearestNeighbour(src: Int16Array, srcFreq: number, dstFreq: number) {
+  const srcLength = src.length;
+  const srcDuration = srcLength / srcFreq;
+  const dstLength = srcDuration * dstFreq;
+  const dst = new Int16Array(dstLength);
+  const adjFreq = srcFreq / dstFreq;
+  for (let dstPtr = 0; dstPtr < dstLength; dstPtr++) {
+    dst[dstPtr] = pcmGetSample(src, srcLength, Math.floor(dstPtr * adjFreq));
+  }
+  return dst;
+}
+
+/** 
+ * Simple linear audio interpolation
+ * @internal
+ */
+export function pcmResampleLinear(src: Int16Array, srcFreq: number, dstFreq: number) {
+  const srcLength = src.length;
+  const srcDuration = srcLength / srcFreq;
+  const dstLength = srcDuration * dstFreq;
+  const dst = new Int16Array(dstLength);
+  const adjFreq = srcFreq / dstFreq;
+  for (let dstPtr = 0, adj = 0, srcPtr = 0, weight = 0; dstPtr < dstLength; dstPtr++) {
+    adj = dstPtr * adjFreq;
+    srcPtr = Math.floor(adj);
+    weight = adj % 1;
+    dst[dstPtr] = (1 - weight) * pcmGetSample(src, srcLength, srcPtr) + weight * pcmGetSample(src, srcLength, srcPtr + 1);
+  }
+  return dst;
+}
 
 /** 
  * Get a ratio of how many audio samples hit the pcm_s16_le clipping bounds
