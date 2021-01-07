@@ -40,20 +40,18 @@ export enum FlipnoteAudioTrack {
 /** 
  * Contains data about a given audio track; it's file offset and length
  */
-export type FlipnoteAudioTrackInfo = {
-  [key in FlipnoteAudioTrack]?: {
-    ptr: number,
-    length: number
-  }
-}
+export interface FlipnoteAudioTrackInfo {
+  ptr: number;
+  length: number;
+};
 
 /**
  * Flipnote layer visibility 
  */
 export type FlipnoteLayerVisibility = {
-  1: boolean,
-  2: boolean,
-  3: boolean
+  1: boolean;
+  2: boolean;
+  3: boolean;
 };
 
 /**
@@ -68,34 +66,34 @@ export interface FlipnoteVersion {
   fsid: string;
   /** KWZ only - sometimes DSi library notes incorrectly use the PPM filename format instead */
   isDsiFilename?: boolean;
-}
+};
 
 /**
  * Flipnote details
  */
 export interface FlipnoteMeta {
-    /** File lock state. Locked Flipnotes cannot be edited by anyone other than the current author */
-    lock: boolean;
-    /** Playback loop state. If `true`, playback will loop once the end is reached */
-    loop: boolean;
-    /** Spinoffs are remixes of another user's Flipnote */
-    isSpinoff: boolean;
-    /** Total number of animation frames */
-    frameCount: number;
-    /** In-app frame playback speed */
-    frameSpeed: number;
-    /** Index of the animation frame used as the Flipnote's thumbnail image */
-    thumbIndex: number;
-    /** Date representing when the file was last edited */
-    timestamp: Date;
-    /** Flipnote duration measured in seconds, assuming normal playback speed */
-    duration: number;
-    /** Metadata about the author of the original Flipnote file */
-    root: FlipnoteVersion;
-    /** Metadata about the previous author of the Flipnote file */
-    parent: FlipnoteVersion;
-    /** Metadata about the current author of the Flipnote file */
-    current: FlipnoteVersion;
+  /** File lock state. Locked Flipnotes cannot be edited by anyone other than the current author */
+  lock: boolean;
+  /** Playback loop state. If `true`, playback will loop once the end is reached */
+  loop: boolean;
+  /** Spinoffs are remixes of another user's Flipnote */
+  isSpinoff: boolean;
+  /** Total number of animation frames */
+  frameCount: number;
+  /** In-app frame playback speed */
+  frameSpeed: number;
+  /** Index of the animation frame used as the Flipnote's thumbnail image */
+  thumbIndex: number;
+  /** Date representing when the file was last edited */
+  timestamp: Date;
+  /** Flipnote duration measured in seconds, assuming normal playback speed */
+  duration: number;
+  /** Metadata about the author of the original Flipnote file */
+  root: FlipnoteVersion;
+  /** Metadata about the previous author of the Flipnote file */
+  parent: FlipnoteVersion;
+  /** Metadata about the current author of the Flipnote file */
+  current: FlipnoteVersion;
 };
 
 /** 
@@ -141,7 +139,7 @@ export abstract class FlipnoteParser extends DataStream {
   /** File metadata, see {@link FlipnoteMeta} for structure */
   public meta: FlipnoteMeta;
   /** File audio track info, see {@link FlipnoteAudioTrackInfo} */
-  public soundMeta: FlipnoteAudioTrackInfo;
+  public soundMeta: Map<FlipnoteAudioTrack, FlipnoteAudioTrackInfo>;
   /** Animation frame global layer visibility */
   public layerVisibility: FlipnoteLayerVisibility;
 
@@ -240,8 +238,6 @@ export abstract class FlipnoteParser extends DataStream {
    * @category Audio
   */
   public hasAudioTrack(trackId: FlipnoteAudioTrack): boolean {
-    if (this.soundMeta.hasOwnProperty(trackId) && this.soundMeta[trackId].length > 0)
-      return true
-    return false;
+    return this.soundMeta.has(trackId) && this.soundMeta.get(trackId).length > 0;
   }
 }

@@ -1,14 +1,23 @@
 // Entrypoint for web and node
 
+export * from './FlipnoteTypes';
+
 export {
-  parseSource,
   FlipnoteFormat,
-  Flipnote,
   FlipnoteMeta,
   FlipnoteAudioTrack,
+  FlipnoteAudioTrackInfo,
+  FlipnotePaletteDefinition,
+  FlipnoteLayerVisibility,
   KwzParser,
   PpmParser,
+  KwzParserSettings,
+  PpmParserSettings,
 } from './parsers';
+
+export { 
+  parseSource
+} from './parseSource';
 
 export {
   Player

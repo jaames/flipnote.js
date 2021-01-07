@@ -1,6 +1,6 @@
-import { FlipnoteParser } from './FlipnoteParserTypes';
-import { PpmParserSettings } from './PpmParser';
-import { KwzParserSettings } from './KwzParser';
+import { FlipnoteParser } from './parsers/FlipnoteParserTypes';
+import { PpmParserSettings } from './parsers/PpmParser';
+import { KwzParserSettings } from './parsers/KwzParser';
 
 /** Optional settings to pass to a Flipnote parser instance. See {@link PpmParserSettings} and {@link KwzParserSettings} */
 export type FlipnoteParserSettings = PpmParserSettings & KwzParserSettings;

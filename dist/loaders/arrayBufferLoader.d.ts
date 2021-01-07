@@ -1,4 +1,4 @@
-import { LoaderDefinition } from './loaderDefinition';
+import { LoaderDefinition } from './LoaderDefinition';
 /**
  * Loader for ArrayBuffer objects
  * @internal

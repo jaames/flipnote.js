@@ -1,12 +1,12 @@
 import { DataStream, ByteArray } from '../utils/index';
+import { EncoderBase } from './EncoderBase';
 import { LzwCompressor } from './LwzCompressor';
-import { Flipnote } from '../parsers/index';
-import { assert, assertNodeEnv, assertBrowserEnv } from '../utils';
+import { Flipnote } from '../FlipnoteTypes';
 
 /**
  * GIF RGBA palette color definition
  */
-type GifPaletteColor = [
+export type GifPaletteColor = [
    /** Red (0 to 255) */
    number,
    /** Green (0 to 255) */
@@ -37,7 +37,7 @@ export interface GifImageSettings {
  * Supports static single-frame GIF export as well as animated GIF
  * @category File Encoder
  */
-export class GifImage {
+export class GifImage extends EncoderBase {
 
   /**
    * Default GIF encoder settings
@@ -49,6 +49,7 @@ export class GifImage {
     colorDepth: 8
   };
 
+  public mimeType = 'gif/image';
   /** Image width */
   public width: number;
   /** Image height */
@@ -62,7 +63,6 @@ export class GifImage {
 
   private data: ByteArray;
   private compressor: LzwCompressor;
-  private dataUrl: string = null;
 
   /**
    * Create a new GIF image object
@@ -71,6 +71,7 @@ export class GifImage {
    * @param settings whether the gif should loop, the delay between frames, etc. See {@link GifEncoderSettings}
    */
   constructor(width: number, height: number, settings: Partial<GifImageSettings> = {}) {
+    super();
     this.width = width;
     this.height = height;
     this.data = new ByteArray();
@@ -226,61 +227,7 @@ export class GifImage {
   /**
    * Returns the GIF image data as an {@link https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/ArrayBuffer | ArrayBuffer}
    */
-  public getArrayBuffer(): ArrayBuffer {
+  public getArrayBuffer() {
     return this.data.getBuffer();
-  }
-
-  /**
-   * Returns the GIF image data as a NodeJS {@link https://nodejs.org/api/buffer.html | Buffer}
-   * 
-   * Note: This method does not work outside of NodeJS environments
-   */
-  public getBuffer(): Buffer {
-    assertNodeEnv();
-    return Buffer.from(this.getArrayBuffer());
-  }
-
-  /**
-   * Returns the GIF image data as a file {@link https://developer.mozilla.org/en-US/docs/Web/API/Blob | Blob}
-   */
-  public getBlob(): Blob {
-    assertBrowserEnv();
-    return new Blob([this.getArrayBuffer()], {type: 'image/gif'});
-  }
-
-  /**
-   * Returns the GIF image data as an {@link https://developer.mozilla.org/en-US/docs/Web/API/URL/createObjectURL | Object URL}
-   * 
-   * Note: This method does not work outside of browser environments
-   */
-  public getUrl(): string {
-    assertBrowserEnv();
-    if (this.dataUrl)
-      return this.dataUrl;
-    return window.URL.createObjectURL(this.getBlob());
-  }
-
-  /**
-   * Revokes this image's {@link https://developer.mozilla.org/en-US/docs/Web/API/URL/createObjectURL | Object URL} if one has been created, use this when the url created with {@link getUrl} is no longer needed, to preserve memory.
-   * 
-   * Note: This method does not work outside of browser environments
-   */
-
-  public revokeUrl(): void {
-    assertBrowserEnv();
-    if (this.dataUrl)
-      window.URL.revokeObjectURL(this.dataUrl);
-  }
-
-  /**
-   * Returns the GIF image data as an {@link https://developer.mozilla.org/en-US/docs/Web/API/HTMLImageElement/Image | Image} object
-   * 
-   * Note: This method does not work outside of browser environments
-   */
-  public getImage(): HTMLImageElement {
-    assertBrowserEnv();
-    const img = new Image(this.width, this.height);
-    img.src = this.getUrl();
-    return img;
   }
 }

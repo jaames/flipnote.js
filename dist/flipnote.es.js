@@ -1,10 +1,10 @@
 /*!!
- flipnote.js v5.1.4 (web build)
- A JavaScript library for parsing, converting, and in-browser playback of the proprietary animation formats used by Nintendo's Flipnote Studio and Flipnote Studio 3D apps.
- Flipnote Studio is (c) Nintendo Co., Ltd. This project isn't affiliated with or endorsed by them in any way.
- 2018 - 2021 James Daniel
- https://flipnote.js.org
- Keep on Flipnoting!
+flipnote.js v5.1.4 (web build)
+https://flipnote.js.org
+A JavaScript library for parsing, converting, and in-browser playback of the proprietary animation formats used by Nintendo's Flipnote Studio and Flipnote Studio 3D apps.
+2018 - 2021 James Daniel
+Flipnote Studio is (c) Nintendo Co., Ltd. This project isn't affiliated with or endorsed by them in any way.
+Keep on Flipnoting!
 */
 /** @internal */
 class ByteArray {
@@ -181,6 +181,91 @@ class DataStream {
     }
 }
 
+/** @internal */
+const ADPCM_INDEX_TABLE_2BIT = new Int8Array([
+    -1, 2, -1, 2
+]);
+/** @internal */
+const ADPCM_INDEX_TABLE_4BIT = new Int8Array([
+    -1, -1, -1, -1, 2, 4, 6, 8,
+    -1, -1, -1, -1, 2, 4, 6, 8
+]);
+/** @internal */
+const ADPCM_STEP_TABLE = new Int16Array([
+    7, 8, 9, 10, 11, 12, 13, 14, 16, 17,
+    19, 21, 23, 25, 28, 31, 34, 37, 41, 45,
+    50, 55, 60, 66, 73, 80, 88, 97, 107, 118,
+    130, 143, 157, 173, 190, 209, 230, 253, 279, 307,
+    337, 371, 408, 449, 494, 544, 598, 658, 724, 796,
+    876, 963, 1060, 1166, 1282, 1411, 1552, 1707, 1878, 2066,
+    2272, 2499, 2749, 3024, 3327, 3660, 4026, 4428, 4871, 5358,
+    5894, 6484, 7132, 7845, 8630, 9493, 10442, 11487, 12635, 13899,
+    15289, 16818, 18500, 20350, 22385, 24623, 27086, 29794, 32767, 0
+]);
+/** @internal */
+function clamp(n, l, h) {
+    if (n < l)
+        return l;
+    if (n > h)
+        return h;
+    return n;
+}
+/** @internal */
+function pcmGetSample(src, srcSize, srcPtr) {
+    if (srcPtr < 0 || srcPtr >= srcSize)
+        return 0;
+    return src[srcPtr];
+}
+/**
+ * Zero-order hold (nearest neighbour) audio interpolation
+ * Credit to SimonTime for the original C version
+ * @internal
+ */
+function pcmResampleNearestNeighbour(src, srcFreq, dstFreq) {
+    const srcLength = src.length;
+    const srcDuration = srcLength / srcFreq;
+    const dstLength = srcDuration * dstFreq;
+    const dst = new Int16Array(dstLength);
+    const adjFreq = srcFreq / dstFreq;
+    for (let dstPtr = 0; dstPtr < dstLength; dstPtr++) {
+        dst[dstPtr] = pcmGetSample(src, srcLength, Math.floor(dstPtr * adjFreq));
+    }
+    return dst;
+}
+/**
+ * Simple linear audio interpolation
+ * @internal
+ */
+function pcmResampleLinear(src, srcFreq, dstFreq) {
+    const srcLength = src.length;
+    const srcDuration = srcLength / srcFreq;
+    const dstLength = srcDuration * dstFreq;
+    const dst = new Int16Array(dstLength);
+    const adjFreq = srcFreq / dstFreq;
+    for (let dstPtr = 0, adj = 0, srcPtr = 0, weight = 0; dstPtr < dstLength; dstPtr++) {
+        adj = dstPtr * adjFreq;
+        srcPtr = Math.floor(adj);
+        weight = adj % 1;
+        dst[dstPtr] = (1 - weight) * pcmGetSample(src, srcLength, srcPtr) + weight * pcmGetSample(src, srcLength, srcPtr + 1);
+    }
+    return dst;
+}
+/**
+ * Get a ratio of how many audio samples hit the pcm_s16_le clipping bounds
+ * This can be used to detect corrupted audio
+ * @internal
+ */
+function pcmGetClippingRatio(src) {
+    const numSamples = src.length;
+    let numClippedSamples = 0;
+    for (let i = 0; i < numSamples; i++) {
+        const sample = src[i];
+        if (sample <= -32768 || sample >= 32767)
+            numClippedSamples += 1;
+    }
+    return numClippedSamples / numSamples;
+}
+
 /**
  * Assert condition is true
  * @internal
@@ -303,212 +388,8 @@ class FlipnoteParser extends DataStream {
      * @category Audio
     */
     hasAudioTrack(trackId) {
-        if (this.soundMeta.hasOwnProperty(trackId) && this.soundMeta[trackId].length > 0)
-            return true;
-        return false;
+        return this.soundMeta.has(trackId) && this.soundMeta.get(trackId).length > 0;
     }
-}
-
-/**
- * Loader for web url strings (Browser only)
- * @internal
- */
-const webUrlLoader = {
-    matches: function (source) {
-        return isBrowser && typeof source === 'string';
-    },
-    load: function (source, resolve, reject) {
-        const xhr = new XMLHttpRequest();
-        xhr.open('GET', source, true);
-        xhr.responseType = 'arraybuffer';
-        xhr.onreadystatechange = function (e) {
-            if (xhr.readyState === 4) {
-                if (xhr.status >= 200 && xhr.status < 300)
-                    resolve(xhr.response);
-                else
-                    reject({
-                        type: 'httpError',
-                        status: xhr.status,
-                        statusText: xhr.statusText
-                    });
-            }
-        };
-        xhr.send(null);
-    }
-};
-
-/**
- * Loader for web url strings (Node only)
- * @internal
- */
-const nodeUrlLoader = {
-    matches: function (source) {
-        return isNode && typeof source === 'string';
-    },
-    load: function (source, resolve, reject) {
-        const http = require('https');
-        http.get(source, (res) => {
-            const chunks = [];
-            res.on('data', chunk => chunks.push(chunk));
-            res.on('end', () => {
-                const buffer = Buffer.concat(chunks);
-                resolve(buffer.buffer);
-            });
-            res.on('error', (err) => reject(err));
-        });
-    }
-};
-
-/**
- * Loader for File objects (browser only)
- * @internal
- */
-const fileLoader = {
-    matches: function (source) {
-        return isBrowser && typeof File !== 'undefined' && source instanceof File;
-    },
-    load: function (source, resolve, reject) {
-        assert(typeof FileReader !== 'undefined');
-        const reader = new FileReader();
-        reader.onload = (event) => {
-            resolve(reader.result);
-        };
-        reader.onerror = (event) => {
-            reject({ type: 'fileReadError' });
-        };
-        reader.readAsArrayBuffer(source);
-    }
-};
-
-/**
- * Loader for Buffer objects (Node only)
- * @internal
- */
-const nodeBufferLoader = {
-    matches: function (source) {
-        return isNode && (source instanceof Buffer);
-    },
-    load: function (source, resolve, reject) {
-        resolve(source.buffer);
-    }
-};
-
-/**
- * Loader for ArrayBuffer objects
- * @internal
- */
-const arrayBufferLoader = {
-    matches: function (source) {
-        return (source instanceof ArrayBuffer);
-    },
-    load: function (source, resolve, reject) {
-        resolve(source);
-    }
-};
-
-/** @internal */
-const loaders = [
-    webUrlLoader,
-    nodeUrlLoader,
-    fileLoader,
-    nodeBufferLoader,
-    arrayBufferLoader
-];
-/** @internal */
-function loadSource(source) {
-    return new Promise((resolve, reject) => {
-        for (let i = 0; i < loaders.length; i++) {
-            const loader = loaders[i];
-            if (loader.matches(source))
-                return loader.load(source, resolve, reject);
-        }
-        reject('No loader available for source type');
-    });
-}
-
-/** @internal */
-const ADPCM_INDEX_TABLE_2BIT = new Int8Array([
-    -1, 2, -1, 2
-]);
-/** @internal */
-const ADPCM_INDEX_TABLE_4BIT = new Int8Array([
-    -1, -1, -1, -1, 2, 4, 6, 8,
-    -1, -1, -1, -1, 2, 4, 6, 8
-]);
-/** @internal */
-const ADPCM_STEP_TABLE = new Int16Array([
-    7, 8, 9, 10, 11, 12, 13, 14, 16, 17,
-    19, 21, 23, 25, 28, 31, 34, 37, 41, 45,
-    50, 55, 60, 66, 73, 80, 88, 97, 107, 118,
-    130, 143, 157, 173, 190, 209, 230, 253, 279, 307,
-    337, 371, 408, 449, 494, 544, 598, 658, 724, 796,
-    876, 963, 1060, 1166, 1282, 1411, 1552, 1707, 1878, 2066,
-    2272, 2499, 2749, 3024, 3327, 3660, 4026, 4428, 4871, 5358,
-    5894, 6484, 7132, 7845, 8630, 9493, 10442, 11487, 12635, 13899,
-    15289, 16818, 18500, 20350, 22385, 24623, 27086, 29794, 32767, 0
-]);
-/** @internal */
-function clamp(n, l, h) {
-    if (n < l)
-        return l;
-    if (n > h)
-        return h;
-    return n;
-}
-/** @internal */
-function pcmGetSample(src, srcSize, srcPtr) {
-    if (srcPtr < 0 || srcPtr >= srcSize)
-        return 0;
-    return src[srcPtr];
-}
-/**
- * Zero-order hold (nearest neighbour) audio interpolation
- * Credit to SimonTime for the original C version
- * @internal
- */
-function pcmResampleNearestNeighbour(src, srcFreq, dstFreq) {
-    const srcLength = src.length;
-    const srcDuration = srcLength / srcFreq;
-    const dstLength = srcDuration * dstFreq;
-    const dst = new Int16Array(dstLength);
-    const adjFreq = srcFreq / dstFreq;
-    for (let dstPtr = 0; dstPtr < dstLength; dstPtr++) {
-        dst[dstPtr] = pcmGetSample(src, srcLength, Math.floor(dstPtr * adjFreq));
-    }
-    return dst;
-}
-/**
- * Simple linear audio interpolation
- * @internal
- */
-function pcmResampleLinear(src, srcFreq, dstFreq) {
-    const srcLength = src.length;
-    const srcDuration = srcLength / srcFreq;
-    const dstLength = srcDuration * dstFreq;
-    const dst = new Int16Array(dstLength);
-    const adjFreq = srcFreq / dstFreq;
-    for (let dstPtr = 0, adj = 0, srcPtr = 0, weight = 0; dstPtr < dstLength; dstPtr++) {
-        adj = dstPtr * adjFreq;
-        srcPtr = Math.floor(adj);
-        weight = adj % 1;
-        dst[dstPtr] = (1 - weight) * pcmGetSample(src, srcLength, srcPtr) + weight * pcmGetSample(src, srcLength, srcPtr + 1);
-    }
-    return dst;
-}
-/**
- * Get a ratio of how many audio samples hit the pcm_s16_le clipping bounds
- * This can be used to detect corrupted audio
- * @internal
- */
-function pcmGetClippingRatio(src) {
-    const numSamples = src.length;
-    let numClippedSamples = 0;
-    for (let i = 0; i < numSamples; i++) {
-        const sample = src[i];
-        if (sample == -32768 || sample == 32767)
-            numClippedSamples += 1;
-    }
-    return numClippedSamples / numSamples;
 }
 
 /**
@@ -712,12 +593,12 @@ class PpmParser extends FlipnoteParser {
         this.framerate = PPM_FRAMERATES[this.frameSpeed];
         this.duration = timeGetNoteDuration(this.frameCount, this.framerate);
         this.bgmrate = PPM_FRAMERATES[this.bgmSpeed];
-        this.soundMeta = {
-            [FlipnoteAudioTrack.BGM]: { ptr: ptr, length: bgmLen },
-            [FlipnoteAudioTrack.SE1]: { ptr: ptr += bgmLen, length: se1Len },
-            [FlipnoteAudioTrack.SE2]: { ptr: ptr += se1Len, length: se2Len },
-            [FlipnoteAudioTrack.SE3]: { ptr: ptr += se2Len, length: se3Len },
-        };
+        const soundMeta = new Map();
+        soundMeta.set(FlipnoteAudioTrack.BGM, { ptr: ptr, length: bgmLen });
+        soundMeta.set(FlipnoteAudioTrack.SE1, { ptr: ptr += bgmLen, length: se1Len });
+        soundMeta.set(FlipnoteAudioTrack.SE2, { ptr: ptr += se1Len, length: se2Len });
+        soundMeta.set(FlipnoteAudioTrack.SE3, { ptr: ptr += se2Len, length: se3Len });
+        this.soundMeta = soundMeta;
     }
     isNewFrame(frameIndex) {
         this.seek(this.frameOffsets[frameIndex]);
@@ -984,7 +865,7 @@ class PpmParser extends FlipnoteParser {
      * @category Audio
     */
     getAudioTrackRaw(trackId) {
-        const trackMeta = this.soundMeta[trackId];
+        const trackMeta = this.soundMeta.get(trackId);
         assert(trackMeta.ptr + trackMeta.length < this.byteLength);
         this.seek(trackMeta.ptr);
         return this.readBytes(trackMeta.length);
@@ -1407,13 +1288,13 @@ class KwzParser extends FlipnoteParser {
         assert(this.bgmSpeed <= 10);
         this.bgmrate = KWZ_FRAMERATES[this.bgmSpeed];
         const trackSizes = new Uint32Array(this.buffer, ptr + 4, 20);
-        this.soundMeta = {
-            [FlipnoteAudioTrack.BGM]: { ptr: ptr += 28, length: trackSizes[0] },
-            [FlipnoteAudioTrack.SE1]: { ptr: ptr += trackSizes[0], length: trackSizes[1] },
-            [FlipnoteAudioTrack.SE2]: { ptr: ptr += trackSizes[1], length: trackSizes[2] },
-            [FlipnoteAudioTrack.SE3]: { ptr: ptr += trackSizes[2], length: trackSizes[3] },
-            [FlipnoteAudioTrack.SE4]: { ptr: ptr += trackSizes[3], length: trackSizes[4] },
-        };
+        const soundMeta = new Map();
+        soundMeta.set(FlipnoteAudioTrack.BGM, { ptr: ptr += 28, length: trackSizes[0] });
+        soundMeta.set(FlipnoteAudioTrack.SE1, { ptr: ptr += trackSizes[0], length: trackSizes[1] });
+        soundMeta.set(FlipnoteAudioTrack.SE2, { ptr: ptr += trackSizes[1], length: trackSizes[2] });
+        soundMeta.set(FlipnoteAudioTrack.SE3, { ptr: ptr += trackSizes[2], length: trackSizes[3] });
+        soundMeta.set(FlipnoteAudioTrack.SE4, { ptr: ptr += trackSizes[3], length: trackSizes[4] });
+        this.soundMeta = soundMeta;
     }
     /**
      * Get the color palette indices for a given frame. RGBA colors for these values can be indexed from {@link KwzParser.globalPalette}
@@ -1796,7 +1677,7 @@ class KwzParser extends FlipnoteParser {
      * @category Audio
     */
     getAudioTrackRaw(trackId) {
-        const trackMeta = this.soundMeta[trackId];
+        const trackMeta = this.soundMeta.get(trackId);
         assert(trackMeta.ptr + trackMeta.length < this.byteLength);
         return new Uint8Array(this.buffer, trackMeta.ptr, trackMeta.length);
     }
@@ -1964,6 +1845,123 @@ KwzParser.globalPalette = [
 ];
 
 /**
+ * Loader for web url strings (Browser only)
+ * @internal
+ */
+const webUrlLoader = {
+    matches: function (source) {
+        return isBrowser && typeof source === 'string';
+    },
+    load: function (source, resolve, reject) {
+        const xhr = new XMLHttpRequest();
+        xhr.open('GET', source, true);
+        xhr.responseType = 'arraybuffer';
+        xhr.onreadystatechange = function (e) {
+            if (xhr.readyState === 4) {
+                if (xhr.status >= 200 && xhr.status < 300)
+                    resolve(xhr.response);
+                else
+                    reject({
+                        type: 'httpError',
+                        status: xhr.status,
+                        statusText: xhr.statusText
+                    });
+            }
+        };
+        xhr.send(null);
+    }
+};
+
+/**
+ * Loader for web url strings (Node only)
+ * @internal
+ */
+const nodeUrlLoader = {
+    matches: function (source) {
+        return isNode && typeof source === 'string';
+    },
+    load: function (source, resolve, reject) {
+        const http = require('https');
+        http.get(source, (res) => {
+            const chunks = [];
+            res.on('data', chunk => chunks.push(chunk));
+            res.on('end', () => {
+                const buffer = Buffer.concat(chunks);
+                resolve(buffer.buffer);
+            });
+            res.on('error', (err) => reject(err));
+        });
+    }
+};
+
+/**
+ * Loader for File objects (browser only)
+ * @internal
+ */
+const fileLoader = {
+    matches: function (source) {
+        return isBrowser && typeof File !== 'undefined' && source instanceof File;
+    },
+    load: function (source, resolve, reject) {
+        assert(typeof FileReader !== 'undefined');
+        const reader = new FileReader();
+        reader.onload = (event) => {
+            resolve(reader.result);
+        };
+        reader.onerror = (event) => {
+            reject({ type: 'fileReadError' });
+        };
+        reader.readAsArrayBuffer(source);
+    }
+};
+
+/**
+ * Loader for Buffer objects (Node only)
+ * @internal
+ */
+const nodeBufferLoader = {
+    matches: function (source) {
+        return isNode && (source instanceof Buffer);
+    },
+    load: function (source, resolve, reject) {
+        resolve(source.buffer);
+    }
+};
+
+/**
+ * Loader for ArrayBuffer objects
+ * @internal
+ */
+const arrayBufferLoader = {
+    matches: function (source) {
+        return (source instanceof ArrayBuffer);
+    },
+    load: function (source, resolve, reject) {
+        resolve(source);
+    }
+};
+
+/** @internal */
+const loaders = [
+    webUrlLoader,
+    nodeUrlLoader,
+    fileLoader,
+    nodeBufferLoader,
+    arrayBufferLoader
+];
+/** @internal */
+function loadSource(source) {
+    return new Promise((resolve, reject) => {
+        for (let i = 0; i < loaders.length; i++) {
+            const loader = loaders[i];
+            if (loader.matches(source))
+                return loader.load(source, resolve, reject);
+        }
+        reject('No loader available for source type');
+    });
+}
+
+/**
  * Load a Flipnote from a given source, returning a promise with a parser object.
  * It will auto-detect the Flipnote format and return either a {@link PpmParser} or {@link KwzParser} accordingly.
  *
@@ -2057,7 +2055,7 @@ const supportedEvents = [
     PlayerEvent.Error,
 ];
 
-/* @license twgl.js 4.15.2 Copyright (c) 2015, Gregg Tavares All Rights Reserved.
+/* @license twgl.js 4.17.0 Copyright (c) 2015, Gregg Tavares All Rights Reserved.
 Available via the MIT license.
 see: http://github.com/greggman/twgl.js for details */
 
@@ -3198,7 +3196,7 @@ function createUniformSetters(gl, program) {
    * @returns {function} the created setter.
    */
   function createUniformSetter(program, uniformInfo, location) {
-    const isArray = (uniformInfo.size > 1 && uniformInfo.name.substr(-3) === "[0]");
+    const isArray = uniformInfo.name.endsWith("[0]");
     const type = uniformInfo.type;
     const typeInfo = typeMap[type];
     if (!typeInfo) {
@@ -3235,7 +3233,7 @@ function createUniformSetters(gl, program) {
     }
     let name = uniformInfo.name;
     // remove the array suffix.
-    if (name.substr(-3) === "[0]") {
+    if (name.endsWith("[0]")) {
       name = name.substr(0, name.length - 3);
     }
     const location = gl.getUniformLocation(program, uniformInfo.name);
@@ -5015,6 +5013,51 @@ class Player {
     }
 }
 
+class EncoderBase {
+    constructor() {
+        this.dataUrl = null;
+    }
+    /**
+     * Returns the file data as a NodeJS {@link https://nodejs.org/api/buffer.html | Buffer}
+     *
+     * Note: This method does not work outside of NodeJS environments
+     */
+    getBuffer() {
+        assertNodeEnv();
+        return Buffer.from(this.getArrayBuffer());
+    }
+    /**
+     * Returns the file data as a {@link https://developer.mozilla.org/en-US/docs/Web/API/Blob | Blob}
+     */
+    getBlob() {
+        assertBrowserEnv();
+        return new Blob([this.getArrayBuffer()], {
+            type: this.mimeType
+        });
+    }
+    /**
+     * Returns the file data as an {@link https://developer.mozilla.org/en-US/docs/Web/API/URL/createObjectURL | Object URL}
+     *
+     * Note: This method does not work outside of browser environments
+     */
+    getUrl() {
+        assertBrowserEnv();
+        if (this.dataUrl)
+            return this.dataUrl;
+        return window.URL.createObjectURL(this.getBlob());
+    }
+    /**
+     * Revokes this file's {@link https://developer.mozilla.org/en-US/docs/Web/API/URL/createObjectURL | Object URL} if one has been created, use this when the url created with {@link getUrl} is no longer needed, to preserve memory.
+     *
+     * Note: This method does not work outside of browser environments
+     */
+    revokeUrl() {
+        assertBrowserEnv();
+        if (this.dataUrl)
+            window.URL.revokeObjectURL(this.dataUrl);
+    }
+}
+
 /*
   LZWEncoder.js
 
@@ -5257,7 +5300,7 @@ class LzwCompressor {
  * Supports static single-frame GIF export as well as animated GIF
  * @category File Encoder
  */
-class GifImage {
+class GifImage extends EncoderBase {
     /**
      * Create a new GIF image object
      * @param width image width
@@ -5265,9 +5308,10 @@ class GifImage {
      * @param settings whether the gif should loop, the delay between frames, etc. See {@link GifEncoderSettings}
      */
     constructor(width, height, settings = {}) {
+        super();
+        this.mimeType = 'gif/image';
         /** Number of current GIF frames */
         this.frameCount = 0;
-        this.dataUrl = null;
         this.width = width;
         this.height = height;
         this.data = new ByteArray();
@@ -5410,54 +5454,6 @@ class GifImage {
     getArrayBuffer() {
         return this.data.getBuffer();
     }
-    /**
-     * Returns the GIF image data as a NodeJS {@link https://nodejs.org/api/buffer.html | Buffer}
-     *
-     * Note: This method does not work outside of NodeJS environments
-     */
-    getBuffer() {
-        assertNodeEnv();
-        return Buffer.from(this.getArrayBuffer());
-    }
-    /**
-     * Returns the GIF image data as a file {@link https://developer.mozilla.org/en-US/docs/Web/API/Blob | Blob}
-     */
-    getBlob() {
-        assertBrowserEnv();
-        return new Blob([this.getArrayBuffer()], { type: 'image/gif' });
-    }
-    /**
-     * Returns the GIF image data as an {@link https://developer.mozilla.org/en-US/docs/Web/API/URL/createObjectURL | Object URL}
-     *
-     * Note: This method does not work outside of browser environments
-     */
-    getUrl() {
-        assertBrowserEnv();
-        if (this.dataUrl)
-            return this.dataUrl;
-        return window.URL.createObjectURL(this.getBlob());
-    }
-    /**
-     * Revokes this image's {@link https://developer.mozilla.org/en-US/docs/Web/API/URL/createObjectURL | Object URL} if one has been created, use this when the url created with {@link getUrl} is no longer needed, to preserve memory.
-     *
-     * Note: This method does not work outside of browser environments
-     */
-    revokeUrl() {
-        assertBrowserEnv();
-        if (this.dataUrl)
-            window.URL.revokeObjectURL(this.dataUrl);
-    }
-    /**
-     * Returns the GIF image data as an {@link https://developer.mozilla.org/en-US/docs/Web/API/HTMLImageElement/Image | Image} object
-     *
-     * Note: This method does not work outside of browser environments
-     */
-    getImage() {
-        assertBrowserEnv();
-        const img = new Image(this.width, this.height);
-        img.src = this.getUrl();
-        return img;
-    }
 }
 /**
  * Default GIF encoder settings
@@ -5476,7 +5472,7 @@ GifImage.defaultSettings = {
  *
  * @category File Encoder
  */
-class WavAudio {
+class WavAudio extends EncoderBase {
     /**
      * Create a new WAV audio object
      * @param sampleRate audio samplerate
@@ -5484,6 +5480,7 @@ class WavAudio {
      * @param bitsPerSample number of bits per sample
      */
     constructor(sampleRate, channels = 1, bitsPerSample = 16) {
+        super();
         this.sampleRate = sampleRate;
         this.channels = channels;
         this.bitsPerSample = bitsPerSample;
@@ -5529,7 +5526,7 @@ class WavAudio {
         const sampleRate = note.sampleRate;
         const wav = new WavAudio(sampleRate, 1, 16);
         const pcm = note.getAudioMasterPcm(sampleRate);
-        wav.writeFrames(pcm);
+        wav.writeSamples(pcm);
         return wav;
     }
     /**
@@ -5541,14 +5538,14 @@ class WavAudio {
         const sampleRate = flipnote.sampleRate;
         const wav = new WavAudio(sampleRate, 1, 16);
         const pcm = flipnote.getAudioTrackPcm(trackId, sampleRate);
-        wav.writeFrames(pcm);
+        wav.writeSamples(pcm);
         return wav;
     }
     /**
      * Add PCM audio frames to the WAV
      * @param pcmData signed int16 PCM audio samples
      */
-    writeFrames(pcmData) {
+    writeSamples(pcmData) {
         let header = this.header;
         // fill in filesize
         header.seek(4);
@@ -5568,25 +5565,6 @@ class WavAudio {
         resultBytes.set(headerBytes);
         resultBytes.set(pcmBytes, headerBytes.byteLength);
         return resultBytes.buffer;
-    }
-    /**
-     * Returns the WAV audio data as a NodeJS {@link https://nodejs.org/api/buffer.html | Buffer}
-     *
-     * Note: This method does not work outside of NodeJS environments
-     */
-    getBuffer() {
-        assertNodeEnv();
-        return Buffer.from(this.getArrayBuffer());
-    }
-    /**
-     * Returns the GIF image data as a file {@link https://developer.mozilla.org/en-US/docs/Web/API/Blob | Blob}
-     *
-     * Note: This method will not work outside of browser environments
-     */
-    getBlob() {
-        assertBrowserEnv();
-        const buffer = this.getArrayBuffer();
-        return new Blob([buffer], { type: 'audio/wav' });
     }
 }
 

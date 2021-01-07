@@ -21,7 +21,7 @@
 * Built-in GIF and WAV converters
 * Works in web browser and NodeJS environments
 * Exports full Typescript types
-* Less than 20kb when minified & gzipped
+* 20kb minified & gzipped
 
 ## Background
 

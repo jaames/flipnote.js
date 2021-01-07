@@ -1,4 +1,4 @@
-import { LoaderDefinition } from './loaderDefinition';
+import { LoaderDefinition } from './LoaderDefinition';
 /**
  * Loader for web url strings (Node only)
  * @internal

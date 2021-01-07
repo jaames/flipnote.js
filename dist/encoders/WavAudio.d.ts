@@ -1,5 +1,7 @@
-/// <reference types="node" />
-import { Flipnote, FlipnoteAudioTrack } from '../parsers/index';
+import { EncoderBase } from './EncoderBase';
+import { Flipnote } from '../FlipnoteTypes';
+import { FlipnoteAudioTrack } from '../parsers/index';
+export declare type WavSampleBuffer = Int16Array | Float32Array;
 /**
  * Wav audio object. Used to create a {@link https://en.wikipedia.org/wiki/WAV | WAV} file from a PCM audio stream or a {@link Flipnote} object.
  *
@@ -7,7 +9,8 @@ import { Flipnote, FlipnoteAudioTrack } from '../parsers/index';
  *
  * @category File Encoder
  */
-export declare class WavAudio {
+export declare class WavAudio extends EncoderBase {
+    mimeType: 'audio/wav';
     /** Audio samplerate */
     sampleRate: number;
     /** Number of audio channels */
@@ -39,21 +42,9 @@ export declare class WavAudio {
      * Add PCM audio frames to the WAV
      * @param pcmData signed int16 PCM audio samples
      */
-    writeFrames(pcmData: Int16Array): void;
+    writeSamples(pcmData: Int16Array): void;
     /**
      * Returns the WAV audio data as an {@link https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/ArrayBuffer | ArrayBuffer}
      */
     getArrayBuffer(): ArrayBufferLike;
-    /**
-     * Returns the WAV audio data as a NodeJS {@link https://nodejs.org/api/buffer.html | Buffer}
-     *
-     * Note: This method does not work outside of NodeJS environments
-     */
-    getBuffer(): Buffer;
-    /**
-     * Returns the GIF image data as a file {@link https://developer.mozilla.org/en-US/docs/Web/API/Blob | Blob}
-     *
-     * Note: This method will not work outside of browser environments
-     */
-    getBlob(): Blob;
 }

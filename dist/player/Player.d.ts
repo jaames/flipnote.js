@@ -1,4 +1,6 @@
-import { FlipnoteSource, Flipnote, FlipnoteFormat, FlipnoteMeta } from '../parsers';
+import { Flipnote } from '../FlipnoteTypes';
+import { FlipnoteFormat, FlipnoteMeta } from '../parsers';
+import { FlipnoteSource } from '../parseSource';
 import { PlayerEvent, PlayerEventMap } from './PlayerEvent';
 import { WebglRenderer } from '../webgl';
 import { WebAudioPlayer } from '../webaudio';

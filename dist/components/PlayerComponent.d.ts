@@ -13,7 +13,7 @@ declare const PlayerComponent_base: {
         readonly layerVisibility: Record<number, boolean>;
         autoplay: boolean;
         supportedEvents: PlayerEvent[];
-        _src: import("../parsers").FlipnoteSource;
+        _src: import("../parseSource").FlipnoteSource;
         _loop: boolean;
         _volume: number;
         _muted: boolean;
@@ -28,7 +28,7 @@ declare const PlayerComponent_base: {
         isPlaying: boolean;
         wasPlaying: boolean;
         isSeeking: boolean;
-        src: import("../parsers").FlipnoteSource;
+        src: import("../parseSource").FlipnoteSource;
         paused: boolean;
         currentFrame: number;
         currentTime: number;
@@ -41,7 +41,7 @@ declare const PlayerComponent_base: {
         readonly frameSpeed: number;
         readonly buffered: TimeRanges;
         readonly seekable: TimeRanges;
-        readonly currentSrc: import("../parsers").FlipnoteSource;
+        readonly currentSrc: import("../parseSource").FlipnoteSource;
         readonly videoWidth: number;
         readonly videoHeight: number;
         load(source?: any): Promise<void>;

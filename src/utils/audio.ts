@@ -81,16 +81,12 @@ export function pcmResampleLinear(src: Int16Array, srcFreq: number, dstFreq: num
  * @internal
  */
 export function pcmGetClippingRatio(src: Int16Array) {
-  
   const numSamples = src.length;
   let numClippedSamples = 0;
-
   for (let i = 0; i < numSamples; i++) {
     const sample = src[i];
-    if (sample == -32768 || sample == 32767)
+    if (sample <= -32768 || sample >= 32767)
       numClippedSamples += 1;
   }
-
   return numClippedSamples / numSamples;
-
 }

@@ -1,5 +1,5 @@
 import { isBrowser } from '../utils';
-import { LoaderDefinition } from './loaderDefinition';
+import { LoaderDefinition } from './LoaderDefinition';
 
 /** 
  * Loader for web url strings (Browser only)

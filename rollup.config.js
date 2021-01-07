@@ -5,6 +5,7 @@ import commonJs from '@rollup/plugin-commonjs';
 import replace from '@rollup/plugin-replace';
 import typescript from 'rollup-plugin-typescript2';
 import { terser } from 'rollup-plugin-terser';
+import minifyHtml from 'rollup-plugin-minify-html-literals';
 import serve from 'rollup-plugin-serve';
 import livereload from 'rollup-plugin-livereload';
 import bundleSize from 'rollup-plugin-bundle-size';
@@ -20,12 +21,12 @@ const isTargetWeb = target === 'web';
 const isTargetWebcomponent = target === 'webcomponent';
 
 const banner = `/*!!
- flipnote.js v${ version } (${ target } build)
- A JavaScript library for parsing, converting, and in-browser playback of the proprietary animation formats used by Nintendo's Flipnote Studio and Flipnote Studio 3D apps.
- Flipnote Studio is (c) Nintendo Co., Ltd. This project isn't affiliated with or endorsed by them in any way.
- 2018 - 2021 James Daniel
- https://flipnote.js.org
- Keep on Flipnoting!
+flipnote.js v${ version } (${ target } build)
+https://flipnote.js.org
+A JavaScript library for parsing, converting, and in-browser playback of the proprietary animation formats used by Nintendo's Flipnote Studio and Flipnote Studio 3D apps.
+2018 - 2021 James Daniel
+Flipnote Studio is (c) Nintendo Co., Ltd. This project isn't affiliated with or endorsed by them in any way.
+Keep on Flipnoting!
 */`;
 
 module.exports = {
@@ -63,20 +64,6 @@ module.exports = {
     }
   ].filter(Boolean),
   plugins: [
-    isTargetWebcomponent && svgo({
-      plugins: [
-        {
-          removeViewBox: false
-        },
-        {
-          removeDimensions: true
-        },
-        {
-          removeUnknownsAndDefaults: true
-        },
-      ]
-    }),
-    bundleSize(),
     nodeResolve({
       // browser: true
     }),
@@ -110,6 +97,7 @@ module.exports = {
       },
     }),
     glslify(),
+    bundleSize(),
     // devserver + livereload
     devserver && serve({
       contentBase: ['dist', 'test']
@@ -128,6 +116,20 @@ module.exports = {
           return false;
         }
       }
+    }),
+    isProdBuild && isTargetWebcomponent && minifyHtml(),
+    isTargetWebcomponent && svgo({
+      plugins: [
+        {
+          removeViewBox: false
+        },
+        {
+          removeDimensions: true
+        },
+        {
+          removeUnknownsAndDefaults: true
+        },
+      ]
     }),
   ].filter(Boolean)
 };

@@ -1,5 +1,5 @@
 /// <reference types="node" />
-import { LoaderDefinition } from './loaderDefinition';
+import { LoaderDefinition } from './LoaderDefinition';
 /**
  * Loader for Buffer objects (Node only)
  * @internal

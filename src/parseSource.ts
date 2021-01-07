@@ -1,6 +1,6 @@
-import { loadSource } from '../loaders';
-import { PpmParser } from './PpmParser';
-import { KwzParser } from './KwzParser';
+import { PpmParser } from './parsers/PpmParser';
+import { KwzParser } from './parsers/KwzParser';
+import { loadSource } from './loaders';
 
 import { Flipnote, FlipnoteParserSettings } from './FlipnoteTypes';
 

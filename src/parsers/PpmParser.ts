@@ -31,14 +31,11 @@ import {
 } from './FlipnoteParserTypes';
 
 import {
+  ADPCM_INDEX_TABLE_4BIT,
+  ADPCM_STEP_TABLE,
   clamp,
   pcmResampleNearestNeighbour,
   pcmGetClippingRatio,
-  ADPCM_INDEX_TABLE_4BIT,
-  ADPCM_STEP_TABLE
-} from './audioUtils';
-
-import {
   assert,
   dateFromNintendoTimestamp,
   timeGetNoteDuration
@@ -71,7 +68,7 @@ export interface PpmMeta extends FlipnoteMeta {
  * PPM parser options for enabling optimisations and other extra features.
  * None are currently implemented
  */
-export interface PpmParserSettings {};
+export type PpmParserSettings = {};
 
 /**
  * Parser class for (DSiWare) Flipnote Studio's PPM animation format.
@@ -279,12 +276,12 @@ export class PpmParser extends FlipnoteParser {
     this.framerate = PPM_FRAMERATES[this.frameSpeed];
     this.duration = timeGetNoteDuration(this.frameCount, this.framerate);
     this.bgmrate = PPM_FRAMERATES[this.bgmSpeed];
-    this.soundMeta = {
-      [FlipnoteAudioTrack.BGM]: {ptr: ptr,           length: bgmLen},
-      [FlipnoteAudioTrack.SE1]: {ptr: ptr += bgmLen, length: se1Len},
-      [FlipnoteAudioTrack.SE2]: {ptr: ptr += se1Len, length: se2Len},
-      [FlipnoteAudioTrack.SE3]: {ptr: ptr += se2Len, length: se3Len},
-    };
+    const soundMeta = new Map();
+    soundMeta.set(FlipnoteAudioTrack.BGM, {ptr: ptr,           length: bgmLen});
+    soundMeta.set(FlipnoteAudioTrack.SE1, {ptr: ptr += bgmLen, length: se1Len});
+    soundMeta.set(FlipnoteAudioTrack.SE2, {ptr: ptr += se1Len, length: se2Len});
+    soundMeta.set(FlipnoteAudioTrack.SE3, {ptr: ptr += se2Len, length: se3Len});
+    this.soundMeta = soundMeta;
   }
 
   private isNewFrame(frameIndex: number) {
@@ -563,7 +560,7 @@ export class PpmParser extends FlipnoteParser {
    * @category Audio
   */
   public getAudioTrackRaw(trackId: FlipnoteAudioTrack) {
-    const trackMeta = this.soundMeta[trackId];
+    const trackMeta = this.soundMeta.get(trackId);
     assert(trackMeta.ptr + trackMeta.length < this.byteLength);
     this.seek(trackMeta.ptr);
     return this.readBytes(trackMeta.length);

@@ -33,8 +33,7 @@ export interface PpmMeta extends FlipnoteMeta {
  * PPM parser options for enabling optimisations and other extra features.
  * None are currently implemented
  */
-export interface PpmParserSettings {
-}
+export declare type PpmParserSettings = {};
 /**
  * Parser class for (DSiWare) Flipnote Studio's PPM animation format.
  *

@@ -13,7 +13,7 @@ import {
 
 import { Player, PlayerEvent } from '../player';
 import { PlayerMixin } from './PlayerMixin';
-import { nextPaint } from './nextPaint';
+import { nextPaint } from '../utils';
 
 import { SliderComponent } from './SliderComponent';
 import { IconComponent } from './IconComponent';

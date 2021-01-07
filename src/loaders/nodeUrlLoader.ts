@@ -1,6 +1,6 @@
 import { isNode } from '../utils';
 import { ServerResponse } from 'http';
-import { LoaderDefinition } from './loaderDefinition';
+import { LoaderDefinition } from './LoaderDefinition';
 
 /** 
  * Loader for web url strings (Node only)

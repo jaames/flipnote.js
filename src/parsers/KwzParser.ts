@@ -7,15 +7,12 @@ import {
 } from './FlipnoteParserTypes';
 
 import {
+  ADPCM_STEP_TABLE,
+  ADPCM_INDEX_TABLE_2BIT,
+  ADPCM_INDEX_TABLE_4BIT,
   clamp,
   pcmResampleLinear,
   pcmGetClippingRatio,
-  ADPCM_STEP_TABLE,
-  ADPCM_INDEX_TABLE_2BIT,
-  ADPCM_INDEX_TABLE_4BIT
-} from './audioUtils';
-
-import {
   assert,
   dateFromNintendoTimestamp,
   timeGetNoteDuration
@@ -143,7 +140,7 @@ export interface KwzFrameMeta {
 /** 
  * KWZ parser options for enabling optimisations and other extra features
  */
-export interface KwzParserSettings {
+export type KwzParserSettings = {
   /** 
    * Skip full metadata parsing for quickness
    */
@@ -422,13 +419,13 @@ export class KwzParser extends FlipnoteParser {
     assert(this.bgmSpeed <= 10);
     this.bgmrate = KWZ_FRAMERATES[this.bgmSpeed];
     const trackSizes = new Uint32Array(this.buffer, ptr + 4, 20);
-    this.soundMeta = {
-      [FlipnoteAudioTrack.BGM]: {ptr: ptr += 28,            length: trackSizes[0]},
-      [FlipnoteAudioTrack.SE1]: {ptr: ptr += trackSizes[0], length: trackSizes[1]},
-      [FlipnoteAudioTrack.SE2]: {ptr: ptr += trackSizes[1], length: trackSizes[2]},
-      [FlipnoteAudioTrack.SE3]: {ptr: ptr += trackSizes[2], length: trackSizes[3]},
-      [FlipnoteAudioTrack.SE4]: {ptr: ptr += trackSizes[3], length: trackSizes[4]},
-    };
+    const soundMeta = new Map();
+    soundMeta.set(FlipnoteAudioTrack.BGM, {ptr: ptr += 28,            length: trackSizes[0]});
+    soundMeta.set(FlipnoteAudioTrack.SE1, {ptr: ptr += trackSizes[0], length: trackSizes[1]});
+    soundMeta.set(FlipnoteAudioTrack.SE2, {ptr: ptr += trackSizes[1], length: trackSizes[2]});
+    soundMeta.set(FlipnoteAudioTrack.SE3, {ptr: ptr += trackSizes[2], length: trackSizes[3]});
+    soundMeta.set(FlipnoteAudioTrack.SE4, {ptr: ptr += trackSizes[3], length: trackSizes[4]});
+    this.soundMeta = soundMeta;
   }
 
   /** 
@@ -842,7 +839,7 @@ export class KwzParser extends FlipnoteParser {
    * @category Audio
   */
   public getAudioTrackRaw(trackId: FlipnoteAudioTrack) {
-    const trackMeta = this.soundMeta[trackId];
+    const trackMeta = this.soundMeta.get(trackId);
     assert(trackMeta.ptr + trackMeta.length < this.byteLength);
     return new Uint8Array(this.buffer, trackMeta.ptr, trackMeta.length);
   }

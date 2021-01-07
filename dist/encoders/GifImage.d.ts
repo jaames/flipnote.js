@@ -1,17 +1,18 @@
-/// <reference types="node" />
-import { Flipnote } from '../parsers/index';
+import { EncoderBase } from './EncoderBase';
+import { Flipnote } from '../FlipnoteTypes';
 /**
  * GIF RGBA palette color definition
  */
-declare type GifPaletteColor = [
-/** Red (0 to 255) */
-number, 
-/** Green (0 to 255) */
-number, 
-/** Blue (0 to 255) */
-number, 
-/** Alpha (0 to 255) */
-number];
+export declare type GifPaletteColor = [
+    /** Red (0 to 255) */
+    number,
+    /** Green (0 to 255) */
+    number,
+    /** Blue (0 to 255) */
+    number,
+    /** Alpha (0 to 255) */
+    number
+];
 /**
  * Optional GIF encoder settings
  */
@@ -31,11 +32,12 @@ export interface GifImageSettings {
  * Supports static single-frame GIF export as well as animated GIF
  * @category File Encoder
  */
-export declare class GifImage {
+export declare class GifImage extends EncoderBase {
     /**
      * Default GIF encoder settings
      */
     static defaultSettings: GifImageSettings;
+    mimeType: string;
     /** Image width */
     width: number;
     /** Image height */
@@ -48,7 +50,6 @@ export declare class GifImage {
     frameCount: number;
     private data;
     private compressor;
-    private dataUrl;
     /**
      * Create a new GIF image object
      * @param width image width
@@ -86,34 +87,5 @@ export declare class GifImage {
     /**
      * Returns the GIF image data as an {@link https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/ArrayBuffer | ArrayBuffer}
      */
-    getArrayBuffer(): ArrayBuffer;
-    /**
-     * Returns the GIF image data as a NodeJS {@link https://nodejs.org/api/buffer.html | Buffer}
-     *
-     * Note: This method does not work outside of NodeJS environments
-     */
-    getBuffer(): Buffer;
-    /**
-     * Returns the GIF image data as a file {@link https://developer.mozilla.org/en-US/docs/Web/API/Blob | Blob}
-     */
-    getBlob(): Blob;
-    /**
-     * Returns the GIF image data as an {@link https://developer.mozilla.org/en-US/docs/Web/API/URL/createObjectURL | Object URL}
-     *
-     * Note: This method does not work outside of browser environments
-     */
-    getUrl(): string;
-    /**
-     * Revokes this image's {@link https://developer.mozilla.org/en-US/docs/Web/API/URL/createObjectURL | Object URL} if one has been created, use this when the url created with {@link getUrl} is no longer needed, to preserve memory.
-     *
-     * Note: This method does not work outside of browser environments
-     */
-    revokeUrl(): void;
-    /**
-     * Returns the GIF image data as an {@link https://developer.mozilla.org/en-US/docs/Web/API/HTMLImageElement/Image | Image} object
-     *
-     * Note: This method does not work outside of browser environments
-     */
-    getImage(): HTMLImageElement;
+    getArrayBuffer(): ArrayBufferLike;
 }
-export {};

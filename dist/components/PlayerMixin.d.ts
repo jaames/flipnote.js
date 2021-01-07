@@ -26,7 +26,7 @@ export declare function PlayerMixin<TargetBase extends Constructor>(Target: Targ
         readonly layerVisibility: Record<number, boolean>;
         autoplay: boolean;
         supportedEvents: import("../player").PlayerEvent[];
-        _src: import("../parsers").FlipnoteSource;
+        _src: import("../parseSource").FlipnoteSource;
         _loop: boolean;
         _volume: number;
         _muted: boolean;
@@ -41,7 +41,7 @@ export declare function PlayerMixin<TargetBase extends Constructor>(Target: Targ
         isPlaying: boolean;
         wasPlaying: boolean;
         isSeeking: boolean;
-        src: import("../parsers").FlipnoteSource;
+        src: import("../parseSource").FlipnoteSource;
         paused: boolean;
         currentFrame: number;
         currentTime: number;
@@ -54,7 +54,7 @@ export declare function PlayerMixin<TargetBase extends Constructor>(Target: Targ
         readonly frameSpeed: number;
         readonly buffered: TimeRanges;
         readonly seekable: TimeRanges;
-        readonly currentSrc: import("../parsers").FlipnoteSource;
+        readonly currentSrc: import("../parseSource").FlipnoteSource;
         readonly videoWidth: number;
         readonly videoHeight: number;
         load(source?: any): Promise<void>;

@@ -8,14 +8,15 @@ export declare enum FlipnoteFormat {
 }
 /** RGBA color */
 export declare type FlipnotePaletteColor = [
-/** Red (0 to 255) */
-number, 
-/** Green (0 to 255) */
-number, 
-/** Blue (0 to 255) */
-number, 
-/** Alpha (0 to 255) */
-number];
+    /** Red (0 to 255) */
+    number,
+    /** Green (0 to 255) */
+    number,
+    /** Blue (0 to 255) */
+    number,
+    /** Alpha (0 to 255) */
+    number
+];
 /** Defines the colors used for a given Flipnote format */
 export declare type FlipnotePaletteDefinition = Record<string, FlipnotePaletteColor>;
 /** Identifies a Flipnote audio track type */
@@ -34,12 +35,10 @@ export declare enum FlipnoteAudioTrack {
 /**
  * Contains data about a given audio track; it's file offset and length
  */
-export declare type FlipnoteAudioTrackInfo = {
-    [key in FlipnoteAudioTrack]?: {
-        ptr: number;
-        length: number;
-    };
-};
+export interface FlipnoteAudioTrackInfo {
+    ptr: number;
+    length: number;
+}
 /**
  * Flipnote layer visibility
  */
@@ -129,7 +128,7 @@ export declare abstract class FlipnoteParser extends DataStream {
     /** File metadata, see {@link FlipnoteMeta} for structure */
     meta: FlipnoteMeta;
     /** File audio track info, see {@link FlipnoteAudioTrackInfo} */
-    soundMeta: FlipnoteAudioTrackInfo;
+    soundMeta: Map<FlipnoteAudioTrack, FlipnoteAudioTrackInfo>;
     /** Animation frame global layer visibility */
     layerVisibility: FlipnoteLayerVisibility;
     /** Spinoffs are remixes of another user's Flipnote */

@@ -1,4 +1,4 @@
-import { LoaderDefinition } from './loaderDefinition';
+import { LoaderDefinition } from './LoaderDefinition';
 import webUrlLoader from './webUrlLoader';
 import nodeUrlLoader from './nodeUrlLoader';
 import fileLoader from './fileLoader';

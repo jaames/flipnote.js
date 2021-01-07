@@ -1,6 +1,10 @@
 import { DataStream } from '../utils/index';
-import { Flipnote, FlipnoteAudioTrack } from '../parsers/index';
+import { EncoderBase } from './EncoderBase';
+import { Flipnote } from '../FlipnoteTypes';
+import { FlipnoteAudioTrack } from '../parsers/index';
 import { assert, assertNodeEnv, assertBrowserEnv } from '../utils';
+
+export type WavSampleBuffer = Int16Array | Float32Array;
 
 /** 
  * Wav audio object. Used to create a {@link https://en.wikipedia.org/wiki/WAV | WAV} file from a PCM audio stream or a {@link Flipnote} object. 
@@ -9,7 +13,9 @@ import { assert, assertNodeEnv, assertBrowserEnv } from '../utils';
  * 
  * @category File Encoder
  */
-export class WavAudio {
+export class WavAudio extends EncoderBase {
+
+  public mimeType: 'audio/wav';
 
   /** Audio samplerate */
   public sampleRate: number;
@@ -28,6 +34,7 @@ export class WavAudio {
    * @param bitsPerSample number of bits per sample
    */
   constructor(sampleRate: number, channels=1, bitsPerSample=16) {
+    super();
     this.sampleRate = sampleRate;
     this.channels = channels;
     this.bitsPerSample = bitsPerSample;
@@ -74,7 +81,7 @@ export class WavAudio {
     const sampleRate = note.sampleRate;
     const wav = new WavAudio(sampleRate, 1, 16);
     const pcm = note.getAudioMasterPcm(sampleRate);
-    wav.writeFrames(pcm);
+    wav.writeSamples(pcm);
     return wav;
   }
 
@@ -87,7 +94,7 @@ export class WavAudio {
     const sampleRate = flipnote.sampleRate;
     const wav = new WavAudio(sampleRate, 1, 16);
     const pcm = flipnote.getAudioTrackPcm(trackId, sampleRate);
-    wav.writeFrames(pcm);
+    wav.writeSamples(pcm);
     return wav;
   }
 
@@ -95,7 +102,7 @@ export class WavAudio {
    * Add PCM audio frames to the WAV
    * @param pcmData signed int16 PCM audio samples
    */
-  public writeFrames(pcmData: Int16Array) {
+  public writeSamples(pcmData: Int16Array) {
     let header = this.header;
     // fill in filesize
     header.seek(4);
@@ -116,27 +123,5 @@ export class WavAudio {
     resultBytes.set(headerBytes);
     resultBytes.set(pcmBytes, headerBytes.byteLength);
     return resultBytes.buffer;
-  }
-
-  /**
-   * Returns the WAV audio data as a NodeJS {@link https://nodejs.org/api/buffer.html | Buffer}
-   * 
-   * Note: This method does not work outside of NodeJS environments
-   */
-  public getBuffer() {
-    assertNodeEnv();
-    return Buffer.from(this.getArrayBuffer());
-  }
-
-
-  /**
-   * Returns the GIF image data as a file {@link https://developer.mozilla.org/en-US/docs/Web/API/Blob | Blob}
-   * 
-   * Note: This method will not work outside of browser environments
-   */
-  public getBlob() {
-    assertBrowserEnv(); 
-    const buffer = this.getArrayBuffer();
-    return new Blob([buffer], {type: 'audio/wav'});
   }
 }
