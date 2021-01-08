@@ -4,6 +4,8 @@ export * from './FlipnoteTypes';
 
 export {
   FlipnoteFormat,
+  FlipnoteVersion,
+  FlipnoteRegion,
   FlipnoteMeta,
   FlipnoteAudioTrack,
   FlipnoteAudioTrackInfo,

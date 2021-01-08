@@ -60,9 +60,13 @@ export declare class PpmParser extends FlipnoteParser {
     /** File format type, reflects {@link PpmParser.format} */
     format: FlipnoteFormat;
     /** Animation frame width, reflects {@link PpmParser.width} */
-    width: number;
+    imageWidth: number;
     /** Animation frame height, reflects {@link PpmParser.height} */
-    height: number;
+    imageHeight: number;
+    /** X offset for the top-left corner of the animation frame */
+    imageOffsetX: number;
+    /** Y offset for the top-left corner of the animation frame */
+    imageOffsetY: number;
     /** Number of animation frame layers, reflects {@link PpmParser.numLayers} */
     numLayers: number;
     /** Audio track base sample rate, reflects {@link PpmParser.rawSampleRate} */

@@ -1,5 +1,5 @@
 export * from './FlipnoteTypes';
-export { FlipnoteFormat, FlipnoteMeta, FlipnoteAudioTrack, FlipnoteAudioTrackInfo, FlipnotePaletteDefinition, FlipnoteLayerVisibility, KwzParser, PpmParser, KwzParserSettings, PpmParserSettings, } from './parsers';
+export { FlipnoteFormat, FlipnoteVersion, FlipnoteRegion, FlipnoteMeta, FlipnoteAudioTrack, FlipnoteAudioTrackInfo, FlipnotePaletteDefinition, FlipnoteLayerVisibility, KwzParser, PpmParser, KwzParserSettings, PpmParserSettings, } from './parsers';
 export { parseSource } from './parseSource';
 export { Player } from './player';
 export { GifImage, WavAudio, } from './encoders';

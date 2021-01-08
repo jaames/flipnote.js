@@ -351,6 +351,76 @@ Keep on Flipnoting!
       return ((frameCount * 100) * (1 / framerate)) / 100;
   }
 
+  /**
+   * Flipnote region
+   */
+  (function (FlipnoteRegion) {
+      /** Europe and Oceania */
+      FlipnoteRegion["EUR"] = "EUR";
+      /** Americas */
+      FlipnoteRegion["USA"] = "USA";
+      /** Japan */
+      FlipnoteRegion["JPN"] = "JPN";
+      /** Unidentified (possibly never used) */
+      FlipnoteRegion["UNKNOWN"] = "UNKNOWN";
+  })(exports.FlipnoteRegion || (exports.FlipnoteRegion = {}));
+  /**
+   * Match an FSID from a DSi Library note (PPM to KWZ conversion)
+   * e.g. 10b8-b909-5180-9b2013
+   * @internal
+   */
+  const REGEX_KWZ_DSI_LIBRARY_FSID = /^[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{3}0-[0-9a-f]{4}[0159]{1}[0-9a-f]{1}$/;
+  /**
+   * Indicates whether the input is a valid DSi Library user ID
+   */
+  function isKwzDsiLibraryFsid(fsid) {
+      return REGEX_KWZ_DSI_LIBRARY_FSID.test(fsid);
+  }
+  /**
+   * Get the region for any valid Flipnote Studio user ID
+   */
+  function getPpmFsidRegion(fsid) {
+      switch (fsid.charAt(0)) {
+          case '0':
+          case '1':
+              return exports.FlipnoteRegion.JPN;
+          case '5':
+              return exports.FlipnoteRegion.USA;
+          case '9':
+              return exports.FlipnoteRegion.EUR;
+          default:
+              return exports.FlipnoteRegion.UNKNOWN;
+      }
+  }
+  /**
+   * Get the region for any valid Flipnote Studio 3D user ID
+   */
+  function getKwzFsidRegion(fsid) {
+      if (isKwzDsiLibraryFsid(fsid)) {
+          switch (fsid.charAt(19)) {
+              case '0':
+              case '1':
+                  return exports.FlipnoteRegion.JPN;
+              case '5':
+                  return exports.FlipnoteRegion.USA;
+              case '9':
+                  return exports.FlipnoteRegion.EUR;
+              default:
+                  return exports.FlipnoteRegion.UNKNOWN;
+          }
+      }
+      switch (fsid.slice(0, 2)) {
+          case '00':
+              return exports.FlipnoteRegion.JPN;
+          case '02':
+              return exports.FlipnoteRegion.USA;
+          case '04':
+              return exports.FlipnoteRegion.EUR;
+          default:
+              return exports.FlipnoteRegion.UNKNOWN;
+      }
+  }
+
   /** @internal */
   const saveData = (function () {
       if (!isBrowser) {
@@ -394,6 +464,15 @@ Keep on Flipnoting!
    * @category File Parser
   */
   class FlipnoteParser extends DataStream {
+      constructor() {
+          super(...arguments);
+          /** (KWZ only) Indicates whether or not this file is a Flipnote Studio 3D folder icon */
+          this.isFolderIcon = false;
+          /** (KWZ only) Indicates whether or not this file is a handwritten comment from Flipnote Gallery World */
+          this.isComment = false;
+          /** (KWZ only) Indicates whether or not this Flipnote is a PPM to KWZ conversion from Flipnote Studio 3D's DSi Library service */
+          this.isDsiLibraryNote = false;
+      }
       /**
        * Does an audio track exist in the Flipnote?
        * @category Audio
@@ -457,9 +536,13 @@ Keep on Flipnoting!
           /** File format type, reflects {@link PpmParser.format} */
           this.format = exports.FlipnoteFormat.PPM;
           /** Animation frame width, reflects {@link PpmParser.width} */
-          this.width = PpmParser.width;
+          this.imageWidth = PpmParser.width;
           /** Animation frame height, reflects {@link PpmParser.height} */
-          this.height = PpmParser.height;
+          this.imageHeight = PpmParser.height;
+          /** X offset for the top-left corner of the animation frame */
+          this.imageOffsetX = 0;
+          /** Y offset for the top-left corner of the animation frame */
+          this.imageOffsetY = 0;
           /** Number of animation frame layers, reflects {@link PpmParser.numLayers} */
           this.numLayers = PpmParser.numLayers;
           /** Audio track base sample rate, reflects {@link PpmParser.rawSampleRate} */
@@ -550,18 +633,21 @@ Keep on Flipnoting!
               thumbIndex: thumbIndex,
               timestamp: timestamp,
               root: {
-                  filename: null,
                   username: rootAuthorName,
                   fsid: rootAuthorId,
+                  region: getPpmFsidRegion(rootAuthorId),
+                  filename: null
               },
               parent: {
                   username: parentAuthorName,
                   fsid: parentAuthorId,
+                  region: getPpmFsidRegion(parentAuthorId),
                   filename: parentFilename
               },
               current: {
                   username: currentAuthorName,
                   fsid: currentAuthorId,
+                  region: getPpmFsidRegion(currentAuthorId),
                   filename: currentFilename
               },
           };
@@ -1102,9 +1188,13 @@ Keep on Flipnoting!
           /** File format type, reflects {@link KwzParser.format} */
           this.format = exports.FlipnoteFormat.KWZ;
           /** Animation frame width, reflects {@link KwzParser.width} */
-          this.width = KwzParser.width;
+          this.imageWidth = KwzParser.width;
           /** Animation frame height, reflects {@link KwzParser.height} */
-          this.height = KwzParser.height;
+          this.imageHeight = KwzParser.height;
+          /** X offset for the top-left corner of the animation frame */
+          this.imageOffsetX = 0;
+          /** Y offset for the top-left corner of the animation frame */
+          this.imageOffsetY = 0;
           /** Number of animation frame layers, reflects {@link KwzParser.numLayers} */
           this.numLayers = KwzParser.numLayers;
           /** Audio track base sample rate, reflects {@link KwzParser.rawSampleRate} */
@@ -1123,12 +1213,38 @@ Keep on Flipnoting!
               new Uint8Array(KwzParser.width * KwzParser.height),
           ];
           this.buildSectionMap();
-          if (!this.settings.quickMeta)
+          // if the KIC section is present, we're dealing with a folder icon
+          // these are single-frame KWZs without a KFH section for metadata, or a KSN section for sound
+          // while the data for a full frame (320*240) is present, only the top-left 24*24 pixels are used
+          if (this.sectionMap.has('KIC')) {
+              this.isFolderIcon = true;
+              this.imageWidth = 24;
+              this.imageHeight = 24;
+              this.frameCount = 1;
+              this.frameSpeed = 0;
+              this.framerate = KWZ_FRAMERATES[0];
+              this.thumbFrameIndex = 0;
+              this.getFrameOffsets();
+          }
+          // if the KFH section is present, then this is a handritten comment from the Flipnote Gallery World online service
+          // these are single-frame KWZs, just with no sound
+          else if (!this.sectionMap.has('KSN')) {
+              this.isComment = true;
               this.decodeMeta();
-          else
-              this.decodeMetaQuick();
-          this.getFrameOffsets();
-          this.decodeSoundHeader();
+              this.getFrameOffsets();
+          }
+          // else let's assume this is a regular note
+          else {
+              this.decodeMeta();
+              this.getFrameOffsets();
+              this.decodeSoundHeader();
+              if (this.settings.dsiLibraryNote) {
+                  this.imageOffsetX = 32;
+                  this.imageOffsetY = 24;
+                  this.imageWidth = 256;
+                  this.imageHeight = 192;
+              }
+          }
       }
       buildSectionMap() {
           this.seek(0);
@@ -1137,7 +1253,7 @@ Keep on Flipnoting!
           let sectionCount = 0;
           let ptr = 0;
           // counting sections should mitigate against one of mrnbayoh's notehax exploits
-          while ((ptr < fileSize) && (sectionCount < 6)) {
+          while (ptr < fileSize && sectionCount < 6) {
               this.seek(ptr);
               const magic = this.readChars(4).substring(0, 3);
               const length = this.readUint32();
@@ -1183,6 +1299,8 @@ Keep on Flipnoting!
           return `${mac}_${random}_${edits}`;
       }
       decodeMeta() {
+          if (this.settings.quickMeta)
+              return this.decodeMetaQuick();
           assert(this.sectionMap.has('KFH'));
           this.seek(this.sectionMap.get('KFH').ptr + 12);
           const creationTime = dateFromNintendoTimestamp(this.readUint32());
@@ -1227,18 +1345,21 @@ Keep on Flipnoting!
               root: {
                   username: rootAuthorName,
                   fsid: rootAuthorId,
+                  region: getKwzFsidRegion(rootAuthorId),
                   filename: rootFilename,
                   isDsiFilename: rootFilename.length !== 28
               },
               parent: {
                   username: parentAuthorName,
                   fsid: parentAuthorId,
+                  region: getKwzFsidRegion(parentAuthorId),
                   filename: parentFilename,
                   isDsiFilename: parentFilename.length !== 28
               },
               current: {
                   username: currentAuthorName,
                   fsid: currentAuthorId,
+                  region: getKwzFsidRegion(currentAuthorId),
                   filename: currentFilename,
                   isDsiFilename: currentFilename.length !== 28
               },
@@ -1603,16 +1724,28 @@ Keep on Flipnoting!
       getLayerPixels(frameIndex, layerIndex) {
           if (this.prevFrameIndex !== frameIndex)
               this.decodeFrame(frameIndex);
-          const palette = this.getFramePaletteIndices(frameIndex);
+          // layer buffer
           const layers = this.layers[layerIndex];
-          const image = new Uint8Array(KwzParser.width * KwzParser.height);
-          const paletteOffset = layerIndex * 2 + 1;
-          for (let pixelIndex = 0; pixelIndex < layers.length; pixelIndex++) {
-              let pixel = layers[pixelIndex];
-              if (pixel === 1)
-                  image[pixelIndex] = palette[paletteOffset];
-              else if (pixel === 2)
-                  image[pixelIndex] = palette[paletteOffset + 1];
+          // palette
+          const palette = this.getFramePaletteIndices(frameIndex);
+          const paletteOffs = layerIndex * 2 + 1;
+          // image dimensions and crop
+          const width = this.imageWidth;
+          const height = this.imageHeight;
+          const xOffs = this.imageOffsetX;
+          const yOffs = this.imageOffsetY;
+          const image = new Uint8Array(width * height);
+          // pixel loop
+          for (let srcY = yOffs, dstY = 0; dstY < height; srcY++, dstY++) {
+              for (let srcX = xOffs, dstX = 0; dstX < width; srcX++, dstX++) {
+                  const srcPtr = srcY * KwzParser.width + srcX;
+                  const dstPtr = dstY * width + dstX;
+                  let pixel = layers[srcPtr];
+                  if (pixel === 1)
+                      image[dstPtr] = palette[paletteOffs];
+                  else if (pixel === 2)
+                      image[dstPtr] = palette[paletteOffs + 1];
+              }
           }
           return image;
       }
@@ -1623,53 +1756,41 @@ Keep on Flipnoting!
       getFramePixels(frameIndex) {
           if (this.prevFrameIndex !== frameIndex)
               this.decodeFrame(frameIndex);
-          const palette = this.getFramePaletteIndices(frameIndex);
           const layerOrder = this.getFrameLayerOrder(frameIndex);
+          // layer buffers
           const layerA = this.layers[layerOrder[2]]; // top
           const layerB = this.layers[layerOrder[1]]; // middle
           const layerC = this.layers[layerOrder[0]]; // bottom
-          const layerAOffset = layerOrder[2] * 2;
-          const layerBOffset = layerOrder[1] * 2;
-          const layerCOffset = layerOrder[0] * 2;
-          if (!this.settings.dsiLibraryNote) {
-              const image = new Uint8Array(KwzParser.width * KwzParser.height);
-              image.fill(palette[0]); // fill with paper color first
-              for (let pixel = 0; pixel < image.length; pixel++) {
-                  const a = layerA[pixel];
-                  const b = layerB[pixel];
-                  const c = layerC[pixel];
+          // palette
+          const palette = this.getFramePaletteIndices(frameIndex);
+          // layer palette offsets
+          const layerAPalleteOffs = layerOrder[2] * 2;
+          const layerBPalleteOffs = layerOrder[1] * 2;
+          const layerCPalleteOffs = layerOrder[0] * 2;
+          // image dimensions and crop
+          const width = this.imageWidth;
+          const height = this.imageHeight;
+          const xOffs = this.imageOffsetX;
+          const yOffs = this.imageOffsetY;
+          const image = new Uint8Array(width * height);
+          image.fill(palette[0]);
+          // pixel loop
+          for (let srcY = yOffs, dstY = 0; dstY < height; srcY++, dstY++) {
+              for (let srcX = xOffs, dstX = 0; dstX < width; srcX++, dstX++) {
+                  const srcPtr = srcY * KwzParser.width + srcX;
+                  const dstPtr = dstY * width + dstX;
+                  const a = layerA[srcPtr];
+                  const b = layerB[srcPtr];
+                  const c = layerC[srcPtr];
                   if (a !== 0)
-                      image[pixel] = palette[layerAOffset + a];
+                      image[dstPtr] = palette[layerAPalleteOffs + a];
                   else if (b !== 0)
-                      image[pixel] = palette[layerBOffset + b];
+                      image[dstPtr] = palette[layerBPalleteOffs + b];
                   else if (c !== 0)
-                      image[pixel] = palette[layerCOffset + c];
+                      image[dstPtr] = palette[layerCPalleteOffs + c];
               }
-              return image;
           }
-          // for dsi gallery notes, bottom layer is ignored and edge is cropped
-          else {
-              const image = new Uint8Array(KwzParser.width * KwzParser.height);
-              image.fill(palette[0]); // fill with paper color first
-              const cropStartY = 32;
-              const cropStartX = 24;
-              const cropWidth = KwzParser.width - 64;
-              const cropHeight = KwzParser.height - 48;
-              const srcStride = KwzParser.width;
-              for (let y = cropStartY; y < cropHeight; y++) {
-                  let srcPtr = y * srcStride;
-                  for (let x = cropStartX; x < cropWidth; x++) {
-                      const a = layerA[srcPtr];
-                      const b = layerB[srcPtr];
-                      if (a !== 0)
-                          image[srcPtr] = palette[layerAOffset + a];
-                      else if (b !== 0)
-                          image[srcPtr] = palette[layerBOffset + b];
-                      srcPtr += 1;
-                  }
-              }
-              return image;
-          }
+          return image;
       }
       /**
        * Get the sound effect flags for every frame in the Flipnote
@@ -1996,9 +2117,11 @@ Keep on Flipnoting!
               // check if magic is KFH (kwz magic)
               else if ((magic & 0xFFFFFF00) === 0x4B464800)
                   resolve(new KwzParser(arrayBuffer, parserConfig));
-              // TODO: KIC (f3ds folder icon) magic check
+              // check if magic is KIC (fs3d folder icon)
+              else if ((magic & 0xFFFFFF00) === 0x4B494300)
+                  resolve(new KwzParser(arrayBuffer, parserConfig));
               else
-                  reject();
+                  reject('Could not identify source as a valid Flipnote file');
           });
       });
   }
@@ -4399,14 +4522,14 @@ Keep on Flipnoting!
        * @category HTMLVideoElement compatibility
        */
       get videoWidth() {
-          return this.isNoteLoaded ? this.note.width : 0;
+          return this.isNoteLoaded ? this.note.imageWidth : 0;
       }
       /**
        * Implementation of the `HTMLVideoElement` {@link https://developer.mozilla.org/en-US/docs/Web/API/HTMLVideoElement/videoHeight | videoHeight} property
        * @category HTMLVideoElement compatibility
        */
       get videoHeight() {
-          return this.isNoteLoaded ? this.note.height : 0;
+          return this.isNoteLoaded ? this.note.imageHeight : 0;
       }
       /**
        * Open a Flipnote from a source
@@ -4476,7 +4599,7 @@ Keep on Flipnoting!
           this.emit(PlayerEvent.CanPlay);
           this.emit(PlayerEvent.CanPlayThrough);
           this.setLoop(note.meta.loop);
-          this.renderer.setInputSize(note.width, note.height);
+          this.renderer.setInputSize(note.imageWidth, note.imageHeight);
           this.drawFrame(note.thumbFrameIndex);
           this.emit(PlayerEvent.LoadedData);
           this.emit(PlayerEvent.Load);
@@ -5337,7 +5460,8 @@ Keep on Flipnoting!
        * @param settings whether the gif should loop, the delay between frames, etc. See {@link GifEncoderSettings}
        */
       static fromFlipnote(flipnote, settings = {}) {
-          const gif = new GifImage(flipnote.width, flipnote.height, Object.assign({ delay: 100 / flipnote.framerate, repeat: flipnote.meta.loop ? -1 : 0 }, settings));
+          var _a;
+          const gif = new GifImage(flipnote.imageWidth, flipnote.imageHeight, Object.assign({ delay: 100 / flipnote.framerate, repeat: ((_a = flipnote.meta) === null || _a === void 0 ? void 0 : _a.loop) ? -1 : 0 }, settings));
           gif.palette = flipnote.globalPalette;
           for (let frameIndex = 0; frameIndex < flipnote.frameCount; frameIndex++)
               gif.writeFrame(flipnote.getFramePixels(frameIndex));
@@ -5350,7 +5474,7 @@ Keep on Flipnoting!
        * @param settings whether the gif should loop, the delay between frames, etc. See {@link GifEncoderSettings}
        */
       static fromFlipnoteFrame(flipnote, frameIndex, settings = {}) {
-          const gif = new GifImage(flipnote.width, flipnote.height, Object.assign({ 
+          const gif = new GifImage(flipnote.imageWidth, flipnote.imageHeight, Object.assign({ 
               // TODO: look at ideal delay and repeat settings for single frame GIF
               delay: 100 / flipnote.framerate, repeat: -1 }, settings));
           gif.palette = flipnote.globalPalette;
@@ -5457,6 +5581,17 @@ Keep on Flipnoting!
        */
       getArrayBuffer() {
           return this.data.getBuffer();
+      }
+      /**
+        * Returns the GIF image data as an {@link https://developer.mozilla.org/en-US/docs/Web/API/HTMLImageElement/Image | Image} object
+        *
+        * Note: This method does not work outside of browser environments
+        */
+      getImage() {
+          assertBrowserEnv();
+          const img = new Image(this.width, this.height);
+          img.src = this.getUrl();
+          return img;
       }
   }
   /**
@@ -8829,7 +8964,7 @@ Keep on Flipnoting!
           let canvasWidth = 256;
           // use the Flipnote's native width
           if (this._width === 'auto' && isPlayerAvailable && this.player.isNoteLoaded) {
-              canvasWidth = this.player.note.width;
+              canvasWidth = this.player.note.imageWidth;
           }
           // expand to fill the full container width
           else if (this._width !== 'auto') {
@@ -9349,6 +9484,127 @@ Keep on Flipnoting!
   IconComponent = __decorate([
       customElement('flipnote-player-icon')
   ], IconComponent);
+
+  /**
+   * Flipnote player icon component
+   *
+   * @category Web Component
+   * @internal
+   */
+  let ImageComponent = class ImageComponent extends LitElement {
+      constructor() {
+          super(...arguments);
+          this._src = '';
+          this._frame = '0';
+          this.gifUrl = '';
+          this.imgTitle = '';
+      }
+      static get styles() {
+          return css `
+      .Image {
+        width: inherit;
+        height: inherit;
+        image-rendering: -moz-crisp-edges;
+        image-rendering: -webkit-crisp-edges;
+        image-rendering: pixelated;
+        image-rendering: crisp-edges;
+        -ms-interpolation-mode: nearest-neighbor;
+      }
+    `;
+      }
+      set src(src) {
+          this.load(src);
+      }
+      get src() {
+          return this._src;
+      }
+      set frame(frame) {
+          this._frame = frame;
+          if (this.note)
+              this.loadNote(this.note);
+      }
+      get frame() {
+          return this._frame;
+      }
+      /** @internal */
+      render() {
+          return html `<img class="Image" src=${this.gifUrl} alt=${this.imgTitle} title=${this.imgTitle} />`;
+      }
+      revokeUrl() {
+          // if there was already an image, clean up its data URL
+          if (this.gif && this.gif.dataUrl) {
+              this.gif.revokeUrl();
+              this.gifUrl = '';
+          }
+      }
+      loadNote(note) {
+          this.note = note;
+          this.revokeUrl();
+          const frame = this._frame;
+          // full animated gif
+          if (frame === 'all') {
+              this.gif = GifImage.fromFlipnote(note);
+              this.gifUrl = this.gif.getUrl();
+          }
+          // thumbnail frame
+          else if (frame === 'thumb') {
+              this.gif = GifImage.fromFlipnoteFrame(note, note.thumbFrameIndex);
+              this.gifUrl = this.gif.getUrl();
+          }
+          // if frame is numeric string
+          else if (!isNaN(+frame)) {
+              const frameIndex = parseInt(frame);
+              this.gif = GifImage.fromFlipnoteFrame(note, frameIndex);
+              this.gifUrl = this.gif.getUrl();
+          }
+          if (this.gifUrl) {
+              this.dispatchLoad();
+              this.imgTitle = this.getTitle(note);
+          }
+          else {
+              this.dispatchError('Invalid frame attribute');
+          }
+      }
+      load(src) {
+          this._src = src;
+          this.note = undefined;
+          parseSource(src)
+              .then(note => this.loadNote(note))
+              .catch(err => this.dispatchError(err));
+      }
+      disconnectedCallback() {
+          this.revokeUrl();
+      }
+      getTitle(note) {
+          if (note.isComment)
+              return `Comment by ${note.meta.current.username}`;
+          if (note.isFolderIcon)
+              return `Folder icon`;
+          return `Flipnote by ${note.meta.current.username}`;
+      }
+      dispatchLoad() {
+          this.dispatchEvent(new Event('load'));
+      }
+      dispatchError(err) {
+          this.dispatchEvent(new ErrorEvent('error', { error: err }));
+          throw new Error(err);
+      }
+  };
+  __decorate([
+      property()
+  ], ImageComponent.prototype, "src", null);
+  __decorate([
+      property()
+  ], ImageComponent.prototype, "frame", null);
+  __decorate([
+      internalProperty()
+  ], ImageComponent.prototype, "gifUrl", void 0);
+  __decorate([
+      internalProperty()
+  ], ImageComponent.prototype, "imgTitle", void 0);
+  ImageComponent = __decorate([
+      customElement('flipnote-image')
+  ], ImageComponent);
 
   // Entrypoint for webcomponent build
   /** @internal */

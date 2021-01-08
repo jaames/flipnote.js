@@ -38,7 +38,8 @@ import {
   pcmGetClippingRatio,
   assert,
   dateFromNintendoTimestamp,
-  timeGetNoteDuration
+  timeGetNoteDuration,
+  getPpmFsidRegion
 } from '../utils';
 
 /** 
@@ -103,9 +104,13 @@ export class PpmParser extends FlipnoteParser {
   /** File format type, reflects {@link PpmParser.format} */
   public format = FlipnoteFormat.PPM;
   /** Animation frame width, reflects {@link PpmParser.width} */
-  public width = PpmParser.width;
+  public imageWidth = PpmParser.width;
   /** Animation frame height, reflects {@link PpmParser.height} */
-  public height = PpmParser.height;
+  public imageHeight = PpmParser.height;
+  /** X offset for the top-left corner of the animation frame */
+  public imageOffsetX = 0;
+  /** Y offset for the top-left corner of the animation frame */
+  public imageOffsetY = 0;
   /** Number of animation frame layers, reflects {@link PpmParser.numLayers} */
   public numLayers = PpmParser.numLayers;
   /** Audio track base sample rate, reflects {@link PpmParser.rawSampleRate} */
@@ -220,18 +225,21 @@ export class PpmParser extends FlipnoteParser {
       thumbIndex: thumbIndex,
       timestamp: timestamp,
       root: {
-        filename: null,
         username: rootAuthorName,
         fsid: rootAuthorId,
+        region: getPpmFsidRegion(rootAuthorId),
+        filename: null
       },
       parent: {
         username: parentAuthorName,
         fsid: parentAuthorId,
+        region: getPpmFsidRegion(parentAuthorId),
         filename: parentFilename
       },
       current: {
         username: currentAuthorName,
         fsid: currentAuthorId,
+        region: getPpmFsidRegion(currentAuthorId),
         filename: currentFilename
       },
     };

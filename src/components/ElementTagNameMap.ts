@@ -1,6 +1,7 @@
 import { PlayerComponent } from './PlayerComponent';
 import { SliderComponent } from './SliderComponent';
 import { IconComponent } from './IconComponent';
+import { ImageComponent } from './ImageComponent';
 
 /** @internal */
 declare global {
@@ -11,5 +12,6 @@ declare global {
     'flipnote-player': PlayerComponent;
     'flipnote-player-slider': SliderComponent;
     'flipnote-player-icon': IconComponent;
+    'flipnote-image': ImageComponent;
   }
 }

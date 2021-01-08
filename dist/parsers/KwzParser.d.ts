@@ -3,7 +3,7 @@ import { FlipnoteFormat, FlipnoteAudioTrack, FlipnoteMeta, FlipnoteParser } from
  * KWZ section types
  * @internal
  */
-export declare type KwzSectionMagic = 'KFH' | 'KTN' | 'KMC' | 'KMI' | 'KSN' | 'ICO';
+export declare type KwzSectionMagic = 'KFH' | 'KTN' | 'KMC' | 'KMI' | 'KSN' | 'KIC';
 /**
  * KWZ section map, tracking their offset and length
  * @internal
@@ -80,9 +80,13 @@ export declare class KwzParser extends FlipnoteParser {
     /** File format type, reflects {@link KwzParser.format} */
     format: FlipnoteFormat;
     /** Animation frame width, reflects {@link KwzParser.width} */
-    width: number;
+    imageWidth: number;
     /** Animation frame height, reflects {@link KwzParser.height} */
-    height: number;
+    imageHeight: number;
+    /** X offset for the top-left corner of the animation frame */
+    imageOffsetX: number;
+    /** Y offset for the top-left corner of the animation frame */
+    imageOffsetY: number;
     /** Number of animation frame layers, reflects {@link KwzParser.numLayers} */
     numLayers: number;
     /** Audio track base sample rate, reflects {@link KwzParser.rawSampleRate} */

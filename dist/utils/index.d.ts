@@ -5,4 +5,5 @@ export * from './nextPaint';
 export * from './env';
 export * from './assert';
 export * from './datetime';
+export * from './fsid';
 export * from './saveData';

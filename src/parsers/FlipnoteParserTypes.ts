@@ -1,4 +1,9 @@
-import { DataStream } from '../utils/index';
+import { 
+  DataStream,
+  FlipnoteRegion
+} from '../utils';
+
+export { FlipnoteRegion } from '../utils';
 
 /** Identifies which animation format a Flipnote uses */
 export enum FlipnoteFormat {
@@ -64,6 +69,8 @@ export interface FlipnoteVersion {
   username: string;
   /** Author's unique ID */
   fsid: string;
+  /** Author's region */
+  region: FlipnoteRegion;
   /** KWZ only - sometimes DSi library notes incorrectly use the PPM filename format instead */
   isDsiFilename?: boolean;
 };
@@ -108,9 +115,9 @@ export abstract class FlipnoteParser extends DataStream {
   /** File format type */
   static format: FlipnoteFormat;
   /** Animation frame width */
-  static width: number;
+  static frameWidth: number;
   /** Animation frame height */
-  static height: number;
+  static frameHeight: number;
   /** Number of animation frame layers */
   static numLayers: number;
   /** Audio track base sample rate */
@@ -123,9 +130,13 @@ export abstract class FlipnoteParser extends DataStream {
   /** File format type, reflects {@link FlipnoteParserBase.format} */
   public format: FlipnoteFormat;
   /** Animation frame width, reflects {@link FlipnoteParserBase.width} */
-  public width: number;
+  public imageWidth: number;
   /** Animation frame height, reflects {@link FlipnoteParserBase.height} */
-  public height: number;
+  public imageHeight: number;
+  /** X offset for the top-left corner of the animation frame */
+  public imageOffsetX: number;
+  /** Y offset for the top-left corner of the animation frame */
+  public imageOffsetY: number;
   /** Number of animation frame layers, reflects {@link FlipnoteParserBase.numLayers} */
   public numLayers: number;
   /** Audio track base sample rate, reflects {@link FlipnoteParserBase.rawSampleRate} */
@@ -145,6 +156,12 @@ export abstract class FlipnoteParser extends DataStream {
 
   /** Spinoffs are remixes of another user's Flipnote */
   public isSpinoff: boolean;
+  /** (KWZ only) Indicates whether or not this file is a Flipnote Studio 3D folder icon */
+  public isFolderIcon: boolean = false;
+  /** (KWZ only) Indicates whether or not this file is a handwritten comment from Flipnote Gallery World */
+  public isComment: boolean = false;
+  /** (KWZ only) Indicates whether or not this Flipnote is a PPM to KWZ conversion from Flipnote Studio 3D's DSi Library service */
+  public isDsiLibraryNote: boolean = false;
   /** Animation frame count */
   public frameCount: number;
   /** In-app animation playback speed */

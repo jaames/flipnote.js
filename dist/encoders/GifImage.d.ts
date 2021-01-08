@@ -88,4 +88,10 @@ export declare class GifImage extends EncoderBase {
      * Returns the GIF image data as an {@link https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/ArrayBuffer | ArrayBuffer}
      */
     getArrayBuffer(): ArrayBufferLike;
+    /**
+      * Returns the GIF image data as an {@link https://developer.mozilla.org/en-US/docs/Web/API/HTMLImageElement/Image | Image} object
+      *
+      * Note: This method does not work outside of browser environments
+      */
+    getImage(): HTMLImageElement;
 }

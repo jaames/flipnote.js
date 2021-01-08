@@ -2,6 +2,7 @@ import { DataStream, ByteArray } from '../utils/index';
 import { EncoderBase } from './EncoderBase';
 import { LzwCompressor } from './LwzCompressor';
 import { Flipnote } from '../FlipnoteTypes';
+import { assertBrowserEnv } from '../utils';
 
 /**
  * GIF RGBA palette color definition
@@ -87,9 +88,9 @@ export class GifImage extends EncoderBase {
    * @param settings whether the gif should loop, the delay between frames, etc. See {@link GifEncoderSettings}
    */
   static fromFlipnote(flipnote: Flipnote, settings: Partial<GifImageSettings> = {}) {
-    const gif = new GifImage(flipnote.width, flipnote.height, {
+    const gif = new GifImage(flipnote.imageWidth, flipnote.imageHeight, {
       delay: 100 / flipnote.framerate,
-      repeat: flipnote.meta.loop ? -1 : 0,
+      repeat: flipnote.meta?.loop ? -1 : 0,
       ...settings
     });
 
@@ -108,7 +109,7 @@ export class GifImage extends EncoderBase {
    * @param settings whether the gif should loop, the delay between frames, etc. See {@link GifEncoderSettings}
    */
   static fromFlipnoteFrame(flipnote: Flipnote, frameIndex: number, settings: Partial<GifImageSettings> = {}) {
-    const gif = new GifImage(flipnote.width, flipnote.height, {
+    const gif = new GifImage(flipnote.imageWidth, flipnote.imageHeight, {
       // TODO: look at ideal delay and repeat settings for single frame GIF
       delay: 100 / flipnote.framerate,
       repeat: -1,
@@ -229,5 +230,17 @@ export class GifImage extends EncoderBase {
    */
   public getArrayBuffer() {
     return this.data.getBuffer();
+  }
+
+ /**
+   * Returns the GIF image data as an {@link https://developer.mozilla.org/en-US/docs/Web/API/HTMLImageElement/Image | Image} object
+   * 
+   * Note: This method does not work outside of browser environments
+   */
+  public getImage(): HTMLImageElement {
+    assertBrowserEnv();
+    const img = new Image(this.width, this.height);
+    img.src = this.getUrl();
+    return img;
   }
 }

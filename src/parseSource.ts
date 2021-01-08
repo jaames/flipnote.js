@@ -37,9 +37,11 @@ export function parseSource(source: FlipnoteSource, parserConfig?: Partial<Flipn
       // check if magic is KFH (kwz magic)
       else if ((magic & 0xFFFFFF00) === 0x4B464800)
         resolve(new KwzParser(arrayBuffer, parserConfig));
-      // TODO: KIC (f3ds folder icon) magic check
+      // check if magic is KIC (fs3d folder icon)
+      else if ((magic & 0xFFFFFF00) === 0x4B494300)
+        resolve(new KwzParser(arrayBuffer, parserConfig));
       else
-        reject();
+        reject('Could not identify source as a valid Flipnote file');
     });
   });
 }

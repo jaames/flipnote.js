@@ -63,15 +63,28 @@
 // })
 
 
-
-// flipnote.parseSource('samples/memoF.kwz').then(note => {
-//   console.time('animated GIF')
-//   const gif = flipnote.gifEncoder.fromFlipnoteFrame(note, 2);
-//   console.timeEnd('animated GIF')
-//   const img = gif.getImage();
-//   testEl.appendChild(img);
-// })
-
+// flipnote.parseSource('samples/comment.kwc').then(note => {
+  // const canvas2 = document.createElement('canvas');
+  // const ctx = canvas2.getContext('2d');
+  // document.body.appendChild(canvas2);
+  // canvas2.width = note.imageWidth;
+  // canvas2.height = note.imageHeight;
+  // const img = ctx.createImageData(note.imageWidth, note.imageHeight);
+  
+  // const src = note.getFramePixels(0);
+  // const srcPalette = note.globalPalette;
+  // const dst = img.data;
+  
+  // for (let srcPtr = 0, dstPtr = 0; srcPtr < src.length; srcPtr += 1, dstPtr += 4) {
+  //   const [r, g, b] = srcPalette[src[srcPtr]];
+  //   dst[dstPtr + 0] = r;
+  //   dst[dstPtr + 1] = g;
+  //   dst[dstPtr + 2] = b;
+  //   dst[dstPtr + 3] = 255;
+  // }
+  
+  // ctx.putImageData(img, 0, 0);
+// });
 
 // flipnote.parseSource('samples/bee.ppm').then(note => {
 //   const gif = flipnote.gifEncoder.fromFlipnote(note);

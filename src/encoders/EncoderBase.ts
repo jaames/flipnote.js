@@ -3,7 +3,7 @@ import { assertNodeEnv, assertBrowserEnv } from '../utils';
 export abstract class EncoderBase {
 
   public mimeType: string;
-  private dataUrl: string = null;
+  public dataUrl: string = null;
 
   /**
    * Returns the file data as an {@link https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/ArrayBuffer | ArrayBuffer}

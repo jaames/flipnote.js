@@ -1,7 +1,7 @@
 /// <reference types="node" />
 export declare abstract class EncoderBase {
     mimeType: string;
-    private dataUrl;
+    dataUrl: string;
     /**
      * Returns the file data as an {@link https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/ArrayBuffer | ArrayBuffer}
      */

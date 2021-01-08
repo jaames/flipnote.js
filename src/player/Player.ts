@@ -234,7 +234,7 @@ export class Player {
    * @category HTMLVideoElement compatibility
    */
   get videoWidth() {
-    return this.isNoteLoaded ? this.note.width : 0;
+    return this.isNoteLoaded ? this.note.imageWidth : 0;
   }
 
   /**
@@ -242,7 +242,7 @@ export class Player {
    * @category HTMLVideoElement compatibility
    */
   get videoHeight() {
-    return this.isNoteLoaded ? this.note.height : 0;
+    return this.isNoteLoaded ? this.note.imageHeight : 0;
   }
 
   /** 
@@ -315,7 +315,7 @@ export class Player {
     this.emit(PlayerEvent.CanPlay);
     this.emit(PlayerEvent.CanPlayThrough);
     this.setLoop(note.meta.loop);
-    this.renderer.setInputSize(note.width, note.height);
+    this.renderer.setInputSize(note.imageWidth, note.imageHeight);
     this.drawFrame(note.thumbFrameIndex);
     this.emit(PlayerEvent.LoadedData);
     this.emit(PlayerEvent.Load);

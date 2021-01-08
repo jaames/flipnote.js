@@ -6,9 +6,9 @@ import {
   css,
   query,
   customElement,
-  internalProperty,
   PropertyValues,
   property,
+  internalProperty,
 } from 'lit-element';
 
 import { Player, PlayerEvent } from '../player';
@@ -394,7 +394,7 @@ export class PlayerComponent extends PlayerMixin(LitElement) {
     let canvasWidth = 256;
     // use the Flipnote's native width
     if (this._width === 'auto' && isPlayerAvailable && this.player.isNoteLoaded) {
-      canvasWidth = this.player.note.width;
+      canvasWidth = this.player.note.imageWidth;
     }
     // expand to fill the full container width
     else if (this._width !== 'auto') {

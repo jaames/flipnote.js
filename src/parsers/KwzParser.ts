@@ -15,7 +15,8 @@ import {
   pcmGetClippingRatio,
   assert,
   dateFromNintendoTimestamp,
-  timeGetNoteDuration
+  timeGetNoteDuration,
+  getKwzFsidRegion
 } from '../utils';
 
 /** 
@@ -100,7 +101,7 @@ const KWZ_LINE_TABLE_COMMON_SHIFT = new Uint8Array(32 * 8);
  * KWZ section types
  * @internal
  */
-export type KwzSectionMagic = 'KFH' | 'KTN' | 'KMC' | 'KMI' | 'KSN' | 'ICO';
+export type KwzSectionMagic = 'KFH' | 'KTN' | 'KMC' | 'KMI' | 'KSN' | 'KIC';
 
 /** 
  * KWZ section map, tracking their offset and length
@@ -196,9 +197,13 @@ export class KwzParser extends FlipnoteParser {
   /** File format type, reflects {@link KwzParser.format} */
   public format = FlipnoteFormat.KWZ;
   /** Animation frame width, reflects {@link KwzParser.width} */
-  public width = KwzParser.width;
+  public imageWidth = KwzParser.width;
   /** Animation frame height, reflects {@link KwzParser.height} */
-  public height = KwzParser.height;
+  public imageHeight = KwzParser.height;
+  /** X offset for the top-left corner of the animation frame */
+  public imageOffsetX = 0;
+  /** Y offset for the top-left corner of the animation frame */
+  public imageOffsetY = 0;
   /** Number of animation frame layers, reflects {@link KwzParser.numLayers} */
   public numLayers = KwzParser.numLayers;
   /** Audio track base sample rate, reflects {@link KwzParser.rawSampleRate} */
@@ -235,12 +240,38 @@ export class KwzParser extends FlipnoteParser {
       new Uint8Array(KwzParser.width * KwzParser.height),
     ];
     this.buildSectionMap();
-    if (!this.settings.quickMeta)
+    // if the KIC section is present, we're dealing with a folder icon
+    // these are single-frame KWZs without a KFH section for metadata, or a KSN section for sound
+    // while the data for a full frame (320*240) is present, only the top-left 24*24 pixels are used
+    if (this.sectionMap.has('KIC')) {
+      this.isFolderIcon = true;
+      this.imageWidth = 24;
+      this.imageHeight = 24;
+      this.frameCount = 1;
+      this.frameSpeed = 0;
+      this.framerate = KWZ_FRAMERATES[0];
+      this.thumbFrameIndex = 0;
+      this.getFrameOffsets();
+    }
+    // if the KFH section is present, then this is a handritten comment from the Flipnote Gallery World online service
+    // these are single-frame KWZs, just with no sound
+    else if (!this.sectionMap.has('KSN')) {
+      this.isComment = true; 
       this.decodeMeta();
-    else
-      this.decodeMetaQuick();
-    this.getFrameOffsets();
-    this.decodeSoundHeader();
+      this.getFrameOffsets();
+    }
+    // else let's assume this is a regular note
+    else {
+      this.decodeMeta();
+      this.getFrameOffsets();
+      this.decodeSoundHeader();
+      if (this.settings.dsiLibraryNote) {
+        this.imageOffsetX = 32;
+        this.imageOffsetY = 24;
+        this.imageWidth = 256;
+        this.imageHeight = 192;
+      }
+    }
   }
   
   private buildSectionMap() {
@@ -250,7 +281,7 @@ export class KwzParser extends FlipnoteParser {
     let sectionCount = 0;
     let ptr = 0;
     // counting sections should mitigate against one of mrnbayoh's notehax exploits
-    while ((ptr < fileSize) && (sectionCount < 6)) {
+    while (ptr < fileSize && sectionCount < 6) {
       this.seek(ptr);
       const magic = this.readChars(4).substring(0, 3) as KwzSectionMagic;
       const length = this.readUint32();
@@ -300,6 +331,8 @@ export class KwzParser extends FlipnoteParser {
   }
 
   private decodeMeta() {
+    if (this.settings.quickMeta)
+      return this.decodeMetaQuick();
     assert(this.sectionMap.has('KFH'));
     this.seek(this.sectionMap.get('KFH').ptr + 12);
     const creationTime = dateFromNintendoTimestamp(this.readUint32());
@@ -331,6 +364,7 @@ export class KwzParser extends FlipnoteParser {
       2: (layerFlags & 0x2) === 0,
       3: (layerFlags & 0x3) === 0,
     };
+
     this.meta = {
       lock: (flags & 0x1) !== 0,
       loop: (flags & 0x2) !== 0,
@@ -344,18 +378,21 @@ export class KwzParser extends FlipnoteParser {
       root: {
         username: rootAuthorName,
         fsid: rootAuthorId,
+        region: getKwzFsidRegion(rootAuthorId),
         filename: rootFilename,
         isDsiFilename: rootFilename.length !== 28
       },
       parent: {
         username: parentAuthorName,
         fsid: parentAuthorId,
+        region: getKwzFsidRegion(parentAuthorId),
         filename: parentFilename,
         isDsiFilename: parentFilename.length !== 28
       },
       current: {
         username: currentAuthorName,
         fsid: currentAuthorId,
+        region: getKwzFsidRegion(currentAuthorId),
         filename: currentFilename,
         isDsiFilename: currentFilename.length !== 28
       },
@@ -751,16 +788,28 @@ export class KwzParser extends FlipnoteParser {
   public getLayerPixels(frameIndex: number, layerIndex: number) {
     if (this.prevFrameIndex !== frameIndex)
       this.decodeFrame(frameIndex);
-    const palette = this.getFramePaletteIndices(frameIndex);
+    // layer buffer
     const layers = this.layers[layerIndex];
-    const image = new Uint8Array(KwzParser.width * KwzParser.height);
-    const paletteOffset = layerIndex * 2 + 1;
-    for (let pixelIndex = 0; pixelIndex < layers.length; pixelIndex++) {
-      let pixel = layers[pixelIndex];
-      if (pixel === 1)
-        image[pixelIndex] = palette[paletteOffset];
-      else if (pixel === 2)
-        image[pixelIndex] = palette[paletteOffset + 1];
+    // palette
+    const palette = this.getFramePaletteIndices(frameIndex);
+    const paletteOffs = layerIndex * 2 + 1;
+    // image dimensions and crop
+    const width = this.imageWidth;
+    const height = this.imageHeight;
+    const xOffs = this.imageOffsetX;
+    const yOffs = this.imageOffsetY;
+    const image = new Uint8Array(width * height);
+    // pixel loop
+    for (let srcY = yOffs, dstY = 0; dstY < height; srcY++, dstY++) {
+      for (let srcX = xOffs, dstX = 0; dstX < width; srcX++, dstX++) {
+        const srcPtr = srcY * KwzParser.width + srcX;
+        const dstPtr = dstY * width + dstX;
+        let pixel = layers[srcPtr];
+        if (pixel === 1)
+          image[dstPtr] = palette[paletteOffs];
+        else if (pixel === 2)
+          image[dstPtr] = palette[paletteOffs + 1]
+      }
     }
     return image;
   }
@@ -772,53 +821,41 @@ export class KwzParser extends FlipnoteParser {
   public getFramePixels(frameIndex: number) {
     if (this.prevFrameIndex !== frameIndex)
       this.decodeFrame(frameIndex);
-    const palette = this.getFramePaletteIndices(frameIndex);
     const layerOrder = this.getFrameLayerOrder(frameIndex);
+    // layer buffers
     const layerA = this.layers[layerOrder[2]]; // top
     const layerB = this.layers[layerOrder[1]]; // middle
     const layerC = this.layers[layerOrder[0]]; // bottom
-    const layerAOffset = layerOrder[2] * 2;
-    const layerBOffset = layerOrder[1] * 2;
-    const layerCOffset = layerOrder[0] * 2;
-    if (!this.settings.dsiLibraryNote) {
-      const image = new Uint8Array(KwzParser.width * KwzParser.height);
-      image.fill(palette[0]); // fill with paper color first
-      for (let pixel = 0; pixel < image.length; pixel++) {
-        const a = layerA[pixel];
-        const b = layerB[pixel];
-        const c = layerC[pixel];
+    // palette
+    const palette = this.getFramePaletteIndices(frameIndex);
+    // layer palette offsets
+    const layerAPalleteOffs = layerOrder[2] * 2;
+    const layerBPalleteOffs = layerOrder[1] * 2;
+    const layerCPalleteOffs = layerOrder[0] * 2;
+    // image dimensions and crop
+    const width = this.imageWidth;
+    const height = this.imageHeight;
+    const xOffs = this.imageOffsetX;
+    const yOffs = this.imageOffsetY;
+    const image = new Uint8Array(width * height);
+    image.fill(palette[0]);
+    // pixel loop
+    for (let srcY = yOffs, dstY = 0; dstY < height; srcY++, dstY++) {
+      for (let srcX = xOffs, dstX = 0; dstX < width; srcX++, dstX++) {
+        const srcPtr = srcY * KwzParser.width + srcX;
+        const dstPtr = dstY * width + dstX;
+        const a = layerA[srcPtr];
+        const b = layerB[srcPtr];
+        const c = layerC[srcPtr];
         if (a !== 0)
-          image[pixel] = palette[layerAOffset + a];
+          image[dstPtr] = palette[layerAPalleteOffs + a];
         else if (b !== 0)
-          image[pixel] = palette[layerBOffset + b];
+          image[dstPtr] = palette[layerBPalleteOffs + b];
         else if (c !== 0)
-          image[pixel] = palette[layerCOffset + c];
+          image[dstPtr] = palette[layerCPalleteOffs + c];
       }
-      return image;
-    } 
-    // for dsi gallery notes, bottom layer is ignored and edge is cropped
-    else {
-      const image = new Uint8Array(KwzParser.width * KwzParser.height);
-      image.fill(palette[0]); // fill with paper color first
-      const cropStartY = 32;
-      const cropStartX = 24;
-      const cropWidth = KwzParser.width - 64;
-      const cropHeight = KwzParser.height - 48;
-      const srcStride = KwzParser.width;
-      for (let y = cropStartY; y < cropHeight; y++) {
-        let srcPtr = y * srcStride;
-        for (let x = cropStartX; x < cropWidth; x++) {
-          const a = layerA[srcPtr];
-          const b = layerB[srcPtr];
-          if (a !== 0)
-            image[srcPtr] = palette[layerAOffset + a];
-          else if (b !== 0)
-            image[srcPtr] = palette[layerBOffset + b];
-          srcPtr += 1;
-        }
-      }
-      return image;
-    }  
+    }
+    return image;
   }
   
   /** 
