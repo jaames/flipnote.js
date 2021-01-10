@@ -49,10 +49,10 @@ export declare type KwzParserSettings = {
      */
     dsiLibraryNote: boolean;
     /**
-     * Flipnote 3D's own implementation is slightly buggy.
-     * Enable this to use a more "correct" audio decoding setup that may produce cleaner audio for most 3DS notes
+     * Flipnote 3D's own implementation is slightly buggy! To counter this, some tweaks are applied be default for nicer audio
+     * Enable this setting to use the "original" audio process used in the 3DS appo
      */
-    cleanerAudio: boolean;
+    originalAudio: boolean;
 };
 /**
  * Parser class for Flipnote Studio 3D's KWZ animation format

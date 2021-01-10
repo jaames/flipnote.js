@@ -1,5 +1,5 @@
 /*!!
-flipnote.js v5.1.4 (webcomponent build)
+flipnote.js v5.2.1 (webcomponent build)
 https://flipnote.js.org
 A JavaScript library for parsing, converting, and in-browser playback of the proprietary animation formats used by Nintendo's Flipnote Studio and Flipnote Studio 3D apps.
 2018 - 2021 James Daniel
@@ -369,7 +369,7 @@ Keep on Flipnoting!
    * e.g. 10b8-b909-5180-9b2013
    * @internal
    */
-  const REGEX_KWZ_DSI_LIBRARY_FSID = /^[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{3}0-[0-9a-f]{4}[0159]{1}[0-9a-f]{1}$/;
+  const REGEX_KWZ_DSI_LIBRARY_FSID = /^(00|10|12|14)[0-9a-f]{2}-[0-9a-f]{4}-[0-9a-f]{3}0-[0-9a-f]{4}[0159]{1}[0-9a-f]{1}$/;
   /**
    * Indicates whether the input is a valid DSi Library user ID
    */
@@ -1238,12 +1238,6 @@ Keep on Flipnoting!
               this.decodeMeta();
               this.getFrameOffsets();
               this.decodeSoundHeader();
-              if (this.settings.dsiLibraryNote) {
-                  this.imageOffsetX = 32;
-                  this.imageOffsetY = 24;
-                  this.imageWidth = 256;
-                  this.imageHeight = 192;
-              }
           }
       }
       buildSectionMap() {
@@ -1332,6 +1326,10 @@ Keep on Flipnoting!
               2: (layerFlags & 0x2) === 0,
               3: (layerFlags & 0x3) === 0,
           };
+          // Try to auto-detect whether the current author ID matches a converted PPM ID
+          if (isKwzDsiLibraryFsid(currentAuthorId) || this.settings.dsiLibraryNote) {
+              this.isDsiLibraryNote = true;
+          }
           this.meta = {
               lock: (flags & 0x1) !== 0,
               loop: (flags & 0x2) !== 0,
@@ -1823,15 +1821,16 @@ Keep on Flipnoting!
           const output = new Int16Array(16364 * 60);
           let outputPtr = 0;
           // initial decoder state
+          // Flipnote 3D's initial values are actually buggy, so corrections are applied by default here
           let predictor = 0;
-          let stepIndex = 40;
+          let stepIndex = 0;
           let sample = 0;
           let step = 0;
           let diff = 0;
-          // Flipnote 3D's initial values are actually buggy, so stepIndex = 0 is technically more correct
           // DSi Library notes, however, seem to only work with 40 (at least the correctly converted ones)
-          if (this.settings.cleanerAudio && !this.settings.dsiLibraryNote)
-              stepIndex = 0;
+          // users of the library may also wish to enable the original audio setup for console accuracy
+          if (this.settings.originalAudio || this.isDsiLibraryNote)
+              stepIndex = 40;
           // loop through each byte in the raw adpcm data
           for (let adpcmPtr = 0; adpcmPtr < adpcm.length; adpcmPtr++) {
               let currByte = adpcm[adpcmPtr];
@@ -1951,7 +1950,7 @@ Keep on Flipnoting!
   KwzParser.defaultSettings = {
       quickMeta: false,
       dsiLibraryNote: false,
-      cleanerAudio: false
+      originalAudio: false
   };
   /** File format type */
   KwzParser.format = exports.FlipnoteFormat.KWZ;
@@ -2836,7 +2835,7 @@ Keep on Flipnoting!
    * @private
    */
   //function getVersionAsNumber(gl) {
-  //  return parseFloat(gl.getParameter(gl."5.1.4").substr(6));
+  //  return parseFloat(gl.getParameter(gl."5.2.1").substr(6));
   //}
 
   /**
@@ -2847,7 +2846,7 @@ Keep on Flipnoting!
    */
   function isWebGL2(gl) {
     // This is the correct check but it's slow
-    //  return gl.getParameter(gl."5.1.4").indexOf("WebGL 2.0") === 0;
+    //  return gl.getParameter(gl."5.2.1").indexOf("WebGL 2.0") === 0;
     // This might also be the correct check but I'm assuming it's slow-ish
     // return gl instanceof WebGL2RenderingContext;
     return !!gl.texStorage2D;
@@ -5711,7 +5710,7 @@ Keep on Flipnoting!
   /**
    * flipnote.js library version (exported as `flipnote.version`). You can find the latest version on the project's [NPM](https://www.npmjs.com/package/flipnote.js) page.
    */
-  const version = "5.1.4"; // replaced by @rollup/plugin-replace; see rollup.config.js
+  const version = "5.2.1"; // replaced by @rollup/plugin-replace; see rollup.config.js
 
   /*! *****************************************************************************
   Copyright (c) Microsoft Corporation.

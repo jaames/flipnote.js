@@ -17,6 +17,8 @@ export {
   PpmParserSettings,
 } from './parsers';
 
+export * as utils from './utils/fsid';
+
 export { 
   parseSource
 } from './parseSource';

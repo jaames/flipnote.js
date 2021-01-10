@@ -16,7 +16,8 @@ import {
   assert,
   dateFromNintendoTimestamp,
   timeGetNoteDuration,
-  getKwzFsidRegion
+  getKwzFsidRegion,
+  isKwzDsiLibraryFsid
 } from '../utils';
 
 /** 
@@ -151,10 +152,10 @@ export type KwzParserSettings = {
    */ 
   dsiLibraryNote: boolean;
   /** 
-   * Flipnote 3D's own implementation is slightly buggy. 
-   * Enable this to use a more "correct" audio decoding setup that may produce cleaner audio for most 3DS notes
+   * Flipnote 3D's own implementation is slightly buggy! To counter this, some tweaks are applied be default for nicer audio
+   * Enable this setting to use the "original" audio process used in the 3DS appo
    */
-  cleanerAudio: boolean;
+  originalAudio: boolean;
 };
 
 /** 
@@ -169,7 +170,7 @@ export class KwzParser extends FlipnoteParser {
   static defaultSettings: KwzParserSettings = {
     quickMeta: false,
     dsiLibraryNote: false,
-    cleanerAudio: false
+    originalAudio: false
   };
   /** File format type */
   static format = FlipnoteFormat.KWZ;
@@ -265,12 +266,6 @@ export class KwzParser extends FlipnoteParser {
       this.decodeMeta();
       this.getFrameOffsets();
       this.decodeSoundHeader();
-      if (this.settings.dsiLibraryNote) {
-        this.imageOffsetX = 32;
-        this.imageOffsetY = 24;
-        this.imageWidth = 256;
-        this.imageHeight = 192;
-      }
     }
   }
   
@@ -364,7 +359,10 @@ export class KwzParser extends FlipnoteParser {
       2: (layerFlags & 0x2) === 0,
       3: (layerFlags & 0x3) === 0,
     };
-
+    // Try to auto-detect whether the current author ID matches a converted PPM ID
+    if (isKwzDsiLibraryFsid(currentAuthorId) || this.settings.dsiLibraryNote) {
+      this.isDsiLibraryNote = true;
+    }
     this.meta = {
       lock: (flags & 0x1) !== 0,
       loop: (flags & 0x2) !== 0,
@@ -891,15 +889,16 @@ export class KwzParser extends FlipnoteParser {
     const output = new Int16Array(16364 * 60);
     let outputPtr = 0;
     // initial decoder state
+    // Flipnote 3D's initial values are actually buggy, so corrections are applied by default here
     let predictor = 0;
-    let stepIndex = 40;
+    let stepIndex = 0;
     let sample = 0;
     let step = 0;
     let diff = 0;
-    // Flipnote 3D's initial values are actually buggy, so stepIndex = 0 is technically more correct
     // DSi Library notes, however, seem to only work with 40 (at least the correctly converted ones)
-    if (this.settings.cleanerAudio && !this.settings.dsiLibraryNote)
-      stepIndex = 0;
+    // users of the library may also wish to enable the original audio setup for console accuracy
+    if (this.settings.originalAudio || this.isDsiLibraryNote)
+      stepIndex = 40;
     // loop through each byte in the raw adpcm data
     for (let adpcmPtr = 0; adpcmPtr < adpcm.length; adpcmPtr++) {
       let currByte = adpcm[adpcmPtr];
