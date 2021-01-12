@@ -87,7 +87,7 @@ module.exports = {
             if (isTargetWebcomponent)
               return 'es2017';
             else if (isEsmoduleBuild)
-              return 'esnext';
+              return 'es2019';
             else
               return 'es5';
           })(),

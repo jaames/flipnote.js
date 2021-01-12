@@ -1,5 +1,5 @@
 /*!!
-flipnote.js v5.2.1 (web build)
+flipnote.js v5.2.2 (web build)
 https://flipnote.js.org
 A JavaScript library for parsing, converting, and in-browser playback of the proprietary animation formats used by Nintendo's Flipnote Studio and Flipnote Studio 3D apps.
 2018 - 2021 James Daniel
@@ -351,16 +351,46 @@ var FlipnoteRegion;
     FlipnoteRegion["UNKNOWN"] = "UNKNOWN";
 })(FlipnoteRegion || (FlipnoteRegion = {}));
 /**
+ * Match an FSID from Flipnote Studio
+ * e.g. 1440D700CEF78DA8
+ * @internal
+ */
+const REGEX_PPM_FSID = /^[0159]{1}[0-9A-F]{6}0[0-9A-F]{8}$/;
+/**
+ * Match an FSID from Flipnote Studio 3D
+ * e.g. 003f-0b7e-82a6-fe0bda
+ * @internal
+ */
+const REGEX_KWZ_FSID = /^[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{6}$/;
+/**
  * Match an FSID from a DSi Library note (PPM to KWZ conversion)
  * e.g. 10b8-b909-5180-9b2013
  * @internal
  */
 const REGEX_KWZ_DSI_LIBRARY_FSID = /^(00|10|12|14)[0-9a-f]{2}-[0-9a-f]{4}-[0-9a-f]{3}0-[0-9a-f]{4}[0159]{1}[0-9a-f]{1}$/;
 /**
+ * Indicates whether the input is a valid Flipnote Studio user ID
+ */
+function isPpmFsid(fsid) {
+    return REGEX_PPM_FSID.test(fsid);
+}
+/**
+ * Indicates whether the input is a valid Flipnote Studio 3D user ID
+ */
+function isKwzFsid(fsid) {
+    return REGEX_KWZ_FSID.test(fsid);
+}
+/**
  * Indicates whether the input is a valid DSi Library user ID
  */
 function isKwzDsiLibraryFsid(fsid) {
     return REGEX_KWZ_DSI_LIBRARY_FSID.test(fsid);
+}
+/**
+ * Indicates whether the input is a valid Flipnote Studio or Flipnote Studio 3D user ID
+ */
+function isFsid(fsid) {
+    return isPpmFsid(fsid) || isKwzFsid(fsid);
 }
 /**
  * Get the region for any valid Flipnote Studio user ID
@@ -406,6 +436,28 @@ function getKwzFsidRegion(fsid) {
             return FlipnoteRegion.UNKNOWN;
     }
 }
+/**
+ * Get the region for any valid Flipnote Studio or Flipnote Studio 3D user ID
+ */
+function getFsidRegion(fsid) {
+    if (isPpmFsid(fsid))
+        return getPpmFsidRegion(fsid);
+    else if (isKwzFsid(fsid))
+        return getKwzFsidRegion(fsid);
+    return FlipnoteRegion.UNKNOWN;
+}
+
+var fsid = /*#__PURE__*/Object.freeze({
+  __proto__: null,
+  get FlipnoteRegion () { return FlipnoteRegion; },
+  isPpmFsid: isPpmFsid,
+  isKwzFsid: isKwzFsid,
+  isKwzDsiLibraryFsid: isKwzDsiLibraryFsid,
+  isFsid: isFsid,
+  getPpmFsidRegion: getPpmFsidRegion,
+  getKwzFsidRegion: getKwzFsidRegion,
+  getFsidRegion: getFsidRegion
+});
 
 /** @internal */
 const saveData = (function () {
@@ -2825,7 +2877,7 @@ function createBufferInfoFromArrays(gl, arrays, srcBufferInfo) {
  * @private
  */
 //function getVersionAsNumber(gl) {
-//  return parseFloat(gl.getParameter(gl."5.2.1").substr(6));
+//  return parseFloat(gl.getParameter(gl."5.2.2").substr(6));
 //}
 
 /**
@@ -2836,7 +2888,7 @@ function createBufferInfoFromArrays(gl, arrays, srcBufferInfo) {
  */
 function isWebGL2(gl) {
   // This is the correct check but it's slow
-  //  return gl.getParameter(gl."5.2.1").indexOf("WebGL 2.0") === 0;
+  //  return gl.getParameter(gl."5.2.2").indexOf("WebGL 2.0") === 0;
   // This might also be the correct check but I'm assuming it's slow-ish
   // return gl instanceof WebGL2RenderingContext;
   return !!gl.texStorage2D;
@@ -5449,9 +5501,10 @@ class GifImage extends EncoderBase {
      * @param settings whether the gif should loop, the delay between frames, etc. See {@link GifEncoderSettings}
      */
     static fromFlipnote(flipnote, settings = {}) {
+        var _a;
         const gif = new GifImage(flipnote.imageWidth, flipnote.imageHeight, {
             delay: 100 / flipnote.framerate,
-            repeat: flipnote.meta?.loop ? -1 : 0,
+            repeat: ((_a = flipnote.meta) === null || _a === void 0 ? void 0 : _a.loop) ? -1 : 0,
             ...settings
         });
         gif.palette = flipnote.globalPalette;
@@ -5706,6 +5759,6 @@ class WavAudio extends EncoderBase {
 /**
  * flipnote.js library version (exported as `flipnote.version`). You can find the latest version on the project's [NPM](https://www.npmjs.com/package/flipnote.js) page.
  */
-const version = "5.2.1"; // replaced by @rollup/plugin-replace; see rollup.config.js
+const version = "5.2.2"; // replaced by @rollup/plugin-replace; see rollup.config.js
 
-export { FlipnoteAudioTrack, FlipnoteFormat, FlipnoteRegion, GifImage, KwzParser, Player, PpmParser, WavAudio, parseSource, version };
+export { FlipnoteAudioTrack, FlipnoteFormat, FlipnoteRegion, GifImage, KwzParser, Player, PpmParser, WavAudio, parseSource, fsid as utils, version };
