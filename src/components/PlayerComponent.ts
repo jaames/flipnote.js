@@ -287,6 +287,7 @@ export class PlayerComponent extends PlayerMixin(LitElement) {
       return html`
         <div class="Controls Controls--compact Controls__row">
           <button @click=${ this.handlePlayToggle } class="Button Controls__playButton">
+          wa
             <flipnote-player-icon icon=${ this._isPlaying ? 'pause' : 'play' }></flipnote-player-icon>
           </button>
           <flipnote-player-slider 
@@ -309,7 +310,7 @@ export class PlayerComponent extends PlayerMixin(LitElement) {
             @change=${ this.handleProgressSliderChange }
             @inputstart=${ this.handleProgressSliderInputStart }
             @inputend=${ this.handleProgressSliderInputEnd }
-          />
+          >
           </flipnote-player-slider>
           <div class="Controls__row">
             <div class="Controls__groupLeft">
