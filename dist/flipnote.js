@@ -1,5 +1,5 @@
 /*!!
-flipnote.js v5.2.3 (web build)
+flipnote.js v5.2.4 (web build)
 https://flipnote.js.org
 A JavaScript library for parsing, converting, and in-browser playback of the proprietary animation formats used by Nintendo's Flipnote Studio and Flipnote Studio 3D apps.
 2018 - 2021 James Daniel
@@ -3006,7 +3006,7 @@ Keep on Flipnoting!
      * @private
      */
     //function getVersionAsNumber(gl) {
-    //  return parseFloat(gl.getParameter(gl."5.2.3").substr(6));
+    //  return parseFloat(gl.getParameter(gl."5.2.4").substr(6));
     //}
 
     /**
@@ -3017,7 +3017,7 @@ Keep on Flipnoting!
      */
     function isWebGL2(gl) {
       // This is the correct check but it's slow
-      //  return gl.getParameter(gl."5.2.3").indexOf("WebGL 2.0") === 0;
+      //  return gl.getParameter(gl."5.2.4").indexOf("WebGL 2.0") === 0;
       // This might also be the correct check but I'm assuming it's slow-ish
       // return gl instanceof WebGL2RenderingContext;
       return !!gl.texStorage2D;
@@ -5448,6 +5448,127 @@ Keep on Flipnoting!
         return Player;
     }());
 
+    /**
+     * This is a bit of a hack to get a player component class to wrap a Player instance,
+     * while also inheriting all of the Player API's methods and properties.
+     *
+     * The resulting PlayerMixinClass will get a Player instance on this.player,
+     * and all of the Player API methods and properties applied as wrappers.
+     *
+     * e.g.
+     * - PlayerMixinClass.play() will have the same behaviour as Player.play(), but will call this.player.play() internally.
+     * - PlayerMixinClass.paused will have getters and setters to match it to this.player.paused.
+     * @internal
+     */
+    function PlayerMixin(Target) {
+        var PlayerMixinClass = /** @class */ (function (_super) {
+            __extends(PlayerMixinClass, _super);
+            function PlayerMixinClass() {
+                return _super !== null && _super.apply(this, arguments) || this;
+            }
+            Object.defineProperty(PlayerMixinClass.prototype, "renderer", {
+                // Mixin needs to re-define all the normal player properties, but most should be made readonly anyway...
+                get: function () {
+                    return this.player.renderer;
+                },
+                enumerable: false,
+                configurable: true
+            });
+            Object.defineProperty(PlayerMixinClass.prototype, "audio", {
+                get: function () {
+                    return this.player.audio;
+                },
+                enumerable: false,
+                configurable: true
+            });
+            Object.defineProperty(PlayerMixinClass.prototype, "canvasEl", {
+                get: function () {
+                    return this.player.canvasEl;
+                },
+                enumerable: false,
+                configurable: true
+            });
+            Object.defineProperty(PlayerMixinClass.prototype, "note", {
+                get: function () {
+                    return this.player.note;
+                },
+                enumerable: false,
+                configurable: true
+            });
+            Object.defineProperty(PlayerMixinClass.prototype, "noteFormat", {
+                get: function () {
+                    return this.player.noteFormat;
+                },
+                enumerable: false,
+                configurable: true
+            });
+            Object.defineProperty(PlayerMixinClass.prototype, "meta", {
+                get: function () {
+                    return this.player.meta;
+                },
+                enumerable: false,
+                configurable: true
+            });
+            Object.defineProperty(PlayerMixinClass.prototype, "duration", {
+                get: function () {
+                    return this.player.duration;
+                },
+                enumerable: false,
+                configurable: true
+            });
+            Object.defineProperty(PlayerMixinClass.prototype, "layerVisibility", {
+                get: function () {
+                    return this.player.layerVisibility;
+                },
+                enumerable: false,
+                configurable: true
+            });
+            Object.defineProperty(PlayerMixinClass.prototype, "autoplay", {
+                get: function () {
+                    return this.player.autoplay;
+                },
+                set: function (value) {
+                    this.player.autoplay = value;
+                },
+                enumerable: false,
+                configurable: true
+            });
+            return PlayerMixinClass;
+        }(Target));
+        var _loop_1 = function (key) {
+            var desc = Object.getOwnPropertyDescriptor(Player.prototype, key);
+            // don't override stuff that already exists, and ignore JS prototype junk
+            if (key in Target.prototype || key === 'constructor' || key === 'name' || key === 'prototype') {
+                return "continue";
+            }
+            // override methods to call e.g. `this.player.methodName()` when `methodName()` is called
+            else if (desc.value && typeof desc.value === 'function') {
+                Object.defineProperty(PlayerMixinClass.prototype, key, __assign(__assign({}, desc), { value: function () {
+                        var _a;
+                        var args = [];
+                        for (var _i = 0; _i < arguments.length; _i++) {
+                            args[_i] = arguments[_i];
+                        }
+                        return (_a = this.player)[key].apply(_a, args);
+                    } }));
+            }
+            // override getters and setters so that e.g. `property` will always reflect `this.player.property`
+            else if (desc.get || desc.set) {
+                Object.defineProperty(PlayerMixinClass.prototype, key, __assign(__assign({}, desc), { set: function (value) {
+                        this.player[key] = value;
+                    }, get: function () {
+                        return this.player[key];
+                    } }));
+            }
+        };
+        // add all Player API methods and getter/setter props to target
+        for (var _i = 0, _a = Reflect.ownKeys(Player.prototype); _i < _a.length; _i++) {
+            var key = _a[_i];
+            _loop_1(key);
+        }
+        return PlayerMixinClass;
+    }
+
     var EncoderBase = /** @class */ (function () {
         function EncoderBase() {
             this.dataUrl = null;
@@ -6025,11 +6146,12 @@ Keep on Flipnoting!
     /**
      * flipnote.js library version (exported as `flipnote.version`). You can find the latest version on the project's [NPM](https://www.npmjs.com/package/flipnote.js) page.
      */
-    var version = "5.2.3"; // replaced by @rollup/plugin-replace; see rollup.config.js
+    var version = "5.2.4"; // replaced by @rollup/plugin-replace; see rollup.config.js
 
     exports.GifImage = GifImage;
     exports.KwzParser = KwzParser;
     exports.Player = Player;
+    exports.PlayerMixin = PlayerMixin;
     exports.PpmParser = PpmParser;
     exports.WavAudio = WavAudio;
     exports.parseSource = parseSource;

@@ -1,5 +1,5 @@
 /*!!
-flipnote.js v5.2.3 (web build)
+flipnote.js v5.2.4 (web build)
 https://flipnote.js.org
 A JavaScript library for parsing, converting, and in-browser playback of the proprietary animation formats used by Nintendo's Flipnote Studio and Flipnote Studio 3D apps.
 2018 - 2021 James Daniel
@@ -2877,7 +2877,7 @@ function createBufferInfoFromArrays(gl, arrays, srcBufferInfo) {
  * @private
  */
 //function getVersionAsNumber(gl) {
-//  return parseFloat(gl.getParameter(gl."5.2.3").substr(6));
+//  return parseFloat(gl.getParameter(gl."5.2.4").substr(6));
 //}
 
 /**
@@ -2888,7 +2888,7 @@ function createBufferInfoFromArrays(gl, arrays, srcBufferInfo) {
  */
 function isWebGL2(gl) {
   // This is the correct check but it's slow
-  //  return gl.getParameter(gl."5.2.3").indexOf("WebGL 2.0") === 0;
+  //  return gl.getParameter(gl."5.2.4").indexOf("WebGL 2.0") === 0;
   // This might also be the correct check but I'm assuming it's slow-ish
   // return gl instanceof WebGL2RenderingContext;
   return !!gl.texStorage2D;
@@ -5188,6 +5188,84 @@ class Player {
     }
 }
 
+/**
+ * This is a bit of a hack to get a player component class to wrap a Player instance,
+ * while also inheriting all of the Player API's methods and properties.
+ *
+ * The resulting PlayerMixinClass will get a Player instance on this.player,
+ * and all of the Player API methods and properties applied as wrappers.
+ *
+ * e.g.
+ * - PlayerMixinClass.play() will have the same behaviour as Player.play(), but will call this.player.play() internally.
+ * - PlayerMixinClass.paused will have getters and setters to match it to this.player.paused.
+ * @internal
+ */
+function PlayerMixin(Target) {
+    class PlayerMixinClass extends Target {
+        // Mixin needs to re-define all the normal player properties, but most should be made readonly anyway...
+        get renderer() {
+            return this.player.renderer;
+        }
+        get audio() {
+            return this.player.audio;
+        }
+        get canvasEl() {
+            return this.player.canvasEl;
+        }
+        get note() {
+            return this.player.note;
+        }
+        get noteFormat() {
+            return this.player.noteFormat;
+        }
+        get meta() {
+            return this.player.meta;
+        }
+        get duration() {
+            return this.player.duration;
+        }
+        get layerVisibility() {
+            return this.player.layerVisibility;
+        }
+        get autoplay() {
+            return this.player.autoplay;
+        }
+        set autoplay(value) {
+            this.player.autoplay = value;
+        }
+    }
+    // add all Player API methods and getter/setter props to target
+    for (let key of Reflect.ownKeys(Player.prototype)) {
+        let desc = Object.getOwnPropertyDescriptor(Player.prototype, key);
+        // don't override stuff that already exists, and ignore JS prototype junk
+        if (key in Target.prototype || key === 'constructor' || key === 'name' || key === 'prototype') {
+            continue;
+        }
+        // override methods to call e.g. `this.player.methodName()` when `methodName()` is called
+        else if (desc.value && typeof desc.value === 'function') {
+            Object.defineProperty(PlayerMixinClass.prototype, key, {
+                ...desc,
+                value: function (...args) {
+                    return this.player[key](...args);
+                }
+            });
+        }
+        // override getters and setters so that e.g. `property` will always reflect `this.player.property`
+        else if (desc.get || desc.set) {
+            Object.defineProperty(PlayerMixinClass.prototype, key, {
+                ...desc,
+                set: function (value) {
+                    this.player[key] = value;
+                },
+                get: function () {
+                    return this.player[key];
+                }
+            });
+        }
+    }
+    return PlayerMixinClass;
+}
+
 class EncoderBase {
     constructor() {
         this.dataUrl = null;
@@ -5759,6 +5837,6 @@ class WavAudio extends EncoderBase {
 /**
  * flipnote.js library version (exported as `flipnote.version`). You can find the latest version on the project's [NPM](https://www.npmjs.com/package/flipnote.js) page.
  */
-const version = "5.2.3"; // replaced by @rollup/plugin-replace; see rollup.config.js
+const version = "5.2.4"; // replaced by @rollup/plugin-replace; see rollup.config.js
 
-export { FlipnoteAudioTrack, FlipnoteFormat, FlipnoteRegion, GifImage, KwzParser, Player, PpmParser, WavAudio, parseSource, fsid as utils, version };
+export { FlipnoteAudioTrack, FlipnoteFormat, FlipnoteRegion, GifImage, KwzParser, Player, PlayerMixin, PpmParser, WavAudio, parseSource, fsid as utils, version };

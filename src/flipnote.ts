@@ -28,6 +28,10 @@ export {
 } from './player';
 
 export {
+  PlayerMixin
+} from './components/PlayerMixin';
+
+export {
   GifImage,
   WavAudio,
   // bitmap encoder is deprecated in favor of gif
