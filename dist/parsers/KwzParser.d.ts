@@ -49,6 +49,10 @@ export declare type KwzParserSettings = {
      */
     dsiLibraryNote: boolean;
     /**
+     * Automatically crop out the border around any frames
+     */
+    borderCrop: boolean;
+    /**
      * Flipnote 3D's own implementation is slightly buggy! To counter this, some tweaks are applied be default for nicer audio
      * Enable this setting to use the "original" audio process used in the 3DS appo
      */

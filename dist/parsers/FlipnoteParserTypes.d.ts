@@ -56,7 +56,7 @@ export interface FlipnoteVersion {
     filename: string;
     /** Author's username */
     username: string;
-    /** Author's unique ID */
+    /** Author's unique Flipnote Studio ID, formatted in the same way that it would appear on the app's settings screen */
     fsid: string;
     /** Author's region */
     region: FlipnoteRegion;

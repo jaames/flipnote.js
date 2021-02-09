@@ -10,6 +10,7 @@ export {
   FlipnoteAudioTrack,
   FlipnoteAudioTrackInfo,
   FlipnotePaletteDefinition,
+  FlipnotePaletteColor,
   FlipnoteLayerVisibility,
   KwzParser,
   PpmParser,
@@ -24,7 +25,8 @@ export {
 } from './parseSource';
 
 export {
-  Player
+  Player,
+  PlayerEvent,
 } from './player';
 
 export {
@@ -34,8 +36,6 @@ export {
 export {
   GifImage,
   WavAudio,
-  // bitmap encoder is deprecated in favor of gif
-  // BitmapEncoder
 } from './encoders';
 
 /** 

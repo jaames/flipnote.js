@@ -1,6 +1,5 @@
 /**
  * Player event types
- * @internal
  */
 export declare enum PlayerEvent {
     __Any = "any",

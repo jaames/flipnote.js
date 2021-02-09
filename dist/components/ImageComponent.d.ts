@@ -17,6 +17,7 @@ export declare class ImageComponent extends LitElement {
     get src(): any;
     set frame(frame: string);
     get frame(): string;
+    cropped: boolean;
     private gifUrl;
     private imgTitle;
     /** @internal */

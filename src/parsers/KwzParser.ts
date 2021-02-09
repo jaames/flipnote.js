@@ -152,6 +152,10 @@ export type KwzParserSettings = {
    */ 
   dsiLibraryNote: boolean;
   /** 
+   * Automatically crop out the border around any frames
+   */ 
+  borderCrop: boolean;
+  /** 
    * Flipnote 3D's own implementation is slightly buggy! To counter this, some tweaks are applied be default for nicer audio
    * Enable this setting to use the "original" audio process used in the 3DS appo
    */
@@ -170,6 +174,7 @@ export class KwzParser extends FlipnoteParser {
   static defaultSettings: KwzParserSettings = {
     quickMeta: false,
     dsiLibraryNote: false,
+    borderCrop: false, 
     originalAudio: false
   };
   /** File format type */
@@ -235,17 +240,18 @@ export class KwzParser extends FlipnoteParser {
   constructor(arrayBuffer: ArrayBuffer, settings: Partial<KwzParserSettings> = {}) {
     super(arrayBuffer);
     this.settings = {...KwzParser.defaultSettings, ...settings};
+    this.buildSectionMap();
     this.layers = [
       new Uint8Array(KwzParser.width * KwzParser.height),
       new Uint8Array(KwzParser.width * KwzParser.height),
       new Uint8Array(KwzParser.width * KwzParser.height),
     ];
-    this.buildSectionMap();
     // if the KIC section is present, we're dealing with a folder icon
     // these are single-frame KWZs without a KFH section for metadata, or a KSN section for sound
     // while the data for a full frame (320*240) is present, only the top-left 24*24 pixels are used
     if (this.sectionMap.has('KIC')) {
       this.isFolderIcon = true;
+      // icons still use the full 320 * 240 frame size, so we just set up our image crop to deal with that
       this.imageWidth = 24;
       this.imageHeight = 24;
       this.frameCount = 1;
@@ -254,7 +260,7 @@ export class KwzParser extends FlipnoteParser {
       this.thumbFrameIndex = 0;
       this.getFrameOffsets();
     }
-    // if the KFH section is present, then this is a handritten comment from the Flipnote Gallery World online service
+    // if the KFH section is present, then this is a handwritten comment from the Flipnote Gallery World online service
     // these are single-frame KWZs, just with no sound
     else if (!this.sectionMap.has('KSN')) {
       this.isComment = true; 
@@ -266,6 +272,29 @@ export class KwzParser extends FlipnoteParser {
       this.decodeMeta();
       this.getFrameOffsets();
       this.decodeSoundHeader();
+    }
+
+    // apply special optimisations for converted DSi library notes
+    if (this.settings.dsiLibraryNote) {
+      this.isDsiLibraryNote = true;
+    }
+    
+    // automatically crop out the border around every frame
+    if (this.settings.borderCrop) {
+      // dsi library notes can be cropped to their original resolution
+      if (this.isDsiLibraryNote) {
+        this.imageOffsetX = 32;
+        this.imageOffsetY = 24;
+        this.imageWidth = 256;
+        this.imageHeight = 192;
+      }
+      // even standard notes have a bit of a border...
+      else if (!this.isFolderIcon) {
+        this.imageOffsetX = 5;
+        this.imageOffsetY = 5;
+        this.imageWidth = 310;
+        this.imageHeight = 230;
+      }
     }
   }
   
@@ -360,7 +389,7 @@ export class KwzParser extends FlipnoteParser {
       3: (layerFlags & 0x3) === 0,
     };
     // Try to auto-detect whether the current author ID matches a converted PPM ID
-    if (isKwzDsiLibraryFsid(currentAuthorId) || this.settings.dsiLibraryNote) {
+    if (isKwzDsiLibraryFsid(currentAuthorId)) {
       this.isDsiLibraryNote = true;
     }
     this.meta = {
@@ -724,50 +753,56 @@ export class KwzParser extends FlipnoteParser {
                   const linePtrB = this.readBits(5) * 8;
                   a = KWZ_LINE_TABLE_COMMON.subarray(linePtrA, linePtrA + 8);
                   b = KWZ_LINE_TABLE_COMMON.subarray(linePtrB, linePtrB + 8);
-                  pattern = (pattern + 1) % 4;
-                } else {
+                  pattern += 1;
+                } 
+                else {
                   const linePtrA = this.readBits(13) * 8;
                   const linePtrB = this.readBits(13) * 8;
                   a = KWZ_LINE_TABLE.subarray(linePtrA, linePtrA + 8);
                   b = KWZ_LINE_TABLE.subarray(linePtrB, linePtrB + 8);
                 }
 
-                if (pattern === 0) {
-                  pixelBuffer.set(a, pixelBufferPtr);
-                  pixelBuffer.set(b, pixelBufferPtr += 320);
-                  pixelBuffer.set(a, pixelBufferPtr += 320);
-                  pixelBuffer.set(b, pixelBufferPtr += 320);
-                  pixelBuffer.set(a, pixelBufferPtr += 320);
-                  pixelBuffer.set(b, pixelBufferPtr += 320);
-                  pixelBuffer.set(a, pixelBufferPtr += 320);
-                  pixelBuffer.set(b, pixelBufferPtr += 320);
-                } else if (pattern === 1) {
-                  pixelBuffer.set(a, pixelBufferPtr);
-                  pixelBuffer.set(a, pixelBufferPtr += 320);
-                  pixelBuffer.set(b, pixelBufferPtr += 320);
-                  pixelBuffer.set(a, pixelBufferPtr += 320);
-                  pixelBuffer.set(a, pixelBufferPtr += 320);
-                  pixelBuffer.set(b, pixelBufferPtr += 320);
-                  pixelBuffer.set(a, pixelBufferPtr += 320);
-                  pixelBuffer.set(a, pixelBufferPtr += 320);
-                } else if (pattern === 2) {
-                  pixelBuffer.set(a, pixelBufferPtr);
-                  pixelBuffer.set(b, pixelBufferPtr += 320);
-                  pixelBuffer.set(a, pixelBufferPtr += 320);
-                  pixelBuffer.set(a, pixelBufferPtr += 320);
-                  pixelBuffer.set(b, pixelBufferPtr += 320);
-                  pixelBuffer.set(a, pixelBufferPtr += 320);
-                  pixelBuffer.set(a, pixelBufferPtr += 320);
-                  pixelBuffer.set(b, pixelBufferPtr += 320);
-                } else if (pattern === 3) {
-                  pixelBuffer.set(a, pixelBufferPtr);
-                  pixelBuffer.set(b, pixelBufferPtr += 320);
-                  pixelBuffer.set(b, pixelBufferPtr += 320);
-                  pixelBuffer.set(a, pixelBufferPtr += 320);
-                  pixelBuffer.set(b, pixelBufferPtr += 320);
-                  pixelBuffer.set(b, pixelBufferPtr += 320);
-                  pixelBuffer.set(a, pixelBufferPtr += 320);
-                  pixelBuffer.set(b, pixelBufferPtr += 320);
+                switch (pattern % 4) {
+                  case 0:
+                    pixelBuffer.set(a, pixelBufferPtr);
+                    pixelBuffer.set(b, pixelBufferPtr += 320);
+                    pixelBuffer.set(a, pixelBufferPtr += 320);
+                    pixelBuffer.set(b, pixelBufferPtr += 320);
+                    pixelBuffer.set(a, pixelBufferPtr += 320);
+                    pixelBuffer.set(b, pixelBufferPtr += 320);
+                    pixelBuffer.set(a, pixelBufferPtr += 320);
+                    pixelBuffer.set(b, pixelBufferPtr += 320);
+                    break;
+                  case 1:
+                    pixelBuffer.set(a, pixelBufferPtr);
+                    pixelBuffer.set(a, pixelBufferPtr += 320);
+                    pixelBuffer.set(b, pixelBufferPtr += 320);
+                    pixelBuffer.set(a, pixelBufferPtr += 320);
+                    pixelBuffer.set(a, pixelBufferPtr += 320);
+                    pixelBuffer.set(b, pixelBufferPtr += 320);
+                    pixelBuffer.set(a, pixelBufferPtr += 320);
+                    pixelBuffer.set(a, pixelBufferPtr += 320);
+                    break;
+                  case 2:
+                    pixelBuffer.set(a, pixelBufferPtr);
+                    pixelBuffer.set(b, pixelBufferPtr += 320);
+                    pixelBuffer.set(a, pixelBufferPtr += 320);
+                    pixelBuffer.set(a, pixelBufferPtr += 320);
+                    pixelBuffer.set(b, pixelBufferPtr += 320);
+                    pixelBuffer.set(a, pixelBufferPtr += 320);
+                    pixelBuffer.set(a, pixelBufferPtr += 320);
+                    pixelBuffer.set(b, pixelBufferPtr += 320);
+                    break;
+                  case 3:
+                    pixelBuffer.set(a, pixelBufferPtr);
+                    pixelBuffer.set(b, pixelBufferPtr += 320);
+                    pixelBuffer.set(b, pixelBufferPtr += 320);
+                    pixelBuffer.set(a, pixelBufferPtr += 320);
+                    pixelBuffer.set(b, pixelBufferPtr += 320);
+                    pixelBuffer.set(b, pixelBufferPtr += 320);
+                    pixelBuffer.set(a, pixelBufferPtr += 320);
+                    pixelBuffer.set(b, pixelBufferPtr += 320);
+                    break;
                 }
               }
             }

@@ -51,6 +51,9 @@ export class ImageComponent extends LitElement {
     return this._frame;
   }
 
+  @property({ type: Boolean })
+  public cropped: boolean = false;
+
   @internalProperty()
   private gifUrl: string = '';
 
@@ -102,7 +105,8 @@ export class ImageComponent extends LitElement {
   public load(src: any) {
     this._src = src;
     this.note = undefined;
-    parseSource(src)
+    const borderCrop = this.getAttribute('cropped') === 'true';
+    parseSource(src, { borderCrop })
       .then(note => this.loadNote(note))
       .catch(err => this.dispatchError(err));
   }

@@ -1,5 +1,5 @@
 /*!!
-flipnote.js v5.2.4 (webcomponent build)
+flipnote.js v5.3.0 (webcomponent build)
 https://flipnote.js.org
 A JavaScript library for parsing, converting, and in-browser playback of the proprietary animation formats used by Nintendo's Flipnote Studio and Flipnote Studio 3D apps.
 2018 - 2021 James Daniel
@@ -1259,17 +1259,18 @@ Keep on Flipnoting!
           this.bitIndex = 0;
           this.bitValue = 0;
           this.settings = Object.assign(Object.assign({}, KwzParser.defaultSettings), settings);
+          this.buildSectionMap();
           this.layers = [
               new Uint8Array(KwzParser.width * KwzParser.height),
               new Uint8Array(KwzParser.width * KwzParser.height),
               new Uint8Array(KwzParser.width * KwzParser.height),
           ];
-          this.buildSectionMap();
           // if the KIC section is present, we're dealing with a folder icon
           // these are single-frame KWZs without a KFH section for metadata, or a KSN section for sound
           // while the data for a full frame (320*240) is present, only the top-left 24*24 pixels are used
           if (this.sectionMap.has('KIC')) {
               this.isFolderIcon = true;
+              // icons still use the full 320 * 240 frame size, so we just set up our image crop to deal with that
               this.imageWidth = 24;
               this.imageHeight = 24;
               this.frameCount = 1;
@@ -1278,7 +1279,7 @@ Keep on Flipnoting!
               this.thumbFrameIndex = 0;
               this.getFrameOffsets();
           }
-          // if the KFH section is present, then this is a handritten comment from the Flipnote Gallery World online service
+          // if the KFH section is present, then this is a handwritten comment from the Flipnote Gallery World online service
           // these are single-frame KWZs, just with no sound
           else if (!this.sectionMap.has('KSN')) {
               this.isComment = true;
@@ -1290,6 +1291,27 @@ Keep on Flipnoting!
               this.decodeMeta();
               this.getFrameOffsets();
               this.decodeSoundHeader();
+          }
+          // apply special optimisations for converted DSi library notes
+          if (this.settings.dsiLibraryNote) {
+              this.isDsiLibraryNote = true;
+          }
+          // automatically crop out the border around every frame
+          if (this.settings.borderCrop) {
+              // dsi library notes can be cropped to their original resolution
+              if (this.isDsiLibraryNote) {
+                  this.imageOffsetX = 32;
+                  this.imageOffsetY = 24;
+                  this.imageWidth = 256;
+                  this.imageHeight = 192;
+              }
+              // even standard notes have a bit of a border...
+              else if (!this.isFolderIcon) {
+                  this.imageOffsetX = 5;
+                  this.imageOffsetY = 5;
+                  this.imageWidth = 310;
+                  this.imageHeight = 230;
+              }
           }
       }
       buildSectionMap() {
@@ -1379,7 +1401,7 @@ Keep on Flipnoting!
               3: (layerFlags & 0x3) === 0,
           };
           // Try to auto-detect whether the current author ID matches a converted PPM ID
-          if (isKwzDsiLibraryFsid(currentAuthorId) || this.settings.dsiLibraryNote) {
+          if (isKwzDsiLibraryFsid(currentAuthorId)) {
               this.isDsiLibraryNote = true;
           }
           this.meta = {
@@ -1710,7 +1732,7 @@ Keep on Flipnoting!
                                       const linePtrB = this.readBits(5) * 8;
                                       a = KWZ_LINE_TABLE_COMMON.subarray(linePtrA, linePtrA + 8);
                                       b = KWZ_LINE_TABLE_COMMON.subarray(linePtrB, linePtrB + 8);
-                                      pattern = (pattern + 1) % 4;
+                                      pattern += 1;
                                   }
                                   else {
                                       const linePtrA = this.readBits(13) * 8;
@@ -1718,45 +1740,47 @@ Keep on Flipnoting!
                                       a = KWZ_LINE_TABLE.subarray(linePtrA, linePtrA + 8);
                                       b = KWZ_LINE_TABLE.subarray(linePtrB, linePtrB + 8);
                                   }
-                                  if (pattern === 0) {
-                                      pixelBuffer.set(a, pixelBufferPtr);
-                                      pixelBuffer.set(b, pixelBufferPtr += 320);
-                                      pixelBuffer.set(a, pixelBufferPtr += 320);
-                                      pixelBuffer.set(b, pixelBufferPtr += 320);
-                                      pixelBuffer.set(a, pixelBufferPtr += 320);
-                                      pixelBuffer.set(b, pixelBufferPtr += 320);
-                                      pixelBuffer.set(a, pixelBufferPtr += 320);
-                                      pixelBuffer.set(b, pixelBufferPtr += 320);
-                                  }
-                                  else if (pattern === 1) {
-                                      pixelBuffer.set(a, pixelBufferPtr);
-                                      pixelBuffer.set(a, pixelBufferPtr += 320);
-                                      pixelBuffer.set(b, pixelBufferPtr += 320);
-                                      pixelBuffer.set(a, pixelBufferPtr += 320);
-                                      pixelBuffer.set(a, pixelBufferPtr += 320);
-                                      pixelBuffer.set(b, pixelBufferPtr += 320);
-                                      pixelBuffer.set(a, pixelBufferPtr += 320);
-                                      pixelBuffer.set(a, pixelBufferPtr += 320);
-                                  }
-                                  else if (pattern === 2) {
-                                      pixelBuffer.set(a, pixelBufferPtr);
-                                      pixelBuffer.set(b, pixelBufferPtr += 320);
-                                      pixelBuffer.set(a, pixelBufferPtr += 320);
-                                      pixelBuffer.set(a, pixelBufferPtr += 320);
-                                      pixelBuffer.set(b, pixelBufferPtr += 320);
-                                      pixelBuffer.set(a, pixelBufferPtr += 320);
-                                      pixelBuffer.set(a, pixelBufferPtr += 320);
-                                      pixelBuffer.set(b, pixelBufferPtr += 320);
-                                  }
-                                  else if (pattern === 3) {
-                                      pixelBuffer.set(a, pixelBufferPtr);
-                                      pixelBuffer.set(b, pixelBufferPtr += 320);
-                                      pixelBuffer.set(b, pixelBufferPtr += 320);
-                                      pixelBuffer.set(a, pixelBufferPtr += 320);
-                                      pixelBuffer.set(b, pixelBufferPtr += 320);
-                                      pixelBuffer.set(b, pixelBufferPtr += 320);
-                                      pixelBuffer.set(a, pixelBufferPtr += 320);
-                                      pixelBuffer.set(b, pixelBufferPtr += 320);
+                                  switch (pattern % 4) {
+                                      case 0:
+                                          pixelBuffer.set(a, pixelBufferPtr);
+                                          pixelBuffer.set(b, pixelBufferPtr += 320);
+                                          pixelBuffer.set(a, pixelBufferPtr += 320);
+                                          pixelBuffer.set(b, pixelBufferPtr += 320);
+                                          pixelBuffer.set(a, pixelBufferPtr += 320);
+                                          pixelBuffer.set(b, pixelBufferPtr += 320);
+                                          pixelBuffer.set(a, pixelBufferPtr += 320);
+                                          pixelBuffer.set(b, pixelBufferPtr += 320);
+                                          break;
+                                      case 1:
+                                          pixelBuffer.set(a, pixelBufferPtr);
+                                          pixelBuffer.set(a, pixelBufferPtr += 320);
+                                          pixelBuffer.set(b, pixelBufferPtr += 320);
+                                          pixelBuffer.set(a, pixelBufferPtr += 320);
+                                          pixelBuffer.set(a, pixelBufferPtr += 320);
+                                          pixelBuffer.set(b, pixelBufferPtr += 320);
+                                          pixelBuffer.set(a, pixelBufferPtr += 320);
+                                          pixelBuffer.set(a, pixelBufferPtr += 320);
+                                          break;
+                                      case 2:
+                                          pixelBuffer.set(a, pixelBufferPtr);
+                                          pixelBuffer.set(b, pixelBufferPtr += 320);
+                                          pixelBuffer.set(a, pixelBufferPtr += 320);
+                                          pixelBuffer.set(a, pixelBufferPtr += 320);
+                                          pixelBuffer.set(b, pixelBufferPtr += 320);
+                                          pixelBuffer.set(a, pixelBufferPtr += 320);
+                                          pixelBuffer.set(a, pixelBufferPtr += 320);
+                                          pixelBuffer.set(b, pixelBufferPtr += 320);
+                                          break;
+                                      case 3:
+                                          pixelBuffer.set(a, pixelBufferPtr);
+                                          pixelBuffer.set(b, pixelBufferPtr += 320);
+                                          pixelBuffer.set(b, pixelBufferPtr += 320);
+                                          pixelBuffer.set(a, pixelBufferPtr += 320);
+                                          pixelBuffer.set(b, pixelBufferPtr += 320);
+                                          pixelBuffer.set(b, pixelBufferPtr += 320);
+                                          pixelBuffer.set(a, pixelBufferPtr += 320);
+                                          pixelBuffer.set(b, pixelBufferPtr += 320);
+                                          break;
                                   }
                               }
                           }
@@ -2002,6 +2026,7 @@ Keep on Flipnoting!
   KwzParser.defaultSettings = {
       quickMeta: false,
       dsiLibraryNote: false,
+      borderCrop: false,
       originalAudio: false
   };
   /** File format type */
@@ -2179,9 +2204,7 @@ Keep on Flipnoting!
 
   /**
    * Player event types
-   * @internal
    */
-  var PlayerEvent;
   (function (PlayerEvent) {
       PlayerEvent["__Any"] = "any";
       PlayerEvent["Play"] = "play";
@@ -2210,34 +2233,34 @@ Keep on Flipnoting!
       PlayerEvent["Close"] = "close";
       PlayerEvent["Error"] = "error";
       PlayerEvent["Destroy"] = "destroy";
-  })(PlayerEvent || (PlayerEvent = {}));
+  })(exports.PlayerEvent || (exports.PlayerEvent = {}));
   /** @internal */
   const supportedEvents = [
-      PlayerEvent.Play,
-      PlayerEvent.Pause,
-      PlayerEvent.CanPlay,
-      PlayerEvent.CanPlayThrough,
-      PlayerEvent.SeekStart,
-      PlayerEvent.SeekEnd,
-      PlayerEvent.Duration,
-      PlayerEvent.Loop,
-      PlayerEvent.Ended,
-      PlayerEvent.VolumeChange,
-      PlayerEvent.Progress,
-      PlayerEvent.TimeUpdate,
-      PlayerEvent.FrameUpdate,
-      PlayerEvent.FrameNext,
-      PlayerEvent.FramePrev,
-      PlayerEvent.FrameFirst,
-      PlayerEvent.FrameLast,
-      PlayerEvent.Ready,
-      PlayerEvent.Load,
-      PlayerEvent.LoadStart,
-      PlayerEvent.LoadedData,
-      PlayerEvent.LoadedMeta,
-      PlayerEvent.Emptied,
-      PlayerEvent.Close,
-      PlayerEvent.Error,
+      exports.PlayerEvent.Play,
+      exports.PlayerEvent.Pause,
+      exports.PlayerEvent.CanPlay,
+      exports.PlayerEvent.CanPlayThrough,
+      exports.PlayerEvent.SeekStart,
+      exports.PlayerEvent.SeekEnd,
+      exports.PlayerEvent.Duration,
+      exports.PlayerEvent.Loop,
+      exports.PlayerEvent.Ended,
+      exports.PlayerEvent.VolumeChange,
+      exports.PlayerEvent.Progress,
+      exports.PlayerEvent.TimeUpdate,
+      exports.PlayerEvent.FrameUpdate,
+      exports.PlayerEvent.FrameNext,
+      exports.PlayerEvent.FramePrev,
+      exports.PlayerEvent.FrameFirst,
+      exports.PlayerEvent.FrameLast,
+      exports.PlayerEvent.Ready,
+      exports.PlayerEvent.Load,
+      exports.PlayerEvent.LoadStart,
+      exports.PlayerEvent.LoadedData,
+      exports.PlayerEvent.LoadedMeta,
+      exports.PlayerEvent.Emptied,
+      exports.PlayerEvent.Close,
+      exports.PlayerEvent.Error,
   ];
 
   /* @license twgl.js 4.17.0 Copyright (c) 2015, Gregg Tavares All Rights Reserved.
@@ -2887,7 +2910,7 @@ Keep on Flipnoting!
    * @private
    */
   //function getVersionAsNumber(gl) {
-  //  return parseFloat(gl.getParameter(gl."5.2.4").substr(6));
+  //  return parseFloat(gl.getParameter(gl."5.3.0").substr(6));
   //}
 
   /**
@@ -2898,7 +2921,7 @@ Keep on Flipnoting!
    */
   function isWebGL2(gl) {
     // This is the correct check but it's slow
-    //  return gl.getParameter(gl."5.2.4").indexOf("WebGL 2.0") === 0;
+    //  return gl.getParameter(gl."5.3.0").indexOf("WebGL 2.0") === 0;
     // This might also be the correct check but I'm assuming it's slow-ish
     // return gl instanceof WebGL2RenderingContext;
     return !!gl.texStorage2D;
@@ -4456,11 +4479,11 @@ Keep on Flipnoting!
               if (currPlaybackTime >= this.duration) {
                   if (this.loop) {
                       this.playbackStartTime = now;
-                      this.emit(PlayerEvent.Loop);
+                      this.emit(exports.PlayerEvent.Loop);
                   }
                   else {
                       this.pause();
-                      this.emit(PlayerEvent.Ended);
+                      this.emit(exports.PlayerEvent.Ended);
                   }
               }
               this.setCurrentTime(currPlaybackTime % this.duration);
@@ -4470,7 +4493,7 @@ Keep on Flipnoting!
           // if `el` is a string, use it to select an Element, else assume it's an element
           el = ('string' == typeof el) ? document.querySelector(el) : el;
           this.renderer = new WebglRenderer(el, width, height, {
-              onlost: () => this.emit(PlayerEvent.Error),
+              onlost: () => this.emit(exports.PlayerEvent.Error),
               onrestored: () => this.load()
           });
           this.audio = new WebAudioPlayer();
@@ -4594,14 +4617,14 @@ Keep on Flipnoting!
           if (!source)
               return this.openNote(this.note);
           // otherwise do a normal load
-          this.emit(PlayerEvent.LoadStart);
+          this.emit(exports.PlayerEvent.LoadStart);
           return parseSource(source)
               .then((note) => {
               this.openNote(note);
               this._src = source;
           })
               .catch((err) => {
-              this.emit(PlayerEvent.Error, err);
+              this.emit(exports.PlayerEvent.Error, err);
               throw new Error(`Error loading Flipnote: ${err.message}`);
           });
       }
@@ -4635,7 +4658,7 @@ Keep on Flipnoting!
               this.closeNote();
           this.note = note;
           this.meta = note.meta;
-          this.emit(PlayerEvent.LoadedMeta);
+          this.emit(exports.PlayerEvent.LoadedMeta);
           this.noteFormat = note.format;
           this.duration = note.duration;
           this.playbackTime = 0;
@@ -4647,14 +4670,14 @@ Keep on Flipnoting!
           this.layerVisibility = note.layerVisibility;
           this.showThumbnail = true;
           this.audio.setBuffer(note.getAudioMasterPcm(), note.sampleRate);
-          this.emit(PlayerEvent.CanPlay);
-          this.emit(PlayerEvent.CanPlayThrough);
+          this.emit(exports.PlayerEvent.CanPlay);
+          this.emit(exports.PlayerEvent.CanPlayThrough);
           this.setLoop(note.meta.loop);
           this.renderer.setInputSize(note.imageWidth, note.imageHeight);
           this.drawFrame(note.thumbFrameIndex);
-          this.emit(PlayerEvent.LoadedData);
-          this.emit(PlayerEvent.Load);
-          this.emit(PlayerEvent.Ready);
+          this.emit(exports.PlayerEvent.LoadedData);
+          this.emit(exports.PlayerEvent.Load);
+          this.emit(exports.PlayerEvent.Ready);
           if (this.autoplay)
               this.play();
       }
@@ -4667,7 +4690,7 @@ Keep on Flipnoting!
           const i = Math.floor(value / (1 / this.framerate));
           this.setCurrentFrame(i);
           this.playbackTime = value;
-          this.emit(PlayerEvent.Progress, this.progress);
+          this.emit(exports.PlayerEvent.Progress, this.progress);
       }
       /**
        * Get the current playback time
@@ -4726,7 +4749,7 @@ Keep on Flipnoting!
           this.playbackStartTime = (now / 1000) - this.playbackTime;
           this.playAudio();
           this.playbackLoop(now);
-          this.emit(PlayerEvent.Play);
+          this.emit(exports.PlayerEvent.Play);
       }
       /**
        * Pause animation playback at the current position
@@ -4739,7 +4762,7 @@ Keep on Flipnoting!
           if (this.playbackLoopId !== null)
               cancelAnimationFrame(this.playbackLoopId);
           this.stopAudio();
-          this.emit(PlayerEvent.Pause);
+          this.emit(exports.PlayerEvent.Pause);
       }
       /**
        * Resumes animation playback if paused, otherwise pauses
@@ -4801,11 +4824,11 @@ Keep on Flipnoting!
           this.showThumbnail = false;
           if (!this.isPlaying) {
               this.playbackTime = newFrameIndex * (1 / this.framerate);
-              this.emit(PlayerEvent.SeekEnd);
+              this.emit(exports.PlayerEvent.SeekEnd);
           }
-          this.emit(PlayerEvent.FrameUpdate, this.currentFrame);
-          this.emit(PlayerEvent.Progress, this.progress);
-          this.emit(PlayerEvent.TimeUpdate, this.currentFrame);
+          this.emit(exports.PlayerEvent.FrameUpdate, this.currentFrame);
+          this.emit(exports.PlayerEvent.Progress, this.progress);
+          this.emit(exports.PlayerEvent.TimeUpdate, this.currentFrame);
       }
       /**
        * Jump to the next animation frame
@@ -4817,7 +4840,7 @@ Keep on Flipnoting!
               this.currentFrame = 0;
           else
               this.currentFrame += 1;
-          this.emit(PlayerEvent.FrameNext);
+          this.emit(exports.PlayerEvent.FrameNext);
       }
       /**
        * Jump to the next animation frame
@@ -4829,7 +4852,7 @@ Keep on Flipnoting!
               this.currentFrame = this.frameCount - 1;
           else
               this.currentFrame -= 1;
-          this.emit(PlayerEvent.FramePrev);
+          this.emit(exports.PlayerEvent.FramePrev);
       }
       /**
        * Jump to the last animation frame
@@ -4837,7 +4860,7 @@ Keep on Flipnoting!
        */
       lastFrame() {
           this.currentFrame = this.frameCount - 1;
-          this.emit(PlayerEvent.FrameLast);
+          this.emit(exports.PlayerEvent.FrameLast);
       }
       /**
        * Jump to the first animation frame
@@ -4845,7 +4868,7 @@ Keep on Flipnoting!
        */
       firstFrame() {
           this.currentFrame = 0;
-          this.emit(PlayerEvent.FrameFirst);
+          this.emit(exports.PlayerEvent.FrameFirst);
       }
       /**
        * Jump to the thumbnail frame
@@ -4860,7 +4883,7 @@ Keep on Flipnoting!
        */
       startSeek() {
           if (!this.isSeeking) {
-              this.emit(PlayerEvent.SeekStart);
+              this.emit(exports.PlayerEvent.SeekStart);
               this.wasPlaying = this.isPlaying;
               this.pause();
               this.isSeeking = true;
@@ -5022,7 +5045,7 @@ Keep on Flipnoting!
           else
               this.audio.volume = this._volume;
           this._muted = isMute;
-          this.emit(PlayerEvent.VolumeChange, this.audio.volume);
+          this.emit(exports.PlayerEvent.VolumeChange, this.audio.volume);
       }
       /**
        * Get the audio mute state
@@ -5046,7 +5069,7 @@ Keep on Flipnoting!
           assertRange(volume, 0, 1, 'volume');
           this._volume = volume;
           this.audio.volume = volume;
-          this.emit(PlayerEvent.VolumeChange, this.audio.volume);
+          this.emit(exports.PlayerEvent.VolumeChange, this.audio.volume);
       }
       /**
        * Get the current audio volume
@@ -5151,7 +5174,7 @@ Keep on Flipnoting!
        */
       emit(eventType, ...args) {
           const events = this.events;
-          if (eventType !== PlayerEvent.__Any && events.has(eventType)) {
+          if (eventType !== exports.PlayerEvent.__Any && events.has(eventType)) {
               const callbackList = events.get(eventType);
               callbackList.forEach(callback => callback.apply(null, args));
               // call onwhatever() function for this event, if one has been added
@@ -5161,8 +5184,8 @@ Keep on Flipnoting!
                   thisAsAny[listenerName].apply(null, args);
           }
           // "any" event listeners fire for all events, and receive eventType as their first param
-          if (events.has(PlayerEvent.__Any)) {
-              const callbackList = events.get(PlayerEvent.__Any);
+          if (events.has(exports.PlayerEvent.__Any)) {
+              const callbackList = events.get(exports.PlayerEvent.__Any);
               callbackList.forEach(callback => callback.apply(null, [eventType, ...args]));
           }
       }
@@ -5179,7 +5202,7 @@ Keep on Flipnoting!
        */
       async destroy() {
           this.clearEvents();
-          this.emit(PlayerEvent.Destroy);
+          this.emit(exports.PlayerEvent.Destroy);
           this.closeNote();
           await this.renderer.destroy();
           await this.audio.destroy();
@@ -5833,7 +5856,7 @@ Keep on Flipnoting!
   /**
    * flipnote.js library version (exported as `flipnote.version`). You can find the latest version on the project's [NPM](https://www.npmjs.com/package/flipnote.js) page.
    */
-  const version = "5.2.4"; // replaced by @rollup/plugin-replace; see rollup.config.js
+  const version = "5.3.0"; // replaced by @rollup/plugin-replace; see rollup.config.js
 
   /*! *****************************************************************************
   Copyright (c) Microsoft Corporation.
@@ -8911,7 +8934,6 @@ Keep on Flipnoting!
               return html `
         <div class="Controls Controls--compact Controls__row">
           <button @click=${this.handlePlayToggle} class="Button Controls__playButton">
-          wa
             <flipnote-player-icon icon=${this._isPlaying ? 'pause' : 'play'}></flipnote-player-icon>
           </button>
           <flipnote-player-slider 
@@ -8969,34 +8991,34 @@ Keep on Flipnoting!
           const player = new Player(this.playerCanvas, 256, 192);
           this._resizeObserver.observe(this);
           this.player = player;
-          player.on(PlayerEvent.LoadStart, () => {
+          player.on(exports.PlayerEvent.LoadStart, () => {
               this._isLoading = true;
           });
-          player.on(PlayerEvent.Load, () => {
+          player.on(exports.PlayerEvent.Load, () => {
               this.updateCanvasSize();
           });
-          player.on(PlayerEvent.Error, () => {
+          player.on(exports.PlayerEvent.Error, () => {
               this._isLoading = false;
               this._isError = true;
           });
-          player.on([PlayerEvent.Load, PlayerEvent.Close, PlayerEvent.Progress], () => {
+          player.on([exports.PlayerEvent.Load, exports.PlayerEvent.Close, exports.PlayerEvent.Progress], () => {
               this._isLoading = false;
               this._isError = false;
               this._progress = player.getProgress() / 100;
               this._counter = player.getFrameCounter();
           });
-          player.on(PlayerEvent.Play, () => {
+          player.on(exports.PlayerEvent.Play, () => {
               this._isPlaying = true;
           });
-          player.on(PlayerEvent.Pause, () => {
+          player.on(exports.PlayerEvent.Pause, () => {
               this._isPlaying = false;
           });
-          player.on([PlayerEvent.Load, PlayerEvent.VolumeChange], () => {
+          player.on([exports.PlayerEvent.Load, exports.PlayerEvent.VolumeChange], () => {
               this._volumeLevel = player.volume;
               this._isMuted = player.muted;
           });
           // catch any player event and dispatch it as a DOM event
-          player.on(PlayerEvent.__Any, (eventName, args) => {
+          player.on(exports.PlayerEvent.__Any, (eventName, args) => {
               this.dispatchEvent(new Event(eventName));
           });
           if (this._playerSrc)
@@ -9548,6 +9570,7 @@ Keep on Flipnoting!
           super(...arguments);
           this._src = '';
           this._frame = '0';
+          this.cropped = false;
           this.gifUrl = '';
           this.imgTitle = '';
       }
@@ -9620,7 +9643,8 @@ Keep on Flipnoting!
       load(src) {
           this._src = src;
           this.note = undefined;
-          parseSource(src)
+          const borderCrop = this.getAttribute('cropped') === 'true';
+          parseSource(src, { borderCrop })
               .then(note => this.loadNote(note))
               .catch(err => this.dispatchError(err));
       }
@@ -9648,6 +9672,9 @@ Keep on Flipnoting!
   __decorate([
       property()
   ], ImageComponent.prototype, "frame", null);
+  __decorate([
+      property({ type: Boolean })
+  ], ImageComponent.prototype, "cropped", void 0);
   __decorate([
       internalProperty()
   ], ImageComponent.prototype, "gifUrl", void 0);

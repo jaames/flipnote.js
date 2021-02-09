@@ -1,6 +1,5 @@
 /** 
  * Player event types
- * @internal
  */
 export enum PlayerEvent {
   __Any = 'any', // special event, gets called on everything

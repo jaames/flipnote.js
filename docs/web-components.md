@@ -1,28 +1,22 @@
-The Web Component version of Flipnote.js provides a custom `<flipnote-player>` HTML tag that can be used to embed a Flipnote player UI in any webpage. 
+The web component build of Flipnote.js provides a set of custom HTML tags that can be used to easily embed a [Flipnote player UI (`<flipnote-player>`)](#flipnote-player) or [Flipnote image (`<flipnote-image>`)](#flipnote-image) in any webpage. 
 
-Here's what it looks like:
+# Installation
 
-<div>
-<flipnote-player src="../../assets/notes/memoA.kwz"></flipnote-player>
-</div>
+Installing the web component build is very similar to the usual installation steps listed on the {@page Getting Started} page, except we import a different file that has the additional web component code included.
 
-## Installation
-
-Installation is very similar to the methods listed on the {@page Getting Started} page, except we import a seperate version of the library that has the web components included:
-
-### From a CDN (web)
+## From a CDN (web)
 
 ```html
 <script src="https://cdn.jsdelivr.net/npm/flipnote.js@5/dist/flipnote.webcomponent.min.js"></script>
 ```
 
-### Self-host (web)
+## Self-host (web)
 
 [**Development version**](https://raw.githubusercontent.com/jaames/flipnote.js/master/dist/flipnote.webcomponent.js)<br/>
 
 [**Production version**](https://raw.githubusercontent.com/jaames/flipnote.js/master/dist/flipnote.webcomponent.min.js)<br/>
 
-### From NPM (web via a bundler)
+## From NPM (web via a bundler)
 
 ```js
 // with the require() function:
@@ -30,6 +24,16 @@ const flipnote = require('flipnote.js/dist/flipnote.webcomponent.js');
 // or with the es6 import syntax:
 import flipnote from 'flipnote.js/dist/flipnote.webcomponent.js';
 ```
+
+# flipnote-player
+
+The `<flipnote-player>` element behaves almost exactly like the standard HTML5 [`<video>`](https://developer.mozilla.org/en-US/docs/Web/HTML/Element/video) element, except it can play any valid Flipnote Studio .ppm or .kwz animation file directly in the browser. It also provides a cute playback UI, inspired by my [web-based Flipnote Player](http://flipnote.rakujira.jp/).
+
+Here's what it looks like:
+
+<div>
+<flipnote-player src="../../assets/notes/memoA.kwz"></flipnote-player>
+</div>
 
 ## Basic usage
 
@@ -181,3 +185,53 @@ A full list of available events can be found on the {@link Player} API page.
 The player uses [WebGL](https://developer.mozilla.org/en-US/docs/Web/API/WebGL_API) to render the Flipnote's animation frames, the benefits of which includes faster performance and lower power consumption compared to the HTML5 canvas API. However, one downside of this approach is that browsers have a hidden limit of how many WebGL contexts can appear on a single page. The number varies, but it's typically around 8 to 12. 
 
 If this limit is reached, it will cull old rendering contexts before new ones are created, each player uses its own WebGL context, so this means you can only have a limited number of active player elements on a single page. Flipnote.js currently handles this by making the player show an error message if its context has been culled, but that isn't very good UX. In the future, I intend to automatically fall back to a HTML5 canvas renderer when this happens, although I haven't got around to implementing that yet. So please make a note of this.
+
+# flipnote-image
+
+The `<flipnote-image>` element behaves similarly to the standard HTML [`<img>`](https://developer.mozilla.org/en-US/docs/Web/HTML/Element/img) element, except it can display a frame from any valid Flipnote Studio .ppm or .kwz animation file directly in the browser. It's a lot less taxing on resources than the player element, so you can use it to embed lots of Flipnote frames in the same page if you want.
+
+<div>
+<flipnote-image src="../../assets/notes/memoA.kwz"></flipnote-image>
+</div>
+
+It also works for Flipnote Gallery World comment files (.kwc)
+
+<div>
+<flipnote-image src="../../assets/notes/comment.kwc"></flipnote-image>
+</div>
+
+And even Flipnote Studio 3D's folder icons (!.ico)
+
+<div>
+<flipnote-image src="../../assets/notes/1.ico"></flipnote-image>
+<flipnote-image src="../../assets/notes/2.ico"></flipnote-image>
+<flipnote-image src="../../assets/notes/3.ico"></flipnote-image>
+</div>
+
+## Basic usage
+
+After inserting the script into your page, all you need to do is put a `<flipnote-image>` tag somewhere in your HTML, and give it a `src` attribute pointing to the URL of a Flipnote Studio .ppm or .kwz file:
+
+```html
+<flipnote-image src="./path/to/some/flipnote.kwz"></flipnote-image>
+```
+
+## Attributes
+
+#### `src`
+
+The `src` attribute tells the image element what Flipnote it should load, and it should point to the URL of a Flipnote Studio .ppm or .kwz animation file. This attribute be changed at any time to load another Flipnote into the same image.
+
+As with the player element, Flipnotes can also be loaded from other kinds of sources, such as from JavaScript [`ArrayBuffer`](https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/ArrayBuffer) or [`File`](https://developer.mozilla.org/en-US/docs/Web/API/File) objects.
+
+#### `frame`
+
+The Flipnote frame to display as an image, this can be:
+
+- Any numeric value to specify an exact frame index to show
+- `"thumb"` to use the Flipnote's thumbnail frame
+- `"all"` to show the entire animation as a non-interactive animated GIF
+
+#### `cropped`
+
+Set this to `"true"` to automatically crop out the border around the Flipnote frame. 
