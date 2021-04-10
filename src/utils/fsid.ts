@@ -17,7 +17,7 @@ export enum FlipnoteRegion {
  * e.g. 1440D700CEF78DA8
  * @internal
  */
-const REGEX_PPM_FSID = /^[0159]{1}[0-9A-F]{6}0[0-9A-F]{8}$/;
+const REGEX_PPM_FSID = /^[0159]{1}[0-9A-F]{15}$/;
 
 /**
  * Match an FSID from Flipnote Studio 3D
@@ -31,7 +31,7 @@ const REGEX_KWZ_FSID = /^[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{6}$/;
  * e.g. 10b8-b909-5180-9b2013
  * @internal
  */
-const REGEX_KWZ_DSI_LIBRARY_FSID = /^(00|10|12|14)[0-9a-f]{2}-[0-9a-f]{4}-[0-9a-f]{3}0-[0-9a-f]{4}[0159]{1}[0-9a-f]{1}$/; 
+const REGEX_KWZ_DSI_LIBRARY_FSID = /^(00|10|12|14)[0-9a-f]{2}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}[0159]{1}[0-9a-f]{1}$/; 
 
 /**
  * Indicates whether the input is a valid Flipnote Studio user ID

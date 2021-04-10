@@ -12,7 +12,6 @@
     ],
     "jsx": "react",
     "allowJs": false,
-    "types": ["node"],
     "allowSyntheticDefaultImports": true,
     "experimentalDecorators": true,
     "esModuleInterop": true,

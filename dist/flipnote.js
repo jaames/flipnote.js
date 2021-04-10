@@ -1,5 +1,5 @@
 /*!!
-flipnote.js v5.3.0 (web build)
+flipnote.js v5.3.1 (web build)
 https://flipnote.js.org
 A JavaScript library for parsing, converting, and in-browser playback of the proprietary animation formats used by Nintendo's Flipnote Studio and Flipnote Studio 3D apps.
 2018 - 2021 James Daniel
@@ -468,7 +468,7 @@ Keep on Flipnoting!
      * e.g. 1440D700CEF78DA8
      * @internal
      */
-    var REGEX_PPM_FSID = /^[0159]{1}[0-9A-F]{6}0[0-9A-F]{8}$/;
+    var REGEX_PPM_FSID = /^[0159]{1}[0-9A-F]{15}$/;
     /**
      * Match an FSID from Flipnote Studio 3D
      * e.g. 003f-0b7e-82a6-fe0bda
@@ -480,7 +480,7 @@ Keep on Flipnoting!
      * e.g. 10b8-b909-5180-9b2013
      * @internal
      */
-    var REGEX_KWZ_DSI_LIBRARY_FSID = /^(00|10|12|14)[0-9a-f]{2}-[0-9a-f]{4}-[0-9a-f]{3}0-[0-9a-f]{4}[0159]{1}[0-9a-f]{1}$/;
+    var REGEX_KWZ_DSI_LIBRARY_FSID = /^(00|10|12|14)[0-9a-f]{2}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}[0159]{1}[0-9a-f]{1}$/;
     /**
      * Indicates whether the input is a valid Flipnote Studio user ID
      */
@@ -3029,7 +3029,7 @@ Keep on Flipnoting!
      * @private
      */
     //function getVersionAsNumber(gl) {
-    //  return parseFloat(gl.getParameter(gl."5.3.0").substr(6));
+    //  return parseFloat(gl.getParameter(gl.VERSION).substr(6));
     //}
 
     /**
@@ -3040,7 +3040,7 @@ Keep on Flipnoting!
      */
     function isWebGL2(gl) {
       // This is the correct check but it's slow
-      //  return gl.getParameter(gl."5.3.0").indexOf("WebGL 2.0") === 0;
+      //  return gl.getParameter(gl.VERSION).indexOf("WebGL 2.0") === 0;
       // This might also be the correct check but I'm assuming it's slow-ish
       // return gl instanceof WebGL2RenderingContext;
       return !!gl.texStorage2D;
@@ -6169,7 +6169,7 @@ Keep on Flipnoting!
     /**
      * flipnote.js library version (exported as `flipnote.version`). You can find the latest version on the project's [NPM](https://www.npmjs.com/package/flipnote.js) page.
      */
-    var version = "5.3.0"; // replaced by @rollup/plugin-replace; see rollup.config.js
+    var version = "5.3.1"; // replaced by @rollup/plugin-replace; see rollup.config.js
 
     exports.GifImage = GifImage;
     exports.KwzParser = KwzParser;

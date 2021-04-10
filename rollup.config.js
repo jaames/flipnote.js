@@ -72,7 +72,7 @@ module.exports = {
       resolve: ['.jsx', '.js', '.ts', '.tsx'],
     }),
     replace({
-      VERSION: JSON.stringify(version),
+      FLIPNOTEJS_VERSION: JSON.stringify(version),
       PROD: isProdBuild ? 'true' : 'false',
       DEV_SERVER: devserver ? 'true' : 'false',
       // https://github.com/PolymerLabs/lit-element-starter-ts/blob/master/rollup.config.js
