@@ -23,7 +23,10 @@ export const ADPCM_STEP_TABLE = new Int16Array([
 ]);
 
 
-/** @internal */
+/** 
+ * Clamp a number n between l and h
+ * @internal 
+ */
 export function clamp(n: number, l: number, h: number) {
   if (n < l)
     return l;
@@ -31,6 +34,12 @@ export function clamp(n: number, l: number, h: number) {
     return h;
   return n;
 }
+
+/** 
+ * Interpolate between a and b - returns a if fac = 0, b if fac = 1, and somewhere between if 0 < fac < 1
+ * @internal
+ */
+export const lerp = (a: number, b: number, fac: number) => a + fac * (b - a);
 
 /** @internal */
 export function pcmGetSample(src: Int16Array, srcSize: number, srcPtr: number) {
@@ -70,7 +79,11 @@ export function pcmResampleLinear(src: Int16Array, srcFreq: number, dstFreq: num
     adj = dstPtr * adjFreq;
     srcPtr = Math.floor(adj);
     weight = adj % 1;
-    dst[dstPtr] = (1 - weight) * pcmGetSample(src, srcLength, srcPtr) + weight * pcmGetSample(src, srcLength, srcPtr + 1);
+    dst[dstPtr] = lerp(
+      pcmGetSample(src, srcLength, srcPtr), 
+      pcmGetSample(src, srcLength, srcPtr + 1), 
+      weight  
+    );
   }
   return dst;
 }
@@ -89,4 +102,17 @@ export function pcmGetClippingRatio(src: Int16Array) {
       numClippedSamples += 1;
   }
   return numClippedSamples / numSamples;
+}
+
+/**
+ * Get the root mean square of a PCM track
+ * @internal
+ */
+export function pcmGetRms(src: Int16Array) {
+  const numSamples = src.length;
+  let rms = 0;
+  for (let i = 0; i < numSamples; i++) {
+    rms += Math.pow(src[i], 2);
+  }
+  return Math.sqrt(rms / numSamples);
 }

@@ -54,9 +54,28 @@ export declare type KwzParserSettings = {
     borderCrop: boolean;
     /**
      * Flipnote 3D's own implementation is slightly buggy! To counter this, some tweaks are applied be default for nicer audio
-     * Enable this setting to use the "original" audio process used in the 3DS appo
+     * Enable this setting to use the "original" audio process used in the 3DS app
      */
     originalAudio: boolean;
+    /**
+     * Nintendo messed up the initial adpcm state for a bunch of the PPM to KWZ conversions on DSi Library. They are effectively random.
+     * By default flipnote.js will try to make a best guess, but you can disable this and provide your own state values
+     *
+     * This is only enabled if `dsiLibraryNote` is also set to `true`
+     */
+    guessInitialBgmState: boolean;
+    /**
+     * Manually provide the initial adpcm step index for the BGM track.
+     *
+     * This is only enabled if `dsiLibraryNote` is also set to `true`
+     */
+    initialBgmStepIndex: number | null;
+    /**
+     * Manually provide the initial adpcm predictor for the BGM track.
+     *
+     * This is only enabled if `dsiLibraryNote` is also set to `true`
+     */
+    initialBgmPredictor: number | null;
 };
 /**
  * Parser class for Flipnote Studio 3D's KWZ animation format
@@ -191,6 +210,7 @@ export declare class KwzParser extends FlipnoteParser {
      * @category Audio
     */
     getAudioTrackRaw(trackId: FlipnoteAudioTrack): Uint8Array;
+    private decodeAdpcm;
     /**
      * Get the decoded audio data for a given track, using the track's native samplerate
      * @returns Signed 16-bit PCM audio

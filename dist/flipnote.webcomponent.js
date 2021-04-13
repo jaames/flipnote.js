@@ -1,5 +1,5 @@
 /*!!
-flipnote.js v5.3.1 (webcomponent build)
+flipnote.js v5.4.0 (webcomponent build)
 https://flipnote.js.org
 A JavaScript library for parsing, converting, and in-browser playback of the proprietary animation formats used by Nintendo's Flipnote Studio and Flipnote Studio 3D apps.
 2018 - 2021 James Daniel
@@ -208,7 +208,10 @@ Keep on Flipnoting!
       5894, 6484, 7132, 7845, 8630, 9493, 10442, 11487, 12635, 13899,
       15289, 16818, 18500, 20350, 22385, 24623, 27086, 29794, 32767, 0
   ]);
-  /** @internal */
+  /**
+   * Clamp a number n between l and h
+   * @internal
+   */
   function clamp(n, l, h) {
       if (n < l)
           return l;
@@ -216,6 +219,11 @@ Keep on Flipnoting!
           return h;
       return n;
   }
+  /**
+   * Interpolate between a and b - returns a if fac = 0, b if fac = 1, and somewhere between if 0 < fac < 1
+   * @internal
+   */
+  const lerp = (a, b, fac) => a + fac * (b - a);
   /** @internal */
   function pcmGetSample(src, srcSize, srcPtr) {
       if (srcPtr < 0 || srcPtr >= srcSize)
@@ -252,7 +260,7 @@ Keep on Flipnoting!
           adj = dstPtr * adjFreq;
           srcPtr = Math.floor(adj);
           weight = adj % 1;
-          dst[dstPtr] = (1 - weight) * pcmGetSample(src, srcLength, srcPtr) + weight * pcmGetSample(src, srcLength, srcPtr + 1);
+          dst[dstPtr] = lerp(pcmGetSample(src, srcLength, srcPtr), pcmGetSample(src, srcLength, srcPtr + 1), weight);
       }
       return dst;
   }
@@ -270,6 +278,18 @@ Keep on Flipnoting!
               numClippedSamples += 1;
       }
       return numClippedSamples / numSamples;
+  }
+  /**
+   * Get the root mean square of a PCM track
+   * @internal
+   */
+  function pcmGetRms(src) {
+      const numSamples = src.length;
+      let rms = 0;
+      for (let i = 0; i < numSamples; i++) {
+          rms += Math.pow(src[i], 2);
+      }
+      return Math.sqrt(rms / numSamples);
   }
 
   /** @internal */
@@ -369,7 +389,7 @@ Keep on Flipnoting!
    * e.g. 1440D700CEF78DA8
    * @internal
    */
-  const REGEX_PPM_FSID = /^[0159]{1}[0-9A-F]{15}$/;
+  const REGEX_PPM_FSID = /^[0159]{1}[0-9A-F]{7}0[0-9A-F]{8}$/;
   /**
    * Match an FSID from Flipnote Studio 3D
    * e.g. 003f-0b7e-82a6-fe0bda
@@ -381,12 +401,14 @@ Keep on Flipnoting!
    * e.g. 10b8-b909-5180-9b2013
    * @internal
    */
-  const REGEX_KWZ_DSI_LIBRARY_FSID = /^(00|10|12|14)[0-9a-f]{2}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}[0159]{1}[0-9a-f]{1}$/;
+  const REGEX_KWZ_DSI_LIBRARY_FSID = /^(00|10|12|14)[0-9a-f]{2}-[0-9a-f]{4}-[0-9a-f]{3}0-[0-9a-f]{4}[0159]{1}[0-9a-f]{1}$/;
   /**
    * Indicates whether the input is a valid Flipnote Studio user ID
    */
   function isPpmFsid(fsid) {
-      return REGEX_PPM_FSID.test(fsid);
+      // The only known exception to the FSID format is the one Nintendo used for their event notes (mario, zelda 25th, etc)
+      // This is likely a goof on their part
+      return fsid === '14E494E35A443235' || REGEX_PPM_FSID.test(fsid);
   }
   /**
    * Indicates whether the input is a valid Flipnote Studio 3D user ID
@@ -398,7 +420,8 @@ Keep on Flipnoting!
    * Indicates whether the input is a valid DSi Library user ID
    */
   function isKwzDsiLibraryFsid(fsid) {
-      return REGEX_KWZ_DSI_LIBRARY_FSID.test(fsid);
+      // DSi Library eqiuvalent of the 14E494E35A443235 ID exception
+      return fsid.endsWith('3532445AE394E414') || REGEX_KWZ_DSI_LIBRARY_FSID.test(fsid);
   }
   /**
    * Indicates whether the input is a valid Flipnote Studio or Flipnote Studio 3D user ID
@@ -1887,29 +1910,15 @@ Keep on Flipnoting!
           assert(trackMeta.ptr + trackMeta.length < this.byteLength);
           return new Uint8Array(this.buffer, trackMeta.ptr, trackMeta.length);
       }
-      /**
-       * Get the decoded audio data for a given track, using the track's native samplerate
-       * @returns Signed 16-bit PCM audio
-       * @category Audio
-      */
-      decodeAudioTrack(trackId) {
-          const adpcm = this.getAudioTrackRaw(trackId);
-          const output = new Int16Array(16364 * 60);
-          let outputPtr = 0;
-          // initial decoder state
-          // Flipnote 3D's initial values are actually buggy, so corrections are applied by default here
-          let predictor = 0;
-          let stepIndex = 0;
+      decodeAdpcm(src, dst, predictor = 0, stepIndex = 0) {
+          const srcSize = src.length;
+          let dstPtr = 0;
           let sample = 0;
           let step = 0;
           let diff = 0;
-          // DSi Library notes, however, seem to only work with 40 (at least the correctly converted ones)
-          // users of the library may also wish to enable the original audio setup for console accuracy
-          if (this.settings.originalAudio || this.isDsiLibraryNote)
-              stepIndex = 40;
           // loop through each byte in the raw adpcm data
-          for (let adpcmPtr = 0; adpcmPtr < adpcm.length; adpcmPtr++) {
-              let currByte = adpcm[adpcmPtr];
+          for (let srcPtr = 0; srcPtr < srcSize; srcPtr++) {
+              let currByte = src[srcPtr];
               let currBit = 0;
               while (currBit < 8) {
                   // 2 bit sample
@@ -1947,11 +1956,57 @@ Keep on Flipnoting!
                   stepIndex = clamp(stepIndex, 0, 79);
                   // clamp as 12 bit then scale to 16
                   predictor = clamp(predictor, -2048, 2047);
-                  output[outputPtr] = predictor * 16;
-                  outputPtr += 1;
+                  dst[dstPtr] = predictor * 16;
+                  dstPtr += 1;
               }
           }
-          return output.slice(0, outputPtr);
+          return dstPtr;
+      }
+      /**
+       * Get the decoded audio data for a given track, using the track's native samplerate
+       * @returns Signed 16-bit PCM audio
+       * @category Audio
+      */
+      decodeAudioTrack(trackId) {
+          const settings = this.settings;
+          const src = this.getAudioTrackRaw(trackId);
+          const dstSize = this.rawSampleRate * 60; // enough for 60 seconds, the max bgm size
+          const dst = new Int16Array(dstSize);
+          // initial decoder state
+          // Flipnote 3D's initial values are actually buggy, so corrections are applied by default here
+          let predictor = 0;
+          let stepIndex = 0;
+          // users of the library may also wish to enable the original audio setup for console accuracy
+          if (settings.originalAudio || this.isDsiLibraryNote)
+              stepIndex = 40;
+          // Nintendo messed up the initial adpcm state for a bunch of the PPM conversions on DSi Library
+          // they are effectively random, so you can optionally provide your own state values, or let the lib make a best guess
+          if (this.isDsiLibraryNote && trackId === exports.FlipnoteAudioTrack.BGM) {
+              // allow manual overrides for default predictor
+              if (settings.initialBgmPredictor !== null)
+                  predictor = settings.initialBgmPredictor;
+              // allow manual overrides for default step index
+              if (settings.initialBgmStepIndex !== null)
+                  stepIndex = settings.initialBgmStepIndex;
+              // bruteforce step index by finding the lowest track root mean square 
+              if (settings.guessInitialBgmState) {
+                  let bestRms = 0xFFFFFFFF; // arbritrarily large
+                  let bestStepIndex = 0;
+                  for (stepIndex = 0; stepIndex <= 88; stepIndex++) {
+                      const dstPtr = this.decodeAdpcm(src, dst, predictor, stepIndex);
+                      const rms = pcmGetRms(dst.subarray(0, dstPtr)); // uses same underlying memory as dst
+                      if (rms < bestRms) {
+                          bestRms = rms;
+                          bestStepIndex = stepIndex;
+                      }
+                  }
+                  stepIndex = bestStepIndex;
+              }
+          }
+          // decode track
+          const dstPtr = this.decodeAdpcm(src, dst, predictor, stepIndex);
+          // copy part of dst with slice() so dst buffer can be garbage collected
+          return dst.slice(0, dstPtr);
       }
       /**
        * Get the decoded audio data for a given track, using the specified samplerate
@@ -2027,7 +2082,10 @@ Keep on Flipnoting!
       quickMeta: false,
       dsiLibraryNote: false,
       borderCrop: false,
-      originalAudio: false
+      originalAudio: false,
+      guessInitialBgmState: true,
+      initialBgmPredictor: null,
+      initialBgmStepIndex: null,
   };
   /** File format type */
   KwzParser.format = exports.FlipnoteFormat.KWZ;
@@ -5856,7 +5914,7 @@ Keep on Flipnoting!
   /**
    * flipnote.js library version (exported as `flipnote.version`). You can find the latest version on the project's [NPM](https://www.npmjs.com/package/flipnote.js) page.
    */
-  const version = "5.3.1"; // replaced by @rollup/plugin-replace; see rollup.config.js
+  const version = "5.4.0"; // replaced by @rollup/plugin-replace; see rollup.config.js
 
   /*! *****************************************************************************
   Copyright (c) Microsoft Corporation.

@@ -17,7 +17,7 @@ export enum FlipnoteRegion {
  * e.g. 1440D700CEF78DA8
  * @internal
  */
-const REGEX_PPM_FSID = /^[0159]{1}[0-9A-F]{15}$/;
+const REGEX_PPM_FSID = /^[0159]{1}[0-9A-F]{7}0[0-9A-F]{8}$/;
 
 /**
  * Match an FSID from Flipnote Studio 3D
@@ -31,13 +31,15 @@ const REGEX_KWZ_FSID = /^[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{6}$/;
  * e.g. 10b8-b909-5180-9b2013
  * @internal
  */
-const REGEX_KWZ_DSI_LIBRARY_FSID = /^(00|10|12|14)[0-9a-f]{2}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}[0159]{1}[0-9a-f]{1}$/; 
+const REGEX_KWZ_DSI_LIBRARY_FSID = /^(00|10|12|14)[0-9a-f]{2}-[0-9a-f]{4}-[0-9a-f]{3}0-[0-9a-f]{4}[0159]{1}[0-9a-f]{1}$/; 
 
 /**
  * Indicates whether the input is a valid Flipnote Studio user ID
  */
 export function isPpmFsid(fsid: string) {
-  return REGEX_PPM_FSID.test(fsid);
+  // The only known exception to the FSID format is the one Nintendo used for their event notes (mario, zelda 25th, etc)
+  // This is likely a goof on their part
+  return fsid === '14E494E35A443235' || REGEX_PPM_FSID.test(fsid);
 }
 
 /**
@@ -51,7 +53,8 @@ export function isKwzFsid(fsid: string) {
  * Indicates whether the input is a valid DSi Library user ID
  */
 export function isKwzDsiLibraryFsid(fsid: string) {
-  return REGEX_KWZ_DSI_LIBRARY_FSID.test(fsid);
+  // DSi Library eqiuvalent of the 14E494E35A443235 ID exception
+  return fsid.endsWith('3532445AE394E414') || REGEX_KWZ_DSI_LIBRARY_FSID.test(fsid);
 }
 
 /**

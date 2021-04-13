@@ -11,9 +11,10 @@ import {
   ADPCM_INDEX_TABLE_2BIT,
   ADPCM_INDEX_TABLE_4BIT,
   clamp,
+  assert,
   pcmResampleLinear,
   pcmGetClippingRatio,
-  assert,
+  pcmGetRms,
   dateFromNintendoTimestamp,
   timeGetNoteDuration,
   getKwzFsidRegion,
@@ -157,9 +158,28 @@ export type KwzParserSettings = {
   borderCrop: boolean;
   /** 
    * Flipnote 3D's own implementation is slightly buggy! To counter this, some tweaks are applied be default for nicer audio
-   * Enable this setting to use the "original" audio process used in the 3DS appo
+   * Enable this setting to use the "original" audio process used in the 3DS app
    */
   originalAudio: boolean;
+  /**
+   * Nintendo messed up the initial adpcm state for a bunch of the PPM to KWZ conversions on DSi Library. They are effectively random.
+   * By default flipnote.js will try to make a best guess, but you can disable this and provide your own state values
+   * 
+   * This is only enabled if `dsiLibraryNote` is also set to `true`
+   */
+   guessInitialBgmState: boolean;
+  /**
+   * Manually provide the initial adpcm step index for the BGM track.
+   * 
+   * This is only enabled if `dsiLibraryNote` is also set to `true`
+   */
+  initialBgmStepIndex: number | null;
+  /**
+   * Manually provide the initial adpcm predictor for the BGM track.
+   * 
+   * This is only enabled if `dsiLibraryNote` is also set to `true`
+   */
+  initialBgmPredictor: number | null;
 };
 
 /** 
@@ -175,7 +195,10 @@ export class KwzParser extends FlipnoteParser {
     quickMeta: false,
     dsiLibraryNote: false,
     borderCrop: false, 
-    originalAudio: false
+    originalAudio: false,
+    guessInitialBgmState: true,
+    initialBgmPredictor: null,
+    initialBgmStepIndex: null,
   };
   /** File format type */
   static format = FlipnoteFormat.KWZ;
@@ -914,29 +937,15 @@ export class KwzParser extends FlipnoteParser {
     return new Uint8Array(this.buffer, trackMeta.ptr, trackMeta.length);
   }
 
-  /** 
-   * Get the decoded audio data for a given track, using the track's native samplerate
-   * @returns Signed 16-bit PCM audio
-   * @category Audio
-  */
-  public decodeAudioTrack(trackId: FlipnoteAudioTrack) {
-    const adpcm = this.getAudioTrackRaw(trackId);
-    const output = new Int16Array(16364 * 60);
-    let outputPtr = 0;
-    // initial decoder state
-    // Flipnote 3D's initial values are actually buggy, so corrections are applied by default here
-    let predictor = 0;
-    let stepIndex = 0;
+  private decodeAdpcm(src: Uint8Array, dst: Int16Array, predictor = 0, stepIndex = 0) {
+    const srcSize = src.length;
+    let dstPtr = 0;
     let sample = 0;
     let step = 0;
     let diff = 0;
-    // DSi Library notes, however, seem to only work with 40 (at least the correctly converted ones)
-    // users of the library may also wish to enable the original audio setup for console accuracy
-    if (this.settings.originalAudio || this.isDsiLibraryNote)
-      stepIndex = 40;
     // loop through each byte in the raw adpcm data
-    for (let adpcmPtr = 0; adpcmPtr < adpcm.length; adpcmPtr++) {
-      let currByte = adpcm[adpcmPtr];
+    for (let srcPtr = 0; srcPtr < srcSize; srcPtr++) {
+      let currByte = src[srcPtr];
       let currBit = 0;
       while (currBit < 8) {
         // 2 bit sample
@@ -974,11 +983,62 @@ export class KwzParser extends FlipnoteParser {
         stepIndex = clamp(stepIndex, 0, 79);
         // clamp as 12 bit then scale to 16
         predictor = clamp(predictor, -2048, 2047);
-        output[outputPtr] = predictor * 16;
-        outputPtr += 1;
+        dst[dstPtr] = predictor * 16;
+        dstPtr += 1;
       }
     }
-    return output.slice(0, outputPtr);
+    return dstPtr;
+  }
+
+  /** 
+   * Get the decoded audio data for a given track, using the track's native samplerate
+   * @returns Signed 16-bit PCM audio
+   * @category Audio
+  */
+  public decodeAudioTrack(trackId: FlipnoteAudioTrack) {
+    const settings = this.settings;
+    const src = this.getAudioTrackRaw(trackId);
+    const dstSize = this.rawSampleRate * 60; // enough for 60 seconds, the max bgm size
+    const dst = new Int16Array(dstSize);
+    // initial decoder state
+    // Flipnote 3D's initial values are actually buggy, so corrections are applied by default here
+    let predictor = 0;
+    let stepIndex = 0;
+
+    // users of the library may also wish to enable the original audio setup for console accuracy
+    if (settings.originalAudio || this.isDsiLibraryNote)
+      stepIndex = 40;
+
+    // Nintendo messed up the initial adpcm state for a bunch of the PPM conversions on DSi Library
+    // they are effectively random, so you can optionally provide your own state values, or let the lib make a best guess
+    if (this.isDsiLibraryNote && trackId === FlipnoteAudioTrack.BGM) {
+      // allow manual overrides for default predictor
+      if (settings.initialBgmPredictor !== null)
+        predictor = settings.initialBgmPredictor;
+
+      // allow manual overrides for default step index
+      if (settings.initialBgmStepIndex !== null)
+        stepIndex = settings.initialBgmStepIndex;
+
+      // bruteforce step index by finding the lowest track root mean square 
+      if (settings.guessInitialBgmState) {
+        let bestRms = 0xFFFFFFFF; // arbritrarily large
+        let bestStepIndex = 0;
+        for (stepIndex = 0; stepIndex <= 88; stepIndex++) {
+          const dstPtr = this.decodeAdpcm(src, dst, predictor, stepIndex);
+          const rms = pcmGetRms(dst.subarray(0, dstPtr)); // uses same underlying memory as dst
+          if (rms < bestRms) {
+            bestRms = rms;
+            bestStepIndex = stepIndex;
+          }
+        }
+        stepIndex = bestStepIndex;
+      }
+    } 
+    // decode track
+    const dstPtr = this.decodeAdpcm(src, dst, predictor, stepIndex);
+    // copy part of dst with slice() so dst buffer can be garbage collected
+    return dst.slice(0, dstPtr);
   }
 
   /** 
