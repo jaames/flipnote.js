@@ -1024,7 +1024,7 @@ export class KwzParser extends FlipnoteParser {
       if (settings.guessInitialBgmState) {
         let bestRms = 0xFFFFFFFF; // arbritrarily large
         let bestStepIndex = 0;
-        for (stepIndex = 0; stepIndex <= 88; stepIndex++) {
+        for (stepIndex = 0; stepIndex <= 40; stepIndex++) {
           const dstPtr = this.decodeAdpcm(src, dst, predictor, stepIndex);
           const rms = pcmGetRms(dst.subarray(0, dstPtr)); // uses same underlying memory as dst
           if (rms < bestRms) {
