@@ -1,5 +1,5 @@
 /*!!
-flipnote.js v5.4.0 (web build)
+flipnote.js v5.4.1 (web build)
 https://flipnote.js.org
 A JavaScript library for parsing, converting, and in-browser playback of the proprietary animation formats used by Nintendo's Flipnote Studio and Flipnote Studio 3D apps.
 2018 - 2021 James Daniel
@@ -1982,7 +1982,7 @@ class KwzParser extends FlipnoteParser {
             if (settings.guessInitialBgmState) {
                 let bestRms = 0xFFFFFFFF; // arbritrarily large
                 let bestStepIndex = 0;
-                for (stepIndex = 0; stepIndex <= 88; stepIndex++) {
+                for (stepIndex = 0; stepIndex <= 40; stepIndex++) {
                     const dstPtr = this.decodeAdpcm(src, dst, predictor, stepIndex);
                     const rms = pcmGetRms(dst.subarray(0, dstPtr)); // uses same underlying memory as dst
                     if (rms < bestRms) {
@@ -5919,6 +5919,6 @@ class WavAudio extends EncoderBase {
 /**
  * flipnote.js library version (exported as `flipnote.version`). You can find the latest version on the project's [NPM](https://www.npmjs.com/package/flipnote.js) page.
  */
-const version = "5.4.0"; // replaced by @rollup/plugin-replace; see rollup.config.js
+const version = "5.4.1"; // replaced by @rollup/plugin-replace; see rollup.config.js
 
 export { FlipnoteAudioTrack, FlipnoteFormat, FlipnoteRegion, GifImage, KwzParser, Player, PlayerEvent, PlayerMixin, PpmParser, WavAudio, parseSource, fsid as utils, version };

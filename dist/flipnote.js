@@ -1,5 +1,5 @@
 /*!!
-flipnote.js v5.4.0 (web build)
+flipnote.js v5.4.1 (web build)
 https://flipnote.js.org
 A JavaScript library for parsing, converting, and in-browser playback of the proprietary animation formats used by Nintendo's Flipnote Studio and Flipnote Studio 3D apps.
 2018 - 2021 James Daniel
@@ -2109,7 +2109,7 @@ Keep on Flipnoting!
                 if (settings.guessInitialBgmState) {
                     var bestRms = 0xFFFFFFFF; // arbritrarily large
                     var bestStepIndex = 0;
-                    for (stepIndex = 0; stepIndex <= 88; stepIndex++) {
+                    for (stepIndex = 0; stepIndex <= 40; stepIndex++) {
                         var dstPtr_1 = this.decodeAdpcm(src, dst, predictor, stepIndex);
                         var rms = pcmGetRms(dst.subarray(0, dstPtr_1)); // uses same underlying memory as dst
                         if (rms < bestRms) {
@@ -6229,7 +6229,7 @@ Keep on Flipnoting!
     /**
      * flipnote.js library version (exported as `flipnote.version`). You can find the latest version on the project's [NPM](https://www.npmjs.com/package/flipnote.js) page.
      */
-    var version = "5.4.0"; // replaced by @rollup/plugin-replace; see rollup.config.js
+    var version = "5.4.1"; // replaced by @rollup/plugin-replace; see rollup.config.js
 
     exports.GifImage = GifImage;
     exports.KwzParser = KwzParser;
