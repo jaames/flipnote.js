@@ -17,7 +17,7 @@ export enum FlipnoteRegion {
  * e.g. 1440D700CEF78DA8
  * @internal
  */
-const REGEX_PPM_FSID = /^[0159]{1}[0-9A-F]{7}0[0-9A-F]{8}$/;
+const REGEX_PPM_FSID = /^[0159]{1}[0-9A-F]{6}0[0-9A-F]{8}$/;
 
 /**
  * Match an FSID from Flipnote Studio 3D

@@ -1,5 +1,5 @@
 /*!!
-flipnote.js v5.4.1 (web build)
+flipnote.js v5.4.2 (web build)
 https://flipnote.js.org
 A JavaScript library for parsing, converting, and in-browser playback of the proprietary animation formats used by Nintendo's Flipnote Studio and Flipnote Studio 3D apps.
 2018 - 2021 James Daniel
@@ -488,7 +488,7 @@ Keep on Flipnoting!
      * e.g. 1440D700CEF78DA8
      * @internal
      */
-    var REGEX_PPM_FSID = /^[0159]{1}[0-9A-F]{7}0[0-9A-F]{8}$/;
+    var REGEX_PPM_FSID = /^[0159]{1}[0-9A-F]{6}0[0-9A-F]{8}$/;
     /**
      * Match an FSID from Flipnote Studio 3D
      * e.g. 003f-0b7e-82a6-fe0bda
@@ -853,10 +853,10 @@ Keep on Flipnoting!
             // https://github.com/Flipnote-Collective/flipnote-studio-docs/wiki/PPM-format#sound-header
             // offset = frame data offset + frame data length + sound effect flags
             var ptr = 0x06A0 + this.frameDataLength + this.frameCount;
-            assert(ptr < this.byteLength);
             // align offset
             if (ptr % 4 != 0)
                 ptr += 4 - (ptr % 4);
+            assert(ptr < this.byteLength);
             this.seek(ptr);
             var bgmLen = this.readUint32();
             var se1Len = this.readUint32();
@@ -6229,7 +6229,7 @@ Keep on Flipnoting!
     /**
      * flipnote.js library version (exported as `flipnote.version`). You can find the latest version on the project's [NPM](https://www.npmjs.com/package/flipnote.js) page.
      */
-    var version = "5.4.1"; // replaced by @rollup/plugin-replace; see rollup.config.js
+    var version = "5.4.2"; // replaced by @rollup/plugin-replace; see rollup.config.js
 
     exports.GifImage = GifImage;
     exports.KwzParser = KwzParser;

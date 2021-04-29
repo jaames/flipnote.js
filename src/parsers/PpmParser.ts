@@ -268,10 +268,10 @@ export class PpmParser extends FlipnoteParser {
     // https://github.com/Flipnote-Collective/flipnote-studio-docs/wiki/PPM-format#sound-header
     // offset = frame data offset + frame data length + sound effect flags
     let ptr = 0x06A0 + this.frameDataLength + this.frameCount;
-    assert(ptr < this.byteLength);
     // align offset
     if (ptr % 4 != 0)
       ptr += 4 - (ptr % 4);
+    assert(ptr < this.byteLength);
     this.seek(ptr);
     const bgmLen = this.readUint32();
     const se1Len = this.readUint32();
