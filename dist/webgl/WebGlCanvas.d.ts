@@ -30,14 +30,12 @@ export declare class WebglRenderer {
      */
     screenHeight: number;
     private options;
-    private layerDrawProgram;
     private postProcessProgram;
     private quadBuffer;
     private paletteData;
-    private paletteTexture;
-    private layerTexture;
+    private rgbaData;
+    private rgbaDataBytes;
     private frameTexture;
-    private frameBuffer;
     private textureWidth;
     private textureHeight;
     private refs;

@@ -10,7 +10,6 @@ import {
 import { assert, assertBrowserEnv } from '../utils';
 
 import quadShader from './shaders/quad.vert';
-import layerDrawShader from './shaders/drawLayer.frag';
 import postProcessShader from './shaders/postProcess_sharpBilinear.frag';
 
 /** 
@@ -31,6 +30,8 @@ interface WebglRendererOptions {
   /** Function to be called if the context is restored */
   onrestored: () => void;
 };
+
+const rgbaToUint32 = ([r, g, b, a]: number[]) => (a << 24) | (b << 16) | (g << 8) | r;
 
 /**
  * Animation frame renderer, built around the {@link https://developer.mozilla.org/en-US/docs/Web/API/WebGL_API WebGL} API
@@ -63,14 +64,13 @@ export class WebglRenderer {
   public screenHeight: number;
 
   private options: WebglRendererOptions;
-  private layerDrawProgram: ProgramInfo; // for drawing layers to a renderbuffer
   private postProcessProgram: ProgramInfo; // for drawing renderbuffer w/ filtering
   private quadBuffer: BufferInfo;
-  private paletteData: Uint8Array;
-  private paletteTexture: WebGLTexture;
-  private layerTexture: WebGLTexture;
+  private paletteData = new Uint32Array(16);
+  private rgbaData: Uint32Array;
+  private rgbaDataBytes: Uint8Array;
+
   private frameTexture: WebGLTexture;
-  private frameBuffer: WebGLFramebuffer;
   private textureWidth: number;
   private textureHeight: number;
   private refs: ResourceMap = {
@@ -107,16 +107,10 @@ export class WebglRenderer {
 
   public init() {
     const gl = this.gl;
-    this.layerDrawProgram = this.createProgram(quadShader, layerDrawShader);
     this.postProcessProgram = this.createProgram(quadShader, postProcessShader);
     this.quadBuffer = this.createScreenQuad(-1, -1, 2, 2, 8, 8);
-    this.setBuffersAndAttribs(this.layerDrawProgram, this.quadBuffer);
     this.setBuffersAndAttribs(this.postProcessProgram, this.quadBuffer);
-    this.paletteData = new Uint8Array(8 * 4);
-    this.paletteTexture = this.createTexture(gl.RGBA, gl.NEAREST, gl.CLAMP_TO_EDGE, 8, 1);
-    this.layerTexture = this.createTexture(gl.ALPHA, gl.NEAREST, gl.CLAMP_TO_EDGE);
     this.frameTexture = this.createTexture(gl.RGBA, gl.LINEAR, gl.CLAMP_TO_EDGE);
-    this.frameBuffer = this.createFrameBuffer(this.frameTexture);
     this.setCanvasSize(this.width, this.height);
   }
 
@@ -227,20 +221,20 @@ export class WebglRenderer {
     return tex;
   }
 
-  private createFrameBuffer(colorTexture: WebGLTexture) {
-    assert(!this.isCtxLost);
-    const gl = this.gl;
-    const fb = gl.createFramebuffer();
-    gl.bindFramebuffer(gl.FRAMEBUFFER, fb);
-    // enable alpha blending
-    gl.enable(gl.BLEND);
-    gl.blendEquation(gl.FUNC_ADD);
-    gl.blendFunc(gl.ONE, gl.ONE_MINUS_SRC_ALPHA);
-    // bind a texture to the framebuffer
-    gl.framebufferTexture2D(gl.FRAMEBUFFER, gl.COLOR_ATTACHMENT0, gl.TEXTURE_2D, colorTexture, 0);
-    this.refs.framebuffers.push(fb);
-    return fb;
-  }
+  // private createFrameBuffer(colorTexture: WebGLTexture) {
+  //   assert(!this.isCtxLost);
+  //   const gl = this.gl;
+  //   const fb = gl.createFramebuffer();
+  //   gl.bindFramebuffer(gl.FRAMEBUFFER, fb);
+  //   // enable alpha blending
+  //   gl.enable(gl.BLEND);
+  //   gl.blendEquation(gl.FUNC_ADD);
+  //   gl.blendFunc(gl.ONE, gl.ONE_MINUS_SRC_ALPHA);
+  //   // bind a texture to the framebuffer
+  //   gl.framebufferTexture2D(gl.FRAMEBUFFER, gl.COLOR_ATTACHMENT0, gl.TEXTURE_2D, colorTexture, 0);
+  //   this.refs.framebuffers.push(fb);
+  //   return fb;
+  // }
 
   /**
    * Resize the canvas surface
@@ -276,6 +270,8 @@ export class WebglRenderer {
     // resize frame texture
     gl.bindTexture(gl.TEXTURE_2D, this.frameTexture);
     gl.texImage2D(gl.TEXTURE_2D, 0, gl.RGBA, this.textureWidth, this.textureHeight, 0, gl.RGBA, gl.UNSIGNED_BYTE, null);
+    this.rgbaData = new Uint32Array(width * height);
+    this.rgbaDataBytes = new Uint8Array(this.rgbaData.buffer); // same memory buffer as rgbaData
   }
 
   /**
@@ -284,14 +280,7 @@ export class WebglRenderer {
    */
   public clearFrameBuffer(paperColor: number[]) {
     assert(!this.isCtxLost);
-    const gl = this.gl;
-    // bind to the frame buffer
-    gl.bindFramebuffer(gl.FRAMEBUFFER, this.frameBuffer);
-    gl.viewport(0, 0, this.textureWidth, this.textureHeight);
-    // clear it using the paper color
-    const [r, g, b, a] = paperColor;
-    gl.clearColor(r/255, g/255, b/255, a/255);
-    gl.clear(gl.COLOR_BUFFER_BIT);
+    this.rgbaData.fill(rgbaToUint32(paperColor));
   }
 
   /**
@@ -301,19 +290,9 @@ export class WebglRenderer {
   public setPalette(colors: number[][]) {
     assert(!this.isCtxLost);
     assert(colors.length < 16);
-    const gl = this.gl;
     const data = this.paletteData.fill(0);
-    let dataPtr = 0;
-    for (let i = 0; i < colors.length; i++) {
-      const [r, g, b, a] = colors[i];
-      data[dataPtr++] = r;
-      data[dataPtr++] = g;
-      data[dataPtr++] = b;
-      data[dataPtr++] = a;
-    }
-    // update layer texture pixels
-    gl.bindTexture(gl.TEXTURE_2D, this.paletteTexture);
-    gl.texImage2D(gl.TEXTURE_2D, 0, gl.RGBA, 8, 1, 0, gl.RGBA, gl.UNSIGNED_BYTE, data);
+    for (let i = 0; i < colors.length; i++)
+      data[i] = rgbaToUint32(colors[i]);
   }
 
   /**
@@ -324,48 +303,36 @@ export class WebglRenderer {
    * @param paletteOffset - Palette offset index for the pixels being drawn
    */
   public drawPixels(pixels: Uint8Array, paletteOffset: number) {
-    const {
-      gl,
-      layerDrawProgram,
-      layerTexture,
-      textureWidth,
-      textureHeight,
-    } = this;
     assert(!this.isCtxLost);
-    assert(pixels.length === textureWidth * textureHeight);
-    // we wanna draw to the frame buffer
-    gl.bindFramebuffer(gl.FRAMEBUFFER, this.frameBuffer);
-    gl.viewport(0, 0, textureWidth, textureHeight);
-    // using the layer draw program
-    gl.useProgram(layerDrawProgram.program);
-    // update layer texture pixels
-    gl.bindTexture(gl.TEXTURE_2D, layerTexture);
-    gl.texImage2D(gl.TEXTURE_2D, 0, gl.ALPHA, textureWidth, textureHeight, 0, gl.ALPHA, gl.UNSIGNED_BYTE, pixels);
-    // prep uniforms
-    setUniforms(layerDrawProgram, {
-      u_palette: this.paletteTexture,
-      u_paletteOffset: paletteOffset,
-      u_bitmap: layerTexture,
-      u_textureSize: [textureWidth, textureHeight],
-      u_screenSize: [gl.drawingBufferWidth, gl.drawingBufferHeight],
-    });
-    // draw screen quad
-    gl.drawElements(gl.TRIANGLES, this.quadBuffer.numElements, this.quadBuffer.elementType, 0);
+    const rgbaData = this.rgbaData;
+    const paletteData = this.paletteData;
+    for (let i = 0; i < pixels.length; i++) {
+      const pixel = pixels[i];
+      if (pixel !== 0)
+        rgbaData[i] = paletteData[pixel + paletteOffset];
+    }
   }
 
   /**
    * Composites the current frame buffer into the canvas, applying post-processing effects like scaling filters if enabled
    */
   public composite() {
-    const gl = this.gl;
+    const {
+      gl,
+      textureWidth,
+      textureHeight,
+    } = this;
     assert(!this.isCtxLost);
     // setting gl.FRAMEBUFFER will draw directly to the screen
     gl.bindFramebuffer(gl.FRAMEBUFFER, null);
     gl.viewport(0, 0, gl.drawingBufferWidth, gl.drawingBufferHeight);
-    // using postprocess program
+    // // using postprocess program
     gl.useProgram(this.postProcessProgram.program);
-    // clear whatever's already been drawn
+    // // clear whatever's already been drawn
     gl.clear(gl.COLOR_BUFFER_BIT);
+    // update layer texture
+    gl.bindTexture(gl.TEXTURE_2D, this.frameTexture);
+    gl.texImage2D(gl.TEXTURE_2D, 0, gl.RGBA, textureWidth, textureHeight, 0, gl.RGBA, gl.UNSIGNED_BYTE, this.rgbaDataBytes);
     // prep uniforms
     setUniforms(this.postProcessProgram, {
       u_flipY: true,

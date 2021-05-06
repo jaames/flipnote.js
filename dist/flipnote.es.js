@@ -1,5 +1,5 @@
 /*!!
-flipnote.js v5.4.2 (web build)
+flipnote.js v5.4.3 (web build)
 https://flipnote.js.org
 A JavaScript library for parsing, converting, and in-browser playback of the proprietary animation formats used by Nintendo's Flipnote Studio and Flipnote Studio 3D apps.
 2018 - 2021 James Daniel
@@ -3900,10 +3900,9 @@ function createProgramInfoFromProgram(gl, program) {
 
 var quadShader = "#define GLSLIFY 1\nattribute vec4 position;attribute vec2 texcoord;varying vec2 v_texel;varying vec2 v_uv;varying float v_scale;uniform bool u_flipY;uniform vec2 u_textureSize;uniform vec2 u_screenSize;void main(){v_uv=texcoord;v_scale=floor(u_screenSize.y/u_textureSize.y+0.01);gl_Position=position;if(u_flipY){gl_Position.y*=-1.;}}"; // eslint-disable-line
 
-var layerDrawShader = "precision highp float;\n#define GLSLIFY 1\nvarying vec2 v_uv;uniform sampler2D u_palette;uniform sampler2D u_bitmap;uniform float u_paletteOffset;const vec4 transparent=vec4(0,0,0,0);void main(){float index=texture2D(u_bitmap,v_uv).a*255.;if(index>0.){gl_FragColor=texture2D(u_palette,vec2((u_paletteOffset+index)/8.,.5));}else{gl_FragColor=transparent;}}"; // eslint-disable-line
-
 var postProcessShader = "precision highp float;\n#define GLSLIFY 1\nvarying vec2 v_uv;uniform sampler2D u_tex;varying float v_scale;uniform vec2 u_textureSize;uniform vec2 u_screenSize;void main(){vec2 v_texel=v_uv*u_textureSize;vec2 texel_floored=floor(v_texel);vec2 s=fract(v_texel);float region_range=0.5-0.5/v_scale;vec2 center_dist=s-0.5;vec2 f=(center_dist-clamp(center_dist,-region_range,region_range))*v_scale+0.5;vec2 mod_texel=texel_floored+f;vec2 coord=mod_texel.xy/u_textureSize.xy;gl_FragColor=texture2D(u_tex,coord);}"; // eslint-disable-line
 
+const rgbaToUint32 = ([r, g, b, a]) => (a << 24) | (b << 16) | (g << 8) | r;
 /**
  * Animation frame renderer, built around the {@link https://developer.mozilla.org/en-US/docs/Web/API/WebGL_API WebGL} API
  *
@@ -3919,6 +3918,7 @@ class WebglRenderer {
      * The ratio between `width` and `height` should be 3:4 for best results
      */
     constructor(el, width = 640, height = 480, options = {}) {
+        this.paletteData = new Uint32Array(16);
         this.refs = {
             programs: [],
             shaders: [],
@@ -3953,16 +3953,10 @@ class WebglRenderer {
     }
     init() {
         const gl = this.gl;
-        this.layerDrawProgram = this.createProgram(quadShader, layerDrawShader);
         this.postProcessProgram = this.createProgram(quadShader, postProcessShader);
         this.quadBuffer = this.createScreenQuad(-1, -1, 2, 2, 8, 8);
-        this.setBuffersAndAttribs(this.layerDrawProgram, this.quadBuffer);
         this.setBuffersAndAttribs(this.postProcessProgram, this.quadBuffer);
-        this.paletteData = new Uint8Array(8 * 4);
-        this.paletteTexture = this.createTexture(gl.RGBA, gl.NEAREST, gl.CLAMP_TO_EDGE, 8, 1);
-        this.layerTexture = this.createTexture(gl.ALPHA, gl.NEAREST, gl.CLAMP_TO_EDGE);
         this.frameTexture = this.createTexture(gl.RGBA, gl.LINEAR, gl.CLAMP_TO_EDGE);
-        this.frameBuffer = this.createFrameBuffer(this.frameTexture);
         this.setCanvasSize(this.width, this.height);
     }
     createProgram(vertexShaderSource, fragmentShaderSource) {
@@ -4114,6 +4108,8 @@ class WebglRenderer {
         // resize frame texture
         gl.bindTexture(gl.TEXTURE_2D, this.frameTexture);
         gl.texImage2D(gl.TEXTURE_2D, 0, gl.RGBA, this.textureWidth, this.textureHeight, 0, gl.RGBA, gl.UNSIGNED_BYTE, null);
+        this.rgbaData = new Uint32Array(width * height);
+        this.rgbaDataBytes = new Uint8Array(this.rgbaData.buffer); // same memory buffer as rgbaData
     }
     /**
      * Clear frame buffer
@@ -4121,14 +4117,7 @@ class WebglRenderer {
      */
     clearFrameBuffer(paperColor) {
         assert(!this.isCtxLost);
-        const gl = this.gl;
-        // bind to the frame buffer
-        gl.bindFramebuffer(gl.FRAMEBUFFER, this.frameBuffer);
-        gl.viewport(0, 0, this.textureWidth, this.textureHeight);
-        // clear it using the paper color
-        const [r, g, b, a] = paperColor;
-        gl.clearColor(r / 255, g / 255, b / 255, a / 255);
-        gl.clear(gl.COLOR_BUFFER_BIT);
+        this.rgbaData.fill(rgbaToUint32(paperColor));
     }
     /**
      * Set the color palette to use for the next {@link drawPixels} call
@@ -4137,19 +4126,9 @@ class WebglRenderer {
     setPalette(colors) {
         assert(!this.isCtxLost);
         assert(colors.length < 16);
-        const gl = this.gl;
         const data = this.paletteData.fill(0);
-        let dataPtr = 0;
-        for (let i = 0; i < colors.length; i++) {
-            const [r, g, b, a] = colors[i];
-            data[dataPtr++] = r;
-            data[dataPtr++] = g;
-            data[dataPtr++] = b;
-            data[dataPtr++] = a;
-        }
-        // update layer texture pixels
-        gl.bindTexture(gl.TEXTURE_2D, this.paletteTexture);
-        gl.texImage2D(gl.TEXTURE_2D, 0, gl.RGBA, 8, 1, 0, gl.RGBA, gl.UNSIGNED_BYTE, data);
+        for (let i = 0; i < colors.length; i++)
+            data[i] = rgbaToUint32(colors[i]);
     }
     /**
      * Draw pixels to the frame buffer
@@ -4159,41 +4138,31 @@ class WebglRenderer {
      * @param paletteOffset - Palette offset index for the pixels being drawn
      */
     drawPixels(pixels, paletteOffset) {
-        const { gl, layerDrawProgram, layerTexture, textureWidth, textureHeight, } = this;
         assert(!this.isCtxLost);
-        assert(pixels.length === textureWidth * textureHeight);
-        // we wanna draw to the frame buffer
-        gl.bindFramebuffer(gl.FRAMEBUFFER, this.frameBuffer);
-        gl.viewport(0, 0, textureWidth, textureHeight);
-        // using the layer draw program
-        gl.useProgram(layerDrawProgram.program);
-        // update layer texture pixels
-        gl.bindTexture(gl.TEXTURE_2D, layerTexture);
-        gl.texImage2D(gl.TEXTURE_2D, 0, gl.ALPHA, textureWidth, textureHeight, 0, gl.ALPHA, gl.UNSIGNED_BYTE, pixels);
-        // prep uniforms
-        setUniforms(layerDrawProgram, {
-            u_palette: this.paletteTexture,
-            u_paletteOffset: paletteOffset,
-            u_bitmap: layerTexture,
-            u_textureSize: [textureWidth, textureHeight],
-            u_screenSize: [gl.drawingBufferWidth, gl.drawingBufferHeight],
-        });
-        // draw screen quad
-        gl.drawElements(gl.TRIANGLES, this.quadBuffer.numElements, this.quadBuffer.elementType, 0);
+        const rgbaData = this.rgbaData;
+        const paletteData = this.paletteData;
+        for (let i = 0; i < pixels.length; i++) {
+            const pixel = pixels[i];
+            if (pixel !== 0)
+                rgbaData[i] = paletteData[pixel + paletteOffset];
+        }
     }
     /**
      * Composites the current frame buffer into the canvas, applying post-processing effects like scaling filters if enabled
      */
     composite() {
-        const gl = this.gl;
+        const { gl, textureWidth, textureHeight, } = this;
         assert(!this.isCtxLost);
         // setting gl.FRAMEBUFFER will draw directly to the screen
         gl.bindFramebuffer(gl.FRAMEBUFFER, null);
         gl.viewport(0, 0, gl.drawingBufferWidth, gl.drawingBufferHeight);
-        // using postprocess program
+        // // using postprocess program
         gl.useProgram(this.postProcessProgram.program);
-        // clear whatever's already been drawn
+        // // clear whatever's already been drawn
         gl.clear(gl.COLOR_BUFFER_BIT);
+        // update layer texture
+        gl.bindTexture(gl.TEXTURE_2D, this.frameTexture);
+        gl.texImage2D(gl.TEXTURE_2D, 0, gl.RGBA, textureWidth, textureHeight, 0, gl.RGBA, gl.UNSIGNED_BYTE, this.rgbaDataBytes);
         // prep uniforms
         setUniforms(this.postProcessProgram, {
             u_flipY: true,
@@ -5919,6 +5888,6 @@ class WavAudio extends EncoderBase {
 /**
  * flipnote.js library version (exported as `flipnote.version`). You can find the latest version on the project's [NPM](https://www.npmjs.com/package/flipnote.js) page.
  */
-const version = "5.4.2"; // replaced by @rollup/plugin-replace; see rollup.config.js
+const version = "5.4.3"; // replaced by @rollup/plugin-replace; see rollup.config.js
 
 export { FlipnoteAudioTrack, FlipnoteFormat, FlipnoteRegion, GifImage, KwzParser, Player, PlayerEvent, PlayerMixin, PpmParser, WavAudio, parseSource, fsid as utils, version };
