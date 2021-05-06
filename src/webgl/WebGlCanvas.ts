@@ -29,6 +29,8 @@ interface WebglRendererOptions {
   onlost: () => void;
   /** Function to be called if the context is restored */
   onrestored: () => void;
+  /** Use DPI scaling */
+  useDpi: boolean;
 };
 
 const rgbaToUint32 = ([r, g, b, a]: number[]) => (a << 24) | (b << 16) | (g << 8) | r;
@@ -43,6 +45,7 @@ export class WebglRenderer {
   static defaultOptions: WebglRendererOptions = {
     onlost: () => {},
     onrestored: () => {},
+    useDpi: true
   };
   /** Canvas HTML element being used as a rendering surface */
   public el: HTMLCanvasElement;
@@ -245,7 +248,7 @@ export class WebglRenderer {
    */
   public setCanvasSize(width: number, height: number) {
     assert(!this.isCtxLost);
-    const dpi = window.devicePixelRatio || 1;
+    const dpi = this.options.useDpi ? (window.devicePixelRatio || 1) ? 1;
     const internalWidth = width * dpi;
     const internalHeight = height * dpi;
     this.width = width;
