@@ -7,6 +7,8 @@ import {
   setUniforms,
 } from 'twgl.js';
 
+import { FlipnoteParser } from '../parsers';
+
 import { assert, assertBrowserEnv } from '../utils';
 
 import quadShader from './shaders/quad.vert';
@@ -21,7 +23,6 @@ interface ResourceMap {
   shaders: WebGLShader[];
   textures: WebGLTexture[];
   buffers: WebGLBuffer[];
-  framebuffers: WebGLFramebuffer[];
 };
 
 interface WebglRendererOptions {
@@ -32,8 +33,6 @@ interface WebglRendererOptions {
   /** Use DPI scaling */
   useDpi: boolean;
 };
-
-const rgbaToUint32 = ([r, g, b, a]: number[]) => (a << 24) | (b << 16) | (g << 8) | r;
 
 /**
  * Animation frame renderer, built around the {@link https://developer.mozilla.org/en-US/docs/Web/API/WebGL_API WebGL} API
@@ -69,9 +68,9 @@ export class WebglRenderer {
   private options: WebglRendererOptions;
   private postProcessProgram: ProgramInfo; // for drawing renderbuffer w/ filtering
   private quadBuffer: BufferInfo;
-  private paletteData = new Uint32Array(16);
-  private rgbaData: Uint32Array;
-  private rgbaDataBytes: Uint8Array;
+  private paletteBuffer = new Uint32Array(16);
+  private frameBuffer: Uint32Array;
+  private frameBufferBytes: Uint8Array; // will be same memory as frameBuffer, just uint8 for webgl texture
 
   private frameTexture: WebGLTexture;
   private textureWidth: number;
@@ -80,8 +79,7 @@ export class WebglRenderer {
     programs: [],
     shaders: [],
     textures: [],
-    buffers: [],
-    framebuffers: []
+    buffers: []
   };
   private isCtxLost = false;
 
@@ -224,21 +222,6 @@ export class WebglRenderer {
     return tex;
   }
 
-  // private createFrameBuffer(colorTexture: WebGLTexture) {
-  //   assert(!this.isCtxLost);
-  //   const gl = this.gl;
-  //   const fb = gl.createFramebuffer();
-  //   gl.bindFramebuffer(gl.FRAMEBUFFER, fb);
-  //   // enable alpha blending
-  //   gl.enable(gl.BLEND);
-  //   gl.blendEquation(gl.FUNC_ADD);
-  //   gl.blendFunc(gl.ONE, gl.ONE_MINUS_SRC_ALPHA);
-  //   // bind a texture to the framebuffer
-  //   gl.framebufferTexture2D(gl.FRAMEBUFFER, gl.COLOR_ATTACHMENT0, gl.TEXTURE_2D, colorTexture, 0);
-  //   this.refs.framebuffers.push(fb);
-  //   return fb;
-  // }
-
   /**
    * Resize the canvas surface
    * @param width - New canvas width, in CSS pixels
@@ -248,7 +231,7 @@ export class WebglRenderer {
    */
   public setCanvasSize(width: number, height: number) {
     assert(!this.isCtxLost);
-    const dpi = this.options.useDpi ? (window.devicePixelRatio || 1) ? 1;
+    const dpi = this.options.useDpi ? (window.devicePixelRatio || 1) : 1;
     const internalWidth = width * dpi;
     const internalHeight = height * dpi;
     this.width = width;
@@ -273,47 +256,41 @@ export class WebglRenderer {
     // resize frame texture
     gl.bindTexture(gl.TEXTURE_2D, this.frameTexture);
     gl.texImage2D(gl.TEXTURE_2D, 0, gl.RGBA, this.textureWidth, this.textureHeight, 0, gl.RGBA, gl.UNSIGNED_BYTE, null);
-    this.rgbaData = new Uint32Array(width * height);
-    this.rgbaDataBytes = new Uint8Array(this.rgbaData.buffer); // same memory buffer as rgbaData
+    this.frameBuffer = new Uint32Array(width * height);
+    this.frameBufferBytes = new Uint8Array(this.frameBuffer.buffer); // same memory buffer as rgbaData
   }
 
-  /**
-   * Clear frame buffer
-   * @param colors - Paper color as `[R, G, B, A]`
-   */
-  public clearFrameBuffer(paperColor: number[]) {
-    assert(!this.isCtxLost);
-    this.rgbaData.fill(rgbaToUint32(paperColor));
+  public clear() {
+    //  clear whatever's already been drawn
+    this.gl.clear(this.gl.COLOR_BUFFER_BIT);
   }
 
-  /**
-   * Set the color palette to use for the next {@link drawPixels} call
-   * @param colors - Array of colors as `[R, G, B, A]`
-   */
-  public setPalette(colors: number[][]) {
-    assert(!this.isCtxLost);
-    assert(colors.length < 16);
-    const data = this.paletteData.fill(0);
-    for (let i = 0; i < colors.length; i++)
-      data[i] = rgbaToUint32(colors[i]);
-  }
-
-  /**
-   * Draw pixels to the frame buffer
-   * 
-   * Note: use {@link composite} to draw the frame buffer to the canvas
-   * @param pixels - Array of color indices for every pixl
-   * @param paletteOffset - Palette offset index for the pixels being drawn
-   */
-  public drawPixels(pixels: Uint8Array, paletteOffset: number) {
-    assert(!this.isCtxLost);
-    const rgbaData = this.rgbaData;
-    const paletteData = this.paletteData;
-    for (let i = 0; i < pixels.length; i++) {
-      const pixel = pixels[i];
-      if (pixel !== 0)
-        rgbaData[i] = paletteData[pixel + paletteOffset];
-    }
+  public drawFrame(note: FlipnoteParser, frameIndex: number) {
+    const {
+      gl,
+      textureWidth,
+      textureHeight,
+    } = this;
+    // get frame pixels as RGBA buffer
+    note.getFramePixelsRgba(frameIndex, this.frameBuffer, this.paletteBuffer);
+    // set viewport bounds
+    gl.viewport(0, 0, gl.drawingBufferWidth, gl.drawingBufferHeight);
+    // using postprocess program
+    gl.useProgram(this.postProcessProgram.program);
+    //  clear whatever's already been drawn
+    gl.clear(gl.COLOR_BUFFER_BIT);
+    // update layer texture
+    gl.bindTexture(gl.TEXTURE_2D, this.frameTexture);
+    gl.texImage2D(gl.TEXTURE_2D, 0, gl.RGBA, textureWidth, textureHeight, 0, gl.RGBA, gl.UNSIGNED_BYTE, this.frameBufferBytes);
+    // prep uniforms
+    setUniforms(this.postProcessProgram, {
+      u_flipY: true,
+      u_tex: this.frameTexture,
+      u_textureSize: [this.textureWidth, this.textureHeight],
+      u_screenSize: [gl.drawingBufferWidth, gl.drawingBufferHeight],
+    });
+    // draw screen quad
+    gl.drawElements(gl.TRIANGLES, this.quadBuffer.numElements, this.quadBuffer.elementType, 0);
   }
 
   /**
@@ -335,7 +312,7 @@ export class WebglRenderer {
     gl.clear(gl.COLOR_BUFFER_BIT);
     // update layer texture
     gl.bindTexture(gl.TEXTURE_2D, this.frameTexture);
-    gl.texImage2D(gl.TEXTURE_2D, 0, gl.RGBA, textureWidth, textureHeight, 0, gl.RGBA, gl.UNSIGNED_BYTE, this.rgbaDataBytes);
+    gl.texImage2D(gl.TEXTURE_2D, 0, gl.RGBA, textureWidth, textureHeight, 0, gl.RGBA, gl.UNSIGNED_BYTE, this.frameBufferBytes);
     // prep uniforms
     setUniforms(this.postProcessProgram, {
       u_flipY: true,
@@ -387,10 +364,6 @@ export class WebglRenderer {
       gl.deleteShader(shader);
     });
     refs.shaders = [];
-    refs.framebuffers.forEach((fb) => {
-      gl.deleteFramebuffer(fb);
-    });
-    refs.framebuffers = [];
     refs.textures.forEach((texture) => {
       gl.deleteTexture(texture);
     });
@@ -403,7 +376,9 @@ export class WebglRenderer {
       gl.deleteProgram(program);
     });
     refs.programs = [];
-    this.paletteData = null;
+    this.paletteBuffer = null;
+    this.frameBuffer = null;
+    this.frameBufferBytes = null;
     // shrink the canvas to reduce memory usage until it is garbage collected
     gl.canvas.width = 1;
     gl.canvas.height = 1;

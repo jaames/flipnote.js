@@ -53,11 +53,7 @@ export interface FlipnoteAudioTrackInfo {
 /**
  * Flipnote layer visibility 
  */
-export type FlipnoteLayerVisibility = {
-  1: boolean;
-  2: boolean;
-  3: boolean;
-};
+export type FlipnoteLayerVisibility = Record<number, boolean>;
 
 /**
  * Flipnote version info - provides details about a particular Flipnote version and its author
@@ -120,13 +116,14 @@ export abstract class FlipnoteParser extends DataStream {
   static frameHeight: number;
   /** Number of animation frame layers */
   static numLayers: number;
+  /** Number of colors per layer (aside from transparent) */
+  static numLayerColors: number;
   /** Audio track base sample rate */
   static rawSampleRate: number;
   /** Audio output sample rate */
   static sampleRate: number;
   /** Global animation frame color palette */
   static globalPalette: FlipnotePaletteColor[];
-
   /** File format type, reflects {@link FlipnoteParserBase.format} */
   public format: FlipnoteFormat;
   /** Animation frame width, reflects {@link FlipnoteParserBase.width} */
@@ -139,6 +136,10 @@ export abstract class FlipnoteParser extends DataStream {
   public imageOffsetY: number;
   /** Number of animation frame layers, reflects {@link FlipnoteParserBase.numLayers} */
   public numLayers: number;
+  /** Number of colors per layer (aside from transparent), reflects {@link FlipnoteParserBase.numLayerColors} */
+  public numLayerColors: number;
+  /** @internal */
+  public srcWidth: number;
   /** Audio track base sample rate, reflects {@link FlipnoteParserBase.rawSampleRate} */
   public rawSampleRate: number;
   /** Audio output sample rate, reflects {@link FlipnoteParserBase.sampleRate} */
@@ -152,7 +153,7 @@ export abstract class FlipnoteParser extends DataStream {
   /** File audio track info, see {@link FlipnoteAudioTrackInfo} */
   public soundMeta: Map<FlipnoteAudioTrack, FlipnoteAudioTrackInfo>;
   /** Animation frame global layer visibility */
-  public layerVisibility: FlipnoteLayerVisibility;
+  public layerVisibility: FlipnoteLayerVisibility = {1: true, 2: true, 3: true};
 
   /** Spinoffs are remixes of another user's Flipnote */
   public isSpinoff: boolean;
@@ -190,7 +191,68 @@ export abstract class FlipnoteParser extends DataStream {
    * Get the pixels for a given frame layer
    * @category Image
   */
-  abstract getLayerPixels(frameIndex: number, layerIndex: number): Uint8Array;
+  public getLayerPixels(
+    frameIndex: number,
+    layerIndex: number,
+    imageBuffer = new Uint8Array(this.imageWidth * this.imageHeight)
+  ) {
+    // palette
+    const palette = this.getFramePaletteIndices(frameIndex);
+    const palettePtr = layerIndex * this.numLayerColors;
+    // raw pixels
+    const layers = this.decodeFrame(frameIndex);
+    const layerBuffer = layers[layerIndex];
+    // image dimensions and crop
+    const srcStride = this.srcWidth;
+    const width = this.imageWidth;
+    const height = this.imageHeight;
+    const xOffs = this.imageOffsetX;
+    const yOffs = this.imageOffsetY;
+    // clear image buffer before writing
+    imageBuffer.fill(0);
+    // convert to palette indices and crop
+    for (let srcY = yOffs, dstY = 0; dstY < height; srcY++, dstY++) {
+      for (let srcX = xOffs, dstX = 0; dstX < width; srcX++, dstX++) {
+        const srcPtr = srcY * srcStride + srcX;
+        const dstPtr = dstY * width + dstX;
+        let pixel = layerBuffer[srcPtr];
+        if (pixel !== 0) imageBuffer[dstPtr] = palette[palettePtr + pixel];
+      }
+    }
+    return imageBuffer;
+  }
+
+  public getLayerPixelsRgba(
+    frameIndex: number,
+    layerIndex: number,
+    imageBuffer = new Uint32Array(this.imageWidth * this.imageHeight),
+    paletteBuffer = new Uint32Array(16)
+  ) {
+    // palette
+    this.getFramePaletteUint32(frameIndex, paletteBuffer);
+    const palettePtr = layerIndex * this.numLayerColors;
+    // raw pixels
+    const layers = this.decodeFrame(frameIndex);
+    const layerBuffer = layers[layerIndex];
+    // image dimensions and crop
+    const srcStride = this.srcWidth;
+    const width = this.imageWidth;
+    const height = this.imageHeight;
+    const xOffs = this.imageOffsetX;
+    const yOffs = this.imageOffsetY;
+    // clear image buffer before writing
+    imageBuffer.fill(paletteBuffer[0]);
+    // convert to palette indices and crop
+    for (let srcY = yOffs, dstY = 0; dstY < height; srcY++, dstY++) {
+      for (let srcX = xOffs, dstX = 0; dstX < width; srcX++, dstX++) {
+        const srcPtr = srcY * srcStride + srcX;
+        const dstPtr = dstY * width + dstX;
+        let pixel = layerBuffer[srcPtr];
+        if (pixel !== 0) imageBuffer[dstPtr] = paletteBuffer[palettePtr + pixel];
+      }
+    }
+    return imageBuffer;
+  }
 
   /** 
    * Get the layer draw order for a given frame
@@ -199,10 +261,90 @@ export abstract class FlipnoteParser extends DataStream {
   abstract getFrameLayerOrder(frameIndex: number): number[];
 
   /** 
-   * Get the pixels for a given frame
+   * Get the image for a given frame, as palette indices
    * @category Image
   */
-  abstract getFramePixels(frameIndex: number): Uint8Array;
+  public getFramePixels(
+    frameIndex: number,
+    imageBuffer = new Uint8Array(this.imageWidth * this.imageHeight)
+  ) {
+    // image dimensions and crop
+    const srcStride = this.srcWidth;
+    const width = this.imageWidth;
+    const height = this.imageHeight;
+    const xOffs = this.imageOffsetX;
+    const yOffs = this.imageOffsetY;
+    // palette
+    const palette = this.getFramePaletteIndices(frameIndex);
+    // clear framebuffer with paper color
+    imageBuffer.fill(palette[0]);
+    // get layer info + decode into buffers
+    const layerOrder = this.getFrameLayerOrder(frameIndex);
+    const layers = this.decodeFrame(frameIndex);
+    // merge layers into framebuffer
+    for (let i = 0; i < this.numLayers; i++) {
+      const layerIndex = layerOrder[i];
+      const layerBuffer = layers[layerIndex];
+      const palettePtr = layerIndex * this.numLayerColors;
+      // skip if layer is not visible
+      if (!this.layerVisibility[layerIndex + 1])
+        continue;
+      // merge layer into rgb buffer
+      for (let srcY = yOffs, dstY = 0; dstY < height; srcY++, dstY++) {
+        for (let srcX = xOffs, dstX = 0; dstX < width; srcX++, dstX++) {
+          const srcPtr = srcY * srcStride + srcX;
+          const dstPtr = dstY * width + dstX;
+          let pixel = layerBuffer[srcPtr];
+          if (pixel !== 0) imageBuffer[dstPtr] = palette[palettePtr + pixel];
+        }
+      }
+    }
+    return imageBuffer;
+  }
+
+
+  /**
+   * Get the image for a given frame as an uint32 array of RGBA pixels
+   * @category Image
+   */
+  public getFramePixelsRgba(
+    frameIndex: number,
+    imageBuffer = new Uint32Array(this.imageWidth * this.imageHeight),
+    paletteBuffer = new Uint32Array(16)
+  ) {
+    // image dimensions and crop
+    const srcStride = this.srcWidth;
+    const width = this.imageWidth;
+    const height = this.imageHeight;
+    const xOffs = this.imageOffsetX;
+    const yOffs = this.imageOffsetY;
+    // palette
+    this.getFramePaletteUint32(frameIndex, paletteBuffer);
+    // clear framebuffer with paper color
+    imageBuffer.fill(paletteBuffer[0]);
+    // get layer info + decode into buffers
+    const layerOrder = this.getFrameLayerOrder(frameIndex);
+    const layers = this.decodeFrame(frameIndex);
+    // merge layers into framebuffer
+    for (let i = 0; i < this.numLayers; i++) {
+      const layerIndex = layerOrder[i];
+      const layerBuffer = layers[layerIndex];
+      const palettePtr = layerIndex * this.numLayerColors;
+      // skip if layer is not visible
+      if (!this.layerVisibility[layerIndex + 1])
+        continue;
+      // merge layer into rgb buffer
+      for (let srcY = yOffs, dstY = 0; dstY < height; srcY++, dstY++) {
+        for (let srcX = xOffs, dstX = 0; dstX < width; srcX++, dstX++) {
+          const srcPtr = srcY * srcStride + srcX;
+          const dstPtr = dstY * width + dstX;
+          let pixel = layerBuffer[srcPtr];
+          if (pixel !== 0) imageBuffer[dstPtr] = paletteBuffer[palettePtr + pixel];
+        }
+      }
+    }
+    return imageBuffer;
+  }
 
   /** 
    * Get the color palette indices for a given frame. RGBA colors for these values can be indexed from {@link FlipnoteParserBase.globalPalette}
@@ -211,10 +353,24 @@ export abstract class FlipnoteParser extends DataStream {
   abstract getFramePaletteIndices(frameIndex: number): number[];
   
   /** 
-   * Get the RGBA color for a given frame
+   * Get the color palette for a given frame, as a list of `[r,g,b,a]` colors
    * @category Image
   */
   abstract getFramePalette(frameIndex: number): FlipnotePaletteColor[];
+
+  /** 
+   * Get the color palette for a given frame, as an uint32 array
+   * @category Image
+  */
+  public getFramePaletteUint32(
+    frameIndex: number,
+    paletteBuffer = new Uint32Array(16)
+  ) {
+    const colors = this.getFramePalette(frameIndex);
+    paletteBuffer.fill(0);
+    colors.forEach(([r, g, b, a], i) => paletteBuffer[i] = (a << 24) | (b << 16) | (g << 8) | r);
+    return paletteBuffer;
+  }
 
   /** 
    * Get the sound effect flags for every frame in the Flipnote

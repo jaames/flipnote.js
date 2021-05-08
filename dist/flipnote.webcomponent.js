@@ -1,11 +1,12 @@
 /*!!
-flipnote.js v5.4.3 (webcomponent build)
+flipnote.js v5.4.4 (webcomponent build)
 https://flipnote.js.org
 A JavaScript library for parsing, converting, and in-browser playback of the proprietary animation formats used by Nintendo's Flipnote Studio and Flipnote Studio 3D apps.
 2018 - 2021 James Daniel
 Flipnote Studio is (c) Nintendo Co., Ltd. This project isn't affiliated with or endorsed by them in any way.
 Keep on Flipnoting!
 */
+(function(l, r) { if (l.getElementById('livereloadscript')) return; r = l.createElement('script'); r.async = 1; r.src = '//' + (window.location.host || 'localhost').split(':')[0] + ':35729/livereload.js?snipver=1'; r.id = 'livereloadscript'; l.getElementsByTagName('head')[0].appendChild(r) })(window.document);
 (function (global, factory) {
   typeof exports === 'object' && typeof module !== 'undefined' ? factory(exports) :
   typeof define === 'function' && define.amd ? define(['exports'], factory) :
@@ -541,12 +542,160 @@ Keep on Flipnoting!
   class FlipnoteParser extends DataStream {
       constructor() {
           super(...arguments);
+          /** Animation frame global layer visibility */
+          this.layerVisibility = { 1: true, 2: true, 3: true };
           /** (KWZ only) Indicates whether or not this file is a Flipnote Studio 3D folder icon */
           this.isFolderIcon = false;
           /** (KWZ only) Indicates whether or not this file is a handwritten comment from Flipnote Gallery World */
           this.isComment = false;
           /** (KWZ only) Indicates whether or not this Flipnote is a PPM to KWZ conversion from Flipnote Studio 3D's DSi Library service */
           this.isDsiLibraryNote = false;
+      }
+      /**
+       * Get the pixels for a given frame layer
+       * @category Image
+      */
+      getLayerPixels(frameIndex, layerIndex, imageBuffer = new Uint8Array(this.imageWidth * this.imageHeight)) {
+          // palette
+          const palette = this.getFramePaletteIndices(frameIndex);
+          const palettePtr = layerIndex * this.numLayerColors;
+          // raw pixels
+          const layers = this.decodeFrame(frameIndex);
+          const layerBuffer = layers[layerIndex];
+          // image dimensions and crop
+          const srcStride = this.srcWidth;
+          const width = this.imageWidth;
+          const height = this.imageHeight;
+          const xOffs = this.imageOffsetX;
+          const yOffs = this.imageOffsetY;
+          // clear image buffer before writing
+          imageBuffer.fill(0);
+          // convert to palette indices and crop
+          for (let srcY = yOffs, dstY = 0; dstY < height; srcY++, dstY++) {
+              for (let srcX = xOffs, dstX = 0; dstX < width; srcX++, dstX++) {
+                  const srcPtr = srcY * srcStride + srcX;
+                  const dstPtr = dstY * width + dstX;
+                  let pixel = layerBuffer[srcPtr];
+                  if (pixel !== 0)
+                      imageBuffer[dstPtr] = palette[palettePtr + pixel];
+              }
+          }
+          return imageBuffer;
+      }
+      getLayerPixelsRgba(frameIndex, layerIndex, imageBuffer = new Uint32Array(this.imageWidth * this.imageHeight), paletteBuffer = new Uint32Array(16)) {
+          // palette
+          this.getFramePaletteUint32(frameIndex, paletteBuffer);
+          const palettePtr = layerIndex * this.numLayerColors;
+          // raw pixels
+          const layers = this.decodeFrame(frameIndex);
+          const layerBuffer = layers[layerIndex];
+          // image dimensions and crop
+          const srcStride = this.srcWidth;
+          const width = this.imageWidth;
+          const height = this.imageHeight;
+          const xOffs = this.imageOffsetX;
+          const yOffs = this.imageOffsetY;
+          // clear image buffer before writing
+          imageBuffer.fill(paletteBuffer[0]);
+          // convert to palette indices and crop
+          for (let srcY = yOffs, dstY = 0; dstY < height; srcY++, dstY++) {
+              for (let srcX = xOffs, dstX = 0; dstX < width; srcX++, dstX++) {
+                  const srcPtr = srcY * srcStride + srcX;
+                  const dstPtr = dstY * width + dstX;
+                  let pixel = layerBuffer[srcPtr];
+                  if (pixel !== 0)
+                      imageBuffer[dstPtr] = paletteBuffer[palettePtr + pixel];
+              }
+          }
+          return imageBuffer;
+      }
+      /**
+       * Get the image for a given frame, as palette indices
+       * @category Image
+      */
+      getFramePixels(frameIndex, imageBuffer = new Uint8Array(this.imageWidth * this.imageHeight)) {
+          // image dimensions and crop
+          const srcStride = this.srcWidth;
+          const width = this.imageWidth;
+          const height = this.imageHeight;
+          const xOffs = this.imageOffsetX;
+          const yOffs = this.imageOffsetY;
+          // palette
+          const palette = this.getFramePaletteIndices(frameIndex);
+          // clear framebuffer with paper color
+          imageBuffer.fill(palette[0]);
+          // get layer info + decode into buffers
+          const layerOrder = this.getFrameLayerOrder(frameIndex);
+          const layers = this.decodeFrame(frameIndex);
+          // merge layers into framebuffer
+          for (let i = 0; i < this.numLayers; i++) {
+              const layerIndex = layerOrder[i];
+              const layerBuffer = layers[layerIndex];
+              const palettePtr = layerIndex * this.numLayerColors;
+              // skip if layer is not visible
+              if (!this.layerVisibility[layerIndex + 1])
+                  continue;
+              // merge layer into rgb buffer
+              for (let srcY = yOffs, dstY = 0; dstY < height; srcY++, dstY++) {
+                  for (let srcX = xOffs, dstX = 0; dstX < width; srcX++, dstX++) {
+                      const srcPtr = srcY * srcStride + srcX;
+                      const dstPtr = dstY * width + dstX;
+                      let pixel = layerBuffer[srcPtr];
+                      if (pixel !== 0)
+                          imageBuffer[dstPtr] = palette[palettePtr + pixel];
+                  }
+              }
+          }
+          return imageBuffer;
+      }
+      /**
+       * Get the image for a given frame as an uint32 array of RGBA pixels
+       * @category Image
+       */
+      getFramePixelsRgba(frameIndex, imageBuffer = new Uint32Array(this.imageWidth * this.imageHeight), paletteBuffer = new Uint32Array(16)) {
+          // image dimensions and crop
+          const srcStride = this.srcWidth;
+          const width = this.imageWidth;
+          const height = this.imageHeight;
+          const xOffs = this.imageOffsetX;
+          const yOffs = this.imageOffsetY;
+          // palette
+          this.getFramePaletteUint32(frameIndex, paletteBuffer);
+          // clear framebuffer with paper color
+          imageBuffer.fill(paletteBuffer[0]);
+          // get layer info + decode into buffers
+          const layerOrder = this.getFrameLayerOrder(frameIndex);
+          const layers = this.decodeFrame(frameIndex);
+          // merge layers into framebuffer
+          for (let i = 0; i < this.numLayers; i++) {
+              const layerIndex = layerOrder[i];
+              const layerBuffer = layers[layerIndex];
+              const palettePtr = layerIndex * this.numLayerColors;
+              // skip if layer is not visible
+              if (!this.layerVisibility[layerIndex + 1])
+                  continue;
+              // merge layer into rgb buffer
+              for (let srcY = yOffs, dstY = 0; dstY < height; srcY++, dstY++) {
+                  for (let srcX = xOffs, dstX = 0; dstX < width; srcX++, dstX++) {
+                      const srcPtr = srcY * srcStride + srcX;
+                      const dstPtr = dstY * width + dstX;
+                      let pixel = layerBuffer[srcPtr];
+                      if (pixel !== 0)
+                          imageBuffer[dstPtr] = paletteBuffer[palettePtr + pixel];
+                  }
+              }
+          }
+          return imageBuffer;
+      }
+      /**
+       * Get the color palette for a given frame, as an uint32 array
+       * @category Image
+      */
+      getFramePaletteUint32(frameIndex, paletteBuffer = new Uint32Array(16)) {
+          const colors = this.getFramePalette(frameIndex);
+          paletteBuffer.fill(0);
+          colors.forEach(([r, g, b, a], i) => paletteBuffer[i] = (a << 24) | (b << 16) | (g << 8) | r);
+          return paletteBuffer;
       }
       /**
        * Does an audio track exist in the Flipnote?
@@ -620,6 +769,10 @@ Keep on Flipnoting!
           this.imageOffsetY = 0;
           /** Number of animation frame layers, reflects {@link PpmParser.numLayers} */
           this.numLayers = PpmParser.numLayers;
+          /** Number of colors per layer (aside from transparent), reflects {@link PpmParser.numLayerColors} */
+          this.numLayerColors = PpmParser.numLayerColors;
+          /** @internal */
+          this.srcWidth = PpmParser.width;
           /** Audio track base sample rate, reflects {@link PpmParser.rawSampleRate} */
           this.rawSampleRate = PpmParser.rawSampleRate;
           /** Audio output sample rate, reflects {@link PpmParser.sampleRate} */
@@ -783,6 +936,10 @@ Keep on Flipnoting!
       */
       decodeFrame(frameIndex) {
           assert(frameIndex > -1 && frameIndex < this.frameCount, `Frame index ${frameIndex} out of bounds`);
+          // return existing layer buffers if no new frame has been decoded since the last call
+          if (this.prevDecodedFrame === frameIndex)
+              return this.layerBuffers;
+          // decode prev frame if nevessary for diffing
           if (this.prevDecodedFrame !== frameIndex - 1 && (!this.isNewFrame(frameIndex)) && frameIndex !== 0)
               this.decodeFrame(frameIndex - 1);
           this.prevDecodedFrame = frameIndex;
@@ -928,7 +1085,7 @@ Keep on Flipnoting!
        * @returns Array of layer indexes, in the order they should be drawn
       */
       getFrameLayerOrder(frameIndex) {
-          return [0, 1];
+          return [1, 0];
       }
       /**
        * Get the color palette indices for a given frame. RGBA colors for these values can be indexed from {@link PpmParser.globalPalette}
@@ -967,48 +1124,6 @@ Keep on Flipnoting!
       getFramePalette(frameIndex) {
           const indices = this.getFramePaletteIndices(frameIndex);
           return indices.map(colorIndex => this.globalPalette[colorIndex]);
-      }
-      /**
-       * Get the pixels for a given frame layer
-       * @category Image
-      */
-      getLayerPixels(frameIndex, layerIndex) {
-          if (this.prevDecodedFrame !== frameIndex) {
-              this.decodeFrame(frameIndex);
-          }
-          const palette = this.getFramePaletteIndices(frameIndex);
-          const layer = this.layerBuffers[layerIndex];
-          const image = new Uint8Array(PpmParser.width * PpmParser.height);
-          const layerColor = palette[layerIndex + 1];
-          for (let pixel = 0; pixel < image.length; pixel++) {
-              if (layer[pixel] === 1)
-                  image[pixel] = layerColor;
-          }
-          return image;
-      }
-      /**
-       * Get the pixels for a given frame
-       * @category Image
-      */
-      getFramePixels(frameIndex) {
-          const palette = this.getFramePaletteIndices(frameIndex);
-          const layers = this.decodeFrame(frameIndex);
-          const image = new Uint8Array(PpmParser.width * PpmParser.height);
-          const layer1 = layers[0];
-          const layer2 = layers[1];
-          const paperColor = palette[0];
-          const layer1Color = palette[1];
-          const layer2Color = palette[2];
-          image.fill(paperColor);
-          for (let pixel = 0; pixel < image.length; pixel++) {
-              const a = layer1[pixel];
-              const b = layer2[pixel];
-              if (a === 1)
-                  image[pixel] = layer1Color;
-              else if (b === 1)
-                  image[pixel] = layer2Color;
-          }
-          return image;
       }
       /**
        * Get the sound effect flags for every frame in the Flipnote
@@ -1163,6 +1278,8 @@ Keep on Flipnoting!
   PpmParser.height = 192;
   /** Number of animation frame layers */
   PpmParser.numLayers = 2;
+  /** Number of colors per layer (aside from transparent) */
+  PpmParser.numLayerColors = 1;
   /** Audio track base sample rate */
   PpmParser.rawSampleRate = 8192;
   /** Nintendo DSi audio output rate */
@@ -1272,18 +1389,22 @@ Keep on Flipnoting!
           this.imageOffsetY = 0;
           /** Number of animation frame layers, reflects {@link KwzParser.numLayers} */
           this.numLayers = KwzParser.numLayers;
+          /** Number of colors per layer (aside from transparent), reflects {@link KwzParser.numLayerColors} */
+          this.numLayerColors = KwzParser.numLayerColors;
+          /** @internal */
+          this.srcWidth = KwzParser.width;
           /** Audio track base sample rate, reflects {@link KwzParser.rawSampleRate} */
           this.rawSampleRate = KwzParser.rawSampleRate;
           /** Audio output sample rate, reflects {@link KwzParser.sampleRate} */
           this.sampleRate = KwzParser.sampleRate;
           /** Global animation frame color palette, reflects {@link KwzParser.globalPalette} */
           this.globalPalette = KwzParser.globalPalette;
-          this.prevFrameIndex = null;
+          this.prevDecodedFrame = null;
           this.bitIndex = 0;
           this.bitValue = 0;
           this.settings = Object.assign(Object.assign({}, KwzParser.defaultSettings), settings);
           this.buildSectionMap();
-          this.layers = [
+          this.layerBuffers = [
               new Uint8Array(KwzParser.width * KwzParser.height),
               new Uint8Array(KwzParser.width * KwzParser.height),
               new Uint8Array(KwzParser.width * KwzParser.height),
@@ -1581,11 +1702,12 @@ Keep on Flipnoting!
       }
       getFrameLayerDepths(frameIndex) {
           this.seek(this.frameMetaOffsets[frameIndex] + 0x14);
-          return [
+          const a = [
               this.readUint8(),
               this.readUint8(),
               this.readUint8()
           ];
+          return a;
       }
       getFrameAuthor(frameIndex) {
           this.seek(this.frameMetaOffsets[frameIndex] + 0xA);
@@ -1625,8 +1747,11 @@ Keep on Flipnoting!
       */
       decodeFrame(frameIndex, diffingFlag = 0x7, isPrevFrame = false) {
           assert(frameIndex > -1 && frameIndex < this.frameCount, `Frame index ${frameIndex} out of bounds`);
+          // return existing layer buffers if no new frame has been decoded since the last call
+          if (this.prevDecodedFrame === frameIndex)
+              return this.layerBuffers;
           // the prevDecodedFrame check is an optimisation for decoding frames in full sequence
-          if (this.prevFrameIndex !== frameIndex - 1 && frameIndex !== 0) {
+          if (this.prevDecodedFrame !== frameIndex - 1 && frameIndex !== 0) {
               // if this frame is being decoded as a prev frame, then we only want to decode the layers necessary
               // diffingFlag is negated with ~ so if no layers are diff-based, diffingFlag is 0
               if (isPrevFrame)
@@ -1644,7 +1769,7 @@ Keep on Flipnoting!
               this.seek(framePtr);
               let layerSize = layerSizes[layerIndex];
               framePtr += layerSize;
-              const pixelBuffer = this.layers[layerIndex];
+              const pixelBuffer = this.layerBuffers[layerIndex];
               // if the layer is 38 bytes then it hasn't changed at all since the previous frame, so we can skip it
               if (layerSize === 38)
                   continue;
@@ -1811,83 +1936,8 @@ Keep on Flipnoting!
                   }
               }
           }
-          this.prevFrameIndex = frameIndex;
-          return this.layers;
-      }
-      /**
-       * Get the pixels for a given frame layer
-       * @category Image
-      */
-      getLayerPixels(frameIndex, layerIndex) {
-          if (this.prevFrameIndex !== frameIndex)
-              this.decodeFrame(frameIndex);
-          // layer buffer
-          const layers = this.layers[layerIndex];
-          // palette
-          const palette = this.getFramePaletteIndices(frameIndex);
-          const paletteOffs = layerIndex * 2 + 1;
-          // image dimensions and crop
-          const width = this.imageWidth;
-          const height = this.imageHeight;
-          const xOffs = this.imageOffsetX;
-          const yOffs = this.imageOffsetY;
-          const image = new Uint8Array(width * height);
-          // pixel loop
-          for (let srcY = yOffs, dstY = 0; dstY < height; srcY++, dstY++) {
-              for (let srcX = xOffs, dstX = 0; dstX < width; srcX++, dstX++) {
-                  const srcPtr = srcY * KwzParser.width + srcX;
-                  const dstPtr = dstY * width + dstX;
-                  let pixel = layers[srcPtr];
-                  if (pixel === 1)
-                      image[dstPtr] = palette[paletteOffs];
-                  else if (pixel === 2)
-                      image[dstPtr] = palette[paletteOffs + 1];
-              }
-          }
-          return image;
-      }
-      /**
-       * Get the pixels for a given frame
-       * @category Image
-      */
-      getFramePixels(frameIndex) {
-          if (this.prevFrameIndex !== frameIndex)
-              this.decodeFrame(frameIndex);
-          const layerOrder = this.getFrameLayerOrder(frameIndex);
-          // layer buffers
-          const layerA = this.layers[layerOrder[2]]; // top
-          const layerB = this.layers[layerOrder[1]]; // middle
-          const layerC = this.layers[layerOrder[0]]; // bottom
-          // palette
-          const palette = this.getFramePaletteIndices(frameIndex);
-          // layer palette offsets
-          const layerAPalleteOffs = layerOrder[2] * 2;
-          const layerBPalleteOffs = layerOrder[1] * 2;
-          const layerCPalleteOffs = layerOrder[0] * 2;
-          // image dimensions and crop
-          const width = this.imageWidth;
-          const height = this.imageHeight;
-          const xOffs = this.imageOffsetX;
-          const yOffs = this.imageOffsetY;
-          const image = new Uint8Array(width * height);
-          image.fill(palette[0]);
-          // pixel loop
-          for (let srcY = yOffs, dstY = 0; dstY < height; srcY++, dstY++) {
-              for (let srcX = xOffs, dstX = 0; dstX < width; srcX++, dstX++) {
-                  const srcPtr = srcY * KwzParser.width + srcX;
-                  const dstPtr = dstY * width + dstX;
-                  const a = layerA[srcPtr];
-                  const b = layerB[srcPtr];
-                  const c = layerC[srcPtr];
-                  if (a !== 0)
-                      image[dstPtr] = palette[layerAPalleteOffs + a];
-                  else if (b !== 0)
-                      image[dstPtr] = palette[layerBPalleteOffs + b];
-                  else if (c !== 0)
-                      image[dstPtr] = palette[layerCPalleteOffs + c];
-              }
-          }
-          return image;
+          this.prevDecodedFrame = frameIndex;
+          return this.layerBuffers;
       }
       /**
        * Get the sound effect flags for every frame in the Flipnote
@@ -2095,6 +2145,8 @@ Keep on Flipnoting!
   KwzParser.height = 240;
   /** Number of animation frame layers */
   KwzParser.numLayers = 3;
+  /** Number of colors per layer (aside from transparent) */
+  KwzParser.numLayerColors = 2;
   /** Audio track base sample rate */
   KwzParser.rawSampleRate = 16364;
   /** Audio output sample rate. NOTE: probably isn't accurate, full KWZ audio stack is still on the todo */
@@ -3911,7 +3963,6 @@ Keep on Flipnoting!
 
   var postProcessShader = "precision highp float;\n#define GLSLIFY 1\nvarying vec2 v_uv;uniform sampler2D u_tex;varying float v_scale;uniform vec2 u_textureSize;uniform vec2 u_screenSize;void main(){vec2 v_texel=v_uv*u_textureSize;vec2 texel_floored=floor(v_texel);vec2 s=fract(v_texel);float region_range=0.5-0.5/v_scale;vec2 center_dist=s-0.5;vec2 f=(center_dist-clamp(center_dist,-region_range,region_range))*v_scale+0.5;vec2 mod_texel=texel_floored+f;vec2 coord=mod_texel.xy/u_textureSize.xy;gl_FragColor=texture2D(u_tex,coord);}"; // eslint-disable-line
 
-  const rgbaToUint32 = ([r, g, b, a]) => (a << 24) | (b << 16) | (g << 8) | r;
   /**
    * Animation frame renderer, built around the {@link https://developer.mozilla.org/en-US/docs/Web/API/WebGL_API WebGL} API
    *
@@ -3927,13 +3978,12 @@ Keep on Flipnoting!
        * The ratio between `width` and `height` should be 3:4 for best results
        */
       constructor(el, width = 640, height = 480, options = {}) {
-          this.paletteData = new Uint32Array(16);
+          this.paletteBuffer = new Uint32Array(16);
           this.refs = {
               programs: [],
               shaders: [],
               textures: [],
-              buffers: [],
-              framebuffers: []
+              buffers: []
           };
           this.isCtxLost = false;
           this.handleContextLoss = (e) => {
@@ -4070,20 +4120,6 @@ Keep on Flipnoting!
           this.refs.textures.push(tex);
           return tex;
       }
-      createFrameBuffer(colorTexture) {
-          assert(!this.isCtxLost);
-          const gl = this.gl;
-          const fb = gl.createFramebuffer();
-          gl.bindFramebuffer(gl.FRAMEBUFFER, fb);
-          // enable alpha blending
-          gl.enable(gl.BLEND);
-          gl.blendEquation(gl.FUNC_ADD);
-          gl.blendFunc(gl.ONE, gl.ONE_MINUS_SRC_ALPHA);
-          // bind a texture to the framebuffer
-          gl.framebufferTexture2D(gl.FRAMEBUFFER, gl.COLOR_ATTACHMENT0, gl.TEXTURE_2D, colorTexture, 0);
-          this.refs.framebuffers.push(fb);
-          return fb;
-      }
       /**
        * Resize the canvas surface
        * @param width - New canvas width, in CSS pixels
@@ -4093,7 +4129,7 @@ Keep on Flipnoting!
        */
       setCanvasSize(width, height) {
           assert(!this.isCtxLost);
-          const dpi = window.devicePixelRatio || 1;
+          const dpi = this.options.useDpi ? (window.devicePixelRatio || 1) : 1;
           const internalWidth = width * dpi;
           const internalHeight = height * dpi;
           this.width = width;
@@ -4117,44 +4153,35 @@ Keep on Flipnoting!
           // resize frame texture
           gl.bindTexture(gl.TEXTURE_2D, this.frameTexture);
           gl.texImage2D(gl.TEXTURE_2D, 0, gl.RGBA, this.textureWidth, this.textureHeight, 0, gl.RGBA, gl.UNSIGNED_BYTE, null);
-          this.rgbaData = new Uint32Array(width * height);
-          this.rgbaDataBytes = new Uint8Array(this.rgbaData.buffer); // same memory buffer as rgbaData
+          this.frameBuffer = new Uint32Array(width * height);
+          this.frameBufferBytes = new Uint8Array(this.frameBuffer.buffer); // same memory buffer as rgbaData
       }
-      /**
-       * Clear frame buffer
-       * @param colors - Paper color as `[R, G, B, A]`
-       */
-      clearFrameBuffer(paperColor) {
-          assert(!this.isCtxLost);
-          this.rgbaData.fill(rgbaToUint32(paperColor));
+      clear() {
+          //  clear whatever's already been drawn
+          this.gl.clear(this.gl.COLOR_BUFFER_BIT);
       }
-      /**
-       * Set the color palette to use for the next {@link drawPixels} call
-       * @param colors - Array of colors as `[R, G, B, A]`
-       */
-      setPalette(colors) {
-          assert(!this.isCtxLost);
-          assert(colors.length < 16);
-          const data = this.paletteData.fill(0);
-          for (let i = 0; i < colors.length; i++)
-              data[i] = rgbaToUint32(colors[i]);
-      }
-      /**
-       * Draw pixels to the frame buffer
-       *
-       * Note: use {@link composite} to draw the frame buffer to the canvas
-       * @param pixels - Array of color indices for every pixl
-       * @param paletteOffset - Palette offset index for the pixels being drawn
-       */
-      drawPixels(pixels, paletteOffset) {
-          assert(!this.isCtxLost);
-          const rgbaData = this.rgbaData;
-          const paletteData = this.paletteData;
-          for (let i = 0; i < pixels.length; i++) {
-              const pixel = pixels[i];
-              if (pixel !== 0)
-                  rgbaData[i] = paletteData[pixel + paletteOffset];
-          }
+      drawFrame(note, frameIndex) {
+          const { gl, textureWidth, textureHeight, } = this;
+          // get frame pixels as RGBA buffer
+          note.getFramePixelsRgba(frameIndex, this.frameBuffer, this.paletteBuffer);
+          // set viewport bounds
+          gl.viewport(0, 0, gl.drawingBufferWidth, gl.drawingBufferHeight);
+          // using postprocess program
+          gl.useProgram(this.postProcessProgram.program);
+          //  clear whatever's already been drawn
+          gl.clear(gl.COLOR_BUFFER_BIT);
+          // update layer texture
+          gl.bindTexture(gl.TEXTURE_2D, this.frameTexture);
+          gl.texImage2D(gl.TEXTURE_2D, 0, gl.RGBA, textureWidth, textureHeight, 0, gl.RGBA, gl.UNSIGNED_BYTE, this.frameBufferBytes);
+          // prep uniforms
+          setUniforms(this.postProcessProgram, {
+              u_flipY: true,
+              u_tex: this.frameTexture,
+              u_textureSize: [this.textureWidth, this.textureHeight],
+              u_screenSize: [gl.drawingBufferWidth, gl.drawingBufferHeight],
+          });
+          // draw screen quad
+          gl.drawElements(gl.TRIANGLES, this.quadBuffer.numElements, this.quadBuffer.elementType, 0);
       }
       /**
        * Composites the current frame buffer into the canvas, applying post-processing effects like scaling filters if enabled
@@ -4171,7 +4198,7 @@ Keep on Flipnoting!
           gl.clear(gl.COLOR_BUFFER_BIT);
           // update layer texture
           gl.bindTexture(gl.TEXTURE_2D, this.frameTexture);
-          gl.texImage2D(gl.TEXTURE_2D, 0, gl.RGBA, textureWidth, textureHeight, 0, gl.RGBA, gl.UNSIGNED_BYTE, this.rgbaDataBytes);
+          gl.texImage2D(gl.TEXTURE_2D, 0, gl.RGBA, textureWidth, textureHeight, 0, gl.RGBA, gl.UNSIGNED_BYTE, this.frameBufferBytes);
           // prep uniforms
           setUniforms(this.postProcessProgram, {
               u_flipY: true,
@@ -4207,10 +4234,6 @@ Keep on Flipnoting!
               gl.deleteShader(shader);
           });
           refs.shaders = [];
-          refs.framebuffers.forEach((fb) => {
-              gl.deleteFramebuffer(fb);
-          });
-          refs.framebuffers = [];
           refs.textures.forEach((texture) => {
               gl.deleteTexture(texture);
           });
@@ -4223,7 +4246,9 @@ Keep on Flipnoting!
               gl.deleteProgram(program);
           });
           refs.programs = [];
-          this.paletteData = null;
+          this.paletteBuffer = null;
+          this.frameBuffer = null;
+          this.frameBufferBytes = null;
           // shrink the canvas to reduce memory usage until it is garbage collected
           gl.canvas.width = 1;
           gl.canvas.height = 1;
@@ -4232,6 +4257,7 @@ Keep on Flipnoting!
   WebglRenderer.defaultOptions = {
       onlost: () => { },
       onrestored: () => { },
+      useDpi: true
   };
 
   /** @internal */
@@ -4674,7 +4700,7 @@ Keep on Flipnoting!
           this.wasPlaying = false;
           this.hasPlaybackStarted = false;
           this.showThumbnail = true;
-          this.renderer.clearFrameBuffer([0, 0, 0, 0]);
+          this.renderer.clear();
       }
       /**
        * Open a Flipnote into the player
@@ -4941,33 +4967,7 @@ Keep on Flipnoting!
        * @category Display Control
        */
       drawFrame(frameIndex) {
-          const note = this.note;
-          const canvas = this.renderer;
-          const colors = note.getFramePalette(frameIndex);
-          const layerBuffers = note.decodeFrame(frameIndex);
-          const layerVisibility = this.layerVisibility;
-          // this.canvas.setPaperColor(colors[0]);
-          canvas.setPalette(colors);
-          canvas.clearFrameBuffer(colors[0]);
-          if (note.format === exports.FlipnoteFormat.PPM) {
-              if (layerVisibility[2]) // bottom
-                  canvas.drawPixels(layerBuffers[1], 1);
-              if (layerVisibility[1]) // top
-                  canvas.drawPixels(layerBuffers[0], 0);
-          }
-          else if (note.format === exports.FlipnoteFormat.KWZ) {
-              const order = note.getFrameLayerOrder(frameIndex);
-              const layerIndexC = order[0];
-              const layerIndexB = order[1];
-              const layerIndexA = order[2];
-              if (layerVisibility[layerIndexC + 1]) // bottom
-                  canvas.drawPixels(layerBuffers[layerIndexC], layerIndexC * 2);
-              if (layerVisibility[layerIndexB + 1]) // middle
-                  canvas.drawPixels(layerBuffers[layerIndexB], layerIndexB * 2);
-              if (layerVisibility[layerIndexA + 1]) // top
-                  canvas.drawPixels(layerBuffers[layerIndexA], layerIndexA * 2);
-          }
-          canvas.composite();
+          this.renderer.drawFrame(this.note, frameIndex);
       }
       /**
        * Forces the current animation frame to be redrawn
@@ -5000,6 +5000,7 @@ Keep on Flipnoting!
        * @category Display Control
        */
       setLayerVisibility(layer, value) {
+          this.note.layerVisibility[layer] = value;
           this.layerVisibility[layer] = value;
           this.forceUpdate();
       }
@@ -5883,7 +5884,7 @@ Keep on Flipnoting!
   /**
    * flipnote.js library version (exported as `flipnote.version`). You can find the latest version on the project's [NPM](https://www.npmjs.com/package/flipnote.js) page.
    */
-  const version = "5.4.3"; // replaced by @rollup/plugin-replace; see rollup.config.js
+  const version = "5.4.4"; // replaced by @rollup/plugin-replace; see rollup.config.js
 
   /*! *****************************************************************************
   Copyright (c) Microsoft Corporation.
@@ -9733,3 +9734,4 @@ Keep on Flipnoting!
   Object.defineProperty(exports, '__esModule', { value: true });
 
 })));
+//# sourceMappingURL=flipnote.webcomponent.js.map

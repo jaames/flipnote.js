@@ -89,6 +89,8 @@ export class PpmParser extends FlipnoteParser {
   static height = 192;
   /** Number of animation frame layers */
   static numLayers = 2;
+  /** Number of colors per layer (aside from transparent) */
+  static numLayerColors = 1;
   /** Audio track base sample rate */
   static rawSampleRate = 8192;
   /** Nintendo DSi audio output rate */
@@ -113,6 +115,10 @@ export class PpmParser extends FlipnoteParser {
   public imageOffsetY = 0;
   /** Number of animation frame layers, reflects {@link PpmParser.numLayers} */
   public numLayers = PpmParser.numLayers;
+  /** Number of colors per layer (aside from transparent), reflects {@link PpmParser.numLayerColors} */
+  public numLayerColors = PpmParser.numLayerColors;
+  /** @internal */
+  public srcWidth = PpmParser.width;
   /** Audio track base sample rate, reflects {@link PpmParser.rawSampleRate} */
   public rawSampleRate = PpmParser.rawSampleRate;
   /** Audio output sample rate, reflects {@link PpmParser.sampleRate} */
@@ -304,6 +310,10 @@ export class PpmParser extends FlipnoteParser {
   */
   public decodeFrame(frameIndex: number) {
     assert(frameIndex > -1 && frameIndex < this.frameCount, `Frame index ${ frameIndex } out of bounds`);
+    // return existing layer buffers if no new frame has been decoded since the last call
+    if (this.prevDecodedFrame === frameIndex)
+      return this.layerBuffers;
+    // decode prev frame if nevessary for diffing
     if (this.prevDecodedFrame !== frameIndex - 1 && (!this.isNewFrame(frameIndex)) && frameIndex !== 0)
       this.decodeFrame(frameIndex - 1);
     this.prevDecodedFrame = frameIndex;
@@ -453,7 +463,7 @@ export class PpmParser extends FlipnoteParser {
    * @returns Array of layer indexes, in the order they should be drawn
   */
   public getFrameLayerOrder(frameIndex?: number) {
-    return [0, 1];
+    return [1, 0];
   }
 
   /** 
@@ -494,50 +504,6 @@ export class PpmParser extends FlipnoteParser {
   public getFramePalette(frameIndex: number) {
     const indices = this.getFramePaletteIndices(frameIndex);
     return indices.map(colorIndex => this.globalPalette[colorIndex]);
-  }
-
-  /** 
-   * Get the pixels for a given frame layer
-   * @category Image
-  */
-  public getLayerPixels(frameIndex: number, layerIndex: number) {
-    if (this.prevDecodedFrame !== frameIndex) {
-      this.decodeFrame(frameIndex);
-    }
-    const palette = this.getFramePaletteIndices(frameIndex);
-    const layer = this.layerBuffers[layerIndex];
-    const image = new Uint8Array(PpmParser.width * PpmParser.height);
-    const layerColor = palette[layerIndex + 1];
-    for (let pixel = 0; pixel < image.length; pixel++) {
-      if (layer[pixel] === 1)
-        image[pixel] = layerColor;
-    }
-    return image;
-  }
-
-  /** 
-   * Get the pixels for a given frame
-   * @category Image
-  */
-  public getFramePixels(frameIndex: number) {
-    const palette = this.getFramePaletteIndices(frameIndex);
-    const layers = this.decodeFrame(frameIndex);
-    const image = new Uint8Array(PpmParser.width * PpmParser.height);
-    const layer1 = layers[0];
-    const layer2 = layers[1];
-    const paperColor = palette[0];
-    const layer1Color = palette[1];
-    const layer2Color = palette[2];
-    image.fill(paperColor);
-    for (let pixel = 0; pixel < image.length; pixel++) {
-      const a = layer1[pixel];
-      const b = layer2[pixel];
-      if (a === 1)
-        image[pixel] = layer1Color;
-      else if (b === 1)
-        image[pixel] = layer2Color;
-    }
-    return image;
   }
 
   /** 

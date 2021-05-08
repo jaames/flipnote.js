@@ -208,6 +208,8 @@ export class KwzParser extends FlipnoteParser {
   static height = 240;
   /** Number of animation frame layers */
   static numLayers = 3;
+  /** Number of colors per layer (aside from transparent) */
+  static numLayerColors = 2;
   /** Audio track base sample rate */
   static rawSampleRate = 16364;
   /** Audio output sample rate. NOTE: probably isn't accurate, full KWZ audio stack is still on the todo */
@@ -235,6 +237,10 @@ export class KwzParser extends FlipnoteParser {
   public imageOffsetY = 0;
   /** Number of animation frame layers, reflects {@link KwzParser.numLayers} */
   public numLayers = KwzParser.numLayers;
+  /** Number of colors per layer (aside from transparent), reflects {@link KwzParser.numLayerColors} */
+  public numLayerColors = KwzParser.numLayerColors;
+  /** @internal */
+  public srcWidth = KwzParser.width;
   /** Audio track base sample rate, reflects {@link KwzParser.rawSampleRate} */
   public rawSampleRate = KwzParser.rawSampleRate;
   /** Audio output sample rate, reflects {@link KwzParser.sampleRate} */
@@ -246,9 +252,9 @@ export class KwzParser extends FlipnoteParser {
 
   private settings: KwzParserSettings;
   private sectionMap: KwzSectionMap;
-  private layers: [Uint8Array, Uint8Array, Uint8Array];
-  private prevFrameIndex: number = null;
-  private frameMeta: Map<number, KwzFrameMeta>;
+  private layerBuffers: [Uint8Array, Uint8Array, Uint8Array];
+  private prevDecodedFrame: number = null;
+  // private frameMeta: Map<number, KwzFrameMeta>;
   private frameMetaOffsets: Uint32Array;
   private frameDataOffsets: Uint32Array;
   private frameLayerSizes: [number, number, number][];
@@ -264,7 +270,7 @@ export class KwzParser extends FlipnoteParser {
     super(arrayBuffer);
     this.settings = {...KwzParser.defaultSettings, ...settings};
     this.buildSectionMap();
-    this.layers = [
+    this.layerBuffers = [
       new Uint8Array(KwzParser.width * KwzParser.height),
       new Uint8Array(KwzParser.width * KwzParser.height),
       new Uint8Array(KwzParser.width * KwzParser.height),
@@ -577,11 +583,12 @@ export class KwzParser extends FlipnoteParser {
 
   private getFrameLayerDepths(frameIndex: number) {
     this.seek(this.frameMetaOffsets[frameIndex] + 0x14);
-    return [
+    const a = [
       this.readUint8(),
       this.readUint8(),
       this.readUint8()
     ];
+    return a;
   }
 
   private getFrameAuthor(frameIndex: number) {
@@ -626,8 +633,11 @@ export class KwzParser extends FlipnoteParser {
   */
   public decodeFrame(frameIndex: number, diffingFlag = 0x7, isPrevFrame = false) {
     assert(frameIndex > -1 && frameIndex < this.frameCount, `Frame index ${ frameIndex } out of bounds`);
+    // return existing layer buffers if no new frame has been decoded since the last call
+    if (this.prevDecodedFrame === frameIndex)
+      return this.layerBuffers;
     // the prevDecodedFrame check is an optimisation for decoding frames in full sequence
-    if (this.prevFrameIndex !== frameIndex - 1 && frameIndex !== 0) {
+    if (this.prevDecodedFrame !== frameIndex - 1 && frameIndex !== 0) {
       // if this frame is being decoded as a prev frame, then we only want to decode the layers necessary
       // diffingFlag is negated with ~ so if no layers are diff-based, diffingFlag is 0
       if (isPrevFrame)
@@ -648,7 +658,7 @@ export class KwzParser extends FlipnoteParser {
       this.seek(framePtr);
       let layerSize = layerSizes[layerIndex];
       framePtr += layerSize;
-      const pixelBuffer = this.layers[layerIndex];
+      const pixelBuffer = this.layerBuffers[layerIndex];
 
       // if the layer is 38 bytes then it hasn't changed at all since the previous frame, so we can skip it
       if (layerSize === 38)
@@ -833,87 +843,10 @@ export class KwzParser extends FlipnoteParser {
         }
       }
     }
-    this.prevFrameIndex = frameIndex;
-    return this.layers;
+    this.prevDecodedFrame = frameIndex;
+    return this.layerBuffers;
   }
 
-  /** 
-   * Get the pixels for a given frame layer
-   * @category Image
-  */
-  public getLayerPixels(frameIndex: number, layerIndex: number) {
-    if (this.prevFrameIndex !== frameIndex)
-      this.decodeFrame(frameIndex);
-    // layer buffer
-    const layers = this.layers[layerIndex];
-    // palette
-    const palette = this.getFramePaletteIndices(frameIndex);
-    const paletteOffs = layerIndex * 2 + 1;
-    // image dimensions and crop
-    const width = this.imageWidth;
-    const height = this.imageHeight;
-    const xOffs = this.imageOffsetX;
-    const yOffs = this.imageOffsetY;
-    const image = new Uint8Array(width * height);
-    // pixel loop
-    for (let srcY = yOffs, dstY = 0; dstY < height; srcY++, dstY++) {
-      for (let srcX = xOffs, dstX = 0; dstX < width; srcX++, dstX++) {
-        const srcPtr = srcY * KwzParser.width + srcX;
-        const dstPtr = dstY * width + dstX;
-        let pixel = layers[srcPtr];
-        if (pixel === 1)
-          image[dstPtr] = palette[paletteOffs];
-        else if (pixel === 2)
-          image[dstPtr] = palette[paletteOffs + 1]
-      }
-    }
-    return image;
-  }
-
-  /** 
-   * Get the pixels for a given frame
-   * @category Image
-  */
-  public getFramePixels(frameIndex: number) {
-    if (this.prevFrameIndex !== frameIndex)
-      this.decodeFrame(frameIndex);
-    const layerOrder = this.getFrameLayerOrder(frameIndex);
-    // layer buffers
-    const layerA = this.layers[layerOrder[2]]; // top
-    const layerB = this.layers[layerOrder[1]]; // middle
-    const layerC = this.layers[layerOrder[0]]; // bottom
-    // palette
-    const palette = this.getFramePaletteIndices(frameIndex);
-    // layer palette offsets
-    const layerAPalleteOffs = layerOrder[2] * 2;
-    const layerBPalleteOffs = layerOrder[1] * 2;
-    const layerCPalleteOffs = layerOrder[0] * 2;
-    // image dimensions and crop
-    const width = this.imageWidth;
-    const height = this.imageHeight;
-    const xOffs = this.imageOffsetX;
-    const yOffs = this.imageOffsetY;
-    const image = new Uint8Array(width * height);
-    image.fill(palette[0]);
-    // pixel loop
-    for (let srcY = yOffs, dstY = 0; dstY < height; srcY++, dstY++) {
-      for (let srcX = xOffs, dstX = 0; dstX < width; srcX++, dstX++) {
-        const srcPtr = srcY * KwzParser.width + srcX;
-        const dstPtr = dstY * width + dstX;
-        const a = layerA[srcPtr];
-        const b = layerB[srcPtr];
-        const c = layerC[srcPtr];
-        if (a !== 0)
-          image[dstPtr] = palette[layerAPalleteOffs + a];
-        else if (b !== 0)
-          image[dstPtr] = palette[layerBPalleteOffs + b];
-        else if (c !== 0)
-          image[dstPtr] = palette[layerCPalleteOffs + c];
-      }
-    }
-    return image;
-  }
-  
   /** 
    * Get the sound effect flags for every frame in the Flipnote
    * @category Audio

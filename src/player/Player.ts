@@ -288,7 +288,7 @@ export class Player {
     this.wasPlaying = false;
     this.hasPlaybackStarted = false;
     this.showThumbnail = true;
-    this.renderer.clearFrameBuffer([0,0,0,0]);
+    this.renderer.clear();
   }
 
   /** 
@@ -604,33 +604,7 @@ export class Player {
    * @category Display Control 
    */
   public drawFrame(frameIndex: number) {
-    const note = this.note;
-    const canvas = this.renderer;
-    const colors = note.getFramePalette(frameIndex);
-    const layerBuffers = note.decodeFrame(frameIndex);
-    const layerVisibility = this.layerVisibility;
-    // this.canvas.setPaperColor(colors[0]);
-    canvas.setPalette(colors);
-    canvas.clearFrameBuffer(colors[0]);
-    if (note.format === FlipnoteFormat.PPM) {
-      if (layerVisibility[2]) // bottom
-        canvas.drawPixels(layerBuffers[1], 1);
-      if (layerVisibility[1]) // top
-        canvas.drawPixels(layerBuffers[0], 0);
-    } 
-    else if (note.format === FlipnoteFormat.KWZ) {
-      const order = note.getFrameLayerOrder(frameIndex)
-      const layerIndexC = order[0];
-      const layerIndexB = order[1];
-      const layerIndexA = order[2];
-      if (layerVisibility[layerIndexC + 1]) // bottom
-        canvas.drawPixels(layerBuffers[layerIndexC], layerIndexC * 2);
-      if (layerVisibility[layerIndexB + 1]) // middle
-        canvas.drawPixels(layerBuffers[layerIndexB], layerIndexB * 2);
-      if (layerVisibility[layerIndexA + 1]) // top
-        canvas.drawPixels(layerBuffers[layerIndexA], layerIndexA * 2);
-    }
-    canvas.composite();
+    this.renderer.drawFrame(this.note, frameIndex);
   }
 
   /**
@@ -666,6 +640,7 @@ export class Player {
    * @category Display Control 
    */
   public setLayerVisibility(layer: number, value: boolean) {
+    this.note.layerVisibility[layer] = value;
     this.layerVisibility[layer] = value;
     this.forceUpdate();
   }
