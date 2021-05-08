@@ -43,11 +43,7 @@ export interface FlipnoteAudioTrackInfo {
 /**
  * Flipnote layer visibility
  */
-export declare type FlipnoteLayerVisibility = {
-    1: boolean;
-    2: boolean;
-    3: boolean;
-};
+export declare type FlipnoteLayerVisibility = Record<number, boolean>;
 /**
  * Flipnote version info - provides details about a particular Flipnote version and its author
  */
@@ -106,6 +102,8 @@ export declare abstract class FlipnoteParser extends DataStream {
     static frameHeight: number;
     /** Number of animation frame layers */
     static numLayers: number;
+    /** Number of colors per layer (aside from transparent) */
+    static numLayerColors: number;
     /** Audio track base sample rate */
     static rawSampleRate: number;
     /** Audio output sample rate */
@@ -124,6 +122,10 @@ export declare abstract class FlipnoteParser extends DataStream {
     imageOffsetY: number;
     /** Number of animation frame layers, reflects {@link FlipnoteParserBase.numLayers} */
     numLayers: number;
+    /** Number of colors per layer (aside from transparent), reflects {@link FlipnoteParserBase.numLayerColors} */
+    numLayerColors: number;
+    /** @internal */
+    srcWidth: number;
     /** Audio track base sample rate, reflects {@link FlipnoteParserBase.rawSampleRate} */
     rawSampleRate: number;
     /** Audio output sample rate, reflects {@link FlipnoteParserBase.sampleRate} */
@@ -171,27 +173,38 @@ export declare abstract class FlipnoteParser extends DataStream {
      * Get the pixels for a given frame layer
      * @category Image
     */
-    abstract getLayerPixels(frameIndex: number, layerIndex: number): Uint8Array;
+    getLayerPixels(frameIndex: number, layerIndex: number, imageBuffer?: Uint8Array): Uint8Array;
+    getLayerPixelsRgba(frameIndex: number, layerIndex: number, imageBuffer?: Uint32Array, paletteBuffer?: Uint32Array): Uint32Array;
     /**
      * Get the layer draw order for a given frame
      * @category Image
     */
     abstract getFrameLayerOrder(frameIndex: number): number[];
     /**
-     * Get the pixels for a given frame
+     * Get the image for a given frame, as palette indices
      * @category Image
     */
-    abstract getFramePixels(frameIndex: number): Uint8Array;
+    getFramePixels(frameIndex: number, imageBuffer?: Uint8Array): Uint8Array;
+    /**
+     * Get the image for a given frame as an uint32 array of RGBA pixels
+     * @category Image
+     */
+    getFramePixelsRgba(frameIndex: number, imageBuffer?: Uint32Array, paletteBuffer?: Uint32Array): Uint32Array;
     /**
      * Get the color palette indices for a given frame. RGBA colors for these values can be indexed from {@link FlipnoteParserBase.globalPalette}
      * @category Image
     */
     abstract getFramePaletteIndices(frameIndex: number): number[];
     /**
-     * Get the RGBA color for a given frame
+     * Get the color palette for a given frame, as a list of `[r,g,b,a]` colors
      * @category Image
     */
     abstract getFramePalette(frameIndex: number): FlipnotePaletteColor[];
+    /**
+     * Get the color palette for a given frame, as an uint32 array
+     * @category Image
+    */
+    getFramePaletteUint32(frameIndex: number, paletteBuffer?: Uint32Array): Uint32Array;
     /**
      * Get the sound effect flags for every frame in the Flipnote
      * @category Audio

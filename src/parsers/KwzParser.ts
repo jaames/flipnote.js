@@ -156,11 +156,6 @@ export type KwzParserSettings = {
    * Automatically crop out the border around any frames
    */ 
   borderCrop: boolean;
-  /** 
-   * Flipnote 3D's own implementation is slightly buggy! To counter this, some tweaks are applied be default for nicer audio
-   * Enable this setting to use the "original" audio process used in the 3DS app
-   */
-  originalAudio: boolean;
   /**
    * Nintendo messed up the initial adpcm state for a bunch of the PPM to KWZ conversions on DSi Library. They are effectively random.
    * By default flipnote.js will try to make a best guess, but you can disable this and provide your own state values
@@ -194,8 +189,7 @@ export class KwzParser extends FlipnoteParser {
   static defaultSettings: KwzParserSettings = {
     quickMeta: false,
     dsiLibraryNote: false,
-    borderCrop: false, 
-    originalAudio: false,
+    borderCrop: false,
     guessInitialBgmState: true,
     initialBgmPredictor: null,
     initialBgmStepIndex: null,
@@ -934,14 +928,8 @@ export class KwzParser extends FlipnoteParser {
     const dstSize = this.rawSampleRate * 60; // enough for 60 seconds, the max bgm size
     const dst = new Int16Array(dstSize);
     // initial decoder state
-    // Flipnote 3D's initial values are actually buggy, so corrections are applied by default here
     let predictor = 0;
-    let stepIndex = 0;
-
-    // users of the library may also wish to enable the original audio setup for console accuracy
-    if (settings.originalAudio || this.isDsiLibraryNote)
-      stepIndex = 40;
-
+    let stepIndex = 40;
     // Nintendo messed up the initial adpcm state for a bunch of the PPM conversions on DSi Library
     // they are effectively random, so you can optionally provide your own state values, or let the lib make a best guess
     if (this.isDsiLibraryNote && trackId === FlipnoteAudioTrack.BGM) {
@@ -967,7 +955,7 @@ export class KwzParser extends FlipnoteParser {
         }
         stepIndex = bestStepIndex;
       }
-    } 
+    }
     // decode track
     const dstPtr = this.decodeAdpcm(src, dst, predictor, stepIndex);
     // copy part of dst with slice() so dst buffer can be garbage collected

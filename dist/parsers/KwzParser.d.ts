@@ -53,11 +53,6 @@ export declare type KwzParserSettings = {
      */
     borderCrop: boolean;
     /**
-     * Flipnote 3D's own implementation is slightly buggy! To counter this, some tweaks are applied be default for nicer audio
-     * Enable this setting to use the "original" audio process used in the 3DS app
-     */
-    originalAudio: boolean;
-    /**
      * Nintendo messed up the initial adpcm state for a bunch of the PPM to KWZ conversions on DSi Library. They are effectively random.
      * By default flipnote.js will try to make a best guess, but you can disable this and provide your own state values
      *
@@ -94,6 +89,8 @@ export declare class KwzParser extends FlipnoteParser {
     static height: number;
     /** Number of animation frame layers */
     static numLayers: number;
+    /** Number of colors per layer (aside from transparent) */
+    static numLayerColors: number;
     /** Audio track base sample rate */
     static rawSampleRate: number;
     /** Audio output sample rate. NOTE: probably isn't accurate, full KWZ audio stack is still on the todo */
@@ -112,6 +109,10 @@ export declare class KwzParser extends FlipnoteParser {
     imageOffsetY: number;
     /** Number of animation frame layers, reflects {@link KwzParser.numLayers} */
     numLayers: number;
+    /** Number of colors per layer (aside from transparent), reflects {@link KwzParser.numLayerColors} */
+    numLayerColors: number;
+    /** @internal */
+    srcWidth: number;
     /** Audio track base sample rate, reflects {@link KwzParser.rawSampleRate} */
     rawSampleRate: number;
     /** Audio output sample rate, reflects {@link KwzParser.sampleRate} */
@@ -122,9 +123,8 @@ export declare class KwzParser extends FlipnoteParser {
     meta: KwzMeta;
     private settings;
     private sectionMap;
-    private layers;
-    private prevFrameIndex;
-    private frameMeta;
+    private layerBuffers;
+    private prevDecodedFrame;
     private frameMetaOffsets;
     private frameDataOffsets;
     private frameLayerSizes;
@@ -189,16 +189,6 @@ export declare class KwzParser extends FlipnoteParser {
      * @category Image
     */
     decodeFrame(frameIndex: number, diffingFlag?: number, isPrevFrame?: boolean): [Uint8Array, Uint8Array, Uint8Array];
-    /**
-     * Get the pixels for a given frame layer
-     * @category Image
-    */
-    getLayerPixels(frameIndex: number, layerIndex: number): Uint8Array;
-    /**
-     * Get the pixels for a given frame
-     * @category Image
-    */
-    getFramePixels(frameIndex: number): Uint8Array;
     /**
      * Get the sound effect flags for every frame in the Flipnote
      * @category Audio

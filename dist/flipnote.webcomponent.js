@@ -1,12 +1,11 @@
 /*!!
-flipnote.js v5.4.4 (webcomponent build)
+flipnote.js v5.5.0 (webcomponent build)
 https://flipnote.js.org
 A JavaScript library for parsing, converting, and in-browser playback of the proprietary animation formats used by Nintendo's Flipnote Studio and Flipnote Studio 3D apps.
 2018 - 2021 James Daniel
 Flipnote Studio is (c) Nintendo Co., Ltd. This project isn't affiliated with or endorsed by them in any way.
 Keep on Flipnoting!
 */
-(function(l, r) { if (l.getElementById('livereloadscript')) return; r = l.createElement('script'); r.async = 1; r.src = '//' + (window.location.host || 'localhost').split(':')[0] + ':35729/livereload.js?snipver=1'; r.id = 'livereloadscript'; l.getElementsByTagName('head')[0].appendChild(r) })(window.document);
 (function (global, factory) {
   typeof exports === 'object' && typeof module !== 'undefined' ? factory(exports) :
   typeof define === 'function' && define.amd ? define(['exports'], factory) :
@@ -2023,12 +2022,8 @@ Keep on Flipnoting!
           const dstSize = this.rawSampleRate * 60; // enough for 60 seconds, the max bgm size
           const dst = new Int16Array(dstSize);
           // initial decoder state
-          // Flipnote 3D's initial values are actually buggy, so corrections are applied by default here
           let predictor = 0;
-          let stepIndex = 0;
-          // users of the library may also wish to enable the original audio setup for console accuracy
-          if (settings.originalAudio || this.isDsiLibraryNote)
-              stepIndex = 40;
+          let stepIndex = 40;
           // Nintendo messed up the initial adpcm state for a bunch of the PPM conversions on DSi Library
           // they are effectively random, so you can optionally provide your own state values, or let the lib make a best guess
           if (this.isDsiLibraryNote && trackId === exports.FlipnoteAudioTrack.BGM) {
@@ -2132,7 +2127,6 @@ Keep on Flipnoting!
       quickMeta: false,
       dsiLibraryNote: false,
       borderCrop: false,
-      originalAudio: false,
       guessInitialBgmState: true,
       initialBgmPredictor: null,
       initialBgmStepIndex: null,
@@ -5884,7 +5878,7 @@ Keep on Flipnoting!
   /**
    * flipnote.js library version (exported as `flipnote.version`). You can find the latest version on the project's [NPM](https://www.npmjs.com/package/flipnote.js) page.
    */
-  const version = "5.4.4"; // replaced by @rollup/plugin-replace; see rollup.config.js
+  const version = "5.5.0"; // replaced by @rollup/plugin-replace; see rollup.config.js
 
   /*! *****************************************************************************
   Copyright (c) Microsoft Corporation.
@@ -9734,4 +9728,3 @@ Keep on Flipnoting!
   Object.defineProperty(exports, '__esModule', { value: true });
 
 })));
-//# sourceMappingURL=flipnote.webcomponent.js.map

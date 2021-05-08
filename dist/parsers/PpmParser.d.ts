@@ -51,6 +51,8 @@ export declare class PpmParser extends FlipnoteParser {
     static height: number;
     /** Number of animation frame layers */
     static numLayers: number;
+    /** Number of colors per layer (aside from transparent) */
+    static numLayerColors: number;
     /** Audio track base sample rate */
     static rawSampleRate: number;
     /** Nintendo DSi audio output rate */
@@ -69,6 +71,10 @@ export declare class PpmParser extends FlipnoteParser {
     imageOffsetY: number;
     /** Number of animation frame layers, reflects {@link PpmParser.numLayers} */
     numLayers: number;
+    /** Number of colors per layer (aside from transparent), reflects {@link PpmParser.numLayerColors} */
+    numLayerColors: number;
+    /** @internal */
+    srcWidth: number;
     /** Audio track base sample rate, reflects {@link PpmParser.rawSampleRate} */
     rawSampleRate: number;
     /** Audio output sample rate, reflects {@link PpmParser.sampleRate} */
@@ -131,16 +137,6 @@ export declare class PpmParser extends FlipnoteParser {
      * @category Image
      */
     getFramePalette(frameIndex: number): import("./FlipnoteParserTypes").FlipnotePaletteColor[];
-    /**
-     * Get the pixels for a given frame layer
-     * @category Image
-    */
-    getLayerPixels(frameIndex: number, layerIndex: number): Uint8Array;
-    /**
-     * Get the pixels for a given frame
-     * @category Image
-    */
-    getFramePixels(frameIndex: number): Uint8Array;
     /**
      * Get the sound effect flags for every frame in the Flipnote
      * @category Audio

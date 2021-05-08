@@ -1,8 +1,11 @@
+import { FlipnoteParser } from '../parsers';
 interface WebglRendererOptions {
     /** Function to be called if the context is lost */
     onlost: () => void;
     /** Function to be called if the context is restored */
     onrestored: () => void;
+    /** Use DPI scaling */
+    useDpi: boolean;
 }
 /**
  * Animation frame renderer, built around the {@link https://developer.mozilla.org/en-US/docs/Web/API/WebGL_API WebGL} API
@@ -32,9 +35,9 @@ export declare class WebglRenderer {
     private options;
     private postProcessProgram;
     private quadBuffer;
-    private paletteData;
-    private rgbaData;
-    private rgbaDataBytes;
+    private paletteBuffer;
+    private frameBuffer;
+    private frameBufferBytes;
     private frameTexture;
     private textureWidth;
     private textureHeight;
@@ -55,7 +58,6 @@ export declare class WebglRenderer {
     private createScreenQuad;
     private setBuffersAndAttribs;
     private createTexture;
-    private createFrameBuffer;
     /**
      * Resize the canvas surface
      * @param width - New canvas width, in CSS pixels
@@ -70,24 +72,8 @@ export declare class WebglRenderer {
      * @param height
      */
     setInputSize(width: number, height: number): void;
-    /**
-     * Clear frame buffer
-     * @param colors - Paper color as `[R, G, B, A]`
-     */
-    clearFrameBuffer(paperColor: number[]): void;
-    /**
-     * Set the color palette to use for the next {@link drawPixels} call
-     * @param colors - Array of colors as `[R, G, B, A]`
-     */
-    setPalette(colors: number[][]): void;
-    /**
-     * Draw pixels to the frame buffer
-     *
-     * Note: use {@link composite} to draw the frame buffer to the canvas
-     * @param pixels - Array of color indices for every pixl
-     * @param paletteOffset - Palette offset index for the pixels being drawn
-     */
-    drawPixels(pixels: Uint8Array, paletteOffset: number): void;
+    clear(): void;
+    drawFrame(note: FlipnoteParser, frameIndex: number): void;
     /**
      * Composites the current frame buffer into the canvas, applying post-processing effects like scaling filters if enabled
      */
