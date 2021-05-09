@@ -2,7 +2,7 @@ import { Flipnote } from '../FlipnoteTypes';
 import { FlipnoteFormat, FlipnoteMeta } from '../parsers';
 import { FlipnoteSource, parseSource } from '../parseSource';
 import { PlayerEvent, PlayerEventMap, supportedEvents } from './PlayerEvent';
-import { WebglRenderer } from '../webgl';
+import { WebglRenderer } from '../renderers';
 import { WebAudioPlayer } from '../webaudio';
 import { createTimeRanges, padNumber, formatTime } from './playerUtils';
 import { assert, assertRange, assertBrowserEnv } from '../utils';
