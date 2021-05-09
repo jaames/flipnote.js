@@ -6,6 +6,7 @@ A JavaScript library for parsing, converting, and in-browser playback of the pro
 Flipnote Studio is (c) Nintendo Co., Ltd. This project isn't affiliated with or endorsed by them in any way.
 Keep on Flipnoting!
 */
+(function(l, r) { if (l.getElementById('livereloadscript')) return; r = l.createElement('script'); r.async = 1; r.src = '//' + (window.location.host || 'localhost').split(':')[0] + ':35729/livereload.js?snipver=1'; r.id = 'livereloadscript'; l.getElementsByTagName('head')[0].appendChild(r) })(window.document);
 (function (global, factory) {
   typeof exports === 'object' && typeof module !== 'undefined' ? factory(exports) :
   typeof define === 'function' && define.amd ? define(['exports'], factory) :
@@ -3955,7 +3956,7 @@ Keep on Flipnoting!
 
   var quadShader = "#define GLSLIFY 1\nattribute vec4 position;attribute vec2 texcoord;varying vec2 v_texel;varying vec2 v_uv;varying float v_scale;uniform bool u_flipY;uniform vec2 u_textureSize;uniform vec2 u_screenSize;void main(){v_uv=texcoord;v_scale=floor(u_screenSize.y/u_textureSize.y+0.01);gl_Position=position;if(u_flipY){gl_Position.y*=-1.;}}"; // eslint-disable-line
 
-  var postProcessShader = "precision highp float;\n#define GLSLIFY 1\nvarying vec2 v_uv;uniform sampler2D u_tex;varying float v_scale;uniform vec2 u_textureSize;uniform vec2 u_screenSize;void main(){vec2 v_texel=v_uv*u_textureSize;vec2 texel_floored=floor(v_texel);vec2 s=fract(v_texel);float region_range=0.5-0.5/v_scale;vec2 center_dist=s-0.5;vec2 f=(center_dist-clamp(center_dist,-region_range,region_range))*v_scale+0.5;vec2 mod_texel=texel_floored+f;vec2 coord=mod_texel.xy/u_textureSize.xy;gl_FragColor=texture2D(u_tex,coord);}"; // eslint-disable-line
+  var drawFrame = "precision highp float;\n#define GLSLIFY 1\nvarying vec2 v_uv;uniform sampler2D u_tex;varying float v_scale;uniform vec2 u_textureSize;uniform vec2 u_screenSize;void main(){vec2 v_texel=v_uv*u_textureSize;vec2 texel_floored=floor(v_texel);vec2 s=fract(v_texel);float region_range=0.5-0.5/v_scale;vec2 center_dist=s-0.5;vec2 f=(center_dist-clamp(center_dist,-region_range,region_range))*v_scale+0.5;vec2 mod_texel=texel_floored+f;vec2 coord=mod_texel.xy/u_textureSize.xy;gl_FragColor=texture2D(u_tex,coord);}"; // eslint-disable-line
 
   /**
    * Animation frame renderer, built around the {@link https://developer.mozilla.org/en-US/docs/Web/API/WebGL_API WebGL} API
@@ -4006,11 +4007,14 @@ Keep on Flipnoting!
       }
       init() {
           const gl = this.gl;
-          this.postProcessProgram = this.createProgram(quadShader, postProcessShader);
+          this.program = this.createProgram(quadShader, drawFrame);
           this.quadBuffer = this.createScreenQuad(-1, -1, 2, 2, 8, 8);
-          this.setBuffersAndAttribs(this.postProcessProgram, this.quadBuffer);
+          this.setBuffersAndAttribs(this.program, this.quadBuffer);
           this.frameTexture = this.createTexture(gl.RGBA, gl.LINEAR, gl.CLAMP_TO_EDGE);
           this.setCanvasSize(this.width, this.height);
+          // set gl constants
+          gl.useProgram(this.program.program);
+          gl.bindTexture(gl.TEXTURE_2D, this.frameTexture);
       }
       createProgram(vertexShaderSource, fragmentShaderSource) {
           assert(!this.isCtxLost);
@@ -4134,6 +4138,8 @@ Keep on Flipnoting!
           this.screenHeight = internalHeight;
           this.el.style.width = `${width}px`;
           this.el.style.height = `${height}px`;
+          const gl = this.gl;
+          gl.viewport(0, 0, gl.drawingBufferWidth, gl.drawingBufferHeight);
       }
       /**
        * Sets the size of the input pixel arrays
@@ -4158,49 +4164,18 @@ Keep on Flipnoting!
           const { gl, textureWidth, textureHeight, } = this;
           // get frame pixels as RGBA buffer
           note.getFramePixelsRgba(frameIndex, this.frameBuffer, this.paletteBuffer);
-          // set viewport bounds
-          gl.viewport(0, 0, gl.drawingBufferWidth, gl.drawingBufferHeight);
-          // using postprocess program
-          gl.useProgram(this.postProcessProgram.program);
-          //  clear whatever's already been drawn
+          // clear whatever's already been drawn
           gl.clear(gl.COLOR_BUFFER_BIT);
-          // update layer texture
-          gl.bindTexture(gl.TEXTURE_2D, this.frameTexture);
+          // update texture
           gl.texImage2D(gl.TEXTURE_2D, 0, gl.RGBA, textureWidth, textureHeight, 0, gl.RGBA, gl.UNSIGNED_BYTE, this.frameBufferBytes);
           // prep uniforms
-          setUniforms(this.postProcessProgram, {
+          setUniforms(this.program, {
               u_flipY: true,
               u_tex: this.frameTexture,
               u_textureSize: [this.textureWidth, this.textureHeight],
               u_screenSize: [gl.drawingBufferWidth, gl.drawingBufferHeight],
           });
-          // draw screen quad
-          gl.drawElements(gl.TRIANGLES, this.quadBuffer.numElements, this.quadBuffer.elementType, 0);
-      }
-      /**
-       * Composites the current frame buffer into the canvas, applying post-processing effects like scaling filters if enabled
-       */
-      composite() {
-          const { gl, textureWidth, textureHeight, } = this;
-          assert(!this.isCtxLost);
-          // setting gl.FRAMEBUFFER will draw directly to the screen
-          gl.bindFramebuffer(gl.FRAMEBUFFER, null);
-          gl.viewport(0, 0, gl.drawingBufferWidth, gl.drawingBufferHeight);
-          // // using postprocess program
-          gl.useProgram(this.postProcessProgram.program);
-          // // clear whatever's already been drawn
-          gl.clear(gl.COLOR_BUFFER_BIT);
-          // update layer texture
-          gl.bindTexture(gl.TEXTURE_2D, this.frameTexture);
-          gl.texImage2D(gl.TEXTURE_2D, 0, gl.RGBA, textureWidth, textureHeight, 0, gl.RGBA, gl.UNSIGNED_BYTE, this.frameBufferBytes);
-          // prep uniforms
-          setUniforms(this.postProcessProgram, {
-              u_flipY: true,
-              u_tex: this.frameTexture,
-              u_textureSize: [this.textureWidth, this.textureHeight],
-              u_screenSize: [gl.drawingBufferWidth, gl.drawingBufferHeight],
-          });
-          // draw screen quad
+          // draw!
           gl.drawElements(gl.TRIANGLES, this.quadBuffer.numElements, this.quadBuffer.elementType, 0);
       }
       /**
@@ -9728,3 +9703,4 @@ Keep on Flipnoting!
   Object.defineProperty(exports, '__esModule', { value: true });
 
 })));
+//# sourceMappingURL=flipnote.webcomponent.js.map

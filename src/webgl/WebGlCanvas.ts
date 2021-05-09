@@ -8,11 +8,10 @@ import {
 } from 'twgl.js';
 
 import { FlipnoteParser } from '../parsers';
-
 import { assert, assertBrowserEnv } from '../utils';
 
 import quadShader from './shaders/quad.vert';
-import postProcessShader from './shaders/postProcess_sharpBilinear.frag';
+import drawFrame from './shaders/drawFrame.frag';
 
 /** 
  * Keeps track of WebGl resources so they can be destroyed properly later
@@ -66,7 +65,7 @@ export class WebglRenderer {
   public screenHeight: number;
 
   private options: WebglRendererOptions;
-  private postProcessProgram: ProgramInfo; // for drawing renderbuffer w/ filtering
+  private program: ProgramInfo; // for drawing renderbuffer w/ filtering
   private quadBuffer: BufferInfo;
   private paletteBuffer = new Uint32Array(16);
   private frameBuffer: Uint32Array;
@@ -106,13 +105,16 @@ export class WebglRenderer {
     this.init();
   }
 
-  public init() {
+  private init() {
     const gl = this.gl;
-    this.postProcessProgram = this.createProgram(quadShader, postProcessShader);
+    this.program = this.createProgram(quadShader, drawFrame);
     this.quadBuffer = this.createScreenQuad(-1, -1, 2, 2, 8, 8);
-    this.setBuffersAndAttribs(this.postProcessProgram, this.quadBuffer);
+    this.setBuffersAndAttribs(this.program, this.quadBuffer);
     this.frameTexture = this.createTexture(gl.RGBA, gl.LINEAR, gl.CLAMP_TO_EDGE);
     this.setCanvasSize(this.width, this.height);
+    // set gl constants
+    gl.useProgram(this.program.program);
+    gl.bindTexture(gl.TEXTURE_2D, this.frameTexture);
   }
 
   private createProgram(vertexShaderSource: string, fragmentShaderSource: string) {
@@ -242,6 +244,8 @@ export class WebglRenderer {
     this.screenHeight = internalHeight;
     this.el.style.width = `${ width }px`;
     this.el.style.height = `${ height }px`;
+    const gl = this.gl;
+    gl.viewport(0, 0, gl.drawingBufferWidth, gl.drawingBufferHeight);
   }
 
   /**
@@ -273,54 +277,18 @@ export class WebglRenderer {
     } = this;
     // get frame pixels as RGBA buffer
     note.getFramePixelsRgba(frameIndex, this.frameBuffer, this.paletteBuffer);
-    // set viewport bounds
-    gl.viewport(0, 0, gl.drawingBufferWidth, gl.drawingBufferHeight);
-    // using postprocess program
-    gl.useProgram(this.postProcessProgram.program);
-    //  clear whatever's already been drawn
+    // clear whatever's already been drawn
     gl.clear(gl.COLOR_BUFFER_BIT);
-    // update layer texture
-    gl.bindTexture(gl.TEXTURE_2D, this.frameTexture);
+    // update texture
     gl.texImage2D(gl.TEXTURE_2D, 0, gl.RGBA, textureWidth, textureHeight, 0, gl.RGBA, gl.UNSIGNED_BYTE, this.frameBufferBytes);
     // prep uniforms
-    setUniforms(this.postProcessProgram, {
+    setUniforms(this.program, {
       u_flipY: true,
       u_tex: this.frameTexture,
       u_textureSize: [this.textureWidth, this.textureHeight],
       u_screenSize: [gl.drawingBufferWidth, gl.drawingBufferHeight],
     });
-    // draw screen quad
-    gl.drawElements(gl.TRIANGLES, this.quadBuffer.numElements, this.quadBuffer.elementType, 0);
-  }
-
-  /**
-   * Composites the current frame buffer into the canvas, applying post-processing effects like scaling filters if enabled
-   */
-  public composite() {
-    const {
-      gl,
-      textureWidth,
-      textureHeight,
-    } = this;
-    assert(!this.isCtxLost);
-    // setting gl.FRAMEBUFFER will draw directly to the screen
-    gl.bindFramebuffer(gl.FRAMEBUFFER, null);
-    gl.viewport(0, 0, gl.drawingBufferWidth, gl.drawingBufferHeight);
-    // // using postprocess program
-    gl.useProgram(this.postProcessProgram.program);
-    // // clear whatever's already been drawn
-    gl.clear(gl.COLOR_BUFFER_BIT);
-    // update layer texture
-    gl.bindTexture(gl.TEXTURE_2D, this.frameTexture);
-    gl.texImage2D(gl.TEXTURE_2D, 0, gl.RGBA, textureWidth, textureHeight, 0, gl.RGBA, gl.UNSIGNED_BYTE, this.frameBufferBytes);
-    // prep uniforms
-    setUniforms(this.postProcessProgram, {
-      u_flipY: true,
-      u_tex: this.frameTexture,
-      u_textureSize: [this.textureWidth, this.textureHeight],
-      u_screenSize: [gl.drawingBufferWidth, gl.drawingBufferHeight],
-    });
-    // draw screen quad
+    // draw!
     gl.drawElements(gl.TRIANGLES, this.quadBuffer.numElements, this.quadBuffer.elementType, 0);
   }
 
