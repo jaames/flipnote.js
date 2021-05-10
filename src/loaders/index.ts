@@ -2,6 +2,7 @@ import { LoaderDefinition } from './LoaderDefinition';
 import webUrlLoader from './webUrlLoader';
 import nodeUrlLoader from './nodeUrlLoader';
 import fileLoader from './fileLoader';
+import blobLoader from './blobLoader';
 import nodeBufferLoader from './nodeBufferLoader';
 import arrayBufferLoader from './arrayBufferLoader';
 
@@ -10,6 +11,7 @@ const loaders: LoaderDefinition<any>[] = [
   webUrlLoader,
   nodeUrlLoader,
   fileLoader,
+  blobLoader,
   nodeBufferLoader,
   arrayBufferLoader
 ];

@@ -8,11 +8,13 @@ import { LoaderDefinition } from './LoaderDefinition';
 const fileLoader: LoaderDefinition<File> = {
 
   matches: function(source) {
-    return isBrowser && typeof File !== 'undefined' && source instanceof File;
+    return isBrowser 
+      && typeof File !== 'undefined' 
+      && typeof FileReader !== 'undefined' 
+      && source instanceof File;
   },
 
   load: function(source, resolve, reject) {
-    assert(typeof FileReader !== 'undefined');
     const reader = new FileReader();
     reader.onload = (event) => {
       resolve(reader.result as ArrayBuffer);

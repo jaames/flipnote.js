@@ -11,7 +11,7 @@ type LoaderReject = (err?: any) => void;
  * @internal 
  */
 export interface LoaderDefinition<T> {
-  /** Does this loader match the source type? */
+  /** Is this loader able to process the input source type? */
   matches: (source: any) => boolean;
   /** Try loading the source. Passes an ArrayBuffer to resolve() if successful, calls reject() with an optional error if not */
   load: (source: T, resolve: LoaderResolve, reject: LoaderReject) => void;

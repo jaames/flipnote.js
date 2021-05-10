@@ -1,4 +1,4 @@
-import { isNode } from '../utils';
+import { isNode, assertNodeEnv } from '../utils';
 import { ServerResponse } from 'http';
 import { LoaderDefinition } from './LoaderDefinition';
 
@@ -13,6 +13,7 @@ const nodeUrlLoader: LoaderDefinition<string> = {
   },
 
   load: function(source, resolve, reject) {
+    assertNodeEnv();
     const http = require('https');
     http.get(source, (res: ServerResponse) => {
       const chunks: Buffer[] = [];
