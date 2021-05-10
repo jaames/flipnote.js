@@ -2,7 +2,7 @@ import { PpmParser } from './parsers/PpmParser';
 import { KwzParser } from './parsers/KwzParser';
 import { loadSource } from './loaders';
 
-import { Flipnote, FlipnoteParserSettings } from './FlipnoteTypes';
+import { Flipnote, FlipnoteParserSettings } from './parsers';
 
 /**
  * Source to load a Flipnote from. Depending on the operating envionment, this can be:

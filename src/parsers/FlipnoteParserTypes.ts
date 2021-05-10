@@ -188,7 +188,9 @@ export abstract class FlipnoteParser extends DataStream {
   abstract decodeFrame(frameIndex: number): Uint8Array[];
 
   /** 
-   * Get the pixels for a given frame layer
+   * Get the pixels for a given frame layer, as palette indices
+   * NOTE: layerIndex are not guaranteed to be sorted by 3D depth in KWZs, use {@link getFrameLayerOrder} to get the correct sort order first
+   * NOTE: if the visibility flag for this layer is turned off, the result will be empty
    * @category Image
   */
   public getLayerPixels(
@@ -210,6 +212,9 @@ export abstract class FlipnoteParser extends DataStream {
     const yOffs = this.imageOffsetY;
     // clear image buffer before writing
     imageBuffer.fill(0);
+    // handle layer visibility by returning a blank image if the layer is invisible
+    if (!this.layerVisibility[layerIndex + 1])
+      return imageBuffer;
     // convert to palette indices and crop
     for (let srcY = yOffs, dstY = 0; dstY < height; srcY++, dstY++) {
       for (let srcX = xOffs, dstX = 0; dstX < width; srcX++, dstX++) {
@@ -222,6 +227,12 @@ export abstract class FlipnoteParser extends DataStream {
     return imageBuffer;
   }
 
+  /** 
+   * Get the pixels for a given frame layer, as RGBA pixels
+   * NOTE: layerIndex are not guaranteed to be sorted by 3D depth in KWZs, use {@link getFrameLayerOrder} to get the correct sort order first
+   * NOTE: if the visibility flag for this layer is turned off, the result will be empty
+   * @category Image
+  */
   public getLayerPixelsRgba(
     frameIndex: number,
     layerIndex: number,
@@ -242,6 +253,9 @@ export abstract class FlipnoteParser extends DataStream {
     const yOffs = this.imageOffsetY;
     // clear image buffer before writing
     imageBuffer.fill(paletteBuffer[0]);
+    // handle layer visibility by returning a blank image if the layer is invisible
+    if (!this.layerVisibility[layerIndex + 1])
+      return imageBuffer;
     // convert to palette indices and crop
     for (let srcY = yOffs, dstY = 0; dstY < height; srcY++, dstY++) {
       for (let srcX = xOffs, dstX = 0; dstX < width; srcX++, dstX++) {
@@ -413,4 +427,22 @@ export abstract class FlipnoteParser extends DataStream {
   public hasAudioTrack(trackId: FlipnoteAudioTrack): boolean {
     return this.soundMeta.has(trackId) && this.soundMeta.get(trackId).length > 0;
   }
+
+  /**
+   * Get the body of the Flipnote - the data that is digested for the signature
+   * @category Verification
+   */
+  abstract getBody(): Uint8Array;
+
+  /**
+   * Get the Flipnote's signature data
+   * @category Verification
+   */
+  abstract getSignature(): Uint8Array;
+
+  /**
+   * Verify whether this Flipnote's signature is valid
+   * @category Verification
+   */
+  abstract verify(): Promise<boolean>;
 }

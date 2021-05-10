@@ -39,7 +39,9 @@ import {
   assert,
   dateFromNintendoTimestamp,
   timeGetNoteDuration,
-  getPpmFsidRegion
+  getPpmFsidRegion,
+  rsaLoadPublicKey,
+  rsaVerify
 } from '../utils';
 
 /** 
@@ -47,6 +49,7 @@ import {
  * Frame speed 0 is never noramally used
  */
 const PPM_FRAMERATES = [0.5, 0.5, 1, 2, 4, 6, 12, 20, 30];
+
 /** 
  * PPM color defines (red, green, blue, alpha)
  */
@@ -56,6 +59,16 @@ const PPM_PALETTE: FlipnotePaletteDefinition = {
   RED:   [0xff, 0x2a, 0x2a, 0xff],
   BLUE:  [0x0a, 0x39, 0xff, 0xff]
 };
+
+/**
+ * This **cannot** be used to resign Flipnotes, it can onnly verify that they are valid
+ */
+const PPM_PUBLIC_KEY = `-----BEGIN PUBLIC KEY-----
+MIGfMA0GCSqGSIb3DQEBAQUAA4GNADCBiQKBgQDCPLwTL6oSflv+gjywi/sM0TUB
+90xqOvuCpjduETjPoN2FwMebxNjdKIqHUyDu4AvrQ6BDJc6gKUbZ1E27BGZoCPH4
+9zQRb+zAM6M9EjHwQ6BABr0u2TcF7xGg2uQ9MBWz9AfbVQ91NjfrNWo0f7UPmffv
+1VvixmTk1BCtavZxBwIDAQAB
+-----END PUBLIC KEY-----`;
 
 /** 
  * PPM file metadata, stores information about its playback, author details, etc
@@ -136,6 +149,7 @@ export class PpmParser extends FlipnoteParser {
   private prevDecodedFrame: number = null;
   private frameDataLength: number;
   private soundDataLength: number;
+  private soundDataOffset: number;
   private frameOffsets: Uint32Array;
 
   /**
@@ -169,14 +183,6 @@ export class PpmParser extends FlipnoteParser {
     this.prevDecodedFrame = null;
   }
 
-  static validateFSID(fsid: string) {
-    return /[0159]{1}[0-9A-F]{6}0[0-9A-F]{8}/.test(fsid);
-  }
-
-  static validateFilename(filename: string) {
-    return /[0-9A-F]{6}_[0-9A-F]{13}_[0-9]{3}/.test(filename);
-  }
-
   private decodeHeader() {
     assert(16 < this.byteLength);
     this.seek(4);
@@ -186,6 +192,11 @@ export class PpmParser extends FlipnoteParser {
     this.soundDataLength = this.readUint32();
     this.frameCount = this.readUint16() + 1;
     this.version = this.readUint16();
+    // sound data offset = frame data offset + frame data length + sound effect flags
+    let soundDataOffset = 0x06A0 + this.frameDataLength + this.frameCount;
+    if (soundDataOffset % 4 !== 0) soundDataOffset += 4 - (soundDataOffset % 4);
+    assert(soundDataOffset < this.byteLength);
+    this.soundDataOffset = soundDataOffset;
   }
 
   private readFilename() {
@@ -272,12 +283,7 @@ export class PpmParser extends FlipnoteParser {
 
   private decodeSoundHeader() {
     // https://github.com/Flipnote-Collective/flipnote-studio-docs/wiki/PPM-format#sound-header
-    // offset = frame data offset + frame data length + sound effect flags
-    let ptr = 0x06A0 + this.frameDataLength + this.frameCount;
-    // align offset
-    if (ptr % 4 != 0)
-      ptr += 4 - (ptr % 4);
-    assert(ptr < this.byteLength);
+    let ptr = this.soundDataOffset;
     this.seek(ptr);
     const bgmLen = this.readUint32();
     const se1Len = this.readUint32();
@@ -652,5 +658,32 @@ export class PpmParser extends FlipnoteParser {
     }
     this.audioClipRatio = pcmGetClippingRatio(master);
     return master;
+  }
+
+  /**
+   * Get the body of the Flipnote - the data that is digested for the signature
+   * @category Verification
+   */
+  public getBody() {
+    const bodyEnd = this.soundDataOffset + this.soundDataLength + 32;
+    return this.bytes.subarray(0, bodyEnd);
+  }
+
+  /**
+  * Get the Flipnote's signature data
+  * @category Verification
+  */
+  public getSignature() {
+    const bodyEnd = this.soundDataOffset + this.soundDataLength + 32;
+    return this.bytes.subarray(bodyEnd, bodyEnd + 128);
+  }
+  
+  /**
+   * Verify whether this Flipnote's signature is valid
+   * @category Verification
+   */
+  public async verify() {
+    const key = await rsaLoadPublicKey(PPM_PUBLIC_KEY, 'SHA-1');
+    return await rsaVerify(key, this.getSignature(), this.getBody());
   }
 }

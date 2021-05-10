@@ -1,8 +1,7 @@
 // Entrypoint for web and node
 
-export * from './FlipnoteTypes';
-
 export {
+  Flipnote,
   FlipnoteFormat,
   FlipnoteVersion,
   FlipnoteRegion,
@@ -12,10 +11,11 @@ export {
   FlipnotePaletteDefinition,
   FlipnotePaletteColor,
   FlipnoteLayerVisibility,
-  KwzParser,
-  PpmParser,
+  FlipnoteParserSettings,
   KwzParserSettings,
   PpmParserSettings,
+  KwzParser,
+  PpmParser
 } from './parsers';
 
 export * as utils from './utils/fsid';
@@ -37,6 +37,11 @@ export {
   GifImage,
   WavAudio,
 } from './encoders';
+
+// export {
+//   WebglRenderer,
+//   Html5Renderer,
+// } from './renderers';
 
 /** 
  * flipnote.js library version (exported as `flipnote.version`). You can find the latest version on the project's [NPM](https://www.npmjs.com/package/flipnote.js) page.

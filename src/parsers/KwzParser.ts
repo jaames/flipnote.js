@@ -18,13 +18,15 @@ import {
   dateFromNintendoTimestamp,
   timeGetNoteDuration,
   getKwzFsidRegion,
-  isKwzDsiLibraryFsid
+  isKwzDsiLibraryFsid,
+  rsaLoadPublicKey,
+  rsaVerify
 } from '../utils';
-
 /** 
  * KWZ framerates in frames per second, indexed by the in-app frame speed
  */
 const KWZ_FRAMERATES = [.2, .5, 1, 2, 4, 6, 8, 12, 20, 24, 30];
+
 /** 
  * KWZ color defines (red, green, blue, alpha)
  */
@@ -37,6 +39,19 @@ const KWZ_PALETTE: FlipnotePaletteDefinition = {
   BLUE:   [0x00, 0x38, 0xce, 0xff],
   NONE:   [0xff, 0xff, 0xff, 0x00]
 };
+
+/**
+ * This **cannot** be used to resign Flipnotes, it can onnly verify that they are valid
+ */
+const KWZ_PUBLIC_KEY = `-----BEGIN PUBLIC KEY-----
+MIIBIjANBgkqhkiG9w0BAQEFAAOCAQ8AMIIBCgKCAQEAuv+zHAXXvbbtRqxADDeJ
+ArX2b9RMxj3T+qpRg3FnIE/jeU3tj7eoDzsMduY+D/UT9CSnP+QHYY/vf0n5lqX9
+s6ljoZAmyUuruyj1e5Bg+fkDEu/yPEPQjqhbyywCyYL4TEAOJveopUBx9fdQxUJ6
+J4J5oCE/Im1kFrlGW+puARiHmt3mmUyNzO8bI/Jx3cGSfoOHJG1foEaQsI5aaKqA
+pBqxtzvwqMhudcZtAWSyRMBMlndvkRnVTDNTfTXLOYdHShCIgnKULCTH87uLBIP/
+nsmr4/bnQz8q2rp/HyVO+0yjR6mVr0NX5APJQ+6riJmGg3t3VOldhKP7aTHDUW+h
+kQIDAQAB
+-----END PUBLIC KEY-----`;
 
 /** 
  * Pre computed bitmasks for readBits; done as a slight optimisation
@@ -246,6 +261,7 @@ export class KwzParser extends FlipnoteParser {
 
   private settings: KwzParserSettings;
   private sectionMap: KwzSectionMap;
+  private bodyEndOffset: number;
   private layerBuffers: [Uint8Array, Uint8Array, Uint8Array];
   private prevDecodedFrame: number = null;
   // private frameMeta: Map<number, KwzFrameMeta>;
@@ -336,6 +352,7 @@ export class KwzParser extends FlipnoteParser {
       ptr += length + 8;
       sectionCount += 1;
     }
+    this.bodyEndOffset = ptr;
     this.sectionMap = sectionMap;
     assert(sectionMap.has('KMC') && sectionMap.has('KMI'));
   }
@@ -1032,5 +1049,32 @@ export class KwzParser extends FlipnoteParser {
     }
     this.audioClipRatio = pcmGetClippingRatio(master);
     return master;
+  }
+
+  /**
+   * Get the body of the Flipnote - the data that is digested for the signature
+   * @category Verification
+   */
+  public getBody() {
+    const bodyEnd = this.bodyEndOffset;
+    return this.bytes.subarray(0, bodyEnd);
+  }
+
+  /**
+   * Get the Flipnote's signature data
+   * @category Verification
+   */
+  public getSignature() {
+    const bodyEnd = this.bodyEndOffset;
+    return this.bytes.subarray(bodyEnd, bodyEnd + 256);
+  }
+
+  /**
+   * Verify whether this Flipnote's signature is valid
+   * @category Verification
+   */
+  public async verify() {
+    const key = await rsaLoadPublicKey(KWZ_PUBLIC_KEY, 'SHA-256');
+    return await rsaVerify(key, this.getSignature(), this.getBody());
   }
 }
