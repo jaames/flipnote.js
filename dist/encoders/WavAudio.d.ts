@@ -1,6 +1,5 @@
+import { Flipnote, FlipnoteAudioTrack } from '../parsers';
 import { EncoderBase } from './EncoderBase';
-import { Flipnote } from '../FlipnoteTypes';
-import { FlipnoteAudioTrack } from '../parsers/index';
 export declare type WavSampleBuffer = Int16Array | Float32Array;
 /**
  * Wav audio object. Used to create a {@link https://en.wikipedia.org/wiki/WAV | WAV} file from a PCM audio stream or a {@link Flipnote} object.

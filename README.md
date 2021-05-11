@@ -14,7 +14,7 @@
 
 ## Features
 
-* Full file parser implementations with metadata, frames, audio, etc
+* Full file parser implementations with metadata, frames, audio, signature verification, etc
 * Realtime browser-based playback, with a player API based on the HTML5 Video and Audio APIs
 * Optional web component for easily embedding a Flipnote player UI on any web page
 * Crisp scaling using sharp-bilinear filtering
@@ -37,7 +37,7 @@ Nintendo created proprietary file formats for storing user-created Flipnote anim
 
 At the time of writing, the only official software that can load and play these animations are the original Flipnote Studio apps themselves, which are now rather hard to obtain due to the [Nintendo DSi Shop closing down in 2016](https://www.nintendo.co.uk/News/2016/March/Important-information-about-the-discontinuation-of-the-Nintendo-DSi-Shop-1095977.html), and [Flipnote Studio 3D having a limited release outside of Japan](https://www.nintendolife.com/news/2016/03/reminder_flipnote_studio_3d_debuting_in_europe_as_my_nintendo_account_incentive). It also seems particularly unlikely that Nintendo is going to produce a new entry in the series any time soon.
 
-This library hopes to aid in the long-term preservation and enjoyment of these animations, by enabling them to be played in any modern web browser. In addition, it provides a consistent API and various utilities for dealing with both animation formats so that other developers can easily create their own tools and applications around them.
+This library hopes to aid in the long-term preservation and enjoyment of these animations, by enabling them to be played in any modern web browser. In addition, it provides a consistent API and various utilities for dealing with both animation formats so that other developers can easily create their own tools and applications around them!
 
 ## Projects using flipnote.js
 

@@ -170,10 +170,18 @@ export declare abstract class FlipnoteParser extends DataStream {
     */
     abstract decodeFrame(frameIndex: number): Uint8Array[];
     /**
-     * Get the pixels for a given frame layer
+     * Get the pixels for a given frame layer, as palette indices
+     * NOTE: layerIndex are not guaranteed to be sorted by 3D depth in KWZs, use {@link getFrameLayerOrder} to get the correct sort order first
+     * NOTE: if the visibility flag for this layer is turned off, the result will be empty
      * @category Image
     */
     getLayerPixels(frameIndex: number, layerIndex: number, imageBuffer?: Uint8Array): Uint8Array;
+    /**
+     * Get the pixels for a given frame layer, as RGBA pixels
+     * NOTE: layerIndex are not guaranteed to be sorted by 3D depth in KWZs, use {@link getFrameLayerOrder} to get the correct sort order first
+     * NOTE: if the visibility flag for this layer is turned off, the result will be empty
+     * @category Image
+    */
     getLayerPixelsRgba(frameIndex: number, layerIndex: number, imageBuffer?: Uint32Array, paletteBuffer?: Uint32Array): Uint32Array;
     /**
      * Get the layer draw order for a given frame
@@ -239,4 +247,19 @@ export declare abstract class FlipnoteParser extends DataStream {
      * @category Audio
     */
     hasAudioTrack(trackId: FlipnoteAudioTrack): boolean;
+    /**
+     * Get the body of the Flipnote - the data that is digested for the signature
+     * @category Verification
+     */
+    abstract getBody(): Uint8Array;
+    /**
+     * Get the Flipnote's signature data
+     * @category Verification
+     */
+    abstract getSignature(): Uint8Array;
+    /**
+     * Verify whether this Flipnote's signature is valid
+     * @category Verification
+     */
+    abstract verify(): Promise<boolean>;
 }

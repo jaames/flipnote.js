@@ -1,15 +1,31 @@
-import { assertBrowserEnv } from './env';
+import { isBrowser, isWebWorker, isNode } from './env';
+
+/**
+ * same SubtleCrypto API is available in browser and node, but in node it isn't global
+ * @internal
+ */
+const SUBTLE_CRYPTO = ((): SubtleCrypto => {
+  if (isBrowser || isWebWorker)
+    return crypto.subtle;
+  else if (isNode)
+    return require('crypto').webcrypto.subtle;
+})();
+
+/**
+ * crypto algo used
+ * @internal
+ */
+const ALGORITHM = 'RSASSA-PKCS1-v1_5';
 
 /**
  * @internal
  */
- type HashType = 'SHA-1' | 'SHA-256' | 'SHA-512';
+type HashType = 'SHA-1' | 'SHA-256'; // also available are 'SHA-384' and 'SHA-512', but flipnote doesnt use them...
 
- /**
-  * @internal
-  */
+/**
+ * @internal
+ */
 export async function rsaLoadPublicKey(pemKey: string, hashType: HashType) {
-  assertBrowserEnv();
   // remove PEM header and footer
   const lines = pemKey
     .split('\n')
@@ -21,16 +37,15 @@ export async function rsaLoadPublicKey(pemKey: string, hashType: HashType) {
   const keyBytes = new Uint8Array(keyPlaintext.length)
     .map((_, i) => keyPlaintext.charCodeAt(i));
   // create cypto api key
-  return await crypto.subtle.importKey('spki', keyBytes.buffer, {
-    name: 'RSASSA-PKCS1-v1_5',
+  return await SUBTLE_CRYPTO.importKey('spki', keyBytes.buffer, {
+    name: ALGORITHM,
     hash: hashType,
   }, false, ['verify']);
 }
  
- /**
-  * @internal
-  */
+/**
+ * @internal
+ */
 export async function rsaVerify(key: CryptoKey, signature: Uint8Array, data: Uint8Array) {
-  assertBrowserEnv();
-  return await crypto.subtle.verify('RSASSA-PKCS1-v1_5', key, signature, data);
+  return await SUBTLE_CRYPTO.verify(ALGORITHM, key, signature, data);
 }

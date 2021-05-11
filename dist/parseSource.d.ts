@@ -1,5 +1,5 @@
 /// <reference types="node" />
-import { Flipnote, FlipnoteParserSettings } from './FlipnoteTypes';
+import { Flipnote, FlipnoteParserSettings } from './parsers';
 /**
  * Source to load a Flipnote from. Depending on the operating envionment, this can be:
  * - A string representing a web URL

@@ -3,7 +3,7 @@ import { Player, PlayerEvent } from '../player';
 declare const PlayerComponent_base: {
     new (...args: any[]): {
         player: Player;
-        readonly renderer: import("../webgl").WebglRenderer;
+        readonly renderer: import("../renderers").WebglCanvas;
         readonly audio: import("../webaudio").WebAudioPlayer;
         readonly canvasEl: HTMLCanvasElement;
         readonly note: import("../parsers").FlipnoteParser;
@@ -151,7 +151,7 @@ export declare class PlayerComponent extends PlayerComponent_base {
     private _isPlaying;
     private _isMuted;
     private _volumeLevel;
-    private playerCanvas;
+    private playerCanvasWrapper;
     private _isPlayerAvailable;
     private _playerSrc;
     private _resizeObserver;

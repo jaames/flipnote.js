@@ -1,5 +1,5 @@
 import { FlipnoteParser } from '../parsers';
-interface WebglRendererOptions {
+interface WebglCanvasOptions {
     /** Function to be called if the context is lost */
     onlost: () => void;
     /** Function to be called if the context is restored */
@@ -12,8 +12,8 @@ interface WebglRendererOptions {
  *
  * Only available in browser contexts
  */
-export declare class WebglRenderer {
-    static defaultOptions: WebglRendererOptions;
+export declare class WebglCanvas {
+    static defaultOptions: WebglCanvasOptions;
     /** Canvas HTML element being used as a rendering surface */
     el: HTMLCanvasElement;
     /** Rendering context - see {@link https://developer.mozilla.org/en-US/docs/Web/API/WebGLRenderingContext} */
@@ -33,7 +33,7 @@ export declare class WebglRenderer {
      */
     screenHeight: number;
     private options;
-    private postProcessProgram;
+    private program;
     private quadBuffer;
     private paletteBuffer;
     private frameBuffer;
@@ -51,8 +51,8 @@ export declare class WebglRenderer {
      *
      * The ratio between `width` and `height` should be 3:4 for best results
      */
-    constructor(el: HTMLCanvasElement, width?: number, height?: number, options?: Partial<WebglRendererOptions>);
-    init(): void;
+    constructor(parent: Element, width?: number, height?: number, options?: Partial<WebglCanvasOptions>);
+    private init;
     private createProgram;
     private createShader;
     private createScreenQuad;
@@ -74,10 +74,6 @@ export declare class WebglRenderer {
     setInputSize(width: number, height: number): void;
     clear(): void;
     drawFrame(note: FlipnoteParser, frameIndex: number): void;
-    /**
-     * Composites the current frame buffer into the canvas, applying post-processing effects like scaling filters if enabled
-     */
-    composite(): void;
     /**
      * Returns true if the webGL context has returned an error
      */

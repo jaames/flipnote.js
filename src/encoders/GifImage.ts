@@ -1,8 +1,8 @@
+import { Flipnote } from '../parsers';
 import { DataStream, ByteArray } from '../utils/index';
+import { assertBrowserEnv } from '../utils';
 import { EncoderBase } from './EncoderBase';
 import { LzwCompressor } from './LwzCompressor';
-import { Flipnote } from '../FlipnoteTypes';
-import { assertBrowserEnv } from '../utils';
 
 /**
  * GIF RGBA palette color definition

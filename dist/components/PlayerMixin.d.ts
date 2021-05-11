@@ -16,7 +16,7 @@ declare type Constructor<T = {}> = new (...args: any[]) => T;
 export declare function PlayerMixin<TargetBase extends Constructor>(Target: TargetBase): {
     new (...args: any[]): {
         player: Player;
-        readonly renderer: import("../webgl").WebglRenderer;
+        readonly renderer: import("../renderers").WebglCanvas;
         readonly audio: import("../webaudio").WebAudioPlayer;
         readonly canvasEl: HTMLCanvasElement;
         readonly note: import("../parsers").FlipnoteParser;

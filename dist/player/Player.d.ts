@@ -1,8 +1,7 @@
-import { Flipnote } from '../FlipnoteTypes';
-import { FlipnoteFormat, FlipnoteMeta } from '../parsers';
+import { Flipnote, FlipnoteFormat, FlipnoteMeta } from '../parsers';
 import { FlipnoteSource } from '../parseSource';
 import { PlayerEvent, PlayerEventMap } from './PlayerEvent';
-import { WebglRenderer } from '../webgl';
+import { WebglCanvas } from '../renderers';
 import { WebAudioPlayer } from '../webaudio';
 declare type PlayerLayerVisibility = Record<number, boolean>;
 /**
@@ -43,7 +42,7 @@ declare type PlayerLayerVisibility = Record<number, boolean>;
  */
 export declare class Player {
     /** Frame renderer */
-    renderer: WebglRenderer;
+    renderer: WebglCanvas;
     /** Audio player */
     audio: WebAudioPlayer;
     /** Canvas HTML element */
@@ -95,13 +94,13 @@ export declare class Player {
     /**
      * Create a new Player instance
      *
-     * @param el - Canvas element (or CSS selector matching a canvas element) to use as a rendering surface
+     * @param parent - Element to mount the rendering canvas to
      * @param width - Canvas width (pixels)
      * @param height - Canvas height (pixels)
      *
      * The ratio between `width` and `height` should be 3:4 for best results
      */
-    constructor(el: string | HTMLCanvasElement, width: number, height: number);
+    constructor(parent: string | Element, width: number, height: number);
     /** The currently loaded Flipnote source, if there is one. Can be overridden to load another Flipnote */
     get src(): FlipnoteSource;
     set src(source: FlipnoteSource);

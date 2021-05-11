@@ -22,7 +22,6 @@ export const ADPCM_STEP_TABLE = new Int16Array([
   15289, 16818, 18500, 20350, 22385, 24623, 27086, 29794, 32767, 0
 ]);
 
-
 /** 
  * Clamp a number n between l and h
  * @internal 

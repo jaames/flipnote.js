@@ -240,8 +240,8 @@ export class PlayerComponent extends PlayerMixin(LitElement) {
   @internalProperty()
   private _volumeLevel = 0;
 
-  @query('#canvas')
-  private playerCanvas: HTMLCanvasElement;
+  @query('#canvasWrapper')
+  private playerCanvasWrapper: Element;
 
   private _isPlayerAvailable = false;
   private _playerSrc: any;
@@ -262,7 +262,7 @@ export class PlayerComponent extends PlayerMixin(LitElement) {
       </style>
       <div class="Player" @keydown=${ this.handleKeyInput }>
         <div class="CanvasArea" @click=${ this.handlePlayToggle }>
-          <canvas class="PlayerCanvas" id="canvas"></canvas>
+          <div class="PlayerCanvas" id="canvasWrapper"></div>
           ${ this._isLoading ?
             html`<div class="Overlay">
               <flipnote-player-icon icon="loader" class="LoaderIcon"></flipnote-player-icon>
@@ -342,7 +342,7 @@ export class PlayerComponent extends PlayerMixin(LitElement) {
 
   /** @internal */
   firstUpdated(changedProperties: PropertyValues) {
-    const player = new Player(this.playerCanvas, 256, 192);
+    const player = new Player(this.playerCanvasWrapper, 256, 192);
     this._resizeObserver.observe(this);
     this.player = player;
     player.on(PlayerEvent.LoadStart, () => {

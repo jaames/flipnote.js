@@ -91,6 +91,7 @@ export declare class PpmParser extends FlipnoteParser {
     private prevDecodedFrame;
     private frameDataLength;
     private soundDataLength;
+    private soundDataOffset;
     private frameOffsets;
     /**
      * Create a new PPM file parser instance
@@ -98,8 +99,6 @@ export declare class PpmParser extends FlipnoteParser {
      * @param settings parser settings (none currently implemented)
      */
     constructor(arrayBuffer: ArrayBuffer, settings?: Partial<PpmParserSettings>);
-    static validateFSID(fsid: string): boolean;
-    static validateFilename(filename: string): boolean;
     private decodeHeader;
     private readFilename;
     private decodeMeta;
@@ -167,4 +166,19 @@ export declare class PpmParser extends FlipnoteParser {
      * @category Audio
     */
     getAudioMasterPcm(dstFreq?: number): Int16Array;
+    /**
+     * Get the body of the Flipnote - the data that is digested for the signature
+     * @category Verification
+     */
+    getBody(): Uint8Array;
+    /**
+    * Get the Flipnote's signature data
+    * @category Verification
+    */
+    getSignature(): Uint8Array;
+    /**
+     * Verify whether this Flipnote's signature is valid
+     * @category Verification
+     */
+    verify(): Promise<boolean>;
 }

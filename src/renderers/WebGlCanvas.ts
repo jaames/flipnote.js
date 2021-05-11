@@ -24,7 +24,7 @@ interface ResourceMap {
   buffers: WebGLBuffer[];
 };
 
-interface WebglRendererOptions {
+interface WebglCanvasOptions {
   /** Function to be called if the context is lost */
   onlost: () => void;
   /** Function to be called if the context is restored */
@@ -38,9 +38,9 @@ interface WebglRendererOptions {
  * 
  * Only available in browser contexts
  */
-export class WebglRenderer {
+export class WebglCanvas {
 
-  static defaultOptions: WebglRendererOptions = {
+  static defaultOptions: WebglCanvasOptions = {
     onlost: () => {},
     onrestored: () => {},
     useDpi: true
@@ -64,7 +64,7 @@ export class WebglRenderer {
    */
   public screenHeight: number;
 
-  private options: WebglRendererOptions;
+  private options: WebglCanvasOptions;
   private program: ProgramInfo; // for drawing renderbuffer w/ filtering
   private quadBuffer: BufferInfo;
   private paletteBuffer = new Uint32Array(16);
@@ -90,18 +90,19 @@ export class WebglRenderer {
    * 
    * The ratio between `width` and `height` should be 3:4 for best results
    */
-  constructor(el: HTMLCanvasElement, width=640, height=480, options: Partial<WebglRendererOptions> = {}) {
+  constructor(parent: Element, width=640, height=480, options: Partial<WebglCanvasOptions> = {}) {
     assertBrowserEnv();
-    this.el = el;
+    this.el = document.createElement('canvas');
     this.width = width;
     this.height = height;
-    this.options = { ...WebglRenderer.defaultOptions, ...options };
-    el.addEventListener('webglcontextlost', this.handleContextLoss, false);
-    el.addEventListener('webglcontextrestored', this.handleContextRestored, false);
-    this.gl = el.getContext('webgl', {
+    this.options = { ...WebglCanvas.defaultOptions, ...options };
+    this.el.addEventListener('webglcontextlost', this.handleContextLoss, false);
+    this.el.addEventListener('webglcontextrestored', this.handleContextRestored, false);
+    this.gl = this.el.getContext('webgl', {
       antialias: false,
       alpha: true
     });
+    if (parent) parent.appendChild(this.el);
     this.init();
   }
 

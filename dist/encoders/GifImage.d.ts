@@ -1,5 +1,5 @@
+import { Flipnote } from '../parsers';
 import { EncoderBase } from './EncoderBase';
-import { Flipnote } from '../FlipnoteTypes';
 /**
  * GIF RGBA palette color definition
  */

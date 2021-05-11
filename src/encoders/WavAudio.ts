@@ -1,8 +1,6 @@
-import { DataStream } from '../utils/index';
+import { Flipnote, FlipnoteAudioTrack } from '../parsers';
+import { DataStream } from '../utils';
 import { EncoderBase } from './EncoderBase';
-import { Flipnote } from '../FlipnoteTypes';
-import { FlipnoteAudioTrack } from '../parsers/index';
-import { assert, assertNodeEnv, assertBrowserEnv } from '../utils';
 
 export type WavSampleBuffer = Int16Array | Float32Array;
 

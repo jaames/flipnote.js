@@ -123,6 +123,7 @@ export declare class KwzParser extends FlipnoteParser {
     meta: KwzMeta;
     private settings;
     private sectionMap;
+    private bodyEndOffset;
     private layerBuffers;
     private prevDecodedFrame;
     private frameMetaOffsets;
@@ -220,4 +221,19 @@ export declare class KwzParser extends FlipnoteParser {
      * @category Audio
     */
     getAudioMasterPcm(dstFreq?: number): Int16Array;
+    /**
+     * Get the body of the Flipnote - the data that is digested for the signature
+     * @category Verification
+     */
+    getBody(): Uint8Array;
+    /**
+     * Get the Flipnote's signature data
+     * @category Verification
+     */
+    getSignature(): Uint8Array;
+    /**
+     * Verify whether this Flipnote's signature is valid
+     * @category Verification
+     */
+    verify(): Promise<boolean>;
 }

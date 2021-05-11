@@ -1,10 +1,9 @@
-import { Flipnote } from '../FlipnoteTypes';
-import { FlipnoteFormat, FlipnoteMeta } from '../parsers';
+import { Flipnote, FlipnoteFormat, FlipnoteMeta } from '../parsers';
 import { FlipnoteSource, parseSource } from '../parseSource';
 import { PlayerEvent, PlayerEventMap, supportedEvents } from './PlayerEvent';
-import { WebglRenderer } from '../renderers';
-import { WebAudioPlayer } from '../webaudio';
 import { createTimeRanges, padNumber, formatTime } from './playerUtils';
+import { WebglCanvas } from '../renderers';
+import { WebAudioPlayer } from '../webaudio';
 import { assert, assertRange, assertBrowserEnv } from '../utils';
 
 type PlayerLayerVisibility = Record<number, boolean>;
@@ -48,7 +47,7 @@ type PlayerLayerVisibility = Record<number, boolean>;
 export class Player {
 
   /** Frame renderer */
-  public renderer: WebglRenderer;
+  public renderer: WebglCanvas;
   /** Audio player */
   public audio: WebAudioPlayer;
   /** Canvas HTML element */
@@ -102,17 +101,17 @@ export class Player {
   /**
    * Create a new Player instance
    * 
-   * @param el - Canvas element (or CSS selector matching a canvas element) to use as a rendering surface
+   * @param parent - Element to mount the rendering canvas to
    * @param width - Canvas width (pixels)
    * @param height - Canvas height (pixels)
    * 
    * The ratio between `width` and `height` should be 3:4 for best results
    */
-  constructor(el: string | HTMLCanvasElement, width: number, height: number) {
+  constructor(parent: string | Element, width: number, height: number) {
     assertBrowserEnv();
     // if `el` is a string, use it to select an Element, else assume it's an element
-    el = ('string' == typeof el) ? <HTMLCanvasElement>document.querySelector(el) : el;
-    this.renderer = new WebglRenderer(el, width, height, {
+    const mountPoint = ('string' == typeof parent) ? <Element>document.querySelector(parent) : parent;
+    this.renderer = new WebglCanvas(mountPoint, width, height, {
       onlost: () => this.emit(PlayerEvent.Error),
       onrestored: () => this.load()
     });
