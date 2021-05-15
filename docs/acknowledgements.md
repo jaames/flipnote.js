@@ -15,10 +15,10 @@ This wouldn't have been possible without the many rad people who contributed to 
 - **[Simon](https://github.com/simontime)** - for finishing both PPM and KWZ audio reverse-engineering.
 - **[Meemo](https://github.com/meemo)** - for coming up with the tricks used to clean up DSi Library KWZ audio.
 - **[Austin](https://twitter.com/AustinSudomemo)** from **[Sudomemo](https://www.sudomemo.net/)** - for providing copius sample Flipnotes and other helpful data, and for allowing me to use his Flipnote audio equalizer setup.
-- **[Dan Burk]()** from Michigan State University - for early ideas to approach restoration mathematically.
+- **[Tycho "Sudodad" Aussie](https://github.com/tychoaussie)** - for scientific assistance with signal processing algorithms.
 - **[Lauren Kelly](https://github.com/thejsa)** - for performing packet captures of Flipnote Hatena before it shut down, without them reverse-engineering the app in general would have been a huge pain.
 - **[Stary](https://github.com/Stary2001)**, **[Joshua](https://github.com/JoshuaDoes)** - for various tips and tricks and entertainment.
-- **[Everyone from the Kaeru Team dev Discord](https://kaeru.world/)** - for helping out with miscellaneous bits and for putting up with my nonsensical ramblings about weird proprietary animation formats.$
+- **[Everyone from the Kaeru Team dev Discord](https://kaeru.world/)** - for helping out with miscellaneous bits and for putting up with my nonsensical ramblings about weird proprietary animation formats.
 
 - **[Nintendo](https://www.nintendo.com/)** - for creating Flipnote Studio.
 - **[Hatena](http://www.hatena.ne.jp/)** - for creating Flipnote Hatena, the now-defunct online service for sharing Flipnote Studio creations.
