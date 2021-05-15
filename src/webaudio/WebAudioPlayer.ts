@@ -23,6 +23,8 @@ export class WebAudioPlayer {
   public sampleRate: number;
   /** Whether the audio is being run through an equalizer or not */
   public useEq = false;
+  /** Whether to connect the output to an audio analyser (see {@link analyser}) */
+  public useAnalyser = false;
   /** Default equalizer settings. Credit to {@link https://www.sudomemo.net/ | Sudomemo} for these */
   public eqSettings: [number, number][] = [
     [31.25, 4.1],
@@ -35,6 +37,8 @@ export class WebAudioPlayer {
     [8000, 5.1],
     [16000, 5.1]
   ];
+  /** If enabled, provides audio analysis for visualisation etc - https://developer.mozilla.org/en-US/docs/Web/API/Web_Audio_API/Visualizations_with_Web_Audio_API */
+  public analyser: AnalyserNode;
 
   private _volume = 1;
   private _loop = false;
@@ -129,21 +133,37 @@ export class WebAudioPlayer {
       const eq = this.connectEqNodesTo(source);
       eq.connect(gainNode);
     }
-    else
+    else {
       source.connect(gainNode);
+    }
 
-    source.connect(gainNode);
-    gainNode.connect(ctx.destination);
+    if (this.useAnalyser) {
+      const analyserNode = ctx.createAnalyser();
+      this.nodeRefs.push(analyserNode);
+      this.analyser = analyserNode;
+      gainNode.connect(analyserNode);
+      analyserNode.connect(ctx.destination);
+    }
+    else {
+      this.analyser = undefined;
+      gainNode.connect(ctx.destination);
+    }
+
     this.source = source;
     this.gainNode = gainNode;
     this.setVolume(this._volume);
+  }
+  
+  public setAnalyserEnabled(on: boolean) {
+    this.useAnalyser = on;
+    this.initNodes();
   }
 
   /**
    * Sets the audio volume level
    * @param value - range is 0 to 1
    */
-  setVolume(value: number) {
+  public setVolume(value: number) {
     this._volume = value;
     if (this.gainNode) {
       // human perception of loudness is logarithmic, rather than linear
@@ -158,7 +178,7 @@ export class WebAudioPlayer {
    * Note that the WebAudioPlayer doesn't keep track of audio playback itself. We rely on the {@link Player} API for that.
    * @param currentTime initial playback position, in seconds
    */
-  playFrom(currentTime: number) {
+  public playFrom(currentTime: number) {
     this.initNodes();
     this.source.loop = this._loop;
     this.source.start(0, currentTime);
@@ -167,19 +187,20 @@ export class WebAudioPlayer {
   /**
    * Stops the audio playback
    */
-  stop() {
+  public stop() {
     if (this.source)
       this.source.stop(0);
   }
 
   /**
- * Frees any resources used by this canvas instance
- */
+   * Frees any resources used by this canvas instance
+   */
   public async destroy() {
     this.stop();
     const ctx = this.getCtx();
     this.nodeRefs.forEach(node => node.disconnect());
     this.nodeRefs = [];
+    this.analyser = undefined;
     if (ctx.state !== 'closed' && typeof ctx.close === 'function')
       await ctx.close();
     this.buffer = null;

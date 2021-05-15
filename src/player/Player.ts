@@ -2,7 +2,7 @@ import { Flipnote, FlipnoteFormat, FlipnoteMeta } from '../parsers';
 import { FlipnoteSource, parseSource } from '../parseSource';
 import { PlayerEvent, PlayerEventMap, supportedEvents } from './PlayerEvent';
 import { createTimeRanges, padNumber, formatTime } from './playerUtils';
-import { WebglCanvas } from '../renderers';
+import { UniversalCanvas } from '../renderers';
 import { WebAudioPlayer } from '../webaudio';
 import { assert, assertRange, assertBrowserEnv } from '../utils';
 
@@ -47,7 +47,7 @@ type PlayerLayerVisibility = Record<number, boolean>;
 export class Player {
 
   /** Frame renderer */
-  public renderer: WebglCanvas;
+  public renderer: UniversalCanvas;
   /** Audio player */
   public audio: WebAudioPlayer;
   /** Canvas HTML element */
@@ -109,14 +109,14 @@ export class Player {
    */
   constructor(parent: string | Element, width: number, height: number) {
     assertBrowserEnv();
-    // if `el` is a string, use it to select an Element, else assume it's an element
+    // if parent is a string, use it to select an Element, else assume it's an Element
     const mountPoint = ('string' == typeof parent) ? <Element>document.querySelector(parent) : parent;
-    this.renderer = new WebglCanvas(mountPoint, width, height, {
+    this.renderer = new UniversalCanvas(mountPoint, width, height, {
       onlost: () => this.emit(PlayerEvent.Error),
       onrestored: () => this.load()
     });
     this.audio = new WebAudioPlayer();
-    this.canvasEl = this.renderer.el;
+    // this.canvasEl = this.renderer.el;
   }
 
   /** The currently loaded Flipnote source, if there is one. Can be overridden to load another Flipnote */
@@ -314,7 +314,7 @@ export class Player {
     this.emit(PlayerEvent.CanPlay);
     this.emit(PlayerEvent.CanPlayThrough);
     this.setLoop(note.meta.loop);
-    this.renderer.setInputSize(note.imageWidth, note.imageHeight);
+    this.renderer.setNote(note);
     this.drawFrame(note.thumbFrameIndex);
     this.emit(PlayerEvent.LoadedData);
     this.emit(PlayerEvent.Load);
@@ -603,7 +603,7 @@ export class Player {
    * @category Display Control 
    */
   public drawFrame(frameIndex: number) {
-    this.renderer.drawFrame(this.note, frameIndex);
+    this.renderer.drawFrame(frameIndex);
   }
 
   /**
@@ -611,8 +611,7 @@ export class Player {
    * @category Display Control 
    */
   public forceUpdate() {
-    if (this.isNoteLoaded)
-      this.drawFrame(this.currentFrame);
+    this.renderer.forceUpdate();
   }
 
   /**

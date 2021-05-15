@@ -12,8 +12,12 @@ export declare class WebAudioPlayer {
     sampleRate: number;
     /** Whether the audio is being run through an equalizer or not */
     useEq: boolean;
+    /** Whether to connect the output to an audio analyser (see {@link analyser}) */
+    useAnalyser: boolean;
     /** Default equalizer settings. Credit to {@link https://www.sudomemo.net/ | Sudomemo} for these */
     eqSettings: [number, number][];
+    /** If enabled, provides audio analysis for visualisation etc - https://developer.mozilla.org/en-US/docs/Web/API/Web_Audio_API/Visualizations_with_Web_Audio_API */
+    analyser: AnalyserNode;
     private _volume;
     private _loop;
     private nodeRefs;
@@ -36,6 +40,7 @@ export declare class WebAudioPlayer {
     setBuffer(inputBuffer: PcmAudioBuffer, sampleRate: number): void;
     private connectEqNodesTo;
     private initNodes;
+    setAnalyserEnabled(on: boolean): void;
     /**
      * Sets the audio volume level
      * @param value - range is 0 to 1
@@ -53,7 +58,7 @@ export declare class WebAudioPlayer {
      */
     stop(): void;
     /**
-   * Frees any resources used by this canvas instance
-   */
+     * Frees any resources used by this canvas instance
+     */
     destroy(): Promise<void>;
 }

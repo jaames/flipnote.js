@@ -434,33 +434,33 @@ export class PlayerComponent extends PlayerMixin(LitElement) {
   }
 
   private handlePlayToggle = (e: InputEvent) => {
-    this.togglePlay();
     this.focus();
+    this.togglePlay();
   }
 
   private handleMuteToggle = (e: InputEvent) => {
-    this.toggleMuted();
     this.focus();
+    this.toggleMuted();
   }
 
   private handleProgressSliderChange = (e: CustomEvent) => {
-    this.seek(e.detail.value);
     this.focus();
+    this.seek(e.detail.value);
   }
 
   private handleProgressSliderInputStart = () => {
-    this.startSeek();
     this.focus();
+    this.startSeek();
   }
 
   private handleProgressSliderInputEnd = () => {
-    this.endSeek();
     this.focus();
+    this.endSeek();
   }
 
   private handleVolumeBarChange = (e: CustomEvent) => {
-    this.setVolume(e.detail.value);
     this.focus();
+    this.setVolume(e.detail.value);
   }
 
 }

@@ -24,5 +24,5 @@ export function assertExists<T>(value: T | null | undefined, name=''): T {
  * @internal
  */
 export function assertRange(value: number, min: number, max: number, name=''): asserts value {
-  assert(value >= min && value <= max, `Value ${name} should be between ${min} and ${max}`);
+  assert(value >= min && value <= max, `${ name || 'value'} ${ value } should be between ${ min } and ${ max }`);
 }

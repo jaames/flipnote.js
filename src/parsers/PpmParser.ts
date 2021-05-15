@@ -26,9 +26,11 @@ import {
   FlipnoteFormat,
   FlipnotePaletteDefinition,
   FlipnoteAudioTrack,
+  FlipnoteSoundEffectTrack,
+  FlipnoteSoundEffectFlags,
   FlipnoteMeta,
-  FlipnoteParser
-} from './FlipnoteParserTypes';
+  FlipnoteParserBase
+} from './FlipnoteParserBase';
 
 import {
   ADPCM_INDEX_TABLE_4BIT,
@@ -37,6 +39,7 @@ import {
   pcmResampleNearestNeighbour,
   pcmGetClippingRatio,
   assert,
+  assertRange,
   dateFromNintendoTimestamp,
   timeGetNoteDuration,
   getPpmFsidRegion,
@@ -90,7 +93,7 @@ export type PpmParserSettings = {};
  * Format docs: https://github.com/Flipnote-Collective/flipnote-studio-docs/wiki/PPM-format
  * @category File Parser
  */
-export class PpmParser extends FlipnoteParser {
+export class PpmParser extends FlipnoteParserBase {
 
   /** Default PPM parser settings */
   static defaultSettings: PpmParserSettings = {};
@@ -107,7 +110,20 @@ export class PpmParser extends FlipnoteParser {
   /** Audio track base sample rate */
   static rawSampleRate = 8192;
   /** Nintendo DSi audio output rate */
-  static sampleRate = 32768; 
+  static sampleRate = 32768;
+  /** Which audio tracks are available in this format */
+  static audioTracks = [
+    FlipnoteAudioTrack.BGM,
+    FlipnoteAudioTrack.SE1,
+    FlipnoteAudioTrack.SE2,
+    FlipnoteAudioTrack.SE3
+  ];
+  /** Which sound effect tracks are available in this format */
+  static soundEffectTracks = [
+    FlipnoteSoundEffectTrack.SE1,
+    FlipnoteSoundEffectTrack.SE2,
+    FlipnoteSoundEffectTrack.SE3,
+  ];
   /** Global animation frame color palette */
   static globalPalette = [
     PPM_PALETTE.WHITE,
@@ -118,6 +134,8 @@ export class PpmParser extends FlipnoteParser {
 
   /** File format type, reflects {@link PpmParser.format} */
   public format = FlipnoteFormat.PPM;
+  /** Custom object tag */
+  public [Symbol.toStringTag] = 'Flipnote Studio PPM animation file';
   /** Animation frame width, reflects {@link PpmParser.width} */
   public imageWidth = PpmParser.width;
   /** Animation frame height, reflects {@link PpmParser.height} */
@@ -132,6 +150,10 @@ export class PpmParser extends FlipnoteParser {
   public numLayerColors = PpmParser.numLayerColors;
   /** @internal */
   public srcWidth = PpmParser.width;
+  /** Which audio tracks are available in this format, reflects {@link PpmParser.audioTracks} */
+  public audioTracks = PpmParser.audioTracks;
+  /** Which sound effect tracks are available in this format, reflects {@link PpmParser.soundEffectTracks} */
+  public soundEffectTracks = PpmParser.soundEffectTracks;
   /** Audio track base sample rate, reflects {@link PpmParser.rawSampleRate} */
   public rawSampleRate = PpmParser.rawSampleRate;
   /** Audio output sample rate, reflects {@link PpmParser.sampleRate} */
@@ -144,6 +166,7 @@ export class PpmParser extends FlipnoteParser {
   public version: number;
 
   private layerBuffers: [Uint8Array, Uint8Array];
+  private soundFlags: boolean[][];
   private prevLayerBuffers: [Uint8Array, Uint8Array];
   private lineEncodingBuffers: [Uint8Array, Uint8Array];
   private prevDecodedFrame: number = null;
@@ -305,6 +328,7 @@ export class PpmParser extends FlipnoteParser {
   }
 
   private isNewFrame(frameIndex: number) {
+    assertRange(frameIndex, 0, this.frameCount - 1, 'Frame index');
     this.seek(this.frameOffsets[frameIndex]);
     const header = this.readUint8();
     return (header >> 7) & 0x1;
@@ -315,7 +339,7 @@ export class PpmParser extends FlipnoteParser {
    * @category Image
   */
   public decodeFrame(frameIndex: number) {
-    assert(frameIndex > -1 && frameIndex < this.frameCount, `Frame index ${ frameIndex } out of bounds`);
+    assertRange(frameIndex, 0, this.frameCount - 1, 'Frame index');
     // return existing layer buffers if no new frame has been decoded since the last call
     if (this.prevDecodedFrame === frameIndex)
       return this.layerBuffers;
@@ -469,6 +493,7 @@ export class PpmParser extends FlipnoteParser {
    * @returns Array of layer indexes, in the order they should be drawn
   */
   public getFrameLayerOrder(frameIndex?: number) {
+    assertRange(frameIndex, 0, this.frameCount - 1, 'Frame index');
     return [1, 0];
   }
 
@@ -482,6 +507,7 @@ export class PpmParser extends FlipnoteParser {
    * @category Image
   */
   public getFramePaletteIndices(frameIndex: number) {
+    assertRange(frameIndex, 0, this.frameCount - 1, 'Frame index');
     this.seek(this.frameOffsets[frameIndex]);
     const header = this.readUint8();
     const isInverted = (header & 0x1) !== 1;
@@ -508,6 +534,7 @@ export class PpmParser extends FlipnoteParser {
    * @category Image
    */
   public getFramePalette(frameIndex: number) {
+    assertRange(frameIndex, 0, this.frameCount - 1, 'Frame index');
     const indices = this.getFramePaletteIndices(frameIndex);
     return indices.map(colorIndex => this.globalPalette[colorIndex]);
   }
@@ -517,21 +544,50 @@ export class PpmParser extends FlipnoteParser {
    * @category Audio
   */
   public decodeSoundFlags() {
+    if (this.soundFlags !== undefined)
+      return this.soundFlags;
     assert(0x06A0 + this.frameDataLength < this.byteLength);
     // https://github.com/Flipnote-Collective/flipnote-studio-docs/wiki/PPM-format#sound-effect-flags
     this.seek(0x06A0 + this.frameDataLength);
     const numFlags = this.frameCount;
     const flags = this.readBytes(numFlags);
-    const unpacked = new Array(numFlags);
+    this.soundFlags = new Array(numFlags);
     for (let i = 0; i < numFlags; i++) {
       const byte = flags[i];
-      unpacked[i] = [
+      this.soundFlags[i] = [
         (byte & 0x1) !== 0, // SE1 bitflag
         (byte & 0x2) !== 0, // SE2 bitflag
         (byte & 0x4) !== 0, // SE3 bitflag
       ];
     }
-    return unpacked;
+    return this.soundFlags;
+  }
+
+  /**
+   * Get the sound effect usage flags for every frame
+   * @category Audio
+   */
+  public getSoundEffectFlags(): FlipnoteSoundEffectFlags[] {
+    return this.decodeSoundFlags().map(frameFlags => ({
+      [FlipnoteSoundEffectTrack.SE1]: frameFlags[0],
+      [FlipnoteSoundEffectTrack.SE2]: frameFlags[1],
+      [FlipnoteSoundEffectTrack.SE3]: frameFlags[2]
+    }));
+  }
+
+  /**
+   * Get the sound effect usage flags for a given frame
+   * @category Audio
+   */
+  public getFrameSoundEffectFlags(frameIndex: number): FlipnoteSoundEffectFlags {
+    assertRange(frameIndex, 0, this.frameCount - 1, 'Frame index');
+    this.seek(0x06A0 + this.frameDataLength + frameIndex);
+    const byte = this.readUint8();
+    return {
+      [FlipnoteSoundEffectTrack.SE1]: (byte & 0x1) !== 0,
+      [FlipnoteSoundEffectTrack.SE2]: (byte & 0x2) !== 0,
+      [FlipnoteSoundEffectTrack.SE3]: (byte & 0x4) !== 0
+    }
   }
 
   /** 

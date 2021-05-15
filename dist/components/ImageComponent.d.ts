@@ -26,7 +26,6 @@ export declare class ImageComponent extends LitElement {
     loadNote(note: Flipnote): void;
     load(src: any): void;
     disconnectedCallback(): void;
-    private getTitle;
     private dispatchLoad;
     private dispatchError;
 }

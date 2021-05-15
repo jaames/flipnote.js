@@ -1,5 +1,5 @@
 /*!!
-flipnote.js v5.5.1 (web build)
+flipnote.js v5.6.0 (web build)
 https://flipnote.js.org
 A JavaScript library for parsing, converting, and in-browser playback of the proprietary animation formats used by Nintendo's Flipnote Studio and Flipnote Studio 3D apps.
 2018 - 2021 James Daniel
@@ -301,7 +301,7 @@ function assert(condition, errMsg = 'Assert failed') {
  * @internal
  */
 function assertRange(value, min, max, name = '') {
-    assert(value >= min && value <= max, `Value ${name} should be between ${min} and ${max}`);
+    assert(value >= min && value <= max, `${name || 'value'} ${value} should be between ${min} and ${max}`);
 }
 
 /**
@@ -571,6 +571,14 @@ var FlipnoteAudioTrack;
     /** Sound effect 4 track (only used by KWZ files) */
     FlipnoteAudioTrack[FlipnoteAudioTrack["SE4"] = 4] = "SE4";
 })(FlipnoteAudioTrack || (FlipnoteAudioTrack = {}));
+/** {@link FlipnoteAudioTrack}, but just sound effect tracks */
+var FlipnoteSoundEffectTrack;
+(function (FlipnoteSoundEffectTrack) {
+    FlipnoteSoundEffectTrack[FlipnoteSoundEffectTrack["SE1"] = 1] = "SE1";
+    FlipnoteSoundEffectTrack[FlipnoteSoundEffectTrack["SE2"] = 2] = "SE2";
+    FlipnoteSoundEffectTrack[FlipnoteSoundEffectTrack["SE3"] = 3] = "SE3";
+    FlipnoteSoundEffectTrack[FlipnoteSoundEffectTrack["SE4"] = 4] = "SE4";
+})(FlipnoteSoundEffectTrack || (FlipnoteSoundEffectTrack = {}));
 /**
  * Base Flipnote parser class
  *
@@ -578,9 +586,19 @@ var FlipnoteAudioTrack;
  * it just provides a consistent API for every format parser to implement.
  * @category File Parser
 */
-class FlipnoteParser extends DataStream {
+class FlipnoteParserBase extends DataStream {
     constructor() {
+        /** Static file format info */
         super(...arguments);
+        /** Instance file format info */
+        /** Custom object tag */
+        this[Symbol.toStringTag] = 'Flipnote';
+        /** Default formats used for {@link getTitle()} */
+        this.titleFormats = {
+            COMMENT: 'Comment by $USERNAME',
+            FLIPNOTE: 'Flipnote by $USERNAME',
+            ICON: 'Folder icon'
+        };
         /** Animation frame global layer visibility */
         this.layerVisibility = { 1: true, 2: true, 3: true };
         /** (KWZ only) Indicates whether or not this file is a Flipnote Studio 3D folder icon */
@@ -591,12 +609,58 @@ class FlipnoteParser extends DataStream {
         this.isDsiLibraryNote = false;
     }
     /**
+     * Get file default title - e.g. "Flipnote by Y", "Comment by X", etc.
+     * A format object can be passed for localisation, where `$USERNAME` gets replaced by author name:
+     * ```js
+     * {
+     *  COMMENT: 'Comment by $USERNAME',
+     *  FLIPNOTE: 'Flipnote by $USERNAME',
+     *  ICON: 'Folder icon'
+     * }
+     * ```
+     * @category Utility
+     */
+    getTitle(formats = this.titleFormats) {
+        if (this.isFolderIcon)
+            return formats.ICON;
+        const title = this.isComment ? formats.COMMENT : formats.FLIPNOTE;
+        return title.replace('$USERNAME', this.meta.current.username);
+    }
+    /**
+     * Returns the Flipnote title when casting a parser instance to a string
+     *
+     * ```js
+     * const str = 'Title: ' + note;
+     * // str === 'Title: Flipnote by username'
+     * ```
+     * @category Utility
+     */
+    toString() {
+        return this.getTitle();
+    }
+    /**
+     * Allows for frame index iteration when using the parser instance as a for..of iterator
+     *
+     * ```js
+     * for (const frameIndex of note) {
+     *   // do something with frameIndex...
+     * }
+     * ```
+     * @category Utility
+     */
+    *[Symbol.iterator]() {
+        for (let i = 0; i < this.frameCount; i++)
+            yield i;
+    }
+    /**
      * Get the pixels for a given frame layer, as palette indices
      * NOTE: layerIndex are not guaranteed to be sorted by 3D depth in KWZs, use {@link getFrameLayerOrder} to get the correct sort order first
      * NOTE: if the visibility flag for this layer is turned off, the result will be empty
      * @category Image
     */
     getLayerPixels(frameIndex, layerIndex, imageBuffer = new Uint8Array(this.imageWidth * this.imageHeight)) {
+        assertRange(frameIndex, 0, this.frameCount - 1, 'Frame index');
+        assertRange(layerIndex, 0, this.numLayers - 1, 'Layer index');
         // palette
         const palette = this.getFramePaletteIndices(frameIndex);
         const palettePtr = layerIndex * this.numLayerColors;
@@ -633,6 +697,8 @@ class FlipnoteParser extends DataStream {
      * @category Image
     */
     getLayerPixelsRgba(frameIndex, layerIndex, imageBuffer = new Uint32Array(this.imageWidth * this.imageHeight), paletteBuffer = new Uint32Array(16)) {
+        assertRange(frameIndex, 0, this.frameCount - 1, 'Frame index');
+        assertRange(layerIndex, 0, this.numLayers - 1, 'Layer index');
         // palette
         this.getFramePaletteUint32(frameIndex, paletteBuffer);
         const palettePtr = layerIndex * this.numLayerColors;
@@ -706,6 +772,7 @@ class FlipnoteParser extends DataStream {
      * @category Image
      */
     getFramePixelsRgba(frameIndex, imageBuffer = new Uint32Array(this.imageWidth * this.imageHeight), paletteBuffer = new Uint32Array(16)) {
+        assertRange(frameIndex, 0, this.frameCount - 1, 'Frame index');
         // image dimensions and crop
         const srcStride = this.srcWidth;
         const width = this.imageWidth;
@@ -745,13 +812,34 @@ class FlipnoteParser extends DataStream {
      * @category Image
     */
     getFramePaletteUint32(frameIndex, paletteBuffer = new Uint32Array(16)) {
+        assertRange(frameIndex, 0, this.frameCount - 1, 'Frame index');
         const colors = this.getFramePalette(frameIndex);
         paletteBuffer.fill(0);
         colors.forEach(([r, g, b, a], i) => paletteBuffer[i] = (a << 24) | (b << 16) | (g << 8) | r);
         return paletteBuffer;
     }
     /**
+     * Get the usage flags for a given track accross every frame
+     * @returns an array of booleans for every frame, indicating whether the track is used on that frame
+     * @category Audio
+     */
+    getSoundEffectFlagsForTrack(trackId) {
+        return this.getSoundEffectFlags().map(frammeFlags => frammeFlags[trackId]);
+    }
+    ;
+    /**
+     * Is a given track used on a given frame
+     * @category Audio
+     */
+    isSoundEffectUsedOnFrame(trackId, frameIndex) {
+        assertRange(frameIndex, 0, this.frameCount - 1, 'Frame index');
+        if (!this.soundEffectTracks.includes(trackId))
+            return false;
+        return this.getFrameSoundEffectFlags(frameIndex)[trackId];
+    }
+    /**
      * Does an audio track exist in the Flipnote?
+     * @returns boolean
      * @category Audio
     */
     hasAudioTrack(trackId) {
@@ -811,7 +899,7 @@ MIGfMA0GCSqGSIb3DQEBAQUAA4GNADCBiQKBgQDCPLwTL6oSflv+gjywi/sM0TUB
  * Format docs: https://github.com/Flipnote-Collective/flipnote-studio-docs/wiki/PPM-format
  * @category File Parser
  */
-class PpmParser extends FlipnoteParser {
+class PpmParser extends FlipnoteParserBase {
     /**
      * Create a new PPM file parser instance
      * @param arrayBuffer an ArrayBuffer containing file data
@@ -821,6 +909,8 @@ class PpmParser extends FlipnoteParser {
         super(arrayBuffer);
         /** File format type, reflects {@link PpmParser.format} */
         this.format = FlipnoteFormat.PPM;
+        /** Custom object tag */
+        this[Symbol.toStringTag] = 'Flipnote Studio PPM animation file';
         /** Animation frame width, reflects {@link PpmParser.width} */
         this.imageWidth = PpmParser.width;
         /** Animation frame height, reflects {@link PpmParser.height} */
@@ -835,6 +925,10 @@ class PpmParser extends FlipnoteParser {
         this.numLayerColors = PpmParser.numLayerColors;
         /** @internal */
         this.srcWidth = PpmParser.width;
+        /** Which audio tracks are available in this format, reflects {@link PpmParser.audioTracks} */
+        this.audioTracks = PpmParser.audioTracks;
+        /** Which sound effect tracks are available in this format, reflects {@link PpmParser.soundEffectTracks} */
+        this.soundEffectTracks = PpmParser.soundEffectTracks;
         /** Audio track base sample rate, reflects {@link PpmParser.rawSampleRate} */
         this.rawSampleRate = PpmParser.rawSampleRate;
         /** Audio output sample rate, reflects {@link PpmParser.sampleRate} */
@@ -983,6 +1077,7 @@ class PpmParser extends FlipnoteParser {
         this.soundMeta = soundMeta;
     }
     isNewFrame(frameIndex) {
+        assertRange(frameIndex, 0, this.frameCount - 1, 'Frame index');
         this.seek(this.frameOffsets[frameIndex]);
         const header = this.readUint8();
         return (header >> 7) & 0x1;
@@ -992,7 +1087,7 @@ class PpmParser extends FlipnoteParser {
      * @category Image
     */
     decodeFrame(frameIndex) {
-        assert(frameIndex > -1 && frameIndex < this.frameCount, `Frame index ${frameIndex} out of bounds`);
+        assertRange(frameIndex, 0, this.frameCount - 1, 'Frame index');
         // return existing layer buffers if no new frame has been decoded since the last call
         if (this.prevDecodedFrame === frameIndex)
             return this.layerBuffers;
@@ -1142,6 +1237,7 @@ class PpmParser extends FlipnoteParser {
      * @returns Array of layer indexes, in the order they should be drawn
     */
     getFrameLayerOrder(frameIndex) {
+        assertRange(frameIndex, 0, this.frameCount - 1, 'Frame index');
         return [1, 0];
     }
     /**
@@ -1154,6 +1250,7 @@ class PpmParser extends FlipnoteParser {
      * @category Image
     */
     getFramePaletteIndices(frameIndex) {
+        assertRange(frameIndex, 0, this.frameCount - 1, 'Frame index');
         this.seek(this.frameOffsets[frameIndex]);
         const header = this.readUint8();
         const isInverted = (header & 0x1) !== 1;
@@ -1179,6 +1276,7 @@ class PpmParser extends FlipnoteParser {
      * @category Image
      */
     getFramePalette(frameIndex) {
+        assertRange(frameIndex, 0, this.frameCount - 1, 'Frame index');
         const indices = this.getFramePaletteIndices(frameIndex);
         return indices.map(colorIndex => this.globalPalette[colorIndex]);
     }
@@ -1187,21 +1285,48 @@ class PpmParser extends FlipnoteParser {
      * @category Audio
     */
     decodeSoundFlags() {
+        if (this.soundFlags !== undefined)
+            return this.soundFlags;
         assert(0x06A0 + this.frameDataLength < this.byteLength);
         // https://github.com/Flipnote-Collective/flipnote-studio-docs/wiki/PPM-format#sound-effect-flags
         this.seek(0x06A0 + this.frameDataLength);
         const numFlags = this.frameCount;
         const flags = this.readBytes(numFlags);
-        const unpacked = new Array(numFlags);
+        this.soundFlags = new Array(numFlags);
         for (let i = 0; i < numFlags; i++) {
             const byte = flags[i];
-            unpacked[i] = [
+            this.soundFlags[i] = [
                 (byte & 0x1) !== 0,
                 (byte & 0x2) !== 0,
                 (byte & 0x4) !== 0,
             ];
         }
-        return unpacked;
+        return this.soundFlags;
+    }
+    /**
+     * Get the sound effect usage flags for every frame
+     * @category Audio
+     */
+    getSoundEffectFlags() {
+        return this.decodeSoundFlags().map(frameFlags => ({
+            [FlipnoteSoundEffectTrack.SE1]: frameFlags[0],
+            [FlipnoteSoundEffectTrack.SE2]: frameFlags[1],
+            [FlipnoteSoundEffectTrack.SE3]: frameFlags[2]
+        }));
+    }
+    /**
+     * Get the sound effect usage flags for a given frame
+     * @category Audio
+     */
+    getFrameSoundEffectFlags(frameIndex) {
+        assertRange(frameIndex, 0, this.frameCount - 1, 'Frame index');
+        this.seek(0x06A0 + this.frameDataLength + frameIndex);
+        const byte = this.readUint8();
+        return {
+            [FlipnoteSoundEffectTrack.SE1]: (byte & 0x1) !== 0,
+            [FlipnoteSoundEffectTrack.SE2]: (byte & 0x2) !== 0,
+            [FlipnoteSoundEffectTrack.SE3]: (byte & 0x4) !== 0
+        };
     }
     /**
      * Get the raw compressed audio data for a given track
@@ -1365,6 +1490,19 @@ PpmParser.numLayerColors = 1;
 PpmParser.rawSampleRate = 8192;
 /** Nintendo DSi audio output rate */
 PpmParser.sampleRate = 32768;
+/** Which audio tracks are available in this format */
+PpmParser.audioTracks = [
+    FlipnoteAudioTrack.BGM,
+    FlipnoteAudioTrack.SE1,
+    FlipnoteAudioTrack.SE2,
+    FlipnoteAudioTrack.SE3
+];
+/** Which sound effect tracks are available in this format */
+PpmParser.soundEffectTracks = [
+    FlipnoteSoundEffectTrack.SE1,
+    FlipnoteSoundEffectTrack.SE2,
+    FlipnoteSoundEffectTrack.SE3,
+];
 /** Global animation frame color palette */
 PpmParser.globalPalette = [
     PPM_PALETTE.WHITE,
@@ -1462,7 +1600,7 @@ const KWZ_LINE_TABLE_COMMON_SHIFT = new Uint8Array(32 * 8);
  * KWZ format docs: https://github.com/Flipnote-Collective/flipnote-studio-3d-docs/wiki/KWZ-Format
  * @category File Parser
  */
-class KwzParser extends FlipnoteParser {
+class KwzParser extends FlipnoteParserBase {
     /**
      * Create a new KWZ file parser instance
      * @param arrayBuffer an ArrayBuffer containing file data
@@ -1472,6 +1610,8 @@ class KwzParser extends FlipnoteParser {
         super(arrayBuffer);
         /** File format type, reflects {@link KwzParser.format} */
         this.format = FlipnoteFormat.KWZ;
+        /** Custom object tag */
+        this[Symbol.toStringTag] = 'Flipnote Studio 3D KWZ animation file';
         /** Animation frame width, reflects {@link KwzParser.width} */
         this.imageWidth = KwzParser.width;
         /** Animation frame height, reflects {@link KwzParser.height} */
@@ -1486,6 +1626,10 @@ class KwzParser extends FlipnoteParser {
         this.numLayerColors = KwzParser.numLayerColors;
         /** @internal */
         this.srcWidth = KwzParser.width;
+        /** Which audio tracks are available in this format, reflects {@link KwzParser.audioTracks} */
+        this.audioTracks = KwzParser.audioTracks;
+        /** Which sound effect tracks are available in this format, reflects {@link KwzParser.soundEffectTracks} */
+        this.soundEffectTracks = KwzParser.soundEffectTracks;
         /** Audio track base sample rate, reflects {@link KwzParser.rawSampleRate} */
         this.rawSampleRate = KwzParser.rawSampleRate;
         /** Audio output sample rate, reflects {@link KwzParser.sampleRate} */
@@ -1752,6 +1896,7 @@ class KwzParser extends FlipnoteParser {
      * @category Image
     */
     getFramePaletteIndices(frameIndex) {
+        assertRange(frameIndex, 0, this.frameCount - 1, 'Frame index');
         this.seek(this.frameMetaOffsets[frameIndex]);
         const flags = this.readUint32();
         return [
@@ -1778,15 +1923,18 @@ class KwzParser extends FlipnoteParser {
      * @category Image
     */
     getFramePalette(frameIndex) {
+        assertRange(frameIndex, 0, this.frameCount - 1, 'Frame index');
         const indices = this.getFramePaletteIndices(frameIndex);
         return indices.map(colorIndex => this.globalPalette[colorIndex]);
     }
     getFrameDiffingFlag(frameIndex) {
+        assertRange(frameIndex, 0, this.frameCount - 1, 'Frame index');
         this.seek(this.frameMetaOffsets[frameIndex]);
         const flags = this.readUint32();
         return (flags >> 4) & 0x07;
     }
     getFrameLayerSizes(frameIndex) {
+        assertRange(frameIndex, 0, this.frameCount - 1, 'Frame index');
         this.seek(this.frameMetaOffsets[frameIndex] + 0x4);
         return [
             this.readUint16(),
@@ -1795,6 +1943,7 @@ class KwzParser extends FlipnoteParser {
         ];
     }
     getFrameLayerDepths(frameIndex) {
+        assertRange(frameIndex, 0, this.frameCount - 1, 'Frame index');
         this.seek(this.frameMetaOffsets[frameIndex] + 0x14);
         const a = [
             this.readUint8(),
@@ -1804,10 +1953,12 @@ class KwzParser extends FlipnoteParser {
         return a;
     }
     getFrameAuthor(frameIndex) {
+        assertRange(frameIndex, 0, this.frameCount - 1, 'Frame index');
         this.seek(this.frameMetaOffsets[frameIndex] + 0xA);
-        return this.readHex(10);
+        return this.readFsid();
     }
-    getFrameSoundFlags(frameIndex) {
+    decodeFrameSoundFlags(frameIndex) {
+        assertRange(frameIndex, 0, this.frameCount - 1, 'Frame index');
         this.seek(this.frameMetaOffsets[frameIndex] + 0x17);
         const soundFlags = this.readUint8();
         return [
@@ -1832,6 +1983,7 @@ class KwzParser extends FlipnoteParser {
      * @returns Array of layer indexes, in the order they should be drawn
     */
     getFrameLayerOrder(frameIndex) {
+        assertRange(frameIndex, 0, this.frameCount - 1, 'Frame index');
         const depths = this.getFrameLayerDepths(frameIndex);
         return [2, 1, 0].sort((a, b) => depths[b] - depths[a]);
     }
@@ -1840,7 +1992,7 @@ class KwzParser extends FlipnoteParser {
      * @category Image
     */
     decodeFrame(frameIndex, diffingFlag = 0x7, isPrevFrame = false) {
-        assert(frameIndex > -1 && frameIndex < this.frameCount, `Frame index ${frameIndex} out of bounds`);
+        assertRange(frameIndex, 0, this.frameCount - 1, 'Frame index');
         // return existing layer buffers if no new frame has been decoded since the last call
         if (this.prevDecodedFrame === frameIndex)
             return this.layerBuffers;
@@ -2038,11 +2190,38 @@ class KwzParser extends FlipnoteParser {
      * @category Audio
     */
     decodeSoundFlags() {
-        const result = [];
-        for (let i = 0; i < this.frameCount; i++) {
-            result.push(this.getFrameSoundFlags(i));
-        }
-        return result;
+        if (this.soundFlags !== undefined)
+            return this.soundFlags;
+        this.soundFlags = new Array(this.frameCount)
+            .fill(false)
+            .map((_, i) => this.decodeFrameSoundFlags(i));
+        return this.soundFlags;
+    }
+    /**
+     * Get the sound effect usage flags for every frame
+     * @category Audio
+     */
+    getSoundEffectFlags() {
+        return this.decodeSoundFlags().map((frameFlags) => ({
+            [FlipnoteSoundEffectTrack.SE1]: frameFlags[0],
+            [FlipnoteSoundEffectTrack.SE2]: frameFlags[1],
+            [FlipnoteSoundEffectTrack.SE3]: frameFlags[2],
+            [FlipnoteSoundEffectTrack.SE4]: frameFlags[3],
+        }));
+    }
+    /**
+     * Get the sound effect usage for a given frame
+     * @param frameIndex
+     * @category Audio
+     */
+    getFrameSoundEffectFlags(frameIndex) {
+        const frameFlags = this.decodeFrameSoundFlags(frameIndex);
+        return {
+            [FlipnoteSoundEffectTrack.SE1]: frameFlags[0],
+            [FlipnoteSoundEffectTrack.SE2]: frameFlags[1],
+            [FlipnoteSoundEffectTrack.SE3]: frameFlags[2],
+            [FlipnoteSoundEffectTrack.SE4]: frameFlags[3],
+        };
     }
     /**
      * Get the raw compressed audio data for a given track
@@ -2200,8 +2379,9 @@ class KwzParser extends FlipnoteParser {
             const se2Pcm = hasSe2 ? this.getAudioTrackPcm(FlipnoteAudioTrack.SE2, dstFreq) : null;
             const se3Pcm = hasSe3 ? this.getAudioTrackPcm(FlipnoteAudioTrack.SE3, dstFreq) : null;
             const se4Pcm = hasSe4 ? this.getAudioTrackPcm(FlipnoteAudioTrack.SE4, dstFreq) : null;
+            const soundEffectFlags = this.decodeSoundFlags();
             for (let i = 0; i < this.frameCount; i++) {
-                const seFlags = this.getFrameSoundFlags(i);
+                const seFlags = soundEffectFlags[i];
                 const seOffset = Math.ceil(i * samplesPerFrame);
                 if (hasSe1 && seFlags[0])
                     this.pcmAudioMix(se1Pcm, master, seOffset);
@@ -2264,6 +2444,21 @@ KwzParser.numLayerColors = 2;
 KwzParser.rawSampleRate = 16364;
 /** Audio output sample rate. NOTE: probably isn't accurate, full KWZ audio stack is still on the todo */
 KwzParser.sampleRate = 32768;
+/** Which audio tracks are available in this format */
+KwzParser.audioTracks = [
+    FlipnoteAudioTrack.BGM,
+    FlipnoteAudioTrack.SE1,
+    FlipnoteAudioTrack.SE2,
+    FlipnoteAudioTrack.SE3,
+    FlipnoteAudioTrack.SE4,
+];
+/** Which sound effect tracks are available in this format */
+KwzParser.soundEffectTracks = [
+    FlipnoteSoundEffectTrack.SE1,
+    FlipnoteSoundEffectTrack.SE2,
+    FlipnoteSoundEffectTrack.SE3,
+    FlipnoteSoundEffectTrack.SE4,
+];
 /** Global animation frame color palette */
 KwzParser.globalPalette = [
     KWZ_PALETTE.WHITE,
@@ -2527,6 +2722,11 @@ function formatTime(seconds) {
     const m = Math.floor((seconds % 3600) / 60);
     const s = Math.floor(seconds % 60);
     return `${m}:${padNumber(s, 2)}`;
+}
+
+/** @internal */
+class CanvasInterface {
+    constructor(parent, width, height) { }
 }
 
 /* @license twgl.js 4.17.0 Copyright (c) 2015, Gregg Tavares All Rights Reserved.
@@ -4120,7 +4320,7 @@ var quadShader = "#define GLSLIFY 1\nattribute vec4 position;attribute vec2 texc
 var drawFrame = "precision highp float;\n#define GLSLIFY 1\nvarying vec2 v_uv;uniform sampler2D u_tex;varying float v_scale;uniform vec2 u_textureSize;uniform vec2 u_screenSize;void main(){vec2 v_texel=v_uv*u_textureSize;vec2 texel_floored=floor(v_texel);vec2 s=fract(v_texel);float region_range=0.5-0.5/v_scale;vec2 center_dist=s-0.5;vec2 f=(center_dist-clamp(center_dist,-region_range,region_range))*v_scale+0.5;vec2 mod_texel=texel_floored+f;vec2 coord=mod_texel.xy/u_textureSize.xy;gl_FragColor=texture2D(u_tex,coord);}"; // eslint-disable-line
 
 /**
- * Animation frame renderer, built around the {@link https://developer.mozilla.org/en-US/docs/Web/API/WebGL_API WebGL} API
+ * Flipnote renderer for the {@link https://developer.mozilla.org/en-US/docs/Web/API/WebGL_API WebGL} API
  *
  * Only available in browser contexts
  */
@@ -4143,10 +4343,12 @@ class WebglCanvas {
         };
         this.isCtxLost = false;
         this.handleContextLoss = (e) => {
-            e.preventDefault();
+            if (e)
+                e.preventDefault();
             this.destroy();
+            if (!this.isCtxLost)
+                this.options.onlost();
             this.isCtxLost = true;
-            this.options.onlost();
         };
         this.handleContextRestored = (e) => {
             this.isCtxLost = false;
@@ -4154,33 +4356,47 @@ class WebglCanvas {
             this.options.onrestored();
         };
         assertBrowserEnv();
-        this.el = document.createElement('canvas');
+        this.options = { ...WebglCanvas.defaultOptions, ...options };
         this.width = width;
         this.height = height;
-        this.options = { ...WebglCanvas.defaultOptions, ...options };
-        this.el.addEventListener('webglcontextlost', this.handleContextLoss, false);
-        this.el.addEventListener('webglcontextrestored', this.handleContextRestored, false);
-        this.gl = this.el.getContext('webgl', {
+        this.canvas = document.createElement('canvas');
+        this.canvas.addEventListener('webglcontextlost', this.handleContextLoss, false);
+        this.canvas.addEventListener('webglcontextrestored', this.handleContextRestored, false);
+        this.canvas.className = 'FlipnoteCanvas FlipnoteCanvas--webgl';
+        this.gl = this.canvas.getContext('webgl', {
             antialias: false,
             alpha: true
         });
         if (parent)
-            parent.appendChild(this.el);
+            parent.appendChild(this.canvas);
         this.init();
     }
+    static isSupported() {
+        if (!isBrowser)
+            return false;
+        let testCanvas = document.createElement('canvas');
+        let testCtx = testCanvas.getContext('2d');
+        const supported = testCtx !== null;
+        testCanvas = null;
+        testCtx = null;
+        return supported;
+    }
     init() {
+        this.setCanvasSize(this.width, this.height);
         const gl = this.gl;
+        if (this.checkContextLoss())
+            return;
         this.program = this.createProgram(quadShader, drawFrame);
-        this.quadBuffer = this.createScreenQuad(-1, -1, 2, 2, 8, 8);
+        this.quadBuffer = this.createScreenQuad(-1, -1, 2, 2, 1, 1);
         this.setBuffersAndAttribs(this.program, this.quadBuffer);
         this.frameTexture = this.createTexture(gl.RGBA, gl.LINEAR, gl.CLAMP_TO_EDGE);
-        this.setCanvasSize(this.width, this.height);
         // set gl constants
         gl.useProgram(this.program.program);
         gl.bindTexture(gl.TEXTURE_2D, this.frameTexture);
     }
     createProgram(vertexShaderSource, fragmentShaderSource) {
-        assert(!this.isCtxLost);
+        if (this.checkContextLoss())
+            return;
         const gl = this.gl;
         const vert = this.createShader(gl.VERTEX_SHADER, vertexShaderSource);
         const frag = this.createShader(gl.FRAGMENT_SHADER, fragmentShaderSource);
@@ -4200,7 +4416,8 @@ class WebglCanvas {
         return programInfo;
     }
     createShader(type, source) {
-        assert(!this.isCtxLost);
+        if (this.checkContextLoss())
+            return;
         const gl = this.gl;
         const shader = gl.createShader(type);
         gl.shaderSource(shader, source);
@@ -4216,7 +4433,8 @@ class WebglCanvas {
     }
     // creating a subdivided quad seems to produce slightly nicer texture filtering
     createScreenQuad(x0, y0, width, height, xSubdivs, ySubdivs) {
-        assert(!this.isCtxLost);
+        if (this.checkContextLoss())
+            return;
         const numVerts = (xSubdivs + 1) * (ySubdivs + 1);
         const numVertsAcross = xSubdivs + 1;
         const positions = new Float32Array(numVerts * 2);
@@ -4264,12 +4482,15 @@ class WebglCanvas {
         return bufferInfo;
     }
     setBuffersAndAttribs(program, buffer) {
+        if (this.checkContextLoss())
+            return;
         const gl = this.gl;
         setAttributes(program.attribSetters, buffer.attribs);
         gl.bindBuffer(gl.ELEMENT_ARRAY_BUFFER, buffer.indices);
     }
     createTexture(type, minMag, wrap, width = 1, height = 1) {
-        assert(!this.isCtxLost);
+        if (this.checkContextLoss())
+            return;
         const gl = this.gl;
         const tex = gl.createTexture();
         gl.bindTexture(gl.TEXTURE_2D, tex);
@@ -4289,19 +4510,20 @@ class WebglCanvas {
      * The ratio between `width` and `height` should be 3:4 for best results
      */
     setCanvasSize(width, height) {
-        assert(!this.isCtxLost);
         const dpi = this.options.useDpi ? (window.devicePixelRatio || 1) : 1;
         const internalWidth = width * dpi;
         const internalHeight = height * dpi;
         this.width = width;
         this.height = height;
-        this.el.width = internalWidth;
-        this.el.height = internalHeight;
-        this.screenWidth = internalWidth;
-        this.screenHeight = internalHeight;
-        this.el.style.width = `${width}px`;
-        this.el.style.height = `${height}px`;
+        this.canvas.width = internalWidth;
+        this.canvas.height = internalHeight;
+        this.dstWidth = internalWidth;
+        this.dstHeight = internalHeight;
+        this.canvas.style.width = `${width}px`;
+        this.canvas.style.height = `${height}px`;
         const gl = this.gl;
+        if (this.checkContextLoss())
+            return;
         gl.viewport(0, 0, gl.drawingBufferWidth, gl.drawingBufferHeight);
     }
     /**
@@ -4309,59 +4531,103 @@ class WebglCanvas {
      * @param width
      * @param height
      */
-    setInputSize(width, height) {
+    setNote(note) {
+        if (this.checkContextLoss())
+            return;
         const gl = this.gl;
-        this.textureWidth = width;
-        this.textureHeight = height;
+        const width = note.imageWidth;
+        const height = note.imageHeight;
+        this.note = note;
+        this.srcWidth = width;
+        this.srcHeight = height;
         // resize frame texture
         gl.bindTexture(gl.TEXTURE_2D, this.frameTexture);
-        gl.texImage2D(gl.TEXTURE_2D, 0, gl.RGBA, this.textureWidth, this.textureHeight, 0, gl.RGBA, gl.UNSIGNED_BYTE, null);
+        gl.texImage2D(gl.TEXTURE_2D, 0, gl.RGBA, this.srcWidth, this.srcHeight, 0, gl.RGBA, gl.UNSIGNED_BYTE, null);
         this.frameBuffer = new Uint32Array(width * height);
         this.frameBufferBytes = new Uint8Array(this.frameBuffer.buffer); // same memory buffer as rgbaData
+        this.prevFrameIndex = undefined;
+        // set canvas alt text
+        this.canvas.title = note.getTitle();
     }
-    clear() {
-        //  clear whatever's already been drawn
+    /**
+     * Clear the canvas
+     * @param color optional RGBA color to use as a background color
+     */
+    clear(color) {
+        if (this.checkContextLoss())
+            return;
+        if (color) {
+            const [r, g, b, a] = color;
+            this.gl.clearColor(r / 255, g / 255, b / 255, a / 255);
+        }
         this.gl.clear(this.gl.COLOR_BUFFER_BIT);
     }
-    drawFrame(note, frameIndex) {
-        const { gl, textureWidth, textureHeight, } = this;
+    /**
+     * Draw a frame from the currently loaded Flipnote
+     * @param frameIndex
+     */
+    drawFrame(frameIndex) {
+        if (this.checkContextLoss())
+            return;
+        const { gl, srcWidth: textureWidth, srcHeight: textureHeight, } = this;
         // get frame pixels as RGBA buffer
-        note.getFramePixelsRgba(frameIndex, this.frameBuffer, this.paletteBuffer);
+        this.note.getFramePixelsRgba(frameIndex, this.frameBuffer, this.paletteBuffer);
         // clear whatever's already been drawn
-        gl.clear(gl.COLOR_BUFFER_BIT);
+        // const paperColor = note.getFramePalette(frameIndex)[0];
+        // this.clear(paperColor);
+        gl.clear(this.gl.COLOR_BUFFER_BIT);
         // update texture
         gl.texImage2D(gl.TEXTURE_2D, 0, gl.RGBA, textureWidth, textureHeight, 0, gl.RGBA, gl.UNSIGNED_BYTE, this.frameBufferBytes);
         // prep uniforms
         setUniforms(this.program, {
             u_flipY: true,
             u_tex: this.frameTexture,
-            u_textureSize: [this.textureWidth, this.textureHeight],
+            u_textureSize: [this.srcWidth, this.srcHeight],
             u_screenSize: [gl.drawingBufferWidth, gl.drawingBufferHeight],
         });
         // draw!
         gl.drawElements(gl.TRIANGLES, this.quadBuffer.numElements, this.quadBuffer.elementType, 0);
+        this.prevFrameIndex = frameIndex;
+    }
+    forceUpdate() {
+        if (this.prevFrameIndex !== undefined)
+            this.drawFrame(this.prevFrameIndex);
     }
     /**
      * Returns true if the webGL context has returned an error
      */
     isErrorState() {
         const gl = this.gl;
-        const error = gl.getError();
-        return error != gl.NO_ERROR && error != gl.CONTEXT_LOST_WEBGL;
+        return gl === null || gl.getError() !== gl.NO_ERROR;
     }
     /**
      * Only a certain number of WebGL contexts can be added to a single page before the browser will start culling old contexts.
      * This method returns true if it has been culled, false if not
      */
-    isLost() {
-        return this.gl.isContextLost();
+    checkContextLoss() {
+        const isLost = this.isCtxLost || this.isErrorState();
+        if (isLost)
+            this.handleContextLoss();
+        return isLost;
+    }
+    /**
+     *
+     * @param type image mime type (`image/jpeg`, `image/png`, etc)
+     * @param quality image quality where supported, between 0 and 1
+     */
+    getDataUrl(type, quality) {
+        return this.canvas.toDataURL(type, quality);
+    }
+    async getBlob(type, quality) {
+        return new Promise((resolve, reject) => this.canvas.toBlob(resolve, type, quality));
     }
     /**
      * Frees any resources used by this canvas instance
      */
-    async destroy() {
+    destroy() {
         const refs = this.refs;
         const gl = this.gl;
+        const canvas = this.canvas;
         refs.shaders.forEach((shader) => {
             gl.deleteShader(shader);
         });
@@ -4381,9 +4647,13 @@ class WebglCanvas {
         this.paletteBuffer = null;
         this.frameBuffer = null;
         this.frameBufferBytes = null;
-        // shrink the canvas to reduce memory usage until it is garbage collected
-        gl.canvas.width = 1;
-        gl.canvas.height = 1;
+        if (canvas && canvas.parentElement) {
+            // shrink the canvas to reduce memory usage until it is garbage collected
+            canvas.width = 1;
+            canvas.height = 1;
+            // remove canvas from dom
+            canvas.parentNode.removeChild(canvas);
+        }
     }
 }
 WebglCanvas.defaultOptions = {
@@ -4391,6 +4661,207 @@ WebglCanvas.defaultOptions = {
     onrestored: () => { },
     useDpi: true
 };
+
+/**
+ * Flipnote renderer for the [HTML5 2D canvas API](https://developer.mozilla.org/en-US/docs/Web/API/CanvasRenderingContext2D)
+ */
+class Html5Canvas {
+    constructor(parent, width, height, options = {}) {
+        this.paletteBuffer = new Uint32Array(16);
+        assertBrowserEnv();
+        this.options = { ...Html5Canvas.defaultOptions, ...options };
+        this.width = width;
+        this.height = height;
+        this.canvas = document.createElement('canvas');
+        this.canvas.className = 'FlipnoteCanvas FlipnoteCanvas--html5';
+        this.ctx = this.canvas.getContext('2d');
+        this.srcCanvas = document.createElement('canvas');
+        this.srcCtx = this.srcCanvas.getContext('2d');
+        assert(this.ctx !== null && this.srcCtx !== null, 'Could not create HTML5 canvas');
+        if (parent)
+            parent.appendChild(this.canvas);
+        this.setCanvasSize(width, height);
+    }
+    static isSupported() {
+        if (!isBrowser)
+            return false;
+        let testCanvas = document.createElement('canvas');
+        let testCtx = testCanvas.getContext('2d');
+        const supported = testCtx !== null;
+        testCanvas = null;
+        testCtx = null;
+        return supported;
+    }
+    /**
+     * Resize the canvas surface
+     * @param width - New canvas width, in CSS pixels
+     * @param height - New canvas height, in CSS pixels
+     *
+     * The ratio between `width` and `height` should be 3:4 for best results
+     */
+    setCanvasSize(width, height) {
+        const canvas = this.canvas;
+        const useDpi = this.options.useDpi;
+        const dpi = useDpi ? (window.devicePixelRatio || 1) : 1;
+        const internalWidth = width * dpi;
+        const internalHeight = height * dpi;
+        this.width = width;
+        this.height = height;
+        this.dstWidth = internalWidth;
+        this.dstHeight = internalHeight;
+        canvas.style.width = `${width}px`;
+        canvas.style.height = `${height}px`;
+        canvas.width = internalWidth;
+        canvas.height = internalHeight;
+    }
+    /**
+     */
+    setNote(note) {
+        const width = note.imageWidth;
+        const height = note.imageHeight;
+        this.note = note;
+        this.srcWidth = width;
+        this.srcHeight = height;
+        this.srcCanvas.width = width;
+        this.srcCanvas.height = height;
+        // create image data to fit note size
+        this.frameImage = this.srcCtx.createImageData(width, height);
+        // uint32 view of the img buffer memory
+        this.frameBuffer = new Uint32Array(this.frameImage.data.buffer);
+        this.prevFrameIndex = undefined;
+        // set canvas alt text
+        this.canvas.title = note.getTitle();
+    }
+    /**
+     * Clear the canvas
+     * @param color optional RGBA color to use as a background color
+     */
+    clear(color) {
+        // clear framebuffer
+        this.frameBuffer.fill(0);
+        // clear canvas
+        this.ctx.clearRect(0, 0, this.dstWidth, this.dstHeight);
+        // fill canvas with paper color
+        if (color) {
+            const [r, g, b, a] = color;
+            this.ctx.fillStyle = `rgba(${r}, ${g}, ${b}, ${a})`;
+            this.ctx.fillRect(0, 0, this.dstWidth, this.dstHeight);
+        }
+    }
+    drawFrame(frameIndex) {
+        // clear whatever's already been drawn
+        this.clear();
+        // optionally enable image smoothing
+        if (!this.options.useSmoothing)
+            this.ctx.imageSmoothingEnabled = false;
+        // get frame pixels as RGBA buffer
+        this.note.getFramePixelsRgba(frameIndex, this.frameBuffer, this.paletteBuffer);
+        // put framebuffer pixels into the src canvas
+        this.srcCtx.putImageData(this.frameImage, 0, 0);
+        // composite src canvas to dst (so image scaling can be handled)
+        this.ctx.drawImage(this.srcCanvas, 0, 0, this.srcWidth, this.srcHeight, 0, 0, this.dstWidth, this.dstHeight);
+        this.prevFrameIndex = frameIndex;
+    }
+    forceUpdate() {
+        if (this.prevFrameIndex !== undefined)
+            this.drawFrame(this.prevFrameIndex);
+    }
+    getDataUrl(type, quality) {
+        return this.canvas.toDataURL(type, quality);
+    }
+    async getBlob(type, quality) {
+        return new Promise((resolve, reject) => this.canvas.toBlob(resolve, type, quality));
+    }
+    destroy() {
+        this.frameImage = null;
+        this.paletteBuffer = null;
+        this.frameBuffer = null;
+        this.canvas.parentNode.removeChild(this.canvas);
+        this.canvas.width = 1;
+        this.canvas.height = 1;
+        this.canvas = null;
+        this.srcCanvas.width = 1;
+        this.srcCanvas.height = 1;
+        this.srcCanvas = null;
+    }
+}
+Html5Canvas.defaultOptions = {
+    useDpi: true,
+    useSmoothing: true,
+};
+
+class UniversalCanvas {
+    constructor(parent, width = 640, height = 480, options = {}) {
+        this.options = {};
+        this.isReady = false;
+        this.isHtml5 = false;
+        this.parent = parent;
+        this.options = options;
+        try {
+            this.renderer = new WebglCanvas(parent, width, height, {
+                ...options,
+                // attempt to switch renderer
+                onlost: () => {
+                    console.warn('WebGL failed, attemping HTML5 fallback');
+                    if (this.isReady && !this.isHtml5) // if the error happened after canvas creation
+                        this.switchToHtml5();
+                    else
+                        throw '';
+                }
+            });
+        }
+        catch {
+            this.switchToHtml5();
+        }
+        this.isReady = true;
+    }
+    switchToHtml5() {
+        var _a;
+        const renderer = new Html5Canvas(this.parent, this.width, this.height, this.options);
+        if (this.note) {
+            renderer.setNote(this.note);
+            renderer.prevFrameIndex = (_a = this.renderer) === null || _a === void 0 ? void 0 : _a.prevFrameIndex;
+            renderer.forceUpdate();
+        }
+        this.isHtml5 = true;
+        this.renderer = renderer;
+    }
+    setCanvasSize(width, height) {
+        const renderer = this.renderer;
+        renderer.setCanvasSize(width, height);
+        this.width = width;
+        this.width = height;
+        this.dstWidth = renderer.dstWidth;
+        this.dstHeight = renderer.dstHeight;
+    }
+    setNote(note) {
+        this.note = note;
+        this.renderer.setNote(note);
+        this.prevFrameIndex = undefined;
+        this.srcWidth = this.renderer.srcWidth;
+        this.srcHeight = this.renderer.srcHeight;
+    }
+    clear(color) {
+        this.renderer.clear(color);
+    }
+    drawFrame(frameIndex) {
+        this.renderer.drawFrame(frameIndex);
+        this.prevFrameIndex = frameIndex;
+    }
+    forceUpdate() {
+        this.renderer.forceUpdate();
+    }
+    getDataUrl(type, quality) {
+        return this.renderer.getDataUrl();
+    }
+    async getBlob(type, quality) {
+        return this.renderer.getBlob();
+    }
+    destroy() {
+        this.renderer.destroy();
+        this.note = null;
+    }
+}
 
 /** @internal */
 const _AudioContext = (() => {
@@ -4407,6 +4878,8 @@ class WebAudioPlayer {
     constructor() {
         /** Whether the audio is being run through an equalizer or not */
         this.useEq = false;
+        /** Whether to connect the output to an audio analyser (see {@link analyser}) */
+        this.useAnalyser = false;
         /** Default equalizer settings. Credit to {@link https://www.sudomemo.net/ | Sudomemo} for these */
         this.eqSettings = [
             [31.25, 4.1],
@@ -4497,13 +4970,27 @@ class WebAudioPlayer {
             const eq = this.connectEqNodesTo(source);
             eq.connect(gainNode);
         }
-        else
+        else {
             source.connect(gainNode);
-        source.connect(gainNode);
-        gainNode.connect(ctx.destination);
+        }
+        if (this.useAnalyser) {
+            const analyserNode = ctx.createAnalyser();
+            this.nodeRefs.push(analyserNode);
+            this.analyser = analyserNode;
+            gainNode.connect(analyserNode);
+            analyserNode.connect(ctx.destination);
+        }
+        else {
+            this.analyser = undefined;
+            gainNode.connect(ctx.destination);
+        }
         this.source = source;
         this.gainNode = gainNode;
         this.setVolume(this._volume);
+    }
+    setAnalyserEnabled(on) {
+        this.useAnalyser = on;
+        this.initNodes();
     }
     /**
      * Sets the audio volume level
@@ -4536,13 +5023,14 @@ class WebAudioPlayer {
             this.source.stop(0);
     }
     /**
-   * Frees any resources used by this canvas instance
-   */
+     * Frees any resources used by this canvas instance
+     */
     async destroy() {
         this.stop();
         const ctx = this.getCtx();
         this.nodeRefs.forEach(node => node.disconnect());
         this.nodeRefs = [];
+        this.analyser = undefined;
         if (ctx.state !== 'closed' && typeof ctx.close === 'function')
             await ctx.close();
         this.buffer = null;
@@ -4656,14 +5144,14 @@ class Player {
             this.playbackLoopId = requestAnimationFrame(this.playbackLoop);
         };
         assertBrowserEnv();
-        // if `el` is a string, use it to select an Element, else assume it's an element
+        // if parent is a string, use it to select an Element, else assume it's an Element
         const mountPoint = ('string' == typeof parent) ? document.querySelector(parent) : parent;
-        this.renderer = new WebglCanvas(mountPoint, width, height, {
+        this.renderer = new UniversalCanvas(mountPoint, width, height, {
             onlost: () => this.emit(PlayerEvent.Error),
             onrestored: () => this.load()
         });
         this.audio = new WebAudioPlayer();
-        this.canvasEl = this.renderer.el;
+        // this.canvasEl = this.renderer.el;
     }
     /** The currently loaded Flipnote source, if there is one. Can be overridden to load another Flipnote */
     get src() {
@@ -4839,7 +5327,7 @@ class Player {
         this.emit(PlayerEvent.CanPlay);
         this.emit(PlayerEvent.CanPlayThrough);
         this.setLoop(note.meta.loop);
-        this.renderer.setInputSize(note.imageWidth, note.imageHeight);
+        this.renderer.setNote(note);
         this.drawFrame(note.thumbFrameIndex);
         this.emit(PlayerEvent.LoadedData);
         this.emit(PlayerEvent.Load);
@@ -5080,15 +5568,14 @@ class Player {
      * @category Display Control
      */
     drawFrame(frameIndex) {
-        this.renderer.drawFrame(this.note, frameIndex);
+        this.renderer.drawFrame(frameIndex);
     }
     /**
      * Forces the current animation frame to be redrawn
      * @category Display Control
      */
     forceUpdate() {
-        if (this.isNoteLoaded)
-            this.drawFrame(this.currentFrame);
+        this.renderer.forceUpdate();
     }
     /**
      * Resize the playback canvas to a new size
@@ -6011,6 +6498,6 @@ class WavAudio extends EncoderBase {
 /**
  * flipnote.js library version (exported as `flipnote.version`). You can find the latest version on the project's [NPM](https://www.npmjs.com/package/flipnote.js) page.
  */
-const version = "5.5.1"; // replaced by @rollup/plugin-replace; see rollup.config.js
+const version = "5.6.0"; // replaced by @rollup/plugin-replace; see rollup.config.js
 
-export { FlipnoteAudioTrack, FlipnoteFormat, FlipnoteRegion, GifImage, KwzParser, Player, PlayerEvent, PlayerMixin, PpmParser, WavAudio, WebglCanvas, parseSource, fsid as utils, version };
+export { CanvasInterface, FlipnoteAudioTrack, FlipnoteFormat, FlipnoteRegion, FlipnoteSoundEffectTrack, GifImage, Html5Canvas, KwzParser, Player, PlayerEvent, PlayerMixin, PpmParser, UniversalCanvas, WavAudio, WebAudioPlayer, WebglCanvas, parseSource, fsid as utils, version };

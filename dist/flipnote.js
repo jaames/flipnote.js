@@ -1,5 +1,5 @@
 /*!!
-flipnote.js v5.5.1 (web build)
+flipnote.js v5.6.0 (web build)
 https://flipnote.js.org
 A JavaScript library for parsing, converting, and in-browser playback of the proprietary animation formats used by Nintendo's Flipnote Studio and Flipnote Studio 3D apps.
 2018 - 2021 James Daniel
@@ -415,7 +415,7 @@ Keep on Flipnoting!
      */
     function assertRange(value, min, max, name) {
         if (name === void 0) { name = ''; }
-        assert(value >= min && value <= max, "Value " + name + " should be between " + min + " and " + max);
+        assert(value >= min && value <= max, (name || 'value') + " " + value + " should be between " + min + " and " + max);
     }
 
     /**
@@ -694,6 +694,12 @@ Keep on Flipnoting!
         /** Sound effect 4 track (only used by KWZ files) */
         FlipnoteAudioTrack[FlipnoteAudioTrack["SE4"] = 4] = "SE4";
     })(exports.FlipnoteAudioTrack || (exports.FlipnoteAudioTrack = {}));
+    (function (FlipnoteSoundEffectTrack) {
+        FlipnoteSoundEffectTrack[FlipnoteSoundEffectTrack["SE1"] = 1] = "SE1";
+        FlipnoteSoundEffectTrack[FlipnoteSoundEffectTrack["SE2"] = 2] = "SE2";
+        FlipnoteSoundEffectTrack[FlipnoteSoundEffectTrack["SE3"] = 3] = "SE3";
+        FlipnoteSoundEffectTrack[FlipnoteSoundEffectTrack["SE4"] = 4] = "SE4";
+    })(exports.FlipnoteSoundEffectTrack || (exports.FlipnoteSoundEffectTrack = {}));
     /**
      * Base Flipnote parser class
      *
@@ -701,10 +707,20 @@ Keep on Flipnoting!
      * it just provides a consistent API for every format parser to implement.
      * @category File Parser
     */
-    var FlipnoteParser = /** @class */ (function (_super) {
-        __extends(FlipnoteParser, _super);
-        function FlipnoteParser() {
+    var FlipnoteParserBase = /** @class */ (function (_super) {
+        __extends(FlipnoteParserBase, _super);
+        function FlipnoteParserBase() {
+            /** Static file format info */
             var _this = _super !== null && _super.apply(this, arguments) || this;
+            /** Instance file format info */
+            /** Custom object tag */
+            _this[Symbol.toStringTag] = 'Flipnote';
+            /** Default formats used for {@link getTitle()} */
+            _this.titleFormats = {
+                COMMENT: 'Comment by $USERNAME',
+                FLIPNOTE: 'Flipnote by $USERNAME',
+                ICON: 'Folder icon'
+            };
             /** Animation frame global layer visibility */
             _this.layerVisibility = { 1: true, 2: true, 3: true };
             /** (KWZ only) Indicates whether or not this file is a Flipnote Studio 3D folder icon */
@@ -716,13 +732,76 @@ Keep on Flipnoting!
             return _this;
         }
         /**
+         * Get file default title - e.g. "Flipnote by Y", "Comment by X", etc.
+         * A format object can be passed for localisation, where `$USERNAME` gets replaced by author name:
+         * ```js
+         * {
+         *  COMMENT: 'Comment by $USERNAME',
+         *  FLIPNOTE: 'Flipnote by $USERNAME',
+         *  ICON: 'Folder icon'
+         * }
+         * ```
+         * @category Utility
+         */
+        FlipnoteParserBase.prototype.getTitle = function (formats) {
+            if (formats === void 0) { formats = this.titleFormats; }
+            if (this.isFolderIcon)
+                return formats.ICON;
+            var title = this.isComment ? formats.COMMENT : formats.FLIPNOTE;
+            return title.replace('$USERNAME', this.meta.current.username);
+        };
+        /**
+         * Returns the Flipnote title when casting a parser instance to a string
+         *
+         * ```js
+         * const str = 'Title: ' + note;
+         * // str === 'Title: Flipnote by username'
+         * ```
+         * @category Utility
+         */
+        FlipnoteParserBase.prototype.toString = function () {
+            return this.getTitle();
+        };
+        /**
+         * Allows for frame index iteration when using the parser instance as a for..of iterator
+         *
+         * ```js
+         * for (const frameIndex of note) {
+         *   // do something with frameIndex...
+         * }
+         * ```
+         * @category Utility
+         */
+        FlipnoteParserBase.prototype[Symbol.iterator] = function () {
+            var i;
+            return __generator(this, function (_a) {
+                switch (_a.label) {
+                    case 0:
+                        i = 0;
+                        _a.label = 1;
+                    case 1:
+                        if (!(i < this.frameCount)) return [3 /*break*/, 4];
+                        return [4 /*yield*/, i];
+                    case 2:
+                        _a.sent();
+                        _a.label = 3;
+                    case 3:
+                        i++;
+                        return [3 /*break*/, 1];
+                    case 4: return [2 /*return*/];
+                }
+            });
+        };
+        /**
          * Get the pixels for a given frame layer, as palette indices
          * NOTE: layerIndex are not guaranteed to be sorted by 3D depth in KWZs, use {@link getFrameLayerOrder} to get the correct sort order first
          * NOTE: if the visibility flag for this layer is turned off, the result will be empty
          * @category Image
         */
-        FlipnoteParser.prototype.getLayerPixels = function (frameIndex, layerIndex, imageBuffer) {
+        FlipnoteParserBase.prototype.getLayerPixels = function (frameIndex, layerIndex, imageBuffer) {
             if (imageBuffer === void 0) { imageBuffer = new Uint8Array(this.imageWidth * this.imageHeight); }
+            assertRange(frameIndex, 0, this.frameCount - 1, 'Frame index');
+            assertRange(layerIndex, 0, this.numLayers - 1, 'Layer index');
             // palette
             var palette = this.getFramePaletteIndices(frameIndex);
             var palettePtr = layerIndex * this.numLayerColors;
@@ -758,9 +837,11 @@ Keep on Flipnoting!
          * NOTE: if the visibility flag for this layer is turned off, the result will be empty
          * @category Image
         */
-        FlipnoteParser.prototype.getLayerPixelsRgba = function (frameIndex, layerIndex, imageBuffer, paletteBuffer) {
+        FlipnoteParserBase.prototype.getLayerPixelsRgba = function (frameIndex, layerIndex, imageBuffer, paletteBuffer) {
             if (imageBuffer === void 0) { imageBuffer = new Uint32Array(this.imageWidth * this.imageHeight); }
             if (paletteBuffer === void 0) { paletteBuffer = new Uint32Array(16); }
+            assertRange(frameIndex, 0, this.frameCount - 1, 'Frame index');
+            assertRange(layerIndex, 0, this.numLayers - 1, 'Layer index');
             // palette
             this.getFramePaletteUint32(frameIndex, paletteBuffer);
             var palettePtr = layerIndex * this.numLayerColors;
@@ -794,7 +875,7 @@ Keep on Flipnoting!
          * Get the image for a given frame, as palette indices
          * @category Image
         */
-        FlipnoteParser.prototype.getFramePixels = function (frameIndex, imageBuffer) {
+        FlipnoteParserBase.prototype.getFramePixels = function (frameIndex, imageBuffer) {
             if (imageBuffer === void 0) { imageBuffer = new Uint8Array(this.imageWidth * this.imageHeight); }
             // image dimensions and crop
             var srcStride = this.srcWidth;
@@ -834,9 +915,10 @@ Keep on Flipnoting!
          * Get the image for a given frame as an uint32 array of RGBA pixels
          * @category Image
          */
-        FlipnoteParser.prototype.getFramePixelsRgba = function (frameIndex, imageBuffer, paletteBuffer) {
+        FlipnoteParserBase.prototype.getFramePixelsRgba = function (frameIndex, imageBuffer, paletteBuffer) {
             if (imageBuffer === void 0) { imageBuffer = new Uint32Array(this.imageWidth * this.imageHeight); }
             if (paletteBuffer === void 0) { paletteBuffer = new Uint32Array(16); }
+            assertRange(frameIndex, 0, this.frameCount - 1, 'Frame index');
             // image dimensions and crop
             var srcStride = this.srcWidth;
             var width = this.imageWidth;
@@ -875,8 +957,9 @@ Keep on Flipnoting!
          * Get the color palette for a given frame, as an uint32 array
          * @category Image
         */
-        FlipnoteParser.prototype.getFramePaletteUint32 = function (frameIndex, paletteBuffer) {
+        FlipnoteParserBase.prototype.getFramePaletteUint32 = function (frameIndex, paletteBuffer) {
             if (paletteBuffer === void 0) { paletteBuffer = new Uint32Array(16); }
+            assertRange(frameIndex, 0, this.frameCount - 1, 'Frame index');
             var colors = this.getFramePalette(frameIndex);
             paletteBuffer.fill(0);
             colors.forEach(function (_a, i) {
@@ -886,13 +969,32 @@ Keep on Flipnoting!
             return paletteBuffer;
         };
         /**
+         * Get the usage flags for a given track accross every frame
+         * @returns an array of booleans for every frame, indicating whether the track is used on that frame
+         * @category Audio
+         */
+        FlipnoteParserBase.prototype.getSoundEffectFlagsForTrack = function (trackId) {
+            return this.getSoundEffectFlags().map(function (frammeFlags) { return frammeFlags[trackId]; });
+        };
+        /**
+         * Is a given track used on a given frame
+         * @category Audio
+         */
+        FlipnoteParserBase.prototype.isSoundEffectUsedOnFrame = function (trackId, frameIndex) {
+            assertRange(frameIndex, 0, this.frameCount - 1, 'Frame index');
+            if (!this.soundEffectTracks.includes(trackId))
+                return false;
+            return this.getFrameSoundEffectFlags(frameIndex)[trackId];
+        };
+        /**
          * Does an audio track exist in the Flipnote?
+         * @returns boolean
          * @category Audio
         */
-        FlipnoteParser.prototype.hasAudioTrack = function (trackId) {
+        FlipnoteParserBase.prototype.hasAudioTrack = function (trackId) {
             return this.soundMeta.has(trackId) && this.soundMeta.get(trackId).length > 0;
         };
-        return FlipnoteParser;
+        return FlipnoteParserBase;
     }(DataStream));
 
     /**
@@ -953,6 +1055,8 @@ Keep on Flipnoting!
             var _this = _super.call(this, arrayBuffer) || this;
             /** File format type, reflects {@link PpmParser.format} */
             _this.format = exports.FlipnoteFormat.PPM;
+            /** Custom object tag */
+            _this[Symbol.toStringTag] = 'Flipnote Studio PPM animation file';
             /** Animation frame width, reflects {@link PpmParser.width} */
             _this.imageWidth = PpmParser.width;
             /** Animation frame height, reflects {@link PpmParser.height} */
@@ -967,6 +1071,10 @@ Keep on Flipnoting!
             _this.numLayerColors = PpmParser.numLayerColors;
             /** @internal */
             _this.srcWidth = PpmParser.width;
+            /** Which audio tracks are available in this format, reflects {@link PpmParser.audioTracks} */
+            _this.audioTracks = PpmParser.audioTracks;
+            /** Which sound effect tracks are available in this format, reflects {@link PpmParser.soundEffectTracks} */
+            _this.soundEffectTracks = PpmParser.soundEffectTracks;
             /** Audio track base sample rate, reflects {@link PpmParser.rawSampleRate} */
             _this.rawSampleRate = PpmParser.rawSampleRate;
             /** Audio output sample rate, reflects {@link PpmParser.sampleRate} */
@@ -1116,6 +1224,7 @@ Keep on Flipnoting!
             this.soundMeta = soundMeta;
         };
         PpmParser.prototype.isNewFrame = function (frameIndex) {
+            assertRange(frameIndex, 0, this.frameCount - 1, 'Frame index');
             this.seek(this.frameOffsets[frameIndex]);
             var header = this.readUint8();
             return (header >> 7) & 0x1;
@@ -1125,7 +1234,7 @@ Keep on Flipnoting!
          * @category Image
         */
         PpmParser.prototype.decodeFrame = function (frameIndex) {
-            assert(frameIndex > -1 && frameIndex < this.frameCount, "Frame index " + frameIndex + " out of bounds");
+            assertRange(frameIndex, 0, this.frameCount - 1, 'Frame index');
             // return existing layer buffers if no new frame has been decoded since the last call
             if (this.prevDecodedFrame === frameIndex)
                 return this.layerBuffers;
@@ -1275,6 +1384,7 @@ Keep on Flipnoting!
          * @returns Array of layer indexes, in the order they should be drawn
         */
         PpmParser.prototype.getFrameLayerOrder = function (frameIndex) {
+            assertRange(frameIndex, 0, this.frameCount - 1, 'Frame index');
             return [1, 0];
         };
         /**
@@ -1287,6 +1397,7 @@ Keep on Flipnoting!
          * @category Image
         */
         PpmParser.prototype.getFramePaletteIndices = function (frameIndex) {
+            assertRange(frameIndex, 0, this.frameCount - 1, 'Frame index');
             this.seek(this.frameOffsets[frameIndex]);
             var header = this.readUint8();
             var isInverted = (header & 0x1) !== 1;
@@ -1313,6 +1424,7 @@ Keep on Flipnoting!
          */
         PpmParser.prototype.getFramePalette = function (frameIndex) {
             var _this = this;
+            assertRange(frameIndex, 0, this.frameCount - 1, 'Frame index');
             var indices = this.getFramePaletteIndices(frameIndex);
             return indices.map(function (colorIndex) { return _this.globalPalette[colorIndex]; });
         };
@@ -1321,21 +1433,52 @@ Keep on Flipnoting!
          * @category Audio
         */
         PpmParser.prototype.decodeSoundFlags = function () {
+            if (this.soundFlags !== undefined)
+                return this.soundFlags;
             assert(0x06A0 + this.frameDataLength < this.byteLength);
             // https://github.com/Flipnote-Collective/flipnote-studio-docs/wiki/PPM-format#sound-effect-flags
             this.seek(0x06A0 + this.frameDataLength);
             var numFlags = this.frameCount;
             var flags = this.readBytes(numFlags);
-            var unpacked = new Array(numFlags);
+            this.soundFlags = new Array(numFlags);
             for (var i = 0; i < numFlags; i++) {
                 var byte = flags[i];
-                unpacked[i] = [
+                this.soundFlags[i] = [
                     (byte & 0x1) !== 0,
                     (byte & 0x2) !== 0,
                     (byte & 0x4) !== 0,
                 ];
             }
-            return unpacked;
+            return this.soundFlags;
+        };
+        /**
+         * Get the sound effect usage flags for every frame
+         * @category Audio
+         */
+        PpmParser.prototype.getSoundEffectFlags = function () {
+            return this.decodeSoundFlags().map(function (frameFlags) {
+                var _a;
+                return (_a = {},
+                    _a[exports.FlipnoteSoundEffectTrack.SE1] = frameFlags[0],
+                    _a[exports.FlipnoteSoundEffectTrack.SE2] = frameFlags[1],
+                    _a[exports.FlipnoteSoundEffectTrack.SE3] = frameFlags[2],
+                    _a);
+            });
+        };
+        /**
+         * Get the sound effect usage flags for a given frame
+         * @category Audio
+         */
+        PpmParser.prototype.getFrameSoundEffectFlags = function (frameIndex) {
+            var _a;
+            assertRange(frameIndex, 0, this.frameCount - 1, 'Frame index');
+            this.seek(0x06A0 + this.frameDataLength + frameIndex);
+            var byte = this.readUint8();
+            return _a = {},
+                _a[exports.FlipnoteSoundEffectTrack.SE1] = (byte & 0x1) !== 0,
+                _a[exports.FlipnoteSoundEffectTrack.SE2] = (byte & 0x2) !== 0,
+                _a[exports.FlipnoteSoundEffectTrack.SE3] = (byte & 0x4) !== 0,
+                _a;
         };
         /**
          * Get the raw compressed audio data for a given track
@@ -1511,6 +1654,19 @@ Keep on Flipnoting!
         PpmParser.rawSampleRate = 8192;
         /** Nintendo DSi audio output rate */
         PpmParser.sampleRate = 32768;
+        /** Which audio tracks are available in this format */
+        PpmParser.audioTracks = [
+            exports.FlipnoteAudioTrack.BGM,
+            exports.FlipnoteAudioTrack.SE1,
+            exports.FlipnoteAudioTrack.SE2,
+            exports.FlipnoteAudioTrack.SE3
+        ];
+        /** Which sound effect tracks are available in this format */
+        PpmParser.soundEffectTracks = [
+            exports.FlipnoteSoundEffectTrack.SE1,
+            exports.FlipnoteSoundEffectTrack.SE2,
+            exports.FlipnoteSoundEffectTrack.SE3,
+        ];
         /** Global animation frame color palette */
         PpmParser.globalPalette = [
             PPM_PALETTE.WHITE,
@@ -1519,7 +1675,7 @@ Keep on Flipnoting!
             PPM_PALETTE.BLUE
         ];
         return PpmParser;
-    }(FlipnoteParser));
+    }(FlipnoteParserBase));
 
     /**
      * KWZ framerates in frames per second, indexed by the in-app frame speed
@@ -1614,6 +1770,8 @@ Keep on Flipnoting!
             var _this = _super.call(this, arrayBuffer) || this;
             /** File format type, reflects {@link KwzParser.format} */
             _this.format = exports.FlipnoteFormat.KWZ;
+            /** Custom object tag */
+            _this[Symbol.toStringTag] = 'Flipnote Studio 3D KWZ animation file';
             /** Animation frame width, reflects {@link KwzParser.width} */
             _this.imageWidth = KwzParser.width;
             /** Animation frame height, reflects {@link KwzParser.height} */
@@ -1628,6 +1786,10 @@ Keep on Flipnoting!
             _this.numLayerColors = KwzParser.numLayerColors;
             /** @internal */
             _this.srcWidth = KwzParser.width;
+            /** Which audio tracks are available in this format, reflects {@link KwzParser.audioTracks} */
+            _this.audioTracks = KwzParser.audioTracks;
+            /** Which sound effect tracks are available in this format, reflects {@link KwzParser.soundEffectTracks} */
+            _this.soundEffectTracks = KwzParser.soundEffectTracks;
             /** Audio track base sample rate, reflects {@link KwzParser.rawSampleRate} */
             _this.rawSampleRate = KwzParser.rawSampleRate;
             /** Audio output sample rate, reflects {@link KwzParser.sampleRate} */
@@ -1895,6 +2057,7 @@ Keep on Flipnoting!
          * @category Image
         */
         KwzParser.prototype.getFramePaletteIndices = function (frameIndex) {
+            assertRange(frameIndex, 0, this.frameCount - 1, 'Frame index');
             this.seek(this.frameMetaOffsets[frameIndex]);
             var flags = this.readUint32();
             return [
@@ -1922,15 +2085,18 @@ Keep on Flipnoting!
         */
         KwzParser.prototype.getFramePalette = function (frameIndex) {
             var _this = this;
+            assertRange(frameIndex, 0, this.frameCount - 1, 'Frame index');
             var indices = this.getFramePaletteIndices(frameIndex);
             return indices.map(function (colorIndex) { return _this.globalPalette[colorIndex]; });
         };
         KwzParser.prototype.getFrameDiffingFlag = function (frameIndex) {
+            assertRange(frameIndex, 0, this.frameCount - 1, 'Frame index');
             this.seek(this.frameMetaOffsets[frameIndex]);
             var flags = this.readUint32();
             return (flags >> 4) & 0x07;
         };
         KwzParser.prototype.getFrameLayerSizes = function (frameIndex) {
+            assertRange(frameIndex, 0, this.frameCount - 1, 'Frame index');
             this.seek(this.frameMetaOffsets[frameIndex] + 0x4);
             return [
                 this.readUint16(),
@@ -1939,6 +2105,7 @@ Keep on Flipnoting!
             ];
         };
         KwzParser.prototype.getFrameLayerDepths = function (frameIndex) {
+            assertRange(frameIndex, 0, this.frameCount - 1, 'Frame index');
             this.seek(this.frameMetaOffsets[frameIndex] + 0x14);
             var a = [
                 this.readUint8(),
@@ -1948,10 +2115,12 @@ Keep on Flipnoting!
             return a;
         };
         KwzParser.prototype.getFrameAuthor = function (frameIndex) {
+            assertRange(frameIndex, 0, this.frameCount - 1, 'Frame index');
             this.seek(this.frameMetaOffsets[frameIndex] + 0xA);
-            return this.readHex(10);
+            return this.readFsid();
         };
-        KwzParser.prototype.getFrameSoundFlags = function (frameIndex) {
+        KwzParser.prototype.decodeFrameSoundFlags = function (frameIndex) {
+            assertRange(frameIndex, 0, this.frameCount - 1, 'Frame index');
             this.seek(this.frameMetaOffsets[frameIndex] + 0x17);
             var soundFlags = this.readUint8();
             return [
@@ -1976,6 +2145,7 @@ Keep on Flipnoting!
          * @returns Array of layer indexes, in the order they should be drawn
         */
         KwzParser.prototype.getFrameLayerOrder = function (frameIndex) {
+            assertRange(frameIndex, 0, this.frameCount - 1, 'Frame index');
             var depths = this.getFrameLayerDepths(frameIndex);
             return [2, 1, 0].sort(function (a, b) { return depths[b] - depths[a]; });
         };
@@ -1986,7 +2156,7 @@ Keep on Flipnoting!
         KwzParser.prototype.decodeFrame = function (frameIndex, diffingFlag, isPrevFrame) {
             if (diffingFlag === void 0) { diffingFlag = 0x7; }
             if (isPrevFrame === void 0) { isPrevFrame = false; }
-            assert(frameIndex > -1 && frameIndex < this.frameCount, "Frame index " + frameIndex + " out of bounds");
+            assertRange(frameIndex, 0, this.frameCount - 1, 'Frame index');
             // return existing layer buffers if no new frame has been decoded since the last call
             if (this.prevDecodedFrame === frameIndex)
                 return this.layerBuffers;
@@ -2184,11 +2354,43 @@ Keep on Flipnoting!
          * @category Audio
         */
         KwzParser.prototype.decodeSoundFlags = function () {
-            var result = [];
-            for (var i = 0; i < this.frameCount; i++) {
-                result.push(this.getFrameSoundFlags(i));
-            }
-            return result;
+            var _this = this;
+            if (this.soundFlags !== undefined)
+                return this.soundFlags;
+            this.soundFlags = new Array(this.frameCount)
+                .fill(false)
+                .map(function (_, i) { return _this.decodeFrameSoundFlags(i); });
+            return this.soundFlags;
+        };
+        /**
+         * Get the sound effect usage flags for every frame
+         * @category Audio
+         */
+        KwzParser.prototype.getSoundEffectFlags = function () {
+            return this.decodeSoundFlags().map(function (frameFlags) {
+                var _a;
+                return (_a = {},
+                    _a[exports.FlipnoteSoundEffectTrack.SE1] = frameFlags[0],
+                    _a[exports.FlipnoteSoundEffectTrack.SE2] = frameFlags[1],
+                    _a[exports.FlipnoteSoundEffectTrack.SE3] = frameFlags[2],
+                    _a[exports.FlipnoteSoundEffectTrack.SE4] = frameFlags[3],
+                    _a);
+            });
+        };
+        /**
+         * Get the sound effect usage for a given frame
+         * @param frameIndex
+         * @category Audio
+         */
+        KwzParser.prototype.getFrameSoundEffectFlags = function (frameIndex) {
+            var _a;
+            var frameFlags = this.decodeFrameSoundFlags(frameIndex);
+            return _a = {},
+                _a[exports.FlipnoteSoundEffectTrack.SE1] = frameFlags[0],
+                _a[exports.FlipnoteSoundEffectTrack.SE2] = frameFlags[1],
+                _a[exports.FlipnoteSoundEffectTrack.SE3] = frameFlags[2],
+                _a[exports.FlipnoteSoundEffectTrack.SE4] = frameFlags[3],
+                _a;
         };
         /**
          * Get the raw compressed audio data for a given track
@@ -2351,8 +2553,9 @@ Keep on Flipnoting!
                 var se2Pcm = hasSe2 ? this.getAudioTrackPcm(exports.FlipnoteAudioTrack.SE2, dstFreq) : null;
                 var se3Pcm = hasSe3 ? this.getAudioTrackPcm(exports.FlipnoteAudioTrack.SE3, dstFreq) : null;
                 var se4Pcm = hasSe4 ? this.getAudioTrackPcm(exports.FlipnoteAudioTrack.SE4, dstFreq) : null;
+                var soundEffectFlags = this.decodeSoundFlags();
                 for (var i = 0; i < this.frameCount; i++) {
-                    var seFlags = this.getFrameSoundFlags(i);
+                    var seFlags = soundEffectFlags[i];
                     var seOffset = Math.ceil(i * samplesPerFrame);
                     if (hasSe1 && seFlags[0])
                         this.pcmAudioMix(se1Pcm, master, seOffset);
@@ -2424,6 +2627,21 @@ Keep on Flipnoting!
         KwzParser.rawSampleRate = 16364;
         /** Audio output sample rate. NOTE: probably isn't accurate, full KWZ audio stack is still on the todo */
         KwzParser.sampleRate = 32768;
+        /** Which audio tracks are available in this format */
+        KwzParser.audioTracks = [
+            exports.FlipnoteAudioTrack.BGM,
+            exports.FlipnoteAudioTrack.SE1,
+            exports.FlipnoteAudioTrack.SE2,
+            exports.FlipnoteAudioTrack.SE3,
+            exports.FlipnoteAudioTrack.SE4,
+        ];
+        /** Which sound effect tracks are available in this format */
+        KwzParser.soundEffectTracks = [
+            exports.FlipnoteSoundEffectTrack.SE1,
+            exports.FlipnoteSoundEffectTrack.SE2,
+            exports.FlipnoteSoundEffectTrack.SE3,
+            exports.FlipnoteSoundEffectTrack.SE4,
+        ];
         /** Global animation frame color palette */
         KwzParser.globalPalette = [
             KWZ_PALETTE.WHITE,
@@ -2435,7 +2653,7 @@ Keep on Flipnoting!
             KWZ_PALETTE.NONE,
         ];
         return KwzParser;
-    }(FlipnoteParser));
+    }(FlipnoteParserBase));
 
     /**
      * Loader for web url strings (Browser only)
@@ -2689,6 +2907,13 @@ Keep on Flipnoting!
         var s = Math.floor(seconds % 60);
         return m + ":" + padNumber(s, 2);
     }
+
+    /** @internal */
+    var CanvasInterface = /** @class */ (function () {
+        function CanvasInterface(parent, width, height) {
+        }
+        return CanvasInterface;
+    }());
 
     /* @license twgl.js 4.17.0 Copyright (c) 2015, Gregg Tavares All Rights Reserved.
     Available via the MIT license.
@@ -4281,7 +4506,7 @@ Keep on Flipnoting!
     var drawFrame = "precision highp float;\n#define GLSLIFY 1\nvarying vec2 v_uv;uniform sampler2D u_tex;varying float v_scale;uniform vec2 u_textureSize;uniform vec2 u_screenSize;void main(){vec2 v_texel=v_uv*u_textureSize;vec2 texel_floored=floor(v_texel);vec2 s=fract(v_texel);float region_range=0.5-0.5/v_scale;vec2 center_dist=s-0.5;vec2 f=(center_dist-clamp(center_dist,-region_range,region_range))*v_scale+0.5;vec2 mod_texel=texel_floored+f;vec2 coord=mod_texel.xy/u_textureSize.xy;gl_FragColor=texture2D(u_tex,coord);}"; // eslint-disable-line
 
     /**
-     * Animation frame renderer, built around the {@link https://developer.mozilla.org/en-US/docs/Web/API/WebGL_API WebGL} API
+     * Flipnote renderer for the {@link https://developer.mozilla.org/en-US/docs/Web/API/WebGL_API WebGL} API
      *
      * Only available in browser contexts
      */
@@ -4308,10 +4533,12 @@ Keep on Flipnoting!
             };
             this.isCtxLost = false;
             this.handleContextLoss = function (e) {
-                e.preventDefault();
+                if (e)
+                    e.preventDefault();
                 _this.destroy();
+                if (!_this.isCtxLost)
+                    _this.options.onlost();
                 _this.isCtxLost = true;
-                _this.options.onlost();
             };
             this.handleContextRestored = function (e) {
                 _this.isCtxLost = false;
@@ -4319,33 +4546,47 @@ Keep on Flipnoting!
                 _this.options.onrestored();
             };
             assertBrowserEnv();
-            this.el = document.createElement('canvas');
+            this.options = __assign(__assign({}, WebglCanvas.defaultOptions), options);
             this.width = width;
             this.height = height;
-            this.options = __assign(__assign({}, WebglCanvas.defaultOptions), options);
-            this.el.addEventListener('webglcontextlost', this.handleContextLoss, false);
-            this.el.addEventListener('webglcontextrestored', this.handleContextRestored, false);
-            this.gl = this.el.getContext('webgl', {
+            this.canvas = document.createElement('canvas');
+            this.canvas.addEventListener('webglcontextlost', this.handleContextLoss, false);
+            this.canvas.addEventListener('webglcontextrestored', this.handleContextRestored, false);
+            this.canvas.className = 'FlipnoteCanvas FlipnoteCanvas--webgl';
+            this.gl = this.canvas.getContext('webgl', {
                 antialias: false,
                 alpha: true
             });
             if (parent)
-                parent.appendChild(this.el);
+                parent.appendChild(this.canvas);
             this.init();
         }
+        WebglCanvas.isSupported = function () {
+            if (!isBrowser)
+                return false;
+            var testCanvas = document.createElement('canvas');
+            var testCtx = testCanvas.getContext('2d');
+            var supported = testCtx !== null;
+            testCanvas = null;
+            testCtx = null;
+            return supported;
+        };
         WebglCanvas.prototype.init = function () {
+            this.setCanvasSize(this.width, this.height);
             var gl = this.gl;
+            if (this.checkContextLoss())
+                return;
             this.program = this.createProgram(quadShader, drawFrame);
-            this.quadBuffer = this.createScreenQuad(-1, -1, 2, 2, 8, 8);
+            this.quadBuffer = this.createScreenQuad(-1, -1, 2, 2, 1, 1);
             this.setBuffersAndAttribs(this.program, this.quadBuffer);
             this.frameTexture = this.createTexture(gl.RGBA, gl.LINEAR, gl.CLAMP_TO_EDGE);
-            this.setCanvasSize(this.width, this.height);
             // set gl constants
             gl.useProgram(this.program.program);
             gl.bindTexture(gl.TEXTURE_2D, this.frameTexture);
         };
         WebglCanvas.prototype.createProgram = function (vertexShaderSource, fragmentShaderSource) {
-            assert(!this.isCtxLost);
+            if (this.checkContextLoss())
+                return;
             var gl = this.gl;
             var vert = this.createShader(gl.VERTEX_SHADER, vertexShaderSource);
             var frag = this.createShader(gl.FRAGMENT_SHADER, fragmentShaderSource);
@@ -4365,7 +4606,8 @@ Keep on Flipnoting!
             return programInfo;
         };
         WebglCanvas.prototype.createShader = function (type, source) {
-            assert(!this.isCtxLost);
+            if (this.checkContextLoss())
+                return;
             var gl = this.gl;
             var shader = gl.createShader(type);
             gl.shaderSource(shader, source);
@@ -4381,7 +4623,8 @@ Keep on Flipnoting!
         };
         // creating a subdivided quad seems to produce slightly nicer texture filtering
         WebglCanvas.prototype.createScreenQuad = function (x0, y0, width, height, xSubdivs, ySubdivs) {
-            assert(!this.isCtxLost);
+            if (this.checkContextLoss())
+                return;
             var numVerts = (xSubdivs + 1) * (ySubdivs + 1);
             var numVertsAcross = xSubdivs + 1;
             var positions = new Float32Array(numVerts * 2);
@@ -4429,6 +4672,8 @@ Keep on Flipnoting!
             return bufferInfo;
         };
         WebglCanvas.prototype.setBuffersAndAttribs = function (program, buffer) {
+            if (this.checkContextLoss())
+                return;
             var gl = this.gl;
             setAttributes(program.attribSetters, buffer.attribs);
             gl.bindBuffer(gl.ELEMENT_ARRAY_BUFFER, buffer.indices);
@@ -4436,7 +4681,8 @@ Keep on Flipnoting!
         WebglCanvas.prototype.createTexture = function (type, minMag, wrap, width, height) {
             if (width === void 0) { width = 1; }
             if (height === void 0) { height = 1; }
-            assert(!this.isCtxLost);
+            if (this.checkContextLoss())
+                return;
             var gl = this.gl;
             var tex = gl.createTexture();
             gl.bindTexture(gl.TEXTURE_2D, tex);
@@ -4456,19 +4702,20 @@ Keep on Flipnoting!
          * The ratio between `width` and `height` should be 3:4 for best results
          */
         WebglCanvas.prototype.setCanvasSize = function (width, height) {
-            assert(!this.isCtxLost);
             var dpi = this.options.useDpi ? (window.devicePixelRatio || 1) : 1;
             var internalWidth = width * dpi;
             var internalHeight = height * dpi;
             this.width = width;
             this.height = height;
-            this.el.width = internalWidth;
-            this.el.height = internalHeight;
-            this.screenWidth = internalWidth;
-            this.screenHeight = internalHeight;
-            this.el.style.width = width + "px";
-            this.el.style.height = height + "px";
+            this.canvas.width = internalWidth;
+            this.canvas.height = internalHeight;
+            this.dstWidth = internalWidth;
+            this.dstHeight = internalHeight;
+            this.canvas.style.width = width + "px";
+            this.canvas.style.height = height + "px";
             var gl = this.gl;
+            if (this.checkContextLoss())
+                return;
             gl.viewport(0, 0, gl.drawingBufferWidth, gl.drawingBufferHeight);
         };
         /**
@@ -4476,87 +4723,134 @@ Keep on Flipnoting!
          * @param width
          * @param height
          */
-        WebglCanvas.prototype.setInputSize = function (width, height) {
+        WebglCanvas.prototype.setNote = function (note) {
+            if (this.checkContextLoss())
+                return;
             var gl = this.gl;
-            this.textureWidth = width;
-            this.textureHeight = height;
+            var width = note.imageWidth;
+            var height = note.imageHeight;
+            this.note = note;
+            this.srcWidth = width;
+            this.srcHeight = height;
             // resize frame texture
             gl.bindTexture(gl.TEXTURE_2D, this.frameTexture);
-            gl.texImage2D(gl.TEXTURE_2D, 0, gl.RGBA, this.textureWidth, this.textureHeight, 0, gl.RGBA, gl.UNSIGNED_BYTE, null);
+            gl.texImage2D(gl.TEXTURE_2D, 0, gl.RGBA, this.srcWidth, this.srcHeight, 0, gl.RGBA, gl.UNSIGNED_BYTE, null);
             this.frameBuffer = new Uint32Array(width * height);
             this.frameBufferBytes = new Uint8Array(this.frameBuffer.buffer); // same memory buffer as rgbaData
+            this.prevFrameIndex = undefined;
+            // set canvas alt text
+            this.canvas.title = note.getTitle();
         };
-        WebglCanvas.prototype.clear = function () {
-            //  clear whatever's already been drawn
+        /**
+         * Clear the canvas
+         * @param color optional RGBA color to use as a background color
+         */
+        WebglCanvas.prototype.clear = function (color) {
+            if (this.checkContextLoss())
+                return;
+            if (color) {
+                var r = color[0], g = color[1], b = color[2], a = color[3];
+                this.gl.clearColor(r / 255, g / 255, b / 255, a / 255);
+            }
             this.gl.clear(this.gl.COLOR_BUFFER_BIT);
         };
-        WebglCanvas.prototype.drawFrame = function (note, frameIndex) {
-            var _a = this, gl = _a.gl, textureWidth = _a.textureWidth, textureHeight = _a.textureHeight;
+        /**
+         * Draw a frame from the currently loaded Flipnote
+         * @param frameIndex
+         */
+        WebglCanvas.prototype.drawFrame = function (frameIndex) {
+            if (this.checkContextLoss())
+                return;
+            var _a = this, gl = _a.gl, textureWidth = _a.srcWidth, textureHeight = _a.srcHeight;
             // get frame pixels as RGBA buffer
-            note.getFramePixelsRgba(frameIndex, this.frameBuffer, this.paletteBuffer);
+            this.note.getFramePixelsRgba(frameIndex, this.frameBuffer, this.paletteBuffer);
             // clear whatever's already been drawn
-            gl.clear(gl.COLOR_BUFFER_BIT);
+            // const paperColor = note.getFramePalette(frameIndex)[0];
+            // this.clear(paperColor);
+            gl.clear(this.gl.COLOR_BUFFER_BIT);
             // update texture
             gl.texImage2D(gl.TEXTURE_2D, 0, gl.RGBA, textureWidth, textureHeight, 0, gl.RGBA, gl.UNSIGNED_BYTE, this.frameBufferBytes);
             // prep uniforms
             setUniforms(this.program, {
                 u_flipY: true,
                 u_tex: this.frameTexture,
-                u_textureSize: [this.textureWidth, this.textureHeight],
+                u_textureSize: [this.srcWidth, this.srcHeight],
                 u_screenSize: [gl.drawingBufferWidth, gl.drawingBufferHeight],
             });
             // draw!
             gl.drawElements(gl.TRIANGLES, this.quadBuffer.numElements, this.quadBuffer.elementType, 0);
+            this.prevFrameIndex = frameIndex;
+        };
+        WebglCanvas.prototype.forceUpdate = function () {
+            if (this.prevFrameIndex !== undefined)
+                this.drawFrame(this.prevFrameIndex);
         };
         /**
          * Returns true if the webGL context has returned an error
          */
         WebglCanvas.prototype.isErrorState = function () {
             var gl = this.gl;
-            var error = gl.getError();
-            return error != gl.NO_ERROR && error != gl.CONTEXT_LOST_WEBGL;
+            return gl === null || gl.getError() !== gl.NO_ERROR;
         };
         /**
          * Only a certain number of WebGL contexts can be added to a single page before the browser will start culling old contexts.
          * This method returns true if it has been culled, false if not
          */
-        WebglCanvas.prototype.isLost = function () {
-            return this.gl.isContextLost();
+        WebglCanvas.prototype.checkContextLoss = function () {
+            var isLost = this.isCtxLost || this.isErrorState();
+            if (isLost)
+                this.handleContextLoss();
+            return isLost;
+        };
+        /**
+         *
+         * @param type image mime type (`image/jpeg`, `image/png`, etc)
+         * @param quality image quality where supported, between 0 and 1
+         */
+        WebglCanvas.prototype.getDataUrl = function (type, quality) {
+            return this.canvas.toDataURL(type, quality);
+        };
+        WebglCanvas.prototype.getBlob = function (type, quality) {
+            return __awaiter(this, void 0, void 0, function () {
+                var _this = this;
+                return __generator(this, function (_a) {
+                    return [2 /*return*/, new Promise(function (resolve, reject) { return _this.canvas.toBlob(resolve, type, quality); })];
+                });
+            });
         };
         /**
          * Frees any resources used by this canvas instance
          */
         WebglCanvas.prototype.destroy = function () {
-            return __awaiter(this, void 0, void 0, function () {
-                var refs, gl;
-                return __generator(this, function (_a) {
-                    refs = this.refs;
-                    gl = this.gl;
-                    refs.shaders.forEach(function (shader) {
-                        gl.deleteShader(shader);
-                    });
-                    refs.shaders = [];
-                    refs.textures.forEach(function (texture) {
-                        gl.deleteTexture(texture);
-                    });
-                    refs.textures = [];
-                    refs.buffers.forEach(function (buffer) {
-                        gl.deleteBuffer(buffer);
-                    });
-                    refs.buffers = [];
-                    refs.programs.forEach(function (program) {
-                        gl.deleteProgram(program);
-                    });
-                    refs.programs = [];
-                    this.paletteBuffer = null;
-                    this.frameBuffer = null;
-                    this.frameBufferBytes = null;
-                    // shrink the canvas to reduce memory usage until it is garbage collected
-                    gl.canvas.width = 1;
-                    gl.canvas.height = 1;
-                    return [2 /*return*/];
-                });
+            var refs = this.refs;
+            var gl = this.gl;
+            var canvas = this.canvas;
+            refs.shaders.forEach(function (shader) {
+                gl.deleteShader(shader);
             });
+            refs.shaders = [];
+            refs.textures.forEach(function (texture) {
+                gl.deleteTexture(texture);
+            });
+            refs.textures = [];
+            refs.buffers.forEach(function (buffer) {
+                gl.deleteBuffer(buffer);
+            });
+            refs.buffers = [];
+            refs.programs.forEach(function (program) {
+                gl.deleteProgram(program);
+            });
+            refs.programs = [];
+            this.paletteBuffer = null;
+            this.frameBuffer = null;
+            this.frameBufferBytes = null;
+            if (canvas && canvas.parentElement) {
+                // shrink the canvas to reduce memory usage until it is garbage collected
+                canvas.width = 1;
+                canvas.height = 1;
+                // remove canvas from dom
+                canvas.parentNode.removeChild(canvas);
+            }
         };
         WebglCanvas.defaultOptions = {
             onlost: function () { },
@@ -4564,6 +4858,221 @@ Keep on Flipnoting!
             useDpi: true
         };
         return WebglCanvas;
+    }());
+
+    /**
+     * Flipnote renderer for the [HTML5 2D canvas API](https://developer.mozilla.org/en-US/docs/Web/API/CanvasRenderingContext2D)
+     */
+    var Html5Canvas = /** @class */ (function () {
+        function Html5Canvas(parent, width, height, options) {
+            if (options === void 0) { options = {}; }
+            this.paletteBuffer = new Uint32Array(16);
+            assertBrowserEnv();
+            this.options = __assign(__assign({}, Html5Canvas.defaultOptions), options);
+            this.width = width;
+            this.height = height;
+            this.canvas = document.createElement('canvas');
+            this.canvas.className = 'FlipnoteCanvas FlipnoteCanvas--html5';
+            this.ctx = this.canvas.getContext('2d');
+            this.srcCanvas = document.createElement('canvas');
+            this.srcCtx = this.srcCanvas.getContext('2d');
+            assert(this.ctx !== null && this.srcCtx !== null, 'Could not create HTML5 canvas');
+            if (parent)
+                parent.appendChild(this.canvas);
+            this.setCanvasSize(width, height);
+        }
+        Html5Canvas.isSupported = function () {
+            if (!isBrowser)
+                return false;
+            var testCanvas = document.createElement('canvas');
+            var testCtx = testCanvas.getContext('2d');
+            var supported = testCtx !== null;
+            testCanvas = null;
+            testCtx = null;
+            return supported;
+        };
+        /**
+         * Resize the canvas surface
+         * @param width - New canvas width, in CSS pixels
+         * @param height - New canvas height, in CSS pixels
+         *
+         * The ratio between `width` and `height` should be 3:4 for best results
+         */
+        Html5Canvas.prototype.setCanvasSize = function (width, height) {
+            var canvas = this.canvas;
+            var useDpi = this.options.useDpi;
+            var dpi = useDpi ? (window.devicePixelRatio || 1) : 1;
+            var internalWidth = width * dpi;
+            var internalHeight = height * dpi;
+            this.width = width;
+            this.height = height;
+            this.dstWidth = internalWidth;
+            this.dstHeight = internalHeight;
+            canvas.style.width = width + "px";
+            canvas.style.height = height + "px";
+            canvas.width = internalWidth;
+            canvas.height = internalHeight;
+        };
+        /**
+         */
+        Html5Canvas.prototype.setNote = function (note) {
+            var width = note.imageWidth;
+            var height = note.imageHeight;
+            this.note = note;
+            this.srcWidth = width;
+            this.srcHeight = height;
+            this.srcCanvas.width = width;
+            this.srcCanvas.height = height;
+            // create image data to fit note size
+            this.frameImage = this.srcCtx.createImageData(width, height);
+            // uint32 view of the img buffer memory
+            this.frameBuffer = new Uint32Array(this.frameImage.data.buffer);
+            this.prevFrameIndex = undefined;
+            // set canvas alt text
+            this.canvas.title = note.getTitle();
+        };
+        /**
+         * Clear the canvas
+         * @param color optional RGBA color to use as a background color
+         */
+        Html5Canvas.prototype.clear = function (color) {
+            // clear framebuffer
+            this.frameBuffer.fill(0);
+            // clear canvas
+            this.ctx.clearRect(0, 0, this.dstWidth, this.dstHeight);
+            // fill canvas with paper color
+            if (color) {
+                var r = color[0], g = color[1], b = color[2], a = color[3];
+                this.ctx.fillStyle = "rgba(" + r + ", " + g + ", " + b + ", " + a + ")";
+                this.ctx.fillRect(0, 0, this.dstWidth, this.dstHeight);
+            }
+        };
+        Html5Canvas.prototype.drawFrame = function (frameIndex) {
+            // clear whatever's already been drawn
+            this.clear();
+            // optionally enable image smoothing
+            if (!this.options.useSmoothing)
+                this.ctx.imageSmoothingEnabled = false;
+            // get frame pixels as RGBA buffer
+            this.note.getFramePixelsRgba(frameIndex, this.frameBuffer, this.paletteBuffer);
+            // put framebuffer pixels into the src canvas
+            this.srcCtx.putImageData(this.frameImage, 0, 0);
+            // composite src canvas to dst (so image scaling can be handled)
+            this.ctx.drawImage(this.srcCanvas, 0, 0, this.srcWidth, this.srcHeight, 0, 0, this.dstWidth, this.dstHeight);
+            this.prevFrameIndex = frameIndex;
+        };
+        Html5Canvas.prototype.forceUpdate = function () {
+            if (this.prevFrameIndex !== undefined)
+                this.drawFrame(this.prevFrameIndex);
+        };
+        Html5Canvas.prototype.getDataUrl = function (type, quality) {
+            return this.canvas.toDataURL(type, quality);
+        };
+        Html5Canvas.prototype.getBlob = function (type, quality) {
+            return __awaiter(this, void 0, void 0, function () {
+                var _this = this;
+                return __generator(this, function (_a) {
+                    return [2 /*return*/, new Promise(function (resolve, reject) { return _this.canvas.toBlob(resolve, type, quality); })];
+                });
+            });
+        };
+        Html5Canvas.prototype.destroy = function () {
+            this.frameImage = null;
+            this.paletteBuffer = null;
+            this.frameBuffer = null;
+            this.canvas.parentNode.removeChild(this.canvas);
+            this.canvas.width = 1;
+            this.canvas.height = 1;
+            this.canvas = null;
+            this.srcCanvas.width = 1;
+            this.srcCanvas.height = 1;
+            this.srcCanvas = null;
+        };
+        Html5Canvas.defaultOptions = {
+            useDpi: true,
+            useSmoothing: true,
+        };
+        return Html5Canvas;
+    }());
+
+    var UniversalCanvas = /** @class */ (function () {
+        function UniversalCanvas(parent, width, height, options) {
+            var _this = this;
+            if (width === void 0) { width = 640; }
+            if (height === void 0) { height = 480; }
+            if (options === void 0) { options = {}; }
+            this.options = {};
+            this.isReady = false;
+            this.isHtml5 = false;
+            this.parent = parent;
+            this.options = options;
+            try {
+                this.renderer = new WebglCanvas(parent, width, height, __assign(__assign({}, options), { 
+                    // attempt to switch renderer
+                    onlost: function () {
+                        console.warn('WebGL failed, attemping HTML5 fallback');
+                        if (_this.isReady && !_this.isHtml5) // if the error happened after canvas creation
+                            _this.switchToHtml5();
+                        else
+                            throw '';
+                    } }));
+            }
+            catch (_a) {
+                this.switchToHtml5();
+            }
+            this.isReady = true;
+        }
+        UniversalCanvas.prototype.switchToHtml5 = function () {
+            var _a;
+            var renderer = new Html5Canvas(this.parent, this.width, this.height, this.options);
+            if (this.note) {
+                renderer.setNote(this.note);
+                renderer.prevFrameIndex = (_a = this.renderer) === null || _a === void 0 ? void 0 : _a.prevFrameIndex;
+                renderer.forceUpdate();
+            }
+            this.isHtml5 = true;
+            this.renderer = renderer;
+        };
+        UniversalCanvas.prototype.setCanvasSize = function (width, height) {
+            var renderer = this.renderer;
+            renderer.setCanvasSize(width, height);
+            this.width = width;
+            this.width = height;
+            this.dstWidth = renderer.dstWidth;
+            this.dstHeight = renderer.dstHeight;
+        };
+        UniversalCanvas.prototype.setNote = function (note) {
+            this.note = note;
+            this.renderer.setNote(note);
+            this.prevFrameIndex = undefined;
+            this.srcWidth = this.renderer.srcWidth;
+            this.srcHeight = this.renderer.srcHeight;
+        };
+        UniversalCanvas.prototype.clear = function (color) {
+            this.renderer.clear(color);
+        };
+        UniversalCanvas.prototype.drawFrame = function (frameIndex) {
+            this.renderer.drawFrame(frameIndex);
+            this.prevFrameIndex = frameIndex;
+        };
+        UniversalCanvas.prototype.forceUpdate = function () {
+            this.renderer.forceUpdate();
+        };
+        UniversalCanvas.prototype.getDataUrl = function (type, quality) {
+            return this.renderer.getDataUrl();
+        };
+        UniversalCanvas.prototype.getBlob = function (type, quality) {
+            return __awaiter(this, void 0, void 0, function () {
+                return __generator(this, function (_a) {
+                    return [2 /*return*/, this.renderer.getBlob()];
+                });
+            });
+        };
+        UniversalCanvas.prototype.destroy = function () {
+            this.renderer.destroy();
+            this.note = null;
+        };
+        return UniversalCanvas;
     }());
 
     /** @internal */
@@ -4581,6 +5090,8 @@ Keep on Flipnoting!
         function WebAudioPlayer() {
             /** Whether the audio is being run through an equalizer or not */
             this.useEq = false;
+            /** Whether to connect the output to an audio analyser (see {@link analyser}) */
+            this.useAnalyser = false;
             /** Default equalizer settings. Credit to {@link https://www.sudomemo.net/ | Sudomemo} for these */
             this.eqSettings = [
                 [31.25, 4.1],
@@ -4681,13 +5192,27 @@ Keep on Flipnoting!
                 var eq = this.connectEqNodesTo(source);
                 eq.connect(gainNode);
             }
-            else
+            else {
                 source.connect(gainNode);
-            source.connect(gainNode);
-            gainNode.connect(ctx.destination);
+            }
+            if (this.useAnalyser) {
+                var analyserNode = ctx.createAnalyser();
+                this.nodeRefs.push(analyserNode);
+                this.analyser = analyserNode;
+                gainNode.connect(analyserNode);
+                analyserNode.connect(ctx.destination);
+            }
+            else {
+                this.analyser = undefined;
+                gainNode.connect(ctx.destination);
+            }
             this.source = source;
             this.gainNode = gainNode;
             this.setVolume(this._volume);
+        };
+        WebAudioPlayer.prototype.setAnalyserEnabled = function (on) {
+            this.useAnalyser = on;
+            this.initNodes();
         };
         /**
          * Sets the audio volume level
@@ -4720,8 +5245,8 @@ Keep on Flipnoting!
                 this.source.stop(0);
         };
         /**
-       * Frees any resources used by this canvas instance
-       */
+         * Frees any resources used by this canvas instance
+         */
         WebAudioPlayer.prototype.destroy = function () {
             return __awaiter(this, void 0, void 0, function () {
                 var ctx;
@@ -4732,6 +5257,7 @@ Keep on Flipnoting!
                             ctx = this.getCtx();
                             this.nodeRefs.forEach(function (node) { return node.disconnect(); });
                             this.nodeRefs = [];
+                            this.analyser = undefined;
                             if (!(ctx.state !== 'closed' && typeof ctx.close === 'function')) return [3 /*break*/, 2];
                             return [4 /*yield*/, ctx.close()];
                         case 1:
@@ -4855,14 +5381,14 @@ Keep on Flipnoting!
                 _this.playbackLoopId = requestAnimationFrame(_this.playbackLoop);
             };
             assertBrowserEnv();
-            // if `el` is a string, use it to select an Element, else assume it's an element
+            // if parent is a string, use it to select an Element, else assume it's an Element
             var mountPoint = ('string' == typeof parent) ? document.querySelector(parent) : parent;
-            this.renderer = new WebglCanvas(mountPoint, width, height, {
+            this.renderer = new UniversalCanvas(mountPoint, width, height, {
                 onlost: function () { return _this.emit(exports.PlayerEvent.Error); },
                 onrestored: function () { return _this.load(); }
             });
             this.audio = new WebAudioPlayer();
-            this.canvasEl = this.renderer.el;
+            // this.canvasEl = this.renderer.el;
         }
         Object.defineProperty(Player.prototype, "src", {
             /** The currently loaded Flipnote source, if there is one. Can be overridden to load another Flipnote */
@@ -5108,7 +5634,7 @@ Keep on Flipnoting!
             this.emit(exports.PlayerEvent.CanPlay);
             this.emit(exports.PlayerEvent.CanPlayThrough);
             this.setLoop(note.meta.loop);
-            this.renderer.setInputSize(note.imageWidth, note.imageHeight);
+            this.renderer.setNote(note);
             this.drawFrame(note.thumbFrameIndex);
             this.emit(exports.PlayerEvent.LoadedData);
             this.emit(exports.PlayerEvent.Load);
@@ -5355,15 +5881,14 @@ Keep on Flipnoting!
          * @category Display Control
          */
         Player.prototype.drawFrame = function (frameIndex) {
-            this.renderer.drawFrame(this.note, frameIndex);
+            this.renderer.drawFrame(frameIndex);
         };
         /**
          * Forces the current animation frame to be redrawn
          * @category Display Control
          */
         Player.prototype.forceUpdate = function () {
-            if (this.isNoteLoaded)
-                this.drawFrame(this.currentFrame);
+            this.renderer.forceUpdate();
         };
         /**
          * Resize the playback canvas to a new size
@@ -6352,14 +6877,18 @@ Keep on Flipnoting!
     /**
      * flipnote.js library version (exported as `flipnote.version`). You can find the latest version on the project's [NPM](https://www.npmjs.com/package/flipnote.js) page.
      */
-    var version = "5.5.1"; // replaced by @rollup/plugin-replace; see rollup.config.js
+    var version = "5.6.0"; // replaced by @rollup/plugin-replace; see rollup.config.js
 
+    exports.CanvasInterface = CanvasInterface;
     exports.GifImage = GifImage;
+    exports.Html5Canvas = Html5Canvas;
     exports.KwzParser = KwzParser;
     exports.Player = Player;
     exports.PlayerMixin = PlayerMixin;
     exports.PpmParser = PpmParser;
+    exports.UniversalCanvas = UniversalCanvas;
     exports.WavAudio = WavAudio;
+    exports.WebAudioPlayer = WebAudioPlayer;
     exports.WebglCanvas = WebglCanvas;
     exports.parseSource = parseSource;
     exports.utils = fsid;

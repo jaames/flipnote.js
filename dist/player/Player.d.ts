@@ -1,7 +1,7 @@
 import { Flipnote, FlipnoteFormat, FlipnoteMeta } from '../parsers';
 import { FlipnoteSource } from '../parseSource';
 import { PlayerEvent, PlayerEventMap } from './PlayerEvent';
-import { WebglCanvas } from '../renderers';
+import { UniversalCanvas } from '../renderers';
 import { WebAudioPlayer } from '../webaudio';
 declare type PlayerLayerVisibility = Record<number, boolean>;
 /**
@@ -42,7 +42,7 @@ declare type PlayerLayerVisibility = Record<number, boolean>;
  */
 export declare class Player {
     /** Frame renderer */
-    renderer: WebglCanvas;
+    renderer: UniversalCanvas;
     /** Audio player */
     audio: WebAudioPlayer;
     /** Canvas HTML element */

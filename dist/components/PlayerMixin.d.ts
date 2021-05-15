@@ -16,10 +16,10 @@ declare type Constructor<T = {}> = new (...args: any[]) => T;
 export declare function PlayerMixin<TargetBase extends Constructor>(Target: TargetBase): {
     new (...args: any[]): {
         player: Player;
-        readonly renderer: import("../renderers").WebglCanvas;
+        readonly renderer: import("../renderers").UniversalCanvas;
         readonly audio: import("../webaudio").WebAudioPlayer;
         readonly canvasEl: HTMLCanvasElement;
-        readonly note: import("../parsers").FlipnoteParser;
+        readonly note: import("../parsers").FlipnoteParserBase;
         readonly noteFormat: import("../parsers").FlipnoteFormat;
         readonly meta: import("../parsers").FlipnoteMeta;
         readonly duration: number;
@@ -59,7 +59,7 @@ export declare function PlayerMixin<TargetBase extends Constructor>(Target: Targ
         readonly videoHeight: number;
         load(source?: any): Promise<void>;
         closeNote(): void;
-        openNote(note: import("../parsers").FlipnoteParser): void;
+        openNote(note: import("../parsers").FlipnoteParserBase): void;
         playbackLoop: (timestamp: number) => void;
         setCurrentTime(value: number): void;
         getCurrentTime(): number;

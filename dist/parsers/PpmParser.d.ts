@@ -21,7 +21,7 @@
  *  Lastly, a huge thanks goes to Nintendo for creating Flipnote Studio,
  *  and to Hatena for providing the Flipnote Hatena online service, both of which inspired so many c:
 */
-import { FlipnoteFormat, FlipnoteAudioTrack, FlipnoteMeta, FlipnoteParser } from './FlipnoteParserTypes';
+import { FlipnoteFormat, FlipnoteAudioTrack, FlipnoteSoundEffectTrack, FlipnoteSoundEffectFlags, FlipnoteMeta, FlipnoteParserBase } from './FlipnoteParserBase';
 /**
  * PPM file metadata, stores information about its playback, author details, etc
  */
@@ -40,7 +40,7 @@ export declare type PpmParserSettings = {};
  * Format docs: https://github.com/Flipnote-Collective/flipnote-studio-docs/wiki/PPM-format
  * @category File Parser
  */
-export declare class PpmParser extends FlipnoteParser {
+export declare class PpmParser extends FlipnoteParserBase {
     /** Default PPM parser settings */
     static defaultSettings: PpmParserSettings;
     /** File format type */
@@ -57,10 +57,16 @@ export declare class PpmParser extends FlipnoteParser {
     static rawSampleRate: number;
     /** Nintendo DSi audio output rate */
     static sampleRate: number;
+    /** Which audio tracks are available in this format */
+    static audioTracks: FlipnoteAudioTrack[];
+    /** Which sound effect tracks are available in this format */
+    static soundEffectTracks: FlipnoteSoundEffectTrack[];
     /** Global animation frame color palette */
-    static globalPalette: import("./FlipnoteParserTypes").FlipnotePaletteColor[];
+    static globalPalette: import("./FlipnoteParserBase").FlipnotePaletteColor[];
     /** File format type, reflects {@link PpmParser.format} */
     format: FlipnoteFormat;
+    /** Custom object tag */
+    [Symbol.toStringTag]: string;
     /** Animation frame width, reflects {@link PpmParser.width} */
     imageWidth: number;
     /** Animation frame height, reflects {@link PpmParser.height} */
@@ -75,17 +81,22 @@ export declare class PpmParser extends FlipnoteParser {
     numLayerColors: number;
     /** @internal */
     srcWidth: number;
+    /** Which audio tracks are available in this format, reflects {@link PpmParser.audioTracks} */
+    audioTracks: FlipnoteAudioTrack[];
+    /** Which sound effect tracks are available in this format, reflects {@link PpmParser.soundEffectTracks} */
+    soundEffectTracks: FlipnoteSoundEffectTrack[];
     /** Audio track base sample rate, reflects {@link PpmParser.rawSampleRate} */
     rawSampleRate: number;
     /** Audio output sample rate, reflects {@link PpmParser.sampleRate} */
     sampleRate: number;
     /** Global animation frame color palette, reflects {@link PpmParser.globalPalette} */
-    globalPalette: import("./FlipnoteParserTypes").FlipnotePaletteColor[];
+    globalPalette: import("./FlipnoteParserBase").FlipnotePaletteColor[];
     /** File metadata, see {@link PpmMeta} for structure */
     meta: PpmMeta;
     /** File format version; always the same as far as we know */
     version: number;
     private layerBuffers;
+    private soundFlags;
     private prevLayerBuffers;
     private lineEncodingBuffers;
     private prevDecodedFrame;
@@ -135,12 +146,22 @@ export declare class PpmParser extends FlipnoteParser {
      *  - index 2 is the layer 2 color
      * @category Image
      */
-    getFramePalette(frameIndex: number): import("./FlipnoteParserTypes").FlipnotePaletteColor[];
+    getFramePalette(frameIndex: number): import("./FlipnoteParserBase").FlipnotePaletteColor[];
     /**
      * Get the sound effect flags for every frame in the Flipnote
      * @category Audio
     */
-    decodeSoundFlags(): any[];
+    decodeSoundFlags(): boolean[][];
+    /**
+     * Get the sound effect usage flags for every frame
+     * @category Audio
+     */
+    getSoundEffectFlags(): FlipnoteSoundEffectFlags[];
+    /**
+     * Get the sound effect usage flags for a given frame
+     * @category Audio
+     */
+    getFrameSoundEffectFlags(frameIndex: number): FlipnoteSoundEffectFlags;
     /**
      * Get the raw compressed audio data for a given track
      * @returns byte array

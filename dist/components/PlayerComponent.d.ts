@@ -3,10 +3,10 @@ import { Player, PlayerEvent } from '../player';
 declare const PlayerComponent_base: {
     new (...args: any[]): {
         player: Player;
-        readonly renderer: import("../renderers").WebglCanvas;
+        readonly renderer: import("../renderers").UniversalCanvas;
         readonly audio: import("../webaudio").WebAudioPlayer;
         readonly canvasEl: HTMLCanvasElement;
-        readonly note: import("../parsers").FlipnoteParser;
+        readonly note: import("../parsers").FlipnoteParserBase;
         readonly noteFormat: import("../parsers").FlipnoteFormat;
         readonly meta: import("../parsers").FlipnoteMeta;
         readonly duration: number;
@@ -46,7 +46,7 @@ declare const PlayerComponent_base: {
         readonly videoHeight: number;
         load(source?: any): Promise<void>;
         closeNote(): void;
-        openNote(note: import("../parsers").FlipnoteParser): void;
+        openNote(note: import("../parsers").FlipnoteParserBase): void;
         playbackLoop: (timestamp: number) => void;
         setCurrentTime(value: number): void;
         getCurrentTime(): number;

@@ -95,7 +95,7 @@ export class ImageComponent extends LitElement {
     }
     if (this.gifUrl) {
       this.dispatchLoad();
-      this.imgTitle = this.getTitle(note);
+      this.imgTitle = note.getTitle();
     }
     else {
       this.dispatchError('Invalid frame attribute');
@@ -113,16 +113,6 @@ export class ImageComponent extends LitElement {
 
   disconnectedCallback() {
     this.revokeUrl();
-  }
-
-  private getTitle(note: Flipnote) {
-    if (note.isComment)
-      return `Comment by ${ note.meta.current.username }`;
-
-    if (note.isFolderIcon)
-      return `Folder icon`;
-
-    return `Flipnote by ${ note.meta.current.username }`;
   }
 
   private dispatchLoad() {

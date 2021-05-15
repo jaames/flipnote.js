@@ -15,13 +15,13 @@
 ## Features
 
 * Full file parser implementations with metadata, frames, audio, signature verification, etc
-* Realtime browser-based playback, with a player API based on the HTML5 Video and Audio APIs
+* Realtime browser-based playback for frames and audio, with a player API based on the HTML5 Video and Audio APIs
 * Optional web component for easily embedding a Flipnote player UI on any web page
-* Crisp scaling using sharp-bilinear filtering
+* WebGL renderer with crisp pixel scaling (using sharp-bilinear filtering!), with a HTML5 canvas fallback
 * Built-in GIF and WAV converters
 * Works in web browser and NodeJS environments
 * Exports full Typescript types
-* 20kb minified & gzipped
+* 23kb minified & gzipped
 
 ## Background
 

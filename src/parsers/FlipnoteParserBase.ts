@@ -1,4 +1,5 @@
 import { 
+  assertRange,
   DataStream,
   FlipnoteRegion
 } from '../utils';
@@ -25,6 +26,9 @@ export type FlipnotePaletteColor = [
   number
 ];
 
+/** Flipnote layer visibility */
+export type FlipnoteLayerVisibility = Record<number, boolean>;
+
 /** Defines the colors used for a given Flipnote format */
 export type FlipnotePaletteDefinition = Record<string, FlipnotePaletteColor>;
 
@@ -42,18 +46,19 @@ export enum FlipnoteAudioTrack {
   SE4
 };
 
-/** 
- * Contains data about a given audio track; it's file offset and length
- */
-export interface FlipnoteAudioTrackInfo {
-  ptr: number;
-  length: number;
+/** Contains data about a given audio track; it's file offset and length */
+export interface FlipnoteAudioTrackInfo { ptr: number; length: number; };
+
+/** {@link FlipnoteAudioTrack}, but just sound effect tracks */
+export enum FlipnoteSoundEffectTrack {
+  SE1 = FlipnoteAudioTrack.SE1,
+  SE2 = FlipnoteAudioTrack.SE2,
+  SE3 = FlipnoteAudioTrack.SE3,
+  SE4 = FlipnoteAudioTrack.SE4,
 };
 
-/**
- * Flipnote layer visibility 
- */
-export type FlipnoteLayerVisibility = Record<number, boolean>;
+/** Flipnote sound flags, indicating which sound effect tracks are used on a given frame */
+export type FlipnoteSoundEffectFlags = Record<FlipnoteSoundEffectTrack, boolean>;
 
 /**
  * Flipnote version info - provides details about a particular Flipnote version and its author
@@ -106,7 +111,9 @@ export interface FlipnoteMeta {
  * it just provides a consistent API for every format parser to implement.
  * @category File Parser
 */
-export abstract class FlipnoteParser extends DataStream {
+export abstract class FlipnoteParserBase extends DataStream {
+
+  /** Static file format info */
 
   /** File format type */
   static format: FlipnoteFormat;
@@ -118,14 +125,29 @@ export abstract class FlipnoteParser extends DataStream {
   static numLayers: number;
   /** Number of colors per layer (aside from transparent) */
   static numLayerColors: number;
+  /** Which audio tracks are available in this format */
+  static audioTracks: FlipnoteAudioTrack[];
+  /** Which sound effect tracks are available in this format */
+  static soundEffectTracks: FlipnoteSoundEffectTrack[];
   /** Audio track base sample rate */
   static rawSampleRate: number;
   /** Audio output sample rate */
   static sampleRate: number;
   /** Global animation frame color palette */
   static globalPalette: FlipnotePaletteColor[];
+
+  /** Instance file format info */
+
+  /** Custom object tag */
+  public [Symbol.toStringTag] = 'Flipnote';
   /** File format type, reflects {@link FlipnoteParserBase.format} */
   public format: FlipnoteFormat;
+  /** Default formats used for {@link getTitle()} */
+  public titleFormats = {
+    COMMENT: 'Comment by $USERNAME',
+    FLIPNOTE: 'Flipnote by $USERNAME',
+    ICON: 'Folder icon'
+  };
   /** Animation frame width, reflects {@link FlipnoteParserBase.width} */
   public imageWidth: number;
   /** Animation frame height, reflects {@link FlipnoteParserBase.height} */
@@ -140,6 +162,10 @@ export abstract class FlipnoteParser extends DataStream {
   public numLayerColors: number;
   /** @internal */
   public srcWidth: number;
+  /** Which audio tracks are available in this format, reflects {@link FlipnoteParserBase.audioTracks} */
+  public audioTracks: FlipnoteAudioTrack[];
+  /** Which sound effect tracks are available in this format, reflects {@link FlipnoteParserBase.soundEffectTracks} */
+  public soundEffectTracks: FlipnoteSoundEffectTrack[];
   /** Audio track base sample rate, reflects {@link FlipnoteParserBase.rawSampleRate} */
   public rawSampleRate: number;
   /** Audio output sample rate, reflects {@link FlipnoteParserBase.sampleRate} */
@@ -154,6 +180,8 @@ export abstract class FlipnoteParser extends DataStream {
   public soundMeta: Map<FlipnoteAudioTrack, FlipnoteAudioTrackInfo>;
   /** Animation frame global layer visibility */
   public layerVisibility: FlipnoteLayerVisibility = {1: true, 2: true, 3: true};
+
+  /** Instance-unique info */
 
   /** Spinoffs are remixes of another user's Flipnote */
   public isSpinoff: boolean;
@@ -177,9 +205,55 @@ export abstract class FlipnoteParser extends DataStream {
   public bgmrate: number;
   /** Index of the animation frame used as the Flipnote's thumbnail image */
   public thumbFrameIndex: number;
-
   /** Get the amount of clipping in the master audio track, useful for determining if a Flipnote's audio is corrupted. Closer to 1.0 = more clipping. Only available after {@link getAudioMasterPcm} has been called */
   public audioClipRatio: number;
+
+  /**
+   * Get file default title - e.g. "Flipnote by Y", "Comment by X", etc. 
+   * A format object can be passed for localisation, where `$USERNAME` gets replaced by author name:
+   * ```js
+   * {
+   *  COMMENT: 'Comment by $USERNAME',
+   *  FLIPNOTE: 'Flipnote by $USERNAME',
+   *  ICON: 'Folder icon'
+   * }
+   * ```
+   * @category Utility
+   */
+  public getTitle(formats = this.titleFormats) {
+    if (this.isFolderIcon)
+      return formats.ICON;
+    const title = this.isComment ? formats.COMMENT : formats.FLIPNOTE;
+    return title.replace('$USERNAME', this.meta.current.username);
+  }
+
+  /**
+   * Returns the Flipnote title when casting a parser instance to a string
+   * 
+   * ```js
+   * const str = 'Title: ' + note;
+   * // str === 'Title: Flipnote by username'
+   * ```
+   * @category Utility
+   */
+  public toString() {
+    return this.getTitle();
+  }
+
+  /**
+   * Allows for frame index iteration when using the parser instance as a for..of iterator
+   * 
+   * ```js
+   * for (const frameIndex of note) {
+   *   // do something with frameIndex...
+   * }
+   * ```
+   * @category Utility
+   */
+  public *[Symbol.iterator]() {
+    for (let i = 0; i < this.frameCount; i++)
+      yield i;
+  }
 
   /** 
    * Decode a frame, returning the raw pixel buffers for each layer
@@ -198,6 +272,8 @@ export abstract class FlipnoteParser extends DataStream {
     layerIndex: number,
     imageBuffer = new Uint8Array(this.imageWidth * this.imageHeight)
   ) {
+    assertRange(frameIndex, 0, this.frameCount - 1, 'Frame index');
+    assertRange(layerIndex, 0, this.numLayers - 1, 'Layer index');
     // palette
     const palette = this.getFramePaletteIndices(frameIndex);
     const palettePtr = layerIndex * this.numLayerColors;
@@ -239,6 +315,8 @@ export abstract class FlipnoteParser extends DataStream {
     imageBuffer = new Uint32Array(this.imageWidth * this.imageHeight),
     paletteBuffer = new Uint32Array(16)
   ) {
+    assertRange(frameIndex, 0, this.frameCount - 1, 'Frame index');
+    assertRange(layerIndex, 0, this.numLayers - 1, 'Layer index');
     // palette
     this.getFramePaletteUint32(frameIndex, paletteBuffer);
     const palettePtr = layerIndex * this.numLayerColors;
@@ -326,6 +404,7 @@ export abstract class FlipnoteParser extends DataStream {
     imageBuffer = new Uint32Array(this.imageWidth * this.imageHeight),
     paletteBuffer = new Uint32Array(16)
   ) {
+    assertRange(frameIndex, 0, this.frameCount - 1, 'Frame index');
     // image dimensions and crop
     const srcStride = this.srcWidth;
     const width = this.imageWidth;
@@ -380,6 +459,7 @@ export abstract class FlipnoteParser extends DataStream {
     frameIndex: number,
     paletteBuffer = new Uint32Array(16)
   ) {
+    assertRange(frameIndex, 0, this.frameCount - 1, 'Frame index');
     const colors = this.getFramePalette(frameIndex);
     paletteBuffer.fill(0);
     colors.forEach(([r, g, b, a], i) => paletteBuffer[i] = (a << 24) | (b << 16) | (g << 8) | r);
@@ -391,6 +471,47 @@ export abstract class FlipnoteParser extends DataStream {
    * @category Audio
   */
   abstract decodeSoundFlags(): boolean[][];
+
+  /**
+   * Get the sound effect usage flags for every frame
+   * @category Audio
+   */
+  public abstract getSoundEffectFlags(): FlipnoteSoundEffectFlags[];
+
+  /**
+   * Get the sound effect usage flags for a given frame
+   * @category Audio
+   */
+  public abstract getFrameSoundEffectFlags(frameIndex: number): FlipnoteSoundEffectFlags;
+
+  /**
+   * Get the usage flags for a given track accross every frame
+   * @returns an array of booleans for every frame, indicating whether the track is used on that frame
+   * @category Audio
+   */
+  public getSoundEffectFlagsForTrack(trackId: FlipnoteSoundEffectTrack) {
+    return this.getSoundEffectFlags().map(frammeFlags => frammeFlags[trackId]);
+  };
+
+  /**
+   * Is a given track used on a given frame
+   * @category Audio
+   */
+  public isSoundEffectUsedOnFrame(trackId: FlipnoteSoundEffectTrack, frameIndex: number) {
+    assertRange(frameIndex, 0, this.frameCount - 1, 'Frame index');
+    if (!this.soundEffectTracks.includes(trackId))
+      return false;
+    return this.getFrameSoundEffectFlags(frameIndex)[trackId];
+  }
+
+  /** 
+   * Does an audio track exist in the Flipnote?
+   * @returns boolean
+   * @category Audio
+  */
+  public hasAudioTrack(trackId: FlipnoteAudioTrack): boolean {
+    return this.soundMeta.has(trackId) && this.soundMeta.get(trackId).length > 0;
+  }
 
   /** 
    * Get the raw compressed audio data for a given track
@@ -420,28 +541,24 @@ export abstract class FlipnoteParser extends DataStream {
   */
   abstract getAudioMasterPcm(sampleRate?: number): Int16Array;
 
-  /** 
-   * Does an audio track exist in the Flipnote?
-   * @category Audio
-  */
-  public hasAudioTrack(trackId: FlipnoteAudioTrack): boolean {
-    return this.soundMeta.has(trackId) && this.soundMeta.get(trackId).length > 0;
-  }
-
   /**
-   * Get the body of the Flipnote - the data that is digested for the signature
+   * Get the body of the Flipnote - the data that is digested for computing the signature
+   * @returns content data as Uint8Array
    * @category Verification
    */
   abstract getBody(): Uint8Array;
 
   /**
    * Get the Flipnote's signature data
+   * @returns signature data as Uint8Array
    * @category Verification
    */
   abstract getSignature(): Uint8Array;
 
   /**
    * Verify whether this Flipnote's signature is valid
+   * @async
+   * @returns boolean
    * @category Verification
    */
   abstract verify(): Promise<boolean>;

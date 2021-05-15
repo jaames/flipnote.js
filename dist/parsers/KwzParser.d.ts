@@ -1,4 +1,4 @@
-import { FlipnoteFormat, FlipnoteAudioTrack, FlipnoteMeta, FlipnoteParser } from './FlipnoteParserTypes';
+import { FlipnoteFormat, FlipnoteAudioTrack, FlipnoteSoundEffectTrack, FlipnoteSoundEffectFlags, FlipnoteMeta, FlipnoteParserBase } from './FlipnoteParserBase';
 /**
  * KWZ section types
  * @internal
@@ -78,7 +78,7 @@ export declare type KwzParserSettings = {
  * KWZ format docs: https://github.com/Flipnote-Collective/flipnote-studio-3d-docs/wiki/KWZ-Format
  * @category File Parser
  */
-export declare class KwzParser extends FlipnoteParser {
+export declare class KwzParser extends FlipnoteParserBase {
     /** Default KWZ parser settings */
     static defaultSettings: KwzParserSettings;
     /** File format type */
@@ -95,10 +95,16 @@ export declare class KwzParser extends FlipnoteParser {
     static rawSampleRate: number;
     /** Audio output sample rate. NOTE: probably isn't accurate, full KWZ audio stack is still on the todo */
     static sampleRate: number;
+    /** Which audio tracks are available in this format */
+    static audioTracks: FlipnoteAudioTrack[];
+    /** Which sound effect tracks are available in this format */
+    static soundEffectTracks: FlipnoteSoundEffectTrack[];
     /** Global animation frame color palette */
-    static globalPalette: import("./FlipnoteParserTypes").FlipnotePaletteColor[];
+    static globalPalette: import("./FlipnoteParserBase").FlipnotePaletteColor[];
     /** File format type, reflects {@link KwzParser.format} */
     format: FlipnoteFormat;
+    /** Custom object tag */
+    [Symbol.toStringTag]: string;
     /** Animation frame width, reflects {@link KwzParser.width} */
     imageWidth: number;
     /** Animation frame height, reflects {@link KwzParser.height} */
@@ -113,18 +119,23 @@ export declare class KwzParser extends FlipnoteParser {
     numLayerColors: number;
     /** @internal */
     srcWidth: number;
+    /** Which audio tracks are available in this format, reflects {@link KwzParser.audioTracks} */
+    audioTracks: FlipnoteAudioTrack[];
+    /** Which sound effect tracks are available in this format, reflects {@link KwzParser.soundEffectTracks} */
+    soundEffectTracks: FlipnoteSoundEffectTrack[];
     /** Audio track base sample rate, reflects {@link KwzParser.rawSampleRate} */
     rawSampleRate: number;
     /** Audio output sample rate, reflects {@link KwzParser.sampleRate} */
     sampleRate: number;
     /** Global animation frame color palette, reflects {@link KwzParser.globalPalette} */
-    globalPalette: import("./FlipnoteParserTypes").FlipnotePaletteColor[];
+    globalPalette: import("./FlipnoteParserBase").FlipnotePaletteColor[];
     /** File metadata, see {@link KwzMeta} for structure */
     meta: KwzMeta;
     private settings;
     private sectionMap;
     private bodyEndOffset;
     private layerBuffers;
+    private soundFlags;
     private prevDecodedFrame;
     private frameMetaOffsets;
     private frameDataOffsets;
@@ -172,12 +183,12 @@ export declare class KwzParser extends FlipnoteParser {
      *  - index 6 is the layer C color 2
      * @category Image
     */
-    getFramePalette(frameIndex: number): import("./FlipnoteParserTypes").FlipnotePaletteColor[];
+    getFramePalette(frameIndex: number): import("./FlipnoteParserBase").FlipnotePaletteColor[];
     private getFrameDiffingFlag;
     private getFrameLayerSizes;
     private getFrameLayerDepths;
     private getFrameAuthor;
-    private getFrameSoundFlags;
+    private decodeFrameSoundFlags;
     private getFrameCameraFlags;
     /**
      * Get the layer draw order for a given frame
@@ -195,6 +206,17 @@ export declare class KwzParser extends FlipnoteParser {
      * @category Audio
     */
     decodeSoundFlags(): boolean[][];
+    /**
+     * Get the sound effect usage flags for every frame
+     * @category Audio
+     */
+    getSoundEffectFlags(): FlipnoteSoundEffectFlags[];
+    /**
+     * Get the sound effect usage for a given frame
+     * @param frameIndex
+     * @category Audio
+     */
+    getFrameSoundEffectFlags(frameIndex: number): FlipnoteSoundEffectFlags;
     /**
      * Get the raw compressed audio data for a given track
      * @returns Byte array

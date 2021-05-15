@@ -1,5 +1,9 @@
-import { FlipnoteParser } from '../parsers';
-interface WebglCanvasOptions {
+import { FlipnoteParserBase } from '../parsers';
+import { CanvasInterface } from './CanvasInterface';
+/**
+ * Settings for {@link WebGlCanvas}
+ */
+export interface WebglCanvasOptions {
     /** Function to be called if the context is lost */
     onlost: () => void;
     /** Function to be called if the context is restored */
@@ -8,30 +12,39 @@ interface WebglCanvasOptions {
     useDpi: boolean;
 }
 /**
- * Animation frame renderer, built around the {@link https://developer.mozilla.org/en-US/docs/Web/API/WebGL_API WebGL} API
+ * Flipnote renderer for the {@link https://developer.mozilla.org/en-US/docs/Web/API/WebGL_API WebGL} API
  *
  * Only available in browser contexts
  */
-export declare class WebglCanvas {
+export declare class WebglCanvas implements CanvasInterface {
     static defaultOptions: WebglCanvasOptions;
+    static isSupported(): boolean;
+    /**  */
+    note: FlipnoteParserBase;
     /** Canvas HTML element being used as a rendering surface */
-    el: HTMLCanvasElement;
+    canvas: HTMLCanvasElement;
     /** Rendering context - see {@link https://developer.mozilla.org/en-US/docs/Web/API/WebGLRenderingContext} */
     gl: WebGLRenderingContext;
     /** View width (CSS pixels) */
     width: number;
     /** View height (CSS pixels) */
     height: number;
+    /** */
+    srcWidth: number;
+    /** */
+    srcHeight: number;
     /**
      * Backing canvas width (real pixels)
      * Note that this factors in device pixel ratio, so it may not reflect the size of the canvas in CSS pixels
      */
-    screenWidth: number;
+    dstWidth: number;
     /**
      * Backing canvas height (real pixels)
      * Note that this factors in device pixel ratio, so it may not reflect the size of the canvas in CSS pixels
      */
-    screenHeight: number;
+    dstHeight: number;
+    /** */
+    prevFrameIndex: number;
     private options;
     private program;
     private quadBuffer;
@@ -39,8 +52,6 @@ export declare class WebglCanvas {
     private frameBuffer;
     private frameBufferBytes;
     private frameTexture;
-    private textureWidth;
-    private textureHeight;
     private refs;
     private isCtxLost;
     /**
@@ -71,9 +82,18 @@ export declare class WebglCanvas {
      * @param width
      * @param height
      */
-    setInputSize(width: number, height: number): void;
-    clear(): void;
-    drawFrame(note: FlipnoteParser, frameIndex: number): void;
+    setNote(note: FlipnoteParserBase): void;
+    /**
+     * Clear the canvas
+     * @param color optional RGBA color to use as a background color
+     */
+    clear(color?: [number, number, number, number]): void;
+    /**
+     * Draw a frame from the currently loaded Flipnote
+     * @param frameIndex
+     */
+    drawFrame(frameIndex: number): void;
+    forceUpdate(): void;
     /**
      * Returns true if the webGL context has returned an error
      */
@@ -82,12 +102,18 @@ export declare class WebglCanvas {
      * Only a certain number of WebGL contexts can be added to a single page before the browser will start culling old contexts.
      * This method returns true if it has been culled, false if not
      */
-    isLost(): boolean;
+    private checkContextLoss;
     private handleContextLoss;
     private handleContextRestored;
     /**
+     *
+     * @param type image mime type (`image/jpeg`, `image/png`, etc)
+     * @param quality image quality where supported, between 0 and 1
+     */
+    getDataUrl(type?: string, quality?: any): string;
+    getBlob(type?: string, quality?: any): Promise<Blob>;
+    /**
      * Frees any resources used by this canvas instance
      */
-    destroy(): Promise<void>;
+    destroy(): void;
 }
-export {};

@@ -6,11 +6,13 @@ export {
   FlipnoteVersion,
   FlipnoteRegion,
   FlipnoteMeta,
+  FlipnotePaletteColor,
+  FlipnotePaletteDefinition,
+  FlipnoteLayerVisibility,
   FlipnoteAudioTrack,
   FlipnoteAudioTrackInfo,
-  FlipnotePaletteDefinition,
-  FlipnotePaletteColor,
-  FlipnoteLayerVisibility,
+  FlipnoteSoundEffectTrack,
+  FlipnoteSoundEffectFlags,
   FlipnoteParserSettings,
   KwzParserSettings,
   PpmParserSettings,
@@ -20,7 +22,7 @@ export {
 
 export * as utils from './utils/fsid';
 
-export { 
+export {
   parseSource
 } from './parseSource';
 
@@ -39,8 +41,15 @@ export {
 } from './encoders';
 
 export {
-  WebglCanvas
+  CanvasInterface,
+  WebglCanvas,
+  Html5Canvas,
+  UniversalCanvas
 } from './renderers';
+
+export {
+  WebAudioPlayer
+} from './webaudio';
 
 /** 
  * flipnote.js library version (exported as `flipnote.version`). You can find the latest version on the project's [NPM](https://www.npmjs.com/package/flipnote.js) page.
