@@ -1,6 +1,38 @@
 import { assert } from './assert';
 
 /**
+ * Webpack tries to replace inline calles to require() with polyfills, 
+ * but we don't want that, since we only use require to add extra features in NodeJs environments
+ * 
+ * Modified from:
+ * https://github.com/getsentry/sentry-javascript/blob/bd35d7364191ebed994fb132ff31031117c1823f/packages/utils/src/misc.ts#L9-L11
+ * https://github.com/getsentry/sentry-javascript/blob/89bca28994a0eaab9bc784841872b12a1f4a875c/packages/hub/src/hub.ts#L340
+ * @internal
+ */
+export function dynamicRequire(nodeModule: NodeModule, p: string) {
+  try {
+    return nodeModule.require(p);
+  }
+  catch {
+    throw new Error(`Could not require(${p})`);
+  }
+}
+
+/**
+ * Safely get global scope object
+ * @internal
+ */
+export function getGlobalObject(): Window | NodeJS.Global | {} {
+  return isNode
+    ? global
+    : typeof window !== 'undefined'
+    ? window
+    : typeof self !== 'undefined'
+    ? self
+    : {};
+}
+
+/**
  * Utils to find out information about the current code execution environment
  */
 

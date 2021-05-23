@@ -25,6 +25,7 @@ import {
   rsaLoadPublicKey,
   rsaVerify,
 } from '../utils';
+
 /** 
  * KWZ framerates in frames per second, indexed by the in-app frame speed
  */
@@ -44,9 +45,11 @@ const KWZ_PALETTE: FlipnotePaletteDefinition = {
 };
 
 /**
- * This **cannot** be used to resign Flipnotes, it can onnly verify that they are valid
+ * RSA public key used to verify that the PPM file signature is genuine.
+ * 
+ * This **cannot** be used to resign Flipnotes, it can only verify that they are valid
  */
-const KWZ_PUBLIC_KEY = `-----BEGIN PUBLIC KEY-----
+const KWZ_PUBLIC_KEY: string = `-----BEGIN PUBLIC KEY-----
 MIIBIjANBgkqhkiG9w0BAQEFAAOCAQ8AMIIBCgKCAQEAuv+zHAXXvbbtRqxADDeJ
 ArX2b9RMxj3T+qpRg3FnIE/jeU3tj7eoDzsMduY+D/UT9CSnP+QHYY/vf0n5lqX9
 s6ljoZAmyUuruyj1e5Bg+fkDEu/yPEPQjqhbyywCyYL4TEAOJveopUBx9fdQxUJ6

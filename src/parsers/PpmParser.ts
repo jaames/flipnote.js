@@ -64,9 +64,11 @@ const PPM_PALETTE: FlipnotePaletteDefinition = {
 };
 
 /**
- * This **cannot** be used to resign Flipnotes, it can onnly verify that they are valid
+ * RSA public key used to verify that the PPM file signature is genuine.
+ * 
+ * This **cannot** be used to resign Flipnotes, it can only verify that they are valid
  */
-const PPM_PUBLIC_KEY = `-----BEGIN PUBLIC KEY-----
+const PPM_PUBLIC_KEY: string = `-----BEGIN PUBLIC KEY-----
 MIGfMA0GCSqGSIb3DQEBAQUAA4GNADCBiQKBgQDCPLwTL6oSflv+gjywi/sM0TUB
 90xqOvuCpjduETjPoN2FwMebxNjdKIqHUyDu4AvrQ6BDJc6gKUbZ1E27BGZoCPH4
 9zQRb+zAM6M9EjHwQ6BABr0u2TcF7xGg2uQ9MBWz9AfbVQ91NjfrNWo0f7UPmffv

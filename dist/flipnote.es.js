@@ -1,5 +1,5 @@
 /*!!
-flipnote.js v5.6.0 (web build)
+flipnote.js v5.6.1 (web build)
 https://flipnote.js.org
 A JavaScript library for parsing, converting, and in-browser playback of the proprietary animation formats used by Nintendo's Flipnote Studio and Flipnote Studio 3D apps.
 2018 - 2021 James Daniel
@@ -305,6 +305,36 @@ function assertRange(value, min, max, name = '') {
 }
 
 /**
+ * Webpack tries to replace inline calles to require() with polyfills,
+ * but we don't want that, since we only use require to add extra features in NodeJs environments
+ *
+ * Modified from:
+ * https://github.com/getsentry/sentry-javascript/blob/bd35d7364191ebed994fb132ff31031117c1823f/packages/utils/src/misc.ts#L9-L11
+ * https://github.com/getsentry/sentry-javascript/blob/89bca28994a0eaab9bc784841872b12a1f4a875c/packages/hub/src/hub.ts#L340
+ * @internal
+ */
+function dynamicRequire(nodeModule, p) {
+    try {
+        return nodeModule.require(p);
+    }
+    catch {
+        throw new Error(`Could not require(${p})`);
+    }
+}
+/**
+ * Safely get global scope object
+ * @internal
+ */
+function getGlobalObject() {
+    return isNode
+        ? global
+        : typeof window !== 'undefined'
+            ? window
+            : typeof self !== 'undefined'
+                ? self
+                : {};
+}
+/**
  * Utils to find out information about the current code execution environment
  */
 /**
@@ -348,10 +378,12 @@ const isWebWorker = typeof self === 'object'
  * @internal
  */
 const SUBTLE_CRYPTO = (() => {
-    if (isBrowser || isWebWorker)
-        return crypto.subtle;
+    if (isBrowser || isWebWorker) {
+        const global = getGlobalObject();
+        return (global.crypto || global.msCrypto).subtle;
+    }
     else if (isNode)
-        return require('crypto').webcrypto.subtle;
+        return dynamicRequire(module, 'crypto').webcrypto.subtle;
 })();
 /**
  * crypto algo used
@@ -885,7 +917,9 @@ const PPM_PALETTE = {
     BLUE: [0x0a, 0x39, 0xff, 0xff]
 };
 /**
- * This **cannot** be used to resign Flipnotes, it can onnly verify that they are valid
+ * RSA public key used to verify that the PPM file signature is genuine.
+ *
+ * This **cannot** be used to resign Flipnotes, it can only verify that they are valid
  */
 const PPM_PUBLIC_KEY = `-----BEGIN PUBLIC KEY-----
 MIGfMA0GCSqGSIb3DQEBAQUAA4GNADCBiQKBgQDCPLwTL6oSflv+gjywi/sM0TUB
@@ -1528,7 +1562,9 @@ const KWZ_PALETTE = {
     NONE: [0xff, 0xff, 0xff, 0x00]
 };
 /**
- * This **cannot** be used to resign Flipnotes, it can onnly verify that they are valid
+ * RSA public key used to verify that the PPM file signature is genuine.
+ *
+ * This **cannot** be used to resign Flipnotes, it can only verify that they are valid
  */
 const KWZ_PUBLIC_KEY = `-----BEGIN PUBLIC KEY-----
 MIIBIjANBgkqhkiG9w0BAQEFAAOCAQ8AMIIBCgKCAQEAuv+zHAXXvbbtRqxADDeJ
@@ -2508,7 +2544,7 @@ const nodeUrlLoader = {
     },
     load: function (source, resolve, reject) {
         assertNodeEnv();
-        const http = require('https');
+        const http = dynamicRequire(module, 'https');
         http.get(source, (res) => {
             const chunks = [];
             res.on('data', chunk => chunks.push(chunk));
@@ -6498,6 +6534,6 @@ class WavAudio extends EncoderBase {
 /**
  * flipnote.js library version (exported as `flipnote.version`). You can find the latest version on the project's [NPM](https://www.npmjs.com/package/flipnote.js) page.
  */
-const version = "5.6.0"; // replaced by @rollup/plugin-replace; see rollup.config.js
+const version = "5.6.1"; // replaced by @rollup/plugin-replace; see rollup.config.js
 
 export { CanvasInterface, FlipnoteAudioTrack, FlipnoteFormat, FlipnoteRegion, FlipnoteSoundEffectTrack, GifImage, Html5Canvas, KwzParser, Player, PlayerEvent, PlayerMixin, PpmParser, UniversalCanvas, WavAudio, WebAudioPlayer, WebglCanvas, parseSource, fsid as utils, version };

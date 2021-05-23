@@ -1,5 +1,5 @@
 /*!!
-flipnote.js v5.6.0 (web build)
+flipnote.js v5.6.1 (web build)
 https://flipnote.js.org
 A JavaScript library for parsing, converting, and in-browser playback of the proprietary animation formats used by Nintendo's Flipnote Studio and Flipnote Studio 3D apps.
 2018 - 2021 James Daniel
@@ -419,6 +419,36 @@ Keep on Flipnoting!
     }
 
     /**
+     * Webpack tries to replace inline calles to require() with polyfills,
+     * but we don't want that, since we only use require to add extra features in NodeJs environments
+     *
+     * Modified from:
+     * https://github.com/getsentry/sentry-javascript/blob/bd35d7364191ebed994fb132ff31031117c1823f/packages/utils/src/misc.ts#L9-L11
+     * https://github.com/getsentry/sentry-javascript/blob/89bca28994a0eaab9bc784841872b12a1f4a875c/packages/hub/src/hub.ts#L340
+     * @internal
+     */
+    function dynamicRequire(nodeModule, p) {
+        try {
+            return nodeModule.require(p);
+        }
+        catch (_a) {
+            throw new Error("Could not require(" + p + ")");
+        }
+    }
+    /**
+     * Safely get global scope object
+     * @internal
+     */
+    function getGlobalObject() {
+        return isNode
+            ? global
+            : typeof window !== 'undefined'
+                ? window
+                : typeof self !== 'undefined'
+                    ? self
+                    : {};
+    }
+    /**
      * Utils to find out information about the current code execution environment
      */
     /**
@@ -462,10 +492,12 @@ Keep on Flipnoting!
      * @internal
      */
     var SUBTLE_CRYPTO = (function () {
-        if (isBrowser || isWebWorker)
-            return crypto.subtle;
+        if (isBrowser || isWebWorker) {
+            var global_1 = getGlobalObject();
+            return (global_1.crypto || global_1.msCrypto).subtle;
+        }
         else if (isNode)
-            return require('crypto').webcrypto.subtle;
+            return dynamicRequire(module, 'crypto').webcrypto.subtle;
     })();
     /**
      * crypto algo used
@@ -1035,7 +1067,9 @@ Keep on Flipnoting!
         BLUE: [0x0a, 0x39, 0xff, 0xff]
     };
     /**
-     * This **cannot** be used to resign Flipnotes, it can onnly verify that they are valid
+     * RSA public key used to verify that the PPM file signature is genuine.
+     *
+     * This **cannot** be used to resign Flipnotes, it can only verify that they are valid
      */
     var PPM_PUBLIC_KEY = "-----BEGIN PUBLIC KEY-----\nMIGfMA0GCSqGSIb3DQEBAQUAA4GNADCBiQKBgQDCPLwTL6oSflv+gjywi/sM0TUB\n90xqOvuCpjduETjPoN2FwMebxNjdKIqHUyDu4AvrQ6BDJc6gKUbZ1E27BGZoCPH4\n9zQRb+zAM6M9EjHwQ6BABr0u2TcF7xGg2uQ9MBWz9AfbVQ91NjfrNWo0f7UPmffv\n1VvixmTk1BCtavZxBwIDAQAB\n-----END PUBLIC KEY-----";
     /**
@@ -1694,7 +1728,9 @@ Keep on Flipnoting!
         NONE: [0xff, 0xff, 0xff, 0x00]
     };
     /**
-     * This **cannot** be used to resign Flipnotes, it can onnly verify that they are valid
+     * RSA public key used to verify that the PPM file signature is genuine.
+     *
+     * This **cannot** be used to resign Flipnotes, it can only verify that they are valid
      */
     var KWZ_PUBLIC_KEY = "-----BEGIN PUBLIC KEY-----\nMIIBIjANBgkqhkiG9w0BAQEFAAOCAQ8AMIIBCgKCAQEAuv+zHAXXvbbtRqxADDeJ\nArX2b9RMxj3T+qpRg3FnIE/jeU3tj7eoDzsMduY+D/UT9CSnP+QHYY/vf0n5lqX9\ns6ljoZAmyUuruyj1e5Bg+fkDEu/yPEPQjqhbyywCyYL4TEAOJveopUBx9fdQxUJ6\nJ4J5oCE/Im1kFrlGW+puARiHmt3mmUyNzO8bI/Jx3cGSfoOHJG1foEaQsI5aaKqA\npBqxtzvwqMhudcZtAWSyRMBMlndvkRnVTDNTfTXLOYdHShCIgnKULCTH87uLBIP/\nnsmr4/bnQz8q2rp/HyVO+0yjR6mVr0NX5APJQ+6riJmGg3t3VOldhKP7aTHDUW+h\nkQIDAQAB\n-----END PUBLIC KEY-----";
     /**
@@ -2693,7 +2729,7 @@ Keep on Flipnoting!
         },
         load: function (source, resolve, reject) {
             assertNodeEnv();
-            var http = require('https');
+            var http = dynamicRequire(module, 'https');
             http.get(source, function (res) {
                 var chunks = [];
                 res.on('data', function (chunk) { return chunks.push(chunk); });
@@ -6877,7 +6913,7 @@ Keep on Flipnoting!
     /**
      * flipnote.js library version (exported as `flipnote.version`). You can find the latest version on the project's [NPM](https://www.npmjs.com/package/flipnote.js) page.
      */
-    var version = "5.6.0"; // replaced by @rollup/plugin-replace; see rollup.config.js
+    var version = "5.6.1"; // replaced by @rollup/plugin-replace; see rollup.config.js
 
     exports.CanvasInterface = CanvasInterface;
     exports.GifImage = GifImage;

@@ -168,7 +168,7 @@ note.verify().then((isValid) => {
 Or with [`async` / `await`](https://developer.mozilla.org/en-US/docs/Learn/JavaScript/Asynchronous/Async_await):
 
 ```js
-async (() => {
+(async () => {
   // isValid is a boolean
   const isValid = await note.verify();
   console.log('is Flipnote valid?', isValid);

@@ -1,4 +1,4 @@
-import { isNode, assertNodeEnv } from '../utils';
+import { isNode, assertNodeEnv, dynamicRequire } from '../utils';
 import { ServerResponse } from 'http';
 import { LoaderDefinition } from './LoaderDefinition';
 
@@ -14,7 +14,7 @@ const nodeUrlLoader: LoaderDefinition<string> = {
 
   load: function(source, resolve, reject) {
     assertNodeEnv();
-    const http = require('https');
+    const http = dynamicRequire(module, 'https');
     http.get(source, (res: ServerResponse) => {
       const chunks: Buffer[] = [];
       res.on('data', chunk => chunks.push(chunk));

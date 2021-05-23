@@ -1,14 +1,24 @@
-import { isBrowser, isWebWorker, isNode } from './env';
+import { isBrowser, isWebWorker, isNode, dynamicRequire, getGlobalObject } from './env';
+
+/**
+ * Extended Window interface that allows for Crypto API usage in IE browsers
+ * @internal
+ */
+interface MsCryptoWindow extends Window {
+  msCrypto?: Crypto;
+};
 
 /**
  * same SubtleCrypto API is available in browser and node, but in node it isn't global
  * @internal
  */
 const SUBTLE_CRYPTO = ((): SubtleCrypto => {
-  if (isBrowser || isWebWorker)
-    return crypto.subtle;
+  if (isBrowser || isWebWorker) {
+    const global = getGlobalObject() as MsCryptoWindow;
+    return (global.crypto || global.msCrypto).subtle;
+  }
   else if (isNode)
-    return require('crypto').webcrypto.subtle;
+    return dynamicRequire(module, 'crypto').webcrypto.subtle;
 })();
 
 /**
