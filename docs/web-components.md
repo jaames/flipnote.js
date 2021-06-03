@@ -47,13 +47,13 @@ And... that's it!
 
 ## Attributes
 
-#### `src`
+### `src`
 
 The `src` attribute tells the player what Flipnote it should load, and it should point to the URL of a Flipnote Studio .ppm or .kwz animation file. This attribute be changed at any time to load another Flipnote into the same player.
 
 The player can also load Flipnotes from other kinds of sources, such as from JavaScript [`ArrayBuffer`](https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/ArrayBuffer) or [`File`](https://developer.mozilla.org/en-US/docs/Web/API/File) objects. For more information on this, check out the [JavaScript API](#javascript-api) section.
 
-#### `controls`
+### `controls`
 
 The `controls` attribute can select between a couple of different UI control layouts.
 
@@ -77,11 +77,11 @@ Default:
 <flipnote-player controls="compact" src="../../assets/notes/mrjohn.ppm"></flipnote-player>
 </div>
 
-#### `cropBorder`
+### `cropBorder`
 
 Set `cropBorder="true"` to make the player remove the border around KWZ frames. If used with [`dsiLibrary`](#dsilibrary), this will also crop a Nintendo DSi Library KWZ to the dimensions of the original PPM it was converted from. This value can not be updated after a Flipnote is loaded.
 
-#### `dsiLibrary`
+### `dsiLibrary`
 
 Set `dsiLibrary="true"` to enable special processing for KWZs from Nintendo DSi Library. This value can not be updated after a Flipnote is loaded.
 
