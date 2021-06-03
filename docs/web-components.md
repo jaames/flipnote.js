@@ -77,6 +77,30 @@ Default:
 <flipnote-player controls="compact" src="../../assets/notes/mrjohn.ppm"></flipnote-player>
 </div>
 
+#### `cropBorder`
+
+Set `cropBorder="true"` to make the player remove the border around KWZ frames. If used with [`dsiLibrary`](#dsilibrary), this will also crop a Nintendo DSi Library KWZ to the dimensions of the original PPM it was converted from. This value can not be updated after a Flipnote is loaded.
+
+#### `dsiLibrary`
+
+Set `dsiLibrary="true"` to enable special processing for KWZs from Nintendo DSi Library. This value can not be updated after a Flipnote is loaded.
+
+### `bgmPredictor`
+
+Some DSi Library KWZs have very broken audio since Nintendo messed up the conversion from the PPM format. While flipnote.js has a built-in correction algorithm for this, very advanced users can instead provide your own ADPCM state values if they really want to. If [`dsiLibrary`](#dsilibrary) is set to `true`, the value of `bgmPredictor` will provide the initial ADPCM predictor value when decoding the BGM track. This value can not be updated after a Flipnote is loaded.
+
+### `bgmStepIndex`
+
+Like [`bgmPredictor`](#bgmpredictor), the value of `bgmStepIndex` will provide the initial ADPCM step index value when decoding the BGM track. This value can not be updated after a Flipnote is loaded.
+
+### `sePredictors`
+
+Like [`bgmPredictor`](#bgmpredictor), the value of `sePredictors` will provide the initial ADPCM predictor values when decoding each sound effect track, as a comma-seperated list in the order of SE1, SE2, SE3 then SE4 (e.g `bgmStepIndices="100,100,100,-100"`). This value can not be updated after a Flipnote is loaded.
+
+### `seStepIndices`
+
+Like [`bgmStepIndex`](#bgmstepindex), the value of `bgmStepIndices` will provide the initial ADPCM step index values when decoding each sound effect track, as a comma-seperated list in the order of SE1, SE2, SE3 then SE4 (e.g `bgmStepIndices="40,40,40,39"`). This value can not be updated after a Flipnote is loaded.
+
 ## Styling
 
 Some [CSS Variables](https://developer.mozilla.org/en-US/docs/Web/CSS/Using_CSS_custom_properties) can also be used to style various elements of the player UI. You can override any these variables to provide your own styles to the component via CSS, like so:

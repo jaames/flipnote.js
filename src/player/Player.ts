@@ -1,4 +1,4 @@
-import { Flipnote, FlipnoteFormat, FlipnoteMeta } from '../parsers';
+import { Flipnote, FlipnoteFormat, FlipnoteMeta, FlipnoteParserSettings } from '../parsers';
 import { FlipnoteSource, parseSource } from '../parseSource';
 import { PlayerEvent, PlayerEventMap, supportedEvents } from './PlayerEvent';
 import { createTimeRanges, padNumber, formatTime } from './playerUtils';
@@ -54,6 +54,8 @@ export class Player {
   public canvasEl: HTMLCanvasElement;
   /** Currently loaded Flipnote */
   public note: Flipnote;
+  /** Flipnote parser settings */
+  public parserSettings: FlipnoteParserSettings;
   /** Format of the currently loaded Flipnote */
   public noteFormat: FlipnoteFormat;
   /** Metadata for the currently loaded Flipnote */
@@ -107,10 +109,11 @@ export class Player {
    * 
    * The ratio between `width` and `height` should be 3:4 for best results
    */
-  constructor(parent: string | Element, width: number, height: number) {
+  constructor(parent: string | Element, width: number, height: number, parserSettings: FlipnoteParserSettings = {}) {
     assertBrowserEnv();
     // if parent is a string, use it to select an Element, else assume it's an Element
     const mountPoint = ('string' == typeof parent) ? <Element>document.querySelector(parent) : parent;
+    this.parserSettings = parserSettings;
     this.renderer = new UniversalCanvas(mountPoint, width, height, {
       onlost: () => this.emit(PlayerEvent.Error),
       onrestored: () => this.load()
@@ -252,20 +255,37 @@ export class Player {
     // close currently open note first
     if (this.isNoteLoaded) 
       this.closeNote();
+    // keep track of source
+    this._src = source;
     // if no source specified, just reset everything
     if (!source)
       return this.openNote(this.note);
     // otherwise do a normal load
     this.emit(PlayerEvent.LoadStart);
-    return parseSource(source)
+    return parseSource(source, this.parserSettings)
       .then((note: Flipnote) => {
         this.openNote(note);
-        this._src = source;
       })
       .catch((err: any) => {
         this.emit(PlayerEvent.Error, err);
         throw new Error(`Error loading Flipnote: ${ err.message }`);
       });
+  }
+
+  /**
+   * Reload the current Flipnote
+   */
+  public async reload() {
+    if (this.note) 
+      return await this.load(this.note.buffer);
+  }
+
+  /**
+   * Reload the current Flipnote
+   */
+  public async updateSettings(settings: FlipnoteParserSettings) {
+    this.parserSettings = settings;
+    return await this.reload();
   }
 
   /** 

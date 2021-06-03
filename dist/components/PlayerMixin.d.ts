@@ -25,6 +25,7 @@ export declare function PlayerMixin<TargetBase extends Constructor>(Target: Targ
         readonly duration: number;
         readonly layerVisibility: Record<number, boolean>;
         autoplay: boolean;
+        parserSettings: Partial<import("../parsers").KwzParserSettings>;
         supportedEvents: import("../player").PlayerEvent[];
         _src: import("../parseSource").FlipnoteSource;
         _loop: boolean;
@@ -58,6 +59,8 @@ export declare function PlayerMixin<TargetBase extends Constructor>(Target: Targ
         readonly videoWidth: number;
         readonly videoHeight: number;
         load(source?: any): Promise<void>;
+        reload(): Promise<void>;
+        updateSettings(settings: Partial<import("../parsers").KwzParserSettings>): Promise<void>;
         closeNote(): void;
         openNote(note: import("../parsers").FlipnoteParserBase): void;
         playbackLoop: (timestamp: number) => void;

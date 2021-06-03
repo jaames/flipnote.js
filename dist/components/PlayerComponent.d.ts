@@ -12,6 +12,7 @@ declare const PlayerComponent_base: {
         readonly duration: number;
         readonly layerVisibility: Record<number, boolean>;
         autoplay: boolean;
+        parserSettings: Partial<import("../parsers").KwzParserSettings>;
         supportedEvents: PlayerEvent[];
         _src: import("../parseSource").FlipnoteSource;
         _loop: boolean;
@@ -45,8 +46,11 @@ declare const PlayerComponent_base: {
         readonly videoWidth: number;
         readonly videoHeight: number;
         load(source?: any): Promise<void>;
+        reload(): Promise<void>;
+        updateSettings(settings: Partial<import("../parsers").KwzParserSettings>): Promise<void>;
         closeNote(): void;
         openNote(note: import("../parsers").FlipnoteParserBase): void;
+        /** @internal */
         playbackLoop: (timestamp: number) => void;
         setCurrentTime(value: number): void;
         getCurrentTime(): number;
@@ -136,6 +140,12 @@ declare const PlayerComponent_base: {
 export declare class PlayerComponent extends PlayerComponent_base {
     static get styles(): import("lit-element").CSSResult;
     controls: string;
+    dsiLibrary: boolean;
+    cropBorder: boolean;
+    bgmPredictor: number;
+    bgmStepIndex: number;
+    sePredictors: string;
+    seStepIndices: string;
     get width(): number | string;
     set width(value: number | string);
     get src(): any;
@@ -164,6 +174,8 @@ export declare class PlayerComponent extends PlayerComponent_base {
     firstUpdated(changedProperties: PropertyValues): void;
     /** @internal */
     disconnectedCallback(): void;
+    private updateSettingsFromProps;
+    private parseListProp;
     private updateCanvasSize;
     private handleResize;
     private handleKeyInput;

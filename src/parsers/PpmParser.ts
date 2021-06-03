@@ -133,6 +133,8 @@ export class PpmParser extends FlipnoteParserBase {
     PPM_PALETTE.RED,
     PPM_PALETTE.BLUE
   ];
+  /** Public key used for Flipnote verification, in PEM format */
+  static publicKey = PPM_PUBLIC_KEY;
 
   /** File format type, reflects {@link PpmParser.format} */
   public format = FlipnoteFormat.PPM;
@@ -150,6 +152,8 @@ export class PpmParser extends FlipnoteParserBase {
   public numLayers = PpmParser.numLayers;
   /** Number of colors per layer (aside from transparent), reflects {@link PpmParser.numLayerColors} */
   public numLayerColors = PpmParser.numLayerColors;
+  /** Public key used for Flipnote verification, in PEM format */
+  public publicKey = PpmParser.publicKey;
   /** @internal */
   public srcWidth = PpmParser.width;
   /** Which audio tracks are available in this format, reflects {@link PpmParser.audioTracks} */

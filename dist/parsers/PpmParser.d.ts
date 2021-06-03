@@ -63,6 +63,8 @@ export declare class PpmParser extends FlipnoteParserBase {
     static soundEffectTracks: FlipnoteSoundEffectTrack[];
     /** Global animation frame color palette */
     static globalPalette: import("./FlipnoteParserBase").FlipnotePaletteColor[];
+    /** Public key used for Flipnote verification, in PEM format */
+    static publicKey: string;
     /** File format type, reflects {@link PpmParser.format} */
     format: FlipnoteFormat;
     /** Custom object tag */
@@ -79,6 +81,8 @@ export declare class PpmParser extends FlipnoteParserBase {
     numLayers: number;
     /** Number of colors per layer (aside from transparent), reflects {@link PpmParser.numLayerColors} */
     numLayerColors: number;
+    /** Public key used for Flipnote verification, in PEM format */
+    publicKey: string;
     /** @internal */
     srcWidth: number;
     /** Which audio tracks are available in this format, reflects {@link PpmParser.audioTracks} */

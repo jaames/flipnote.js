@@ -15,6 +15,7 @@
     "allowSyntheticDefaultImports": true,
     "experimentalDecorators": true,
     "esModuleInterop": true,
+    "downlevelIteration": true,
     "paths": {
       "*" : ["src/types/*"]
     },

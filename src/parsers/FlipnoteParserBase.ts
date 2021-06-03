@@ -135,6 +135,8 @@ export abstract class FlipnoteParserBase extends DataStream {
   static sampleRate: number;
   /** Global animation frame color palette */
   static globalPalette: FlipnotePaletteColor[];
+  /** Public key used for Flipnote verification, in PEM format */
+  static publicKey: string;
 
   /** Instance file format info */
 
@@ -180,6 +182,8 @@ export abstract class FlipnoteParserBase extends DataStream {
   public soundMeta: Map<FlipnoteAudioTrack, FlipnoteAudioTrackInfo>;
   /** Animation frame global layer visibility */
   public layerVisibility: FlipnoteLayerVisibility = {1: true, 2: true, 3: true};
+  /** Public key used for Flipnote verification, in PEM format */
+  public publicKey: string;
 
   /** Instance-unique info */
 

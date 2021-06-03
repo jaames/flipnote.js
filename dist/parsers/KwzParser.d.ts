@@ -71,6 +71,18 @@ export declare type KwzParserSettings = {
      * This is only enabled if `dsiLibraryNote` is also set to `true`
      */
     initialBgmPredictor: number | null;
+    /**
+     * Manually provide an initial adpcm step index for each sound effect track.
+     *
+     * This is only enabled if `dsiLibraryNote` is also set to `true`
+     */
+    initialSeStepIndices: number[] | null;
+    /**
+     * Manually provide an initial adpcm predictor for each sound effect track.
+     *
+     * This is only enabled if `dsiLibraryNote` is also set to `true`
+     */
+    initialSePredictors: number[] | null;
 };
 /**
  * Parser class for Flipnote Studio 3D's KWZ animation format
@@ -101,6 +113,8 @@ export declare class KwzParser extends FlipnoteParserBase {
     static soundEffectTracks: FlipnoteSoundEffectTrack[];
     /** Global animation frame color palette */
     static globalPalette: import("./FlipnoteParserBase").FlipnotePaletteColor[];
+    /** Public key used for Flipnote verification, in PEM format */
+    static publicKey: string;
     /** File format type, reflects {@link KwzParser.format} */
     format: FlipnoteFormat;
     /** Custom object tag */
@@ -117,6 +131,8 @@ export declare class KwzParser extends FlipnoteParserBase {
     numLayers: number;
     /** Number of colors per layer (aside from transparent), reflects {@link KwzParser.numLayerColors} */
     numLayerColors: number;
+    /** Public key used for Flipnote verification, in PEM format */
+    publicKey: string;
     /** @internal */
     srcWidth: number;
     /** Which audio tracks are available in this format, reflects {@link KwzParser.audioTracks} */

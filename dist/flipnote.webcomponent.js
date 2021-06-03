@@ -1,5 +1,5 @@
 /*!!
-flipnote.js v5.6.1 (webcomponent build)
+flipnote.js v5.6.2 (webcomponent build)
 https://flipnote.js.org
 A JavaScript library for parsing, converting, and in-browser playback of the proprietary animation formats used by Nintendo's Flipnote Studio and Flipnote Studio 3D apps.
 2018 - 2021 James Daniel
@@ -966,6 +966,8 @@ MIGfMA0GCSqGSIb3DQEBAQUAA4GNADCBiQKBgQDCPLwTL6oSflv+gjywi/sM0TUB
           this.numLayers = PpmParser.numLayers;
           /** Number of colors per layer (aside from transparent), reflects {@link PpmParser.numLayerColors} */
           this.numLayerColors = PpmParser.numLayerColors;
+          /** Public key used for Flipnote verification, in PEM format */
+          this.publicKey = PpmParser.publicKey;
           /** @internal */
           this.srcWidth = PpmParser.width;
           /** Which audio tracks are available in this format, reflects {@link PpmParser.audioTracks} */
@@ -1553,6 +1555,8 @@ MIGfMA0GCSqGSIb3DQEBAQUAA4GNADCBiQKBgQDCPLwTL6oSflv+gjywi/sM0TUB
       PPM_PALETTE.RED,
       PPM_PALETTE.BLUE
   ];
+  /** Public key used for Flipnote verification, in PEM format */
+  PpmParser.publicKey = PPM_PUBLIC_KEY;
 
   /**
    * KWZ framerates in frames per second, indexed by the in-app frame speed
@@ -1669,6 +1673,8 @@ kQIDAQAB
           this.numLayers = KwzParser.numLayers;
           /** Number of colors per layer (aside from transparent), reflects {@link KwzParser.numLayerColors} */
           this.numLayerColors = KwzParser.numLayerColors;
+          /** Public key used for Flipnote verification, in PEM format */
+          this.publicKey = KwzParser.publicKey;
           /** @internal */
           this.srcWidth = KwzParser.width;
           /** Which audio tracks are available in this format, reflects {@link KwzParser.audioTracks} */
@@ -1685,12 +1691,13 @@ kQIDAQAB
           this.bitIndex = 0;
           this.bitValue = 0;
           this.settings = Object.assign(Object.assign({}, KwzParser.defaultSettings), settings);
-          this.buildSectionMap();
           this.layerBuffers = [
               new Uint8Array(KwzParser.width * KwzParser.height),
               new Uint8Array(KwzParser.width * KwzParser.height),
               new Uint8Array(KwzParser.width * KwzParser.height),
           ];
+          // skip through the file and read all of the section headers so we can locate them
+          this.buildSectionMap();
           // if the KIC section is present, we're dealing with a folder icon
           // these are single-frame KWZs without a KFH section for metadata, or a KSN section for sound
           // while the data for a full frame (320*240) is present, only the top-left 24*24 pixels are used
@@ -1705,7 +1712,7 @@ kQIDAQAB
               this.thumbFrameIndex = 0;
               this.getFrameOffsets();
           }
-          // if the KFH section is present, then this is a handwritten comment from the Flipnote Gallery World online service
+          // if the KSN section is not present, then this is a handwritten comment from the Flipnote Gallery World online service
           // these are single-frame KWZs, just with no sound
           else if (!this.sectionMap.has('KSN')) {
               this.isComment = true;
@@ -1741,7 +1748,6 @@ kQIDAQAB
           }
       }
       buildSectionMap() {
-          this.seek(0);
           const fileSize = this.byteLength - 256;
           const sectionMap = new Map();
           let sectionCount = 0;
@@ -1828,9 +1834,9 @@ kQIDAQAB
               3: (layerFlags & 0x3) === 0,
           };
           // Try to auto-detect whether the current author ID matches a converted PPM ID
-          if (isKwzDsiLibraryFsid(currentAuthorId)) {
-              this.isDsiLibraryNote = true;
-          }
+          // if (isKwzDsiLibraryFsid(currentAuthorId)) {
+          //   this.isDsiLibraryNote = true;
+          // }
           this.meta = {
               lock: (flags & 0x1) !== 0,
               loop: (flags & 0x2) !== 0,
@@ -2345,26 +2351,37 @@ kQIDAQAB
           let stepIndex = 40;
           // Nintendo messed up the initial adpcm state for a bunch of the PPM conversions on DSi Library
           // they are effectively random, so you can optionally provide your own state values, or let the lib make a best guess
-          if (this.isDsiLibraryNote && trackId === exports.FlipnoteAudioTrack.BGM) {
-              // allow manual overrides for default predictor
-              if (settings.initialBgmPredictor !== null)
-                  predictor = settings.initialBgmPredictor;
-              // allow manual overrides for default step index
-              if (settings.initialBgmStepIndex !== null)
-                  stepIndex = settings.initialBgmStepIndex;
-              // bruteforce step index by finding the lowest track root mean square 
-              if (settings.guessInitialBgmState) {
-                  let bestRms = 0xFFFFFFFF; // arbritrarily large
-                  let bestStepIndex = 0;
-                  for (stepIndex = 0; stepIndex <= 40; stepIndex++) {
-                      const dstPtr = this.decodeAdpcm(src, dst, predictor, stepIndex);
-                      const rms = pcmGetRms(dst.subarray(0, dstPtr)); // uses same underlying memory as dst
-                      if (rms < bestRms) {
-                          bestRms = rms;
-                          bestStepIndex = stepIndex;
+          if (this.isDsiLibraryNote) {
+              if (trackId === exports.FlipnoteAudioTrack.BGM) {
+                  // allow manual overrides for default predictor
+                  if (settings.initialBgmPredictor !== null)
+                      predictor = settings.initialBgmPredictor;
+                  // allow manual overrides for default step index
+                  if (settings.initialBgmStepIndex !== null)
+                      stepIndex = settings.initialBgmStepIndex;
+                  // bruteforce step index by finding the lowest track root mean square 
+                  if (settings.guessInitialBgmState) {
+                      let bestRms = 0xFFFFFFFF; // arbritrarily large
+                      let bestStepIndex = 0;
+                      for (stepIndex = 0; stepIndex <= 40; stepIndex++) {
+                          const dstPtr = this.decodeAdpcm(src, dst, predictor, stepIndex);
+                          const rms = pcmGetRms(dst.subarray(0, dstPtr)); // uses same underlying memory as dst
+                          if (rms < bestRms) {
+                              bestRms = rms;
+                              bestStepIndex = stepIndex;
+                          }
                       }
+                      stepIndex = bestStepIndex;
                   }
-                  stepIndex = bestStepIndex;
+              }
+              else {
+                  const trackIndex = this.soundEffectTracks.indexOf(trackId);
+                  // allow manual overrides for default predictor
+                  if (Array.isArray(settings.initialSePredictors) && settings.initialSePredictors[trackIndex] !== undefined)
+                      predictor = settings.initialSePredictors[trackIndex];
+                  // allow manual overrides for default step index
+                  if (Array.isArray(settings.initialSeStepIndices) && settings.initialSeStepIndices[trackIndex] !== undefined)
+                      stepIndex = settings.initialSeStepIndices[trackIndex];
               }
           }
           // decode track
@@ -2474,6 +2491,8 @@ kQIDAQAB
       guessInitialBgmState: true,
       initialBgmPredictor: null,
       initialBgmStepIndex: null,
+      initialSePredictors: null,
+      initialSeStepIndices: null,
   };
   /** File format type */
   KwzParser.format = exports.FlipnoteFormat.KWZ;
@@ -2514,6 +2533,8 @@ kQIDAQAB
       KWZ_PALETTE.BLUE,
       KWZ_PALETTE.NONE,
   ];
+  /** Public key used for Flipnote verification, in PEM format */
+  KwzParser.publicKey = KWZ_PUBLIC_KEY;
 
   /**
    * Loader for web url strings (Browser only)
@@ -5125,7 +5146,7 @@ kQIDAQAB
        *
        * The ratio between `width` and `height` should be 3:4 for best results
        */
-      constructor(parent, width, height) {
+      constructor(parent, width, height, parserSettings = {}) {
           /** Animation duration, in seconds */
           this.duration = 0;
           /** Automatically begin playback after a Flipnote is loaded */
@@ -5188,6 +5209,7 @@ kQIDAQAB
           assertBrowserEnv();
           // if parent is a string, use it to select an Element, else assume it's an Element
           const mountPoint = ('string' == typeof parent) ? document.querySelector(parent) : parent;
+          this.parserSettings = parserSettings;
           this.renderer = new UniversalCanvas(mountPoint, width, height, {
               onlost: () => this.emit(exports.PlayerEvent.Error),
               onrestored: () => this.load()
@@ -5309,20 +5331,35 @@ kQIDAQAB
           // close currently open note first
           if (this.isNoteLoaded)
               this.closeNote();
+          // keep track of source
+          this._src = source;
           // if no source specified, just reset everything
           if (!source)
               return this.openNote(this.note);
           // otherwise do a normal load
           this.emit(exports.PlayerEvent.LoadStart);
-          return parseSource(source)
+          return parseSource(source, this.parserSettings)
               .then((note) => {
               this.openNote(note);
-              this._src = source;
           })
               .catch((err) => {
               this.emit(exports.PlayerEvent.Error, err);
               throw new Error(`Error loading Flipnote: ${err.message}`);
           });
+      }
+      /**
+       * Reload the current Flipnote
+       */
+      async reload() {
+          if (this.note)
+              return await this.load(this.note.buffer);
+      }
+      /**
+       * Reload the current Flipnote
+       */
+      async updateSettings(settings) {
+          this.parserSettings = settings;
+          return await this.reload();
       }
       /**
        * Close the currently loaded Flipnote
@@ -6526,7 +6563,7 @@ kQIDAQAB
   /**
    * flipnote.js library version (exported as `flipnote.version`). You can find the latest version on the project's [NPM](https://www.npmjs.com/package/flipnote.js) page.
    */
-  const version = "5.6.1"; // replaced by @rollup/plugin-replace; see rollup.config.js
+  const version = "5.6.2"; // replaced by @rollup/plugin-replace; see rollup.config.js
 
   /*! *****************************************************************************
   Copyright (c) Microsoft Corporation.
@@ -9658,7 +9695,8 @@ kQIDAQAB
       }
       /** @internal */
       firstUpdated(changedProperties) {
-          const player = new Player(this.playerCanvasWrapper, 256, 192);
+          this.updateSettingsFromProps();
+          const player = new Player(this.playerCanvasWrapper, 256, 192, this.parserSettings);
           this._resizeObserver.observe(this);
           this.player = player;
           player.on(exports.PlayerEvent.LoadStart, () => {
@@ -9695,12 +9733,42 @@ kQIDAQAB
               player.load(this._playerSrc);
           this._isPlayerAvailable = true;
       }
+      // TODO: get this to actualy work so that prop updates update parser settings
+      // /**@internal */
+      // async updated(changedProperties: PropertyValues) {
+      //   let hasReloaded = false;
+      //   let settingProps =  ['dsiLibrary', 'cropBorder', 'bgmPredictor', 'bgmStepIndex', 'sePredictor', 'seStepIndex'];
+      //   for (let [key, value] of changedProperties) {
+      //     if ((!hasReloaded) && settingProps.includes(key as string)) {
+      //       console.log(key, 'updated');
+      //       this.updateSettingsFromProps();
+      //       await this.player.reload();
+      //       hasReloaded = true;
+      //     }
+      //   }
+      // }
       /** @internal */
       disconnectedCallback() {
           // disable resize observer
           this._resizeObserver.disconnect();
           // clean up webgl and buffer stuff if this element is removed from DOM
           this.destroy();
+      }
+      updateSettingsFromProps() {
+          this.parserSettings = {
+              dsiLibraryNote: this.dsiLibrary,
+              borderCrop: this.cropBorder,
+              initialBgmPredictor: this.bgmPredictor,
+              initialBgmStepIndex: this.bgmStepIndex,
+              initialSePredictors: this.parseListProp(this === null || this === void 0 ? void 0 : this.sePredictors),
+              initialSeStepIndices: this.parseListProp(this === null || this === void 0 ? void 0 : this.seStepIndices),
+          };
+      }
+      parseListProp(propValue) {
+          if (!propValue)
+              return undefined;
+          // split string into segments on instances of ",", check if segment is empty, if not, convert to num, else undefined
+          return propValue.split(',').map(x => !(/^\s*$/.test(x)) ? parseInt(x) : undefined);
       }
       updateCanvasSize() {
           const isPlayerAvailable = this._isPlayerAvailable;
@@ -9723,6 +9791,24 @@ kQIDAQAB
   __decorate([
       property({ type: String })
   ], PlayerComponent.prototype, "controls", void 0);
+  __decorate([
+      property({ type: Boolean })
+  ], PlayerComponent.prototype, "dsiLibrary", void 0);
+  __decorate([
+      property({ type: Boolean })
+  ], PlayerComponent.prototype, "cropBorder", void 0);
+  __decorate([
+      property({ type: Number })
+  ], PlayerComponent.prototype, "bgmPredictor", void 0);
+  __decorate([
+      property({ type: Number })
+  ], PlayerComponent.prototype, "bgmStepIndex", void 0);
+  __decorate([
+      property({ type: String })
+  ], PlayerComponent.prototype, "sePredictors", void 0);
+  __decorate([
+      property({ type: String })
+  ], PlayerComponent.prototype, "seStepIndices", void 0);
   __decorate([
       property({ type: String })
   ], PlayerComponent.prototype, "width", null);

@@ -1,5 +1,5 @@
 /*!!
-flipnote.js v5.6.1 (web build)
+flipnote.js v5.6.2 (web build)
 https://flipnote.js.org
 A JavaScript library for parsing, converting, and in-browser playback of the proprietary animation formats used by Nintendo's Flipnote Studio and Flipnote Studio 3D apps.
 2018 - 2021 James Daniel
@@ -957,6 +957,8 @@ class PpmParser extends FlipnoteParserBase {
         this.numLayers = PpmParser.numLayers;
         /** Number of colors per layer (aside from transparent), reflects {@link PpmParser.numLayerColors} */
         this.numLayerColors = PpmParser.numLayerColors;
+        /** Public key used for Flipnote verification, in PEM format */
+        this.publicKey = PpmParser.publicKey;
         /** @internal */
         this.srcWidth = PpmParser.width;
         /** Which audio tracks are available in this format, reflects {@link PpmParser.audioTracks} */
@@ -1544,6 +1546,8 @@ PpmParser.globalPalette = [
     PPM_PALETTE.RED,
     PPM_PALETTE.BLUE
 ];
+/** Public key used for Flipnote verification, in PEM format */
+PpmParser.publicKey = PPM_PUBLIC_KEY;
 
 /**
  * KWZ framerates in frames per second, indexed by the in-app frame speed
@@ -1660,6 +1664,8 @@ class KwzParser extends FlipnoteParserBase {
         this.numLayers = KwzParser.numLayers;
         /** Number of colors per layer (aside from transparent), reflects {@link KwzParser.numLayerColors} */
         this.numLayerColors = KwzParser.numLayerColors;
+        /** Public key used for Flipnote verification, in PEM format */
+        this.publicKey = KwzParser.publicKey;
         /** @internal */
         this.srcWidth = KwzParser.width;
         /** Which audio tracks are available in this format, reflects {@link KwzParser.audioTracks} */
@@ -1676,12 +1682,13 @@ class KwzParser extends FlipnoteParserBase {
         this.bitIndex = 0;
         this.bitValue = 0;
         this.settings = { ...KwzParser.defaultSettings, ...settings };
-        this.buildSectionMap();
         this.layerBuffers = [
             new Uint8Array(KwzParser.width * KwzParser.height),
             new Uint8Array(KwzParser.width * KwzParser.height),
             new Uint8Array(KwzParser.width * KwzParser.height),
         ];
+        // skip through the file and read all of the section headers so we can locate them
+        this.buildSectionMap();
         // if the KIC section is present, we're dealing with a folder icon
         // these are single-frame KWZs without a KFH section for metadata, or a KSN section for sound
         // while the data for a full frame (320*240) is present, only the top-left 24*24 pixels are used
@@ -1696,7 +1703,7 @@ class KwzParser extends FlipnoteParserBase {
             this.thumbFrameIndex = 0;
             this.getFrameOffsets();
         }
-        // if the KFH section is present, then this is a handwritten comment from the Flipnote Gallery World online service
+        // if the KSN section is not present, then this is a handwritten comment from the Flipnote Gallery World online service
         // these are single-frame KWZs, just with no sound
         else if (!this.sectionMap.has('KSN')) {
             this.isComment = true;
@@ -1732,7 +1739,6 @@ class KwzParser extends FlipnoteParserBase {
         }
     }
     buildSectionMap() {
-        this.seek(0);
         const fileSize = this.byteLength - 256;
         const sectionMap = new Map();
         let sectionCount = 0;
@@ -1819,9 +1825,9 @@ class KwzParser extends FlipnoteParserBase {
             3: (layerFlags & 0x3) === 0,
         };
         // Try to auto-detect whether the current author ID matches a converted PPM ID
-        if (isKwzDsiLibraryFsid(currentAuthorId)) {
-            this.isDsiLibraryNote = true;
-        }
+        // if (isKwzDsiLibraryFsid(currentAuthorId)) {
+        //   this.isDsiLibraryNote = true;
+        // }
         this.meta = {
             lock: (flags & 0x1) !== 0,
             loop: (flags & 0x2) !== 0,
@@ -2336,26 +2342,37 @@ class KwzParser extends FlipnoteParserBase {
         let stepIndex = 40;
         // Nintendo messed up the initial adpcm state for a bunch of the PPM conversions on DSi Library
         // they are effectively random, so you can optionally provide your own state values, or let the lib make a best guess
-        if (this.isDsiLibraryNote && trackId === FlipnoteAudioTrack.BGM) {
-            // allow manual overrides for default predictor
-            if (settings.initialBgmPredictor !== null)
-                predictor = settings.initialBgmPredictor;
-            // allow manual overrides for default step index
-            if (settings.initialBgmStepIndex !== null)
-                stepIndex = settings.initialBgmStepIndex;
-            // bruteforce step index by finding the lowest track root mean square 
-            if (settings.guessInitialBgmState) {
-                let bestRms = 0xFFFFFFFF; // arbritrarily large
-                let bestStepIndex = 0;
-                for (stepIndex = 0; stepIndex <= 40; stepIndex++) {
-                    const dstPtr = this.decodeAdpcm(src, dst, predictor, stepIndex);
-                    const rms = pcmGetRms(dst.subarray(0, dstPtr)); // uses same underlying memory as dst
-                    if (rms < bestRms) {
-                        bestRms = rms;
-                        bestStepIndex = stepIndex;
+        if (this.isDsiLibraryNote) {
+            if (trackId === FlipnoteAudioTrack.BGM) {
+                // allow manual overrides for default predictor
+                if (settings.initialBgmPredictor !== null)
+                    predictor = settings.initialBgmPredictor;
+                // allow manual overrides for default step index
+                if (settings.initialBgmStepIndex !== null)
+                    stepIndex = settings.initialBgmStepIndex;
+                // bruteforce step index by finding the lowest track root mean square 
+                if (settings.guessInitialBgmState) {
+                    let bestRms = 0xFFFFFFFF; // arbritrarily large
+                    let bestStepIndex = 0;
+                    for (stepIndex = 0; stepIndex <= 40; stepIndex++) {
+                        const dstPtr = this.decodeAdpcm(src, dst, predictor, stepIndex);
+                        const rms = pcmGetRms(dst.subarray(0, dstPtr)); // uses same underlying memory as dst
+                        if (rms < bestRms) {
+                            bestRms = rms;
+                            bestStepIndex = stepIndex;
+                        }
                     }
+                    stepIndex = bestStepIndex;
                 }
-                stepIndex = bestStepIndex;
+            }
+            else {
+                const trackIndex = this.soundEffectTracks.indexOf(trackId);
+                // allow manual overrides for default predictor
+                if (Array.isArray(settings.initialSePredictors) && settings.initialSePredictors[trackIndex] !== undefined)
+                    predictor = settings.initialSePredictors[trackIndex];
+                // allow manual overrides for default step index
+                if (Array.isArray(settings.initialSeStepIndices) && settings.initialSeStepIndices[trackIndex] !== undefined)
+                    stepIndex = settings.initialSeStepIndices[trackIndex];
             }
         }
         // decode track
@@ -2465,6 +2482,8 @@ KwzParser.defaultSettings = {
     guessInitialBgmState: true,
     initialBgmPredictor: null,
     initialBgmStepIndex: null,
+    initialSePredictors: null,
+    initialSeStepIndices: null,
 };
 /** File format type */
 KwzParser.format = FlipnoteFormat.KWZ;
@@ -2505,6 +2524,8 @@ KwzParser.globalPalette = [
     KWZ_PALETTE.BLUE,
     KWZ_PALETTE.NONE,
 ];
+/** Public key used for Flipnote verification, in PEM format */
+KwzParser.publicKey = KWZ_PUBLIC_KEY;
 
 /**
  * Loader for web url strings (Browser only)
@@ -5119,7 +5140,7 @@ class Player {
      *
      * The ratio between `width` and `height` should be 3:4 for best results
      */
-    constructor(parent, width, height) {
+    constructor(parent, width, height, parserSettings = {}) {
         /** Animation duration, in seconds */
         this.duration = 0;
         /** Automatically begin playback after a Flipnote is loaded */
@@ -5182,6 +5203,7 @@ class Player {
         assertBrowserEnv();
         // if parent is a string, use it to select an Element, else assume it's an Element
         const mountPoint = ('string' == typeof parent) ? document.querySelector(parent) : parent;
+        this.parserSettings = parserSettings;
         this.renderer = new UniversalCanvas(mountPoint, width, height, {
             onlost: () => this.emit(PlayerEvent.Error),
             onrestored: () => this.load()
@@ -5303,20 +5325,35 @@ class Player {
         // close currently open note first
         if (this.isNoteLoaded)
             this.closeNote();
+        // keep track of source
+        this._src = source;
         // if no source specified, just reset everything
         if (!source)
             return this.openNote(this.note);
         // otherwise do a normal load
         this.emit(PlayerEvent.LoadStart);
-        return parseSource(source)
+        return parseSource(source, this.parserSettings)
             .then((note) => {
             this.openNote(note);
-            this._src = source;
         })
             .catch((err) => {
             this.emit(PlayerEvent.Error, err);
             throw new Error(`Error loading Flipnote: ${err.message}`);
         });
+    }
+    /**
+     * Reload the current Flipnote
+     */
+    async reload() {
+        if (this.note)
+            return await this.load(this.note.buffer);
+    }
+    /**
+     * Reload the current Flipnote
+     */
+    async updateSettings(settings) {
+        this.parserSettings = settings;
+        return await this.reload();
     }
     /**
      * Close the currently loaded Flipnote
@@ -6534,6 +6571,6 @@ class WavAudio extends EncoderBase {
 /**
  * flipnote.js library version (exported as `flipnote.version`). You can find the latest version on the project's [NPM](https://www.npmjs.com/package/flipnote.js) page.
  */
-const version = "5.6.1"; // replaced by @rollup/plugin-replace; see rollup.config.js
+const version = "5.6.2"; // replaced by @rollup/plugin-replace; see rollup.config.js
 
 export { CanvasInterface, FlipnoteAudioTrack, FlipnoteFormat, FlipnoteRegion, FlipnoteSoundEffectTrack, GifImage, Html5Canvas, KwzParser, Player, PlayerEvent, PlayerMixin, PpmParser, UniversalCanvas, WavAudio, WebAudioPlayer, WebglCanvas, parseSource, fsid as utils, version };

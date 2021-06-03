@@ -174,6 +174,24 @@ export class PlayerComponent extends PlayerMixin(LitElement) {
   @property({ type: String })
   public controls: string;
 
+  @property({ type: Boolean })
+  public dsiLibrary: boolean;
+
+  @property({ type: Boolean })
+  public cropBorder: boolean;
+
+  @property({ type: Number })
+  public bgmPredictor: number;
+
+  @property({ type: Number })
+  public bgmStepIndex: number;
+
+  @property({ type: String })
+  public sePredictors: string;
+
+  @property({ type: String })
+  public seStepIndices: string;
+
   @property({ type: String })
   get width() {
     return this._width;
@@ -342,7 +360,8 @@ export class PlayerComponent extends PlayerMixin(LitElement) {
 
   /** @internal */
   firstUpdated(changedProperties: PropertyValues) {
-    const player = new Player(this.playerCanvasWrapper, 256, 192);
+    this.updateSettingsFromProps();
+    const player = new Player(this.playerCanvasWrapper, 256, 192, this.parserSettings);
     this._resizeObserver.observe(this);
     this.player = player;
     player.on(PlayerEvent.LoadStart, () => {
@@ -380,12 +399,45 @@ export class PlayerComponent extends PlayerMixin(LitElement) {
     this._isPlayerAvailable = true;
   }
 
+  // TODO: get this to actualy work so that prop updates update parser settings
+  // /**@internal */
+  // async updated(changedProperties: PropertyValues) {
+  //   let hasReloaded = false;
+  //   let settingProps =  ['dsiLibrary', 'cropBorder', 'bgmPredictor', 'bgmStepIndex', 'sePredictor', 'seStepIndex'];
+  //   for (let [key, value] of changedProperties) {
+  //     if ((!hasReloaded) && settingProps.includes(key as string)) {
+  //       console.log(key, 'updated');
+  //       this.updateSettingsFromProps();
+  //       await this.player.reload();
+  //       hasReloaded = true;
+  //     }
+  //   }
+  // }
+
   /** @internal */
   disconnectedCallback() {
     // disable resize observer
     this._resizeObserver.disconnect();
     // clean up webgl and buffer stuff if this element is removed from DOM
     this.destroy();
+  }
+
+  private updateSettingsFromProps() {
+    this.parserSettings = {
+      dsiLibraryNote: this.dsiLibrary,
+      borderCrop: this.cropBorder,
+      initialBgmPredictor: this.bgmPredictor,
+      initialBgmStepIndex: this.bgmStepIndex,
+      initialSePredictors: this.parseListProp(this?.sePredictors),
+      initialSeStepIndices: this.parseListProp(this?.seStepIndices),
+    };
+  }
+
+  private parseListProp(propValue: string) {
+    if (!propValue)
+      return undefined;
+    // split string into segments on instances of ",", check if segment is empty, if not, convert to num, else undefined
+    return propValue.split(',').map(x => !(/^\s*$/.test(x)) ? parseInt(x) : undefined);
   }
 
   private updateCanvasSize() {

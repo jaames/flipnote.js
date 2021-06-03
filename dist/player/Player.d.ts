@@ -1,4 +1,4 @@
-import { Flipnote, FlipnoteFormat, FlipnoteMeta } from '../parsers';
+import { Flipnote, FlipnoteFormat, FlipnoteMeta, FlipnoteParserSettings } from '../parsers';
 import { FlipnoteSource } from '../parseSource';
 import { PlayerEvent, PlayerEventMap } from './PlayerEvent';
 import { UniversalCanvas } from '../renderers';
@@ -49,6 +49,8 @@ export declare class Player {
     canvasEl: HTMLCanvasElement;
     /** Currently loaded Flipnote */
     note: Flipnote;
+    /** Flipnote parser settings */
+    parserSettings: FlipnoteParserSettings;
     /** Format of the currently loaded Flipnote */
     noteFormat: FlipnoteFormat;
     /** Metadata for the currently loaded Flipnote */
@@ -100,7 +102,7 @@ export declare class Player {
      *
      * The ratio between `width` and `height` should be 3:4 for best results
      */
-    constructor(parent: string | Element, width: number, height: number);
+    constructor(parent: string | Element, width: number, height: number, parserSettings?: FlipnoteParserSettings);
     /** The currently loaded Flipnote source, if there is one. Can be overridden to load another Flipnote */
     get src(): FlipnoteSource;
     set src(source: FlipnoteSource);
@@ -161,6 +163,14 @@ export declare class Player {
      * @category Lifecycle
      */
     load(source?: any): Promise<void>;
+    /**
+     * Reload the current Flipnote
+     */
+    reload(): Promise<void>;
+    /**
+     * Reload the current Flipnote
+     */
+    updateSettings(settings: FlipnoteParserSettings): Promise<void>;
     /**
      * Close the currently loaded Flipnote
      * @category Lifecycle

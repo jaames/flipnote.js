@@ -183,7 +183,7 @@ export type KwzParserSettings = {
    * 
    * This is only enabled if `dsiLibraryNote` is also set to `true`
    */
-   guessInitialBgmState: boolean;
+  guessInitialBgmState: boolean;
   /**
    * Manually provide the initial adpcm step index for the BGM track.
    * 
@@ -196,6 +196,18 @@ export type KwzParserSettings = {
    * This is only enabled if `dsiLibraryNote` is also set to `true`
    */
   initialBgmPredictor: number | null;
+  /**
+   * Manually provide an initial adpcm step index for each sound effect track.
+   * 
+   * This is only enabled if `dsiLibraryNote` is also set to `true`
+   */
+  initialSeStepIndices: number[] | null;
+  /**
+   * Manually provide an initial adpcm predictor for each sound effect track.
+   * 
+   * This is only enabled if `dsiLibraryNote` is also set to `true`
+   */
+  initialSePredictors: number[] | null;
 };
 
 /** 
@@ -214,6 +226,8 @@ export class KwzParser extends FlipnoteParserBase {
     guessInitialBgmState: true,
     initialBgmPredictor: null,
     initialBgmStepIndex: null,
+    initialSePredictors: null,
+    initialSeStepIndices: null,
   };
   /** File format type */
   static format = FlipnoteFormat.KWZ;
@@ -254,6 +268,8 @@ export class KwzParser extends FlipnoteParserBase {
     KWZ_PALETTE.BLUE,
     KWZ_PALETTE.NONE,
   ];
+  /** Public key used for Flipnote verification, in PEM format */
+  static publicKey = KWZ_PUBLIC_KEY;
   
   /** File format type, reflects {@link KwzParser.format} */
   public format = FlipnoteFormat.KWZ;
@@ -271,6 +287,8 @@ export class KwzParser extends FlipnoteParserBase {
   public numLayers = KwzParser.numLayers;
   /** Number of colors per layer (aside from transparent), reflects {@link KwzParser.numLayerColors} */
   public numLayerColors = KwzParser.numLayerColors;
+  /** Public key used for Flipnote verification, in PEM format */
+  public publicKey = KwzParser.publicKey;
   /** @internal */
   public srcWidth = KwzParser.width;
   /** Which audio tracks are available in this format, reflects {@link KwzParser.audioTracks} */
@@ -307,12 +325,13 @@ export class KwzParser extends FlipnoteParserBase {
   constructor(arrayBuffer: ArrayBuffer, settings: Partial<KwzParserSettings> = {}) {
     super(arrayBuffer);
     this.settings = {...KwzParser.defaultSettings, ...settings};
-    this.buildSectionMap();
     this.layerBuffers = [
       new Uint8Array(KwzParser.width * KwzParser.height),
       new Uint8Array(KwzParser.width * KwzParser.height),
       new Uint8Array(KwzParser.width * KwzParser.height),
     ];
+    // skip through the file and read all of the section headers so we can locate them
+    this.buildSectionMap();
     // if the KIC section is present, we're dealing with a folder icon
     // these are single-frame KWZs without a KFH section for metadata, or a KSN section for sound
     // while the data for a full frame (320*240) is present, only the top-left 24*24 pixels are used
@@ -327,7 +346,7 @@ export class KwzParser extends FlipnoteParserBase {
       this.thumbFrameIndex = 0;
       this.getFrameOffsets();
     }
-    // if the KFH section is present, then this is a handwritten comment from the Flipnote Gallery World online service
+    // if the KSN section is not present, then this is a handwritten comment from the Flipnote Gallery World online service
     // these are single-frame KWZs, just with no sound
     else if (!this.sectionMap.has('KSN')) {
       this.isComment = true; 
@@ -366,7 +385,6 @@ export class KwzParser extends FlipnoteParserBase {
   }
   
   private buildSectionMap() {
-    this.seek(0);
     const fileSize = this.byteLength - 256;
     const sectionMap = new Map();
     let sectionCount = 0;
@@ -457,9 +475,9 @@ export class KwzParser extends FlipnoteParserBase {
       3: (layerFlags & 0x3) === 0,
     };
     // Try to auto-detect whether the current author ID matches a converted PPM ID
-    if (isKwzDsiLibraryFsid(currentAuthorId)) {
-      this.isDsiLibraryNote = true;
-    }
+    // if (isKwzDsiLibraryFsid(currentAuthorId)) {
+    //   this.isDsiLibraryNote = true;
+    // }
     this.meta = {
       lock: (flags & 0x1) !== 0,
       loop: (flags & 0x2) !== 0,
@@ -1014,28 +1032,39 @@ export class KwzParser extends FlipnoteParserBase {
     let stepIndex = 40;
     // Nintendo messed up the initial adpcm state for a bunch of the PPM conversions on DSi Library
     // they are effectively random, so you can optionally provide your own state values, or let the lib make a best guess
-    if (this.isDsiLibraryNote && trackId === FlipnoteAudioTrack.BGM) {
-      // allow manual overrides for default predictor
-      if (settings.initialBgmPredictor !== null)
-        predictor = settings.initialBgmPredictor;
+    if (this.isDsiLibraryNote) {
+      if (trackId === FlipnoteAudioTrack.BGM) {
+        // allow manual overrides for default predictor
+        if (settings.initialBgmPredictor !== null)
+          predictor = settings.initialBgmPredictor;
 
-      // allow manual overrides for default step index
-      if (settings.initialBgmStepIndex !== null)
-        stepIndex = settings.initialBgmStepIndex;
+        // allow manual overrides for default step index
+        if (settings.initialBgmStepIndex !== null)
+          stepIndex = settings.initialBgmStepIndex;
 
-      // bruteforce step index by finding the lowest track root mean square 
-      if (settings.guessInitialBgmState) {
-        let bestRms = 0xFFFFFFFF; // arbritrarily large
-        let bestStepIndex = 0;
-        for (stepIndex = 0; stepIndex <= 40; stepIndex++) {
-          const dstPtr = this.decodeAdpcm(src, dst, predictor, stepIndex);
-          const rms = pcmGetRms(dst.subarray(0, dstPtr)); // uses same underlying memory as dst
-          if (rms < bestRms) {
-            bestRms = rms;
-            bestStepIndex = stepIndex;
+        // bruteforce step index by finding the lowest track root mean square 
+        if (settings.guessInitialBgmState) {
+          let bestRms = 0xFFFFFFFF; // arbritrarily large
+          let bestStepIndex = 0;
+          for (stepIndex = 0; stepIndex <= 40; stepIndex++) {
+            const dstPtr = this.decodeAdpcm(src, dst, predictor, stepIndex);
+            const rms = pcmGetRms(dst.subarray(0, dstPtr)); // uses same underlying memory as dst
+            if (rms < bestRms) {
+              bestRms = rms;
+              bestStepIndex = stepIndex;
+            }
           }
+          stepIndex = bestStepIndex;
         }
-        stepIndex = bestStepIndex;
+      }
+      else {
+        const trackIndex = this.soundEffectTracks.indexOf(trackId as any);
+        // allow manual overrides for default predictor
+        if (Array.isArray(settings.initialSePredictors) && settings.initialSePredictors[trackIndex] !== undefined)
+          predictor = settings.initialSePredictors[trackIndex];
+        // allow manual overrides for default step index
+        if (Array.isArray(settings.initialSeStepIndices) && settings.initialSeStepIndices[trackIndex] !== undefined)
+          stepIndex = settings.initialSeStepIndices[trackIndex];
       }
     }
     // decode track

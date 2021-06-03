@@ -1,5 +1,5 @@
 /*!!
-flipnote.js v5.6.1 (web build)
+flipnote.js v5.6.2 (web build)
 https://flipnote.js.org
 A JavaScript library for parsing, converting, and in-browser playback of the proprietary animation formats used by Nintendo's Flipnote Studio and Flipnote Studio 3D apps.
 2018 - 2021 James Daniel
@@ -90,12 +90,39 @@ Keep on Flipnoting!
         }
     }
 
-    function __spreadArrays() {
-        for (var s = 0, i = 0, il = arguments.length; i < il; i++) s += arguments[i].length;
-        for (var r = Array(s), k = 0, i = 0; i < il; i++)
-            for (var a = arguments[i], j = 0, jl = a.length; j < jl; j++, k++)
-                r[k] = a[j];
-        return r;
+    function __values(o) {
+        var s = typeof Symbol === "function" && Symbol.iterator, m = s && o[s], i = 0;
+        if (m) return m.call(o);
+        if (o && typeof o.length === "number") return {
+            next: function () {
+                if (o && i >= o.length) o = void 0;
+                return { value: o && o[i++], done: !o };
+            }
+        };
+        throw new TypeError(s ? "Object is not iterable." : "Symbol.iterator is not defined.");
+    }
+
+    function __read(o, n) {
+        var m = typeof Symbol === "function" && o[Symbol.iterator];
+        if (!m) return o;
+        var i = m.call(o), r, ar = [], e;
+        try {
+            while ((n === void 0 || n-- > 0) && !(r = i.next()).done) ar.push(r.value);
+        }
+        catch (error) { e = { error: error }; }
+        finally {
+            try {
+                if (r && !r.done && (m = i["return"])) m.call(i);
+            }
+            finally { if (e) throw e.error; }
+        }
+        return ar;
+    }
+
+    function __spread() {
+        for (var ar = [], i = 0; i < arguments.length; i++)
+            ar = ar.concat(__read(arguments[i]));
+        return ar;
     }
 
     /** @internal */
@@ -995,7 +1022,7 @@ Keep on Flipnoting!
             var colors = this.getFramePalette(frameIndex);
             paletteBuffer.fill(0);
             colors.forEach(function (_a, i) {
-                var r = _a[0], g = _a[1], b = _a[2], a = _a[3];
+                var _b = __read(_a, 4), r = _b[0], g = _b[1], b = _b[2], a = _b[3];
                 return paletteBuffer[i] = (a << 24) | (b << 16) | (g << 8) | r;
             });
             return paletteBuffer;
@@ -1103,6 +1130,8 @@ Keep on Flipnoting!
             _this.numLayers = PpmParser.numLayers;
             /** Number of colors per layer (aside from transparent), reflects {@link PpmParser.numLayerColors} */
             _this.numLayerColors = PpmParser.numLayerColors;
+            /** Public key used for Flipnote verification, in PEM format */
+            _this.publicKey = PpmParser.publicKey;
             /** @internal */
             _this.srcWidth = PpmParser.width;
             /** Which audio tracks are available in this format, reflects {@link PpmParser.audioTracks} */
@@ -1708,6 +1737,8 @@ Keep on Flipnoting!
             PPM_PALETTE.RED,
             PPM_PALETTE.BLUE
         ];
+        /** Public key used for Flipnote verification, in PEM format */
+        PpmParser.publicKey = PPM_PUBLIC_KEY;
         return PpmParser;
     }(FlipnoteParserBase));
 
@@ -1820,6 +1851,8 @@ Keep on Flipnoting!
             _this.numLayers = KwzParser.numLayers;
             /** Number of colors per layer (aside from transparent), reflects {@link KwzParser.numLayerColors} */
             _this.numLayerColors = KwzParser.numLayerColors;
+            /** Public key used for Flipnote verification, in PEM format */
+            _this.publicKey = KwzParser.publicKey;
             /** @internal */
             _this.srcWidth = KwzParser.width;
             /** Which audio tracks are available in this format, reflects {@link KwzParser.audioTracks} */
@@ -1836,12 +1869,13 @@ Keep on Flipnoting!
             _this.bitIndex = 0;
             _this.bitValue = 0;
             _this.settings = __assign(__assign({}, KwzParser.defaultSettings), settings);
-            _this.buildSectionMap();
             _this.layerBuffers = [
                 new Uint8Array(KwzParser.width * KwzParser.height),
                 new Uint8Array(KwzParser.width * KwzParser.height),
                 new Uint8Array(KwzParser.width * KwzParser.height),
             ];
+            // skip through the file and read all of the section headers so we can locate them
+            _this.buildSectionMap();
             // if the KIC section is present, we're dealing with a folder icon
             // these are single-frame KWZs without a KFH section for metadata, or a KSN section for sound
             // while the data for a full frame (320*240) is present, only the top-left 24*24 pixels are used
@@ -1856,7 +1890,7 @@ Keep on Flipnoting!
                 _this.thumbFrameIndex = 0;
                 _this.getFrameOffsets();
             }
-            // if the KFH section is present, then this is a handwritten comment from the Flipnote Gallery World online service
+            // if the KSN section is not present, then this is a handwritten comment from the Flipnote Gallery World online service
             // these are single-frame KWZs, just with no sound
             else if (!_this.sectionMap.has('KSN')) {
                 _this.isComment = true;
@@ -1893,7 +1927,6 @@ Keep on Flipnoting!
             return _this;
         }
         KwzParser.prototype.buildSectionMap = function () {
-            this.seek(0);
             var fileSize = this.byteLength - 256;
             var sectionMap = new Map();
             var sectionCount = 0;
@@ -1980,9 +2013,9 @@ Keep on Flipnoting!
                 3: (layerFlags & 0x3) === 0,
             };
             // Try to auto-detect whether the current author ID matches a converted PPM ID
-            if (isKwzDsiLibraryFsid(currentAuthorId)) {
-                this.isDsiLibraryNote = true;
-            }
+            // if (isKwzDsiLibraryFsid(currentAuthorId)) {
+            //   this.isDsiLibraryNote = true;
+            // }
             this.meta = {
                 lock: (flags & 0x1) !== 0,
                 loop: (flags & 0x2) !== 0,
@@ -2507,26 +2540,37 @@ Keep on Flipnoting!
             var stepIndex = 40;
             // Nintendo messed up the initial adpcm state for a bunch of the PPM conversions on DSi Library
             // they are effectively random, so you can optionally provide your own state values, or let the lib make a best guess
-            if (this.isDsiLibraryNote && trackId === exports.FlipnoteAudioTrack.BGM) {
-                // allow manual overrides for default predictor
-                if (settings.initialBgmPredictor !== null)
-                    predictor = settings.initialBgmPredictor;
-                // allow manual overrides for default step index
-                if (settings.initialBgmStepIndex !== null)
-                    stepIndex = settings.initialBgmStepIndex;
-                // bruteforce step index by finding the lowest track root mean square 
-                if (settings.guessInitialBgmState) {
-                    var bestRms = 0xFFFFFFFF; // arbritrarily large
-                    var bestStepIndex = 0;
-                    for (stepIndex = 0; stepIndex <= 40; stepIndex++) {
-                        var dstPtr_1 = this.decodeAdpcm(src, dst, predictor, stepIndex);
-                        var rms = pcmGetRms(dst.subarray(0, dstPtr_1)); // uses same underlying memory as dst
-                        if (rms < bestRms) {
-                            bestRms = rms;
-                            bestStepIndex = stepIndex;
+            if (this.isDsiLibraryNote) {
+                if (trackId === exports.FlipnoteAudioTrack.BGM) {
+                    // allow manual overrides for default predictor
+                    if (settings.initialBgmPredictor !== null)
+                        predictor = settings.initialBgmPredictor;
+                    // allow manual overrides for default step index
+                    if (settings.initialBgmStepIndex !== null)
+                        stepIndex = settings.initialBgmStepIndex;
+                    // bruteforce step index by finding the lowest track root mean square 
+                    if (settings.guessInitialBgmState) {
+                        var bestRms = 0xFFFFFFFF; // arbritrarily large
+                        var bestStepIndex = 0;
+                        for (stepIndex = 0; stepIndex <= 40; stepIndex++) {
+                            var dstPtr_1 = this.decodeAdpcm(src, dst, predictor, stepIndex);
+                            var rms = pcmGetRms(dst.subarray(0, dstPtr_1)); // uses same underlying memory as dst
+                            if (rms < bestRms) {
+                                bestRms = rms;
+                                bestStepIndex = stepIndex;
+                            }
                         }
+                        stepIndex = bestStepIndex;
                     }
-                    stepIndex = bestStepIndex;
+                }
+                else {
+                    var trackIndex = this.soundEffectTracks.indexOf(trackId);
+                    // allow manual overrides for default predictor
+                    if (Array.isArray(settings.initialSePredictors) && settings.initialSePredictors[trackIndex] !== undefined)
+                        predictor = settings.initialSePredictors[trackIndex];
+                    // allow manual overrides for default step index
+                    if (Array.isArray(settings.initialSeStepIndices) && settings.initialSeStepIndices[trackIndex] !== undefined)
+                        stepIndex = settings.initialSeStepIndices[trackIndex];
                 }
             }
             // decode track
@@ -2648,6 +2692,8 @@ Keep on Flipnoting!
             guessInitialBgmState: true,
             initialBgmPredictor: null,
             initialBgmStepIndex: null,
+            initialSePredictors: null,
+            initialSeStepIndices: null,
         };
         /** File format type */
         KwzParser.format = exports.FlipnoteFormat.KWZ;
@@ -2688,6 +2734,8 @@ Keep on Flipnoting!
             KWZ_PALETTE.BLUE,
             KWZ_PALETTE.NONE,
         ];
+        /** Public key used for Flipnote verification, in PEM format */
+        KwzParser.publicKey = KWZ_PUBLIC_KEY;
         return KwzParser;
     }(FlipnoteParserBase));
 
@@ -4785,7 +4833,7 @@ Keep on Flipnoting!
             if (this.checkContextLoss())
                 return;
             if (color) {
-                var r = color[0], g = color[1], b = color[2], a = color[3];
+                var _a = __read(color, 4), r = _a[0], g = _a[1], b = _a[2], a = _a[3];
                 this.gl.clearColor(r / 255, g / 255, b / 255, a / 255);
             }
             this.gl.clear(this.gl.COLOR_BUFFER_BIT);
@@ -4978,7 +5026,7 @@ Keep on Flipnoting!
             this.ctx.clearRect(0, 0, this.dstWidth, this.dstHeight);
             // fill canvas with paper color
             if (color) {
-                var r = color[0], g = color[1], b = color[2], a = color[3];
+                var _a = __read(color, 4), r = _a[0], g = _a[1], b = _a[2], a = _a[3];
                 this.ctx.fillStyle = "rgba(" + r + ", " + g + ", " + b + ", " + a + ")";
                 this.ctx.fillRect(0, 0, this.dstWidth, this.dstHeight);
             }
@@ -5200,7 +5248,7 @@ Keep on Flipnoting!
             var eqSettings = this.eqSettings;
             var lastNode = inNode;
             eqSettings.forEach(function (_a, index) {
-                var frequency = _a[0], gain = _a[1];
+                var _b = __read(_a, 2), frequency = _b[0], gain = _b[1];
                 var node = ctx.createBiquadFilter();
                 _this.nodeRefs.push(node);
                 node.frequency.value = frequency;
@@ -5355,8 +5403,9 @@ Keep on Flipnoting!
          *
          * The ratio between `width` and `height` should be 3:4 for best results
          */
-        function Player(parent, width, height) {
+        function Player(parent, width, height, parserSettings) {
             var _this = this;
+            if (parserSettings === void 0) { parserSettings = {}; }
             /** Animation duration, in seconds */
             this.duration = 0;
             /** Automatically begin playback after a Flipnote is loaded */
@@ -5419,6 +5468,7 @@ Keep on Flipnoting!
             assertBrowserEnv();
             // if parent is a string, use it to select an Element, else assume it's an Element
             var mountPoint = ('string' == typeof parent) ? document.querySelector(parent) : parent;
+            this.parserSettings = parserSettings;
             this.renderer = new UniversalCanvas(mountPoint, width, height, {
                 onlost: function () { return _this.emit(exports.PlayerEvent.Error); },
                 onrestored: function () { return _this.load(); }
@@ -5608,20 +5658,52 @@ Keep on Flipnoting!
                     // close currently open note first
                     if (this.isNoteLoaded)
                         this.closeNote();
+                    // keep track of source
+                    this._src = source;
                     // if no source specified, just reset everything
                     if (!source)
                         return [2 /*return*/, this.openNote(this.note)];
                     // otherwise do a normal load
                     this.emit(exports.PlayerEvent.LoadStart);
-                    return [2 /*return*/, parseSource(source)
+                    return [2 /*return*/, parseSource(source, this.parserSettings)
                             .then(function (note) {
                             _this.openNote(note);
-                            _this._src = source;
                         })
                             .catch(function (err) {
                             _this.emit(exports.PlayerEvent.Error, err);
                             throw new Error("Error loading Flipnote: " + err.message);
                         })];
+                });
+            });
+        };
+        /**
+         * Reload the current Flipnote
+         */
+        Player.prototype.reload = function () {
+            return __awaiter(this, void 0, void 0, function () {
+                return __generator(this, function (_a) {
+                    switch (_a.label) {
+                        case 0:
+                            if (!this.note) return [3 /*break*/, 2];
+                            return [4 /*yield*/, this.load(this.note.buffer)];
+                        case 1: return [2 /*return*/, _a.sent()];
+                        case 2: return [2 /*return*/];
+                    }
+                });
+            });
+        };
+        /**
+         * Reload the current Flipnote
+         */
+        Player.prototype.updateSettings = function (settings) {
+            return __awaiter(this, void 0, void 0, function () {
+                return __generator(this, function (_a) {
+                    switch (_a.label) {
+                        case 0:
+                            this.parserSettings = settings;
+                            return [4 /*yield*/, this.reload()];
+                        case 1: return [2 /*return*/, _a.sent()];
+                    }
                 });
             });
         };
@@ -6167,7 +6249,7 @@ Keep on Flipnoting!
             // "any" event listeners fire for all events, and receive eventType as their first param
             if (events.has(exports.PlayerEvent.__Any)) {
                 var callbackList = events.get(exports.PlayerEvent.__Any);
-                callbackList.forEach(function (callback) { return callback.apply(null, __spreadArrays([eventType], args)); });
+                callbackList.forEach(function (callback) { return callback.apply(null, __spread([eventType], args)); });
             }
         };
         /**
@@ -6228,6 +6310,7 @@ Keep on Flipnoting!
      * @internal
      */
     function PlayerMixin(Target) {
+        var e_1, _a;
         var PlayerMixinClass = /** @class */ (function (_super) {
             __extends(PlayerMixinClass, _super);
             function PlayerMixinClass() {
@@ -6316,7 +6399,7 @@ Keep on Flipnoting!
                         for (var _i = 0; _i < arguments.length; _i++) {
                             args[_i] = arguments[_i];
                         }
-                        return (_a = this.player)[key].apply(_a, args);
+                        return (_a = this.player)[key].apply(_a, __spread(args));
                     } }));
             }
             // override getters and setters so that e.g. `property` will always reflect `this.player.property`
@@ -6328,10 +6411,19 @@ Keep on Flipnoting!
                     } }));
             }
         };
-        // add all Player API methods and getter/setter props to target
-        for (var _i = 0, _a = Reflect.ownKeys(Player.prototype); _i < _a.length; _i++) {
-            var key = _a[_i];
-            _loop_1(key);
+        try {
+            // add all Player API methods and getter/setter props to target
+            for (var _b = __values(Reflect.ownKeys(Player.prototype)), _c = _b.next(); !_c.done; _c = _b.next()) {
+                var key = _c.value;
+                _loop_1(key);
+            }
+        }
+        catch (e_1_1) { e_1 = { error: e_1_1 }; }
+        finally {
+            try {
+                if (_c && !_c.done && (_a = _b.return)) _a.call(_b);
+            }
+            finally { if (e_1) throw e_1.error; }
         }
         return PlayerMixinClass;
     }
@@ -6723,7 +6815,7 @@ Keep on Flipnoting!
             var palette = new Uint8Array(3 * Math.pow(2, this.settings.colorDepth));
             var ptr = 0;
             for (var index = 0; index < this.palette.length; index += 1) {
-                var _a = this.palette[index], r = _a[0], g = _a[1], b = _a[2], a = _a[3];
+                var _a = __read(this.palette[index], 4), r = _a[0], g = _a[1], b = _a[2], a = _a[3];
                 palette[ptr++] = r;
                 palette[ptr++] = g;
                 palette[ptr++] = b;
@@ -6913,7 +7005,7 @@ Keep on Flipnoting!
     /**
      * flipnote.js library version (exported as `flipnote.version`). You can find the latest version on the project's [NPM](https://www.npmjs.com/package/flipnote.js) page.
      */
-    var version = "5.6.1"; // replaced by @rollup/plugin-replace; see rollup.config.js
+    var version = "5.6.2"; // replaced by @rollup/plugin-replace; see rollup.config.js
 
     exports.CanvasInterface = CanvasInterface;
     exports.GifImage = GifImage;
