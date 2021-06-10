@@ -179,7 +179,7 @@ export abstract class FlipnoteParserBase extends DataStream {
   /** File metadata, see {@link FlipnoteMeta} for structure */
   public meta: FlipnoteMeta;
   /** File audio track info, see {@link FlipnoteAudioTrackInfo} */
-  public soundMeta: Map<FlipnoteAudioTrack, FlipnoteAudioTrackInfo>;
+  public soundMeta: Map<FlipnoteAudioTrack, FlipnoteAudioTrackInfo> = new Map();
   /** Animation frame global layer visibility */
   public layerVisibility: FlipnoteLayerVisibility = {1: true, 2: true, 3: true};
   /** Public key used for Flipnote verification, in PEM format */
