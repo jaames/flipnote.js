@@ -18,7 +18,6 @@ export declare type GifPaletteColor = [
  */
 export interface GifImageSettings {
     /** Use transparency */
-    transparentBg: boolean;
     /** Delay between animated GIF frames, measured in milliseconds */
     delay: number;
     /** Color depth as bits per pixel. Defaults to 8 */
@@ -77,12 +76,16 @@ export declare class GifImage extends EncoderBase {
      * @param pixels Raw pixels to encode, must be an uncompressed 8bit array of palette indices with a size matching image width * image height
      */
     writeFrame(pixels: Uint8Array): void;
+    finish(): void;
     private writeFirstFrame;
     private writeAdditionalFrame;
     private writeHeader;
-    private writeColorTable;
+    private writeGraphicControlExt;
+    private writeLogicalScreenDescriptor;
     private writeNetscapeExt;
-    private writeFrameHeader;
+    private writeColorTable;
+    private writeImageDescriptor;
+    private colorTableSize;
     private writePixels;
     /**
      * Returns the GIF image data as an {@link https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/ArrayBuffer | ArrayBuffer}

@@ -1,5 +1,5 @@
 /*!!
-flipnote.js v5.6.3 (webcomponent build)
+flipnote.js v5.6.5 (webcomponent build)
 https://flipnote.js.org
 A JavaScript library for parsing, converting, and in-browser playback of the proprietary animation formats used by Nintendo's Flipnote Studio and Flipnote Studio 3D apps.
 2018 - 2021 James Daniel
@@ -15,43 +15,87 @@ Keep on Flipnoting!
   /** @internal */
   class ByteArray {
       constructor() {
-          this.pageSize = ByteArray.pageSize;
-          this.currPageIndex = -1;
+          // sizes
+          this.pageSize = 2048 * 2;
+          this.allocSize = 0; // allocated size counting all pages
+          this.realSize = 0; // number of bytes actually used
+          // pages
           this.pages = [];
-          this.pointer = 0;
+          this.numPages = 0;
+          // pointers
+          this.pageIdx = 0; // page to write to
+          this.pagePtr = 0; // position in page to write to
+          this.realPtr = 0; // position in file
           this.newPage();
       }
+      set pointer(ptr) {
+          this.setPointer(ptr);
+      }
+      get pointer() {
+          return this.realPtr;
+      }
       newPage() {
-          this.pages[++this.currPageIndex] = new Uint8Array(this.pageSize);
-          this.currPage = this.pages[this.currPageIndex];
-          this.pointer = 0;
+          this.pages[this.numPages] = new Uint8Array(this.pageSize);
+          this.numPages = this.pages.length;
+          this.allocSize = this.numPages * this.pageSize;
       }
-      getData() {
-          const data = new Uint8Array(this.currPageIndex * this.pageSize + this.pointer);
-          for (let index = 0; index < this.pages.length; index++) {
-              const page = this.pages[index];
-              if (index === this.currPageIndex)
-                  data.set(page.slice(0, this.pointer), index * this.pageSize);
-              else
-                  data.set(page, index * this.pageSize);
-          }
-          return data;
-      }
-      getBuffer() {
-          const data = this.getData();
-          return data.buffer;
-      }
-      writeByte(val) {
-          if (this.pointer >= this.pageSize)
+      setPointer(ptr) {
+          // allocate enough pages to include pointer
+          while (ptr >= this.allocSize) {
               this.newPage();
-          this.currPage[this.pointer++] = val;
+          }
+          // increase real file size if the end is reached
+          if (ptr > this.realSize)
+              this.realSize = ptr;
+          // update ptrs
+          // TODO: this is going to get hit a lot, maybe optimise?
+          this.pageIdx = Math.floor(ptr / this.pageSize);
+          this.pagePtr = ptr % this.pageSize;
+          this.realPtr = ptr;
       }
-      writeBytes(bytes, offset, length) {
-          for (let l = length || bytes.length, i = offset || 0; i < l; i++)
+      writeByte(value) {
+          this.pages[this.pageIdx][this.pagePtr] = value;
+          this.setPointer(this.realPtr + 1);
+      }
+      writeBytes(bytes, srcPtr, length) {
+          for (let l = length || bytes.length, i = srcPtr || 0; i < l; i++)
               this.writeByte(bytes[i]);
       }
+      writeChars(str) {
+          for (let i = 0; i < str.length; i++) {
+              this.writeByte(str.charCodeAt(i));
+          }
+      }
+      writeU8(value) {
+          this.writeByte(value & 0xFF);
+      }
+      writeU16(value) {
+          this.writeByte((value >>> 0) & 0xFF);
+          this.writeByte((value >>> 8) & 0xFF);
+      }
+      writeU32(value) {
+          this.writeByte((value >>> 0) & 0xFF);
+          this.writeByte((value >>> 8) & 0xFF);
+          this.writeByte((value >>> 16) & 0xFF);
+          this.writeByte((value >>> 24) & 0xFF);
+      }
+      getBytes() {
+          const bytes = new Uint8Array(this.realSize);
+          const numPages = this.numPages;
+          for (let i = 0; i < numPages; i++) {
+              const page = this.pages[i];
+              if (i === numPages - 1) // last page
+                  bytes.set(page.slice(0, this.realSize % this.pageSize), i * this.pageSize);
+              else
+                  bytes.set(page, i * this.pageSize);
+          }
+          return bytes;
+      }
+      getBuffer() {
+          const bytes = this.getBytes();
+          return bytes.buffer;
+      }
   }
-  ByteArray.pageSize = 2048;
 
   /**
    * Wrapper around the DataView API to keep track of the offset into the data
@@ -5217,6 +5261,7 @@ kQIDAQAB
               onrestored: () => this.load()
           });
           this.audio = new WebAudioPlayer();
+          this.el = mountPoint;
           // this.canvasEl = this.renderer.el;
       }
       /** The currently loaded Flipnote source, if there is one. Can be overridden to load another Flipnote */
@@ -6319,6 +6364,7 @@ kQIDAQAB
           gif.palette = flipnote.globalPalette;
           for (let frameIndex = 0; frameIndex < flipnote.frameCount; frameIndex++)
               gif.writeFrame(flipnote.getFramePixels(frameIndex));
+          gif.finish();
           return gif;
       }
       /**
@@ -6328,11 +6374,10 @@ kQIDAQAB
        * @param settings whether the gif should loop, the delay between frames, etc. See {@link GifEncoderSettings}
        */
       static fromFlipnoteFrame(flipnote, frameIndex, settings = {}) {
-          const gif = new GifImage(flipnote.imageWidth, flipnote.imageHeight, Object.assign({ 
-              // TODO: look at ideal delay and repeat settings for single frame GIF
-              delay: 100 / flipnote.framerate, repeat: -1 }, settings));
+          const gif = new GifImage(flipnote.imageWidth, flipnote.imageHeight, Object.assign({ delay: 0, repeat: 0 }, settings));
           gif.palette = flipnote.globalPalette;
           gif.writeFrame(flipnote.getFramePixels(frameIndex));
+          gif.finish();
           return gif;
       }
       /**
@@ -6346,84 +6391,85 @@ kQIDAQAB
               this.writeAdditionalFrame(pixels);
           this.frameCount += 1;
       }
+      finish() {
+          this.data.writeByte(0x3B);
+      }
       writeFirstFrame(pixels) {
-          const paletteSize = this.palette.length;
-          // calc colorDepth
-          for (var p = 1; 1 << p < paletteSize; p += 1)
-              continue;
-          this.settings.colorDepth = p;
           this.writeHeader();
+          this.writeLogicalScreenDescriptor();
           this.writeColorTable();
           this.writeNetscapeExt();
-          this.writeFrameHeader();
+          this.writeGraphicControlExt();
+          this.writeImageDescriptor();
           this.writePixels(pixels);
       }
       writeAdditionalFrame(pixels) {
-          this.writeFrameHeader();
+          this.writeGraphicControlExt();
+          this.writeImageDescriptor();
           this.writePixels(pixels);
       }
       writeHeader() {
-          const header = new DataStream(new ArrayBuffer(13));
-          header.writeChars('GIF89a');
-          // Logical Screen Descriptor
-          header.writeUint16(this.width);
-          header.writeUint16(this.height);
-          header.writeUint8(0x80 | // 1 : global color table flag = 1 (gct used)
-              (this.settings.colorDepth - 1) // 6-8 : gct size
-          );
-          header.writeBytes([
-              0x0,
-              0x0
-          ]);
-          this.data.writeBytes(new Uint8Array(header.buffer));
+          this.data.writeChars('GIF89a');
       }
-      writeColorTable() {
-          const palette = new Uint8Array(3 * Math.pow(2, this.settings.colorDepth));
-          let ptr = 0;
-          for (let index = 0; index < this.palette.length; index += 1) {
-              const [r, g, b, a] = this.palette[index];
-              palette[ptr++] = r;
-              palette[ptr++] = g;
-              palette[ptr++] = b;
-          }
-          this.data.writeBytes(palette);
+      writeGraphicControlExt() {
+          this.data.writeByte(0x21); // extension introducer
+          this.data.writeByte(0xf9); // GCE label
+          this.data.writeByte(4); // data block size
+          // packed fields
+          this.data.writeByte(0);
+          this.data.writeU16(this.settings.delay); // delay x 1/100 sec
+          this.data.writeByte(0); // transparent color index
+          this.data.writeByte(0); // block terminator
+      }
+      writeLogicalScreenDescriptor() {
+          const palette = this.palette;
+          const colorDepth = this.settings.colorDepth;
+          const globalColorTableFlag = 1;
+          const sortFlag = 0;
+          const globalColorTableSize = this.colorTableSize(palette.length) - 1;
+          const fields = (globalColorTableFlag << 7) |
+              ((colorDepth - 1) << 4) |
+              (sortFlag << 3) |
+              globalColorTableSize;
+          const backgroundColorIndex = 0;
+          const pixelAspectRatio = 0;
+          this.data.writeU16(this.width);
+          this.data.writeU16(this.height);
+          this.data.writeBytes([fields, backgroundColorIndex, pixelAspectRatio]);
       }
       writeNetscapeExt() {
-          const netscapeExt = new DataStream(new ArrayBuffer(19));
-          netscapeExt.writeBytes([
-              0x21,
-              0xFF,
-              11,
-          ]);
-          netscapeExt.writeChars('NETSCAPE2.0');
-          netscapeExt.writeUint8(3); // subblock size
-          netscapeExt.writeUint8(1); // loop subblock id
-          netscapeExt.writeUint16(this.settings.repeat); // loop flag
-          this.data.writeBytes(new Uint8Array(netscapeExt.buffer));
+          this.data.writeByte(0x21); // extension introducer
+          this.data.writeByte(0xff); // app extension label
+          this.data.writeByte(11); // block size
+          this.data.writeChars('NETSCAPE2.0'); // app id + auth code
+          this.data.writeByte(3); // sub-block size
+          this.data.writeByte(1); // loop sub-block id
+          this.data.writeU16(this.settings.repeat); // loop count (extra iterations, 0=repeat forever)
+          this.data.writeByte(0); // block terminator
       }
-      writeFrameHeader() {
-          const fHeader = new DataStream(new ArrayBuffer(18));
-          // graphics control ext block
-          const transparentFlag = this.settings.transparentBg ? 0x1 : 0x0;
-          fHeader.writeBytes([
-              0x21,
-              0xF9,
-              0x4,
-              0x0 | transparentFlag // bitflags
-          ]);
-          fHeader.writeUint16(this.settings.delay); // loop flag
-          fHeader.writeBytes([
-              0x0,
-              0x0
-          ]);
-          // image desc block
-          fHeader.writeUint8(0x2C);
-          fHeader.writeUint16(0); // image left
-          fHeader.writeUint16(0); // image top
-          fHeader.writeUint16(this.width);
-          fHeader.writeUint16(this.height);
-          fHeader.writeUint8(0);
-          this.data.writeBytes(new Uint8Array(fHeader.buffer));
+      writeColorTable() {
+          const palette = this.palette;
+          const colorTableLength = 1 << this.colorTableSize(palette.length);
+          for (let i = 0; i < colorTableLength; i++) {
+              let color = [0, 0, 0];
+              if (i < palette.length) {
+                  color = palette[i];
+              }
+              this.data.writeByte(color[0]);
+              this.data.writeByte(color[1]);
+              this.data.writeByte(color[2]);
+          }
+      }
+      writeImageDescriptor() {
+          this.data.writeByte(0x2c); // image separator
+          this.data.writeU16(0); // x position
+          this.data.writeU16(0); // y position
+          this.data.writeU16(this.width); // image size
+          this.data.writeU16(this.height);
+          this.data.writeByte(0); // global palette
+      }
+      colorTableSize(length) {
+          return Math.max(Math.ceil(Math.log2(length)), 1);
       }
       writePixels(pixels) {
           this.compressor.colorDepth = this.settings.colorDepth;
@@ -6452,7 +6498,7 @@ kQIDAQAB
    * Default GIF encoder settings
    */
   GifImage.defaultSettings = {
-      transparentBg: false,
+      // transparentBg: false,
       delay: 100,
       repeat: -1,
       colorDepth: 8
@@ -6565,7 +6611,7 @@ kQIDAQAB
   /**
    * flipnote.js library version (exported as `flipnote.version`). You can find the latest version on the project's [NPM](https://www.npmjs.com/package/flipnote.js) page.
    */
-  const version = "5.6.3"; // replaced by @rollup/plugin-replace; see rollup.config.js
+  const version = "5.6.5"; // replaced by @rollup/plugin-replace; see rollup.config.js
 
   /*! *****************************************************************************
   Copyright (c) Microsoft Corporation.

@@ -1,5 +1,5 @@
 import { Flipnote } from '../parsers';
-import { DataStream, ByteArray } from '../utils/index';
+import { ByteArray } from '../utils/index';
 import { assertBrowserEnv } from '../utils';
 import { EncoderBase } from './EncoderBase';
 import { LzwCompressor } from './LwzCompressor';
@@ -23,7 +23,7 @@ export type GifPaletteColor = [
  */
 export interface GifImageSettings {
   /** Use transparency */
-  transparentBg: boolean;
+  // transparentBg: boolean; // TODO: reimplement
   /** Delay between animated GIF frames, measured in milliseconds */
   delay: number;
   /** Color depth as bits per pixel. Defaults to 8 */
@@ -44,7 +44,7 @@ export class GifImage extends EncoderBase {
    * Default GIF encoder settings
    */
   static defaultSettings: GifImageSettings = {
-    transparentBg: false,
+    // transparentBg: false,
     delay: 100,
     repeat: -1,
     colorDepth: 8
@@ -99,6 +99,7 @@ export class GifImage extends EncoderBase {
     for (let frameIndex = 0; frameIndex < flipnote.frameCount; frameIndex++)
       gif.writeFrame(flipnote.getFramePixels(frameIndex));
 
+    gif.finish();
     return gif;
   }
 
@@ -110,13 +111,13 @@ export class GifImage extends EncoderBase {
    */
   static fromFlipnoteFrame(flipnote: Flipnote, frameIndex: number, settings: Partial<GifImageSettings> = {}) {
     const gif = new GifImage(flipnote.imageWidth, flipnote.imageHeight, {
-      // TODO: look at ideal delay and repeat settings for single frame GIF
-      delay: 100 / flipnote.framerate,
-      repeat: -1,
+      delay: 0,
+      repeat: 0,
       ...settings,
     });
     gif.palette = flipnote.globalPalette;
     gif.writeFrame(flipnote.getFramePixels(frameIndex));
+    gif.finish();
     return gif;
   }
 
@@ -132,91 +133,95 @@ export class GifImage extends EncoderBase {
     this.frameCount += 1;
   }
 
-  private writeFirstFrame(pixels: Uint8Array) {
-    const paletteSize = this.palette.length;
-    // calc colorDepth
-    for (var p = 1; 1 << p < paletteSize; p += 1)
-      continue;
+  public finish() {
+    this.data.writeByte(0x3B);
+  }
 
-    this.settings.colorDepth = p;
+  private writeFirstFrame(pixels: Uint8Array) {
     this.writeHeader();
+    this.writeLogicalScreenDescriptor();
     this.writeColorTable();
     this.writeNetscapeExt();
-    this.writeFrameHeader();
+    this.writeGraphicControlExt();
+    this.writeImageDescriptor();
     this.writePixels(pixels);
   }
 
   private writeAdditionalFrame(pixels: Uint8Array) {
-    this.writeFrameHeader();
+    this.writeGraphicControlExt();
+    this.writeImageDescriptor();
     this.writePixels(pixels);
   }
 
   private writeHeader() {
-    const header = new DataStream(new ArrayBuffer(13));
-    header.writeChars('GIF89a');
-    // Logical Screen Descriptor
-    header.writeUint16(this.width);
-    header.writeUint16(this.height);
-    header.writeUint8(
-      0x80 | // 1 : global color table flag = 1 (gct used)
-      (this.settings.colorDepth - 1) // 6-8 : gct size
-    );
-    header.writeBytes([
-      0x0,
-      0x0
-    ]);
-    this.data.writeBytes(new Uint8Array(header.buffer));
+    this.data.writeChars('GIF89a');
   }
 
-  private writeColorTable() {
-    const palette = new Uint8Array(3 * Math.pow(2, this.settings.colorDepth));
-    let ptr = 0;
-    for(let index = 0; index < this.palette.length; index += 1) {
-      const [r, g, b, a] = this.palette[index];
-      palette[ptr++] = r;
-      palette[ptr++] = g;
-      palette[ptr++] = b;
-    }
-    this.data.writeBytes(palette);
+  private writeGraphicControlExt() {
+    this.data.writeByte(0x21); // extension introducer
+    this.data.writeByte(0xf9); // GCE label
+    this.data.writeByte(4); // data block size
+    // packed fields
+    this.data.writeByte(0);
+    this.data.writeU16(this.settings.delay); // delay x 1/100 sec
+    this.data.writeByte(0); // transparent color index
+    this.data.writeByte(0); // block terminator
+  }
+
+  private writeLogicalScreenDescriptor() {
+    const palette = this.palette;
+    const colorDepth = this.settings.colorDepth;
+    const globalColorTableFlag = 1;
+    const sortFlag = 0;
+    const globalColorTableSize = this.colorTableSize(palette.length) - 1;
+    const fields =
+      (globalColorTableFlag << 7) |
+      ((colorDepth - 1) << 4) |
+      (sortFlag << 3) |
+      globalColorTableSize;
+    const backgroundColorIndex = 0;
+    const pixelAspectRatio = 0;
+    this.data.writeU16(this.width);
+    this.data.writeU16(this.height);
+    this.data.writeBytes([fields, backgroundColorIndex, pixelAspectRatio]);
   }
 
   private writeNetscapeExt() {
-    const netscapeExt = new DataStream(new ArrayBuffer(19));
-    netscapeExt.writeBytes([
-      0x21, // extension introducer
-      0xFF, // app extension label
-      11, // block size
-    ]);
-    netscapeExt.writeChars('NETSCAPE2.0');
-    netscapeExt.writeUint8(3); // subblock size
-    netscapeExt.writeUint8(1); // loop subblock id
-    netscapeExt.writeUint16(this.settings.repeat); // loop flag
-    this.data.writeBytes(new Uint8Array(netscapeExt.buffer));
+    this.data.writeByte(0x21); // extension introducer
+    this.data.writeByte(0xff); // app extension label
+    this.data.writeByte(11); // block size
+    this.data.writeChars('NETSCAPE2.0'); // app id + auth code
+    this.data.writeByte(3); // sub-block size
+    this.data.writeByte(1); // loop sub-block id
+    this.data.writeU16(this.settings.repeat); // loop count (extra iterations, 0=repeat forever)
+    this.data.writeByte(0); // block terminator
   }
 
-  private writeFrameHeader() {
-    const fHeader = new DataStream(new ArrayBuffer(18));
-    // graphics control ext block
-    const transparentFlag = this.settings.transparentBg ? 0x1 : 0x0;
-    fHeader.writeBytes([
-      0x21, // extension introducer
-      0xF9, // graphic control label
-      0x4, // block size
-      0x0 | transparentFlag // bitflags
-    ]);
-    fHeader.writeUint16(this.settings.delay); // loop flag
-    fHeader.writeBytes([
-      0x0,
-      0x0
-    ]);
-    // image desc block
-    fHeader.writeUint8(0x2C);
-    fHeader.writeUint16(0); // image left
-    fHeader.writeUint16(0); // image top
-    fHeader.writeUint16(this.width);
-    fHeader.writeUint16(this.height);
-    fHeader.writeUint8(0);
-    this.data.writeBytes(new Uint8Array(fHeader.buffer));
+  private writeColorTable() {
+    const palette = this.palette;
+    const colorTableLength = 1 << this.colorTableSize(palette.length);
+    for (let i = 0; i < colorTableLength; i++) {
+      let color = [0, 0, 0];
+      if (i < palette.length) {
+        color = palette[i];
+      }
+      this.data.writeByte(color[0]);
+      this.data.writeByte(color[1]);
+      this.data.writeByte(color[2]);
+    }
+  }
+
+  private writeImageDescriptor() {
+    this.data.writeByte(0x2c); // image separator
+    this.data.writeU16(0); // x position
+    this.data.writeU16(0); // y position
+    this.data.writeU16(this.width); // image size
+    this.data.writeU16(this.height);
+    this.data.writeByte(0); // global palette
+  }
+
+  private colorTableSize(length: number) {
+    return Math.max(Math.ceil(Math.log2(length)), 1);
   }
 
   private writePixels(pixels: Uint8Array) {

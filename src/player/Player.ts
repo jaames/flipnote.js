@@ -50,6 +50,8 @@ export class Player {
   public renderer: UniversalCanvas;
   /** Audio player */
   public audio: WebAudioPlayer;
+  /** Root element */
+  public el: Element;
   /** Canvas HTML element */
   public canvasEl: HTMLCanvasElement;
   /** Currently loaded Flipnote */
@@ -119,6 +121,7 @@ export class Player {
       onrestored: () => this.load()
     });
     this.audio = new WebAudioPlayer();
+    this.el = mountPoint;
     // this.canvasEl = this.renderer.el;
   }
 

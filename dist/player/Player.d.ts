@@ -45,6 +45,8 @@ export declare class Player {
     renderer: UniversalCanvas;
     /** Audio player */
     audio: WebAudioPlayer;
+    /** Root element */
+    el: Element;
     /** Canvas HTML element */
     canvasEl: HTMLCanvasElement;
     /** Currently loaded Flipnote */

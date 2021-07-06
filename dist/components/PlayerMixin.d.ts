@@ -25,6 +25,7 @@ export declare function PlayerMixin<TargetBase extends Constructor>(Target: Targ
         readonly duration: number;
         readonly layerVisibility: Record<number, boolean>;
         autoplay: boolean;
+        el: Element;
         parserSettings: Partial<import("../parsers").KwzParserSettings>;
         supportedEvents: import("../player").PlayerEvent[];
         _src: import("../parseSource").FlipnoteSource;

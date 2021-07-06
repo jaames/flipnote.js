@@ -12,6 +12,7 @@ declare const PlayerComponent_base: {
         readonly duration: number;
         readonly layerVisibility: Record<number, boolean>;
         autoplay: boolean;
+        el: Element;
         parserSettings: Partial<import("../parsers").KwzParserSettings>;
         supportedEvents: PlayerEvent[];
         _src: import("../parseSource").FlipnoteSource;
@@ -50,7 +51,6 @@ declare const PlayerComponent_base: {
         updateSettings(settings: Partial<import("../parsers").KwzParserSettings>): Promise<void>;
         closeNote(): void;
         openNote(note: import("../parsers").FlipnoteParserBase): void;
-        /** @internal */
         playbackLoop: (timestamp: number) => void;
         setCurrentTime(value: number): void;
         getCurrentTime(): number;
