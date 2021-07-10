@@ -75,11 +75,29 @@ Flipnote.js exports the following interfaces globally:
 - {@link Player}
 - {@link GifImage}
 - {@link WavAudio}
+- {@link WebglCanvas}
+- {@link Html5Canvas}
+- {@link UniversalCanvas}
+- {@link WebAudioPlayer}
 - {@link version}
 
 For Typescript, it also exports the following types:
 
 - {@link Flipnote}
 - {@link FlipnoteFormat}
+- {@link FlipnoteVersion}
+- {@link FlipnoteRegion}
 - {@link FlipnoteMeta}
+- {@link FlipnotePaletteColor}
+- {@link FlipnotePaletteDefinition}
+- {@link FlipnoteLayerVisibility}
 - {@link FlipnoteAudioTrack}
+- {@link FlipnoteAudioTrackInfo}
+- {@link FlipnoteSoundEffectTrack}
+- {@link FlipnoteSoundEffectFlags}
+- {@link FlipnoteParserSettings}
+- {@link KwzParserSettings}
+- {@link PpmParserSettings}
+- {@link PlayerEvent}
+- {@link PlayerMixin}
+- {@link CanvasInterface}

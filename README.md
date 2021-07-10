@@ -14,7 +14,7 @@
 
 ## Features
 
-* Full file parser implementations with metadata, frames, audio, signature verification, etc
+* Full file parser implementations for animations from both Flipnote Studio and Flipnote Studio 3D - with metadata, frames, audio, signature verification, and more
 * Realtime browser-based playback for frames and audio, with a player API based on the HTML5 Video and Audio APIs
 * Optional web component for easily embedding a Flipnote player UI on any web page
 * WebGL renderer with crisp pixel scaling (using sharp-bilinear filtering!), with a HTML5 canvas fallback
@@ -22,6 +22,14 @@
 * Works in web browser and NodeJS environments
 * Exports full Typescript types
 * 23kb minified & gzipped
+
+## Status
+
+I consider this library more-or-less feature complete at this stage (notwithstanding a new Flipnote Studio release, of course!). There are a still couple of small things to pick at however:
+
+* The Flipnote signature verification API [doesn't work in Node](https://github.com/jaames/flipnote.js/issues/24). This should be an easy fix.
+* Letterboxing so that the player aspect ratio doesn't have to be strictly 3:4. This would also lead into a fullscreen mode for the player UI.
+* It would be neat to look into some [pixel-art upscaling methods](https://github.com/jaames/flipnote.js/issues/25) for exporting Flipnotes are higher resolutions.
 
 ## Background
 

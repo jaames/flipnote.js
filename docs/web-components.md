@@ -204,11 +204,9 @@ player.addEventListener('play', function() {
 
 A full list of available events can be found on the {@link Player} API page.
 
-## Limitations
+## HTML5 fallback
 
-The player uses [WebGL](https://developer.mozilla.org/en-US/docs/Web/API/WebGL_API) to render the Flipnote's animation frames, the benefits of which includes faster performance and lower power consumption compared to the HTML5 canvas API. However, one downside of this approach is that browsers have a hidden limit of how many WebGL contexts can appear on a single page. The number varies, but it's typically around 8 to 12. 
-
-If this limit is reached, it will cull old rendering contexts before new ones are created, each player uses its own WebGL context, so this means you can only have a limited number of active player elements on a single page. Flipnote.js currently handles this by making the player show an error message if its context has been culled, but that isn't very good UX. In the future, I intend to automatically fall back to a HTML5 canvas renderer when this happens, although I haven't got around to implementing that yet. So please make a note of this.
+The player uses [WebGL](https://developer.mozilla.org/en-US/docs/Web/API/WebGL_API) to render the Flipnote's animation frames, the benefits of which includes faster performance and lower power consumption compared to the HTML5 canvas API. However, there's typically a limit to how many WebGL instances can be used on the same page (about 8 to 12), and some devices may still not even support it at all. For these cases, the player will automatically downgrade to using a HTML5-backed renderer.
 
 # flipnote-image
 

@@ -2,7 +2,7 @@ Flipnote.js was written by **James**, who went slightly insane in the process an
 
 ### Special Thanks
 
-This wouldn't have been possible without the many rad people who contributed to Flipnote Studio and its ensuing reverse-engineering scene over the years:
+This wouldn't have been possible without the many rad people who have contributed to Flipnote Studio and its ensuing reverse-engineering scene over the years:
 
 - **[Bricklife](http://ugomemo.g.hatena.ne.jp/bricklife/20090307/1236391313)**, **[mirai-iro](http://mirai-iro.hatenablog.jp/entry/20090116/ugomemo_ppm)** and **[harimau_tigris](http://ugomemo.g.hatena.ne.jp/harimau_tigris)** - for early Flipnote Studio and PPM format reverse-engineering.
 - **Midmad** from Hatena Haiku and **WDLMaster** from hcs64.com - for early PPM audio reverse-engineering.
@@ -18,6 +18,7 @@ This wouldn't have been possible without the many rad people who contributed to 
 - **[Tycho "Sudodad" Aussie](https://github.com/tychoaussie)** - for scientific assistance with signal processing algorithms.
 - **[Lauren Kelly](https://github.com/thejsa)** - for performing packet captures of Flipnote Hatena before it shut down, without them reverse-engineering the app in general would have been a huge pain.
 - **[Stary](https://github.com/Stary2001)**, **[Joshua](https://github.com/JoshuaDoes)** - for various tips and tricks and entertainment.
+- **[Jaames](https://github.com/jaames)** - general reverse-engineering and tooling for both apps.
 - **[Everyone from the Kaeru Team dev Discord](https://kaeru.world/)** - for helping out with miscellaneous bits and for putting up with my nonsensical ramblings about weird proprietary animation formats.
 
 - **[Nintendo](https://www.nintendo.com/)** - for creating Flipnote Studio.
