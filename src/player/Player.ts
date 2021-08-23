@@ -14,16 +14,16 @@ type PlayerLayerVisibility = Record<number, boolean>;
  * 
  * ### Create a new player
  * 
- * You'll need a canvas element in your page's HTML:
+ * You'll need an element in your page's HTML to act as a wrapper for the player:
  * 
  * ```html
- *  <canvas id="player-canvas"></canvas>
+ *  <div id="player-wrapper"></div>
  * ```
  * 
- * Then you can create a new `Player` instance by passing a CSS selector that matches the canvas, plus the disired width and height.
+ * Then you can create a new `Player` instance by passing a CSS selector that matches the wrapper element, plus the desired width and height.
  * 
  * ```js
- *  const player = new flipnote.Player('#player-canvas', 320, 240);
+ *  const player = new flipnote.Player('#player-wrapper', 320, 240);
  * ```
  * 
  * ### Load a Flipnote
