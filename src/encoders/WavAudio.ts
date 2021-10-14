@@ -13,14 +13,14 @@ export type WavSampleBuffer = Int16Array | Float32Array;
  */
 export class WavAudio extends EncoderBase {
 
-  public mimeType: 'audio/wav';
+  mimeType: 'audio/wav';
 
   /** Audio samplerate */
-  public sampleRate: number;
+  sampleRate: number;
   /** Number of audio channels */
-  public channels: number;
+  channels: number;
   /** Number of bits per sample */
-  public bitsPerSample: number;
+  bitsPerSample: number;
 
   private header: DataStream;
   private pcmData: Int16Array;
@@ -100,7 +100,7 @@ export class WavAudio extends EncoderBase {
    * Add PCM audio frames to the WAV
    * @param pcmData signed int16 PCM audio samples
    */
-  public writeSamples(pcmData: Int16Array) {
+  writeSamples(pcmData: Int16Array) {
     let header = this.header;
     // fill in filesize
     header.seek(4);
@@ -114,7 +114,7 @@ export class WavAudio extends EncoderBase {
   /**
    * Returns the WAV audio data as an {@link https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/ArrayBuffer | ArrayBuffer}
    */
-  public getArrayBuffer() {
+  getArrayBuffer() {
     const headerBytes = this.header.bytes;
     const pcmBytes = new Uint8Array(this.pcmData.buffer);
     const resultBytes = new Uint8Array(this.header.byteLength + this.pcmData.byteLength);

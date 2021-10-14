@@ -18,7 +18,7 @@ type Constructor<T = {}> = new (...args: any[]) => T;
 export function PlayerMixin<TargetBase extends Constructor>(Target: TargetBase) {
   class PlayerMixinClass extends Target {
     // the player instance that Mixin will be wrapping
-    public player: Player;
+    player: Player;
 
     // Mixin needs to re-define all the normal player properties, but most should be made readonly anyway...
 

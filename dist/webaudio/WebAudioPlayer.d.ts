@@ -20,6 +20,8 @@ export declare class WebAudioPlayer {
     analyser: AnalyserNode;
     private _volume;
     private _loop;
+    private _startTime;
+    private _ctxStartTime;
     private nodeRefs;
     private buffer;
     private gainNode;
@@ -57,6 +59,10 @@ export declare class WebAudioPlayer {
      * Stops the audio playback
      */
     stop(): void;
+    /**
+     * Get the current playback time, in seconds
+     */
+    getCurrentTime(): number;
     /**
      * Frees any resources used by this canvas instance
      */

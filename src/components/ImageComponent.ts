@@ -26,33 +26,33 @@ export class ImageComponent extends LitElement {
     `;
   }
 
-  public gif: GifImage;
-  public note: Flipnote;
+  gif: GifImage;
+  note: Flipnote;
   private _src: string = '';
   private _frame: string = '0';
 
   @property()
-  public set src(src: any) {
+  set src(src: any) {
     this.load(src);
   }
 
-  public get src() {
+  get src() {
     return this._src;
   }
 
   @property()
-  public set frame(frame: string) {
+  set frame(frame: string) {
     this._frame = frame;
     if (this.note)
       this.loadNote(this.note);
   }
 
-  public get frame() {
+  get frame() {
     return this._frame;
   }
 
   @property({ type: Boolean })
-  public cropped: boolean = false;
+  cropped: boolean = false;
 
   @internalProperty()
   private gifUrl: string = '';
@@ -61,7 +61,7 @@ export class ImageComponent extends LitElement {
   private imgTitle: string = '';
 
   /** @internal */
-  public render() {
+  render() {
     return html`<img class="Image" src=${ this.gifUrl } alt=${ this.imgTitle } title=${ this.imgTitle } />`;
   }
 
@@ -73,7 +73,7 @@ export class ImageComponent extends LitElement {
     }
   }
 
-  public loadNote(note: Flipnote) {
+  loadNote(note: Flipnote) {
     this.note = note;
     this.revokeUrl();
     const frame = this._frame;
@@ -102,7 +102,7 @@ export class ImageComponent extends LitElement {
     }
   }
 
-  public load(src: any) {
+  load(src: any) {
     this._src = src;
     this.note = undefined;
     const borderCrop = this.getAttribute('cropped') === 'true';

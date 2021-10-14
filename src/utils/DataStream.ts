@@ -12,8 +12,8 @@ export const enum SeekOrigin {
  */
 export class DataStream {
 
-  public buffer: ArrayBuffer;
-  public pointer: number;
+  buffer: ArrayBuffer;
+  pointer: number;
   private data: DataView;
 
   constructor(arrayBuffer: ArrayBuffer) {
@@ -30,7 +30,7 @@ export class DataStream {
     return this.data.byteLength;
   }
 
-  public seek(offset: number, whence?: SeekOrigin) {
+  seek(offset: number, whence?: SeekOrigin) {
     switch (whence) {
       case SeekOrigin.End:
         this.pointer = this.data.byteLength + offset;
@@ -45,83 +45,83 @@ export class DataStream {
     }
   }
 
-  public readUint8() {
+  readUint8() {
     const val = this.data.getUint8(this.pointer);
     this.pointer += 1;
     return val;
   }
 
-  public writeUint8(value: number) {
+  writeUint8(value: number) {
     this.data.setUint8(this.pointer, value);
     this.pointer += 1;
   }
 
-  public readInt8() {
+  readInt8() {
     const val = this.data.getInt8(this.pointer);
     this.pointer += 1;
     return val;
   }
 
-  public writeInt8(value: number) {
+  writeInt8(value: number) {
     this.data.setInt8(this.pointer, value);
     this.pointer += 1;
   }
 
-  public readUint16(littleEndian: boolean=true) {
+  readUint16(littleEndian: boolean=true) {
     const val = this.data.getUint16(this.pointer, littleEndian);
     this.pointer += 2;
     return val;
   }
 
-  public writeUint16(value: number, littleEndian: boolean=true) {
+  writeUint16(value: number, littleEndian: boolean=true) {
     this.data.setUint16(this.pointer, value, littleEndian);
     this.pointer += 2;
   }
 
-  public readInt16(littleEndian: boolean=true) {
+  readInt16(littleEndian: boolean=true) {
     const val = this.data.getInt16(this.pointer, littleEndian);
     this.pointer += 2;
     return val;
   }
 
-  public writeInt16(value: number, littleEndian: boolean=true) {
+  writeInt16(value: number, littleEndian: boolean=true) {
     this.data.setInt16(this.pointer, value, littleEndian);
     this.pointer += 2;
   }
 
-  public readUint32(littleEndian: boolean=true) {
+  readUint32(littleEndian: boolean=true) {
     const val = this.data.getUint32(this.pointer, littleEndian);
     this.pointer += 4;
     return val;
   }
   
-  public writeUint32(value: number, littleEndian: boolean=true) {
+  writeUint32(value: number, littleEndian: boolean=true) {
     this.data.setUint32(this.pointer, value, littleEndian);
     this.pointer += 4;
   }
 
-  public readInt32(littleEndian: boolean=true) {
+  readInt32(littleEndian: boolean=true) {
     const val = this.data.getInt32(this.pointer, littleEndian);
     this.pointer += 4;
     return val;
   }
 
-  public writeInt32(value: number, littleEndian: boolean=true) {
+  writeInt32(value: number, littleEndian: boolean=true) {
     this.data.setInt32(this.pointer, value, littleEndian);
     this.pointer += 4;
   }
 
-  public readBytes(count: number) {
+  readBytes(count: number) {
     const bytes = new Uint8Array(this.data.buffer, this.pointer, count);
     this.pointer += bytes.byteLength;
     return bytes;
   }
 
-  public writeBytes(bytes: number[] | Uint8Array) {
+  writeBytes(bytes: number[] | Uint8Array) {
     bytes.forEach((byte: number) => this.writeUint8(byte));
   }
 
-  public readHex(count: number, reverse: boolean=false) {
+  readHex(count: number, reverse: boolean=false) {
     const bytes = this.readBytes(count);
     let hex = [];
     for (let i = 0; i < bytes.length; i++) {
@@ -132,7 +132,7 @@ export class DataStream {
     return hex.join('').toUpperCase();
   }
 
-  public readChars(count: number) {
+  readChars(count: number) {
     const chars = this.readBytes(count);
     let str = '';
     for (let i = 0; i < chars.length; i++) {
@@ -144,14 +144,14 @@ export class DataStream {
     return str;
   }
 
-  public writeChars(string: string) {
+  writeChars(string: string) {
     for (let i = 0; i < string.length; i++) {
       const char = string.charCodeAt(i);
       this.writeUint8(char);
     }
   }
 
-  public readWideChars(count: number) {
+  readWideChars(count: number) {
     const chars = new Uint16Array(this.data.buffer, this.pointer, count);
     let str = '';
     for (let i = 0; i < chars.length; i++) {

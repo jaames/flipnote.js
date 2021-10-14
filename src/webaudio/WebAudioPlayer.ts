@@ -18,15 +18,15 @@ export type PcmAudioBuffer = Int16Array | Float32Array;
 export class WebAudioPlayer {
 
   /** Audio context, see {@link https://developer.mozilla.org/en-US/docs/Web/API/AudioContext | AudioContext} */
-  public ctx: AudioContext;
+  ctx: AudioContext;
   /** Audio sample rate */
-  public sampleRate: number;
+  sampleRate: number;
   /** Whether the audio is being run through an equalizer or not */
-  public useEq = false;
+  useEq = false;
   /** Whether to connect the output to an audio analyser (see {@link analyser}) */
-  public useAnalyser = false;
+  useAnalyser = false;
   /** Default equalizer settings. Credit to {@link https://www.sudomemo.net/ | Sudomemo} for these */
-  public eqSettings: [number, number][] = [
+  eqSettings: [number, number][] = [
     [31.25, 4.1],
     [62.5, 1.2],
     [125, 0],
@@ -38,10 +38,12 @@ export class WebAudioPlayer {
     [16000, 5.1]
   ];
   /** If enabled, provides audio analysis for visualisation etc - https://developer.mozilla.org/en-US/docs/Web/API/Web_Audio_API/Visualizations_with_Web_Audio_API */
-  public analyser: AnalyserNode;
+  analyser: AnalyserNode;
 
   private _volume = 1;
   private _loop = false;
+  private _startTime = 0;
+  private _ctxStartTime = 0;
   private nodeRefs: AudioNode[] = [];
   private buffer: AudioBuffer;
   private gainNode: GainNode;
@@ -154,7 +156,7 @@ export class WebAudioPlayer {
     this.setVolume(this._volume);
   }
   
-  public setAnalyserEnabled(on: boolean) {
+  setAnalyserEnabled(on: boolean) {
     this.useAnalyser = on;
     this.initNodes();
   }
@@ -163,7 +165,7 @@ export class WebAudioPlayer {
    * Sets the audio volume level
    * @param value - range is 0 to 1
    */
-  public setVolume(value: number) {
+  setVolume(value: number) {
     this._volume = value;
     if (this.gainNode) {
       // human perception of loudness is logarithmic, rather than linear
@@ -178,8 +180,10 @@ export class WebAudioPlayer {
    * Note that the WebAudioPlayer doesn't keep track of audio playback itself. We rely on the {@link Player} API for that.
    * @param currentTime initial playback position, in seconds
    */
-  public playFrom(currentTime: number) {
+  playFrom(currentTime: number) {
     this.initNodes();
+    this._startTime = currentTime;
+    this._ctxStartTime = this.ctx.currentTime;
     this.source.loop = this._loop;
     this.source.start(0, currentTime);
   }
@@ -187,15 +191,22 @@ export class WebAudioPlayer {
   /**
    * Stops the audio playback
    */
-  public stop() {
+  stop() {
     if (this.source)
       this.source.stop(0);
   }
 
   /**
+   * Get the current playback time, in seconds
+   */
+  getCurrentTime() {
+    return this._startTime + (this.ctx.currentTime - this._ctxStartTime);
+  }
+
+  /**
    * Frees any resources used by this canvas instance
    */
-  public async destroy() {
+  async destroy() {
     this.stop();
     const ctx = this.getCtx();
     this.nodeRefs.forEach(node => node.disconnect());

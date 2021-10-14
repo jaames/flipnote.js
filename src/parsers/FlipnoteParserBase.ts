@@ -135,82 +135,82 @@ export abstract class FlipnoteParserBase extends DataStream {
   static sampleRate: number;
   /** Global animation frame color palette */
   static globalPalette: FlipnotePaletteColor[];
-  /** Public key used for Flipnote verification, in PEM format */
+  /** key used for Flipnote verification, in PEM format */
   static publicKey: string;
 
   /** Instance file format info */
 
   /** Custom object tag */
-  public [Symbol.toStringTag] = 'Flipnote';
+  [Symbol.toStringTag] = 'Flipnote';
   /** File format type, reflects {@link FlipnoteParserBase.format} */
-  public format: FlipnoteFormat;
+  format: FlipnoteFormat;
   /** Default formats used for {@link getTitle()} */
-  public titleFormats = {
+  titleFormats = {
     COMMENT: 'Comment by $USERNAME',
     FLIPNOTE: 'Flipnote by $USERNAME',
     ICON: 'Folder icon'
   };
   /** Animation frame width, reflects {@link FlipnoteParserBase.width} */
-  public imageWidth: number;
+  imageWidth: number;
   /** Animation frame height, reflects {@link FlipnoteParserBase.height} */
-  public imageHeight: number;
+  imageHeight: number;
   /** X offset for the top-left corner of the animation frame */
-  public imageOffsetX: number;
+  imageOffsetX: number;
   /** Y offset for the top-left corner of the animation frame */
-  public imageOffsetY: number;
+  imageOffsetY: number;
   /** Number of animation frame layers, reflects {@link FlipnoteParserBase.numLayers} */
-  public numLayers: number;
+  numLayers: number;
   /** Number of colors per layer (aside from transparent), reflects {@link FlipnoteParserBase.numLayerColors} */
-  public numLayerColors: number;
+  numLayerColors: number;
   /** @internal */
-  public srcWidth: number;
+  srcWidth: number;
   /** Which audio tracks are available in this format, reflects {@link FlipnoteParserBase.audioTracks} */
-  public audioTracks: FlipnoteAudioTrack[];
+  audioTracks: FlipnoteAudioTrack[];
   /** Which sound effect tracks are available in this format, reflects {@link FlipnoteParserBase.soundEffectTracks} */
-  public soundEffectTracks: FlipnoteSoundEffectTrack[];
+  soundEffectTracks: FlipnoteSoundEffectTrack[];
   /** Audio track base sample rate, reflects {@link FlipnoteParserBase.rawSampleRate} */
-  public rawSampleRate: number;
+  rawSampleRate: number;
   /** Audio output sample rate, reflects {@link FlipnoteParserBase.sampleRate} */
-  public sampleRate: number;
+  sampleRate: number;
   /** Global animation frame color palette, reflects {@link FlipnoteParserBase.globalPalette} */
-  public globalPalette: FlipnotePaletteColor[];
+  globalPalette: FlipnotePaletteColor[];
   /** Flipnote palette */
-  public palette: FlipnotePaletteDefinition;
+  palette: FlipnotePaletteDefinition;
   /** File metadata, see {@link FlipnoteMeta} for structure */
-  public meta: FlipnoteMeta;
+  meta: FlipnoteMeta;
   /** File audio track info, see {@link FlipnoteAudioTrackInfo} */
-  public soundMeta: Map<FlipnoteAudioTrack, FlipnoteAudioTrackInfo> = new Map();
+  soundMeta: Map<FlipnoteAudioTrack, FlipnoteAudioTrackInfo> = new Map();
   /** Animation frame global layer visibility */
-  public layerVisibility: FlipnoteLayerVisibility = {1: true, 2: true, 3: true};
-  /** Public key used for Flipnote verification, in PEM format */
-  public publicKey: string;
+  layerVisibility: FlipnoteLayerVisibility = {1: true, 2: true, 3: true};
+  /** key used for Flipnote verification, in PEM format */
+  publicKey: string;
 
   /** Instance-unique info */
 
   /** Spinoffs are remixes of another user's Flipnote */
-  public isSpinoff: boolean;
+  isSpinoff: boolean;
   /** (KWZ only) Indicates whether or not this file is a Flipnote Studio 3D folder icon */
-  public isFolderIcon: boolean = false;
+  isFolderIcon: boolean = false;
   /** (KWZ only) Indicates whether or not this file is a handwritten comment from Flipnote Gallery World */
-  public isComment: boolean = false;
+  isComment: boolean = false;
   /** (KWZ only) Indicates whether or not this Flipnote is a PPM to KWZ conversion from Flipnote Studio 3D's DSi Library service */
-  public isDsiLibraryNote: boolean = false;
+  isDsiLibraryNote: boolean = false;
   /** Animation frame count */
-  public frameCount: number;
+  frameCount: number;
   /** In-app animation playback speed */
-  public frameSpeed: number;
+  frameSpeed: number;
   /** Animation duration, in seconds */
-  public duration: number;
+  duration: number;
   /** In-app animation playback speed when the BGM track was recorded */
-  public bgmSpeed: number;
+  bgmSpeed: number;
   /** Animation framerate, measured as frames per second */
-  public framerate: number;
+  framerate: number;
   /** Animation framerate when the BGM track was recorded, measured as frames per second */
-  public bgmrate: number;
+  bgmrate: number;
   /** Index of the animation frame used as the Flipnote's thumbnail image */
-  public thumbFrameIndex: number;
+  thumbFrameIndex: number;
   /** Get the amount of clipping in the master audio track, useful for determining if a Flipnote's audio is corrupted. Closer to 1.0 = more clipping. Only available after {@link getAudioMasterPcm} has been called */
-  public audioClipRatio: number;
+  audioClipRatio: number;
 
   /**
    * Get file default title - e.g. "Flipnote by Y", "Comment by X", etc. 
@@ -224,7 +224,7 @@ export abstract class FlipnoteParserBase extends DataStream {
    * ```
    * @category Utility
    */
-  public getTitle(formats = this.titleFormats) {
+  getTitle(formats = this.titleFormats) {
     if (this.isFolderIcon)
       return formats.ICON;
     const title = this.isComment ? formats.COMMENT : formats.FLIPNOTE;
@@ -240,7 +240,7 @@ export abstract class FlipnoteParserBase extends DataStream {
    * ```
    * @category Utility
    */
-  public toString() {
+  toString() {
     return this.getTitle();
   }
 
@@ -254,7 +254,7 @@ export abstract class FlipnoteParserBase extends DataStream {
    * ```
    * @category Utility
    */
-  public *[Symbol.iterator]() {
+  *[Symbol.iterator]() {
     for (let i = 0; i < this.frameCount; i++)
       yield i;
   }
@@ -271,7 +271,7 @@ export abstract class FlipnoteParserBase extends DataStream {
    * NOTE: if the visibility flag for this layer is turned off, the result will be empty
    * @category Image
   */
-  public getLayerPixels(
+  getLayerPixels(
     frameIndex: number,
     layerIndex: number,
     imageBuffer = new Uint8Array(this.imageWidth * this.imageHeight)
@@ -313,7 +313,7 @@ export abstract class FlipnoteParserBase extends DataStream {
    * NOTE: if the visibility flag for this layer is turned off, the result will be empty
    * @category Image
   */
-  public getLayerPixelsRgba(
+  getLayerPixelsRgba(
     frameIndex: number,
     layerIndex: number,
     imageBuffer = new Uint32Array(this.imageWidth * this.imageHeight),
@@ -360,7 +360,7 @@ export abstract class FlipnoteParserBase extends DataStream {
    * Get the image for a given frame, as palette indices
    * @category Image
   */
-  public getFramePixels(
+  getFramePixels(
     frameIndex: number,
     imageBuffer = new Uint8Array(this.imageWidth * this.imageHeight)
   ) {
@@ -403,7 +403,7 @@ export abstract class FlipnoteParserBase extends DataStream {
    * Get the image for a given frame as an uint32 array of RGBA pixels
    * @category Image
    */
-  public getFramePixelsRgba(
+  getFramePixelsRgba(
     frameIndex: number,
     imageBuffer = new Uint32Array(this.imageWidth * this.imageHeight),
     paletteBuffer = new Uint32Array(16)
@@ -459,7 +459,7 @@ export abstract class FlipnoteParserBase extends DataStream {
    * Get the color palette for a given frame, as an uint32 array
    * @category Image
   */
-  public getFramePaletteUint32(
+  getFramePaletteUint32(
     frameIndex: number,
     paletteBuffer = new Uint32Array(16)
   ) {
@@ -480,20 +480,20 @@ export abstract class FlipnoteParserBase extends DataStream {
    * Get the sound effect usage flags for every frame
    * @category Audio
    */
-  public abstract getSoundEffectFlags(): FlipnoteSoundEffectFlags[];
+  abstract getSoundEffectFlags(): FlipnoteSoundEffectFlags[];
 
   /**
    * Get the sound effect usage flags for a given frame
    * @category Audio
    */
-  public abstract getFrameSoundEffectFlags(frameIndex: number): FlipnoteSoundEffectFlags;
+  abstract getFrameSoundEffectFlags(frameIndex: number): FlipnoteSoundEffectFlags;
 
   /**
    * Get the usage flags for a given track accross every frame
    * @returns an array of booleans for every frame, indicating whether the track is used on that frame
    * @category Audio
    */
-  public getSoundEffectFlagsForTrack(trackId: FlipnoteSoundEffectTrack) {
+  getSoundEffectFlagsForTrack(trackId: FlipnoteSoundEffectTrack) {
     return this.getSoundEffectFlags().map(frammeFlags => frammeFlags[trackId]);
   };
 
@@ -501,7 +501,7 @@ export abstract class FlipnoteParserBase extends DataStream {
    * Is a given track used on a given frame
    * @category Audio
    */
-  public isSoundEffectUsedOnFrame(trackId: FlipnoteSoundEffectTrack, frameIndex: number) {
+  isSoundEffectUsedOnFrame(trackId: FlipnoteSoundEffectTrack, frameIndex: number) {
     assertRange(frameIndex, 0, this.frameCount - 1, 'Frame index');
     if (!this.soundEffectTracks.includes(trackId))
       return false;
@@ -513,7 +513,7 @@ export abstract class FlipnoteParserBase extends DataStream {
    * @returns boolean
    * @category Audio
   */
-  public hasAudioTrack(trackId: FlipnoteAudioTrack): boolean {
+  hasAudioTrack(trackId: FlipnoteAudioTrack): boolean {
     return this.soundMeta.has(trackId) && this.soundMeta.get(trackId).length > 0;
   }
 

@@ -1,26 +1,3 @@
-/**
- * PPM decoder
- * Reads frames, audio, and metadata from Flipnote Studio PPM files
- * Based on my Python PPM decoder implementation (https://github.com/jaames/flipnote-tools)
- *
- * Credits:
- *  PPM format reverse-engineering and documentation:
- *   - bricklife (http://ugomemo.g.hatena.ne.jp/bricklife/20090307/1236391313)
- *   - mirai-iro (http://mirai-iro.hatenablog.jp/entry/20090116/ugomemo_ppm)
- *   - harimau_tigris (http://ugomemo.g.hatena.ne.jp/harimau_tigris)
- *   - steven (http://www.dsibrew.org/wiki/User:Steven)
- *   - yellows8 (http://www.dsibrew.org/wiki/User:Yellows8)
- *   - PBSDS (https://github.com/pbsds)
- *   - jaames (https://github.com/jaames)
- *  Identifying the PPM sound codec:
- *   - Midmad from Hatena Haiku
- *   - WDLMaster from hcs64.com
- *  Helping me to identify issues with the Python decoder that this is based on:
- *   - Austin Burk (https://sudomemo.net)
- *
- *  Lastly, a huge thanks goes to Nintendo for creating Flipnote Studio,
- *  and to Hatena for providing the Flipnote Hatena online service, both of which inspired so many c:
-*/
 import { FlipnoteFormat, FlipnoteAudioTrack, FlipnoteSoundEffectTrack, FlipnoteSoundEffectFlags, FlipnoteMeta, FlipnoteParserBase } from './FlipnoteParserBase';
 /**
  * PPM file metadata, stores information about its playback, author details, etc
@@ -81,7 +58,7 @@ export declare class PpmParser extends FlipnoteParserBase {
     numLayers: number;
     /** Number of colors per layer (aside from transparent), reflects {@link PpmParser.numLayerColors} */
     numLayerColors: number;
-    /** Public key used for Flipnote verification, in PEM format */
+    /** key used for Flipnote verification, in PEM format */
     publicKey: string;
     /** @internal */
     srcWidth: number;

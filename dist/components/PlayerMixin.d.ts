@@ -33,6 +33,7 @@ export declare function PlayerMixin<TargetBase extends Constructor>(Target: Targ
         _volume: number;
         _muted: boolean;
         _frame: number;
+        _hasEnded: boolean;
         isNoteLoaded: boolean;
         events: import("../player").PlayerEventMap;
         playbackStartTime: number;

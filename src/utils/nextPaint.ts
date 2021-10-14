@@ -1,7 +1,7 @@
 import { isBrowser } from './env';
 
 /** @internal */
-const raf = isBrowser && (window.requestAnimationFrame || window.webkitRequestAnimationFrame);
+const raf = isBrowser && (window.requestAnimationFrame || (window as any).webkitRequestAnimationFrame);
 
 /** @internal */
 export function nextPaint(callback: Function) {

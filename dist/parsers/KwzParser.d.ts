@@ -131,7 +131,7 @@ export declare class KwzParser extends FlipnoteParserBase {
     numLayers: number;
     /** Number of colors per layer (aside from transparent), reflects {@link KwzParser.numLayerColors} */
     numLayerColors: number;
-    /** Public key used for Flipnote verification, in PEM format */
+    /** key used for Flipnote verification, in PEM format */
     publicKey: string;
     /** @internal */
     srcWidth: number;

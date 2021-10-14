@@ -1,5 +1,5 @@
 /*!!
-flipnote.js v5.6.5 (web build)
+flipnote.js v5.6.6 (web build)
 https://flipnote.js.org
 A JavaScript library for parsing, converting, and in-browser playback of the proprietary animation formats used by Nintendo's Flipnote Studio and Flipnote Studio 3D apps.
 2018 - 2021 James Daniel
@@ -10,7 +10,7 @@ Keep on Flipnoting!
     typeof exports === 'object' && typeof module !== 'undefined' ? factory(exports) :
     typeof define === 'function' && define.amd ? define(['exports'], factory) :
     (global = typeof globalThis !== 'undefined' ? globalThis : global || self, factory(global.flipnote = {}));
-}(this, (function (exports) { 'use strict';
+})(this, (function (exports) { 'use strict';
 
     /*! *****************************************************************************
     Copyright (c) Microsoft Corporation.
@@ -36,6 +36,8 @@ Keep on Flipnoting!
     };
 
     function __extends(d, b) {
+        if (typeof b !== "function" && b !== null)
+            throw new TypeError("Class extends value " + String(b) + " is not a constructor or null");
         extendStatics(d, b);
         function __() { this.constructor = d; }
         d.prototype = b === null ? Object.create(b) : (__.prototype = b.prototype, new __());
@@ -119,6 +121,7 @@ Keep on Flipnoting!
         return ar;
     }
 
+    /** @deprecated */
     function __spread() {
         for (var ar = [], i = 0; i < arguments.length; i++)
             ar = ar.concat(__read(arguments[i]));
@@ -644,6 +647,7 @@ Keep on Flipnoting!
     /**
      * Flipnote region
      */
+    exports.FlipnoteRegion = void 0;
     (function (FlipnoteRegion) {
         /** Europe and Oceania */
         FlipnoteRegion["EUR"] = "EUR";
@@ -767,7 +771,7 @@ Keep on Flipnoting!
     });
 
     /** @internal */
-    var saveData = (function () {
+    ((function () {
         if (!isBrowser) {
             return function () { };
         }
@@ -781,14 +785,18 @@ Keep on Flipnoting!
             a.click();
             window.URL.revokeObjectURL(url);
         };
-    })();
+    }))();
 
+    /** Identifies which animation format a Flipnote uses */
+    exports.FlipnoteFormat = void 0;
     (function (FlipnoteFormat) {
         /** Animation format used by Flipnote Studio (Nintendo DSiWare) */
         FlipnoteFormat["PPM"] = "PPM";
         /** Animation format used by Flipnote Studio 3D (Nintendo 3DS) */
         FlipnoteFormat["KWZ"] = "KWZ";
     })(exports.FlipnoteFormat || (exports.FlipnoteFormat = {}));
+    /** Identifies a Flipnote audio track type */
+    exports.FlipnoteAudioTrack = void 0;
     (function (FlipnoteAudioTrack) {
         /** Background music track */
         FlipnoteAudioTrack[FlipnoteAudioTrack["BGM"] = 0] = "BGM";
@@ -801,6 +809,8 @@ Keep on Flipnoting!
         /** Sound effect 4 track (only used by KWZ files) */
         FlipnoteAudioTrack[FlipnoteAudioTrack["SE4"] = 4] = "SE4";
     })(exports.FlipnoteAudioTrack || (exports.FlipnoteAudioTrack = {}));
+    /** {@link FlipnoteAudioTrack}, but just sound effect tracks */
+    exports.FlipnoteSoundEffectTrack = void 0;
     (function (FlipnoteSoundEffectTrack) {
         FlipnoteSoundEffectTrack[FlipnoteSoundEffectTrack["SE1"] = 1] = "SE1";
         FlipnoteSoundEffectTrack[FlipnoteSoundEffectTrack["SE2"] = 2] = "SE2";
@@ -1107,29 +1117,6 @@ Keep on Flipnoting!
     }(DataStream));
 
     /**
-     * PPM decoder
-     * Reads frames, audio, and metadata from Flipnote Studio PPM files
-     * Based on my Python PPM decoder implementation (https://github.com/jaames/flipnote-tools)
-     *
-     * Credits:
-     *  PPM format reverse-engineering and documentation:
-     *   - bricklife (http://ugomemo.g.hatena.ne.jp/bricklife/20090307/1236391313)
-     *   - mirai-iro (http://mirai-iro.hatenablog.jp/entry/20090116/ugomemo_ppm)
-     *   - harimau_tigris (http://ugomemo.g.hatena.ne.jp/harimau_tigris)
-     *   - steven (http://www.dsibrew.org/wiki/User:Steven)
-     *   - yellows8 (http://www.dsibrew.org/wiki/User:Yellows8)
-     *   - PBSDS (https://github.com/pbsds)
-     *   - jaames (https://github.com/jaames)
-     *  Identifying the PPM sound codec:
-     *   - Midmad from Hatena Haiku
-     *   - WDLMaster from hcs64.com
-     *  Helping me to identify issues with the Python decoder that this is based on:
-     *   - Austin Burk (https://sudomemo.net)
-     *
-     *  Lastly, a huge thanks goes to Nintendo for creating Flipnote Studio,
-     *  and to Hatena for providing the Flipnote Hatena online service, both of which inspired so many c:
-    */
-    /**
      * PPM framerates in frames per second, indexed by the in-app frame speed.
      * Frame speed 0 is never noramally used
      */
@@ -1180,7 +1167,7 @@ Keep on Flipnoting!
             _this.numLayers = PpmParser.numLayers;
             /** Number of colors per layer (aside from transparent), reflects {@link PpmParser.numLayerColors} */
             _this.numLayerColors = PpmParser.numLayerColors;
-            /** Public key used for Flipnote verification, in PEM format */
+            /** key used for Flipnote verification, in PEM format */
             _this.publicKey = PpmParser.publicKey;
             /** @internal */
             _this.srcWidth = PpmParser.width;
@@ -1901,7 +1888,7 @@ Keep on Flipnoting!
             _this.numLayers = KwzParser.numLayers;
             /** Number of colors per layer (aside from transparent), reflects {@link KwzParser.numLayerColors} */
             _this.numLayerColors = KwzParser.numLayerColors;
-            /** Public key used for Flipnote verification, in PEM format */
+            /** key used for Flipnote verification, in PEM format */
             _this.publicKey = KwzParser.publicKey;
             /** @internal */
             _this.srcWidth = KwzParser.width;
@@ -2036,7 +2023,7 @@ Keep on Flipnoting!
             var creationTime = dateFromNintendoTimestamp(this.readUint32());
             var modifiedTime = dateFromNintendoTimestamp(this.readUint32());
             // const simonTime = 
-            var appVersion = this.readUint32();
+            this.readUint32();
             var rootAuthorId = this.readFsid();
             var parentAuthorId = this.readFsid();
             var currentAuthorId = this.readFsid();
@@ -2104,7 +2091,7 @@ Keep on Flipnoting!
             this.seek(this.sectionMap.get('KFH').ptr + 0x8 + 0xC4);
             var frameCount = this.readUint16();
             var thumbFrameIndex = this.readUint16();
-            var flags = this.readUint16();
+            this.readUint16();
             var frameSpeed = this.readUint8();
             var layerFlags = this.readUint8();
             this.frameCount = frameCount;
@@ -2965,6 +2952,7 @@ Keep on Flipnoting!
     /**
      * Player event types
      */
+    exports.PlayerEvent = void 0;
     (function (PlayerEvent) {
         PlayerEvent["__Any"] = "any";
         PlayerEvent["Play"] = "play";
@@ -3049,7 +3037,7 @@ Keep on Flipnoting!
         return CanvasInterface;
     }());
 
-    /* @license twgl.js 4.17.0 Copyright (c) 2015, Gregg Tavares All Rights Reserved.
+    /* @license twgl.js 4.21.2 Copyright (c) 2015, Gregg Tavares All Rights Reserved.
     Available via the MIT license.
     see: http://github.com/greggman/twgl.js for details */
 
@@ -3984,30 +3972,30 @@ Keep on Flipnoting!
     }
 
     typeMap[FLOAT$3]                         = { Type: Float32Array, size:  4, setter: floatSetter,      arraySetter: floatArraySetter, };
-    typeMap[FLOAT_VEC2]                    = { Type: Float32Array, size:  8, setter: floatVec2Setter,  };
-    typeMap[FLOAT_VEC3]                    = { Type: Float32Array, size: 12, setter: floatVec3Setter,  };
-    typeMap[FLOAT_VEC4]                    = { Type: Float32Array, size: 16, setter: floatVec4Setter,  };
+    typeMap[FLOAT_VEC2]                    = { Type: Float32Array, size:  8, setter: floatVec2Setter,  cols: 2, };
+    typeMap[FLOAT_VEC3]                    = { Type: Float32Array, size: 12, setter: floatVec3Setter,  cols: 3, };
+    typeMap[FLOAT_VEC4]                    = { Type: Float32Array, size: 16, setter: floatVec4Setter,  cols: 4, };
     typeMap[INT$3]                           = { Type: Int32Array,   size:  4, setter: intSetter,        arraySetter: intArraySetter, };
-    typeMap[INT_VEC2]                      = { Type: Int32Array,   size:  8, setter: intVec2Setter,    };
-    typeMap[INT_VEC3]                      = { Type: Int32Array,   size: 12, setter: intVec3Setter,    };
-    typeMap[INT_VEC4]                      = { Type: Int32Array,   size: 16, setter: intVec4Setter,    };
+    typeMap[INT_VEC2]                      = { Type: Int32Array,   size:  8, setter: intVec2Setter,    cols: 2, };
+    typeMap[INT_VEC3]                      = { Type: Int32Array,   size: 12, setter: intVec3Setter,    cols: 3, };
+    typeMap[INT_VEC4]                      = { Type: Int32Array,   size: 16, setter: intVec4Setter,    cols: 4, };
     typeMap[UNSIGNED_INT$3]                  = { Type: Uint32Array,  size:  4, setter: uintSetter,       arraySetter: uintArraySetter, };
-    typeMap[UNSIGNED_INT_VEC2]             = { Type: Uint32Array,  size:  8, setter: uintVec2Setter,   };
-    typeMap[UNSIGNED_INT_VEC3]             = { Type: Uint32Array,  size: 12, setter: uintVec3Setter,   };
-    typeMap[UNSIGNED_INT_VEC4]             = { Type: Uint32Array,  size: 16, setter: uintVec4Setter,   };
+    typeMap[UNSIGNED_INT_VEC2]             = { Type: Uint32Array,  size:  8, setter: uintVec2Setter,   cols: 2, };
+    typeMap[UNSIGNED_INT_VEC3]             = { Type: Uint32Array,  size: 12, setter: uintVec3Setter,   cols: 3, };
+    typeMap[UNSIGNED_INT_VEC4]             = { Type: Uint32Array,  size: 16, setter: uintVec4Setter,   cols: 4, };
     typeMap[BOOL]                          = { Type: Uint32Array,  size:  4, setter: intSetter,        arraySetter: intArraySetter, };
-    typeMap[BOOL_VEC2]                     = { Type: Uint32Array,  size:  8, setter: intVec2Setter,    };
-    typeMap[BOOL_VEC3]                     = { Type: Uint32Array,  size: 12, setter: intVec3Setter,    };
-    typeMap[BOOL_VEC4]                     = { Type: Uint32Array,  size: 16, setter: intVec4Setter,    };
-    typeMap[FLOAT_MAT2]                    = { Type: Float32Array, size: 16, setter: floatMat2Setter,  };
-    typeMap[FLOAT_MAT3]                    = { Type: Float32Array, size: 36, setter: floatMat3Setter,  };
-    typeMap[FLOAT_MAT4]                    = { Type: Float32Array, size: 64, setter: floatMat4Setter,  };
-    typeMap[FLOAT_MAT2x3]                  = { Type: Float32Array, size: 24, setter: floatMat23Setter, };
-    typeMap[FLOAT_MAT2x4]                  = { Type: Float32Array, size: 32, setter: floatMat24Setter, };
-    typeMap[FLOAT_MAT3x2]                  = { Type: Float32Array, size: 24, setter: floatMat32Setter, };
-    typeMap[FLOAT_MAT3x4]                  = { Type: Float32Array, size: 48, setter: floatMat34Setter, };
-    typeMap[FLOAT_MAT4x2]                  = { Type: Float32Array, size: 32, setter: floatMat42Setter, };
-    typeMap[FLOAT_MAT4x3]                  = { Type: Float32Array, size: 48, setter: floatMat43Setter, };
+    typeMap[BOOL_VEC2]                     = { Type: Uint32Array,  size:  8, setter: intVec2Setter,    cols: 2, };
+    typeMap[BOOL_VEC3]                     = { Type: Uint32Array,  size: 12, setter: intVec3Setter,    cols: 3, };
+    typeMap[BOOL_VEC4]                     = { Type: Uint32Array,  size: 16, setter: intVec4Setter,    cols: 4, };
+    typeMap[FLOAT_MAT2]                    = { Type: Float32Array, size: 32, setter: floatMat2Setter,  rows: 2, cols: 2, };
+    typeMap[FLOAT_MAT3]                    = { Type: Float32Array, size: 48, setter: floatMat3Setter,  rows: 3, cols: 3, };
+    typeMap[FLOAT_MAT4]                    = { Type: Float32Array, size: 64, setter: floatMat4Setter,  rows: 4, cols: 4, };
+    typeMap[FLOAT_MAT2x3]                  = { Type: Float32Array, size: 32, setter: floatMat23Setter, rows: 2, cols: 3, };
+    typeMap[FLOAT_MAT2x4]                  = { Type: Float32Array, size: 32, setter: floatMat24Setter, rows: 2, cols: 4, };
+    typeMap[FLOAT_MAT3x2]                  = { Type: Float32Array, size: 48, setter: floatMat32Setter, rows: 3, cols: 2, };
+    typeMap[FLOAT_MAT3x4]                  = { Type: Float32Array, size: 48, setter: floatMat34Setter, rows: 3, cols: 4, };
+    typeMap[FLOAT_MAT4x2]                  = { Type: Float32Array, size: 64, setter: floatMat42Setter, rows: 4, cols: 2, };
+    typeMap[FLOAT_MAT4x3]                  = { Type: Float32Array, size: 64, setter: floatMat43Setter, rows: 4, cols: 3, };
     typeMap[SAMPLER_2D]                    = { Type: null,         size:  0, setter: samplerSetter,    arraySetter: samplerArraySetter, bindPoint: TEXTURE_2D$1,       };
     typeMap[SAMPLER_CUBE]                  = { Type: null,         size:  0, setter: samplerSetter,    arraySetter: samplerArraySetter, bindPoint: TEXTURE_CUBE_MAP$1, };
     typeMap[SAMPLER_3D]                    = { Type: null,         size:  0, setter: samplerSetter,    arraySetter: samplerArraySetter, bindPoint: TEXTURE_3D$1,       };
@@ -4168,6 +4156,43 @@ Keep on Flipnoting!
       return name.startsWith("gl_") || name.startsWith("webgl_");
     }
 
+    const tokenRE = /(\.|\[|]|\w+)/g;
+    const isDigit = s => s >= '0' && s <= '9';
+    function addSetterToUniformTree(fullPath, setter, node, uniformSetters) {
+      const tokens = fullPath.split(tokenRE).filter(s => s !== '');
+      let tokenNdx = 0;
+      let path = '';
+
+      for (;;) {
+        const token = tokens[tokenNdx++];  // has to be name or number
+        path += token;
+        const isArrayIndex = isDigit(token[0]);
+        const accessor = isArrayIndex
+            ? parseInt(token)
+            : token;
+        if (isArrayIndex) {
+          path += tokens[tokenNdx++];  // skip ']'
+        }
+        const isLastToken = tokenNdx === tokens.length;
+        if (isLastToken) {
+          node[accessor] = setter;
+          break;
+        } else {
+          const token = tokens[tokenNdx++];  // has to be . or [
+          const isArray = token === '[';
+          const child = node[accessor] || (isArray ? [] : {});
+          node[accessor] = child;
+          node = child;
+          uniformSetters[path] = uniformSetters[path] || function(node) {
+            return function(value) {
+              setUniformTree(node, value);
+            };
+          }(child);
+          path += token;
+        }
+      }
+    }
+
     /**
      * Creates setter functions for all uniforms of a shader
      * program.
@@ -4217,13 +4242,14 @@ Keep on Flipnoting!
         return setter;
       }
 
-      const uniformSetters = { };
+      const uniformSetters = {};
+      const uniformTree = {};
       const numUniforms = gl.getProgramParameter(program, ACTIVE_UNIFORMS);
 
       for (let ii = 0; ii < numUniforms; ++ii) {
         const uniformInfo = gl.getActiveUniform(program, ii);
         if (isBuiltIn(uniformInfo)) {
-            continue;
+          continue;
         }
         let name = uniformInfo.name;
         // remove the array suffix.
@@ -4233,9 +4259,12 @@ Keep on Flipnoting!
         const location = gl.getUniformLocation(program, uniformInfo.name);
         // the uniform will have no location if it's in a uniform block
         if (location) {
-          uniformSetters[name] = createUniformSetter(program, uniformInfo, location);
+          const setter = createUniformSetter(program, uniformInfo, location);
+          uniformSetters[name] = setter;
+          addSetterToUniformTree(name, setter, uniformTree, uniformSetters);
         }
       }
+
       return uniformSetters;
     }
 
@@ -4270,6 +4299,7 @@ Keep on Flipnoting!
 
     /**
      * @typedef {Object} UniformData
+     * @property {string} name The name of the uniform
      * @property {number} type The WebGL type enum for this uniform
      * @property {number} size The number of elements for this uniform
      * @property {number} blockNdx The block index this uniform appears in
@@ -4296,7 +4326,7 @@ Keep on Flipnoting!
      * UniformBlockObjects for a given program
      *
      * @typedef {Object} UniformBlockSpec
-     * @property {Object.<string, module:twgl.BlockSpec> blockSpecs The BlockSpec for each block by block name
+     * @property {Object.<string, module:twgl.BlockSpec>} blockSpecs The BlockSpec for each block by block name
      * @property {UniformData[]} uniformData An array of data for each uniform by uniform index.
      * @memberOf module:twgl
      */
@@ -4321,10 +4351,6 @@ Keep on Flipnoting!
         uniformIndices.push(ii);
         uniformData.push({});
         const uniformInfo = gl.getActiveUniform(program, ii);
-        if (isBuiltIn(uniformInfo)) {
-          break;
-        }
-        // REMOVE [0]?
         uniformData[ii].name = uniformInfo.name;
       }
 
@@ -4361,6 +4387,17 @@ Keep on Flipnoting!
         blockSpecs: blockSpecs,
         uniformData: uniformData,
       };
+    }
+
+    function setUniformTree(tree, values) {
+      for (const name in values) {
+        const prop = tree[name];
+        if (typeof prop === 'function') {
+          prop(values[name]);
+        } else {
+          setUniformTree(tree[name], values[name]);
+        }
+      }
     }
 
     /**
@@ -4475,13 +4512,49 @@ Keep on Flipnoting!
      *     twgl.setUniforms(programInfo, sharedUniforms);
      *     twgl.setUniforms(programInfo, localUniforms};
      *
+     *   You can also fill out structure and array values either via
+     *   shortcut. Example
+     *
+     *     // -- in shader --
+     *     struct Light {
+     *       float intensity;
+     *       vec4 color;
+     *     };
+     *     uniform Light lights[2];
+     *
+     *     // in JavaScript
+     *
+     *     twgl.setUniforms(programInfo, {
+     *       lights: [
+     *         { intensity: 5.0, color: [1, 0, 0, 1] },
+     *         { intensity: 2.0, color: [0, 0, 1, 1] },
+     *       ],
+     *     });
+     *
+     *   or the more traditional way
+     *
+     *     twgl.setUniforms(programInfo, {
+     *       "lights[0].intensity": 5.0,
+     *       "lights[0].color": [1, 0, 0, 1],
+     *       "lights[1].intensity": 2.0,
+     *       "lights[1].color": [0, 0, 1, 1],
+     *     });
+     *
+     *   You can also specify partial paths
+     *
+     *     twgl.setUniforms(programInfo, {
+     *       'lights[1]: { intensity: 5.0, color: [1, 0, 0, 1] },
+     *     });
+     *
+     *   But you can not specify leaf array indices
+     *
      * @memberOf module:twgl/programs
      */
-    function setUniforms(setters, values) {  // eslint-disable-line
+    function setUniforms(setters, ...args) {  // eslint-disable-line
       const actualSetters = setters.uniformSetters || setters;
-      const numArgs = arguments.length;
-      for (let aNdx = 1; aNdx < numArgs; ++aNdx) {
-        const values = arguments[aNdx];
+      const numArgs = args.length;
+      for (let aNdx = 0; aNdx < numArgs; ++aNdx) {
+        const values = args[aNdx];
         if (Array.isArray(values)) {
           const numValues = values.length;
           for (let ii = 0; ii < numValues; ++ii) {
@@ -4516,7 +4589,7 @@ Keep on Flipnoting!
       for (let ii = 0; ii < numAttribs; ++ii) {
         const attribInfo = gl.getActiveAttrib(program, ii);
         if (isBuiltIn(attribInfo)) {
-            continue;
+          continue;
         }
         const index = gl.getAttribLocation(program, attribInfo.name);
         const typeInfo = attrTypeMap[attribInfo.type];
@@ -4596,7 +4669,7 @@ Keep on Flipnoting!
      * @property {WebGLProgram} program A shader program
      * @property {Object<string, function>} uniformSetters object of setters as returned from createUniformSetters,
      * @property {Object<string, function>} attribSetters object of setters as returned from createAttribSetters,
-     * @property {module:twgl.UniformBlockSpec} [uniformBlockSpace] a uniform block spec for making UniformBlockInfos with createUniformBlockInfo etc..
+     * @property {module:twgl.UniformBlockSpec} [uniformBlockSpec] a uniform block spec for making UniformBlockInfos with createUniformBlockInfo etc..
      * @property {Object<string, module:twgl.TransformFeedbackInfo>} [transformFeedbackInfo] info for transform feedbacks
      * @memberOf module:twgl
      */
@@ -4622,9 +4695,9 @@ Keep on Flipnoting!
       const uniformSetters = createUniformSetters(gl, program);
       const attribSetters = createAttributeSetters(gl, program);
       const programInfo = {
-        program: program,
-        uniformSetters: uniformSetters,
-        attribSetters: attribSetters,
+        program,
+        uniformSetters,
+        attribSetters,
       };
 
       if (isWebGL2(gl)) {
@@ -5240,6 +5313,8 @@ Keep on Flipnoting!
             ];
             this._volume = 1;
             this._loop = false;
+            this._startTime = 0;
+            this._ctxStartTime = 0;
             this.nodeRefs = [];
             assertBrowserEnv();
         }
@@ -5368,6 +5443,8 @@ Keep on Flipnoting!
          */
         WebAudioPlayer.prototype.playFrom = function (currentTime) {
             this.initNodes();
+            this._startTime = currentTime;
+            this._ctxStartTime = this.ctx.currentTime;
             this.source.loop = this._loop;
             this.source.start(0, currentTime);
         };
@@ -5377,6 +5454,12 @@ Keep on Flipnoting!
         WebAudioPlayer.prototype.stop = function () {
             if (this.source)
                 this.source.stop(0);
+        };
+        /**
+         * Get the current playback time, in seconds
+         */
+        WebAudioPlayer.prototype.getCurrentTime = function () {
+            return this._startTime + (this.ctx.currentTime - this._ctxStartTime);
         };
         /**
          * Frees any resources used by this canvas instance
@@ -5413,16 +5496,16 @@ Keep on Flipnoting!
      *
      * ### Create a new player
      *
-     * You'll need a canvas element in your page's HTML:
+     * You'll need an element in your page's HTML to act as a wrapper for the player:
      *
      * ```html
-     *  <canvas id="player-canvas"></canvas>
+     *  <div id="player-wrapper"></div>
      * ```
      *
-     * Then you can create a new `Player` instance by passing a CSS selector that matches the canvas, plus the disired width and height.
+     * Then you can create a new `Player` instance by passing a CSS selector that matches the wrapper element, plus the desired width and height.
      *
      * ```js
-     *  const player = new flipnote.Player('#player-canvas', 320, 240);
+     *  const player = new flipnote.Player('#player-wrapper', 320, 240);
      * ```
      *
      * ### Load a Flipnote
@@ -5473,6 +5556,8 @@ Keep on Flipnoting!
             /** @internal */
             this._frame = null;
             /** @internal */
+            this._hasEnded = false;
+            /** @internal */
             this.isNoteLoaded = false;
             /** @internal */
             this.events = new Map();
@@ -5501,18 +5586,26 @@ Keep on Flipnoting!
                 if (!_this.isPlaying)
                     return;
                 var now = timestamp / 1000;
+                var duration = _this.duration;
+                var currAudioTime = _this.audio.getCurrentTime();
                 var currPlaybackTime = now - _this.playbackStartTime;
-                if (currPlaybackTime >= _this.duration) {
+                // try to keep playback time in sync with the audio if there's any slipping
+                if (Math.abs((currPlaybackTime % duration) - (currAudioTime % duration)) > 0.01)
+                    currPlaybackTime = currAudioTime;
+                // handle playback end, if reached
+                if (currPlaybackTime >= duration) {
                     if (_this.loop) {
                         _this.playbackStartTime = now;
                         _this.emit(exports.PlayerEvent.Loop);
                     }
                     else {
                         _this.pause();
+                        _this._hasEnded = true;
                         _this.emit(exports.PlayerEvent.Ended);
+                        return;
                     }
                 }
-                _this.setCurrentTime(currPlaybackTime % _this.duration);
+                _this.setCurrentTime(currPlaybackTime % duration);
                 _this.playbackLoopId = requestAnimationFrame(_this.playbackLoop);
             };
             assertBrowserEnv();
@@ -5874,12 +5967,15 @@ Keep on Flipnoting!
                     this.assertNoteLoaded();
                     if (this.isPlaying)
                         return [2 /*return*/];
-                    // if ((!this.hasPlaybackStarted) || ((!this.loop) && (this.currentFrame == this.frameCount - 1)))
-                    //   this.playbackTime = 0;
-                    this.isPlaying = true;
-                    this.hasPlaybackStarted = true;
+                    // if the flipnote hasn't looped and is at the end, rewind it to 0
+                    if (this._hasEnded) {
+                        this.playbackTime = 0;
+                        this._hasEnded = false;
+                    }
                     now = performance.now();
                     this.playbackStartTime = (now / 1000) - this.playbackTime;
+                    this.isPlaying = true;
+                    this.hasPlaybackStarted = true;
                     this.playAudio();
                     this.playbackLoop(now);
                     this.emit(exports.PlayerEvent.Play);
@@ -6232,6 +6328,7 @@ Keep on Flipnoting!
             var quality = {
                 creationTime: 0,
                 droppedVideoFrames: 0,
+                // corruptedVideoFrames: 0,
                 totalVideoFrames: this.frameCount
             };
             return quality;
@@ -7057,7 +7154,7 @@ Keep on Flipnoting!
     /**
      * flipnote.js library version (exported as `flipnote.version`). You can find the latest version on the project's [NPM](https://www.npmjs.com/package/flipnote.js) page.
      */
-    var version = "5.6.5"; // replaced by @rollup/plugin-replace; see rollup.config.js
+    var version = "5.6.6"; // replaced by @rollup/plugin-replace; see rollup.config.js
 
     exports.CanvasInterface = CanvasInterface;
     exports.GifImage = GifImage;
@@ -7076,4 +7173,4 @@ Keep on Flipnoting!
 
     Object.defineProperty(exports, '__esModule', { value: true });
 
-})));
+}));

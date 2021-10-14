@@ -1,5 +1,5 @@
 /*!!
-flipnote.js v5.6.5 (webcomponent build)
+flipnote.js v5.6.6 (webcomponent build)
 https://flipnote.js.org
 A JavaScript library for parsing, converting, and in-browser playback of the proprietary animation formats used by Nintendo's Flipnote Studio and Flipnote Studio 3D apps.
 2018 - 2021 James Daniel
@@ -10,7 +10,7 @@ Keep on Flipnoting!
   typeof exports === 'object' && typeof module !== 'undefined' ? factory(exports) :
   typeof define === 'function' && define.amd ? define(['exports'], factory) :
   (global = typeof globalThis !== 'undefined' ? globalThis : global || self, factory(global.flipnote = {}));
-}(this, (function (exports) { 'use strict';
+})(this, (function (exports) { 'use strict';
 
   /** @internal */
   class ByteArray {
@@ -501,6 +501,7 @@ Keep on Flipnoting!
   /**
    * Flipnote region
    */
+  exports.FlipnoteRegion = void 0;
   (function (FlipnoteRegion) {
       /** Europe and Oceania */
       FlipnoteRegion["EUR"] = "EUR";
@@ -624,7 +625,7 @@ Keep on Flipnoting!
   });
 
   /** @internal */
-  const saveData = (function () {
+  ((function () {
       if (!isBrowser) {
           return function () { };
       }
@@ -638,14 +639,18 @@ Keep on Flipnoting!
           a.click();
           window.URL.revokeObjectURL(url);
       };
-  })();
+  }))();
 
+  /** Identifies which animation format a Flipnote uses */
+  exports.FlipnoteFormat = void 0;
   (function (FlipnoteFormat) {
       /** Animation format used by Flipnote Studio (Nintendo DSiWare) */
       FlipnoteFormat["PPM"] = "PPM";
       /** Animation format used by Flipnote Studio 3D (Nintendo 3DS) */
       FlipnoteFormat["KWZ"] = "KWZ";
   })(exports.FlipnoteFormat || (exports.FlipnoteFormat = {}));
+  /** Identifies a Flipnote audio track type */
+  exports.FlipnoteAudioTrack = void 0;
   (function (FlipnoteAudioTrack) {
       /** Background music track */
       FlipnoteAudioTrack[FlipnoteAudioTrack["BGM"] = 0] = "BGM";
@@ -658,6 +663,8 @@ Keep on Flipnoting!
       /** Sound effect 4 track (only used by KWZ files) */
       FlipnoteAudioTrack[FlipnoteAudioTrack["SE4"] = 4] = "SE4";
   })(exports.FlipnoteAudioTrack || (exports.FlipnoteAudioTrack = {}));
+  /** {@link FlipnoteAudioTrack}, but just sound effect tracks */
+  exports.FlipnoteSoundEffectTrack = void 0;
   (function (FlipnoteSoundEffectTrack) {
       FlipnoteSoundEffectTrack[FlipnoteSoundEffectTrack["SE1"] = 1] = "SE1";
       FlipnoteSoundEffectTrack[FlipnoteSoundEffectTrack["SE2"] = 2] = "SE2";
@@ -935,29 +942,6 @@ Keep on Flipnoting!
   }
 
   /**
-   * PPM decoder
-   * Reads frames, audio, and metadata from Flipnote Studio PPM files
-   * Based on my Python PPM decoder implementation (https://github.com/jaames/flipnote-tools)
-   *
-   * Credits:
-   *  PPM format reverse-engineering and documentation:
-   *   - bricklife (http://ugomemo.g.hatena.ne.jp/bricklife/20090307/1236391313)
-   *   - mirai-iro (http://mirai-iro.hatenablog.jp/entry/20090116/ugomemo_ppm)
-   *   - harimau_tigris (http://ugomemo.g.hatena.ne.jp/harimau_tigris)
-   *   - steven (http://www.dsibrew.org/wiki/User:Steven)
-   *   - yellows8 (http://www.dsibrew.org/wiki/User:Yellows8)
-   *   - PBSDS (https://github.com/pbsds)
-   *   - jaames (https://github.com/jaames)
-   *  Identifying the PPM sound codec:
-   *   - Midmad from Hatena Haiku
-   *   - WDLMaster from hcs64.com
-   *  Helping me to identify issues with the Python decoder that this is based on:
-   *   - Austin Burk (https://sudomemo.net)
-   *
-   *  Lastly, a huge thanks goes to Nintendo for creating Flipnote Studio,
-   *  and to Hatena for providing the Flipnote Hatena online service, both of which inspired so many c:
-  */
-  /**
    * PPM framerates in frames per second, indexed by the in-app frame speed.
    * Frame speed 0 is never noramally used
    */
@@ -1012,7 +996,7 @@ MIGfMA0GCSqGSIb3DQEBAQUAA4GNADCBiQKBgQDCPLwTL6oSflv+gjywi/sM0TUB
           this.numLayers = PpmParser.numLayers;
           /** Number of colors per layer (aside from transparent), reflects {@link PpmParser.numLayerColors} */
           this.numLayerColors = PpmParser.numLayerColors;
-          /** Public key used for Flipnote verification, in PEM format */
+          /** key used for Flipnote verification, in PEM format */
           this.publicKey = PpmParser.publicKey;
           /** @internal */
           this.srcWidth = PpmParser.width;
@@ -1719,7 +1703,7 @@ kQIDAQAB
           this.numLayers = KwzParser.numLayers;
           /** Number of colors per layer (aside from transparent), reflects {@link KwzParser.numLayerColors} */
           this.numLayerColors = KwzParser.numLayerColors;
-          /** Public key used for Flipnote verification, in PEM format */
+          /** key used for Flipnote verification, in PEM format */
           this.publicKey = KwzParser.publicKey;
           /** @internal */
           this.srcWidth = KwzParser.width;
@@ -1853,7 +1837,7 @@ kQIDAQAB
           const creationTime = dateFromNintendoTimestamp(this.readUint32());
           const modifiedTime = dateFromNintendoTimestamp(this.readUint32());
           // const simonTime = 
-          const appVersion = this.readUint32();
+          this.readUint32();
           const rootAuthorId = this.readFsid();
           const parentAuthorId = this.readFsid();
           const currentAuthorId = this.readFsid();
@@ -1921,7 +1905,7 @@ kQIDAQAB
           this.seek(this.sectionMap.get('KFH').ptr + 0x8 + 0xC4);
           const frameCount = this.readUint16();
           const thumbFrameIndex = this.readUint16();
-          const flags = this.readUint16();
+          this.readUint16();
           const frameSpeed = this.readUint8();
           const layerFlags = this.readUint8();
           this.frameCount = frameCount;
@@ -2758,6 +2742,7 @@ kQIDAQAB
   /**
    * Player event types
    */
+  exports.PlayerEvent = void 0;
   (function (PlayerEvent) {
       PlayerEvent["__Any"] = "any";
       PlayerEvent["Play"] = "play";
@@ -2840,7 +2825,7 @@ kQIDAQAB
       constructor(parent, width, height) { }
   }
 
-  /* @license twgl.js 4.17.0 Copyright (c) 2015, Gregg Tavares All Rights Reserved.
+  /* @license twgl.js 4.21.2 Copyright (c) 2015, Gregg Tavares All Rights Reserved.
   Available via the MIT license.
   see: http://github.com/greggman/twgl.js for details */
 
@@ -3775,30 +3760,30 @@ kQIDAQAB
   }
 
   typeMap[FLOAT$3]                         = { Type: Float32Array, size:  4, setter: floatSetter,      arraySetter: floatArraySetter, };
-  typeMap[FLOAT_VEC2]                    = { Type: Float32Array, size:  8, setter: floatVec2Setter,  };
-  typeMap[FLOAT_VEC3]                    = { Type: Float32Array, size: 12, setter: floatVec3Setter,  };
-  typeMap[FLOAT_VEC4]                    = { Type: Float32Array, size: 16, setter: floatVec4Setter,  };
+  typeMap[FLOAT_VEC2]                    = { Type: Float32Array, size:  8, setter: floatVec2Setter,  cols: 2, };
+  typeMap[FLOAT_VEC3]                    = { Type: Float32Array, size: 12, setter: floatVec3Setter,  cols: 3, };
+  typeMap[FLOAT_VEC4]                    = { Type: Float32Array, size: 16, setter: floatVec4Setter,  cols: 4, };
   typeMap[INT$3]                           = { Type: Int32Array,   size:  4, setter: intSetter,        arraySetter: intArraySetter, };
-  typeMap[INT_VEC2]                      = { Type: Int32Array,   size:  8, setter: intVec2Setter,    };
-  typeMap[INT_VEC3]                      = { Type: Int32Array,   size: 12, setter: intVec3Setter,    };
-  typeMap[INT_VEC4]                      = { Type: Int32Array,   size: 16, setter: intVec4Setter,    };
+  typeMap[INT_VEC2]                      = { Type: Int32Array,   size:  8, setter: intVec2Setter,    cols: 2, };
+  typeMap[INT_VEC3]                      = { Type: Int32Array,   size: 12, setter: intVec3Setter,    cols: 3, };
+  typeMap[INT_VEC4]                      = { Type: Int32Array,   size: 16, setter: intVec4Setter,    cols: 4, };
   typeMap[UNSIGNED_INT$3]                  = { Type: Uint32Array,  size:  4, setter: uintSetter,       arraySetter: uintArraySetter, };
-  typeMap[UNSIGNED_INT_VEC2]             = { Type: Uint32Array,  size:  8, setter: uintVec2Setter,   };
-  typeMap[UNSIGNED_INT_VEC3]             = { Type: Uint32Array,  size: 12, setter: uintVec3Setter,   };
-  typeMap[UNSIGNED_INT_VEC4]             = { Type: Uint32Array,  size: 16, setter: uintVec4Setter,   };
+  typeMap[UNSIGNED_INT_VEC2]             = { Type: Uint32Array,  size:  8, setter: uintVec2Setter,   cols: 2, };
+  typeMap[UNSIGNED_INT_VEC3]             = { Type: Uint32Array,  size: 12, setter: uintVec3Setter,   cols: 3, };
+  typeMap[UNSIGNED_INT_VEC4]             = { Type: Uint32Array,  size: 16, setter: uintVec4Setter,   cols: 4, };
   typeMap[BOOL]                          = { Type: Uint32Array,  size:  4, setter: intSetter,        arraySetter: intArraySetter, };
-  typeMap[BOOL_VEC2]                     = { Type: Uint32Array,  size:  8, setter: intVec2Setter,    };
-  typeMap[BOOL_VEC3]                     = { Type: Uint32Array,  size: 12, setter: intVec3Setter,    };
-  typeMap[BOOL_VEC4]                     = { Type: Uint32Array,  size: 16, setter: intVec4Setter,    };
-  typeMap[FLOAT_MAT2]                    = { Type: Float32Array, size: 16, setter: floatMat2Setter,  };
-  typeMap[FLOAT_MAT3]                    = { Type: Float32Array, size: 36, setter: floatMat3Setter,  };
-  typeMap[FLOAT_MAT4]                    = { Type: Float32Array, size: 64, setter: floatMat4Setter,  };
-  typeMap[FLOAT_MAT2x3]                  = { Type: Float32Array, size: 24, setter: floatMat23Setter, };
-  typeMap[FLOAT_MAT2x4]                  = { Type: Float32Array, size: 32, setter: floatMat24Setter, };
-  typeMap[FLOAT_MAT3x2]                  = { Type: Float32Array, size: 24, setter: floatMat32Setter, };
-  typeMap[FLOAT_MAT3x4]                  = { Type: Float32Array, size: 48, setter: floatMat34Setter, };
-  typeMap[FLOAT_MAT4x2]                  = { Type: Float32Array, size: 32, setter: floatMat42Setter, };
-  typeMap[FLOAT_MAT4x3]                  = { Type: Float32Array, size: 48, setter: floatMat43Setter, };
+  typeMap[BOOL_VEC2]                     = { Type: Uint32Array,  size:  8, setter: intVec2Setter,    cols: 2, };
+  typeMap[BOOL_VEC3]                     = { Type: Uint32Array,  size: 12, setter: intVec3Setter,    cols: 3, };
+  typeMap[BOOL_VEC4]                     = { Type: Uint32Array,  size: 16, setter: intVec4Setter,    cols: 4, };
+  typeMap[FLOAT_MAT2]                    = { Type: Float32Array, size: 32, setter: floatMat2Setter,  rows: 2, cols: 2, };
+  typeMap[FLOAT_MAT3]                    = { Type: Float32Array, size: 48, setter: floatMat3Setter,  rows: 3, cols: 3, };
+  typeMap[FLOAT_MAT4]                    = { Type: Float32Array, size: 64, setter: floatMat4Setter,  rows: 4, cols: 4, };
+  typeMap[FLOAT_MAT2x3]                  = { Type: Float32Array, size: 32, setter: floatMat23Setter, rows: 2, cols: 3, };
+  typeMap[FLOAT_MAT2x4]                  = { Type: Float32Array, size: 32, setter: floatMat24Setter, rows: 2, cols: 4, };
+  typeMap[FLOAT_MAT3x2]                  = { Type: Float32Array, size: 48, setter: floatMat32Setter, rows: 3, cols: 2, };
+  typeMap[FLOAT_MAT3x4]                  = { Type: Float32Array, size: 48, setter: floatMat34Setter, rows: 3, cols: 4, };
+  typeMap[FLOAT_MAT4x2]                  = { Type: Float32Array, size: 64, setter: floatMat42Setter, rows: 4, cols: 2, };
+  typeMap[FLOAT_MAT4x3]                  = { Type: Float32Array, size: 64, setter: floatMat43Setter, rows: 4, cols: 3, };
   typeMap[SAMPLER_2D]                    = { Type: null,         size:  0, setter: samplerSetter,    arraySetter: samplerArraySetter, bindPoint: TEXTURE_2D$1,       };
   typeMap[SAMPLER_CUBE]                  = { Type: null,         size:  0, setter: samplerSetter,    arraySetter: samplerArraySetter, bindPoint: TEXTURE_CUBE_MAP$1, };
   typeMap[SAMPLER_3D]                    = { Type: null,         size:  0, setter: samplerSetter,    arraySetter: samplerArraySetter, bindPoint: TEXTURE_3D$1,       };
@@ -3959,6 +3944,43 @@ kQIDAQAB
     return name.startsWith("gl_") || name.startsWith("webgl_");
   }
 
+  const tokenRE = /(\.|\[|]|\w+)/g;
+  const isDigit = s => s >= '0' && s <= '9';
+  function addSetterToUniformTree(fullPath, setter, node, uniformSetters) {
+    const tokens = fullPath.split(tokenRE).filter(s => s !== '');
+    let tokenNdx = 0;
+    let path = '';
+
+    for (;;) {
+      const token = tokens[tokenNdx++];  // has to be name or number
+      path += token;
+      const isArrayIndex = isDigit(token[0]);
+      const accessor = isArrayIndex
+          ? parseInt(token)
+          : token;
+      if (isArrayIndex) {
+        path += tokens[tokenNdx++];  // skip ']'
+      }
+      const isLastToken = tokenNdx === tokens.length;
+      if (isLastToken) {
+        node[accessor] = setter;
+        break;
+      } else {
+        const token = tokens[tokenNdx++];  // has to be . or [
+        const isArray = token === '[';
+        const child = node[accessor] || (isArray ? [] : {});
+        node[accessor] = child;
+        node = child;
+        uniformSetters[path] = uniformSetters[path] || function(node) {
+          return function(value) {
+            setUniformTree(node, value);
+          };
+        }(child);
+        path += token;
+      }
+    }
+  }
+
   /**
    * Creates setter functions for all uniforms of a shader
    * program.
@@ -4008,13 +4030,14 @@ kQIDAQAB
       return setter;
     }
 
-    const uniformSetters = { };
+    const uniformSetters = {};
+    const uniformTree = {};
     const numUniforms = gl.getProgramParameter(program, ACTIVE_UNIFORMS);
 
     for (let ii = 0; ii < numUniforms; ++ii) {
       const uniformInfo = gl.getActiveUniform(program, ii);
       if (isBuiltIn(uniformInfo)) {
-          continue;
+        continue;
       }
       let name = uniformInfo.name;
       // remove the array suffix.
@@ -4024,9 +4047,12 @@ kQIDAQAB
       const location = gl.getUniformLocation(program, uniformInfo.name);
       // the uniform will have no location if it's in a uniform block
       if (location) {
-        uniformSetters[name] = createUniformSetter(program, uniformInfo, location);
+        const setter = createUniformSetter(program, uniformInfo, location);
+        uniformSetters[name] = setter;
+        addSetterToUniformTree(name, setter, uniformTree, uniformSetters);
       }
     }
+
     return uniformSetters;
   }
 
@@ -4061,6 +4087,7 @@ kQIDAQAB
 
   /**
    * @typedef {Object} UniformData
+   * @property {string} name The name of the uniform
    * @property {number} type The WebGL type enum for this uniform
    * @property {number} size The number of elements for this uniform
    * @property {number} blockNdx The block index this uniform appears in
@@ -4087,7 +4114,7 @@ kQIDAQAB
    * UniformBlockObjects for a given program
    *
    * @typedef {Object} UniformBlockSpec
-   * @property {Object.<string, module:twgl.BlockSpec> blockSpecs The BlockSpec for each block by block name
+   * @property {Object.<string, module:twgl.BlockSpec>} blockSpecs The BlockSpec for each block by block name
    * @property {UniformData[]} uniformData An array of data for each uniform by uniform index.
    * @memberOf module:twgl
    */
@@ -4112,10 +4139,6 @@ kQIDAQAB
       uniformIndices.push(ii);
       uniformData.push({});
       const uniformInfo = gl.getActiveUniform(program, ii);
-      if (isBuiltIn(uniformInfo)) {
-        break;
-      }
-      // REMOVE [0]?
       uniformData[ii].name = uniformInfo.name;
     }
 
@@ -4152,6 +4175,17 @@ kQIDAQAB
       blockSpecs: blockSpecs,
       uniformData: uniformData,
     };
+  }
+
+  function setUniformTree(tree, values) {
+    for (const name in values) {
+      const prop = tree[name];
+      if (typeof prop === 'function') {
+        prop(values[name]);
+      } else {
+        setUniformTree(tree[name], values[name]);
+      }
+    }
   }
 
   /**
@@ -4266,13 +4300,49 @@ kQIDAQAB
    *     twgl.setUniforms(programInfo, sharedUniforms);
    *     twgl.setUniforms(programInfo, localUniforms};
    *
+   *   You can also fill out structure and array values either via
+   *   shortcut. Example
+   *
+   *     // -- in shader --
+   *     struct Light {
+   *       float intensity;
+   *       vec4 color;
+   *     };
+   *     uniform Light lights[2];
+   *
+   *     // in JavaScript
+   *
+   *     twgl.setUniforms(programInfo, {
+   *       lights: [
+   *         { intensity: 5.0, color: [1, 0, 0, 1] },
+   *         { intensity: 2.0, color: [0, 0, 1, 1] },
+   *       ],
+   *     });
+   *
+   *   or the more traditional way
+   *
+   *     twgl.setUniforms(programInfo, {
+   *       "lights[0].intensity": 5.0,
+   *       "lights[0].color": [1, 0, 0, 1],
+   *       "lights[1].intensity": 2.0,
+   *       "lights[1].color": [0, 0, 1, 1],
+   *     });
+   *
+   *   You can also specify partial paths
+   *
+   *     twgl.setUniforms(programInfo, {
+   *       'lights[1]: { intensity: 5.0, color: [1, 0, 0, 1] },
+   *     });
+   *
+   *   But you can not specify leaf array indices
+   *
    * @memberOf module:twgl/programs
    */
-  function setUniforms(setters, values) {  // eslint-disable-line
+  function setUniforms(setters, ...args) {  // eslint-disable-line
     const actualSetters = setters.uniformSetters || setters;
-    const numArgs = arguments.length;
-    for (let aNdx = 1; aNdx < numArgs; ++aNdx) {
-      const values = arguments[aNdx];
+    const numArgs = args.length;
+    for (let aNdx = 0; aNdx < numArgs; ++aNdx) {
+      const values = args[aNdx];
       if (Array.isArray(values)) {
         const numValues = values.length;
         for (let ii = 0; ii < numValues; ++ii) {
@@ -4307,7 +4377,7 @@ kQIDAQAB
     for (let ii = 0; ii < numAttribs; ++ii) {
       const attribInfo = gl.getActiveAttrib(program, ii);
       if (isBuiltIn(attribInfo)) {
-          continue;
+        continue;
       }
       const index = gl.getAttribLocation(program, attribInfo.name);
       const typeInfo = attrTypeMap[attribInfo.type];
@@ -4387,7 +4457,7 @@ kQIDAQAB
    * @property {WebGLProgram} program A shader program
    * @property {Object<string, function>} uniformSetters object of setters as returned from createUniformSetters,
    * @property {Object<string, function>} attribSetters object of setters as returned from createAttribSetters,
-   * @property {module:twgl.UniformBlockSpec} [uniformBlockSpace] a uniform block spec for making UniformBlockInfos with createUniformBlockInfo etc..
+   * @property {module:twgl.UniformBlockSpec} [uniformBlockSpec] a uniform block spec for making UniformBlockInfos with createUniformBlockInfo etc..
    * @property {Object<string, module:twgl.TransformFeedbackInfo>} [transformFeedbackInfo] info for transform feedbacks
    * @memberOf module:twgl
    */
@@ -4413,9 +4483,9 @@ kQIDAQAB
     const uniformSetters = createUniformSetters(gl, program);
     const attribSetters = createAttributeSetters(gl, program);
     const programInfo = {
-      program: program,
-      uniformSetters: uniformSetters,
-      attribSetters: attribSetters,
+      program,
+      uniformSetters,
+      attribSetters,
     };
 
     if (isWebGL2(gl)) {
@@ -5003,6 +5073,8 @@ kQIDAQAB
           ];
           this._volume = 1;
           this._loop = false;
+          this._startTime = 0;
+          this._ctxStartTime = 0;
           this.nodeRefs = [];
           assertBrowserEnv();
       }
@@ -5121,6 +5193,8 @@ kQIDAQAB
        */
       playFrom(currentTime) {
           this.initNodes();
+          this._startTime = currentTime;
+          this._ctxStartTime = this.ctx.currentTime;
           this.source.loop = this._loop;
           this.source.start(0, currentTime);
       }
@@ -5130,6 +5204,12 @@ kQIDAQAB
       stop() {
           if (this.source)
               this.source.stop(0);
+      }
+      /**
+       * Get the current playback time, in seconds
+       */
+      getCurrentTime() {
+          return this._startTime + (this.ctx.currentTime - this._ctxStartTime);
       }
       /**
        * Frees any resources used by this canvas instance
@@ -5152,16 +5232,16 @@ kQIDAQAB
    *
    * ### Create a new player
    *
-   * You'll need a canvas element in your page's HTML:
+   * You'll need an element in your page's HTML to act as a wrapper for the player:
    *
    * ```html
-   *  <canvas id="player-canvas"></canvas>
+   *  <div id="player-wrapper"></div>
    * ```
    *
-   * Then you can create a new `Player` instance by passing a CSS selector that matches the canvas, plus the disired width and height.
+   * Then you can create a new `Player` instance by passing a CSS selector that matches the wrapper element, plus the desired width and height.
    *
    * ```js
-   *  const player = new flipnote.Player('#player-canvas', 320, 240);
+   *  const player = new flipnote.Player('#player-wrapper', 320, 240);
    * ```
    *
    * ### Load a Flipnote
@@ -5210,6 +5290,8 @@ kQIDAQAB
           /** @internal */
           this._frame = null;
           /** @internal */
+          this._hasEnded = false;
+          /** @internal */
           this.isNoteLoaded = false;
           /** @internal */
           this.events = new Map();
@@ -5238,18 +5320,26 @@ kQIDAQAB
               if (!this.isPlaying)
                   return;
               const now = timestamp / 1000;
-              const currPlaybackTime = now - this.playbackStartTime;
-              if (currPlaybackTime >= this.duration) {
+              const duration = this.duration;
+              const currAudioTime = this.audio.getCurrentTime();
+              let currPlaybackTime = now - this.playbackStartTime;
+              // try to keep playback time in sync with the audio if there's any slipping
+              if (Math.abs((currPlaybackTime % duration) - (currAudioTime % duration)) > 0.01)
+                  currPlaybackTime = currAudioTime;
+              // handle playback end, if reached
+              if (currPlaybackTime >= duration) {
                   if (this.loop) {
                       this.playbackStartTime = now;
                       this.emit(exports.PlayerEvent.Loop);
                   }
                   else {
                       this.pause();
+                      this._hasEnded = true;
                       this.emit(exports.PlayerEvent.Ended);
+                      return;
                   }
               }
-              this.setCurrentTime(currPlaybackTime % this.duration);
+              this.setCurrentTime(currPlaybackTime % duration);
               this.playbackLoopId = requestAnimationFrame(this.playbackLoop);
           };
           assertBrowserEnv();
@@ -5521,12 +5611,15 @@ kQIDAQAB
           this.assertNoteLoaded();
           if (this.isPlaying)
               return;
-          // if ((!this.hasPlaybackStarted) || ((!this.loop) && (this.currentFrame == this.frameCount - 1)))
-          //   this.playbackTime = 0;
-          this.isPlaying = true;
-          this.hasPlaybackStarted = true;
+          // if the flipnote hasn't looped and is at the end, rewind it to 0
+          if (this._hasEnded) {
+              this.playbackTime = 0;
+              this._hasEnded = false;
+          }
           const now = performance.now();
           this.playbackStartTime = (now / 1000) - this.playbackTime;
+          this.isPlaying = true;
+          this.hasPlaybackStarted = true;
           this.playAudio();
           this.playbackLoop(now);
           this.emit(exports.PlayerEvent.Play);
@@ -5876,6 +5969,7 @@ kQIDAQAB
           const quality = {
               creationTime: 0,
               droppedVideoFrames: 0,
+              // corruptedVideoFrames: 0,
               totalVideoFrames: this.frameCount
           };
           return quality;
@@ -6611,7 +6705,7 @@ kQIDAQAB
   /**
    * flipnote.js library version (exported as `flipnote.version`). You can find the latest version on the project's [NPM](https://www.npmjs.com/package/flipnote.js) page.
    */
-  const version = "5.6.5"; // replaced by @rollup/plugin-replace; see rollup.config.js
+  const version = "5.6.6"; // replaced by @rollup/plugin-replace; see rollup.config.js
 
   /*! *****************************************************************************
   Copyright (c) Microsoft Corporation.
@@ -7888,7 +7982,7 @@ kQIDAQAB
    *     container. Render options must *not* change between renders to the same
    *     container, as those changes will not effect previously rendered DOM.
    */
-  const render = (result, container, options) => {
+  const render$1 = (result, container, options) => {
       let part = parts.get(container);
       if (part === undefined) {
           removeNodes(container, container.firstChild);
@@ -7967,7 +8061,7 @@ kQIDAQAB
   // This line will be used in regexes to search for lit-html usage.
   // TODO(justinfagnani): inject version number at build time
   if (typeof window !== 'undefined') {
-      (window['litHtmlVersions'] || (window['litHtmlVersions'] = [])).push('1.3.0');
+      (window['litHtmlVersions'] || (window['litHtmlVersions'] = [])).push('1.4.1');
   }
   /**
    * Interprets a template literal as an HTML template that can efficiently
@@ -8193,7 +8287,7 @@ kQIDAQAB
    * non-shorthand names (for example `border` and `border-width`) is not
    * supported.
    */
-  const render$1 = (result, container, options) => {
+  const render = (result, container, options) => {
       if (!options || typeof options !== 'object' || !options.scopeName) {
           throw new Error('The `scopeName` option is required.');
       }
@@ -8207,7 +8301,7 @@ kQIDAQAB
       // On first scope render, render into a fragment; this cannot be a single
       // fragment that is reused since nested renders can occur synchronously.
       const renderContainer = firstScopeRender ? document.createDocumentFragment() : container;
-      render(result, renderContainer, Object.assign({ templateFactory: shadyTemplateFactory(scopeName) }, options));
+      render$1(result, renderContainer, Object.assign({ templateFactory: shadyTemplateFactory(scopeName) }, options));
       // When performing first scope render,
       // (1) We've rendered into a fragment so that there's a chance to
       // `prepareTemplateStyles` before sub-elements hit the DOM
@@ -9411,14 +9505,14 @@ kQIDAQAB
    *
    * @nocollapse
    */
-  LitElement.render = render$1;
+  LitElement.render = render;
 
   /// <reference types="resize-observer-browser" /> 
   /**
    * @category Web Component
    * @internal
    */
-  let PlayerComponent = class PlayerComponent extends PlayerMixin(LitElement) {
+  let PlayerComponent$1 = class PlayerComponent extends PlayerMixin(LitElement) {
       constructor() {
           super();
           this._width = 'auto';
@@ -9838,67 +9932,67 @@ kQIDAQAB
   };
   __decorate([
       property({ type: String })
-  ], PlayerComponent.prototype, "controls", void 0);
+  ], PlayerComponent$1.prototype, "controls", void 0);
   __decorate([
       property({ type: Boolean })
-  ], PlayerComponent.prototype, "dsiLibrary", void 0);
+  ], PlayerComponent$1.prototype, "dsiLibrary", void 0);
   __decorate([
       property({ type: Boolean })
-  ], PlayerComponent.prototype, "cropBorder", void 0);
+  ], PlayerComponent$1.prototype, "cropBorder", void 0);
   __decorate([
       property({ type: Number })
-  ], PlayerComponent.prototype, "bgmPredictor", void 0);
+  ], PlayerComponent$1.prototype, "bgmPredictor", void 0);
   __decorate([
       property({ type: Number })
-  ], PlayerComponent.prototype, "bgmStepIndex", void 0);
+  ], PlayerComponent$1.prototype, "bgmStepIndex", void 0);
   __decorate([
       property({ type: String })
-  ], PlayerComponent.prototype, "sePredictors", void 0);
+  ], PlayerComponent$1.prototype, "sePredictors", void 0);
   __decorate([
       property({ type: String })
-  ], PlayerComponent.prototype, "seStepIndices", void 0);
+  ], PlayerComponent$1.prototype, "seStepIndices", void 0);
   __decorate([
       property({ type: String })
-  ], PlayerComponent.prototype, "width", null);
+  ], PlayerComponent$1.prototype, "width", null);
   __decorate([
       property({ type: String })
-  ], PlayerComponent.prototype, "src", null);
+  ], PlayerComponent$1.prototype, "src", null);
   __decorate([
       property({ type: Boolean })
-  ], PlayerComponent.prototype, "autoplay", null);
+  ], PlayerComponent$1.prototype, "autoplay", null);
   __decorate([
       internalProperty()
-  ], PlayerComponent.prototype, "_width", void 0);
+  ], PlayerComponent$1.prototype, "_width", void 0);
   __decorate([
       internalProperty()
-  ], PlayerComponent.prototype, "_cssWidth", void 0);
+  ], PlayerComponent$1.prototype, "_cssWidth", void 0);
   __decorate([
       internalProperty()
-  ], PlayerComponent.prototype, "_progress", void 0);
+  ], PlayerComponent$1.prototype, "_progress", void 0);
   __decorate([
       internalProperty()
-  ], PlayerComponent.prototype, "_counter", void 0);
+  ], PlayerComponent$1.prototype, "_counter", void 0);
   __decorate([
       internalProperty()
-  ], PlayerComponent.prototype, "_isLoading", void 0);
+  ], PlayerComponent$1.prototype, "_isLoading", void 0);
   __decorate([
       internalProperty()
-  ], PlayerComponent.prototype, "_isError", void 0);
+  ], PlayerComponent$1.prototype, "_isError", void 0);
   __decorate([
       internalProperty()
-  ], PlayerComponent.prototype, "_isPlaying", void 0);
+  ], PlayerComponent$1.prototype, "_isPlaying", void 0);
   __decorate([
       internalProperty()
-  ], PlayerComponent.prototype, "_isMuted", void 0);
+  ], PlayerComponent$1.prototype, "_isMuted", void 0);
   __decorate([
       internalProperty()
-  ], PlayerComponent.prototype, "_volumeLevel", void 0);
+  ], PlayerComponent$1.prototype, "_volumeLevel", void 0);
   __decorate([
       query('#canvasWrapper')
-  ], PlayerComponent.prototype, "playerCanvasWrapper", void 0);
-  PlayerComponent = __decorate([
+  ], PlayerComponent$1.prototype, "playerCanvasWrapper", void 0);
+  PlayerComponent$1 = __decorate([
       customElement('flipnote-player')
-  ], PlayerComponent);
+  ], PlayerComponent$1);
 
   /**
    * @license
@@ -10369,7 +10463,7 @@ kQIDAQAB
    * @category Web Component
    * @internal
    */
-  let ImageComponent = class ImageComponent extends LitElement {
+  let ImageComponent$1 = class ImageComponent extends LitElement {
       constructor() {
           super(...arguments);
           this._src = '';
@@ -10465,36 +10559,36 @@ kQIDAQAB
   };
   __decorate([
       property()
-  ], ImageComponent.prototype, "src", null);
+  ], ImageComponent$1.prototype, "src", null);
   __decorate([
       property()
-  ], ImageComponent.prototype, "frame", null);
+  ], ImageComponent$1.prototype, "frame", null);
   __decorate([
       property({ type: Boolean })
-  ], ImageComponent.prototype, "cropped", void 0);
+  ], ImageComponent$1.prototype, "cropped", void 0);
   __decorate([
       internalProperty()
-  ], ImageComponent.prototype, "gifUrl", void 0);
+  ], ImageComponent$1.prototype, "gifUrl", void 0);
   __decorate([
       internalProperty()
-  ], ImageComponent.prototype, "imgTitle", void 0);
-  ImageComponent = __decorate([
+  ], ImageComponent$1.prototype, "imgTitle", void 0);
+  ImageComponent$1 = __decorate([
       customElement('flipnote-image')
-  ], ImageComponent);
+  ], ImageComponent$1);
 
   // Entrypoint for webcomponent build
   /** @internal */
-  const PlayerComponent$1 = PlayerComponent;
+  const PlayerComponent = PlayerComponent$1;
   /** @internal */
-  const ImageComponent$1 = ImageComponent;
+  const ImageComponent = ImageComponent$1;
 
   exports.CanvasInterface = CanvasInterface;
   exports.GifImage = GifImage;
   exports.Html5Canvas = Html5Canvas;
-  exports.ImageComponent = ImageComponent$1;
+  exports.ImageComponent = ImageComponent;
   exports.KwzParser = KwzParser;
   exports.Player = Player;
-  exports.PlayerComponent = PlayerComponent$1;
+  exports.PlayerComponent = PlayerComponent;
   exports.PlayerMixin = PlayerMixin;
   exports.PpmParser = PpmParser;
   exports.UniversalCanvas = UniversalCanvas;
@@ -10507,4 +10601,4 @@ kQIDAQAB
 
   Object.defineProperty(exports, '__esModule', { value: true });
 
-})));
+}));

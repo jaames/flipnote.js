@@ -38,10 +38,10 @@ const masks = [
 
 /** @internal */
 export class LzwCompressor {
-  public width: number;
-  public height: number;
-  public pixels: Uint8Array;
-  public colorDepth: number;
+  width: number;
+  height: number;
+  pixels: Uint8Array;
+  colorDepth: number;
 
   private initCodeSize: number;
   private accum = new Uint8Array(256);

@@ -1,27 +1,3 @@
-/**
- * PPM decoder
- * Reads frames, audio, and metadata from Flipnote Studio PPM files 
- * Based on my Python PPM decoder implementation (https://github.com/jaames/flipnote-tools)
- *  
- * Credits:
- *  PPM format reverse-engineering and documentation:
- *   - bricklife (http://ugomemo.g.hatena.ne.jp/bricklife/20090307/1236391313)
- *   - mirai-iro (http://mirai-iro.hatenablog.jp/entry/20090116/ugomemo_ppm)
- *   - harimau_tigris (http://ugomemo.g.hatena.ne.jp/harimau_tigris)
- *   - steven (http://www.dsibrew.org/wiki/User:Steven)
- *   - yellows8 (http://www.dsibrew.org/wiki/User:Yellows8)
- *   - PBSDS (https://github.com/pbsds)
- *   - jaames (https://github.com/jaames)
- *  Identifying the PPM sound codec:
- *   - Midmad from Hatena Haiku
- *   - WDLMaster from hcs64.com
- *  Helping me to identify issues with the Python decoder that this is based on:
- *   - Austin Burk (https://sudomemo.net)
- * 
- *  Lastly, a huge thanks goes to Nintendo for creating Flipnote Studio, 
- *  and to Hatena for providing the Flipnote Hatena online service, both of which inspired so many c:
-*/
-
 import { 
   FlipnoteFormat,
   FlipnotePaletteDefinition,
@@ -137,39 +113,39 @@ export class PpmParser extends FlipnoteParserBase {
   static publicKey = PPM_PUBLIC_KEY;
 
   /** File format type, reflects {@link PpmParser.format} */
-  public format = FlipnoteFormat.PPM;
+  format = FlipnoteFormat.PPM;
   /** Custom object tag */
-  public [Symbol.toStringTag] = 'Flipnote Studio PPM animation file';
+  [Symbol.toStringTag] = 'Flipnote Studio PPM animation file';
   /** Animation frame width, reflects {@link PpmParser.width} */
-  public imageWidth = PpmParser.width;
+  imageWidth = PpmParser.width;
   /** Animation frame height, reflects {@link PpmParser.height} */
-  public imageHeight = PpmParser.height;
+  imageHeight = PpmParser.height;
   /** X offset for the top-left corner of the animation frame */
-  public imageOffsetX = 0;
+  imageOffsetX = 0;
   /** Y offset for the top-left corner of the animation frame */
-  public imageOffsetY = 0;
+  imageOffsetY = 0;
   /** Number of animation frame layers, reflects {@link PpmParser.numLayers} */
-  public numLayers = PpmParser.numLayers;
+  numLayers = PpmParser.numLayers;
   /** Number of colors per layer (aside from transparent), reflects {@link PpmParser.numLayerColors} */
-  public numLayerColors = PpmParser.numLayerColors;
-  /** Public key used for Flipnote verification, in PEM format */
-  public publicKey = PpmParser.publicKey;
+  numLayerColors = PpmParser.numLayerColors;
+  /** key used for Flipnote verification, in PEM format */
+  publicKey = PpmParser.publicKey;
   /** @internal */
-  public srcWidth = PpmParser.width;
+  srcWidth = PpmParser.width;
   /** Which audio tracks are available in this format, reflects {@link PpmParser.audioTracks} */
-  public audioTracks = PpmParser.audioTracks;
+  audioTracks = PpmParser.audioTracks;
   /** Which sound effect tracks are available in this format, reflects {@link PpmParser.soundEffectTracks} */
-  public soundEffectTracks = PpmParser.soundEffectTracks;
+  soundEffectTracks = PpmParser.soundEffectTracks;
   /** Audio track base sample rate, reflects {@link PpmParser.rawSampleRate} */
-  public rawSampleRate = PpmParser.rawSampleRate;
+  rawSampleRate = PpmParser.rawSampleRate;
   /** Audio output sample rate, reflects {@link PpmParser.sampleRate} */
-  public sampleRate = PpmParser.sampleRate;
+  sampleRate = PpmParser.sampleRate;
   /** Global animation frame color palette, reflects {@link PpmParser.globalPalette} */
-  public globalPalette = PpmParser.globalPalette;
+  globalPalette = PpmParser.globalPalette;
   /** File metadata, see {@link PpmMeta} for structure */
-  public meta: PpmMeta;
+  meta: PpmMeta;
   /** File format version; always the same as far as we know */
-  public version: number;
+  version: number;
 
   private layerBuffers: [Uint8Array, Uint8Array];
   private soundFlags: boolean[][];
@@ -344,7 +320,7 @@ export class PpmParser extends FlipnoteParserBase {
    * Decode a frame, returning the raw pixel buffers for each layer
    * @category Image
   */
-  public decodeFrame(frameIndex: number) {
+  decodeFrame(frameIndex: number) {
     assertRange(frameIndex, 0, this.frameCount - 1, 'Frame index');
     // return existing layer buffers if no new frame has been decoded since the last call
     if (this.prevDecodedFrame === frameIndex)
@@ -498,7 +474,7 @@ export class PpmParser extends FlipnoteParserBase {
    * @category Image
    * @returns Array of layer indexes, in the order they should be drawn
   */
-  public getFrameLayerOrder(frameIndex?: number) {
+  getFrameLayerOrder(frameIndex?: number) {
     assertRange(frameIndex, 0, this.frameCount - 1, 'Frame index');
     return [1, 0];
   }
@@ -512,7 +488,7 @@ export class PpmParser extends FlipnoteParserBase {
    *  - index 2 is the layer 2 color index
    * @category Image
   */
-  public getFramePaletteIndices(frameIndex: number) {
+  getFramePaletteIndices(frameIndex: number) {
     assertRange(frameIndex, 0, this.frameCount - 1, 'Frame index');
     this.seek(this.frameOffsets[frameIndex]);
     const header = this.readUint8();
@@ -539,7 +515,7 @@ export class PpmParser extends FlipnoteParserBase {
    *  - index 2 is the layer 2 color
    * @category Image
    */
-  public getFramePalette(frameIndex: number) {
+  getFramePalette(frameIndex: number) {
     assertRange(frameIndex, 0, this.frameCount - 1, 'Frame index');
     const indices = this.getFramePaletteIndices(frameIndex);
     return indices.map(colorIndex => this.globalPalette[colorIndex]);
@@ -549,7 +525,7 @@ export class PpmParser extends FlipnoteParserBase {
    * Get the sound effect flags for every frame in the Flipnote
    * @category Audio
   */
-  public decodeSoundFlags() {
+  decodeSoundFlags() {
     if (this.soundFlags !== undefined)
       return this.soundFlags;
     assert(0x06A0 + this.frameDataLength < this.byteLength);
@@ -573,7 +549,7 @@ export class PpmParser extends FlipnoteParserBase {
    * Get the sound effect usage flags for every frame
    * @category Audio
    */
-  public getSoundEffectFlags(): FlipnoteSoundEffectFlags[] {
+  getSoundEffectFlags(): FlipnoteSoundEffectFlags[] {
     return this.decodeSoundFlags().map(frameFlags => ({
       [FlipnoteSoundEffectTrack.SE1]: frameFlags[0],
       [FlipnoteSoundEffectTrack.SE2]: frameFlags[1],
@@ -585,7 +561,7 @@ export class PpmParser extends FlipnoteParserBase {
    * Get the sound effect usage flags for a given frame
    * @category Audio
    */
-  public getFrameSoundEffectFlags(frameIndex: number): FlipnoteSoundEffectFlags {
+  getFrameSoundEffectFlags(frameIndex: number): FlipnoteSoundEffectFlags {
     assertRange(frameIndex, 0, this.frameCount - 1, 'Frame index');
     this.seek(0x06A0 + this.frameDataLength + frameIndex);
     const byte = this.readUint8();
@@ -601,7 +577,7 @@ export class PpmParser extends FlipnoteParserBase {
    * @returns byte array
    * @category Audio
   */
-  public getAudioTrackRaw(trackId: FlipnoteAudioTrack) {
+  getAudioTrackRaw(trackId: FlipnoteAudioTrack) {
     const trackMeta = this.soundMeta.get(trackId);
     assert(trackMeta.ptr + trackMeta.length < this.byteLength);
     this.seek(trackMeta.ptr);
@@ -613,7 +589,7 @@ export class PpmParser extends FlipnoteParserBase {
    * @returns Signed 16-bit PCM audio
    * @category Audio
   */
-  public decodeAudioTrack(trackId: FlipnoteAudioTrack) {
+  decodeAudioTrack(trackId: FlipnoteAudioTrack) {
     // note this doesn't resample
     // TODO: kinda slow, maybe use sample lookup table
     // decode a 4 bit IMA adpcm audio track
@@ -659,7 +635,7 @@ export class PpmParser extends FlipnoteParserBase {
    * @returns Signed 16-bit PCM audio
    * @category Audio
   */
-  public getAudioTrackPcm(trackId: FlipnoteAudioTrack, dstFreq = this.sampleRate) {
+  getAudioTrackPcm(trackId: FlipnoteAudioTrack, dstFreq = this.sampleRate) {
     const srcPcm = this.decodeAudioTrack(trackId);
     let srcFreq = this.rawSampleRate;
     if (trackId === FlipnoteAudioTrack.BGM) {
@@ -688,7 +664,7 @@ export class PpmParser extends FlipnoteParserBase {
    * @returns Signed 16-bit PCM audio
    * @category Audio
   */
-  public getAudioMasterPcm(dstFreq = this.sampleRate) {
+  getAudioMasterPcm(dstFreq = this.sampleRate) {
     const dstSize = Math.ceil(this.duration * dstFreq);
     const master = new Int16Array(dstSize);
     const hasBgm = this.hasAudioTrack(FlipnoteAudioTrack.BGM);
@@ -726,7 +702,7 @@ export class PpmParser extends FlipnoteParserBase {
    * Get the body of the Flipnote - the data that is digested for the signature
    * @category Verification
    */
-  public getBody() {
+  getBody() {
     const bodyEnd = this.soundDataOffset + this.soundDataLength + 32;
     return this.bytes.subarray(0, bodyEnd);
   }
@@ -735,7 +711,7 @@ export class PpmParser extends FlipnoteParserBase {
   * Get the Flipnote's signature data
   * @category Verification
   */
-  public getSignature() {
+  getSignature() {
     const bodyEnd = this.soundDataOffset + this.soundDataLength + 32;
     return this.bytes.subarray(bodyEnd, bodyEnd + 128);
   }
@@ -744,7 +720,7 @@ export class PpmParser extends FlipnoteParserBase {
    * Verify whether this Flipnote's signature is valid
    * @category Verification
    */
-  public async verify() {
+  async verify() {
     const key = await rsaLoadPublicKey(PPM_PUBLIC_KEY, 'SHA-1');
     return await rsaVerify(key, this.getSignature(), this.getBody());
   }

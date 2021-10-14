@@ -20,6 +20,7 @@ declare const PlayerComponent_base: {
         _volume: number;
         _muted: boolean;
         _frame: number;
+        _hasEnded: boolean;
         isNoteLoaded: boolean;
         events: import("../player").PlayerEventMap;
         playbackStartTime: number;

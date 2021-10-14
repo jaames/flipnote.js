@@ -172,25 +172,25 @@ export class PlayerComponent extends PlayerMixin(LitElement) {
   }
 
   @property({ type: String })
-  public controls: string;
+  controls: string;
 
   @property({ type: Boolean })
-  public dsiLibrary: boolean;
+  dsiLibrary: boolean;
 
   @property({ type: Boolean })
-  public cropBorder: boolean;
+  cropBorder: boolean;
 
   @property({ type: Number })
-  public bgmPredictor: number;
+  bgmPredictor: number;
 
   @property({ type: Number })
-  public bgmStepIndex: number;
+  bgmStepIndex: number;
 
   @property({ type: String })
-  public sePredictors: string;
+  sePredictors: string;
 
   @property({ type: String })
-  public seStepIndices: string;
+  seStepIndices: string;
 
   @property({ type: String })
   get width() {

@@ -272,37 +272,37 @@ export class KwzParser extends FlipnoteParserBase {
   static publicKey = KWZ_PUBLIC_KEY;
   
   /** File format type, reflects {@link KwzParser.format} */
-  public format = FlipnoteFormat.KWZ;
+  format = FlipnoteFormat.KWZ;
   /** Custom object tag */
-  public [Symbol.toStringTag] = 'Flipnote Studio 3D KWZ animation file';
+  [Symbol.toStringTag] = 'Flipnote Studio 3D KWZ animation file';
   /** Animation frame width, reflects {@link KwzParser.width} */
-  public imageWidth = KwzParser.width;
+  imageWidth = KwzParser.width;
   /** Animation frame height, reflects {@link KwzParser.height} */
-  public imageHeight = KwzParser.height;
+  imageHeight = KwzParser.height;
   /** X offset for the top-left corner of the animation frame */
-  public imageOffsetX = 0;
+  imageOffsetX = 0;
   /** Y offset for the top-left corner of the animation frame */
-  public imageOffsetY = 0;
+  imageOffsetY = 0;
   /** Number of animation frame layers, reflects {@link KwzParser.numLayers} */
-  public numLayers = KwzParser.numLayers;
+  numLayers = KwzParser.numLayers;
   /** Number of colors per layer (aside from transparent), reflects {@link KwzParser.numLayerColors} */
-  public numLayerColors = KwzParser.numLayerColors;
-  /** Public key used for Flipnote verification, in PEM format */
-  public publicKey = KwzParser.publicKey;
+  numLayerColors = KwzParser.numLayerColors;
+  /** key used for Flipnote verification, in PEM format */
+  publicKey = KwzParser.publicKey;
   /** @internal */
-  public srcWidth = KwzParser.width;
+  srcWidth = KwzParser.width;
   /** Which audio tracks are available in this format, reflects {@link KwzParser.audioTracks} */
-  public audioTracks = KwzParser.audioTracks;
+  audioTracks = KwzParser.audioTracks;
   /** Which sound effect tracks are available in this format, reflects {@link KwzParser.soundEffectTracks} */
-  public soundEffectTracks = KwzParser.soundEffectTracks;
+  soundEffectTracks = KwzParser.soundEffectTracks;
   /** Audio track base sample rate, reflects {@link KwzParser.rawSampleRate} */
-  public rawSampleRate = KwzParser.rawSampleRate;
+  rawSampleRate = KwzParser.rawSampleRate;
   /** Audio output sample rate, reflects {@link KwzParser.sampleRate} */
-  public sampleRate = KwzParser.sampleRate;
+  sampleRate = KwzParser.sampleRate;
   /** Global animation frame color palette, reflects {@link KwzParser.globalPalette} */
-  public globalPalette = KwzParser.globalPalette;
+  globalPalette = KwzParser.globalPalette;
   /** File metadata, see {@link KwzMeta} for structure */
-  public meta: KwzMeta;
+  meta: KwzMeta;
 
   private settings: KwzParserSettings;
   private sectionMap: KwzSectionMap;
@@ -591,7 +591,7 @@ export class KwzParser extends FlipnoteParserBase {
    *  - index 6 is the layer C color 2 index
    * @category Image
   */
-  public getFramePaletteIndices(frameIndex: number) {
+  getFramePaletteIndices(frameIndex: number) {
     assertRange(frameIndex, 0, this.frameCount - 1, 'Frame index');
     this.seek(this.frameMetaOffsets[frameIndex]);
     const flags = this.readUint32();
@@ -619,7 +619,7 @@ export class KwzParser extends FlipnoteParserBase {
    *  - index 6 is the layer C color 2
    * @category Image
   */
-  public getFramePalette(frameIndex: number) {
+  getFramePalette(frameIndex: number) {
     assertRange(frameIndex, 0, this.frameCount - 1, 'Frame index');
     const indices = this.getFramePaletteIndices(frameIndex);
     return indices.map(colorIndex => this.globalPalette[colorIndex]);
@@ -686,7 +686,7 @@ export class KwzParser extends FlipnoteParserBase {
    * @category Image
    * @returns Array of layer indexes, in the order they should be drawn
   */
-  public getFrameLayerOrder(frameIndex: number) {
+  getFrameLayerOrder(frameIndex: number) {
     assertRange(frameIndex, 0, this.frameCount - 1, 'Frame index');
     const depths = this.getFrameLayerDepths(frameIndex);
     return [2, 1, 0].sort((a, b) => depths[b] - depths[a]);
@@ -696,7 +696,7 @@ export class KwzParser extends FlipnoteParserBase {
    * Decode a frame, returning the raw pixel buffers for each layer
    * @category Image
   */
-  public decodeFrame(frameIndex: number, diffingFlag = 0x7, isPrevFrame = false) {
+  decodeFrame(frameIndex: number, diffingFlag = 0x7, isPrevFrame = false) {
     assertRange(frameIndex, 0, this.frameCount - 1, 'Frame index');
     // return existing layer buffers if no new frame has been decoded since the last call
     if (this.prevDecodedFrame === frameIndex)
@@ -916,7 +916,7 @@ export class KwzParser extends FlipnoteParserBase {
    * Get the sound effect flags for every frame in the Flipnote
    * @category Audio
   */
-  public decodeSoundFlags() {
+  decodeSoundFlags() {
     if (this.soundFlags !== undefined)
       return this.soundFlags;
     this.soundFlags = new Array(this.frameCount)
@@ -929,7 +929,7 @@ export class KwzParser extends FlipnoteParserBase {
    * Get the sound effect usage flags for every frame
    * @category Audio
    */
-  public getSoundEffectFlags(): FlipnoteSoundEffectFlags[] {
+  getSoundEffectFlags(): FlipnoteSoundEffectFlags[] {
     return this.decodeSoundFlags().map((frameFlags) => ({
       [FlipnoteSoundEffectTrack.SE1]: frameFlags[0],
       [FlipnoteSoundEffectTrack.SE2]: frameFlags[1],
@@ -943,7 +943,7 @@ export class KwzParser extends FlipnoteParserBase {
    * @param frameIndex
    * @category Audio
    */
-  public getFrameSoundEffectFlags(frameIndex: number): FlipnoteSoundEffectFlags {
+  getFrameSoundEffectFlags(frameIndex: number): FlipnoteSoundEffectFlags {
     const frameFlags = this.decodeFrameSoundFlags(frameIndex);
     return {
       [FlipnoteSoundEffectTrack.SE1]: frameFlags[0],
@@ -958,7 +958,7 @@ export class KwzParser extends FlipnoteParserBase {
    * @returns Byte array
    * @category Audio
   */
-  public getAudioTrackRaw(trackId: FlipnoteAudioTrack) {
+  getAudioTrackRaw(trackId: FlipnoteAudioTrack) {
     const trackMeta = this.soundMeta.get(trackId);
     assert(trackMeta.ptr + trackMeta.length < this.byteLength);
     return new Uint8Array(this.buffer, trackMeta.ptr, trackMeta.length);
@@ -1022,7 +1022,7 @@ export class KwzParser extends FlipnoteParserBase {
    * @returns Signed 16-bit PCM audio
    * @category Audio
   */
-  public decodeAudioTrack(trackId: FlipnoteAudioTrack) {
+  decodeAudioTrack(trackId: FlipnoteAudioTrack) {
     const settings = this.settings;
     const src = this.getAudioTrackRaw(trackId);
     const dstSize = this.rawSampleRate * 60; // enough for 60 seconds, the max bgm size
@@ -1078,7 +1078,7 @@ export class KwzParser extends FlipnoteParserBase {
    * @returns Signed 16-bit PCM audio
    * @category Audio
   */
-  public getAudioTrackPcm(trackId: FlipnoteAudioTrack, dstFreq = this.sampleRate) {
+  getAudioTrackPcm(trackId: FlipnoteAudioTrack, dstFreq = this.sampleRate) {
     const srcPcm = this.decodeAudioTrack(trackId);
     let srcFreq = this.rawSampleRate;
     if (trackId === FlipnoteAudioTrack.BGM) {
@@ -1108,7 +1108,7 @@ export class KwzParser extends FlipnoteParserBase {
    * @returns Signed 16-bit PCM audio
    * @category Audio
   */
-  public getAudioMasterPcm(dstFreq = this.sampleRate) {
+  getAudioMasterPcm(dstFreq = this.sampleRate) {
     const dstSize = Math.ceil(this.duration * dstFreq);
     const master = new Int16Array(dstSize);
     const hasBgm = this.hasAudioTrack(FlipnoteAudioTrack.BGM);
@@ -1150,7 +1150,7 @@ export class KwzParser extends FlipnoteParserBase {
    * Get the body of the Flipnote - the data that is digested for the signature
    * @category Verification
    */
-  public getBody() {
+  getBody() {
     const bodyEnd = this.bodyEndOffset;
     return this.bytes.subarray(0, bodyEnd);
   }
@@ -1159,7 +1159,7 @@ export class KwzParser extends FlipnoteParserBase {
    * Get the Flipnote's signature data
    * @category Verification
    */
-  public getSignature() {
+  getSignature() {
     const bodyEnd = this.bodyEndOffset;
     return this.bytes.subarray(bodyEnd, bodyEnd + 256);
   }
@@ -1168,7 +1168,7 @@ export class KwzParser extends FlipnoteParserBase {
    * Verify whether this Flipnote's signature is valid
    * @category Verification
    */
-  public async verify() {
+  async verify() {
     const key = await rsaLoadPublicKey(KWZ_PUBLIC_KEY, 'SHA-256');
     return await rsaVerify(key, this.getSignature(), this.getBody());
   }
