@@ -45,7 +45,7 @@ const KWZ_PALETTE: FlipnotePaletteDefinition = {
 };
 
 /**
- * RSA public key used to verify that the PPM file signature is genuine.
+ * RSA public key used to verify that the KWZ file signature is genuine.
  * 
  * This **cannot** be used to resign Flipnotes, it can only verify that they are valid
  */

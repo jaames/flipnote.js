@@ -45,7 +45,7 @@ export class UniversalCanvas implements CanvasInterface {
         ...options,
         // attempt to switch renderer
         onlost: () => {
-          console.warn('WebGL failed, attemping HTML5 fallback');
+          console.warn('WebGL failed, attempting HTML5 fallback');
           if (this.isReady && !this.isHtml5) // if the error happened after canvas creation
             this.switchToHtml5();
           else

@@ -1,5 +1,5 @@
 /*!!
-flipnote.js v5.6.6 (web build)
+flipnote.js v5.6.7 (web build)
 https://flipnote.js.org
 A JavaScript library for parsing, converting, and in-browser playback of the proprietary animation formats used by Nintendo's Flipnote Studio and Flipnote Studio 3D apps.
 2018 - 2021 James Daniel
@@ -1323,7 +1323,7 @@ Keep on Flipnoting!
             soundMeta.set(exports.FlipnoteAudioTrack.SE3, { ptr: ptr += se2Len, length: se3Len });
             this.soundMeta = soundMeta;
         };
-        PpmParser.prototype.isNewFrame = function (frameIndex) {
+        PpmParser.prototype.isKeyFrame = function (frameIndex) {
             assertRange(frameIndex, 0, this.frameCount - 1, 'Frame index');
             this.seek(this.frameOffsets[frameIndex]);
             var header = this.readUint8();
@@ -1338,14 +1338,14 @@ Keep on Flipnoting!
             // return existing layer buffers if no new frame has been decoded since the last call
             if (this.prevDecodedFrame === frameIndex)
                 return this.layerBuffers;
-            // decode prev frame if nevessary for diffing
-            if (this.prevDecodedFrame !== frameIndex - 1 && (!this.isNewFrame(frameIndex)) && frameIndex !== 0)
+            // if necessary, decode previous frames until a keyframe is reached
+            if (this.prevDecodedFrame !== frameIndex - 1 && (!this.isKeyFrame(frameIndex)) && frameIndex !== 0)
                 this.decodeFrame(frameIndex - 1);
             this.prevDecodedFrame = frameIndex;
             // https://github.com/Flipnote-Collective/flipnote-studio-docs/wiki/PPM-format#animation-data
             this.seek(this.frameOffsets[frameIndex]);
             var header = this.readUint8();
-            var isNewFrame = (header >> 7) & 0x1;
+            var isKeyFrame = (header >> 7) & 0x1;
             var isTranslated = (header >> 5) & 0x3;
             // reset current layer buffers
             this.layerBuffers[0].fill(0);
@@ -1447,26 +1447,30 @@ Keep on Flipnoting!
             var layer2 = this.layerBuffers[1];
             var layer1Prev = this.prevLayerBuffers[0];
             var layer2Prev = this.prevLayerBuffers[1];
-            if (!isNewFrame) {
+            // fast diffing if the frame isn't translated
+            if (!isKeyFrame && translateX === 0 && translateY === 0) {
+                var size = PpmParser.height * PpmParser.width;
+                for (var i = 0; i < size; i++) {
+                    layer1[i] ^= layer1Prev[i];
+                    layer2[i] ^= layer2Prev[i];
+                }
+            }
+            // slower diffing if the frame is translated
+            else if (!isKeyFrame) {
+                var w = PpmParser.width;
+                var h = PpmParser.height;
+                var startX = Math.max(translateX, 0);
+                var startY = Math.max(translateY, 0);
+                var endX = Math.min(w + translateX, w);
+                var endY = Math.min(h + translateY, h);
+                var shift = translateY * w + translateX;
                 var dest = void 0, src = void 0;
                 // loop through each line
-                for (var y = 0; y < PpmParser.height; y++) {
-                    // skip to next line if this one falls off the top edge of the screen
-                    if (y - translateY < 0)
-                        continue;
-                    // stop once the bottom screen edge has been reached
-                    if (y - translateY >= PpmParser.height)
-                        break;
+                for (var y = startY; y < endY; y++) {
                     // loop through each pixel in the line
-                    for (var x = 0; x < PpmParser.width; x++) {
-                        // skip to the next pixel if this one falls off the left edge of the screen
-                        if (x - translateX < 0)
-                            continue;
-                        // stop diffing this line once the right screen edge has been reached
-                        if (x - translateX >= PpmParser.width)
-                            break;
-                        dest = x + y * PpmParser.width;
-                        src = dest - (translateX + translateY * PpmParser.width);
+                    for (var x = startX; x < endX; x++) {
+                        dest = y * w + x;
+                        src = dest - shift;
                         // diff pixels with a binary XOR
                         layer1[dest] ^= layer1Prev[src];
                         layer2[dest] ^= layer2Prev[src];
@@ -1796,7 +1800,7 @@ Keep on Flipnoting!
         NONE: [0xff, 0xff, 0xff, 0x00]
     };
     /**
-     * RSA public key used to verify that the PPM file signature is genuine.
+     * RSA public key used to verify that the KWZ file signature is genuine.
      *
      * This **cannot** be used to resign Flipnotes, it can only verify that they are valid
      */
@@ -5217,7 +5221,7 @@ Keep on Flipnoting!
                 this.renderer = new WebglCanvas(parent, width, height, __assign(__assign({}, options), { 
                     // attempt to switch renderer
                     onlost: function () {
-                        console.warn('WebGL failed, attemping HTML5 fallback');
+                        console.warn('WebGL failed, attempting HTML5 fallback');
                         if (_this.isReady && !_this.isHtml5) // if the error happened after canvas creation
                             _this.switchToHtml5();
                         else
@@ -7154,7 +7158,7 @@ Keep on Flipnoting!
     /**
      * flipnote.js library version (exported as `flipnote.version`). You can find the latest version on the project's [NPM](https://www.npmjs.com/package/flipnote.js) page.
      */
-    var version = "5.6.6"; // replaced by @rollup/plugin-replace; see rollup.config.js
+    var version = "5.6.7"; // replaced by @rollup/plugin-replace; see rollup.config.js
 
     exports.CanvasInterface = CanvasInterface;
     exports.GifImage = GifImage;

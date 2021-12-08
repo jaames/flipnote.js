@@ -96,7 +96,7 @@ export declare class PpmParser extends FlipnoteParserBase {
     private decodeMeta;
     private decodeAnimationHeader;
     private decodeSoundHeader;
-    private isNewFrame;
+    private isKeyFrame;
     /**
      * Decode a frame, returning the raw pixel buffers for each layer
      * @category Image
