@@ -95,11 +95,11 @@ Like [`bgmPredictor`](#bgmpredictor), the value of `bgmStepIndex` will provide t
 
 ### `sePredictors`
 
-Like [`bgmPredictor`](#bgmpredictor), the value of `sePredictors` will provide the initial ADPCM predictor values when decoding each sound effect track, as a comma-seperated list in the order of SE1, SE2, SE3 then SE4 (e.g `bgmStepIndices="100,100,100,-100"`). This value can not be updated after a Flipnote is loaded.
+Like [`bgmPredictor`](#bgmpredictor), the value of `sePredictors` will provide the initial ADPCM predictor values when decoding each sound effect track, as a comma-seperated list in the order of SE1, SE2, SE3 then SE4 (e.g `sePredictors="100,100,100,-100"`). This value can not be updated after a Flipnote is loaded.
 
 ### `seStepIndices`
 
-Like [`bgmStepIndex`](#bgmstepindex), the value of `bgmStepIndices` will provide the initial ADPCM step index values when decoding each sound effect track, as a comma-seperated list in the order of SE1, SE2, SE3 then SE4 (e.g `bgmStepIndices="40,40,40,39"`). This value can not be updated after a Flipnote is loaded.
+Like [`bgmStepIndex`](#bgmstepindex), the value of `seStepIndices` will provide the initial ADPCM step index values when decoding each sound effect track, as a comma-seperated list in the order of SE1, SE2, SE3 then SE4 (e.g `seStepIndices="40,40,40,39"`). This value can not be updated after a Flipnote is loaded.
 
 ## Styling
 
