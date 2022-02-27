@@ -149,7 +149,8 @@ export class PpmParser extends FlipnoteParserBase {
 
   private layerBuffers: [Uint8Array, Uint8Array];
   private soundFlags: boolean[][];
-  private prevLayerBuffers: [Uint8Array, Uint8Array];
+  private workingLayerBuffers: [Uint8Array, Uint8Array];
+  private prevWorkingLayerBuffers: [Uint8Array, Uint8Array];
   private lineEncodingBuffers: [Uint8Array, Uint8Array];
   private prevDecodedFrame: number = null;
   private frameDataLength: number;
@@ -177,9 +178,13 @@ export class PpmParser extends FlipnoteParserBase {
       new Uint8Array(PpmParser.width * PpmParser.height),
       new Uint8Array(PpmParser.width * PpmParser.height)
     ];
-    this.prevLayerBuffers = [
-      new Uint8Array(PpmParser.width * PpmParser.height),
-      new Uint8Array(PpmParser.width * PpmParser.height)
+    this.workingLayerBuffers = [
+      new Uint8Array(PpmParser.height * 32),
+      new Uint8Array(PpmParser.height * 32)
+    ];
+    this.prevWorkingLayerBuffers = [
+      new Uint8Array(PpmParser.height * 32),
+      new Uint8Array(PpmParser.height * 32)
     ];
     this.lineEncodingBuffers = [
       new Uint8Array(PpmParser.height),
@@ -238,7 +243,7 @@ export class PpmParser extends FlipnoteParserBase {
     this.isSpinoff = (currentAuthorId !== parentAuthorId) || (currentAuthorId !== rootAuthorId);
     this.meta = {
       lock: lock === 1,
-      loop: (flags >> 1 & 0x1) === 1,
+      loop: (flags & 0x2) !== 0,
       isSpinoff: this.isSpinoff,
       frameCount: this.frameCount,
       frameSpeed: this.frameSpeed,
@@ -335,8 +340,8 @@ export class PpmParser extends FlipnoteParserBase {
     const isKeyFrame = (header >> 7) & 0x1;
     const isTranslated = (header >> 5) & 0x3;
     // reset current layer buffers
-    this.layerBuffers[0].fill(0);
-    this.layerBuffers[1].fill(0);
+    this.workingLayerBuffers[0].fill(0);
+    this.workingLayerBuffers[1].fill(0);
 
     let translateX = 0;
     let translateY = 0;
@@ -366,10 +371,10 @@ export class PpmParser extends FlipnoteParserBase {
 
     // unpack layer bitmaps
     for (let layerIndex = 0; layerIndex < 2; layerIndex++) {
-      const pixelBuffer = this.layerBuffers[layerIndex];
+      const pixelBuffer = this.workingLayerBuffers[layerIndex];
       const lineEncodingBuffer = this.lineEncodingBuffers[layerIndex];
       for (let y = 0; y < PpmParser.height; y++) {
-        let pixelBufferPtr = y * PpmParser.width;
+        let pixelBufferPtr = y * 32;
         const lineType = lineEncodingBuffer[y];
         switch(lineType) {
           // line type 0 = blank line, decode nothing
@@ -384,24 +389,17 @@ export class PpmParser extends FlipnoteParserBase {
             // so on the next loop cycle the next bit will be checked
             // and if the line header equals 0, no more bits are set, 
             // the rest of the line is empty and can be skipped
-            for (; lineHeader !== 0; lineHeader <<= 1, pixelBufferPtr += 8) {
+            for (; lineHeader !== 0; lineHeader <<= 1, pixelBufferPtr += 1) {
               // if the bit is set, this 8-pix wide chunk is stored
               // else we can just leave it blank and move on to the next chunk
-              if (lineHeader & 0x80000000) {
-                let chunk = this.readUint8();
-                // unpack chunk bits
-                // the chunk if shifted right 1 bit on every loop
-                // if the chunk equals 0, no more bits are set, 
-                // so the rest of the chunk is empty and can be skipped
-                for (let pixel = 0; chunk !== 0; pixel++, chunk >>= 1)
-                  pixelBuffer[pixelBufferPtr + pixel] = chunk & 0x1;
-              }
+              if (lineHeader & 0x80000000)
+                pixelBuffer[pixelBufferPtr] = this.readUint8();
             }
             break;
           // line type 2 = compressed bitmap line like type 1, but all pixels are set to 1 first
           case 2:
             // line type 2 starts as an inverted line
-            pixelBuffer.fill(1, pixelBufferPtr, pixelBufferPtr + PpmParser.width);
+            pixelBuffer.fill(0xFF, pixelBufferPtr, pixelBufferPtr + 32);
             // read lineHeader as a big-endian int
             var lineHeader = this.readUint32(false);
             // loop through each bit in the line header
@@ -409,57 +407,45 @@ export class PpmParser extends FlipnoteParserBase {
             // so on the next loop cycle the next bit will be checked
             // and if the line header equals 0, no more bits are set, 
             // the rest of the line is empty and can be skipped
-            for (; lineHeader !== 0; lineHeader <<= 1, pixelBufferPtr += 8) {
+            for (; lineHeader !== 0; lineHeader <<= 1, pixelBufferPtr += 1) {
               // if the bit is set, this 8-pix wide chunk is stored
               // else we can just leave it blank and move on to the next chunk
-              if (lineHeader & 0x80000000) {
-                let chunk = this.readUint8();
-                // unpack chunk bits
-                for (let pixel = 0; pixel < 8; pixel++, chunk >>= 1)
-                  pixelBuffer[pixelBufferPtr + pixel] = chunk & 0x1;
-              }
+              if (lineHeader & 0x80000000)
+                pixelBuffer[pixelBufferPtr] = this.readUint8();
             }
             break;
           // line type 3 = raw bitmap line
           case 3:
-            for (let chunk = 0, i = 0; i < PpmParser.width; i++) {
-              if (i % 8 === 0)
-                chunk = this.readUint8();
-              pixelBuffer[pixelBufferPtr++] = chunk & 0x1;
-              chunk >>= 1;
+            for (let i = 0; i < 32; i++, pixelBufferPtr += 1) {
+              pixelBuffer[pixelBufferPtr] = this.readUint8();
             }
             break;
         }
       }
     }
-    // if the current frame is based on changes from the preivous one, merge them by XORing their values
-    const layer1 = this.layerBuffers[0];
-    const layer2 = this.layerBuffers[1];
-    const layer1Prev = this.prevLayerBuffers[0];
-    const layer2Prev = this.prevLayerBuffers[1];
+    // if the current frame is based on changes from the previous one, merge them by XORing their values
+    const layer1 = this.workingLayerBuffers[0];
+    const layer2 = this.workingLayerBuffers[1];
+    const layer1Prev = this.prevWorkingLayerBuffers[0];
+    const layer2Prev = this.prevWorkingLayerBuffers[1];
     // fast diffing if the frame isn't translated
     if (!isKeyFrame && translateX === 0 && translateY === 0) {
-      const size =  PpmParser.height * PpmParser.width;
+      const size = PpmParser.height * 32;
       for (let i = 0; i < size; i++) {
         layer1[i] ^= layer1Prev[i];
         layer2[i] ^= layer2Prev[i];
       }
     }
-    // slower diffing if the frame is translated
-    else if (!isKeyFrame) {
-      const w = PpmParser.width;
+    else if (!isKeyFrame && translateX == 0) {
       const h = PpmParser.height;
-      const startX = Math.max(translateX, 0);
       const startY = Math.max(translateY, 0);
-      const endX = Math.min(w + translateX, w);
       const endY = Math.min(h + translateY, h);
-      const shift = translateY * w + translateX;
+      const shift = translateY * 32;
       let dest: number, src: number;
-      // loop through each line
       for (let y = startY; y < endY; y++) {
-        // loop through each pixel in the line
-        for (let x = startX; x < endX; x++) {
-          dest = y * w + x;
+        // loop through each chunk in the line
+        for (let x = 0; x < 32; x++) {
+          dest = y * 32 + x;
           src = dest - shift;
           // diff pixels with a binary XOR
           layer1[dest] ^= layer1Prev[src];
@@ -467,9 +453,65 @@ export class PpmParser extends FlipnoteParserBase {
         }
       }
     }
+    // slower diffing if the frame is translated
+    else if (!isKeyFrame && translateX > 0) {
+      console.log('translate by', translateX, translateY)
+      const h = PpmParser.height;
+      const offsetByX = Math.floor(translateX / 8)
+      // TODO max statements can be removed bc x is always positive
+      const startX = Math.max(offsetByX, 0);
+      const startY = Math.max(translateY, 0);
+      const endX = Math.min(32 + offsetByX, 32);
+      const endY = Math.min(h + translateY, h);
+      const shift = translateY * 32 + offsetByX;
+      const modX = translateX % 8;
+      let dest: number, src: number;
+      // loop through each line
+      for (let y = startY; y < endY; y++) {
+        if (startX == 0) {
+          dest = y * 32
+          src = dest - shift;
+          layer1[dest] ^= (layer1Prev[src] << modX);
+          layer2[dest] ^= (layer2Prev[src] << modX);
+        }
+        // loop through each chunk in the line
+        for (let x = startX + 1; x < endX; x++) {
+          dest = y * 32 + x;
+          src = dest - shift;
+          // diff pixels with a binary XOR
+          layer1[dest] ^= (layer1Prev[src] << modX) | (layer1Prev[src - 1] >> (8 - modX));
+          layer2[dest] ^= (layer2Prev[src] << modX) | (layer2Prev[src - 1] >> (8 - modX));
+        }
+      }
+    }
+    else if (!isKeyFrame) {
+      console.log('UNIMPLEMENTED translate by', translateX, translateY)
+    }
+
     // copy the current layer buffers to the previous ones
-    this.prevLayerBuffers[0].set(this.layerBuffers[0]);
-    this.prevLayerBuffers[1].set(this.layerBuffers[1]);
+    this.prevWorkingLayerBuffers[0].set(this.workingLayerBuffers[0]);
+    this.prevWorkingLayerBuffers[1].set(this.workingLayerBuffers[1]);
+
+    // TEMP: convert 1 bit to framebuffer
+    const size = PpmParser.height * 32;
+    let srcPtr = 0;
+    let dstPtr = 0;
+    let layerASrc = this.workingLayerBuffers[0];
+    let layerBSrc = this.workingLayerBuffers[1];
+    let layerADst = this.layerBuffers[0];
+    let layerBDst = this.layerBuffers[1];
+    for (let i = 0; i < size; i++) {
+      let chunkA = layerASrc[srcPtr];
+      let chunkB = layerBSrc[srcPtr];
+      for (let b = 0; b < 8; b++) {
+        layerADst[dstPtr] = chunkA & 0x1;
+        layerBDst[dstPtr] = chunkB & 0x1;
+        chunkA >>= 1;
+        chunkB >>= 1;
+        dstPtr++;
+      }
+      srcPtr++;
+    }
     return this.layerBuffers;
   }
 
@@ -690,12 +732,18 @@ export class PpmParser extends FlipnoteParserBase {
       for (let frame = 0; frame < this.frameCount; frame++) {
         const seOffset = Math.ceil(frame * samplesPerFrame);
         const flag = seFlags[frame];
-        if (hasSe1 && flag[0])
+        if (hasSe1 && flag[0]) {
+          console.log(`sound effect 1 on frame ${frame}`);
           this.pcmAudioMix(se1Pcm, master, seOffset);
-        if (hasSe2 && flag[1])
+        }
+        if (hasSe2 && flag[1]){
+          console.log(`sound effect 2 on frame ${frame}`);
           this.pcmAudioMix(se2Pcm, master, seOffset);
-        if (hasSe3 && flag[2])
+        }
+        if (hasSe3 && flag[2]) {
+          console.log(`sound effect 3 on frame ${frame}`);
           this.pcmAudioMix(se3Pcm, master, seOffset);
+        }
       }
     }
     this.audioClipRatio = pcmGetClippingRatio(master);
