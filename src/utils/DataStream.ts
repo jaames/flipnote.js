@@ -67,46 +67,46 @@ export class DataStream {
     this.pointer += 1;
   }
 
-  readUint16(littleEndian: boolean=true) {
+  readUint16(littleEndian=true) {
     const val = this.data.getUint16(this.pointer, littleEndian);
     this.pointer += 2;
     return val;
   }
 
-  writeUint16(value: number, littleEndian: boolean=true) {
+  writeUint16(value: number, littleEndian=true) {
     this.data.setUint16(this.pointer, value, littleEndian);
     this.pointer += 2;
   }
 
-  readInt16(littleEndian: boolean=true) {
+  readInt16(littleEndian=true) {
     const val = this.data.getInt16(this.pointer, littleEndian);
     this.pointer += 2;
     return val;
   }
 
-  writeInt16(value: number, littleEndian: boolean=true) {
+  writeInt16(value: number, littleEndian=true) {
     this.data.setInt16(this.pointer, value, littleEndian);
     this.pointer += 2;
   }
 
-  readUint32(littleEndian: boolean=true) {
+  readUint32(littleEndian=true) {
     const val = this.data.getUint32(this.pointer, littleEndian);
     this.pointer += 4;
     return val;
   }
   
-  writeUint32(value: number, littleEndian: boolean=true) {
+  writeUint32(value: number, littleEndian=true) {
     this.data.setUint32(this.pointer, value, littleEndian);
     this.pointer += 4;
   }
 
-  readInt32(littleEndian: boolean=true) {
+  readInt32(littleEndian=true) {
     const val = this.data.getInt32(this.pointer, littleEndian);
     this.pointer += 4;
     return val;
   }
 
-  writeInt32(value: number, littleEndian: boolean=true) {
+  writeInt32(value: number, littleEndian=true) {
     this.data.setInt32(this.pointer, value, littleEndian);
     this.pointer += 4;
   }
@@ -121,14 +121,13 @@ export class DataStream {
     bytes.forEach((byte: number) => this.writeUint8(byte));
   }
 
-  readHex(count: number, reverse: boolean=false) {
+  readHex(count: number, reverse=false) {
     const bytes = this.readBytes(count);
     let hex = [];
     for (let i = 0; i < bytes.length; i++) {
       hex.push(bytes[i].toString(16).padStart(2, '0'));
     }
-    if (reverse)
-      hex.reverse();
+    if (reverse) hex.reverse();
     return hex.join('').toUpperCase();
   }
 
@@ -137,8 +136,7 @@ export class DataStream {
     let str = '';
     for (let i = 0; i < chars.length; i++) {
       const char = chars[i];
-      if (char === 0)
-        break;
+      if (char === 0) break;
       str += String.fromCharCode(char);
     }
     return str;

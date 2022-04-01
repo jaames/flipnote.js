@@ -1,8 +1,8 @@
 /*!!
-flipnote.js v5.6.7 (web build)
+flipnote.js v5.7.0
 https://flipnote.js.org
 A JavaScript library for parsing, converting, and in-browser playback of the proprietary animation formats used by Nintendo's Flipnote Studio and Flipnote Studio 3D apps.
-2018 - 2021 James Daniel
+2018 - 2022 James Daniel
 Flipnote Studio is (c) Nintendo Co., Ltd. This project isn't affiliated with or endorsed by them in any way.
 Keep on Flipnoting!
 */
@@ -7158,7 +7158,7 @@ Keep on Flipnoting!
     /**
      * flipnote.js library version (exported as `flipnote.version`). You can find the latest version on the project's [NPM](https://www.npmjs.com/package/flipnote.js) page.
      */
-    var version = "5.6.7"; // replaced by @rollup/plugin-replace; see rollup.config.js
+    var version = "5.7.0"; // replaced by @rollup/plugin-replace; see rollup.config.js
 
     exports.CanvasInterface = CanvasInterface;
     exports.GifImage = GifImage;

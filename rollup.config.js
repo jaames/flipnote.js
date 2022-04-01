@@ -11,40 +11,79 @@ import livereload from 'rollup-plugin-livereload';
 import bundleSize from 'rollup-plugin-bundle-size';
 import glslify from 'rollup-plugin-glslify';
 import svgo from 'rollup-plugin-svgo';
+const ts = require('typescript');
 
-const target = process.env.TARGET || 'web';
 const build = process.env.BUILD || 'development';
 const devserver = process.env.DEV_SERVER || false;
-const isEsmoduleBuild = process.env.ES_MODULE || false;
 const isProdBuild = build === 'production';
-const isTargetWeb = target === 'web';
-const isTargetWebcomponent = target === 'webcomponent';
 
 const banner = `/*!!
-flipnote.js v${ version } (${ target } build)
+flipnote.js v${ version }
 https://flipnote.js.org
 A JavaScript library for parsing, converting, and in-browser playback of the proprietary animation formats used by Nintendo's Flipnote Studio and Flipnote Studio 3D apps.
-2018 - 2021 James Daniel
+2018 - 2022 James Daniel
 Flipnote Studio is (c) Nintendo Co., Ltd. This project isn't affiliated with or endorsed by them in any way.
 Keep on Flipnoting!
 */`;
 
-module.exports = {
-  input: [
-    isTargetWeb && 'src/flipnote.ts',
-    isTargetWebcomponent && 'src/flipnote.webcomponent.ts',
-  ].filter(Boolean).join(''),
-  output: [
-    (isTargetWeb) && (isEsmoduleBuild) && {
-      file: 'dist/flipnote.es.js',
-      format: 'es',
-      name: 'flipnote',
-      exports: 'named',
-      banner: banner,
-      sourcemap: devserver ? true : false,
-      sourcemapFile: 'dist/flipnote.es.map'
+const basePlugins = [
+  nodeResolve({
+    // browser: true
+  }),
+  commonJs(),
+  alias({
+    resolve: ['.jsx', '.js', '.ts', '.tsx'],
+  }),
+  replace({
+    preventAssignment: true,
+    FLIPNOTEJS_VERSION: JSON.stringify(version),
+    PROD: isProdBuild ? 'true' : 'false',
+    DEV_SERVER: devserver ? 'true' : 'false',
+    // https://github.com/PolymerLabs/lit-element-starter-ts/blob/master/rollup.config.js
+    'Reflect.decorate': 'undefined'
+  }),
+  glslify(),
+  bundleSize(),
+  // devserver + livereload
+  devserver && serve({
+    contentBase: ['dist', 'test']
+  }),
+  devserver && livereload({
+    watch: 'dist'
+  }),
+].filter(Boolean);
+
+const typescriptConfig = (target = 'es2019') => typescript({
+  abortOnError: false,
+  typescript: ts,
+  tsconfigOverride: {
+    compilerOptions: {
+      target: target,
+      declaration: !devserver ? true : false,
+      sourceMap: devserver ? true : false,
     },
-    (isTargetWeb) && (!isEsmoduleBuild) && {
+  },
+});
+
+const minifierConfig = () => isProdBuild && terser({
+  // preserve banner comment
+  output: {
+    comments: function(node, comment) {
+      if (comment.type === 'comment2') {
+        return /\!\!/i.test(comment.value);
+      }
+      return false;
+    }
+  }
+});
+
+module.exports = [
+  // UMD build
+  {
+    input: [
+      'src/flipnote.ts',
+    ],
+    output: {
       file: isProdBuild ? 'dist/flipnote.min.js' : 'dist/flipnote.js',
       format: 'umd',
       name: 'flipnote',
@@ -53,7 +92,35 @@ module.exports = {
       sourcemap: devserver ? true : false,
       sourcemapFile: isProdBuild ? 'dist/flipnote.min.js.map' : 'dist/flipnote.js.map'
     },
-    isTargetWebcomponent && {
+    plugins: basePlugins.concat([
+      typescriptConfig('es5'),
+      minifierConfig()
+    ].filter(Boolean))
+  },
+  // ES build
+  {
+    input: [
+      'src/flipnote.ts',
+    ],
+    output: {
+      file: 'dist/flipnote.es.js',
+      format: 'es',
+      name: 'flipnote',
+      exports: 'named',
+      banner: banner,
+      sourcemap: devserver ? true : false,
+      sourcemapFile: 'dist/flipnote.es.map'
+    },
+    plugins: basePlugins.concat([
+      typescriptConfig('es2019')
+    ].filter(Boolean))
+  },
+  // Web component build
+  {
+    input: [
+      'src/flipnote.webcomponent.ts',
+    ],
+    output: {
       file: isProdBuild ? 'dist/flipnote.webcomponent.min.js' : 'dist/flipnote.webcomponent.js',
       format: 'umd',
       name: 'flipnote',
@@ -61,75 +128,50 @@ module.exports = {
       banner: banner,
       sourcemap: devserver ? true : false,
       sourcemapFile: isProdBuild ? 'dist/flipnote.webcomponent.min.js.map' : 'dist/flipnote.webcomponent.js.map'
-    }
-  ].filter(Boolean),
-  plugins: [
-    nodeResolve({
-      // browser: true
-    }),
-    commonJs(),
-    alias({
-      resolve: ['.jsx', '.js', '.ts', '.tsx'],
-    }),
-    replace({
-      FLIPNOTEJS_VERSION: JSON.stringify(version),
-      PROD: isProdBuild ? 'true' : 'false',
-      DEV_SERVER: devserver ? 'true' : 'false',
-      // https://github.com/PolymerLabs/lit-element-starter-ts/blob/master/rollup.config.js
-      'Reflect.decorate': 'undefined'
-    }),
-    typescript({
-      abortOnError: false,
-      typescript: require('typescript'),
-      tsconfigOverride: {
-        compilerOptions: {
-          target: (() => {
-            if (isTargetWebcomponent)
-              return 'es2017';
-            else if (isEsmoduleBuild)
-              return 'es2019';
-            else
-              return 'es5';
-          })(),
-          declaration: !devserver ? true : false,
-          sourceMap: devserver ? true : false,
-        },
-      },
-    }),
-    glslify(),
-    bundleSize(),
-    // devserver + livereload
-    devserver && serve({
-      contentBase: ['dist', 'test']
-    }),
-    devserver && livereload({
-      watch: 'dist'
-    }),
-    // only minify if we're producing a non-es production build
-    isProdBuild && !isEsmoduleBuild && terser({
-      // preserve banner comment
-      output: {
-        comments: function(node, comment) {
-          if (comment.type === 'comment2') {
-            return /\!\!/i.test(comment.value);
-          }
-          return false;
-        }
-      }
-    }),
-    isProdBuild && isTargetWebcomponent && minifyHtml(),
-    isTargetWebcomponent && svgo({
-      plugins: [
-        {
-          removeViewBox: false
-        },
-        {
-          removeDimensions: true
-        },
-        {
-          removeUnknownsAndDefaults: true
-        },
-      ]
-    }),
-  ].filter(Boolean)
-};
+    },
+    plugins: basePlugins.concat([
+      typescriptConfig('es2017'),
+      minifierConfig(),
+      isProdBuild && minifyHtml(),
+      svgo({
+        plugins: [
+          {
+            removeViewBox: false
+          },
+          {
+            removeDimensions: true
+          },
+          {
+            removeUnknownsAndDefaults: true
+          },
+        ]
+      }),
+    ].filter(Boolean))
+  },
+  {
+    input: [
+      'src/parsers/PpmParser.ts',
+    ],
+    output: {
+      file: 'dist/PpmParser.js',
+      format: 'es',
+      banner: banner,
+    },
+    plugins: basePlugins.concat([
+      typescriptConfig('es2019')
+    ])
+  },
+  {
+    input: [
+      'src/parsers/KwzParser.ts',
+    ],
+    output: {
+      file: 'dist/KwzParser.js',
+      format: 'es',
+      banner: banner,
+    },
+    plugins: basePlugins.concat([
+      typescriptConfig('es2019')
+    ])
+  },
+]

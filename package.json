@@ -1,6 +1,6 @@
 {
   "name": "flipnote.js",
-  "version": "5.6.7",
+  "version": "5.7.0",
   "description": "A JavaScript library for parsing, converting, and in-browser playback of the proprietary animation formats used by Nintendo's Flipnote Studio and Flipnote Studio 3D apps.",
   "module": "dist/flipnote.es.js",
   "main": "dist/flipnote.js",
@@ -8,13 +8,9 @@
   "scripts": {
     "prepublishOnly": "npm run build",
     "postpublish": "./deploy.sh",
-    "start": "rollup -c --watch --environment DEV_SERVER,TARGET:webcomponent,BUILD:development",
+    "start": "rollup -c --watch --environment DEV_SERVER,BUILD:development",
     "dev": "rollup -c --environment BUILD:development",
-    "build": "npm run dev && npm run build:min && npm run build:es && npm run build:webcomponent && npm run build:webcomponent:min",
-    "build:min": "rollup -c --environment TARGET:web,BUILD:production",
-    "build:es": "rollup -c --environment TARGET:web,ES_MODULE,BUILD:production",
-    "build:webcomponent": "rollup -c --environment TARGET:webcomponent,BUILD:development",
-    "build:webcomponent:min": "rollup -c --environment TARGET:webcomponent,BUILD:production",
+    "build": "npm run dev && rollup -c --environment BUILD:production",
     "docs": "typedoc && npm run docs:copyjs && npm run docs:copyppm && npm run docs:copykwz && npm run docs:copykwc && npm run docs:copyico",
     "docs:copyppm": "mkdir -p ./www/assets/notes && yes | cp ./test/samples/*.ppm ./www/assets/notes",
     "docs:copykwz": "mkdir -p ./www/assets/notes && yes | cp ./test/samples/*.kwz ./www/assets/notes",
