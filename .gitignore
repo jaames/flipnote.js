@@ -4,6 +4,8 @@
 dist/demo
 demo/samples
 test/samples
+# ts temp stuff
+types
 
 # Docpage stuff
 www

@@ -14,7 +14,7 @@ export class DataStream {
 
   buffer: ArrayBuffer;
   pointer: number;
-  private data: DataView;
+  data: DataView;
 
   constructor(arrayBuffer: ArrayBuffer) {
     this.buffer = arrayBuffer;

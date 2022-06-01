@@ -11,6 +11,8 @@ import livereload from 'rollup-plugin-livereload';
 import bundleSize from 'rollup-plugin-bundle-size';
 import glslify from 'rollup-plugin-glslify';
 import svgo from 'rollup-plugin-svgo';
+import dts from 'rollup-plugin-dts';
+
 const ts = require('typescript');
 
 const build = process.env.BUILD || 'development';
@@ -54,11 +56,13 @@ const basePlugins = [
 ].filter(Boolean);
 
 const typescriptConfig = (target = 'es2019') => typescript({
+  useTsconfigDeclarationDir: true,
   abortOnError: false,
   typescript: ts,
   tsconfigOverride: {
     compilerOptions: {
       target: target,
+      declarationDir: './types',
       declaration: !devserver ? true : false,
       sourceMap: devserver ? true : false,
     },
@@ -88,10 +92,22 @@ const microbundleConfig = (src, dest) => (
       banner: banner,
     },
     plugins: basePlugins.concat([
-      typescriptConfig('es2019')
+      typescriptConfig('es2019'),
+
     ])
   }
 );
+
+const typeDeclarationConfig = (src, dest) => (
+  {
+    input: src,
+    output: {
+      file: dest, 
+      format: 'es'
+    },
+    plugins: [dts()],
+  }
+)
 
 module.exports = [
   // UMD build
@@ -113,6 +129,8 @@ module.exports = [
       minifierConfig()
     ].filter(Boolean))
   },
+  typeDeclarationConfig('types/flipnote.d.ts', 'dist/flipnote.d.ts'),
+
   // ES build
   {
     input: [
@@ -131,6 +149,7 @@ module.exports = [
       typescriptConfig('es2019')
     ].filter(Boolean))
   },
+
   // Web component build
   {
     input: [
@@ -164,10 +183,22 @@ module.exports = [
       }),
     ].filter(Boolean))
   },
+  typeDeclarationConfig('types/flipnote.webcomponent.d.ts', 'dist/flipnote.webcomponent.d.ts'),
+
   // tiny bundles for specific features
-  (!devserver) && microbundleConfig('src/parsers/PpmParser.ts', 'dist/PpmParser.js'),
-  (!devserver) && microbundleConfig('src/parsers/KwzParser.ts', 'dist/KwzParser.js'),
-  (!devserver) && microbundleConfig('src/renderers/index.ts', 'dist/renderers.js'),
-  (!devserver) && microbundleConfig('src/player/index.ts', 'dist/Player.js'),
-  (!devserver) && microbundleConfig('src/utils/index.ts', 'dist/utils.js'),
+
+  isProdBuild && microbundleConfig('src/parsers/PpmParser.ts', 'dist/PpmParser.js'),
+  isProdBuild && typeDeclarationConfig('types/parsers/PpmParser.d.ts', 'dist/PpmParser.d.ts'),
+
+  isProdBuild && microbundleConfig('src/parsers/KwzParser.ts', 'dist/KwzParser.js'),
+  isProdBuild && typeDeclarationConfig('types/parsers/KwzParser.d.ts', 'dist/KwzParser.d.ts'),
+
+  isProdBuild && microbundleConfig('src/Player/index.ts', 'dist/Player.js'),
+  isProdBuild && typeDeclarationConfig('types/Player/index.d.ts', 'dist/Player.d.ts'),
+
+  isProdBuild && microbundleConfig('src/renderers/index.ts', 'dist/renderers.js'),
+  isProdBuild && typeDeclarationConfig('types/renderers/index.d.ts', 'dist/renderers.d.ts'),
+
+  isProdBuild && microbundleConfig('src/utils/index.ts', 'dist/utils.js'),
+  isProdBuild && typeDeclarationConfig('types/utils/index.d.ts', 'dist/utils.d.ts'),
 ].filter(Boolean)

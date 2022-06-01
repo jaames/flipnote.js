@@ -16,7 +16,7 @@ export type FlipnoteSource = string | ArrayBuffer | Buffer | File;
 /**
  * Implements loading a Flipnote from a given source type, and returns a promise which resolves to a {@link Flipnote} parser instance.
  */
-export type FlipnoteSourceParser<S = FlipnoteSource> = (source:S, parserConfig?: Partial<FlipnoteParserSettings>, loaders?: LoaderDefinitionList) => Promise<Flipnote>;
+export type FlipnoteSourceParser<S = FlipnoteSource, D = Flipnote> = (source:S, parserConfig?: Partial<FlipnoteParserSettings>, loaders?: LoaderDefinitionList) => Promise<D>;
 
 /**
  * Load a Flipnote from a given source, returning a promise with a parser object. 

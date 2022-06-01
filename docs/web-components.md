@@ -20,9 +20,9 @@ Installing the web component build is very similar to the usual installation ste
 
 ```js
 // with the require() function:
-const flipnote = require('flipnote.js/dist/flipnote.webcomponent.js');
+const flipnote = require('flipnote.js/flipnote.webcomponent.js');
 // or with the es6 import syntax:
-import flipnote from 'flipnote.js/dist/flipnote.webcomponent.js';
+import flipnote from 'flipnote.js/flipnote.webcomponent.js';
 ```
 
 # flipnote-player

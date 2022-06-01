@@ -1,14 +1,65 @@
-import { DataStream, FlipnoteRegion } from '../utils';
-export { FlipnoteRegion } from '../utils';
+/** @internal */
+declare const enum SeekOrigin {
+    Begin = 0,
+    Current = 1,
+    End = 2
+}
+/**
+ * Wrapper around the DataView API to keep track of the offset into the data
+ * also provides some utils for reading ascii strings etc
+ * @internal
+ */
+declare class DataStream {
+    buffer: ArrayBuffer;
+    pointer: number;
+    data: DataView;
+    constructor(arrayBuffer: ArrayBuffer);
+    get bytes(): Uint8Array;
+    get byteLength(): number;
+    seek(offset: number, whence?: SeekOrigin): void;
+    readUint8(): number;
+    writeUint8(value: number): void;
+    readInt8(): number;
+    writeInt8(value: number): void;
+    readUint16(littleEndian?: boolean): number;
+    writeUint16(value: number, littleEndian?: boolean): void;
+    readInt16(littleEndian?: boolean): number;
+    writeInt16(value: number, littleEndian?: boolean): void;
+    readUint32(littleEndian?: boolean): number;
+    writeUint32(value: number, littleEndian?: boolean): void;
+    readInt32(littleEndian?: boolean): number;
+    writeInt32(value: number, littleEndian?: boolean): void;
+    readBytes(count: number): Uint8Array;
+    writeBytes(bytes: number[] | Uint8Array): void;
+    readHex(count: number, reverse?: boolean): string;
+    readChars(count: number): string;
+    writeChars(string: string): void;
+    readWideChars(count: number): string;
+}
+
+/**
+ * Flipnote region
+ */
+declare enum FlipnoteRegion {
+    /** Europe and Oceania */
+    EUR = "EUR",
+    /** Americas */
+    USA = "USA",
+    /** Japan */
+    JPN = "JPN",
+    /** Unidentified (possibly never used) */
+    UNKNOWN = "UNKNOWN"
+}
+
 /** Identifies which animation format a Flipnote uses */
-export declare enum FlipnoteFormat {
+declare enum FlipnoteFormat {
     /** Animation format used by Flipnote Studio (Nintendo DSiWare) */
     PPM = "PPM",
     /** Animation format used by Flipnote Studio 3D (Nintendo 3DS) */
     KWZ = "KWZ"
 }
 /** RGBA color */
-export declare type FlipnotePaletteColor = [
+declare type FlipnotePaletteColor = [
     /** Red (0 to 255) */
     number,
     /** Green (0 to 255) */
@@ -19,11 +70,11 @@ export declare type FlipnotePaletteColor = [
     number
 ];
 /** Flipnote layer visibility */
-export declare type FlipnoteLayerVisibility = Record<number, boolean>;
+declare type FlipnoteLayerVisibility = Record<number, boolean>;
 /** Defines the colors used for a given Flipnote format */
-export declare type FlipnotePaletteDefinition = Record<string, FlipnotePaletteColor>;
+declare type FlipnotePaletteDefinition = Record<string, FlipnotePaletteColor>;
 /** Identifies a Flipnote audio track type */
-export declare enum FlipnoteAudioTrack {
+declare enum FlipnoteAudioTrack {
     /** Background music track */
     BGM = 0,
     /** Sound effect 1 track */
@@ -36,23 +87,23 @@ export declare enum FlipnoteAudioTrack {
     SE4 = 4
 }
 /** Contains data about a given audio track; it's file offset and length */
-export interface FlipnoteAudioTrackInfo {
+interface FlipnoteAudioTrackInfo {
     ptr: number;
     length: number;
 }
 /** {@link FlipnoteAudioTrack}, but just sound effect tracks */
-export declare enum FlipnoteSoundEffectTrack {
+declare enum FlipnoteSoundEffectTrack {
     SE1 = 1,
     SE2 = 2,
     SE3 = 3,
     SE4 = 4
 }
 /** Flipnote sound flags, indicating which sound effect tracks are used on a given frame */
-export declare type FlipnoteSoundEffectFlags = Record<FlipnoteSoundEffectTrack, boolean>;
+declare type FlipnoteSoundEffectFlags = Record<FlipnoteSoundEffectTrack, boolean>;
 /**
  * Flipnote version info - provides details about a particular Flipnote version and its author
  */
-export interface FlipnoteVersion {
+interface FlipnoteVersion {
     /** Flipnote unique filename */
     filename: string;
     /** Author's username */
@@ -67,7 +118,7 @@ export interface FlipnoteVersion {
 /**
  * Flipnote details
  */
-export interface FlipnoteMeta {
+interface FlipnoteMeta {
     /** File lock state. Locked Flipnotes cannot be edited by anyone other than the current author */
     lock: boolean;
     /** Playback loop state. If `true`, playback will loop once the end is reached */
@@ -98,7 +149,7 @@ export interface FlipnoteMeta {
  * it just provides a consistent API for every format parser to implement.
  * @category File Parser
 */
-export declare abstract class FlipnoteParserBase extends DataStream {
+declare abstract class FlipnoteParserBase extends DataStream {
     /** Static file format info */
     /** File format type */
     static format: FlipnoteFormat;
@@ -355,3 +406,191 @@ export declare abstract class FlipnoteParserBase extends DataStream {
      */
     abstract verify(): Promise<boolean>;
 }
+
+/**
+ * PPM file metadata, stores information about its playback, author details, etc
+ */
+interface PpmMeta extends FlipnoteMeta {
+    /** In-app frame playback speed when the BGM audio track was recorded */
+    bgmSpeed: number;
+}
+/**
+ * PPM parser options for enabling optimisations and other extra features.
+ * None are currently implemented
+ */
+declare type PpmParserSettings = {};
+/**
+ * Parser class for (DSiWare) Flipnote Studio's PPM animation format.
+ *
+ * Format docs: https://github.com/Flipnote-Collective/flipnote-studio-docs/wiki/PPM-format
+ * @category File Parser
+ */
+declare class PpmParser extends FlipnoteParserBase {
+    /** Default PPM parser settings */
+    static defaultSettings: PpmParserSettings;
+    /** File format type */
+    static format: FlipnoteFormat;
+    /** Animation frame width */
+    static width: number;
+    /** Animation frame height */
+    static height: number;
+    /** Number of animation frame layers */
+    static numLayers: number;
+    /** Number of colors per layer (aside from transparent) */
+    static numLayerColors: number;
+    /** Audio track base sample rate */
+    static rawSampleRate: number;
+    /** Nintendo DSi audio output rate */
+    static sampleRate: number;
+    /** Which audio tracks are available in this format */
+    static audioTracks: FlipnoteAudioTrack[];
+    /** Which sound effect tracks are available in this format */
+    static soundEffectTracks: FlipnoteSoundEffectTrack[];
+    /** Global animation frame color palette */
+    static globalPalette: FlipnotePaletteColor[];
+    /** Public key used for Flipnote verification, in PEM format */
+    static publicKey: string;
+    /** File format type, reflects {@link PpmParser.format} */
+    format: FlipnoteFormat;
+    /** Custom object tag */
+    [Symbol.toStringTag]: string;
+    /** Animation frame width, reflects {@link PpmParser.width} */
+    imageWidth: number;
+    /** Animation frame height, reflects {@link PpmParser.height} */
+    imageHeight: number;
+    /** X offset for the top-left corner of the animation frame */
+    imageOffsetX: number;
+    /** Y offset for the top-left corner of the animation frame */
+    imageOffsetY: number;
+    /** Number of animation frame layers, reflects {@link PpmParser.numLayers} */
+    numLayers: number;
+    /** Number of colors per layer (aside from transparent), reflects {@link PpmParser.numLayerColors} */
+    numLayerColors: number;
+    /** key used for Flipnote verification, in PEM format */
+    publicKey: string;
+    /** @internal */
+    srcWidth: number;
+    /** Which audio tracks are available in this format, reflects {@link PpmParser.audioTracks} */
+    audioTracks: FlipnoteAudioTrack[];
+    /** Which sound effect tracks are available in this format, reflects {@link PpmParser.soundEffectTracks} */
+    soundEffectTracks: FlipnoteSoundEffectTrack[];
+    /** Audio track base sample rate, reflects {@link PpmParser.rawSampleRate} */
+    rawSampleRate: number;
+    /** Audio output sample rate, reflects {@link PpmParser.sampleRate} */
+    sampleRate: number;
+    /** Global animation frame color palette, reflects {@link PpmParser.globalPalette} */
+    globalPalette: FlipnotePaletteColor[];
+    /** File metadata, see {@link PpmMeta} for structure */
+    meta: PpmMeta;
+    /** File format version; always the same as far as we know */
+    version: number;
+    private layerBuffers;
+    private soundFlags;
+    private prevLayerBuffers;
+    private lineEncodingBuffers;
+    private prevDecodedFrame;
+    private frameDataLength;
+    private soundDataLength;
+    private soundDataOffset;
+    private frameOffsets;
+    /**
+     * Create a new PPM file parser instance
+     * @param arrayBuffer an ArrayBuffer containing file data
+     * @param settings parser settings (none currently implemented)
+     */
+    constructor(arrayBuffer: ArrayBuffer, settings?: Partial<PpmParserSettings>);
+    private decodeHeader;
+    private readFilename;
+    private decodeMeta;
+    private decodeAnimationHeader;
+    private decodeSoundHeader;
+    private isKeyFrame;
+    /**
+     * Decode a frame, returning the raw pixel buffers for each layer
+     * @category Image
+    */
+    decodeFrame(frameIndex: number): [Uint8Array, Uint8Array];
+    /**
+     * Get the layer draw order for a given frame
+     * @category Image
+     * @returns Array of layer indexes, in the order they should be drawn
+    */
+    getFrameLayerOrder(frameIndex?: number): number[];
+    /**
+     * Get the color palette indices for a given frame. RGBA colors for these values can be indexed from {@link PpmParser.globalPalette}
+     *
+     * Returns an array where:
+     *  - index 0 is the paper color index
+     *  - index 1 is the layer 1 color index
+     *  - index 2 is the layer 2 color index
+     * @category Image
+    */
+    getFramePaletteIndices(frameIndex: number): number[];
+    /**
+     * Get the RGBA colors for a given frame
+     *
+     * Returns an array where:
+     *  - index 0 is the paper color
+     *  - index 1 is the layer 1 color
+     *  - index 2 is the layer 2 color
+     * @category Image
+     */
+    getFramePalette(frameIndex: number): FlipnotePaletteColor[];
+    /**
+     * Get the sound effect flags for every frame in the Flipnote
+     * @category Audio
+    */
+    decodeSoundFlags(): boolean[][];
+    /**
+     * Get the sound effect usage flags for every frame
+     * @category Audio
+     */
+    getSoundEffectFlags(): FlipnoteSoundEffectFlags[];
+    /**
+     * Get the sound effect usage flags for a given frame
+     * @category Audio
+     */
+    getFrameSoundEffectFlags(frameIndex: number): FlipnoteSoundEffectFlags;
+    /**
+     * Get the raw compressed audio data for a given track
+     * @returns byte array
+     * @category Audio
+    */
+    getAudioTrackRaw(trackId: FlipnoteAudioTrack): Uint8Array;
+    /**
+     * Get the decoded audio data for a given track, using the track's native samplerate
+     * @returns Signed 16-bit PCM audio
+     * @category Audio
+    */
+    decodeAudioTrack(trackId: FlipnoteAudioTrack): Int16Array;
+    /**
+     * Get the decoded audio data for a given track, using the specified samplerate
+     * @returns Signed 16-bit PCM audio
+     * @category Audio
+    */
+    getAudioTrackPcm(trackId: FlipnoteAudioTrack, dstFreq?: number): Int16Array;
+    private pcmAudioMix;
+    /**
+     * Get the full mixed audio for the Flipnote, using the specified samplerate
+     * @returns Signed 16-bit PCM audio
+     * @category Audio
+    */
+    getAudioMasterPcm(dstFreq?: number): Int16Array;
+    /**
+     * Get the body of the Flipnote - the data that is digested for the signature
+     * @category Verification
+     */
+    getBody(): Uint8Array;
+    /**
+    * Get the Flipnote's signature data
+    * @category Verification
+    */
+    getSignature(): Uint8Array;
+    /**
+     * Verify whether this Flipnote's signature is valid
+     * @category Verification
+     */
+    verify(): Promise<boolean>;
+}
+
+export { PpmMeta, PpmParser, PpmParserSettings };
