@@ -1,6 +1,7 @@
 export { Flipnote, FlipnoteFormat, FlipnoteVersion, FlipnoteRegion, FlipnoteMeta, FlipnotePaletteColor, FlipnotePaletteDefinition, FlipnoteLayerVisibility, FlipnoteAudioTrack, FlipnoteAudioTrackInfo, FlipnoteSoundEffectTrack, FlipnoteSoundEffectFlags, FlipnoteParserSettings, KwzParserSettings, PpmParserSettings, KwzParser, PpmParser } from './parsers';
 export * as utils from './utils/fsid';
-export { parseSource } from './parseSource';
+export * from './loaders';
+export * from './parseSource';
 export { Player, PlayerEvent, } from './player';
 export { PlayerMixin } from './components/PlayerMixin';
 export { GifImage, WavAudio, } from './encoders';

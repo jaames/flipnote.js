@@ -77,6 +77,22 @@ const minifierConfig = () => isProdBuild && terser({
   }
 });
 
+const microbundleConfig = (src, dest) => (
+  {
+    input: [
+      src,
+    ],
+    output: {
+      file: dest,
+      format: 'es',
+      banner: banner,
+    },
+    plugins: basePlugins.concat([
+      typescriptConfig('es2019')
+    ])
+  }
+);
+
 module.exports = [
   // UMD build
   {
@@ -148,30 +164,10 @@ module.exports = [
       }),
     ].filter(Boolean))
   },
-  {
-    input: [
-      'src/parsers/PpmParser.ts',
-    ],
-    output: {
-      file: 'dist/PpmParser.js',
-      format: 'es',
-      banner: banner,
-    },
-    plugins: basePlugins.concat([
-      typescriptConfig('es2019')
-    ])
-  },
-  {
-    input: [
-      'src/parsers/KwzParser.ts',
-    ],
-    output: {
-      file: 'dist/KwzParser.js',
-      format: 'es',
-      banner: banner,
-    },
-    plugins: basePlugins.concat([
-      typescriptConfig('es2019')
-    ])
-  },
-]
+  // tiny bundles for specific features
+  (!devserver) && microbundleConfig('src/parsers/PpmParser.ts', 'dist/PpmParser.js'),
+  (!devserver) && microbundleConfig('src/parsers/KwzParser.ts', 'dist/KwzParser.js'),
+  (!devserver) && microbundleConfig('src/renderers/index.ts', 'dist/renderers.js'),
+  (!devserver) && microbundleConfig('src/player/index.ts', 'dist/Player.js'),
+  (!devserver) && microbundleConfig('src/utils/index.ts', 'dist/utils.js'),
+].filter(Boolean)

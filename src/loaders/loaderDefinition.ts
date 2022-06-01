@@ -1,14 +1,20 @@
-/** @internal */
-type LoaderResolve = (result: ArrayBuffer) => void;
+/**
+ * Resolution function passed to a loader's `load` method. Call when a Flipnote has been loaded successfully.
+ * The result should be Flipnote file data as an ArrayBuffer.
+ * @category Loader
+ */
+export type LoaderResolve = (result: ArrayBuffer) => void;
 
-/** @internal */
-type LoaderReject = (err?: any) => void;
+/**
+ * Rejection function passed to a loader's `load` method. Call when a Flipnote couldn't be loaded.
+ * @category Loader
+ */
+export type LoaderReject = (err?: any) => void;
 
 /** 
  * Loader interface
- * 
- * The goal of each loader is to be able to tell when it can handle a particular source type, and resolve an ArrayBuffer for that source
- * @internal 
+ * The goal of a loader is to be able to tell when it can handle a particular source type, and then resolve an ArrayBuffer for that source.
+ * @category Loader
  */
 export interface LoaderDefinition<T> {
   /** Is this loader able to process the input source type? */

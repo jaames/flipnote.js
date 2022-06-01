@@ -17,6 +17,6 @@ export function dateFromNintendoTimestamp(timestamp: number) {
  * @internal
  */
 export function timeGetNoteDuration(frameCount: number, framerate: number) {
-  // multiply and devide by 100 to get around floating precision issues
+  // multiply and divide by 100 to get around floating precision issues
   return ((frameCount * 100) * (1 / framerate)) / 100;
 }

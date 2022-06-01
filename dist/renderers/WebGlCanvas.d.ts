@@ -1,4 +1,4 @@
-import { FlipnoteParserBase } from '../parsers';
+import type { FlipnoteParserBase } from '../parsers';
 import { CanvasInterface } from './CanvasInterface';
 /**
  * Settings for {@link WebGlCanvas}

@@ -3,7 +3,7 @@ import { LoaderDefinition } from './LoaderDefinition';
 
 /** 
  * Loader for File objects (browser only)
- * @internal
+ * @category Loader
  */
 const fileLoader: LoaderDefinition<File> = {
 

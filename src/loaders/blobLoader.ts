@@ -3,7 +3,7 @@ import { LoaderDefinition } from './LoaderDefinition';
 
 /** 
  * Loader for Blob objects (browser only)
- * @internal
+ * @category Loader
  */
 const blobLoader: LoaderDefinition<Blob> = {
 

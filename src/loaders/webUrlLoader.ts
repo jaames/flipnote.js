@@ -3,7 +3,7 @@ import { LoaderDefinition } from './LoaderDefinition';
 
 /** 
  * Loader for web url strings (Browser only)
- * @internal
+ * @category Loader
  */
 const webUrlLoader: LoaderDefinition<string> = {
 

@@ -2,7 +2,7 @@ import { LoaderDefinition } from './LoaderDefinition';
 
 /** 
  * Loader for ArrayBuffer objects
- * @internal
+ * @category Loader
  */
 const arrayBufferLoader: LoaderDefinition<ArrayBuffer> = {
 

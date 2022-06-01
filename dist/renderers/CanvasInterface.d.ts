@@ -1,4 +1,4 @@
-import { FlipnoteParserBase } from '../parsers';
+import type { FlipnoteParserBase } from '../parsers';
 /** @internal */
 export declare abstract class CanvasInterface {
     note: FlipnoteParserBase;

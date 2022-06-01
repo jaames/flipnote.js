@@ -31,6 +31,8 @@ declare const PlayerComponent_base: {
         isPlaying: boolean;
         wasPlaying: boolean;
         isSeeking: boolean;
+        lastParser: import("../parseSource").FlipnoteSourceParser<import("../parseSource").FlipnoteSource>;
+        lastLoaders: import("../loaders").LoaderDefinitionList;
         src: import("../parseSource").FlipnoteSource;
         paused: boolean;
         currentFrame: number;
@@ -47,7 +49,7 @@ declare const PlayerComponent_base: {
         readonly currentSrc: import("../parseSource").FlipnoteSource;
         readonly videoWidth: number;
         readonly videoHeight: number;
-        load(source?: any): Promise<void>;
+        load(source: any, getParser: import("../parseSource").FlipnoteSourceParser<import("../parseSource").FlipnoteSource>, loaders?: import("../loaders").LoaderDefinitionList): Promise<void>;
         reload(): Promise<void>;
         updateSettings(settings: Partial<import("../parsers").KwzParserSettings>): Promise<void>;
         closeNote(): void;

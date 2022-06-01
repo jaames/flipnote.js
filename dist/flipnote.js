@@ -1,5 +1,5 @@
 /*!!
-flipnote.js v5.7.0
+flipnote.js v5.8.1
 https://flipnote.js.org
 A JavaScript library for parsing, converting, and in-browser playback of the proprietary animation formats used by Nintendo's Flipnote Studio and Flipnote Studio 3D apps.
 2018 - 2022 James Daniel
@@ -624,6 +624,32 @@ Keep on Flipnoting!
     }
 
     /**
+     * Gracefully handles a given Promise factory.
+     * @internal
+     * @example
+     * const [ error, data ] = await until(() => asyncAction())
+     */
+    var until = function (promise) { return __awaiter(void 0, void 0, void 0, function () {
+        var data, error_1;
+        return __generator(this, function (_a) {
+            switch (_a.label) {
+                case 0:
+                    _a.trys.push([0, 2, , 3]);
+                    return [4 /*yield*/, promise().catch(function (error) {
+                            throw error;
+                        })];
+                case 1:
+                    data = _a.sent();
+                    return [2 /*return*/, [null, data]];
+                case 2:
+                    error_1 = _a.sent();
+                    return [2 /*return*/, [error_1, null]];
+                case 3: return [2 /*return*/];
+            }
+        });
+    }); };
+
+    /**
      * Number of seconds between the UNIX timestamp epoch (jan 1 1970) and the Nintendo timestamp epoch (jan 1 2000)
      * @internal
      */
@@ -640,7 +666,7 @@ Keep on Flipnoting!
      * @internal
      */
     function timeGetNoteDuration(frameCount, framerate) {
-        // multiply and devide by 100 to get around floating precision issues
+        // multiply and divide by 100 to get around floating precision issues
         return ((frameCount * 100) * (1 / framerate)) / 100;
     }
 
@@ -737,6 +763,7 @@ Keep on Flipnoting!
             }
         }
         switch (fsid.slice(0, 2)) {
+            // note: might be incorrect
             case '00':
                 return exports.FlipnoteRegion.JPN;
             case '02':
@@ -2782,7 +2809,7 @@ Keep on Flipnoting!
 
     /**
      * Loader for web url strings (Browser only)
-     * @internal
+     * @category Loader
      */
     var webUrlLoader = {
         matches: function (source) {
@@ -2810,7 +2837,7 @@ Keep on Flipnoting!
 
     /**
      * Loader for web url strings (Node only)
-     * @internal
+     * @category Loader
      */
     var nodeUrlLoader = {
         matches: function (source) {
@@ -2833,7 +2860,7 @@ Keep on Flipnoting!
 
     /**
      * Loader for File objects (browser only)
-     * @internal
+     * @category Loader
      */
     var fileLoader = {
         matches: function (source) {
@@ -2856,7 +2883,7 @@ Keep on Flipnoting!
 
     /**
      * Loader for Blob objects (browser only)
-     * @internal
+     * @category Loader
      */
     var blobLoader = {
         matches: function (source) {
@@ -2875,7 +2902,7 @@ Keep on Flipnoting!
 
     /**
      * Loader for Buffer objects (Node only)
-     * @internal
+     * @category Loader
      */
     var nodeBufferLoader = {
         matches: function (source) {
@@ -2888,7 +2915,7 @@ Keep on Flipnoting!
 
     /**
      * Loader for ArrayBuffer objects
-     * @internal
+     * @category Loader
      */
     var arrayBufferLoader = {
         matches: function (source) {
@@ -2899,8 +2926,8 @@ Keep on Flipnoting!
         }
     };
 
-    /** @internal */
-    var loaders = [
+    /** @category Loaders */
+    var DEFAULT_LOADERS = [
         webUrlLoader,
         nodeUrlLoader,
         fileLoader,
@@ -2909,7 +2936,8 @@ Keep on Flipnoting!
         arrayBufferLoader
     ];
     /** @internal */
-    function loadSource(source) {
+    function loadSource(source, loaders) {
+        if (loaders === void 0) { loaders = DEFAULT_LOADERS; }
         return new Promise(function (resolve, reject) {
             for (var i = 0; i < loaders.length; i++) {
                 var loader = loaders[i];
@@ -2924,15 +2952,17 @@ Keep on Flipnoting!
      * Load a Flipnote from a given source, returning a promise with a parser object.
      * It will auto-detect the Flipnote format and return either a {@link PpmParser} or {@link KwzParser} accordingly.
      *
-     * @param source - Source to load a Flipnote from. Depending on the operating envionment, this can be:
+     * @param source - Source to load a Flipnote from. Depending on the operating environment, this can be:
      * - A string representing a web URL
      * - An {@link https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/ArrayBuffer | ArrayBuffer}
      * - A {@link https://developer.mozilla.org/en-US/docs/Web/API/File | File} object (Browser only)
      * - A {@link https://nodejs.org/api/buffer.html | Buffer} object (NodeJS only)
+     * You can also pass your own list of loaders to support your own source types.
      * @param parserConfig - Config settings to pass to the parser, see {@link FlipnoteParserSettings}
+     * @param loaders - Optional list of file loaders ({@link LoaderDefinition}) when attempting to load a Flipnote. Loaders are tried in sequence until a matching one is found for the requested input.
      */
-    function parseSource(source, parserConfig) {
-        return loadSource(source)
+    var parseSource = function (source, parserConfig, loaders) {
+        return loadSource(source, loaders)
             .then(function (arrayBuffer) {
             return new Promise(function (resolve, reject) {
                 // check the buffer's magic to identify which format it uses
@@ -2951,7 +2981,7 @@ Keep on Flipnoting!
                     reject('Could not identify source as a valid Flipnote file');
             });
         });
-    }
+    };
 
     /**
      * Player event types
@@ -5581,6 +5611,10 @@ Keep on Flipnoting!
             this.wasPlaying = false;
             /** @internal */
             this.isSeeking = false;
+            /** @internal */
+            this.lastParser = undefined;
+            /** @internal */
+            this.lastLoaders = undefined;
             /**
              * Playback animation loop
              * @internal
@@ -5618,19 +5652,19 @@ Keep on Flipnoting!
             this.parserSettings = parserSettings;
             this.renderer = new UniversalCanvas(mountPoint, width, height, {
                 onlost: function () { return _this.emit(exports.PlayerEvent.Error); },
-                onrestored: function () { return _this.load(); }
+                onrestored: function () { return _this.reload(); }
             });
             this.audio = new WebAudioPlayer();
             this.el = mountPoint;
             // this.canvasEl = this.renderer.el;
         }
         Object.defineProperty(Player.prototype, "src", {
-            /** The currently loaded Flipnote source, if there is one. Can be overridden to load another Flipnote */
+            /** The currently loaded Flipnote source, if there is one */
             get: function () {
                 return this._src;
             },
             set: function (source) {
-                this.load(source);
+                throw new Error('Setting a Player source has been deprecated, please use the load() method instead');
             },
             enumerable: false,
             configurable: true
@@ -5798,29 +5832,35 @@ Keep on Flipnoting!
          * Open a Flipnote from a source
          * @category Lifecycle
          */
-        Player.prototype.load = function (source) {
-            if (source === void 0) { source = null; }
+        Player.prototype.load = function (source, getParser, loaders) {
             return __awaiter(this, void 0, void 0, function () {
+                var _a, err, note;
                 var _this = this;
-                return __generator(this, function (_a) {
-                    // close currently open note first
-                    if (this.isNoteLoaded)
-                        this.closeNote();
-                    // keep track of source
-                    this._src = source;
-                    // if no source specified, just reset everything
-                    if (!source)
-                        return [2 /*return*/, this.openNote(this.note)];
-                    // otherwise do a normal load
-                    this.emit(exports.PlayerEvent.LoadStart);
-                    return [2 /*return*/, parseSource(source, this.parserSettings)
-                            .then(function (note) {
-                            _this.openNote(note);
-                        })
-                            .catch(function (err) {
-                            _this.emit(exports.PlayerEvent.Error, err);
-                            throw new Error("Error loading Flipnote: " + err.message);
-                        })];
+                return __generator(this, function (_b) {
+                    switch (_b.label) {
+                        case 0:
+                            // close currently open note first
+                            if (this.isNoteLoaded)
+                                this.closeNote();
+                            // keep track of source
+                            this._src = source;
+                            // if no source specified, just reset everything
+                            if (!source)
+                                return [2 /*return*/, this.openNote(this.note)];
+                            // otherwise do a normal load
+                            this.emit(exports.PlayerEvent.LoadStart);
+                            return [4 /*yield*/, until(function () { return getParser(source, _this.parserSettings, loaders); })];
+                        case 1:
+                            _a = __read.apply(void 0, [_b.sent(), 2]), err = _a[0], note = _a[1];
+                            if (err) {
+                                this.emit(exports.PlayerEvent.Error, err);
+                                throw new Error("Error loading Flipnote: " + err.message);
+                            }
+                            this.lastParser = getParser;
+                            this.lastLoaders = loaders;
+                            this.openNote(note);
+                            return [2 /*return*/];
+                    }
                 });
             });
         };
@@ -5832,8 +5872,8 @@ Keep on Flipnoting!
                 return __generator(this, function (_a) {
                     switch (_a.label) {
                         case 0:
-                            if (!this.note) return [3 /*break*/, 2];
-                            return [4 /*yield*/, this.load(this.note.buffer)];
+                            if (!(this.note && this.lastParser)) return [3 /*break*/, 2];
+                            return [4 /*yield*/, this.load(this.note.buffer, this.lastParser, this.lastLoaders)];
                         case 1: return [2 /*return*/, _a.sent()];
                         case 2: return [2 /*return*/];
                     }
@@ -7158,7 +7198,7 @@ Keep on Flipnoting!
     /**
      * flipnote.js library version (exported as `flipnote.version`). You can find the latest version on the project's [NPM](https://www.npmjs.com/package/flipnote.js) page.
      */
-    var version = "5.7.0"; // replaced by @rollup/plugin-replace; see rollup.config.js
+    var version = "5.8.1"; // replaced by @rollup/plugin-replace; see rollup.config.js
 
     exports.CanvasInterface = CanvasInterface;
     exports.GifImage = GifImage;
@@ -7171,6 +7211,7 @@ Keep on Flipnoting!
     exports.WavAudio = WavAudio;
     exports.WebAudioPlayer = WebAudioPlayer;
     exports.WebglCanvas = WebglCanvas;
+    exports.loadSource = loadSource;
     exports.parseSource = parseSource;
     exports.utils = fsid;
     exports.version = version;

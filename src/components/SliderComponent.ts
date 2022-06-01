@@ -24,6 +24,7 @@ export class SliderComponent extends LitElement {
   static get styles() {
     return css`
       .Slider {
+        touch-action: none;
         padding: 4px 0;
         cursor: pointer;
       }
@@ -50,11 +51,20 @@ export class SliderComponent extends LitElement {
         margin: 0 6px;
       }
 
+      .Slider__levelWrapper {
+        position: absolute;
+        left: 0px;
+        right: 0px;
+        height: 6px;
+        margin: -1px;
+      }
+
       .Slider__level {
         position: absolute;
         width: 100%;
-        height: 6px;
-        margin: -1px;
+        left: 0;
+        height: 8px;
+        /* margin: -1px; */
         border-radius: 8px;
         background: var(--flipnote-player-slider-level, #F36A2D);
       }
@@ -123,48 +133,80 @@ export class SliderComponent extends LitElement {
       'Slider--isActive': this.isActive,
     };
     return html`
-      <div class=${ classMap(rootClasses) } @mousedown=${ this.onSliderInputStart }>
+      <div class=${ classMap(rootClasses) } @touchstart=${ this.onSliderTouchStart } @mousedown=${ this.onSliderMouseStart }>
         <div class="Slider__track">
-          <div class="Slider__level" style=${ styleMap({ [mainAxis]: percent }) }></div>
+          <div class="Slider__levelWrapper">  
+            <div class="Slider__level" style=${ styleMap({ [mainAxis]: percent }) }></div>
+          </div>
           <div class="Slider__handle" style=${ styleMap({ [side]: percent }) }></div>
         </div>
       </div>
     `;
   }
 
-  onSliderInputStart = (event: MouseEvent) => {
+  onSliderMouseStart = (event: MouseEvent) => {
     event.preventDefault();
     this.isActive = true;
-    document.addEventListener('mousemove', this.onSliderInput);
-    document.addEventListener('mouseup', this.onSliderInputEnd);
+    document.addEventListener('mousemove', this.onSliderMouseMove);
+    document.addEventListener('mouseup', this.onSliderMouseEnd);
     this.dispatch('inputstart');
-    this.onSliderInput(event);
+    this.onSliderInput(event.clientX, event.clientY);
   }
 
-  onSliderInputEnd = (event: MouseEvent) => {
+  onSliderMouseEnd = (event: MouseEvent) => {
     event.preventDefault();
-    document.removeEventListener('mousemove', this.onSliderInput);
-    document.removeEventListener('mouseup', this.onSliderInputEnd);
+    document.removeEventListener('mousemove', this.onSliderMouseMove);
+    document.removeEventListener('mouseup', this.onSliderMouseEnd);
     this.dispatch('inputend');
-    this.onSliderInput(event);
+    this.onSliderInput(event.clientX, event.clientY);
     this.isActive = false;
   }
 
-  onSliderInput = (event: MouseEvent) => {
+  onSliderMouseMove = (event: MouseEvent) => {
     event.preventDefault();
+    this.onSliderInput(event.clientX, event.clientY);
+  }
+
+  onSliderTouchStart = (event: TouchEvent) => {
+    const point = event.changedTouches[0];
+    event.preventDefault();
+    this.isActive = true;
+    document.addEventListener('touchmove', this.onSliderTouchMove);
+    document.addEventListener('touchend', this.onSliderTouchEnd);
+    this.dispatch('inputstart');
+    this.onSliderInput(point.clientX, point.clientY);
+  }
+
+  onSliderTouchEnd = (event: TouchEvent) => {
+    const point = event.changedTouches[0];
+    event.preventDefault();
+    document.removeEventListener('touchmove', this.onSliderTouchMove);
+    document.removeEventListener('touchend', this.onSliderTouchEnd);
+    this.dispatch('inputend');
+    this.onSliderInput(point.clientX, point.clientY);
+    this.isActive = false;
+  }
+
+  onSliderTouchMove = (event: TouchEvent) => {
+    const point = event.changedTouches[0];
+    event.preventDefault();
+    this.onSliderInput(point.clientX, point.clientY);
+  }
+
+  onSliderInput = (x: number, y: number) => {
     const rect = this.sliderElement.getBoundingClientRect();
     let value;
     if (this.orientation === 'horizontal') {
       const railCap = rect.height / 2;
       const railLength = rect.width - railCap * 2;
-      const inputPosition = event.clientX - rect.left - railCap;
+      const inputPosition = x - rect.left - railCap;
       const v = inputPosition / railLength;
       value = Math.max(0, Math.min(v, 1));
     }
     else if (this.orientation === 'vertical') {
       const railCap = rect.width / 2;
       const railLength = rect.height - railCap * 2;
-      const inputPosition = event.clientY - rect.top - railCap;
+      const inputPosition = y - rect.top - railCap;
       const v = 1 - inputPosition / railLength; // y is inverted; top is the max point
       value = Math.max(0, Math.min(v, 1));
     }

@@ -1,10 +1,11 @@
-import { Flipnote, FlipnoteFormat, FlipnoteMeta, FlipnoteParserSettings } from '../parsers';
-import { FlipnoteSource, parseSource } from '../parseSource';
+import type { Flipnote, FlipnoteFormat, FlipnoteMeta, FlipnoteParserSettings } from '../parsers';
+import type { FlipnoteSource, FlipnoteSourceParser } from '../parseSource';
+import type { LoaderDefinitionList } from '../loaders';
 import { PlayerEvent, PlayerEventMap, supportedEvents } from './PlayerEvent';
 import { createTimeRanges, padNumber, formatTime } from './playerUtils';
 import { UniversalCanvas } from '../renderers';
 import { WebAudioPlayer } from '../webaudio';
-import { assert, assertRange, assertBrowserEnv } from '../utils';
+import { assert, assertRange, assertBrowserEnv, until } from '../utils';
 
 type PlayerLayerVisibility = Record<number, boolean>;
 
@@ -103,6 +104,10 @@ export class Player {
   wasPlaying: boolean = false;
   /** @internal */
   isSeeking: boolean = false;
+  /** @internal */
+  lastParser: FlipnoteSourceParser = undefined;
+  /** @internal */
+  lastLoaders: LoaderDefinitionList = undefined;
 
   /**
    * Create a new Player instance
@@ -120,19 +125,19 @@ export class Player {
     this.parserSettings = parserSettings;
     this.renderer = new UniversalCanvas(mountPoint, width, height, {
       onlost: () => this.emit(PlayerEvent.Error),
-      onrestored: () => this.load()
+      onrestored: () => this.reload()
     });
     this.audio = new WebAudioPlayer();
     this.el = mountPoint;
     // this.canvasEl = this.renderer.el;
   }
 
-  /** The currently loaded Flipnote source, if there is one. Can be overridden to load another Flipnote */
+  /** The currently loaded Flipnote source, if there is one */
   get src() {
     return this._src;
   }
   set src(source: FlipnoteSource) {
-    this.load(source);
+    throw new Error('Setting a Player source has been deprecated, please use the load() method instead');
   }
 
   /** Indicates whether playback is currently paused */
@@ -256,7 +261,7 @@ export class Player {
    * Open a Flipnote from a source
    * @category Lifecycle
    */
-  async load(source: any = null) {
+  async load(source: any, getParser: FlipnoteSourceParser, loaders?: LoaderDefinitionList) {
     // close currently open note first
     if (this.isNoteLoaded) 
       this.closeNote();
@@ -267,22 +272,25 @@ export class Player {
       return this.openNote(this.note);
     // otherwise do a normal load
     this.emit(PlayerEvent.LoadStart);
-    return parseSource(source, this.parserSettings)
-      .then((note: Flipnote) => {
-        this.openNote(note);
-      })
-      .catch((err: any) => {
-        this.emit(PlayerEvent.Error, err);
-        throw new Error(`Error loading Flipnote: ${ err.message }`);
-      });
+
+    const [err, note] = await until(() => getParser(source, this.parserSettings, loaders));
+
+    if (err) {
+      this.emit(PlayerEvent.Error, err);
+      throw new Error(`Error loading Flipnote: ${ err.message }`);
+    }
+
+    this.lastParser = getParser;
+    this.lastLoaders = loaders;
+    this.openNote(note);
   }
 
   /**
    * Reload the current Flipnote
    */
   async reload() {
-    if (this.note) 
-      return await this.load(this.note.buffer);
+    if (this.note && this.lastParser) 
+      return await this.load(this.note.buffer, this.lastParser, this.lastLoaders);
   }
 
   /**

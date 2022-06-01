@@ -2,7 +2,7 @@
 import { LoaderDefinition } from './LoaderDefinition';
 /**
  * Loader for Buffer objects (Node only)
- * @internal
+ * @category Loader
  */
 declare const nodeBufferLoader: LoaderDefinition<Buffer>;
 export default nodeBufferLoader;

@@ -1,4 +1,4 @@
-import { FlipnoteParserBase } from '../parsers';
+import type { FlipnoteParserBase } from '../parsers';
 import { CanvasInterface } from './CanvasInterface';
 /**
  * Setup options for {@link Html5Canvas}

@@ -22,9 +22,9 @@ export {
 
 export * as utils from './utils/fsid';
 
-export {
-  parseSource
-} from './parseSource';
+export * from './loaders';
+
+export * from './parseSource';
 
 export {
   Player,

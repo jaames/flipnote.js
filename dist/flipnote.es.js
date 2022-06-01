@@ -1,5 +1,5 @@
 /*!!
-flipnote.js v5.7.0
+flipnote.js v5.8.1
 https://flipnote.js.org
 A JavaScript library for parsing, converting, and in-browser playback of the proprietary animation formats used by Nintendo's Flipnote Studio and Flipnote Studio 3D apps.
 2018 - 2022 James Daniel
@@ -462,6 +462,24 @@ async function rsaVerify(key, signature, data) {
 }
 
 /**
+ * Gracefully handles a given Promise factory.
+ * @internal
+ * @example
+ * const [ error, data ] = await until(() => asyncAction())
+ */
+const until = async (promise) => {
+    try {
+        const data = await promise().catch((error) => {
+            throw error;
+        });
+        return [null, data];
+    }
+    catch (error) {
+        return [error, null];
+    }
+};
+
+/**
  * Number of seconds between the UNIX timestamp epoch (jan 1 1970) and the Nintendo timestamp epoch (jan 1 2000)
  * @internal
  */
@@ -478,7 +496,7 @@ function dateFromNintendoTimestamp(timestamp) {
  * @internal
  */
 function timeGetNoteDuration(frameCount, framerate) {
-    // multiply and devide by 100 to get around floating precision issues
+    // multiply and divide by 100 to get around floating precision issues
     return ((frameCount * 100) * (1 / framerate)) / 100;
 }
 
@@ -575,6 +593,7 @@ function getKwzFsidRegion(fsid) {
         }
     }
     switch (fsid.slice(0, 2)) {
+        // note: might be incorrect
         case '00':
             return FlipnoteRegion.JPN;
         case '02':
@@ -2556,7 +2575,7 @@ KwzParser.publicKey = KWZ_PUBLIC_KEY;
 
 /**
  * Loader for web url strings (Browser only)
- * @internal
+ * @category Loader
  */
 const webUrlLoader = {
     matches: function (source) {
@@ -2584,7 +2603,7 @@ const webUrlLoader = {
 
 /**
  * Loader for web url strings (Node only)
- * @internal
+ * @category Loader
  */
 const nodeUrlLoader = {
     matches: function (source) {
@@ -2607,7 +2626,7 @@ const nodeUrlLoader = {
 
 /**
  * Loader for File objects (browser only)
- * @internal
+ * @category Loader
  */
 const fileLoader = {
     matches: function (source) {
@@ -2630,7 +2649,7 @@ const fileLoader = {
 
 /**
  * Loader for Blob objects (browser only)
- * @internal
+ * @category Loader
  */
 const blobLoader = {
     matches: function (source) {
@@ -2649,7 +2668,7 @@ const blobLoader = {
 
 /**
  * Loader for Buffer objects (Node only)
- * @internal
+ * @category Loader
  */
 const nodeBufferLoader = {
     matches: function (source) {
@@ -2662,7 +2681,7 @@ const nodeBufferLoader = {
 
 /**
  * Loader for ArrayBuffer objects
- * @internal
+ * @category Loader
  */
 const arrayBufferLoader = {
     matches: function (source) {
@@ -2673,8 +2692,8 @@ const arrayBufferLoader = {
     }
 };
 
-/** @internal */
-const loaders = [
+/** @category Loaders */
+const DEFAULT_LOADERS = [
     webUrlLoader,
     nodeUrlLoader,
     fileLoader,
@@ -2683,7 +2702,7 @@ const loaders = [
     arrayBufferLoader
 ];
 /** @internal */
-function loadSource(source) {
+function loadSource(source, loaders = DEFAULT_LOADERS) {
     return new Promise((resolve, reject) => {
         for (let i = 0; i < loaders.length; i++) {
             const loader = loaders[i];
@@ -2698,15 +2717,17 @@ function loadSource(source) {
  * Load a Flipnote from a given source, returning a promise with a parser object.
  * It will auto-detect the Flipnote format and return either a {@link PpmParser} or {@link KwzParser} accordingly.
  *
- * @param source - Source to load a Flipnote from. Depending on the operating envionment, this can be:
+ * @param source - Source to load a Flipnote from. Depending on the operating environment, this can be:
  * - A string representing a web URL
  * - An {@link https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/ArrayBuffer | ArrayBuffer}
  * - A {@link https://developer.mozilla.org/en-US/docs/Web/API/File | File} object (Browser only)
  * - A {@link https://nodejs.org/api/buffer.html | Buffer} object (NodeJS only)
+ * You can also pass your own list of loaders to support your own source types.
  * @param parserConfig - Config settings to pass to the parser, see {@link FlipnoteParserSettings}
+ * @param loaders - Optional list of file loaders ({@link LoaderDefinition}) when attempting to load a Flipnote. Loaders are tried in sequence until a matching one is found for the requested input.
  */
-function parseSource(source, parserConfig) {
-    return loadSource(source)
+const parseSource = (source, parserConfig, loaders) => {
+    return loadSource(source, loaders)
         .then((arrayBuffer) => {
         return new Promise((resolve, reject) => {
             // check the buffer's magic to identify which format it uses
@@ -2725,7 +2746,7 @@ function parseSource(source, parserConfig) {
                 reject('Could not identify source as a valid Flipnote file');
         });
     });
-}
+};
 
 /**
  * Player event types
@@ -5301,6 +5322,10 @@ class Player {
         this.wasPlaying = false;
         /** @internal */
         this.isSeeking = false;
+        /** @internal */
+        this.lastParser = undefined;
+        /** @internal */
+        this.lastLoaders = undefined;
         /**
          * Playback animation loop
          * @internal
@@ -5338,18 +5363,18 @@ class Player {
         this.parserSettings = parserSettings;
         this.renderer = new UniversalCanvas(mountPoint, width, height, {
             onlost: () => this.emit(PlayerEvent.Error),
-            onrestored: () => this.load()
+            onrestored: () => this.reload()
         });
         this.audio = new WebAudioPlayer();
         this.el = mountPoint;
         // this.canvasEl = this.renderer.el;
     }
-    /** The currently loaded Flipnote source, if there is one. Can be overridden to load another Flipnote */
+    /** The currently loaded Flipnote source, if there is one */
     get src() {
         return this._src;
     }
     set src(source) {
-        this.load(source);
+        throw new Error('Setting a Player source has been deprecated, please use the load() method instead');
     }
     /** Indicates whether playback is currently paused */
     get paused() {
@@ -5454,7 +5479,7 @@ class Player {
      * Open a Flipnote from a source
      * @category Lifecycle
      */
-    async load(source = null) {
+    async load(source, getParser, loaders) {
         // close currently open note first
         if (this.isNoteLoaded)
             this.closeNote();
@@ -5465,21 +5490,21 @@ class Player {
             return this.openNote(this.note);
         // otherwise do a normal load
         this.emit(PlayerEvent.LoadStart);
-        return parseSource(source, this.parserSettings)
-            .then((note) => {
-            this.openNote(note);
-        })
-            .catch((err) => {
+        const [err, note] = await until(() => getParser(source, this.parserSettings, loaders));
+        if (err) {
             this.emit(PlayerEvent.Error, err);
             throw new Error(`Error loading Flipnote: ${err.message}`);
-        });
+        }
+        this.lastParser = getParser;
+        this.lastLoaders = loaders;
+        this.openNote(note);
     }
     /**
      * Reload the current Flipnote
      */
     async reload() {
-        if (this.note)
-            return await this.load(this.note.buffer);
+        if (this.note && this.lastParser)
+            return await this.load(this.note.buffer, this.lastParser, this.lastLoaders);
     }
     /**
      * Reload the current Flipnote
@@ -6710,6 +6735,6 @@ class WavAudio extends EncoderBase {
 /**
  * flipnote.js library version (exported as `flipnote.version`). You can find the latest version on the project's [NPM](https://www.npmjs.com/package/flipnote.js) page.
  */
-const version = "5.7.0"; // replaced by @rollup/plugin-replace; see rollup.config.js
+const version = "5.8.1"; // replaced by @rollup/plugin-replace; see rollup.config.js
 
-export { CanvasInterface, FlipnoteAudioTrack, FlipnoteFormat, FlipnoteRegion, FlipnoteSoundEffectTrack, GifImage, Html5Canvas, KwzParser, Player, PlayerEvent, PlayerMixin, PpmParser, UniversalCanvas, WavAudio, WebAudioPlayer, WebglCanvas, parseSource, fsid as utils, version };
+export { CanvasInterface, FlipnoteAudioTrack, FlipnoteFormat, FlipnoteRegion, FlipnoteSoundEffectTrack, GifImage, Html5Canvas, KwzParser, Player, PlayerEvent, PlayerMixin, PpmParser, UniversalCanvas, WavAudio, WebAudioPlayer, WebglCanvas, loadSource, parseSource, fsid as utils, version };

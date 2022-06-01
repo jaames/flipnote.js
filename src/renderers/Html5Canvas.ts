@@ -1,4 +1,4 @@
-import { FlipnoteParserBase } from '../parsers';
+import type { FlipnoteParserBase } from '../parsers';
 import { assert, assertBrowserEnv, isBrowser } from '../utils';
 import { CanvasInterface } from './CanvasInterface';
 

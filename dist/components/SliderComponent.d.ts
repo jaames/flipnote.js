@@ -12,9 +12,13 @@ export declare class SliderComponent extends LitElement {
     private isActive;
     private sliderElement;
     render(): import("lit-element").TemplateResult;
-    onSliderInputStart: (event: MouseEvent) => void;
-    onSliderInputEnd: (event: MouseEvent) => void;
-    onSliderInput: (event: MouseEvent) => void;
+    onSliderMouseStart: (event: MouseEvent) => void;
+    onSliderMouseEnd: (event: MouseEvent) => void;
+    onSliderMouseMove: (event: MouseEvent) => void;
+    onSliderTouchStart: (event: TouchEvent) => void;
+    onSliderTouchEnd: (event: TouchEvent) => void;
+    onSliderTouchMove: (event: TouchEvent) => void;
+    onSliderInput: (x: number, y: number) => void;
     private dispatch;
 }
 export {};

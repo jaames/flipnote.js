@@ -5,6 +5,7 @@ export * from './nextPaint';
 export * from './rsa';
 export * from './env';
 export * from './assert';
+export * from './promises';
 export * from './datetime';
 export * from './fsid';
 export * from './saveData';

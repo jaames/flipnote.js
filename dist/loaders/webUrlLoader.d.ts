@@ -1,7 +1,7 @@
 import { LoaderDefinition } from './LoaderDefinition';
 /**
  * Loader for web url strings (Browser only)
- * @internal
+ * @category Loader
  */
 declare const webUrlLoader: LoaderDefinition<string>;
 export default webUrlLoader;

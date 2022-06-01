@@ -1,5 +1,5 @@
 /*!!
-flipnote.js v5.7.0
+flipnote.js v5.8.1
 https://flipnote.js.org
 A JavaScript library for parsing, converting, and in-browser playback of the proprietary animation formats used by Nintendo's Flipnote Studio and Flipnote Studio 3D apps.
 2018 - 2022 James Daniel
@@ -363,7 +363,7 @@ function dateFromNintendoTimestamp(timestamp) {
  * @internal
  */
 function timeGetNoteDuration(frameCount, framerate) {
-    // multiply and devide by 100 to get around floating precision issues
+    // multiply and divide by 100 to get around floating precision issues
     return ((frameCount * 100) * (1 / framerate)) / 100;
 }
 
@@ -412,6 +412,7 @@ function getKwzFsidRegion(fsid) {
         }
     }
     switch (fsid.slice(0, 2)) {
+        // note: might be incorrect
         case '00':
             return FlipnoteRegion.JPN;
         case '02':

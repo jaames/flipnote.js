@@ -4,7 +4,7 @@ import { LoaderDefinition } from './LoaderDefinition';
 
 /** 
  * Loader for web url strings (Node only)
- * @internal
+ * @category Loader
  */
 const nodeUrlLoader: LoaderDefinition<string> = {
 

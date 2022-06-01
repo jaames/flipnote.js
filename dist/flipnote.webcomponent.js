@@ -1,5 +1,5 @@
 /*!!
-flipnote.js v5.7.0
+flipnote.js v5.8.1
 https://flipnote.js.org
 A JavaScript library for parsing, converting, and in-browser playback of the proprietary animation formats used by Nintendo's Flipnote Studio and Flipnote Studio 3D apps.
 2018 - 2022 James Daniel
@@ -478,6 +478,24 @@ Keep on Flipnoting!
   }
 
   /**
+   * Gracefully handles a given Promise factory.
+   * @internal
+   * @example
+   * const [ error, data ] = await until(() => asyncAction())
+   */
+  const until = async (promise) => {
+      try {
+          const data = await promise().catch((error) => {
+              throw error;
+          });
+          return [null, data];
+      }
+      catch (error) {
+          return [error, null];
+      }
+  };
+
+  /**
    * Number of seconds between the UNIX timestamp epoch (jan 1 1970) and the Nintendo timestamp epoch (jan 1 2000)
    * @internal
    */
@@ -494,7 +512,7 @@ Keep on Flipnoting!
    * @internal
    */
   function timeGetNoteDuration(frameCount, framerate) {
-      // multiply and devide by 100 to get around floating precision issues
+      // multiply and divide by 100 to get around floating precision issues
       return ((frameCount * 100) * (1 / framerate)) / 100;
   }
 
@@ -591,6 +609,7 @@ Keep on Flipnoting!
           }
       }
       switch (fsid.slice(0, 2)) {
+          // note: might be incorrect
           case '00':
               return exports.FlipnoteRegion.JPN;
           case '02':
@@ -2572,7 +2591,7 @@ kQIDAQAB
 
   /**
    * Loader for web url strings (Browser only)
-   * @internal
+   * @category Loader
    */
   const webUrlLoader = {
       matches: function (source) {
@@ -2600,7 +2619,7 @@ kQIDAQAB
 
   /**
    * Loader for web url strings (Node only)
-   * @internal
+   * @category Loader
    */
   const nodeUrlLoader = {
       matches: function (source) {
@@ -2623,7 +2642,7 @@ kQIDAQAB
 
   /**
    * Loader for File objects (browser only)
-   * @internal
+   * @category Loader
    */
   const fileLoader = {
       matches: function (source) {
@@ -2646,7 +2665,7 @@ kQIDAQAB
 
   /**
    * Loader for Blob objects (browser only)
-   * @internal
+   * @category Loader
    */
   const blobLoader = {
       matches: function (source) {
@@ -2665,7 +2684,7 @@ kQIDAQAB
 
   /**
    * Loader for Buffer objects (Node only)
-   * @internal
+   * @category Loader
    */
   const nodeBufferLoader = {
       matches: function (source) {
@@ -2678,7 +2697,7 @@ kQIDAQAB
 
   /**
    * Loader for ArrayBuffer objects
-   * @internal
+   * @category Loader
    */
   const arrayBufferLoader = {
       matches: function (source) {
@@ -2689,8 +2708,8 @@ kQIDAQAB
       }
   };
 
-  /** @internal */
-  const loaders = [
+  /** @category Loaders */
+  const DEFAULT_LOADERS = [
       webUrlLoader,
       nodeUrlLoader,
       fileLoader,
@@ -2699,7 +2718,7 @@ kQIDAQAB
       arrayBufferLoader
   ];
   /** @internal */
-  function loadSource(source) {
+  function loadSource(source, loaders = DEFAULT_LOADERS) {
       return new Promise((resolve, reject) => {
           for (let i = 0; i < loaders.length; i++) {
               const loader = loaders[i];
@@ -2714,15 +2733,17 @@ kQIDAQAB
    * Load a Flipnote from a given source, returning a promise with a parser object.
    * It will auto-detect the Flipnote format and return either a {@link PpmParser} or {@link KwzParser} accordingly.
    *
-   * @param source - Source to load a Flipnote from. Depending on the operating envionment, this can be:
+   * @param source - Source to load a Flipnote from. Depending on the operating environment, this can be:
    * - A string representing a web URL
    * - An {@link https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/ArrayBuffer | ArrayBuffer}
    * - A {@link https://developer.mozilla.org/en-US/docs/Web/API/File | File} object (Browser only)
    * - A {@link https://nodejs.org/api/buffer.html | Buffer} object (NodeJS only)
+   * You can also pass your own list of loaders to support your own source types.
    * @param parserConfig - Config settings to pass to the parser, see {@link FlipnoteParserSettings}
+   * @param loaders - Optional list of file loaders ({@link LoaderDefinition}) when attempting to load a Flipnote. Loaders are tried in sequence until a matching one is found for the requested input.
    */
-  function parseSource(source, parserConfig) {
-      return loadSource(source)
+  const parseSource = (source, parserConfig, loaders) => {
+      return loadSource(source, loaders)
           .then((arrayBuffer) => {
           return new Promise((resolve, reject) => {
               // check the buffer's magic to identify which format it uses
@@ -2741,7 +2762,7 @@ kQIDAQAB
                   reject('Could not identify source as a valid Flipnote file');
           });
       });
-  }
+  };
 
   /**
    * Player event types
@@ -5315,6 +5336,10 @@ kQIDAQAB
           this.wasPlaying = false;
           /** @internal */
           this.isSeeking = false;
+          /** @internal */
+          this.lastParser = undefined;
+          /** @internal */
+          this.lastLoaders = undefined;
           /**
            * Playback animation loop
            * @internal
@@ -5352,18 +5377,18 @@ kQIDAQAB
           this.parserSettings = parserSettings;
           this.renderer = new UniversalCanvas(mountPoint, width, height, {
               onlost: () => this.emit(exports.PlayerEvent.Error),
-              onrestored: () => this.load()
+              onrestored: () => this.reload()
           });
           this.audio = new WebAudioPlayer();
           this.el = mountPoint;
           // this.canvasEl = this.renderer.el;
       }
-      /** The currently loaded Flipnote source, if there is one. Can be overridden to load another Flipnote */
+      /** The currently loaded Flipnote source, if there is one */
       get src() {
           return this._src;
       }
       set src(source) {
-          this.load(source);
+          throw new Error('Setting a Player source has been deprecated, please use the load() method instead');
       }
       /** Indicates whether playback is currently paused */
       get paused() {
@@ -5468,7 +5493,7 @@ kQIDAQAB
        * Open a Flipnote from a source
        * @category Lifecycle
        */
-      async load(source = null) {
+      async load(source, getParser, loaders) {
           // close currently open note first
           if (this.isNoteLoaded)
               this.closeNote();
@@ -5479,21 +5504,21 @@ kQIDAQAB
               return this.openNote(this.note);
           // otherwise do a normal load
           this.emit(exports.PlayerEvent.LoadStart);
-          return parseSource(source, this.parserSettings)
-              .then((note) => {
-              this.openNote(note);
-          })
-              .catch((err) => {
+          const [err, note] = await until(() => getParser(source, this.parserSettings, loaders));
+          if (err) {
               this.emit(exports.PlayerEvent.Error, err);
               throw new Error(`Error loading Flipnote: ${err.message}`);
-          });
+          }
+          this.lastParser = getParser;
+          this.lastLoaders = loaders;
+          this.openNote(note);
       }
       /**
        * Reload the current Flipnote
        */
       async reload() {
-          if (this.note)
-              return await this.load(this.note.buffer);
+          if (this.note && this.lastParser)
+              return await this.load(this.note.buffer, this.lastParser, this.lastLoaders);
       }
       /**
        * Reload the current Flipnote
@@ -6709,7 +6734,7 @@ kQIDAQAB
   /**
    * flipnote.js library version (exported as `flipnote.version`). You can find the latest version on the project's [NPM](https://www.npmjs.com/package/flipnote.js) page.
    */
-  const version = "5.7.0"; // replaced by @rollup/plugin-replace; see rollup.config.js
+  const version = "5.8.1"; // replaced by @rollup/plugin-replace; see rollup.config.js
 
   /*! *****************************************************************************
   Copyright (c) Microsoft Corporation.
@@ -9743,7 +9768,7 @@ kQIDAQAB
       set src(src) {
           const oldValue = this._playerSrc;
           if (this._isPlayerAvailable)
-              this.player.src = src;
+              this.player.load(src, parseSource);
           this._playerSrc = src;
           this.requestUpdate('src', oldValue);
       }
@@ -9876,7 +9901,7 @@ kQIDAQAB
               this.dispatchEvent(new Event(eventName));
           });
           if (this._playerSrc)
-              player.load(this._playerSrc);
+              player.load(this._playerSrc, parseSource);
           this._isPlayerAvailable = true;
       }
       // TODO: get this to actualy work so that prop updates update parser settings
@@ -10185,37 +10210,63 @@ kQIDAQAB
           this.value = 0;
           this.orientation = 'horizontal'; // switch to horizontal
           this.isActive = false;
-          this.onSliderInputStart = (event) => {
+          this.onSliderMouseStart = (event) => {
               event.preventDefault();
               this.isActive = true;
-              document.addEventListener('mousemove', this.onSliderInput);
-              document.addEventListener('mouseup', this.onSliderInputEnd);
+              document.addEventListener('mousemove', this.onSliderMouseMove);
+              document.addEventListener('mouseup', this.onSliderMouseEnd);
               this.dispatch('inputstart');
-              this.onSliderInput(event);
+              this.onSliderInput(event.clientX, event.clientY);
           };
-          this.onSliderInputEnd = (event) => {
+          this.onSliderMouseEnd = (event) => {
               event.preventDefault();
-              document.removeEventListener('mousemove', this.onSliderInput);
-              document.removeEventListener('mouseup', this.onSliderInputEnd);
+              document.removeEventListener('mousemove', this.onSliderMouseMove);
+              document.removeEventListener('mouseup', this.onSliderMouseEnd);
               this.dispatch('inputend');
-              this.onSliderInput(event);
+              this.onSliderInput(event.clientX, event.clientY);
               this.isActive = false;
           };
-          this.onSliderInput = (event) => {
+          this.onSliderMouseMove = (event) => {
               event.preventDefault();
+              this.onSliderInput(event.clientX, event.clientY);
+          };
+          this.onSliderTouchStart = (event) => {
+              const point = event.changedTouches[0];
+              event.preventDefault();
+              this.isActive = true;
+              document.addEventListener('touchmove', this.onSliderTouchMove);
+              document.addEventListener('touchend', this.onSliderTouchEnd);
+              this.dispatch('inputstart');
+              this.onSliderInput(point.clientX, point.clientY);
+          };
+          this.onSliderTouchEnd = (event) => {
+              const point = event.changedTouches[0];
+              event.preventDefault();
+              document.removeEventListener('touchmove', this.onSliderTouchMove);
+              document.removeEventListener('touchend', this.onSliderTouchEnd);
+              this.dispatch('inputend');
+              this.onSliderInput(point.clientX, point.clientY);
+              this.isActive = false;
+          };
+          this.onSliderTouchMove = (event) => {
+              const point = event.changedTouches[0];
+              event.preventDefault();
+              this.onSliderInput(point.clientX, point.clientY);
+          };
+          this.onSliderInput = (x, y) => {
               const rect = this.sliderElement.getBoundingClientRect();
               let value;
               if (this.orientation === 'horizontal') {
                   const railCap = rect.height / 2;
                   const railLength = rect.width - railCap * 2;
-                  const inputPosition = event.clientX - rect.left - railCap;
+                  const inputPosition = x - rect.left - railCap;
                   const v = inputPosition / railLength;
                   value = Math.max(0, Math.min(v, 1));
               }
               else if (this.orientation === 'vertical') {
                   const railCap = rect.width / 2;
                   const railLength = rect.height - railCap * 2;
-                  const inputPosition = event.clientY - rect.top - railCap;
+                  const inputPosition = y - rect.top - railCap;
                   const v = 1 - inputPosition / railLength; // y is inverted; top is the max point
                   value = Math.max(0, Math.min(v, 1));
               }
@@ -10226,6 +10277,7 @@ kQIDAQAB
       static get styles() {
           return css `
       .Slider {
+        touch-action: none;
         padding: 4px 0;
         cursor: pointer;
       }
@@ -10252,11 +10304,20 @@ kQIDAQAB
         margin: 0 6px;
       }
 
+      .Slider__levelWrapper {
+        position: absolute;
+        left: 0px;
+        right: 0px;
+        height: 6px;
+        margin: -1px;
+      }
+
       .Slider__level {
         position: absolute;
         width: 100%;
-        height: 6px;
-        margin: -1px;
+        left: 0;
+        height: 8px;
+        /* margin: -1px; */
         border-radius: 8px;
         background: var(--flipnote-player-slider-level, #F36A2D);
       }
@@ -10312,9 +10373,11 @@ kQIDAQAB
               'Slider--isActive': this.isActive,
           };
           return html `
-      <div class=${classMap(rootClasses)} @mousedown=${this.onSliderInputStart}>
+      <div class=${classMap(rootClasses)} @touchstart=${this.onSliderTouchStart} @mousedown=${this.onSliderMouseStart}>
         <div class="Slider__track">
-          <div class="Slider__level" style=${styleMap({ [mainAxis]: percent })}></div>
+          <div class="Slider__levelWrapper">  
+            <div class="Slider__level" style=${styleMap({ [mainAxis]: percent })}></div>
+          </div>
           <div class="Slider__handle" style=${styleMap({ [side]: percent })}></div>
         </div>
       </div>
@@ -10599,6 +10662,7 @@ kQIDAQAB
   exports.WavAudio = WavAudio;
   exports.WebAudioPlayer = WebAudioPlayer;
   exports.WebglCanvas = WebglCanvas;
+  exports.loadSource = loadSource;
   exports.parseSource = parseSource;
   exports.utils = fsid;
   exports.version = version;

@@ -1,5 +1,6 @@
-import { Flipnote, FlipnoteFormat, FlipnoteMeta, FlipnoteParserSettings } from '../parsers';
-import { FlipnoteSource } from '../parseSource';
+import type { Flipnote, FlipnoteFormat, FlipnoteMeta, FlipnoteParserSettings } from '../parsers';
+import type { FlipnoteSource, FlipnoteSourceParser } from '../parseSource';
+import type { LoaderDefinitionList } from '../loaders';
 import { PlayerEvent, PlayerEventMap } from './PlayerEvent';
 import { UniversalCanvas } from '../renderers';
 import { WebAudioPlayer } from '../webaudio';
@@ -97,6 +98,10 @@ export declare class Player {
     wasPlaying: boolean;
     /** @internal */
     isSeeking: boolean;
+    /** @internal */
+    lastParser: FlipnoteSourceParser;
+    /** @internal */
+    lastLoaders: LoaderDefinitionList;
     /**
      * Create a new Player instance
      *
@@ -107,7 +112,7 @@ export declare class Player {
      * The ratio between `width` and `height` should be 3:4 for best results
      */
     constructor(parent: string | Element, width: number, height: number, parserSettings?: FlipnoteParserSettings);
-    /** The currently loaded Flipnote source, if there is one. Can be overridden to load another Flipnote */
+    /** The currently loaded Flipnote source, if there is one */
     get src(): FlipnoteSource;
     set src(source: FlipnoteSource);
     /** Indicates whether playback is currently paused */
@@ -166,7 +171,7 @@ export declare class Player {
      * Open a Flipnote from a source
      * @category Lifecycle
      */
-    load(source?: any): Promise<void>;
+    load(source: any, getParser: FlipnoteSourceParser, loaders?: LoaderDefinitionList): Promise<void>;
     /**
      * Reload the current Flipnote
      */

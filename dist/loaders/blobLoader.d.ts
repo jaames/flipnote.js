@@ -1,7 +1,7 @@
 import { LoaderDefinition } from './LoaderDefinition';
 /**
  * Loader for Blob objects (browser only)
- * @internal
+ * @category Loader
  */
 declare const blobLoader: LoaderDefinition<Blob>;
 export default blobLoader;

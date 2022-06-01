@@ -12,6 +12,7 @@ import {
 } from 'lit-element';
 
 import { Player, PlayerEvent } from '../player';
+import { parseSource } from '../parseSource';
 import { PlayerMixin } from './PlayerMixin';
 import { nextPaint } from '../utils';
 
@@ -215,7 +216,7 @@ export class PlayerComponent extends PlayerMixin(LitElement) {
   set src(src: any) {
     const oldValue = this._playerSrc;
     if (this._isPlayerAvailable)
-      this.player.src = src;
+      this.player.load(src, parseSource)
     this._playerSrc = src;
     this.requestUpdate('src', oldValue);
   }
@@ -395,7 +396,7 @@ export class PlayerComponent extends PlayerMixin(LitElement) {
       this.dispatchEvent(new Event(eventName));
     });
     if (this._playerSrc)
-      player.load(this._playerSrc);
+      player.load(this._playerSrc, parseSource);
     this._isPlayerAvailable = true;
   }
 

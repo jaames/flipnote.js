@@ -99,6 +99,7 @@ export function getKwzFsidRegion(fsid: string): FlipnoteRegion {
     }
   }
   switch (fsid.slice(0, 2)) {
+    // note: might be incorrect
     case '00':
       return FlipnoteRegion.JPN;
     case '02':
