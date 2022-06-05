@@ -134,7 +134,7 @@ declare function dynamicRequire(nodeModule: NodeModule, p: string): any;
  * Safely get global scope object
  * @internal
  */
-declare function getGlobalObject(): Window | NodeJS.Global | {};
+declare function getGlobalObject(): Window | typeof globalThis | {};
 /**
  * Utils to find out information about the current code execution environment
  */

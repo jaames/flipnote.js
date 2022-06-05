@@ -22,7 +22,7 @@ export function dynamicRequire(nodeModule: NodeModule, p: string) {
  * Safely get global scope object
  * @internal
  */
-export function getGlobalObject(): Window | NodeJS.Global | {} {
+export function getGlobalObject(): Window | typeof globalThis | {} {
   return isNode
     ? global
     : typeof window !== 'undefined'

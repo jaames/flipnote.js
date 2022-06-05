@@ -416,7 +416,7 @@ export class WebglCanvas implements CanvasInterface {
     this.paletteBuffer = null;
     this.frameBuffer = null;
     this.frameBufferBytes = null;
-    if (canvas && canvas.parentElement) { 
+    if (canvas && canvas.parentElement) {
       // shrink the canvas to reduce memory usage until it is garbage collected
       canvas.width = 1;
       canvas.height = 1;

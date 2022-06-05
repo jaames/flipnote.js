@@ -594,7 +594,7 @@ interface Html5CanvasOptions {
 declare type UniversalCanvasOptions = WebglCanvasOptions & Html5CanvasOptions;
 declare class UniversalCanvas implements CanvasInterface {
     /** */
-    renderer: CanvasInterface;
+    subRenderer: CanvasInterface;
     /** */
     note: FlipnoteParserBase;
     /** View width (CSS pixels) */

@@ -1,5 +1,5 @@
 /*!!
-flipnote.js v5.8.3
+flipnote.js v5.8.4
 https://flipnote.js.org
 A JavaScript library for parsing, converting, and in-browser playback of the proprietary animation formats used by Nintendo's Flipnote Studio and Flipnote Studio 3D apps.
 2018 - 2022 James Daniel
@@ -4988,7 +4988,7 @@ class UniversalCanvas {
         this.parent = parent;
         this.options = options;
         try {
-            this.renderer = new WebglCanvas(parent, width, height, {
+            this.subRenderer = new WebglCanvas(parent, width, height, {
                 ...options,
                 // attempt to switch renderer
                 onlost: () => {
@@ -5010,14 +5010,16 @@ class UniversalCanvas {
         const renderer = new Html5Canvas(this.parent, this.width, this.height, this.options);
         if (this.note) {
             renderer.setNote(this.note);
-            renderer.prevFrameIndex = (_a = this.renderer) === null || _a === void 0 ? void 0 : _a.prevFrameIndex;
+            renderer.prevFrameIndex = (_a = this.subRenderer) === null || _a === void 0 ? void 0 : _a.prevFrameIndex;
             renderer.forceUpdate();
         }
+        if (this.subRenderer)
+            this.subRenderer.destroy();
         this.isHtml5 = true;
-        this.renderer = renderer;
+        this.subRenderer = renderer;
     }
     setCanvasSize(width, height) {
-        const renderer = this.renderer;
+        const renderer = this.subRenderer;
         renderer.setCanvasSize(width, height);
         this.width = width;
         this.width = height;
@@ -5026,29 +5028,29 @@ class UniversalCanvas {
     }
     setNote(note) {
         this.note = note;
-        this.renderer.setNote(note);
+        this.subRenderer.setNote(note);
         this.prevFrameIndex = undefined;
-        this.srcWidth = this.renderer.srcWidth;
-        this.srcHeight = this.renderer.srcHeight;
+        this.srcWidth = this.subRenderer.srcWidth;
+        this.srcHeight = this.subRenderer.srcHeight;
     }
     clear(color) {
-        this.renderer.clear(color);
+        this.subRenderer.clear(color);
     }
     drawFrame(frameIndex) {
-        this.renderer.drawFrame(frameIndex);
+        this.subRenderer.drawFrame(frameIndex);
         this.prevFrameIndex = frameIndex;
     }
     forceUpdate() {
-        this.renderer.forceUpdate();
+        this.subRenderer.forceUpdate();
     }
     getDataUrl(type, quality) {
-        return this.renderer.getDataUrl();
+        return this.subRenderer.getDataUrl();
     }
     async getBlob(type, quality) {
-        return this.renderer.getBlob();
+        return this.subRenderer.getBlob();
     }
     destroy() {
-        this.renderer.destroy();
+        this.subRenderer.destroy();
         this.note = null;
     }
 }
@@ -6735,6 +6737,6 @@ class WavAudio extends EncoderBase {
 /**
  * flipnote.js library version (exported as `flipnote.version`). You can find the latest version on the project's [NPM](https://www.npmjs.com/package/flipnote.js) page.
  */
-const version = "5.8.3"; // replaced by @rollup/plugin-replace; see rollup.config.js
+const version = "5.8.4"; // replaced by @rollup/plugin-replace; see rollup.config.js
 
 export { CanvasInterface, FlipnoteAudioTrack, FlipnoteFormat, FlipnoteRegion, FlipnoteSoundEffectTrack, GifImage, Html5Canvas, KwzParser, Player, PlayerEvent, PlayerMixin, PpmParser, UniversalCanvas, WavAudio, WebAudioPlayer, WebglCanvas, loadSource, parseSource, fsid as utils, version };

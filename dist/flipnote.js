@@ -1,5 +1,5 @@
 /*!!
-flipnote.js v5.8.3
+flipnote.js v5.8.4
 https://flipnote.js.org
 A JavaScript library for parsing, converting, and in-browser playback of the proprietary animation formats used by Nintendo's Flipnote Studio and Flipnote Studio 3D apps.
 2018 - 2022 James Daniel
@@ -5248,7 +5248,7 @@ Keep on Flipnoting!
             this.parent = parent;
             this.options = options;
             try {
-                this.renderer = new WebglCanvas(parent, width, height, __assign(__assign({}, options), { 
+                this.subRenderer = new WebglCanvas(parent, width, height, __assign(__assign({}, options), { 
                     // attempt to switch renderer
                     onlost: function () {
                         console.warn('WebGL failed, attempting HTML5 fallback');
@@ -5268,14 +5268,16 @@ Keep on Flipnoting!
             var renderer = new Html5Canvas(this.parent, this.width, this.height, this.options);
             if (this.note) {
                 renderer.setNote(this.note);
-                renderer.prevFrameIndex = (_a = this.renderer) === null || _a === void 0 ? void 0 : _a.prevFrameIndex;
+                renderer.prevFrameIndex = (_a = this.subRenderer) === null || _a === void 0 ? void 0 : _a.prevFrameIndex;
                 renderer.forceUpdate();
             }
+            if (this.subRenderer)
+                this.subRenderer.destroy();
             this.isHtml5 = true;
-            this.renderer = renderer;
+            this.subRenderer = renderer;
         };
         UniversalCanvas.prototype.setCanvasSize = function (width, height) {
-            var renderer = this.renderer;
+            var renderer = this.subRenderer;
             renderer.setCanvasSize(width, height);
             this.width = width;
             this.width = height;
@@ -5284,33 +5286,33 @@ Keep on Flipnoting!
         };
         UniversalCanvas.prototype.setNote = function (note) {
             this.note = note;
-            this.renderer.setNote(note);
+            this.subRenderer.setNote(note);
             this.prevFrameIndex = undefined;
-            this.srcWidth = this.renderer.srcWidth;
-            this.srcHeight = this.renderer.srcHeight;
+            this.srcWidth = this.subRenderer.srcWidth;
+            this.srcHeight = this.subRenderer.srcHeight;
         };
         UniversalCanvas.prototype.clear = function (color) {
-            this.renderer.clear(color);
+            this.subRenderer.clear(color);
         };
         UniversalCanvas.prototype.drawFrame = function (frameIndex) {
-            this.renderer.drawFrame(frameIndex);
+            this.subRenderer.drawFrame(frameIndex);
             this.prevFrameIndex = frameIndex;
         };
         UniversalCanvas.prototype.forceUpdate = function () {
-            this.renderer.forceUpdate();
+            this.subRenderer.forceUpdate();
         };
         UniversalCanvas.prototype.getDataUrl = function (type, quality) {
-            return this.renderer.getDataUrl();
+            return this.subRenderer.getDataUrl();
         };
         UniversalCanvas.prototype.getBlob = function (type, quality) {
             return __awaiter(this, void 0, void 0, function () {
                 return __generator(this, function (_a) {
-                    return [2 /*return*/, this.renderer.getBlob()];
+                    return [2 /*return*/, this.subRenderer.getBlob()];
                 });
             });
         };
         UniversalCanvas.prototype.destroy = function () {
-            this.renderer.destroy();
+            this.subRenderer.destroy();
             this.note = null;
         };
         return UniversalCanvas;
@@ -7198,7 +7200,7 @@ Keep on Flipnoting!
     /**
      * flipnote.js library version (exported as `flipnote.version`). You can find the latest version on the project's [NPM](https://www.npmjs.com/package/flipnote.js) page.
      */
-    var version = "5.8.3"; // replaced by @rollup/plugin-replace; see rollup.config.js
+    var version = "5.8.4"; // replaced by @rollup/plugin-replace; see rollup.config.js
 
     exports.CanvasInterface = CanvasInterface;
     exports.GifImage = GifImage;

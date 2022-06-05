@@ -8,7 +8,7 @@ export type UniversalCanvasOptions = WebglCanvasOptions & Html5CanvasOptions;
 export class UniversalCanvas implements CanvasInterface {
 
   /** */
-  public renderer: CanvasInterface;
+  public subRenderer: CanvasInterface;
   /** */
   public note: FlipnoteParserBase;
   /** View width (CSS pixels) */
@@ -41,7 +41,7 @@ export class UniversalCanvas implements CanvasInterface {
     this.parent = parent;
     this.options = options;
     try {
-      this.renderer = new WebglCanvas(parent, width, height, {
+      this.subRenderer = new WebglCanvas(parent, width, height, {
         ...options,
         // attempt to switch renderer
         onlost: () => {
@@ -63,15 +63,17 @@ export class UniversalCanvas implements CanvasInterface {
     const renderer = new Html5Canvas(this.parent, this.width, this.height, this.options);
     if (this.note) {
       renderer.setNote(this.note);
-      renderer.prevFrameIndex = this.renderer?.prevFrameIndex;
+      renderer.prevFrameIndex = this.subRenderer?.prevFrameIndex;
       renderer.forceUpdate();
     }
+    if (this.subRenderer)
+      this.subRenderer.destroy();
     this.isHtml5 = true;
-    this.renderer = renderer;
+    this.subRenderer = renderer;
   }
 
   public setCanvasSize(width: number, height: number) {
-    const renderer = this.renderer;
+    const renderer = this.subRenderer;
     renderer.setCanvasSize(width, height);
     this.width = width;
     this.width = height;
@@ -81,35 +83,35 @@ export class UniversalCanvas implements CanvasInterface {
 
   public setNote(note: FlipnoteParserBase) {
     this.note = note;
-    this.renderer.setNote(note);
+    this.subRenderer.setNote(note);
     this.prevFrameIndex = undefined;
-    this.srcWidth = this.renderer.srcWidth;
-    this.srcHeight = this.renderer.srcHeight;
+    this.srcWidth = this.subRenderer.srcWidth;
+    this.srcHeight = this.subRenderer.srcHeight;
   }
 
   public clear(color?: [number, number, number, number]) {
-    this.renderer.clear(color);
+    this.subRenderer.clear(color);
   }
 
   public drawFrame(frameIndex: number) {
-    this.renderer.drawFrame(frameIndex);
+    this.subRenderer.drawFrame(frameIndex);
     this.prevFrameIndex = frameIndex;
   }
 
   public forceUpdate() {
-    this.renderer.forceUpdate();
+    this.subRenderer.forceUpdate();
   }
 
   public getDataUrl(type?: string, quality?: any) {
-    return this.renderer.getDataUrl();
+    return this.subRenderer.getDataUrl();
   }
 
   async getBlob(type?: string, quality?: any) {
-    return this.renderer.getBlob();
+    return this.subRenderer.getBlob();
   }
 
   public destroy() {
-    this.renderer.destroy();
+    this.subRenderer.destroy();
     this.note = null;
   }
 
