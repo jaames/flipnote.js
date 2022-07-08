@@ -1,5 +1,5 @@
 /*!!
-flipnote.js v5.8.4
+flipnote.js v5.8.5
 https://flipnote.js.org
 A JavaScript library for parsing, converting, and in-browser playback of the proprietary animation formats used by Nintendo's Flipnote Studio and Flipnote Studio 3D apps.
 2018 - 2022 James Daniel

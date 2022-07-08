@@ -1,5 +1,5 @@
 /*!!
-flipnote.js v5.8.4
+flipnote.js v5.8.5
 https://flipnote.js.org
 A JavaScript library for parsing, converting, and in-browser playback of the proprietary animation formats used by Nintendo's Flipnote Studio and Flipnote Studio 3D apps.
 2018 - 2022 James Daniel
@@ -559,12 +559,21 @@ const REGEX_KWZ_FSID = /^[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{6}$/;
  */
 const REGEX_KWZ_DSI_LIBRARY_FSID = /^(00|10|12|14)[0-9a-f]{2}-[0-9a-f]{4}-[0-9a-f]{3}0-[0-9a-f]{4}[0159]{1}[0-9a-f]{1}$/;
 /**
+ * @internal
+ */
+const PPM_FSID_SPECIAL_CASE = [
+    '01FACA7A4367FC5F', '03D6E959E2F9A42D',
+    '03F80445160587FA', '04068426E1008915',
+    '092A3EC8199FD5D5', '0B8D56BA1BD441B8',
+    '0E61C75C9B5AD90B', '14E494E35A443235'
+];
+/**
  * Indicates whether the input is a valid Flipnote Studio user ID
  */
 function isPpmFsid(fsid) {
     // The only known exception to the FSID format is the one Nintendo used for their event notes (mario, zelda 25th, etc)
     // This is likely a goof on their part
-    return fsid === '14E494E35A443235' || REGEX_PPM_FSID.test(fsid);
+    return PPM_FSID_SPECIAL_CASE.includes(fsid) || REGEX_PPM_FSID.test(fsid);
 }
 /**
  * Indicates whether the input is a valid Flipnote Studio 3D user ID
@@ -576,7 +585,7 @@ function isKwzFsid(fsid) {
  * Indicates whether the input is a valid DSi Library user ID
  */
 function isKwzDsiLibraryFsid(fsid) {
-    // DSi Library eqiuvalent of the 14E494E35A443235 ID exception
+    // DSi Library equivalent of the 14E494E35A443235 ID exception
     return fsid.endsWith('3532445AE394E414') || REGEX_KWZ_DSI_LIBRARY_FSID.test(fsid);
 }
 /**

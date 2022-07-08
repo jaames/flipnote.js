@@ -1034,16 +1034,22 @@ export class KwzParser extends FlipnoteParserBase {
     // they are effectively random, so you can optionally provide your own state values, or let the lib make a best guess
     if (this.isDsiLibraryNote) {
       if (trackId === FlipnoteAudioTrack.BGM) {
+        // passing an initial index or predictor value should disable bruteforcing
+        let doGuess = true;
         // allow manual overrides for default predictor
-        if (settings.initialBgmPredictor !== null)
+        if (settings.initialBgmPredictor !== null) {
           predictor = settings.initialBgmPredictor;
+          doGuess = false;
+        }
 
         // allow manual overrides for default step index
-        if (settings.initialBgmStepIndex !== null)
+        if (settings.initialBgmStepIndex !== null) {
           stepIndex = settings.initialBgmStepIndex;
+          doGuess = false
+        }
 
         // bruteforce step index by finding the lowest track root mean square 
-        if (settings.guessInitialBgmState) {
+        if (doGuess && settings.guessInitialBgmState) {
           let bestRms = 0xFFFFFFFF; // arbritrarily large
           let bestStepIndex = 0;
           for (stepIndex = 0; stepIndex <= 40; stepIndex++) {

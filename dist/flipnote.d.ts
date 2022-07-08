@@ -2262,6 +2262,6 @@ declare class WavAudio extends EncoderBase {
 /**
  * flipnote.js library version (exported as `flipnote.version`). You can find the latest version on the project's [NPM](https://www.npmjs.com/package/flipnote.js) page.
  */
-declare const version = "5.8.4";
+declare const version = "5.8.5";
 
 export { CanvasInterface, Flipnote, FlipnoteAudioTrack, FlipnoteAudioTrackInfo, FlipnoteFormat, FlipnoteLayerVisibility, FlipnoteMeta, FlipnotePaletteColor, FlipnotePaletteDefinition, FlipnoteParserSettings, FlipnoteRegion, FlipnoteSoundEffectFlags, FlipnoteSoundEffectTrack, FlipnoteSource, FlipnoteSourceParser, FlipnoteVersion, GifImage, Html5Canvas, KwzParser, KwzParserSettings, LoaderDefinition, LoaderDefinitionList, LoaderReject, LoaderResolve, Player, PlayerEvent, PlayerMixin, PpmParser, PpmParserSettings, UniversalCanvas, WavAudio, WebAudioPlayer, WebglCanvas, loadSource, parseSource, fsid_d as utils, version };
