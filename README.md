@@ -27,7 +27,6 @@
 
 I consider this library more-or-less feature complete at this stage (notwithstanding a new Flipnote Studio release, of course!). There are a still couple of small things to pick at however:
 
-* The Flipnote signature verification API [doesn't work in Node](https://github.com/jaames/flipnote.js/issues/24). This should be an easy fix.
 * Letterboxing so that the player aspect ratio doesn't have to be strictly 3:4. This would also lead into a fullscreen mode for the player UI.
 
 ## Background
