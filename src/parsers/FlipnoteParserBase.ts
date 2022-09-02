@@ -118,9 +118,11 @@ export abstract class FlipnoteParserBase extends DataStream {
   /** File format type */
   static format: FlipnoteFormat;
   /** Animation frame width */
-  static frameWidth: number;
+  static width: number;
   /** Animation frame height */
-  static frameHeight: number;
+  static height: number;
+  /** Animation frame aspect ratio (height / width) */
+  static aspect: number;
   /** Number of animation frame layers */
   static numLayers: number;
   /** Number of colors per layer (aside from transparent) */
@@ -154,6 +156,8 @@ export abstract class FlipnoteParserBase extends DataStream {
   imageWidth: number;
   /** Animation frame height, reflects {@link FlipnoteParserBase.height} */
   imageHeight: number;
+  /** Animation frame aspect ratio (height / width), reflects {@link FlipnoteParserBase.aspect} */
+  aspect: number;
   /** X offset for the top-left corner of the animation frame */
   imageOffsetX: number;
   /** Y offset for the top-left corner of the animation frame */
@@ -214,7 +218,7 @@ export abstract class FlipnoteParserBase extends DataStream {
 
   /**
    * Get file default title - e.g. "Flipnote by Y", "Comment by X", etc. 
-   * A format object can be passed for localisation, where `$USERNAME` gets replaced by author name:
+   * A format object can be passed for localization, where `$USERNAME` gets replaced by author name:
    * ```js
    * {
    *  COMMENT: 'Comment by $USERNAME',
@@ -489,12 +493,12 @@ export abstract class FlipnoteParserBase extends DataStream {
   abstract getFrameSoundEffectFlags(frameIndex: number): FlipnoteSoundEffectFlags;
 
   /**
-   * Get the usage flags for a given track accross every frame
+   * Get the usage flags for a given track across every frame
    * @returns an array of booleans for every frame, indicating whether the track is used on that frame
    * @category Audio
    */
   getSoundEffectFlagsForTrack(trackId: FlipnoteSoundEffectTrack) {
-    return this.getSoundEffectFlags().map(frammeFlags => frammeFlags[trackId]);
+    return this.getSoundEffectFlags().map(flags => flags[trackId]);
   };
 
   /**

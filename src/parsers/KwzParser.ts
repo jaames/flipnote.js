@@ -162,7 +162,7 @@ export interface KwzFrameMeta {
 };
 
 /** 
- * KWZ parser options for enabling optimisations and other extra features
+ * KWZ parser options for enabling optimizations and other extra features
  */
 export type KwzParserSettings = {
   /** 
@@ -235,13 +235,15 @@ export class KwzParser extends FlipnoteParserBase {
   static width = 320;
   /** Animation frame height */
   static height = 240;
+  /** Animation frame aspect ratio */
+  static aspect = 3 / 4;
   /** Number of animation frame layers */
   static numLayers = 3;
   /** Number of colors per layer (aside from transparent) */
   static numLayerColors = 2;
   /** Audio track base sample rate */
   static rawSampleRate = 16364;
-  /** Audio output sample rate. NOTE: probably isn't accurate, full KWZ audio stack is still on the todo */
+  /** Audio output sample rate  */
   static sampleRate = 32768;
   /** Which audio tracks are available in this format */
   static audioTracks = [
@@ -279,6 +281,8 @@ export class KwzParser extends FlipnoteParserBase {
   imageWidth = KwzParser.width;
   /** Animation frame height, reflects {@link KwzParser.height} */
   imageHeight = KwzParser.height;
+  /** Animation frame aspect ratio, reflects {@link KwzParser.aspect} */
+  aspect = KwzParser.aspect;
   /** X offset for the top-left corner of the animation frame */
   imageOffsetX = 0;
   /** Y offset for the top-left corner of the animation frame */
@@ -360,7 +364,7 @@ export class KwzParser extends FlipnoteParserBase {
       this.decodeSoundHeader();
     }
 
-    // apply special optimisations for converted DSi library notes
+    // apply special optimizations for converted DSi library notes
     if (this.settings.dsiLibraryNote) {
       this.isDsiLibraryNote = true;
     }
@@ -701,7 +705,7 @@ export class KwzParser extends FlipnoteParserBase {
     // return existing layer buffers if no new frame has been decoded since the last call
     if (this.prevDecodedFrame === frameIndex)
       return this.layerBuffers;
-    // the prevDecodedFrame check is an optimisation for decoding frames in full sequence
+    // the prevDecodedFrame check is an optimization for decoding frames in full sequence
     if (this.prevDecodedFrame !== frameIndex - 1 && frameIndex !== 0) {
       // if this frame is being decoded as a prev frame, then we only want to decode the layers necessary
       // diffingFlag is negated with ~ so if no layers are diff-based, diffingFlag is 0
@@ -1050,7 +1054,7 @@ export class KwzParser extends FlipnoteParserBase {
 
         // bruteforce step index by finding the lowest track root mean square 
         if (doGuess && settings.guessInitialBgmState) {
-          let bestRms = 0xFFFFFFFF; // arbritrarily large
+          let bestRms = 0xFFFFFFFF; // arbitrarily large
           let bestStepIndex = 0;
           for (stepIndex = 0; stepIndex <= 40; stepIndex++) {
             const dstPtr = this.decodeAdpcm(src, dst, predictor, stepIndex);

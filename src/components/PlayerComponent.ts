@@ -400,7 +400,7 @@ export class PlayerComponent extends PlayerMixin(LitElement) {
     this._isPlayerAvailable = true;
   }
 
-  // TODO: get this to actualy work so that prop updates update parser settings
+  // TODO: get this to actually work so that prop updates update parser settings
   // /**@internal */
   // async updated(changedProperties: PropertyValues) {
   //   let hasReloaded = false;
@@ -443,20 +443,18 @@ export class PlayerComponent extends PlayerMixin(LitElement) {
 
   private updateCanvasSize() {
     const isPlayerAvailable = this._isPlayerAvailable;
+    const note = this.player.note;
     // default width is DSi note size
     let canvasWidth = 256;
     // use the Flipnote's native width
-    if (this._width === 'auto' && isPlayerAvailable && this.player.isNoteLoaded) {
-      canvasWidth = this.player.note.imageWidth;
-    }
+    if (this._width === 'auto' && isPlayerAvailable && this.player.isNoteLoaded)
+      canvasWidth = note.imageWidth;
     // expand to fill the full container width
-    else if (this._width !== 'auto') {
+    else if (this._width !== 'auto')
       canvasWidth = this.getBoundingClientRect().width;
-    }
-    // TODO: initialise canvas right away then mount into DOM later?
-    // 4:3 aspect ratio is forced
-    if (isPlayerAvailable)
-      this.player.resize(canvasWidth, canvasWidth * .75);
+    // force flipnote aspect ratio
+    if (isPlayerAvailable && note)
+      this.player.resize(canvasWidth, canvasWidth * note.aspect);
   }
 
   private handleResize = (entries: ResizeObserverEntry[]) => {

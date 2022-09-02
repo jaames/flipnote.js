@@ -273,9 +273,7 @@ export class WebglCanvas implements CanvasInterface {
   }
 
   /**
-   * Sets the size of the input pixel arrays
-   * @param width 
-   * @param height 
+   * Sets the note to use for this player
    */
   public setNote(note: FlipnoteParserBase) {
     if(this.checkContextLoss()) return;

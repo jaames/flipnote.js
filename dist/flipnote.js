@@ -1,11 +1,12 @@
 /*!!
-flipnote.js v5.8.5
+flipnote.js v5.9.0
 https://flipnote.js.org
 A JavaScript library for parsing, converting, and in-browser playback of the proprietary animation formats used by Nintendo's Flipnote Studio and Flipnote Studio 3D apps.
 2018 - 2022 James Daniel
 Flipnote Studio is (c) Nintendo Co., Ltd. This project isn't affiliated with or endorsed by them in any way.
 Keep on Flipnoting!
 */
+(function(l, r) { if (l.getElementById('livereloadscript')) return; r = l.createElement('script'); r.async = 1; r.src = '//' + (window.location.host || 'localhost').split(':')[0] + ':35729/livereload.js?snipver=1'; r.id = 'livereloadscript'; l.getElementsByTagName('head')[0].appendChild(r) })(window.document);
 (function (global, factory) {
     typeof exports === 'object' && typeof module !== 'undefined' ? factory(exports) :
     typeof define === 'function' && define.amd ? define(['exports'], factory) :
@@ -168,7 +169,6 @@ Keep on Flipnoting!
             if (ptr > this.realSize)
                 this.realSize = ptr;
             // update ptrs
-            // TODO: this is going to get hit a lot, maybe optimise?
             this.pageIdx = Math.floor(ptr / this.pageSize);
             this.pagePtr = ptr % this.pageSize;
             this.realPtr = ptr;
@@ -603,7 +603,7 @@ Keep on Flipnoting!
                                 hash: hashType,
                             }, false, ['verify'])];
                     case 1: 
-                    // create cypto api key
+                    // create crypto api key
                     return [2 /*return*/, _a.sent()];
                 }
             });
@@ -704,6 +704,8 @@ Keep on Flipnoting!
     var REGEX_KWZ_DSI_LIBRARY_FSID = /^(00|10|12|14)[0-9a-f]{2}-[0-9a-f]{4}-[0-9a-f]{3}0-[0-9a-f]{4}[0159]{1}[0-9a-f]{1}$/;
     /**
      * @internal
+     * There are several known exceptions to the FSID format, all from Nintendo or Hatena developer and event accounts (mario, zelda 25th, etc).
+     * This list was compiled from data provided by the Flipnote Archive, so it can be considered comprehensive enough to match any Flipnote you may encounter.
      */
     var PPM_FSID_SPECIAL_CASE = [
         '01FACA7A4367FC5F', '03D6E959E2F9A42D',
@@ -712,12 +714,14 @@ Keep on Flipnoting!
         '0E61C75C9B5AD90B', '14E494E35A443235'
     ];
     /**
+     * @internal
+     */
+    var KWZ_DSI_LIBRARY_FSID_SPECIAL_CASE_SUFFIX = PPM_FSID_SPECIAL_CASE.map(function (id) { return convertPpmFsidToKwzFsidSuffix(id); });
+    /**
      * Indicates whether the input is a valid Flipnote Studio user ID
      */
     function isPpmFsid(fsid) {
-        // The only known exception to the FSID format is the one Nintendo used for their event notes (mario, zelda 25th, etc)
-        // This is likely a goof on their part
-        return PPM_FSID_SPECIAL_CASE.includes(fsid) || REGEX_PPM_FSID.test(fsid);
+        return REGEX_PPM_FSID.test(fsid) || PPM_FSID_SPECIAL_CASE.includes(fsid);
     }
     /**
      * Indicates whether the input is a valid Flipnote Studio 3D user ID
@@ -729,8 +733,24 @@ Keep on Flipnoting!
      * Indicates whether the input is a valid DSi Library user ID
      */
     function isKwzDsiLibraryFsid(fsid) {
-        // DSi Library equivalent of the 14E494E35A443235 ID exception
-        return fsid.endsWith('3532445AE394E414') || REGEX_KWZ_DSI_LIBRARY_FSID.test(fsid);
+        var e_1, _a;
+        if (REGEX_KWZ_DSI_LIBRARY_FSID.test(fsid))
+            return true;
+        try {
+            for (var KWZ_DSI_LIBRARY_FSID_SPECIAL_CASE_SUFFIX_1 = __values(KWZ_DSI_LIBRARY_FSID_SPECIAL_CASE_SUFFIX), KWZ_DSI_LIBRARY_FSID_SPECIAL_CASE_SUFFIX_1_1 = KWZ_DSI_LIBRARY_FSID_SPECIAL_CASE_SUFFIX_1.next(); !KWZ_DSI_LIBRARY_FSID_SPECIAL_CASE_SUFFIX_1_1.done; KWZ_DSI_LIBRARY_FSID_SPECIAL_CASE_SUFFIX_1_1 = KWZ_DSI_LIBRARY_FSID_SPECIAL_CASE_SUFFIX_1.next()) {
+                var suffix = KWZ_DSI_LIBRARY_FSID_SPECIAL_CASE_SUFFIX_1_1.value;
+                if (fsid.endsWith(suffix))
+                    return true;
+            }
+        }
+        catch (e_1_1) { e_1 = { error: e_1_1 }; }
+        finally {
+            try {
+                if (KWZ_DSI_LIBRARY_FSID_SPECIAL_CASE_SUFFIX_1_1 && !KWZ_DSI_LIBRARY_FSID_SPECIAL_CASE_SUFFIX_1_1.done && (_a = KWZ_DSI_LIBRARY_FSID_SPECIAL_CASE_SUFFIX_1.return)) _a.call(KWZ_DSI_LIBRARY_FSID_SPECIAL_CASE_SUFFIX_1);
+            }
+            finally { if (e_1) throw e_1.error; }
+        }
+        return false;
     }
     /**
      * Indicates whether the input is a valid Flipnote Studio or Flipnote Studio 3D user ID
@@ -755,7 +775,8 @@ Keep on Flipnoting!
         }
     }
     /**
-     * Get the region for any valid Flipnote Studio 3D user ID
+     * Get the region for any valid Flipnote Studio 3D user ID.
+     * NOTE: This may be incorrect for IDs that are not from the DSi Library.
      */
     function getKwzFsidRegion(fsid) {
         if (isKwzDsiLibraryFsid(fsid)) {
@@ -784,6 +805,49 @@ Keep on Flipnoting!
         }
     }
     /**
+     * Convert a KWZ Flipnote Studio ID (from a Nintendo DSi Library Flipnote) to the format used by PPM Flipnote Studio IDs.
+     * Will return `null` if the conversion could not be made.
+     */
+    function convertKwzFsidToPpmFsid(fsid) {
+        if (REGEX_KWZ_DSI_LIBRARY_FSID.test(fsid))
+            return (fsid.slice(19, 21) + fsid.slice(17, 19) + fsid.slice(15, 17) + fsid.slice(12, 14) + fsid.slice(10, 12) + fsid.slice(7, 9) + fsid.slice(5, 7) + fsid.slice(2, 4)).toUpperCase();
+        return null;
+    }
+    /**
+     * Convert a PPM Flipnote Studio ID to the format used by KWZ Flipnote Studio IDs (as seen in Nintendo DSi Library Flipnotes).
+     * Will return `null` if the conversion could not be made.
+     *
+     * NOTE: KWZ Flipnote Studio IDs contain an extra two characters at the beginning. It is not possible to resolve these from a PPM Flipnote Studio ID.
+     */
+    function convertPpmFsidToKwzFsidSuffix(fsid) {
+        if (REGEX_PPM_FSID.test(fsid))
+            return (fsid.slice(14, 16) + fsid.slice(12, 14) + '-' + fsid.slice(10, 12) + fsid.slice(8, 10) + '-' + fsid.slice(6, 8) + fsid.slice(4, 6) + '-' + fsid.slice(2, 4) + fsid.slice(0, 2)).toLowerCase();
+        return null;
+    }
+    /**
+     * Convert a PPM Flipnote Studio ID to an array of all possible matching KWZ Flipnote Studio IDs (as seen in Nintendo DSi Library Flipnotes).
+     * Will return `null` if the conversion could not be made.
+     */
+    function convertPpmFsidToPossibleKwzFsids(fsid) {
+        var kwzIdSuffix = convertPpmFsidToKwzFsidSuffix(fsid);
+        if (kwzIdSuffix) {
+            return [
+                '00' + kwzIdSuffix,
+                '10' + kwzIdSuffix,
+                '12' + kwzIdSuffix,
+                '14' + kwzIdSuffix,
+            ];
+        }
+        return null;
+    }
+    /**
+     * Tests if a KWZ Flipnote Studio ID (from a Nintendo DSi Library Flipnote) matches a given PPM-formatted Flipnote Studio ID.
+     */
+    function testKwzFsidMatchesPpmFsid(kwzFsid, ppmFsid) {
+        var ppmFromKwz = convertKwzFsidToPpmFsid(kwzFsid);
+        return ppmFromKwz == ppmFsid;
+    }
+    /**
      * Get the region for any valid Flipnote Studio or Flipnote Studio 3D user ID
      */
     function getFsidRegion(fsid) {
@@ -803,6 +867,10 @@ Keep on Flipnoting!
         isFsid: isFsid,
         getPpmFsidRegion: getPpmFsidRegion,
         getKwzFsidRegion: getKwzFsidRegion,
+        convertKwzFsidToPpmFsid: convertKwzFsidToPpmFsid,
+        convertPpmFsidToKwzFsidSuffix: convertPpmFsidToKwzFsidSuffix,
+        convertPpmFsidToPossibleKwzFsids: convertPpmFsidToPossibleKwzFsids,
+        testKwzFsidMatchesPpmFsid: testKwzFsidMatchesPpmFsid,
         getFsidRegion: getFsidRegion
     });
 
@@ -811,9 +879,7 @@ Keep on Flipnoting!
         if (!isBrowser) {
             return function () { };
         }
-        var a = document.createElement("a");
-        // document.body.appendChild(a);
-        // a.style.display = "none";
+        var a = document.createElement('a');
         return function (blob, filename) {
             var url = window.URL.createObjectURL(blob);
             a.href = url;
@@ -888,7 +954,7 @@ Keep on Flipnoting!
         }
         /**
          * Get file default title - e.g. "Flipnote by Y", "Comment by X", etc.
-         * A format object can be passed for localisation, where `$USERNAME` gets replaced by author name:
+         * A format object can be passed for localization, where `$USERNAME` gets replaced by author name:
          * ```js
          * {
          *  COMMENT: 'Comment by $USERNAME',
@@ -1124,12 +1190,12 @@ Keep on Flipnoting!
             return paletteBuffer;
         };
         /**
-         * Get the usage flags for a given track accross every frame
+         * Get the usage flags for a given track across every frame
          * @returns an array of booleans for every frame, indicating whether the track is used on that frame
          * @category Audio
          */
         FlipnoteParserBase.prototype.getSoundEffectFlagsForTrack = function (trackId) {
-            return this.getSoundEffectFlags().map(function (frammeFlags) { return frammeFlags[trackId]; });
+            return this.getSoundEffectFlags().map(function (flags) { return flags[trackId]; });
         };
         /**
          * Is a given track used on a given frame
@@ -1154,7 +1220,7 @@ Keep on Flipnoting!
 
     /**
      * PPM framerates in frames per second, indexed by the in-app frame speed.
-     * Frame speed 0 is never noramally used
+     * Frame speed 0 is never normally used
      */
     var PPM_FRAMERATES = [0.5, 0.5, 1, 2, 4, 6, 12, 20, 30];
     /**
@@ -1195,6 +1261,8 @@ Keep on Flipnoting!
             _this.imageWidth = PpmParser.width;
             /** Animation frame height, reflects {@link PpmParser.height} */
             _this.imageHeight = PpmParser.height;
+            /** Animation frame aspect ratio, reflects {@link PpmParser.aspect} */
+            _this.aspect = PpmParser.aspect;
             /** X offset for the top-left corner of the animation frame */
             _this.imageOffsetX = 0;
             /** Y offset for the top-left corner of the animation frame */
@@ -1451,7 +1519,7 @@ Keep on Flipnoting!
                             // read lineHeader as a big-endian int
                             var lineHeader = this.readUint32(false);
                             // loop through each bit in the line header
-                            // shift lineheader to the left by 1 bit every interation, 
+                            // shift lineheader to the left by 1 bit every iteration, 
                             // so on the next loop cycle the next bit will be checked
                             // and if the line header equals 0, no more bits are set, 
                             // the rest of the line is empty and can be skipped
@@ -1478,7 +1546,7 @@ Keep on Flipnoting!
                     }
                 }
             }
-            // if the current frame is based on changes from the preivous one, merge them by XORing their values
+            // if the current frame is based on changes from the previous one, merge them by XORing their values
             var layer1 = this.layerBuffers[0];
             var layer2 = this.layerBuffers[1];
             var layer1Prev = this.prevLayerBuffers[0];
@@ -1638,7 +1706,6 @@ Keep on Flipnoting!
         */
         PpmParser.prototype.decodeAudioTrack = function (trackId) {
             // note this doesn't resample
-            // TODO: kinda slow, maybe use sample lookup table
             // decode a 4 bit IMA adpcm audio track
             // https://github.com/Flipnote-Collective/flipnote-studio-docs/wiki/PPM-format#sound-data
             var src = this.getAudioTrackRaw(trackId);
@@ -1786,6 +1853,8 @@ Keep on Flipnoting!
         PpmParser.width = 256;
         /** Animation frame height */
         PpmParser.height = 192;
+        /** Animation frame aspect ratio */
+        PpmParser.aspect = 3 / 4;
         /** Number of animation frame layers */
         PpmParser.numLayers = 2;
         /** Number of colors per layer (aside from transparent) */
@@ -1920,6 +1989,8 @@ Keep on Flipnoting!
             _this.imageWidth = KwzParser.width;
             /** Animation frame height, reflects {@link KwzParser.height} */
             _this.imageHeight = KwzParser.height;
+            /** Animation frame aspect ratio, reflects {@link KwzParser.aspect} */
+            _this.aspect = KwzParser.aspect;
             /** X offset for the top-left corner of the animation frame */
             _this.imageOffsetX = 0;
             /** Y offset for the top-left corner of the animation frame */
@@ -1980,7 +2051,7 @@ Keep on Flipnoting!
                 _this.getFrameOffsets();
                 _this.decodeSoundHeader();
             }
-            // apply special optimisations for converted DSi library notes
+            // apply special optimizations for converted DSi library notes
             if (_this.settings.dsiLibraryNote) {
                 _this.isDsiLibraryNote = true;
             }
@@ -2306,7 +2377,7 @@ Keep on Flipnoting!
             // return existing layer buffers if no new frame has been decoded since the last call
             if (this.prevDecodedFrame === frameIndex)
                 return this.layerBuffers;
-            // the prevDecodedFrame check is an optimisation for decoding frames in full sequence
+            // the prevDecodedFrame check is an optimization for decoding frames in full sequence
             if (this.prevDecodedFrame !== frameIndex - 1 && frameIndex !== 0) {
                 // if this frame is being decoded as a prev frame, then we only want to decode the layers necessary
                 // diffingFlag is negated with ~ so if no layers are diff-based, diffingFlag is 0
@@ -2633,7 +2704,7 @@ Keep on Flipnoting!
                     }
                     // bruteforce step index by finding the lowest track root mean square 
                     if (doGuess && settings.guessInitialBgmState) {
-                        var bestRms = 0xFFFFFFFF; // arbritrarily large
+                        var bestRms = 0xFFFFFFFF; // arbitrarily large
                         var bestStepIndex = 0;
                         for (stepIndex = 0; stepIndex <= 40; stepIndex++) {
                             var dstPtr_1 = this.decodeAdpcm(src, dst, predictor, stepIndex);
@@ -2784,13 +2855,15 @@ Keep on Flipnoting!
         KwzParser.width = 320;
         /** Animation frame height */
         KwzParser.height = 240;
+        /** Animation frame aspect ratio */
+        KwzParser.aspect = 3 / 4;
         /** Number of animation frame layers */
         KwzParser.numLayers = 3;
         /** Number of colors per layer (aside from transparent) */
         KwzParser.numLayerColors = 2;
         /** Audio track base sample rate */
         KwzParser.rawSampleRate = 16364;
-        /** Audio output sample rate. NOTE: probably isn't accurate, full KWZ audio stack is still on the todo */
+        /** Audio output sample rate  */
         KwzParser.sampleRate = 32768;
         /** Which audio tracks are available in this format */
         KwzParser.audioTracks = [
@@ -4975,9 +5048,7 @@ Keep on Flipnoting!
             gl.viewport(0, 0, gl.drawingBufferWidth, gl.drawingBufferHeight);
         };
         /**
-         * Sets the size of the input pixel arrays
-         * @param width
-         * @param height
+         * Sets the note to use for this player
          */
         WebglCanvas.prototype.setNote = function (note) {
             if (this.checkContextLoss())
@@ -6389,7 +6460,8 @@ Keep on Flipnoting!
             var quality = {
                 creationTime: 0,
                 droppedVideoFrames: 0,
-                // corruptedVideoFrames: 0,
+                // @ts-ignore
+                corruptedVideoFrames: 0,
                 totalVideoFrames: this.frameCount
             };
             return quality;
@@ -6469,7 +6541,7 @@ Keep on Flipnoting!
             this.events.clear();
         };
         /**
-         * Destroy a Player instace
+         * Destroy a Player instance
          * @category Lifecycle
          */
         Player.prototype.destroy = function () {
@@ -7215,7 +7287,7 @@ Keep on Flipnoting!
     /**
      * flipnote.js library version (exported as `flipnote.version`). You can find the latest version on the project's [NPM](https://www.npmjs.com/package/flipnote.js) page.
      */
-    var version = "5.8.5"; // replaced by @rollup/plugin-replace; see rollup.config.js
+    var version = "5.9.0"; // replaced by @rollup/plugin-replace; see rollup.config.js
 
     exports.CanvasInterface = CanvasInterface;
     exports.GifImage = GifImage;
@@ -7236,3 +7308,4 @@ Keep on Flipnoting!
     Object.defineProperty(exports, '__esModule', { value: true });
 
 }));
+//# sourceMappingURL=flipnote.js.map

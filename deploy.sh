@@ -9,7 +9,6 @@ npm run docs
 # navigate into the build output directory
 cd www
 
-# TODO: CNAME HERE
 echo 'flipnote.js.org' > CNAME
 
 # push to gh-pages branch

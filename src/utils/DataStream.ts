@@ -136,7 +136,8 @@ export class DataStream {
     let str = '';
     for (let i = 0; i < chars.length; i++) {
       const char = chars[i];
-      if (char === 0) break;
+      if (char === 0)
+        break;
       str += String.fromCharCode(char);
     }
     return str;

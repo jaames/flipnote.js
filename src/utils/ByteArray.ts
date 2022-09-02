@@ -39,7 +39,6 @@ export class ByteArray {
     if (ptr > this.realSize)
       this.realSize = ptr;
     // update ptrs
-    // TODO: this is going to get hit a lot, maybe optimise?
     this.pageIdx = Math.floor(ptr / this.pageSize);
     this.pagePtr = ptr % this.pageSize;
     this.realPtr = ptr;

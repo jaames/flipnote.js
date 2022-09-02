@@ -25,7 +25,7 @@ import {
 
 /** 
  * PPM framerates in frames per second, indexed by the in-app frame speed.
- * Frame speed 0 is never noramally used
+ * Frame speed 0 is never normally used
  */
 const PPM_FRAMERATES = [0.5, 0.5, 1, 2, 4, 6, 12, 20, 30];
 
@@ -60,7 +60,7 @@ export interface PpmMeta extends FlipnoteMeta {
 };
 
 /**
- * PPM parser options for enabling optimisations and other extra features.
+ * PPM parser options for enabling optimizations and other extra features.
  * None are currently implemented
  */
 export type PpmParserSettings = {};
@@ -81,6 +81,8 @@ export class PpmParser extends FlipnoteParserBase {
   static width = 256;
   /** Animation frame height */
   static height = 192;
+  /** Animation frame aspect ratio */
+  static aspect = 3 / 4;
   /** Number of animation frame layers */
   static numLayers = 2;
   /** Number of colors per layer (aside from transparent) */
@@ -120,6 +122,8 @@ export class PpmParser extends FlipnoteParserBase {
   imageWidth = PpmParser.width;
   /** Animation frame height, reflects {@link PpmParser.height} */
   imageHeight = PpmParser.height;
+  /** Animation frame aspect ratio, reflects {@link PpmParser.aspect} */
+  aspect = PpmParser.aspect;
   /** X offset for the top-left corner of the animation frame */
   imageOffsetX = 0;
   /** Y offset for the top-left corner of the animation frame */
@@ -405,7 +409,7 @@ export class PpmParser extends FlipnoteParserBase {
             // read lineHeader as a big-endian int
             var lineHeader = this.readUint32(false);
             // loop through each bit in the line header
-            // shift lineheader to the left by 1 bit every interation, 
+            // shift lineheader to the left by 1 bit every iteration, 
             // so on the next loop cycle the next bit will be checked
             // and if the line header equals 0, no more bits are set, 
             // the rest of the line is empty and can be skipped
@@ -432,7 +436,7 @@ export class PpmParser extends FlipnoteParserBase {
         }
       }
     }
-    // if the current frame is based on changes from the preivous one, merge them by XORing their values
+    // if the current frame is based on changes from the previous one, merge them by XORing their values
     const layer1 = this.layerBuffers[0];
     const layer2 = this.layerBuffers[1];
     const layer1Prev = this.prevLayerBuffers[0];
@@ -595,7 +599,6 @@ export class PpmParser extends FlipnoteParserBase {
   */
   decodeAudioTrack(trackId: FlipnoteAudioTrack) {
     // note this doesn't resample
-    // TODO: kinda slow, maybe use sample lookup table
     // decode a 4 bit IMA adpcm audio track
     // https://github.com/Flipnote-Collective/flipnote-studio-docs/wiki/PPM-format#sound-data
     const src = this.getAudioTrackRaw(trackId);

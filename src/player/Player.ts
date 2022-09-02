@@ -849,7 +849,8 @@ export class Player {
     const quality: VideoPlaybackQuality = {
       creationTime: 0,
       droppedVideoFrames: 0,
-      // corruptedVideoFrames: 0,
+      // @ts-ignore
+      corruptedVideoFrames: 0,
       totalVideoFrames: this.frameCount
     };
     return quality;
@@ -922,7 +923,7 @@ export class Player {
   ondurationchange: () => void;
 
   /**
-   * Fired when playbackc has looped after reaching the end
+   * Fired when playback has looped after reaching the end
    * @category playback
    * @event loop
    */
@@ -940,7 +941,7 @@ export class Player {
    * @category audio
    * @event volumechange
    */
-  onvolumechane: (volume: number) => void;
+  onvolumechange: (volume: number) => void;
 
   /**
    * Fired when playback progress has changed
@@ -1115,7 +1116,7 @@ export class Player {
   }
 
   /** 
-   * Destroy a Player instace
+   * Destroy a Player instance
    * @category Lifecycle
    */
   async destroy() {

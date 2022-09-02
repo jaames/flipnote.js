@@ -23,7 +23,6 @@ export type GifPaletteColor = [
  */
 export interface GifImageSettings {
   /** Use transparency */
-  // transparentBg: boolean; // TODO: reimplement
   /** Delay between animated GIF frames, measured in milliseconds */
   delay: number;
   /** Color depth as bits per pixel. Defaults to 8 */

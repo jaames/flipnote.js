@@ -46,7 +46,7 @@ export async function rsaLoadPublicKey(pemKey: string, hashType: HashType) {
   // convert to byte array
   const keyBytes = new Uint8Array(keyPlaintext.length)
     .map((_, i) => keyPlaintext.charCodeAt(i));
-  // create cypto api key
+  // create crypto api key
   return await SUBTLE_CRYPTO.importKey('spki', keyBytes.buffer, {
     name: ALGORITHM,
     hash: hashType,

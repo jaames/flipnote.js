@@ -5,9 +5,7 @@ export const saveData = (function () {
   if (!isBrowser) {
     return function(){}
   }
-  var a = document.createElement("a");
-  // document.body.appendChild(a);
-  // a.style.display = "none";
+  const a = document.createElement('a');
   return function (blob: Blob, filename:string) {
     const url = window.URL.createObjectURL(blob);
     a.href = url;
