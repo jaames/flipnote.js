@@ -362,8 +362,9 @@ export class WebglCanvas implements CanvasInterface {
   }
 
   private handleContextLoss = (e?: Event) => {
-    if (e) e.preventDefault();
     this.destroy();
+    if (e)
+      e.preventDefault();
     if (!this.isCtxLost)
       this.options.onlost();
     this.isCtxLost = true;

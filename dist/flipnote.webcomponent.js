@@ -2924,7 +2924,7 @@ kQIDAQAB
 
   /** @internal */
   class CanvasInterface {
-      constructor(parent, width, height) { }
+      constructor(parent, width, height, options) { }
   }
 
   /* @license twgl.js 4.21.2 Copyright (c) 2015, Gregg Tavares All Rights Reserved.
@@ -4626,9 +4626,9 @@ kQIDAQAB
           };
           this.isCtxLost = false;
           this.handleContextLoss = (e) => {
+              this.destroy();
               if (e)
                   e.preventDefault();
-              this.destroy();
               if (!this.isCtxLost)
                   this.options.onlost();
               this.isCtxLost = true;
@@ -5073,30 +5073,38 @@ kQIDAQAB
 
   class UniversalCanvas {
       constructor(parent, width = 640, height = 480, options = {}) {
-          this.options = {};
+          /** */
           this.isReady = false;
+          /** */
           this.isHtml5 = false;
+          this.rendererStack = [
+              WebglCanvas,
+              Html5Canvas
+          ];
+          this.rendererStackIdx = 0;
+          this.options = {};
+          this.width = width;
+          this.height = height;
           this.parent = parent;
           this.options = options;
-          try {
-              this.subRenderer = new WebglCanvas(parent, width, height, Object.assign(Object.assign({}, options), { 
-                  // attempt to switch renderer
-                  onlost: () => {
-                      console.warn('WebGL failed, attempting HTML5 fallback');
-                      if (this.isReady && !this.isHtml5) // if the error happened after canvas creation
-                          this.switchToHtml5();
-                      else
-                          throw '';
-                  } }));
-          }
-          catch (_a) {
-              this.switchToHtml5();
-          }
-          this.isReady = true;
+          this.setSubRenderer(this.rendererStack[0]);
       }
-      switchToHtml5() {
+      fallbackIfPossible() {
+          if (this.rendererStackIdx >= this.rendererStack.length)
+              throw new Error('No renderer to fall back to');
+          this.rendererStackIdx += 1;
+          this.setSubRenderer(this.rendererStack[this.rendererStackIdx]);
+      }
+      setSubRenderer(Canvas) {
           var _a;
-          const renderer = new Html5Canvas(this.parent, this.width, this.height, this.options);
+          let immediateLoss = false;
+          const renderer = new Canvas(this.parent, this.width, this.height, Object.assign(Object.assign({}, this.options), { onlost: () => {
+                  immediateLoss = true;
+                  this.fallbackIfPossible();
+              } }));
+          // if onlost was called immediately, we succeed to the fallback
+          if (immediateLoss)
+              return;
           if (this.note) {
               renderer.setNote(this.note);
               renderer.prevFrameIndex = (_a = this.subRenderer) === null || _a === void 0 ? void 0 : _a.prevFrameIndex;
@@ -5104,8 +5112,14 @@ kQIDAQAB
           }
           if (this.subRenderer)
               this.subRenderer.destroy();
-          this.isHtml5 = true;
+          this.isHtml5 = renderer instanceof Html5Canvas;
+          this.isReady = true;
           this.subRenderer = renderer;
+          this.rendererStackIdx = this.rendererStack.indexOf(Canvas);
+      }
+      // for backwards compat
+      switchToHtml5() {
+          this.setSubRenderer(Html5Canvas);
       }
       setCanvasSize(width, height) {
           const renderer = this.subRenderer;

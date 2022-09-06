@@ -1,4 +1,4 @@
-import { CanvasInterface } from './CanvasInterface';
+import { CanvasInterface, CanvasConstructor } from './CanvasInterface';
 import { WebglCanvas, WebglCanvasOptions } from './WebGlCanvas';
 import { Html5Canvas, Html5CanvasOptions } from './Html5Canvas';
 import { FlipnoteParserBase } from '../parsers';
@@ -31,45 +31,68 @@ export class UniversalCanvas implements CanvasInterface {
   public srcHeight: number;
   /** */
   public prevFrameIndex: number;
+  /** */
+  public isReady = false;
+  /** */
+  public isHtml5 = false;
 
+  private rendererStack: CanvasConstructor[] = [
+    WebglCanvas,
+    Html5Canvas
+  ];
+  private rendererStackIdx = 0;
   private parent: Element;
   private options: Partial<UniversalCanvasOptions> = {};
-  private isReady = false;
-  private isHtml5 = false;
   
   constructor (parent: Element, width=640, height=480, options: Partial<UniversalCanvasOptions>={}) {
+    this.width = width;
+    this.height = height;
     this.parent = parent;
     this.options = options;
-    try {
-      this.subRenderer = new WebglCanvas(parent, width, height, {
-        ...options,
-        // attempt to switch renderer
-        onlost: () => {
-          console.warn('WebGL failed, attempting HTML5 fallback');
-          if (this.isReady && !this.isHtml5) // if the error happened after canvas creation
-            this.switchToHtml5();
-          else
-            throw '';
-        }
-      });
-    }
-    catch {
-      this.switchToHtml5();
-    }
-    this.isReady = true;
+    this.setSubRenderer(this.rendererStack[0]);
   }
 
-  public switchToHtml5() {
-    const renderer = new Html5Canvas(this.parent, this.width, this.height, this.options);
+  public fallbackIfPossible() {
+    if (this.rendererStackIdx >= this.rendererStack.length)
+      throw new Error('No renderer to fall back to');
+
+    this.rendererStackIdx += 1;
+    this.setSubRenderer(this.rendererStack[this.rendererStackIdx]);
+  }
+
+  private setSubRenderer(Canvas: CanvasConstructor) {
+    let immediateLoss = false;
+
+    const renderer = new Canvas(this.parent, this.width, this.height, {
+      ...this.options,
+      onlost: () => {
+        immediateLoss = true;
+        this.fallbackIfPossible();
+      }
+    });
+
+    // if onlost was called immediately, we succeed to the fallback
+    if (immediateLoss)
+      return;
+    
     if (this.note) {
       renderer.setNote(this.note);
       renderer.prevFrameIndex = this.subRenderer?.prevFrameIndex;
       renderer.forceUpdate();
     }
+
     if (this.subRenderer)
       this.subRenderer.destroy();
-    this.isHtml5 = true;
+
+    this.isHtml5 = renderer instanceof Html5Canvas;
+    this.isReady = true;
     this.subRenderer = renderer;
+    this.rendererStackIdx = this.rendererStack.indexOf(Canvas);
+  }
+
+  // for backwards compat
+  public switchToHtml5() {
+    this.setSubRenderer(Html5Canvas);
   }
 
   public setCanvasSize(width: number, height: number) {

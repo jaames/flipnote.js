@@ -1,6 +1,11 @@
 import type { FlipnoteParserBase } from '../parsers';
 
 /** @internal */
+export type CanvasConstructor = {
+  new(parent: Element, width: number, height: number, options?: {}): CanvasInterface
+}
+
+/** @internal */
 export abstract class CanvasInterface {
 
   public note: FlipnoteParserBase;
@@ -13,7 +18,7 @@ export abstract class CanvasInterface {
   public dstHeight: number;
   public prevFrameIndex: number;
 
-  constructor (parent: Element, width: number, height: number) {}
+  constructor (parent: Element, width: number, height: number, options?: {}) {}
 
   public abstract setCanvasSize(width: number, height: number): void
 

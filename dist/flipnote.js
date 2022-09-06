@@ -3154,7 +3154,7 @@ Keep on Flipnoting!
 
     /** @internal */
     var CanvasInterface = /** @class */ (function () {
-        function CanvasInterface(parent, width, height) {
+        function CanvasInterface(parent, width, height, options) {
         }
         return CanvasInterface;
     }());
@@ -4862,9 +4862,9 @@ Keep on Flipnoting!
             };
             this.isCtxLost = false;
             this.handleContextLoss = function (e) {
+                _this.destroy();
                 if (e)
                     e.preventDefault();
-                _this.destroy();
                 if (!_this.isCtxLost)
                     _this.options.onlost();
                 _this.isCtxLost = true;
@@ -5324,34 +5324,42 @@ Keep on Flipnoting!
 
     var UniversalCanvas = /** @class */ (function () {
         function UniversalCanvas(parent, width, height, options) {
-            var _this = this;
             if (width === void 0) { width = 640; }
             if (height === void 0) { height = 480; }
             if (options === void 0) { options = {}; }
-            this.options = {};
+            /** */
             this.isReady = false;
+            /** */
             this.isHtml5 = false;
+            this.rendererStack = [
+                WebglCanvas,
+                Html5Canvas
+            ];
+            this.rendererStackIdx = 0;
+            this.options = {};
+            this.width = width;
+            this.height = height;
             this.parent = parent;
             this.options = options;
-            try {
-                this.subRenderer = new WebglCanvas(parent, width, height, __assign(__assign({}, options), { 
-                    // attempt to switch renderer
-                    onlost: function () {
-                        console.warn('WebGL failed, attempting HTML5 fallback');
-                        if (_this.isReady && !_this.isHtml5) // if the error happened after canvas creation
-                            _this.switchToHtml5();
-                        else
-                            throw '';
-                    } }));
-            }
-            catch (_a) {
-                this.switchToHtml5();
-            }
-            this.isReady = true;
+            this.setSubRenderer(this.rendererStack[0]);
         }
-        UniversalCanvas.prototype.switchToHtml5 = function () {
+        UniversalCanvas.prototype.fallbackIfPossible = function () {
+            if (this.rendererStackIdx >= this.rendererStack.length)
+                throw new Error('No renderer to fall back to');
+            this.rendererStackIdx += 1;
+            this.setSubRenderer(this.rendererStack[this.rendererStackIdx]);
+        };
+        UniversalCanvas.prototype.setSubRenderer = function (Canvas) {
+            var _this = this;
             var _a;
-            var renderer = new Html5Canvas(this.parent, this.width, this.height, this.options);
+            var immediateLoss = false;
+            var renderer = new Canvas(this.parent, this.width, this.height, __assign(__assign({}, this.options), { onlost: function () {
+                    immediateLoss = true;
+                    _this.fallbackIfPossible();
+                } }));
+            // if onlost was called immediately, we succeed to the fallback
+            if (immediateLoss)
+                return;
             if (this.note) {
                 renderer.setNote(this.note);
                 renderer.prevFrameIndex = (_a = this.subRenderer) === null || _a === void 0 ? void 0 : _a.prevFrameIndex;
@@ -5359,8 +5367,14 @@ Keep on Flipnoting!
             }
             if (this.subRenderer)
                 this.subRenderer.destroy();
-            this.isHtml5 = true;
+            this.isHtml5 = renderer instanceof Html5Canvas;
+            this.isReady = true;
             this.subRenderer = renderer;
+            this.rendererStackIdx = this.rendererStack.indexOf(Canvas);
+        };
+        // for backwards compat
+        UniversalCanvas.prototype.switchToHtml5 = function () {
+            this.setSubRenderer(Html5Canvas);
         };
         UniversalCanvas.prototype.setCanvasSize = function (width, height) {
             var renderer = this.subRenderer;
