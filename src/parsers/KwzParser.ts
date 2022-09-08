@@ -5,7 +5,8 @@ import {
   FlipnoteSoundEffectTrack,
   FlipnoteSoundEffectFlags,
   FlipnoteMeta,
-  FlipnoteParserBase
+  FlipnoteParserBase,
+  FlipnoteThumbImageFormat
 } from './FlipnoteParserBase';
 
 import {
@@ -582,6 +583,25 @@ export class KwzParser extends FlipnoteParserBase {
     this.soundMeta = soundMeta;
   }
 
+  /**
+   * Decodes the thumbnail image embedded in the Flipnote. Will return a {@link FlipnoteThumbImage} containing JPEG data.
+   * 
+   * Note: For most purposes, you should probably just decode the thumbnail fraa to get a higher resolution image.
+   * @category Meta
+   */
+  getThumbnailImage() {
+    assert(this.sectionMap.has('KTN'), 'KTN section missing - Note that folder icons and comments do not contain thumbnail data');
+    const ktn = this.sectionMap.get('KTN');
+    this.seek(ktn.ptr + 12);
+    const bytes = this.readBytes(ktn.length - 12);
+    return {
+      format: FlipnoteThumbImageFormat.Jpeg,
+      width: 80,
+      height: 64,
+      data: bytes.buffer
+    }
+  }
+
   /** 
    * Get the color palette indices for a given frame. RGBA colors for these values can be indexed from {@link KwzParser.globalPalette}
    * 
@@ -632,50 +652,55 @@ export class KwzParser extends FlipnoteParserBase {
   private getFrameDiffingFlag(frameIndex: number) {
     assertRange(frameIndex, 0, this.frameCount - 1, 'Frame index');
     this.seek(this.frameMetaOffsets[frameIndex]);
-    const flags = this.readUint32();
-    return (flags >> 4) & 0x07;
+    return (this.readUint32() >> 4) & 0x07;
   }
 
-  private getFrameLayerSizes(frameIndex: number) {
-    assertRange(frameIndex, 0, this.frameCount - 1, 'Frame index');
-    this.seek(this.frameMetaOffsets[frameIndex] + 0x4);
+  /**
+   * Determines if a given frame is a video key frame or not. This returns an array of booleans for each layer, since keyframe encoding is done on a per-layer basis.
+   * @param frameIndex
+   * @category Image
+  */
+  getIsKeyFrame(frameIndex: number) {
+    const flag = this.getFrameDiffingFlag(frameIndex);
     return [
-      this.readUint16(),
-      this.readUint16(),
-      this.readUint16()
+      (flag & 0x1) === 0,
+      (flag & 0x2) === 0,
+      (flag & 0x4) === 0,
     ];
   }
 
-  private getFrameLayerDepths(frameIndex: number) {
+  /**
+   * Get the 3D depths for each layer in a given frame.
+   * @param frameIndex
+   * @category Image
+  */
+  getFrameLayerDepths(frameIndex: number) {
     assertRange(frameIndex, 0, this.frameCount - 1, 'Frame index');
     this.seek(this.frameMetaOffsets[frameIndex] + 0x14);
-    const a = [
+    return [
       this.readUint8(),
       this.readUint8(),
       this.readUint8()
     ];
-    return a;
   }
 
-  private getFrameAuthor(frameIndex: number) {
+  /**
+   * Get the FSID for a given frame's original author.
+   * @param frameIndex
+   * @category Meta
+  */
+  getFrameAuthor(frameIndex: number) {
     assertRange(frameIndex, 0, this.frameCount - 1, 'Frame index');
     this.seek(this.frameMetaOffsets[frameIndex] + 0xA);
     return this.readFsid();
   }
 
-  private decodeFrameSoundFlags(frameIndex: number) {
-    assertRange(frameIndex, 0, this.frameCount - 1, 'Frame index');
-    this.seek(this.frameMetaOffsets[frameIndex] + 0x17);
-    const soundFlags = this.readUint8();
-    return [
-      (soundFlags & 0x1) !== 0,
-      (soundFlags & 0x2) !== 0,
-      (soundFlags & 0x4) !== 0,
-      (soundFlags & 0x8) !== 0,
-    ];
-  }
-
-  private getFrameCameraFlags(frameIndex: number) {
+  /** 
+   * Get the camera flags for a given frame
+   * @category Image
+   * @returns Array of booleans, indicating whether each layer uses a photo or not
+  */
+  getFrameCameraFlags(frameIndex: number) {
     this.seek(this.frameMetaOffsets[frameIndex] + 0x1A);
     const cameraFlags = this.readUint8();
     return [
@@ -688,7 +713,6 @@ export class KwzParser extends FlipnoteParserBase {
   /** 
    * Get the layer draw order for a given frame
    * @category Image
-   * @returns Array of layer indexes, in the order they should be drawn
   */
   getFrameLayerOrder(frameIndex: number) {
     assertRange(frameIndex, 0, this.frameCount - 1, 'Frame index');
@@ -914,6 +938,18 @@ export class KwzParser extends FlipnoteParserBase {
     }
     this.prevDecodedFrame = frameIndex;
     return this.layerBuffers;
+  }
+
+  private decodeFrameSoundFlags(frameIndex: number) {
+    assertRange(frameIndex, 0, this.frameCount - 1, 'Frame index');
+    this.seek(this.frameMetaOffsets[frameIndex] + 0x17);
+    const soundFlags = this.readUint8();
+    return [
+      (soundFlags & 0x1) !== 0,
+      (soundFlags & 0x2) !== 0,
+      (soundFlags & 0x4) !== 0,
+      (soundFlags & 0x8) !== 0,
+    ];
   }
 
   /** 

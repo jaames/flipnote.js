@@ -5,7 +5,8 @@ import {
   FlipnoteSoundEffectTrack,
   FlipnoteSoundEffectFlags,
   FlipnoteMeta,
-  FlipnoteParserBase
+  FlipnoteParserBase,
+  FlipnoteThumbImageFormat
 } from './FlipnoteParserBase';
 
 import {
@@ -30,7 +31,7 @@ import {
 const PPM_FRAMERATES = [0.5, 0.5, 1, 2, 4, 6, 12, 20, 30];
 
 /** 
- * PPM color defines (red, green, blue, alpha)
+ * PPM frame color defines (red, green, blue, alpha)
  */
 const PPM_PALETTE: FlipnotePaletteDefinition = {
   WHITE: [0xff, 0xff, 0xff, 0xff],
@@ -38,6 +39,29 @@ const PPM_PALETTE: FlipnotePaletteDefinition = {
   RED:   [0xff, 0x2a, 0x2a, 0xff],
   BLUE:  [0x0a, 0x39, 0xff, 0xff]
 };
+
+/** 
+ * @internal
+ * PPM thumbnail color defines (in ABGR order)
+ */
+const PPM_THUMB_PALETTE = [
+  0xFFFFFFFF,
+  0xFF525252,
+  0xFFFFFFFF,
+  0xFF9C9C9C,
+  0xFF4448FF,
+  0xFF4F51C8,
+  0xFFACADFF,
+  0xFF00FF00,
+  0xFFFF4048,
+  0xFFB84F51,
+  0xFFFFABAD,
+  0xFF00FF00,
+  0xFFB757B6,
+  0xFF00FF00,
+  0xFF00FF00,
+  0xFF00FF00,
+];
 
 /**
  * RSA public key used to verify that the PPM file signature is genuine.
@@ -319,6 +343,37 @@ export class PpmParser extends FlipnoteParserBase {
     const header = this.readUint8();
     return (header >> 7) & 0x1;
   }
+
+  /**
+   * Decodes the thumbnail image embedded in the Flipnote. Will return a {@link FlipnoteThumbImage} containing raw RGBA data.
+   * 
+   * Note: For most purposes, you should probably just decode the thumbnail frame to get a higher resolution image.
+   * @category Meta
+   */
+  getThumbnailImage() {
+    this.seek(0xA0);
+    const data = this.readBytes(1536);
+    const pixels = new Uint32Array(64 * 48);
+    let ptr = 0;
+    for (let tileY = 0; tileY < 48; tileY += 8) {
+      for (let tileX = 0; tileX < 64; tileX += 8) {
+        for (let line = 0; line < 8; line += 1) {
+          for (let pixel = 0; pixel < 8; pixel += 2) {
+            const x = tileX + pixel;
+            const y = tileY + line;
+            pixels[y * 64 + x] = PPM_THUMB_PALETTE[data[ptr] & 0xF];
+            pixels[y * 64 + x + 1] = PPM_THUMB_PALETTE[(data[ptr] << 4) & 0xF];
+          }
+        }
+      }
+    }
+    return {
+      format: FlipnoteThumbImageFormat.Rgba,
+      width: 64,
+      height: 48,
+      data: pixels.buffer
+    }
+  }
   
   /** 
    * Decode a frame, returning the raw pixel buffers for each layer
@@ -478,16 +533,6 @@ export class PpmParser extends FlipnoteParserBase {
   }
 
   /** 
-   * Get the layer draw order for a given frame
-   * @category Image
-   * @returns Array of layer indexes, in the order they should be drawn
-  */
-  getFrameLayerOrder(frameIndex?: number) {
-    assertRange(frameIndex, 0, this.frameCount - 1, 'Frame index');
-    return [1, 0];
-  }
-
-  /** 
    * Get the color palette indices for a given frame. RGBA colors for these values can be indexed from {@link PpmParser.globalPalette}
    *
    * Returns an array where:
@@ -527,6 +572,52 @@ export class PpmParser extends FlipnoteParserBase {
     assertRange(frameIndex, 0, this.frameCount - 1, 'Frame index');
     const indices = this.getFramePaletteIndices(frameIndex);
     return indices.map(colorIndex => this.globalPalette[colorIndex]);
+  }
+
+  /**
+   * Determines if a given frame is a video key frame or not. This returns an array of booleans for each layer, since in the KWZ format, keyframe encoding is done on a per-layer basis.
+   * @param frameIndex
+   * @category Image
+  */
+  getIsKeyFrame(frameIndex: number) {
+    const flag = this.isKeyFrame(frameIndex) === 1;
+    return [flag, flag];
+  }
+
+  /**
+   * Get the 3D depths for each layer in a given frame. The PPM format doesn't actually store this information, so `0` is returned for both layers. This method is only here for consistency with KWZ.
+   * @param frameIndex
+   * @category Image
+  */
+  getFrameLayerDepths(frameIndex: number) {
+    return [0, 0];
+  }
+
+  /**
+   * Get the FSID for a given frame's original author. The PPM format doesn't actually store this information, so the current author FSID is returned. This method is only here for consistency with KWZ.
+   * @param frameIndex
+   * @category Meta
+  */
+  getFrameAuthor(frameIndex: number) {
+    return this.meta.current.fsid;
+  }
+
+  /** 
+   * Get the camera flags for a given frame. The PPM format doesn't actually store this information so `false` will be returned for both layers. This method is only here for consistency with KWZ.
+   * @category Image
+   * @returns Array of booleans, indicating whether each layer uses a photo or not
+  */
+  getFrameCameraFlags(frameIndex: number) {
+    return [false, false];
+  }
+
+  /** 
+   * Get the layer draw order for a given frame
+   * @category Image
+   * @returns Array of layer indices, in the order they should be drawn
+  */
+  getFrameLayerOrder(frameIndex: number) {
+    return [1, 0];
   }
 
   /** 

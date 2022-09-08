@@ -111,7 +111,7 @@ const typeDeclarationConfig = (src, dest) => (
 
 module.exports = [
   // UMD build
-  {
+  (!devserver) && {
     input: [
       'src/flipnote.ts',
     ],
@@ -129,10 +129,10 @@ module.exports = [
       minifierConfig()
     ].filter(Boolean))
   },
-  typeDeclarationConfig('types/flipnote.d.ts', 'dist/flipnote.d.ts'),
+  (!devserver) && typeDeclarationConfig('types/flipnote.d.ts', 'dist/flipnote.d.ts'),
 
   // ES build
-  {
+  (!devserver) && {
     input: [
       'src/flipnote.ts',
     ],
@@ -183,7 +183,7 @@ module.exports = [
       }),
     ].filter(Boolean))
   },
-  typeDeclarationConfig('types/flipnote.webcomponent.d.ts', 'dist/flipnote.webcomponent.d.ts'),
+  (!devserver) && typeDeclarationConfig('types/flipnote.webcomponent.d.ts', 'dist/flipnote.webcomponent.d.ts'),
 
   // tiny bundles for specific features
 

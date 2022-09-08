@@ -14,6 +14,24 @@ export enum FlipnoteFormat {
   KWZ = 'KWZ'
 };
 
+/** Buffer format for a FlipnoteThumbImage  */
+export enum FlipnoteThumbImageFormat {
+  Jpeg,
+  Rgba
+};
+
+/** Represents a decoded Flipnote thumbnail image */
+export type FlipnoteThumbImage = {
+  /**  */
+  format: FlipnoteThumbImageFormat,
+  /** Image width in pixels */
+  width: number,
+  /** Image height in pixels */
+  height: number,
+  /** Image data */
+  data: ArrayBuffer
+};
+
 /** RGBA color */
 export type FlipnotePaletteColor = [
   /** Red (0 to 255) */
@@ -28,6 +46,12 @@ export type FlipnotePaletteColor = [
 
 /** Flipnote layer visibility */
 export type FlipnoteLayerVisibility = Record<number, boolean>;
+
+/** Stereographic eye view (left/right) for 3D effects */
+export enum FlipnoteStereographEye {
+  Left,
+  Right
+};
 
 /** Defines the colors used for a given Flipnote format */
 export type FlipnotePaletteDefinition = Record<string, FlipnotePaletteColor>;
@@ -263,6 +287,14 @@ export abstract class FlipnoteParserBase extends DataStream {
       yield i;
   }
 
+  /**
+   * Decodes the thumbnail image embedded in the Flipnote. Will return a {@link FlipnoteThumbImage} containing JPEG or raw RGBA data depending on the format.
+   * 
+   * Note: For most purposes, you should probably just decode the thumbnail frame instead, to get a higher resolution image.
+   * @category Meta
+   */
+  abstract getThumbnailImage(): FlipnoteThumbImage;
+
   /** 
    * Decode a frame, returning the raw pixel buffers for each layer
    * @category Image
@@ -278,7 +310,9 @@ export abstract class FlipnoteParserBase extends DataStream {
   getLayerPixels(
     frameIndex: number,
     layerIndex: number,
-    imageBuffer = new Uint8Array(this.imageWidth * this.imageHeight)
+    imageBuffer = new Uint8Array(this.imageWidth * this.imageHeight),
+    depthStrength = 0.5,
+    depthEye: FlipnoteStereographEye = FlipnoteStereographEye.Right,
   ) {
     assertRange(frameIndex, 0, this.frameCount - 1, 'Frame index');
     assertRange(layerIndex, 0, this.numLayers - 1, 'Layer index');
@@ -288,8 +322,11 @@ export abstract class FlipnoteParserBase extends DataStream {
     // raw pixels
     const layers = this.decodeFrame(frameIndex);
     const layerBuffer = layers[layerIndex];
+    const depth = Math.floor(this.getFrameLayerDepths(frameIndex)[layerIndex] * depthStrength);
+    const depthShift = ((depthEye == FlipnoteStereographEye.Left) ? -depth : depth);
     // image dimensions and crop
     const srcStride = this.srcWidth;
+    const dstStride = this.imageWidth;
     const width = this.imageWidth;
     const height = this.imageHeight;
     const xOffs = this.imageOffsetX;
@@ -303,9 +340,10 @@ export abstract class FlipnoteParserBase extends DataStream {
     for (let srcY = yOffs, dstY = 0; dstY < height; srcY++, dstY++) {
       for (let srcX = xOffs, dstX = 0; dstX < width; srcX++, dstX++) {
         const srcPtr = srcY * srcStride + srcX;
-        const dstPtr = dstY * width + dstX;
+        const dstPtr = dstY * dstStride + dstX + depthShift;
         let pixel = layerBuffer[srcPtr];
-        if (pixel !== 0) imageBuffer[dstPtr] = palette[palettePtr + pixel];
+        if (pixel !== 0)
+          imageBuffer[dstPtr] = palette[palettePtr + pixel];
       }
     }
     return imageBuffer;
@@ -321,7 +359,9 @@ export abstract class FlipnoteParserBase extends DataStream {
     frameIndex: number,
     layerIndex: number,
     imageBuffer = new Uint32Array(this.imageWidth * this.imageHeight),
-    paletteBuffer = new Uint32Array(16)
+    paletteBuffer = new Uint32Array(16),
+    depthStrength = 0,
+    depthEye: FlipnoteStereographEye = FlipnoteStereographEye.Left,
   ) {
     assertRange(frameIndex, 0, this.frameCount - 1, 'Frame index');
     assertRange(layerIndex, 0, this.numLayers - 1, 'Layer index');
@@ -331,9 +371,13 @@ export abstract class FlipnoteParserBase extends DataStream {
     // raw pixels
     const layers = this.decodeFrame(frameIndex);
     const layerBuffer = layers[layerIndex];
+    // depths
+    const depth = Math.floor(this.getFrameLayerDepths(frameIndex)[layerIndex] * depthStrength);
+    const depthShift = ((depthEye == FlipnoteStereographEye.Left) ? -depth : depth)
     // image dimensions and crop
     const srcStride = this.srcWidth;
-    const width = this.imageWidth;
+    const dstStride = this.imageWidth;
+    const width = this.imageWidth - depth;
     const height = this.imageHeight;
     const xOffs = this.imageOffsetX;
     const yOffs = this.imageOffsetY;
@@ -346,13 +390,42 @@ export abstract class FlipnoteParserBase extends DataStream {
     for (let srcY = yOffs, dstY = 0; dstY < height; srcY++, dstY++) {
       for (let srcX = xOffs, dstX = 0; dstX < width; srcX++, dstX++) {
         const srcPtr = srcY * srcStride + srcX;
-        const dstPtr = dstY * width + dstX;
+        const dstPtr = dstY * dstStride + dstX + depthShift;
         let pixel = layerBuffer[srcPtr];
-        if (pixel !== 0) imageBuffer[dstPtr] = paletteBuffer[palettePtr + pixel];
+        if (pixel !== 0)
+          imageBuffer[dstPtr] = paletteBuffer[palettePtr + pixel];
       }
     }
     return imageBuffer;
   }
+
+  /**
+   * Determines if a given frame is a video key frame or not. This returns an array of booleans for each layer, since keyframe encoding is done on a per-layer basis.
+   * @param frameIndex
+   * @category Image
+  */
+  abstract getIsKeyFrame(frameIndex: number): boolean[];
+
+  /**
+   * Get the 3D depths for each layer in a given frame.
+   * @param frameIndex
+   * @category Image
+  */
+  abstract getFrameLayerDepths(frameIndex: number): number[];
+
+  /**
+   * Get the FSID for a given frame's original author.
+   * @param frameIndex
+   * @category Meta
+   */
+  abstract getFrameAuthor(frameIndex: number): string;
+
+  /** 
+   * Get the camera flags for a given frame, if there are any
+   * @category Image
+   * @returns Array of booleans, indicating whether each layer uses a photo or not
+  */
+  abstract getFrameCameraFlags(frameIndex: number): boolean[];
 
   /** 
    * Get the layer draw order for a given frame
@@ -366,10 +439,13 @@ export abstract class FlipnoteParserBase extends DataStream {
   */
   getFramePixels(
     frameIndex: number,
-    imageBuffer = new Uint8Array(this.imageWidth * this.imageHeight)
+    imageBuffer = new Uint8Array(this.imageWidth * this.imageHeight),
+    depthStrength = 0.5,
+    depthEye: FlipnoteStereographEye = FlipnoteStereographEye.Right,
   ) {
     // image dimensions and crop
     const srcStride = this.srcWidth;
+    const dstStride = this.imageWidth;
     const width = this.imageWidth;
     const height = this.imageHeight;
     const xOffs = this.imageOffsetX;
@@ -380,12 +456,15 @@ export abstract class FlipnoteParserBase extends DataStream {
     imageBuffer.fill(palette[0]);
     // get layer info + decode into buffers
     const layerOrder = this.getFrameLayerOrder(frameIndex);
+    const layerDepth = this.getFrameLayerDepths(frameIndex);
     const layers = this.decodeFrame(frameIndex);
     // merge layers into framebuffer
     for (let i = 0; i < this.numLayers; i++) {
       const layerIndex = layerOrder[i];
       const layerBuffer = layers[layerIndex];
       const palettePtr = layerIndex * this.numLayerColors;
+      const depth = Math.floor(layerDepth[layerIndex] * depthStrength);
+      const depthShift = ((depthEye == FlipnoteStereographEye.Left) ? -depth : depth);
       // skip if layer is not visible
       if (!this.layerVisibility[layerIndex + 1])
         continue;
@@ -393,9 +472,10 @@ export abstract class FlipnoteParserBase extends DataStream {
       for (let srcY = yOffs, dstY = 0; dstY < height; srcY++, dstY++) {
         for (let srcX = xOffs, dstX = 0; dstX < width; srcX++, dstX++) {
           const srcPtr = srcY * srcStride + srcX;
-          const dstPtr = dstY * width + dstX;
+          const dstPtr = dstY * width + dstX + depthShift;
           let pixel = layerBuffer[srcPtr];
-          if (pixel !== 0) imageBuffer[dstPtr] = palette[palettePtr + pixel];
+          if (pixel !== 0)
+            imageBuffer[dstPtr] = palette[palettePtr + pixel];
         }
       }
     }
@@ -410,11 +490,14 @@ export abstract class FlipnoteParserBase extends DataStream {
   getFramePixelsRgba(
     frameIndex: number,
     imageBuffer = new Uint32Array(this.imageWidth * this.imageHeight),
-    paletteBuffer = new Uint32Array(16)
+    paletteBuffer = new Uint32Array(16),
+    depthStrength = 0.5,
+    depthEye: FlipnoteStereographEye = FlipnoteStereographEye.Right,
   ) {
     assertRange(frameIndex, 0, this.frameCount - 1, 'Frame index');
     // image dimensions and crop
     const srcStride = this.srcWidth;
+    const dstStride = this.imageWidth;
     const width = this.imageWidth;
     const height = this.imageHeight;
     const xOffs = this.imageOffsetX;
@@ -425,22 +508,28 @@ export abstract class FlipnoteParserBase extends DataStream {
     imageBuffer.fill(paletteBuffer[0]);
     // get layer info + decode into buffers
     const layerOrder = this.getFrameLayerOrder(frameIndex);
+    const layerDepth = this.getFrameLayerDepths(frameIndex);
     const layers = this.decodeFrame(frameIndex);
     // merge layers into framebuffer
     for (let i = 0; i < this.numLayers; i++) {
       const layerIndex = layerOrder[i];
-      const layerBuffer = layers[layerIndex];
-      const palettePtr = layerIndex * this.numLayerColors;
+      
       // skip if layer is not visible
       if (!this.layerVisibility[layerIndex + 1])
         continue;
-      // merge layer into rgb buffer
-      for (let srcY = yOffs, dstY = 0; dstY < height; srcY++, dstY++) {
-        for (let srcX = xOffs, dstX = 0; dstX < width; srcX++, dstX++) {
+        
+      const layerBuffer = layers[layerIndex];
+      const palettePtr = layerIndex * this.numLayerColors;
+      const depth = Math.floor(layerDepth[layerIndex] * depthStrength);
+      const depthShift = ((depthEye == FlipnoteStereographEye.Left) ? -depth : depth);
+
+      for (let srcY = yOffs, dstY = 0; srcY < height; srcY++, dstY++) {
+        for (let srcX = xOffs, dstX = 0; srcX < width; srcX++, dstX++) {
           const srcPtr = srcY * srcStride + srcX;
-          const dstPtr = dstY * width + dstX;
+          const dstPtr = dstY * dstStride + dstX + depthShift;
           let pixel = layerBuffer[srcPtr];
-          if (pixel !== 0) imageBuffer[dstPtr] = paletteBuffer[palettePtr + pixel];
+          if (pixel !== 0)
+            imageBuffer[dstPtr] = paletteBuffer[palettePtr + pixel];
         }
       }
     }

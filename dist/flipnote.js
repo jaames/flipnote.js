@@ -897,6 +897,18 @@ Keep on Flipnoting!
         /** Animation format used by Flipnote Studio 3D (Nintendo 3DS) */
         FlipnoteFormat["KWZ"] = "KWZ";
     })(exports.FlipnoteFormat || (exports.FlipnoteFormat = {}));
+    /** Buffer format for a FlipnoteThumbImage  */
+    var FlipnoteThumbImageFormat;
+    (function (FlipnoteThumbImageFormat) {
+        FlipnoteThumbImageFormat[FlipnoteThumbImageFormat["Jpeg"] = 0] = "Jpeg";
+        FlipnoteThumbImageFormat[FlipnoteThumbImageFormat["Rgba"] = 1] = "Rgba";
+    })(FlipnoteThumbImageFormat || (FlipnoteThumbImageFormat = {}));
+    /** Stereographic eye view (left/right) for 3D effects */
+    var FlipnoteStereographEye;
+    (function (FlipnoteStereographEye) {
+        FlipnoteStereographEye[FlipnoteStereographEye["Left"] = 0] = "Left";
+        FlipnoteStereographEye[FlipnoteStereographEye["Right"] = 1] = "Right";
+    })(FlipnoteStereographEye || (FlipnoteStereographEye = {}));
     /** Identifies a Flipnote audio track type */
     exports.FlipnoteAudioTrack = void 0;
     (function (FlipnoteAudioTrack) {
@@ -1058,9 +1070,11 @@ Keep on Flipnoting!
          * NOTE: if the visibility flag for this layer is turned off, the result will be empty
          * @category Image
         */
-        FlipnoteParserBase.prototype.getLayerPixelsRgba = function (frameIndex, layerIndex, imageBuffer, paletteBuffer) {
+        FlipnoteParserBase.prototype.getLayerPixelsRgba = function (frameIndex, layerIndex, imageBuffer, paletteBuffer, depthStrength, depthEye) {
             if (imageBuffer === void 0) { imageBuffer = new Uint32Array(this.imageWidth * this.imageHeight); }
             if (paletteBuffer === void 0) { paletteBuffer = new Uint32Array(16); }
+            if (depthStrength === void 0) { depthStrength = 0; }
+            if (depthEye === void 0) { depthEye = FlipnoteStereographEye.Left; }
             assertRange(frameIndex, 0, this.frameCount - 1, 'Frame index');
             assertRange(layerIndex, 0, this.numLayers - 1, 'Layer index');
             // palette
@@ -1069,9 +1083,13 @@ Keep on Flipnoting!
             // raw pixels
             var layers = this.decodeFrame(frameIndex);
             var layerBuffer = layers[layerIndex];
+            // depths
+            var layerDepth = Math.floor(this.getFrameLayerDepths(frameIndex)[layerIndex] * depthStrength);
+            var layerShift = ((depthEye == FlipnoteStereographEye.Left) ? -layerDepth : layerDepth);
             // image dimensions and crop
             var srcStride = this.srcWidth;
-            var width = this.imageWidth;
+            var dstStride = this.imageWidth;
+            var width = this.imageWidth - layerDepth;
             var height = this.imageHeight;
             var xOffs = this.imageOffsetX;
             var yOffs = this.imageOffsetY;
@@ -1082,9 +1100,9 @@ Keep on Flipnoting!
                 return imageBuffer;
             // convert to palette indices and crop
             for (var srcY = yOffs, dstY = 0; dstY < height; srcY++, dstY++) {
-                for (var srcX = xOffs, dstX = 0; dstX < width; srcX++, dstX++) {
+                for (var srcX = xOffs, dstX = layerShift; dstX < width; srcX++, dstX++) {
                     var srcPtr = srcY * srcStride + srcX;
-                    var dstPtr = dstY * width + dstX;
+                    var dstPtr = dstY * dstStride + dstX;
                     var pixel = layerBuffer[srcPtr];
                     if (pixel !== 0)
                         imageBuffer[dstPtr] = paletteBuffer[palettePtr + pixel];
@@ -1136,12 +1154,15 @@ Keep on Flipnoting!
          * Get the image for a given frame as an uint32 array of RGBA pixels
          * @category Image
          */
-        FlipnoteParserBase.prototype.getFramePixelsRgba = function (frameIndex, imageBuffer, paletteBuffer) {
+        FlipnoteParserBase.prototype.getFramePixelsRgba = function (frameIndex, imageBuffer, paletteBuffer, depthStrength, depthEye) {
             if (imageBuffer === void 0) { imageBuffer = new Uint32Array(this.imageWidth * this.imageHeight); }
             if (paletteBuffer === void 0) { paletteBuffer = new Uint32Array(16); }
+            if (depthStrength === void 0) { depthStrength = 1; }
+            if (depthEye === void 0) { depthEye = FlipnoteStereographEye.Right; }
             assertRange(frameIndex, 0, this.frameCount - 1, 'Frame index');
             // image dimensions and crop
             var srcStride = this.srcWidth;
+            var dstStride = this.imageWidth;
             var width = this.imageWidth;
             var height = this.imageHeight;
             var xOffs = this.imageOffsetX;
@@ -1152,20 +1173,25 @@ Keep on Flipnoting!
             imageBuffer.fill(paletteBuffer[0]);
             // get layer info + decode into buffers
             var layerOrder = this.getFrameLayerOrder(frameIndex);
+            var layerDepth = this.getFrameLayerDepths(frameIndex);
             var layers = this.decodeFrame(frameIndex);
             // merge layers into framebuffer
             for (var i = 0; i < this.numLayers; i++) {
                 var layerIndex = layerOrder[i];
-                var layerBuffer = layers[layerIndex];
-                var palettePtr = layerIndex * this.numLayerColors;
                 // skip if layer is not visible
                 if (!this.layerVisibility[layerIndex + 1])
                     continue;
-                // merge layer into rgb buffer
+                var layerBuffer = layers[layerIndex];
+                var palettePtr = layerIndex * this.numLayerColors;
+                var depth = Math.floor(layerDepth[layerIndex] * depthStrength);
+                ((depthEye == FlipnoteStereographEye.Left) ? -depth : depth);
+                // const startY = Math.max(translateY, 0);
+                // const endX = Math.min(w + translateX, w);
+                // const endY = Math.min(h + translateY, h);
                 for (var srcY = yOffs, dstY = 0; dstY < height; srcY++, dstY++) {
                     for (var srcX = xOffs, dstX = 0; dstX < width; srcX++, dstX++) {
                         var srcPtr = srcY * srcStride + srcX;
-                        var dstPtr = dstY * width + dstX;
+                        var dstPtr = dstY * dstStride + dstX;
                         var pixel = layerBuffer[srcPtr];
                         if (pixel !== 0)
                             imageBuffer[dstPtr] = paletteBuffer[palettePtr + pixel];
@@ -1224,7 +1250,7 @@ Keep on Flipnoting!
      */
     var PPM_FRAMERATES = [0.5, 0.5, 1, 2, 4, 6, 12, 20, 30];
     /**
-     * PPM color defines (red, green, blue, alpha)
+     * PPM frame color defines (red, green, blue, alpha)
      */
     var PPM_PALETTE = {
         WHITE: [0xff, 0xff, 0xff, 0xff],
@@ -1232,6 +1258,28 @@ Keep on Flipnoting!
         RED: [0xff, 0x2a, 0x2a, 0xff],
         BLUE: [0x0a, 0x39, 0xff, 0xff]
     };
+    /**
+     * @internal
+     * PPM thumbnail color defines (in ABGR order)
+     */
+    var PPM_THUMB_PALETTE = [
+        0xFFFFFFFF,
+        0xFF525252,
+        0xFFFFFFFF,
+        0xFF9C9C9C,
+        0xFF4448FF,
+        0xFF4F51C8,
+        0xFFACADFF,
+        0xFF00FF00,
+        0xFFFF4048,
+        0xFFB84F51,
+        0xFFFFABAD,
+        0xFF00FF00,
+        0xFFB757B6,
+        0xFF00FF00,
+        0xFF00FF00,
+        0xFF00FF00,
+    ];
     /**
      * RSA public key used to verify that the PPM file signature is genuine.
      *
@@ -1434,6 +1482,36 @@ Keep on Flipnoting!
             return (header >> 7) & 0x1;
         };
         /**
+         * Decodes the thumbnail image embedded in the Flipnote. Will return a {@link FlipnoteThumbImage} containing raw RGBA data.
+         *
+         * Note: For most purposes, you should probably just decode the thumbnail frame to get a higher resolution image.
+         * @category Meta
+         */
+        PpmParser.prototype.getThumbnailImage = function () {
+            this.seek(0xA0);
+            var data = this.readBytes(1536);
+            var pixels = new Uint32Array(64 * 48);
+            var ptr = 0;
+            for (var tileY = 0; tileY < 48; tileY += 8) {
+                for (var tileX = 0; tileX < 64; tileX += 8) {
+                    for (var line = 0; line < 8; line += 1) {
+                        for (var pixel = 0; pixel < 8; pixel += 2) {
+                            var x = tileX + pixel;
+                            var y = tileY + line;
+                            pixels[y * 64 + x] = PPM_THUMB_PALETTE[data[ptr] & 0xF];
+                            pixels[y * 64 + x + 1] = PPM_THUMB_PALETTE[(data[ptr] << 4) & 0xF];
+                        }
+                    }
+                }
+            }
+            return {
+                format: FlipnoteThumbImageFormat.Rgba,
+                width: 64,
+                height: 48,
+                data: pixels.buffer
+            };
+        };
+        /**
          * Decode a frame, returning the raw pixel buffers for each layer
          * @category Image
         */
@@ -1587,15 +1665,6 @@ Keep on Flipnoting!
             return this.layerBuffers;
         };
         /**
-         * Get the layer draw order for a given frame
-         * @category Image
-         * @returns Array of layer indexes, in the order they should be drawn
-        */
-        PpmParser.prototype.getFrameLayerOrder = function (frameIndex) {
-            assertRange(frameIndex, 0, this.frameCount - 1, 'Frame index');
-            return [1, 0];
-        };
-        /**
          * Get the color palette indices for a given frame. RGBA colors for these values can be indexed from {@link PpmParser.globalPalette}
          *
          * Returns an array where:
@@ -1635,6 +1704,47 @@ Keep on Flipnoting!
             assertRange(frameIndex, 0, this.frameCount - 1, 'Frame index');
             var indices = this.getFramePaletteIndices(frameIndex);
             return indices.map(function (colorIndex) { return _this.globalPalette[colorIndex]; });
+        };
+        /**
+         * Determines if a given frame is a video key frame or not. This returns an array of booleans for each layer, since in the KWZ format, keyframe encoding is done on a per-layer basis.
+         * @param frameIndex
+         * @category Image
+        */
+        PpmParser.prototype.getIsKeyFrame = function (frameIndex) {
+            var flag = this.isKeyFrame(frameIndex) === 1;
+            return [flag, flag];
+        };
+        /**
+         * Get the 3D depths for each layer in a given frame. The PPM format doesn't actually store this information, so `0` is returned for both layers. This method is only here for consistency with KWZ.
+         * @param frameIndex
+         * @category Image
+        */
+        PpmParser.prototype.getFrameLayerDepths = function (frameIndex) {
+            return [0, 0];
+        };
+        /**
+         * Get the FSID for a given frame's original author. The PPM format doesn't actually store this information, so the current author FSID is returned. This method is only here for consistency with KWZ.
+         * @param frameIndex
+         * @category Meta
+        */
+        PpmParser.prototype.getFrameAuthor = function (frameIndex) {
+            return this.meta.current.fsid;
+        };
+        /**
+         * Get the camera flags for a given frame. The PPM format doesn't actually store this information so `false` will be returned for both layers. This method is only here for consistency with KWZ.
+         * @category Image
+         * @returns Array of booleans, indicating whether each layer uses a photo or not
+        */
+        PpmParser.prototype.getFrameCameraFlags = function (frameIndex) {
+            return [false, false];
+        };
+        /**
+         * Get the layer draw order for a given frame
+         * @category Image
+         * @returns Array of layer indices, in the order they should be drawn
+        */
+        PpmParser.prototype.getFrameLayerOrder = function (frameIndex) {
+            return [1, 0];
         };
         /**
          * Get the sound effect flags for every frame in the Flipnote
@@ -2261,6 +2371,24 @@ Keep on Flipnoting!
             this.soundMeta = soundMeta;
         };
         /**
+         * Decodes the thumbnail image embedded in the Flipnote. Will return a {@link FlipnoteThumbImage} containing JPEG data.
+         *
+         * Note: For most purposes, you should probably just decode the thumbnail fraa to get a higher resolution image.
+         * @category Meta
+         */
+        KwzParser.prototype.getThumbnailImage = function () {
+            assert(this.sectionMap.has('KTN'), 'KTN section missing - Note that folder icons and comments do not contain thumbnail data');
+            var ktn = this.sectionMap.get('KTN');
+            this.seek(ktn.ptr + 12);
+            var bytes = this.readBytes(ktn.length - 12);
+            return {
+                format: FlipnoteThumbImageFormat.Jpeg,
+                width: 80,
+                height: 64,
+                data: bytes.buffer
+            };
+        };
+        /**
          * Get the color palette indices for a given frame. RGBA colors for these values can be indexed from {@link KwzParser.globalPalette}
          *
          * Returns an array where:
@@ -2309,44 +2437,50 @@ Keep on Flipnoting!
         KwzParser.prototype.getFrameDiffingFlag = function (frameIndex) {
             assertRange(frameIndex, 0, this.frameCount - 1, 'Frame index');
             this.seek(this.frameMetaOffsets[frameIndex]);
-            var flags = this.readUint32();
-            return (flags >> 4) & 0x07;
+            return (this.readUint32() >> 4) & 0x07;
         };
-        KwzParser.prototype.getFrameLayerSizes = function (frameIndex) {
-            assertRange(frameIndex, 0, this.frameCount - 1, 'Frame index');
-            this.seek(this.frameMetaOffsets[frameIndex] + 0x4);
+        /**
+         * Determines if a given frame is a video key frame or not. This returns an array of booleans for each layer, since keyframe encoding is done on a per-layer basis.
+         * @param frameIndex
+         * @category Image
+        */
+        KwzParser.prototype.getIsKeyFrame = function (frameIndex) {
+            var flag = this.getFrameDiffingFlag(frameIndex);
             return [
-                this.readUint16(),
-                this.readUint16(),
-                this.readUint16()
+                (flag & 0x1) === 0,
+                (flag & 0x2) === 0,
+                (flag & 0x4) === 0,
             ];
         };
+        /**
+         * Get the 3D depths for each layer in a given frame.
+         * @param frameIndex
+         * @category Image
+        */
         KwzParser.prototype.getFrameLayerDepths = function (frameIndex) {
             assertRange(frameIndex, 0, this.frameCount - 1, 'Frame index');
             this.seek(this.frameMetaOffsets[frameIndex] + 0x14);
-            var a = [
+            return [
                 this.readUint8(),
                 this.readUint8(),
                 this.readUint8()
             ];
-            return a;
         };
+        /**
+         * Get the FSID for a given frame's original author.
+         * @param frameIndex
+         * @category Meta
+        */
         KwzParser.prototype.getFrameAuthor = function (frameIndex) {
             assertRange(frameIndex, 0, this.frameCount - 1, 'Frame index');
             this.seek(this.frameMetaOffsets[frameIndex] + 0xA);
             return this.readFsid();
         };
-        KwzParser.prototype.decodeFrameSoundFlags = function (frameIndex) {
-            assertRange(frameIndex, 0, this.frameCount - 1, 'Frame index');
-            this.seek(this.frameMetaOffsets[frameIndex] + 0x17);
-            var soundFlags = this.readUint8();
-            return [
-                (soundFlags & 0x1) !== 0,
-                (soundFlags & 0x2) !== 0,
-                (soundFlags & 0x4) !== 0,
-                (soundFlags & 0x8) !== 0,
-            ];
-        };
+        /**
+         * Get the camera flags for a given frame
+         * @category Image
+         * @returns Array of booleans, indicating whether each layer uses a photo or not
+        */
         KwzParser.prototype.getFrameCameraFlags = function (frameIndex) {
             this.seek(this.frameMetaOffsets[frameIndex] + 0x1A);
             var cameraFlags = this.readUint8();
@@ -2359,7 +2493,6 @@ Keep on Flipnoting!
         /**
          * Get the layer draw order for a given frame
          * @category Image
-         * @returns Array of layer indexes, in the order they should be drawn
         */
         KwzParser.prototype.getFrameLayerOrder = function (frameIndex) {
             assertRange(frameIndex, 0, this.frameCount - 1, 'Frame index');
@@ -2565,6 +2698,17 @@ Keep on Flipnoting!
             }
             this.prevDecodedFrame = frameIndex;
             return this.layerBuffers;
+        };
+        KwzParser.prototype.decodeFrameSoundFlags = function (frameIndex) {
+            assertRange(frameIndex, 0, this.frameCount - 1, 'Frame index');
+            this.seek(this.frameMetaOffsets[frameIndex] + 0x17);
+            var soundFlags = this.readUint8();
+            return [
+                (soundFlags & 0x1) !== 0,
+                (soundFlags & 0x2) !== 0,
+                (soundFlags & 0x4) !== 0,
+                (soundFlags & 0x8) !== 0,
+            ];
         };
         /**
          * Get the sound effect flags for every frame in the Flipnote
@@ -5362,14 +5506,14 @@ Keep on Flipnoting!
                 return;
             if (this.note) {
                 renderer.setNote(this.note);
-                renderer.prevFrameIndex = (_a = this.subRenderer) === null || _a === void 0 ? void 0 : _a.prevFrameIndex;
+                renderer.prevFrameIndex = (_a = this.renderer) === null || _a === void 0 ? void 0 : _a.prevFrameIndex;
                 renderer.forceUpdate();
             }
-            if (this.subRenderer)
-                this.subRenderer.destroy();
+            if (this.renderer)
+                this.renderer.destroy();
             this.isHtml5 = renderer instanceof Html5Canvas;
             this.isReady = true;
-            this.subRenderer = renderer;
+            this.renderer = renderer;
             this.rendererStackIdx = this.rendererStack.indexOf(Canvas);
         };
         // for backwards compat
@@ -5377,7 +5521,7 @@ Keep on Flipnoting!
             this.setSubRenderer(Html5Canvas);
         };
         UniversalCanvas.prototype.setCanvasSize = function (width, height) {
-            var renderer = this.subRenderer;
+            var renderer = this.renderer;
             renderer.setCanvasSize(width, height);
             this.width = width;
             this.width = height;
@@ -5386,33 +5530,33 @@ Keep on Flipnoting!
         };
         UniversalCanvas.prototype.setNote = function (note) {
             this.note = note;
-            this.subRenderer.setNote(note);
+            this.renderer.setNote(note);
             this.prevFrameIndex = undefined;
-            this.srcWidth = this.subRenderer.srcWidth;
-            this.srcHeight = this.subRenderer.srcHeight;
+            this.srcWidth = this.renderer.srcWidth;
+            this.srcHeight = this.renderer.srcHeight;
         };
         UniversalCanvas.prototype.clear = function (color) {
-            this.subRenderer.clear(color);
+            this.renderer.clear(color);
         };
         UniversalCanvas.prototype.drawFrame = function (frameIndex) {
-            this.subRenderer.drawFrame(frameIndex);
+            this.renderer.drawFrame(frameIndex);
             this.prevFrameIndex = frameIndex;
         };
         UniversalCanvas.prototype.forceUpdate = function () {
-            this.subRenderer.forceUpdate();
+            this.renderer.forceUpdate();
         };
         UniversalCanvas.prototype.getDataUrl = function (type, quality) {
-            return this.subRenderer.getDataUrl();
+            return this.renderer.getDataUrl();
         };
         UniversalCanvas.prototype.getBlob = function (type, quality) {
             return __awaiter(this, void 0, void 0, function () {
                 return __generator(this, function (_a) {
-                    return [2 /*return*/, this.subRenderer.getBlob()];
+                    return [2 /*return*/, this.renderer.getBlob()];
                 });
             });
         };
         UniversalCanvas.prototype.destroy = function () {
-            this.subRenderer.destroy();
+            this.renderer.destroy();
             this.note = null;
         };
         return UniversalCanvas;
