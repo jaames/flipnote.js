@@ -1,0 +1,2809 @@
+<!doctype html>
+<html class="default no-js">
+<head>
+	<meta charset="utf-8">
+	<meta http-equiv="X-UA-Compatible" content="IE=edge">
+	<title>FlipnoteParserBase | flipnote.js</title>
+	<meta name="description" content="A JavaScript library for parsing, converting, and in-browser playback of the proprietary animation formats used by Nintendo's Flipnote Studio and Flipnote Studio 3D apps.">
+	<meta name="viewport" content="width=device-width, initial-scale=1">
+	<link rel="stylesheet" href="../assets/css/main.css">
+	<link rel="stylesheet" href="../assets/css/pages.css">
+	<link rel="stylesheet" href="../assets/css/landing.css">
+</head>
+<body>
+<header>
+	<div class="tsd-page-toolbar">
+		<div class="container">
+			<div class="table-wrap">
+				<div class="table-cell" id="tsd-search" data-index="../assets/js/search.json" data-base="..">
+					<div class="field">
+						<label for="tsd-search-field" class="tsd-widget search no-caption">Search</label>
+						<input id="tsd-search-field" type="text" />
+					</div>
+					<ul class="results">
+						<li class="state loading">Preparing search index...</li>
+						<li class="state failure">The search index is not available</li>
+					</ul>
+					<a href="../index.html" class="title">flipnote.js</a>
+				</div>
+				<a href="#" class="tsd-widget menu no-caption" data-toggle="menu">Menu</a>
+			</div>
+		</div>
+	</div>
+	<div class="tsd-page-title">
+		<div class="container">
+			<ul class="tsd-breadcrumb">
+				<li>
+					<a href="../globals.html">Globals</a>
+				</li>
+				<li>
+					<a href="flipnoteparserbase.html">FlipnoteParserBase</a>
+				</li>
+			</ul>
+			<h1>Class FlipnoteParserBase</h1>
+		</div>
+	</div>
+</header>
+<div class="container container-main page-reflection">
+	<div class="row">
+		<div class="col-8 col-content">
+			<div>
+				<section class="tsd-panel tsd-comment">
+					<div class="tsd-comment tsd-typography">
+						<div class="lead">
+							<p>Base Flipnote parser class</p>
+						</div>
+						<p>This doesn&#39;t implement any parsing functionality itself,
+						it just provides a consistent API for every format parser to implement.</p>
+					</div>
+				</section>
+				<section class="tsd-panel tsd-hierarchy">
+					<h3>Hierarchy</h3>
+					<ul class="tsd-hierarchy">
+						<li>
+							<span class="tsd-signature-type">DataStream</span>
+							<ul class="tsd-hierarchy">
+								<li>
+									<span class="target">FlipnoteParserBase</span>
+									<ul class="tsd-hierarchy">
+										<li>
+											<a href="ppmparser.html" class="tsd-signature-type">PpmParser</a>
+										</li>
+										<li>
+											<a href="kwzparser.html" class="tsd-signature-type">KwzParser</a>
+										</li>
+									</ul>
+								</li>
+							</ul>
+						</li>
+					</ul>
+				</section>
+				<section class="tsd-panel-group tsd-index-group">
+					<h2>Index</h2>
+					<section class="tsd-panel tsd-index-panel">
+						<div class="tsd-index-content">
+							<section class="tsd-index-section tsd-is-inherited">
+								<h3>Constructors</h3>
+								<ul class="tsd-index-list">
+									<li class="tsd-kind-constructor tsd-parent-kind-class tsd-is-inherited"><a href="flipnoteparserbase.html#constructor" class="tsd-kind-icon">constructor</a></li>
+								</ul>
+							</section>
+							<section class="tsd-index-section ">
+								<h3>Properties</h3>
+								<ul class="tsd-index-list">
+									<li class="tsd-kind-property tsd-parent-kind-class"><a href="flipnoteparserbase.html#_symbol_tostringtag_" class="tsd-kind-icon">[<wbr>Symbol.to<wbr>String<wbr>Tag]</a></li>
+									<li class="tsd-kind-property tsd-parent-kind-class"><a href="flipnoteparserbase.html#aspect" class="tsd-kind-icon">aspect</a></li>
+									<li class="tsd-kind-property tsd-parent-kind-class"><a href="flipnoteparserbase.html#audioclipratio" class="tsd-kind-icon">audio<wbr>Clip<wbr>Ratio</a></li>
+									<li class="tsd-kind-property tsd-parent-kind-class"><a href="flipnoteparserbase.html#audiotracks" class="tsd-kind-icon">audio<wbr>Tracks</a></li>
+									<li class="tsd-kind-property tsd-parent-kind-class"><a href="flipnoteparserbase.html#bgmspeed" class="tsd-kind-icon">bgm<wbr>Speed</a></li>
+									<li class="tsd-kind-property tsd-parent-kind-class"><a href="flipnoteparserbase.html#bgmrate" class="tsd-kind-icon">bgmrate</a></li>
+									<li class="tsd-kind-property tsd-parent-kind-class tsd-is-inherited"><a href="flipnoteparserbase.html#buffer" class="tsd-kind-icon">buffer</a></li>
+									<li class="tsd-kind-property tsd-parent-kind-class tsd-is-inherited"><a href="flipnoteparserbase.html#data" class="tsd-kind-icon">data</a></li>
+									<li class="tsd-kind-property tsd-parent-kind-class"><a href="flipnoteparserbase.html#duration" class="tsd-kind-icon">duration</a></li>
+									<li class="tsd-kind-property tsd-parent-kind-class"><a href="flipnoteparserbase.html#format" class="tsd-kind-icon">format</a></li>
+									<li class="tsd-kind-property tsd-parent-kind-class"><a href="flipnoteparserbase.html#framecount" class="tsd-kind-icon">frame<wbr>Count</a></li>
+									<li class="tsd-kind-property tsd-parent-kind-class"><a href="flipnoteparserbase.html#framespeed" class="tsd-kind-icon">frame<wbr>Speed</a></li>
+									<li class="tsd-kind-property tsd-parent-kind-class"><a href="flipnoteparserbase.html#framerate" class="tsd-kind-icon">framerate</a></li>
+									<li class="tsd-kind-property tsd-parent-kind-class"><a href="flipnoteparserbase.html#globalpalette" class="tsd-kind-icon">global<wbr>Palette</a></li>
+									<li class="tsd-kind-property tsd-parent-kind-class"><a href="flipnoteparserbase.html#imageheight" class="tsd-kind-icon">image<wbr>Height</a></li>
+									<li class="tsd-kind-property tsd-parent-kind-class"><a href="flipnoteparserbase.html#imageoffsetx" class="tsd-kind-icon">image<wbr>OffsetX</a></li>
+									<li class="tsd-kind-property tsd-parent-kind-class"><a href="flipnoteparserbase.html#imageoffsety" class="tsd-kind-icon">image<wbr>OffsetY</a></li>
+									<li class="tsd-kind-property tsd-parent-kind-class"><a href="flipnoteparserbase.html#imagewidth" class="tsd-kind-icon">image<wbr>Width</a></li>
+									<li class="tsd-kind-property tsd-parent-kind-class"><a href="flipnoteparserbase.html#iscomment" class="tsd-kind-icon">is<wbr>Comment</a></li>
+									<li class="tsd-kind-property tsd-parent-kind-class"><a href="flipnoteparserbase.html#isdsilibrarynote" class="tsd-kind-icon">is<wbr>Dsi<wbr>Library<wbr>Note</a></li>
+									<li class="tsd-kind-property tsd-parent-kind-class"><a href="flipnoteparserbase.html#isfoldericon" class="tsd-kind-icon">is<wbr>Folder<wbr>Icon</a></li>
+									<li class="tsd-kind-property tsd-parent-kind-class"><a href="flipnoteparserbase.html#isspinoff" class="tsd-kind-icon">is<wbr>Spinoff</a></li>
+									<li class="tsd-kind-property tsd-parent-kind-class"><a href="flipnoteparserbase.html#meta" class="tsd-kind-icon">meta</a></li>
+									<li class="tsd-kind-property tsd-parent-kind-class"><a href="flipnoteparserbase.html#numlayercolors" class="tsd-kind-icon">num<wbr>Layer<wbr>Colors</a></li>
+									<li class="tsd-kind-property tsd-parent-kind-class"><a href="flipnoteparserbase.html#numlayers" class="tsd-kind-icon">num<wbr>Layers</a></li>
+									<li class="tsd-kind-property tsd-parent-kind-class"><a href="flipnoteparserbase.html#palette" class="tsd-kind-icon">palette</a></li>
+									<li class="tsd-kind-property tsd-parent-kind-class tsd-is-inherited"><a href="flipnoteparserbase.html#pointer" class="tsd-kind-icon">pointer</a></li>
+									<li class="tsd-kind-property tsd-parent-kind-class"><a href="flipnoteparserbase.html#publickey" class="tsd-kind-icon">public<wbr>Key</a></li>
+									<li class="tsd-kind-property tsd-parent-kind-class"><a href="flipnoteparserbase.html#rawsamplerate" class="tsd-kind-icon">raw<wbr>Sample<wbr>Rate</a></li>
+									<li class="tsd-kind-property tsd-parent-kind-class"><a href="flipnoteparserbase.html#samplerate" class="tsd-kind-icon">sample<wbr>Rate</a></li>
+									<li class="tsd-kind-property tsd-parent-kind-class"><a href="flipnoteparserbase.html#soundeffecttracks" class="tsd-kind-icon">sound<wbr>Effect<wbr>Tracks</a></li>
+									<li class="tsd-kind-property tsd-parent-kind-class"><a href="flipnoteparserbase.html#soundmeta" class="tsd-kind-icon">sound<wbr>Meta</a></li>
+									<li class="tsd-kind-property tsd-parent-kind-class"><a href="flipnoteparserbase.html#thumbframeindex" class="tsd-kind-icon">thumb<wbr>Frame<wbr>Index</a></li>
+									<li class="tsd-kind-property tsd-parent-kind-class tsd-is-static"><a href="flipnoteparserbase.html#aspect-1" class="tsd-kind-icon">aspect</a></li>
+									<li class="tsd-kind-property tsd-parent-kind-class tsd-is-static"><a href="flipnoteparserbase.html#audiotracks-1" class="tsd-kind-icon">audio<wbr>Tracks</a></li>
+									<li class="tsd-kind-property tsd-parent-kind-class tsd-is-static"><a href="flipnoteparserbase.html#format-1" class="tsd-kind-icon">format</a></li>
+									<li class="tsd-kind-property tsd-parent-kind-class tsd-is-static"><a href="flipnoteparserbase.html#globalpalette-1" class="tsd-kind-icon">global<wbr>Palette</a></li>
+									<li class="tsd-kind-property tsd-parent-kind-class tsd-is-static"><a href="flipnoteparserbase.html#height" class="tsd-kind-icon">height</a></li>
+									<li class="tsd-kind-property tsd-parent-kind-class tsd-is-static"><a href="flipnoteparserbase.html#numlayercolors-1" class="tsd-kind-icon">num<wbr>Layer<wbr>Colors</a></li>
+									<li class="tsd-kind-property tsd-parent-kind-class tsd-is-static"><a href="flipnoteparserbase.html#numlayers-1" class="tsd-kind-icon">num<wbr>Layers</a></li>
+									<li class="tsd-kind-property tsd-parent-kind-class tsd-is-static"><a href="flipnoteparserbase.html#publickey-1" class="tsd-kind-icon">public<wbr>Key</a></li>
+									<li class="tsd-kind-property tsd-parent-kind-class tsd-is-static"><a href="flipnoteparserbase.html#rawsamplerate-1" class="tsd-kind-icon">raw<wbr>Sample<wbr>Rate</a></li>
+									<li class="tsd-kind-property tsd-parent-kind-class tsd-is-static"><a href="flipnoteparserbase.html#samplerate-1" class="tsd-kind-icon">sample<wbr>Rate</a></li>
+									<li class="tsd-kind-property tsd-parent-kind-class tsd-is-static"><a href="flipnoteparserbase.html#soundeffecttracks-1" class="tsd-kind-icon">sound<wbr>Effect<wbr>Tracks</a></li>
+									<li class="tsd-kind-property tsd-parent-kind-class tsd-is-static"><a href="flipnoteparserbase.html#width" class="tsd-kind-icon">width</a></li>
+								</ul>
+							</section>
+							<section class="tsd-index-section tsd-is-inherited">
+								<h3>Accessors</h3>
+								<ul class="tsd-index-list">
+									<li class="tsd-kind-get-signature tsd-parent-kind-class tsd-is-inherited"><a href="flipnoteparserbase.html#bytelength" class="tsd-kind-icon">byte<wbr>Length</a></li>
+									<li class="tsd-kind-get-signature tsd-parent-kind-class tsd-is-inherited"><a href="flipnoteparserbase.html#bytes" class="tsd-kind-icon">bytes</a></li>
+								</ul>
+							</section>
+							<section class="tsd-index-section ">
+								<h3>Audio Methods</h3>
+								<ul class="tsd-index-list">
+									<li class="tsd-kind-method tsd-parent-kind-class"><a href="flipnoteparserbase.html#decodeaudiotrack" class="tsd-kind-icon">decode<wbr>Audio<wbr>Track</a></li>
+									<li class="tsd-kind-method tsd-parent-kind-class"><a href="flipnoteparserbase.html#decodesoundflags" class="tsd-kind-icon">decode<wbr>Sound<wbr>Flags</a></li>
+									<li class="tsd-kind-method tsd-parent-kind-class"><a href="flipnoteparserbase.html#getaudiomasterpcm" class="tsd-kind-icon">get<wbr>Audio<wbr>Master<wbr>Pcm</a></li>
+									<li class="tsd-kind-method tsd-parent-kind-class"><a href="flipnoteparserbase.html#getaudiotrackpcm" class="tsd-kind-icon">get<wbr>Audio<wbr>Track<wbr>Pcm</a></li>
+									<li class="tsd-kind-method tsd-parent-kind-class"><a href="flipnoteparserbase.html#getaudiotrackraw" class="tsd-kind-icon">get<wbr>Audio<wbr>Track<wbr>Raw</a></li>
+									<li class="tsd-kind-method tsd-parent-kind-class"><a href="flipnoteparserbase.html#getframesoundeffectflags" class="tsd-kind-icon">get<wbr>Frame<wbr>Sound<wbr>Effect<wbr>Flags</a></li>
+									<li class="tsd-kind-method tsd-parent-kind-class"><a href="flipnoteparserbase.html#getsoundeffectflags" class="tsd-kind-icon">get<wbr>Sound<wbr>Effect<wbr>Flags</a></li>
+									<li class="tsd-kind-method tsd-parent-kind-class"><a href="flipnoteparserbase.html#getsoundeffectflagsfortrack" class="tsd-kind-icon">get<wbr>Sound<wbr>Effect<wbr>Flags<wbr>For<wbr>Track</a></li>
+									<li class="tsd-kind-method tsd-parent-kind-class"><a href="flipnoteparserbase.html#hasaudiotrack" class="tsd-kind-icon">has<wbr>Audio<wbr>Track</a></li>
+									<li class="tsd-kind-method tsd-parent-kind-class"><a href="flipnoteparserbase.html#issoundeffectusedonframe" class="tsd-kind-icon">is<wbr>Sound<wbr>Effect<wbr>Used<wbr>OnFrame</a></li>
+								</ul>
+								<h3>Image Methods</h3>
+								<ul class="tsd-index-list">
+									<li class="tsd-kind-method tsd-parent-kind-class"><a href="flipnoteparserbase.html#decodeframe" class="tsd-kind-icon">decode<wbr>Frame</a></li>
+									<li class="tsd-kind-method tsd-parent-kind-class"><a href="flipnoteparserbase.html#getframecameraflags" class="tsd-kind-icon">get<wbr>Frame<wbr>Camera<wbr>Flags</a></li>
+									<li class="tsd-kind-method tsd-parent-kind-class"><a href="flipnoteparserbase.html#getframelayerdepths" class="tsd-kind-icon">get<wbr>Frame<wbr>Layer<wbr>Depths</a></li>
+									<li class="tsd-kind-method tsd-parent-kind-class"><a href="flipnoteparserbase.html#getframelayerorder" class="tsd-kind-icon">get<wbr>Frame<wbr>Layer<wbr>Order</a></li>
+									<li class="tsd-kind-method tsd-parent-kind-class"><a href="flipnoteparserbase.html#getframepalette" class="tsd-kind-icon">get<wbr>Frame<wbr>Palette</a></li>
+									<li class="tsd-kind-method tsd-parent-kind-class"><a href="flipnoteparserbase.html#getframepaletteindices" class="tsd-kind-icon">get<wbr>Frame<wbr>Palette<wbr>Indices</a></li>
+									<li class="tsd-kind-method tsd-parent-kind-class"><a href="flipnoteparserbase.html#getframepaletteuint32" class="tsd-kind-icon">get<wbr>Frame<wbr>Palette<wbr>Uint32</a></li>
+									<li class="tsd-kind-method tsd-parent-kind-class"><a href="flipnoteparserbase.html#getframepixels" class="tsd-kind-icon">get<wbr>Frame<wbr>Pixels</a></li>
+									<li class="tsd-kind-method tsd-parent-kind-class"><a href="flipnoteparserbase.html#getframepixelsrgba" class="tsd-kind-icon">get<wbr>Frame<wbr>Pixels<wbr>Rgba</a></li>
+									<li class="tsd-kind-method tsd-parent-kind-class"><a href="flipnoteparserbase.html#getiskeyframe" class="tsd-kind-icon">get<wbr>IsKey<wbr>Frame</a></li>
+									<li class="tsd-kind-method tsd-parent-kind-class"><a href="flipnoteparserbase.html#getlayerpixels" class="tsd-kind-icon">get<wbr>Layer<wbr>Pixels</a></li>
+									<li class="tsd-kind-method tsd-parent-kind-class"><a href="flipnoteparserbase.html#getlayerpixelsrgba" class="tsd-kind-icon">get<wbr>Layer<wbr>Pixels<wbr>Rgba</a></li>
+								</ul>
+								<h3>Meta Methods</h3>
+								<ul class="tsd-index-list">
+									<li class="tsd-kind-method tsd-parent-kind-class"><a href="flipnoteparserbase.html#getframeauthor" class="tsd-kind-icon">get<wbr>Frame<wbr>Author</a></li>
+									<li class="tsd-kind-method tsd-parent-kind-class"><a href="flipnoteparserbase.html#getthumbnailimage" class="tsd-kind-icon">get<wbr>Thumbnail<wbr>Image</a></li>
+								</ul>
+								<h3>Other Methods</h3>
+								<ul class="tsd-index-list">
+									<li class="tsd-kind-method tsd-parent-kind-class tsd-is-inherited"><a href="flipnoteparserbase.html#readbytes" class="tsd-kind-icon">read<wbr>Bytes</a></li>
+									<li class="tsd-kind-method tsd-parent-kind-class tsd-is-inherited"><a href="flipnoteparserbase.html#readchars" class="tsd-kind-icon">read<wbr>Chars</a></li>
+									<li class="tsd-kind-method tsd-parent-kind-class tsd-is-inherited"><a href="flipnoteparserbase.html#readhex" class="tsd-kind-icon">read<wbr>Hex</a></li>
+									<li class="tsd-kind-method tsd-parent-kind-class tsd-is-inherited"><a href="flipnoteparserbase.html#readint16" class="tsd-kind-icon">read<wbr>Int16</a></li>
+									<li class="tsd-kind-method tsd-parent-kind-class tsd-is-inherited"><a href="flipnoteparserbase.html#readint32" class="tsd-kind-icon">read<wbr>Int32</a></li>
+									<li class="tsd-kind-method tsd-parent-kind-class tsd-is-inherited"><a href="flipnoteparserbase.html#readint8" class="tsd-kind-icon">read<wbr>Int8</a></li>
+									<li class="tsd-kind-method tsd-parent-kind-class tsd-is-inherited"><a href="flipnoteparserbase.html#readuint16" class="tsd-kind-icon">read<wbr>Uint16</a></li>
+									<li class="tsd-kind-method tsd-parent-kind-class tsd-is-inherited"><a href="flipnoteparserbase.html#readuint32" class="tsd-kind-icon">read<wbr>Uint32</a></li>
+									<li class="tsd-kind-method tsd-parent-kind-class tsd-is-inherited"><a href="flipnoteparserbase.html#readuint8" class="tsd-kind-icon">read<wbr>Uint8</a></li>
+									<li class="tsd-kind-method tsd-parent-kind-class tsd-is-inherited"><a href="flipnoteparserbase.html#readwidechars" class="tsd-kind-icon">read<wbr>Wide<wbr>Chars</a></li>
+									<li class="tsd-kind-method tsd-parent-kind-class tsd-is-inherited"><a href="flipnoteparserbase.html#seek" class="tsd-kind-icon">seek</a></li>
+									<li class="tsd-kind-method tsd-parent-kind-class tsd-is-inherited"><a href="flipnoteparserbase.html#writebytes" class="tsd-kind-icon">write<wbr>Bytes</a></li>
+									<li class="tsd-kind-method tsd-parent-kind-class tsd-is-inherited"><a href="flipnoteparserbase.html#writechars" class="tsd-kind-icon">write<wbr>Chars</a></li>
+									<li class="tsd-kind-method tsd-parent-kind-class tsd-is-inherited"><a href="flipnoteparserbase.html#writeint16" class="tsd-kind-icon">write<wbr>Int16</a></li>
+									<li class="tsd-kind-method tsd-parent-kind-class tsd-is-inherited"><a href="flipnoteparserbase.html#writeint32" class="tsd-kind-icon">write<wbr>Int32</a></li>
+									<li class="tsd-kind-method tsd-parent-kind-class tsd-is-inherited"><a href="flipnoteparserbase.html#writeint8" class="tsd-kind-icon">write<wbr>Int8</a></li>
+									<li class="tsd-kind-method tsd-parent-kind-class tsd-is-inherited"><a href="flipnoteparserbase.html#writeuint16" class="tsd-kind-icon">write<wbr>Uint16</a></li>
+									<li class="tsd-kind-method tsd-parent-kind-class tsd-is-inherited"><a href="flipnoteparserbase.html#writeuint32" class="tsd-kind-icon">write<wbr>Uint32</a></li>
+									<li class="tsd-kind-method tsd-parent-kind-class tsd-is-inherited"><a href="flipnoteparserbase.html#writeuint8" class="tsd-kind-icon">write<wbr>Uint8</a></li>
+								</ul>
+								<h3>Utility Methods</h3>
+								<ul class="tsd-index-list">
+									<li class="tsd-kind-method tsd-parent-kind-class"><a href="flipnoteparserbase.html#_symbol_iterator_" class="tsd-kind-icon">[<wbr>Symbol.iterator]</a></li>
+									<li class="tsd-kind-method tsd-parent-kind-class"><a href="flipnoteparserbase.html#gettitle" class="tsd-kind-icon">get<wbr>Title</a></li>
+									<li class="tsd-kind-method tsd-parent-kind-class"><a href="flipnoteparserbase.html#tostring" class="tsd-kind-icon">to<wbr>String</a></li>
+								</ul>
+								<h3>Verification Methods</h3>
+								<ul class="tsd-index-list">
+									<li class="tsd-kind-method tsd-parent-kind-class"><a href="flipnoteparserbase.html#getbody" class="tsd-kind-icon">get<wbr>Body</a></li>
+									<li class="tsd-kind-method tsd-parent-kind-class"><a href="flipnoteparserbase.html#getsignature" class="tsd-kind-icon">get<wbr>Signature</a></li>
+									<li class="tsd-kind-method tsd-parent-kind-class"><a href="flipnoteparserbase.html#verify" class="tsd-kind-icon">verify</a></li>
+								</ul>
+							</section>
+							<section class="tsd-index-section ">
+								<h3>Object literals</h3>
+								<ul class="tsd-index-list">
+									<li class="tsd-kind-object-literal tsd-parent-kind-class"><a href="flipnoteparserbase.html#layervisibility" class="tsd-kind-icon">layer<wbr>Visibility</a></li>
+									<li class="tsd-kind-object-literal tsd-parent-kind-class"><a href="flipnoteparserbase.html#titleformats" class="tsd-kind-icon">title<wbr>Formats</a></li>
+								</ul>
+							</section>
+						</div>
+					</section>
+				</section>
+				<section class="tsd-panel-group tsd-member-group tsd-is-inherited">
+					<h2>Constructors</h2>
+					<section class="tsd-panel tsd-member tsd-kind-constructor tsd-parent-kind-class tsd-is-inherited">
+						<a name="constructor" class="tsd-anchor"></a>
+						<h3>constructor</h3>
+						<ul class="tsd-signatures tsd-kind-constructor tsd-parent-kind-class tsd-is-inherited">
+							<li class="tsd-signature tsd-kind-icon">new <wbr>Flipnote<wbr>Parser<wbr>Base<span class="tsd-signature-symbol">(</span>arrayBuffer<span class="tsd-signature-symbol">: </span><span class="tsd-signature-type">ArrayBuffer</span><span class="tsd-signature-symbol">)</span><span class="tsd-signature-symbol">: </span><a href="flipnoteparserbase.html" class="tsd-signature-type">FlipnoteParserBase</a></li>
+						</ul>
+						<ul class="tsd-descriptions">
+							<li class="tsd-description">
+								<aside class="tsd-sources">
+									<p>Inherited from DataStream.__constructor</p>
+									<ul>
+										<li>Defined in <a href="https://github.com/jaames/flipnote.js/blob/5edc3e4/src/utils/DataStream.ts#L17">src/utils/DataStream.ts:17</a></li>
+									</ul>
+								</aside>
+								<h4 class="tsd-parameters-title">Parameters</h4>
+								<ul class="tsd-parameters">
+									<li>
+										<h5>arrayBuffer: <span class="tsd-signature-type">ArrayBuffer</span></h5>
+									</li>
+								</ul>
+								<h4 class="tsd-returns-title">Returns <a href="flipnoteparserbase.html" class="tsd-signature-type">FlipnoteParserBase</a></h4>
+							</li>
+						</ul>
+					</section>
+				</section>
+				<section class="tsd-panel-group tsd-member-group ">
+					<h2>Properties</h2>
+					<section class="tsd-panel tsd-member tsd-kind-property tsd-parent-kind-class">
+						<a name="_symbol_tostringtag_" class="tsd-anchor"></a>
+						<h3>[<wbr>Symbol.to<wbr>String<wbr>Tag]</h3>
+						<div class="tsd-signature tsd-kind-icon">[<wbr>Symbol.to<wbr>String<wbr>Tag]<span class="tsd-signature-symbol">:</span> <span class="tsd-signature-type">string</span><span class="tsd-signature-symbol"> = &quot;Flipnote&quot;</span></div>
+						<aside class="tsd-sources">
+							<ul>
+								<li>Defined in <a href="https://github.com/jaames/flipnote.js/blob/5edc3e4/src/parsers/FlipnoteParserBase.ts#L170">src/parsers/FlipnoteParserBase.ts:170</a></li>
+							</ul>
+						</aside>
+						<div class="tsd-comment tsd-typography">
+							<div class="lead">
+								<p>Custom object tag</p>
+							</div>
+						</div>
+					</section>
+					<section class="tsd-panel tsd-member tsd-kind-property tsd-parent-kind-class">
+						<a name="aspect" class="tsd-anchor"></a>
+						<h3>aspect</h3>
+						<div class="tsd-signature tsd-kind-icon">aspect<span class="tsd-signature-symbol">:</span> <span class="tsd-signature-type">number</span></div>
+						<aside class="tsd-sources">
+							<ul>
+								<li>Defined in <a href="https://github.com/jaames/flipnote.js/blob/5edc3e4/src/parsers/FlipnoteParserBase.ts#L184">src/parsers/FlipnoteParserBase.ts:184</a></li>
+							</ul>
+						</aside>
+						<div class="tsd-comment tsd-typography">
+							<div class="lead">
+								<p>Animation frame aspect ratio (height / width), reflects <a href="flipnoteparserbase.html#aspect-1">FlipnoteParserBase.aspect</a></p>
+							</div>
+						</div>
+					</section>
+					<section class="tsd-panel tsd-member tsd-kind-property tsd-parent-kind-class">
+						<a name="audioclipratio" class="tsd-anchor"></a>
+						<h3>audio<wbr>Clip<wbr>Ratio</h3>
+						<div class="tsd-signature tsd-kind-icon">audio<wbr>Clip<wbr>Ratio<span class="tsd-signature-symbol">:</span> <span class="tsd-signature-type">number</span></div>
+						<aside class="tsd-sources">
+							<ul>
+								<li>Defined in <a href="https://github.com/jaames/flipnote.js/blob/5edc3e4/src/parsers/FlipnoteParserBase.ts#L241">src/parsers/FlipnoteParserBase.ts:241</a></li>
+							</ul>
+						</aside>
+						<div class="tsd-comment tsd-typography">
+							<div class="lead">
+								<p>Get the amount of clipping in the master audio track, useful for determining if a Flipnote&#39;s audio is corrupted. Closer to 1.0 = more clipping. Only available after <a href="flipnoteparserbase.html#getaudiomasterpcm">getAudioMasterPcm</a> has been called</p>
+							</div>
+						</div>
+					</section>
+					<section class="tsd-panel tsd-member tsd-kind-property tsd-parent-kind-class">
+						<a name="audiotracks" class="tsd-anchor"></a>
+						<h3>audio<wbr>Tracks</h3>
+						<div class="tsd-signature tsd-kind-icon">audio<wbr>Tracks<span class="tsd-signature-symbol">:</span> <a href="../enums/flipnoteaudiotrack.html" class="tsd-signature-type">FlipnoteAudioTrack</a><span class="tsd-signature-symbol">[]</span></div>
+						<aside class="tsd-sources">
+							<ul>
+								<li>Defined in <a href="https://github.com/jaames/flipnote.js/blob/5edc3e4/src/parsers/FlipnoteParserBase.ts#L196">src/parsers/FlipnoteParserBase.ts:196</a></li>
+							</ul>
+						</aside>
+						<div class="tsd-comment tsd-typography">
+							<div class="lead">
+								<p>Which audio tracks are available in this format, reflects <a href="flipnoteparserbase.html#audiotracks-1">FlipnoteParserBase.audioTracks</a></p>
+							</div>
+						</div>
+					</section>
+					<section class="tsd-panel tsd-member tsd-kind-property tsd-parent-kind-class">
+						<a name="bgmspeed" class="tsd-anchor"></a>
+						<h3>bgm<wbr>Speed</h3>
+						<div class="tsd-signature tsd-kind-icon">bgm<wbr>Speed<span class="tsd-signature-symbol">:</span> <span class="tsd-signature-type">number</span></div>
+						<aside class="tsd-sources">
+							<ul>
+								<li>Defined in <a href="https://github.com/jaames/flipnote.js/blob/5edc3e4/src/parsers/FlipnoteParserBase.ts#L233">src/parsers/FlipnoteParserBase.ts:233</a></li>
+							</ul>
+						</aside>
+						<div class="tsd-comment tsd-typography">
+							<div class="lead">
+								<p>In-app animation playback speed when the BGM track was recorded</p>
+							</div>
+						</div>
+					</section>
+					<section class="tsd-panel tsd-member tsd-kind-property tsd-parent-kind-class">
+						<a name="bgmrate" class="tsd-anchor"></a>
+						<h3>bgmrate</h3>
+						<div class="tsd-signature tsd-kind-icon">bgmrate<span class="tsd-signature-symbol">:</span> <span class="tsd-signature-type">number</span></div>
+						<aside class="tsd-sources">
+							<ul>
+								<li>Defined in <a href="https://github.com/jaames/flipnote.js/blob/5edc3e4/src/parsers/FlipnoteParserBase.ts#L237">src/parsers/FlipnoteParserBase.ts:237</a></li>
+							</ul>
+						</aside>
+						<div class="tsd-comment tsd-typography">
+							<div class="lead">
+								<p>Animation framerate when the BGM track was recorded, measured as frames per second</p>
+							</div>
+						</div>
+					</section>
+					<section class="tsd-panel tsd-member tsd-kind-property tsd-parent-kind-class tsd-is-inherited">
+						<a name="buffer" class="tsd-anchor"></a>
+						<h3>buffer</h3>
+						<div class="tsd-signature tsd-kind-icon">buffer<span class="tsd-signature-symbol">:</span> <span class="tsd-signature-type">ArrayBuffer</span></div>
+						<aside class="tsd-sources">
+							<p>Inherited from DataStream.buffer</p>
+							<ul>
+								<li>Defined in <a href="https://github.com/jaames/flipnote.js/blob/5edc3e4/src/utils/DataStream.ts#L15">src/utils/DataStream.ts:15</a></li>
+							</ul>
+						</aside>
+					</section>
+					<section class="tsd-panel tsd-member tsd-kind-property tsd-parent-kind-class tsd-is-inherited">
+						<a name="data" class="tsd-anchor"></a>
+						<h3>data</h3>
+						<div class="tsd-signature tsd-kind-icon">data<span class="tsd-signature-symbol">:</span> <span class="tsd-signature-type">DataView</span></div>
+						<aside class="tsd-sources">
+							<p>Inherited from DataStream.data</p>
+							<ul>
+								<li>Defined in <a href="https://github.com/jaames/flipnote.js/blob/5edc3e4/src/utils/DataStream.ts#L17">src/utils/DataStream.ts:17</a></li>
+							</ul>
+						</aside>
+					</section>
+					<section class="tsd-panel tsd-member tsd-kind-property tsd-parent-kind-class">
+						<a name="duration" class="tsd-anchor"></a>
+						<h3>duration</h3>
+						<div class="tsd-signature tsd-kind-icon">duration<span class="tsd-signature-symbol">:</span> <span class="tsd-signature-type">number</span></div>
+						<aside class="tsd-sources">
+							<ul>
+								<li>Defined in <a href="https://github.com/jaames/flipnote.js/blob/5edc3e4/src/parsers/FlipnoteParserBase.ts#L231">src/parsers/FlipnoteParserBase.ts:231</a></li>
+							</ul>
+						</aside>
+						<div class="tsd-comment tsd-typography">
+							<div class="lead">
+								<p>Animation duration, in seconds</p>
+							</div>
+						</div>
+					</section>
+					<section class="tsd-panel tsd-member tsd-kind-property tsd-parent-kind-class">
+						<a name="format" class="tsd-anchor"></a>
+						<h3>format</h3>
+						<div class="tsd-signature tsd-kind-icon">format<span class="tsd-signature-symbol">:</span> <a href="../enums/flipnoteformat.html" class="tsd-signature-type">FlipnoteFormat</a></div>
+						<aside class="tsd-sources">
+							<ul>
+								<li>Defined in <a href="https://github.com/jaames/flipnote.js/blob/5edc3e4/src/parsers/FlipnoteParserBase.ts#L172">src/parsers/FlipnoteParserBase.ts:172</a></li>
+							</ul>
+						</aside>
+						<div class="tsd-comment tsd-typography">
+							<div class="lead">
+								<p>File format type, reflects <a href="flipnoteparserbase.html#format-1">FlipnoteParserBase.format</a></p>
+							</div>
+						</div>
+					</section>
+					<section class="tsd-panel tsd-member tsd-kind-property tsd-parent-kind-class">
+						<a name="framecount" class="tsd-anchor"></a>
+						<h3>frame<wbr>Count</h3>
+						<div class="tsd-signature tsd-kind-icon">frame<wbr>Count<span class="tsd-signature-symbol">:</span> <span class="tsd-signature-type">number</span></div>
+						<aside class="tsd-sources">
+							<ul>
+								<li>Defined in <a href="https://github.com/jaames/flipnote.js/blob/5edc3e4/src/parsers/FlipnoteParserBase.ts#L227">src/parsers/FlipnoteParserBase.ts:227</a></li>
+							</ul>
+						</aside>
+						<div class="tsd-comment tsd-typography">
+							<div class="lead">
+								<p>Animation frame count</p>
+							</div>
+						</div>
+					</section>
+					<section class="tsd-panel tsd-member tsd-kind-property tsd-parent-kind-class">
+						<a name="framespeed" class="tsd-anchor"></a>
+						<h3>frame<wbr>Speed</h3>
+						<div class="tsd-signature tsd-kind-icon">frame<wbr>Speed<span class="tsd-signature-symbol">:</span> <span class="tsd-signature-type">number</span></div>
+						<aside class="tsd-sources">
+							<ul>
+								<li>Defined in <a href="https://github.com/jaames/flipnote.js/blob/5edc3e4/src/parsers/FlipnoteParserBase.ts#L229">src/parsers/FlipnoteParserBase.ts:229</a></li>
+							</ul>
+						</aside>
+						<div class="tsd-comment tsd-typography">
+							<div class="lead">
+								<p>In-app animation playback speed</p>
+							</div>
+						</div>
+					</section>
+					<section class="tsd-panel tsd-member tsd-kind-property tsd-parent-kind-class">
+						<a name="framerate" class="tsd-anchor"></a>
+						<h3>framerate</h3>
+						<div class="tsd-signature tsd-kind-icon">framerate<span class="tsd-signature-symbol">:</span> <span class="tsd-signature-type">number</span></div>
+						<aside class="tsd-sources">
+							<ul>
+								<li>Defined in <a href="https://github.com/jaames/flipnote.js/blob/5edc3e4/src/parsers/FlipnoteParserBase.ts#L235">src/parsers/FlipnoteParserBase.ts:235</a></li>
+							</ul>
+						</aside>
+						<div class="tsd-comment tsd-typography">
+							<div class="lead">
+								<p>Animation framerate, measured as frames per second</p>
+							</div>
+						</div>
+					</section>
+					<section class="tsd-panel tsd-member tsd-kind-property tsd-parent-kind-class">
+						<a name="globalpalette" class="tsd-anchor"></a>
+						<h3>global<wbr>Palette</h3>
+						<div class="tsd-signature tsd-kind-icon">global<wbr>Palette<span class="tsd-signature-symbol">:</span> <a href="../globals.html#flipnotepalettecolor" class="tsd-signature-type">FlipnotePaletteColor</a><span class="tsd-signature-symbol">[]</span></div>
+						<aside class="tsd-sources">
+							<ul>
+								<li>Defined in <a href="https://github.com/jaames/flipnote.js/blob/5edc3e4/src/parsers/FlipnoteParserBase.ts#L204">src/parsers/FlipnoteParserBase.ts:204</a></li>
+							</ul>
+						</aside>
+						<div class="tsd-comment tsd-typography">
+							<div class="lead">
+								<p>Global animation frame color palette, reflects <a href="flipnoteparserbase.html#globalpalette-1">FlipnoteParserBase.globalPalette</a></p>
+							</div>
+						</div>
+					</section>
+					<section class="tsd-panel tsd-member tsd-kind-property tsd-parent-kind-class">
+						<a name="imageheight" class="tsd-anchor"></a>
+						<h3>image<wbr>Height</h3>
+						<div class="tsd-signature tsd-kind-icon">image<wbr>Height<span class="tsd-signature-symbol">:</span> <span class="tsd-signature-type">number</span></div>
+						<aside class="tsd-sources">
+							<ul>
+								<li>Defined in <a href="https://github.com/jaames/flipnote.js/blob/5edc3e4/src/parsers/FlipnoteParserBase.ts#L182">src/parsers/FlipnoteParserBase.ts:182</a></li>
+							</ul>
+						</aside>
+						<div class="tsd-comment tsd-typography">
+							<div class="lead">
+								<p>Animation frame height, reflects <a href="flipnoteparserbase.html#height">FlipnoteParserBase.height</a></p>
+							</div>
+						</div>
+					</section>
+					<section class="tsd-panel tsd-member tsd-kind-property tsd-parent-kind-class">
+						<a name="imageoffsetx" class="tsd-anchor"></a>
+						<h3>image<wbr>OffsetX</h3>
+						<div class="tsd-signature tsd-kind-icon">image<wbr>OffsetX<span class="tsd-signature-symbol">:</span> <span class="tsd-signature-type">number</span></div>
+						<aside class="tsd-sources">
+							<ul>
+								<li>Defined in <a href="https://github.com/jaames/flipnote.js/blob/5edc3e4/src/parsers/FlipnoteParserBase.ts#L186">src/parsers/FlipnoteParserBase.ts:186</a></li>
+							</ul>
+						</aside>
+						<div class="tsd-comment tsd-typography">
+							<div class="lead">
+								<p>X offset for the top-left corner of the animation frame</p>
+							</div>
+						</div>
+					</section>
+					<section class="tsd-panel tsd-member tsd-kind-property tsd-parent-kind-class">
+						<a name="imageoffsety" class="tsd-anchor"></a>
+						<h3>image<wbr>OffsetY</h3>
+						<div class="tsd-signature tsd-kind-icon">image<wbr>OffsetY<span class="tsd-signature-symbol">:</span> <span class="tsd-signature-type">number</span></div>
+						<aside class="tsd-sources">
+							<ul>
+								<li>Defined in <a href="https://github.com/jaames/flipnote.js/blob/5edc3e4/src/parsers/FlipnoteParserBase.ts#L188">src/parsers/FlipnoteParserBase.ts:188</a></li>
+							</ul>
+						</aside>
+						<div class="tsd-comment tsd-typography">
+							<div class="lead">
+								<p>Y offset for the top-left corner of the animation frame</p>
+							</div>
+						</div>
+					</section>
+					<section class="tsd-panel tsd-member tsd-kind-property tsd-parent-kind-class">
+						<a name="imagewidth" class="tsd-anchor"></a>
+						<h3>image<wbr>Width</h3>
+						<div class="tsd-signature tsd-kind-icon">image<wbr>Width<span class="tsd-signature-symbol">:</span> <span class="tsd-signature-type">number</span></div>
+						<aside class="tsd-sources">
+							<ul>
+								<li>Defined in <a href="https://github.com/jaames/flipnote.js/blob/5edc3e4/src/parsers/FlipnoteParserBase.ts#L180">src/parsers/FlipnoteParserBase.ts:180</a></li>
+							</ul>
+						</aside>
+						<div class="tsd-comment tsd-typography">
+							<div class="lead">
+								<p>Animation frame width, reflects <a href="flipnoteparserbase.html#width">FlipnoteParserBase.width</a></p>
+							</div>
+						</div>
+					</section>
+					<section class="tsd-panel tsd-member tsd-kind-property tsd-parent-kind-class">
+						<a name="iscomment" class="tsd-anchor"></a>
+						<h3>is<wbr>Comment</h3>
+						<div class="tsd-signature tsd-kind-icon">is<wbr>Comment<span class="tsd-signature-symbol">:</span> <span class="tsd-signature-type">boolean</span><span class="tsd-signature-symbol"> = false</span></div>
+						<aside class="tsd-sources">
+							<ul>
+								<li>Defined in <a href="https://github.com/jaames/flipnote.js/blob/5edc3e4/src/parsers/FlipnoteParserBase.ts#L223">src/parsers/FlipnoteParserBase.ts:223</a></li>
+							</ul>
+						</aside>
+						<div class="tsd-comment tsd-typography">
+							<div class="lead">
+								<p>(KWZ only) Indicates whether or not this file is a handwritten comment from Flipnote Gallery World</p>
+							</div>
+						</div>
+					</section>
+					<section class="tsd-panel tsd-member tsd-kind-property tsd-parent-kind-class">
+						<a name="isdsilibrarynote" class="tsd-anchor"></a>
+						<h3>is<wbr>Dsi<wbr>Library<wbr>Note</h3>
+						<div class="tsd-signature tsd-kind-icon">is<wbr>Dsi<wbr>Library<wbr>Note<span class="tsd-signature-symbol">:</span> <span class="tsd-signature-type">boolean</span><span class="tsd-signature-symbol"> = false</span></div>
+						<aside class="tsd-sources">
+							<ul>
+								<li>Defined in <a href="https://github.com/jaames/flipnote.js/blob/5edc3e4/src/parsers/FlipnoteParserBase.ts#L225">src/parsers/FlipnoteParserBase.ts:225</a></li>
+							</ul>
+						</aside>
+						<div class="tsd-comment tsd-typography">
+							<div class="lead">
+								<p>(KWZ only) Indicates whether or not this Flipnote is a PPM to KWZ conversion from Flipnote Studio 3D&#39;s DSi Library service</p>
+							</div>
+						</div>
+					</section>
+					<section class="tsd-panel tsd-member tsd-kind-property tsd-parent-kind-class">
+						<a name="isfoldericon" class="tsd-anchor"></a>
+						<h3>is<wbr>Folder<wbr>Icon</h3>
+						<div class="tsd-signature tsd-kind-icon">is<wbr>Folder<wbr>Icon<span class="tsd-signature-symbol">:</span> <span class="tsd-signature-type">boolean</span><span class="tsd-signature-symbol"> = false</span></div>
+						<aside class="tsd-sources">
+							<ul>
+								<li>Defined in <a href="https://github.com/jaames/flipnote.js/blob/5edc3e4/src/parsers/FlipnoteParserBase.ts#L221">src/parsers/FlipnoteParserBase.ts:221</a></li>
+							</ul>
+						</aside>
+						<div class="tsd-comment tsd-typography">
+							<div class="lead">
+								<p>(KWZ only) Indicates whether or not this file is a Flipnote Studio 3D folder icon</p>
+							</div>
+						</div>
+					</section>
+					<section class="tsd-panel tsd-member tsd-kind-property tsd-parent-kind-class">
+						<a name="isspinoff" class="tsd-anchor"></a>
+						<h3>is<wbr>Spinoff</h3>
+						<div class="tsd-signature tsd-kind-icon">is<wbr>Spinoff<span class="tsd-signature-symbol">:</span> <span class="tsd-signature-type">boolean</span></div>
+						<aside class="tsd-sources">
+							<ul>
+								<li>Defined in <a href="https://github.com/jaames/flipnote.js/blob/5edc3e4/src/parsers/FlipnoteParserBase.ts#L219">src/parsers/FlipnoteParserBase.ts:219</a></li>
+							</ul>
+						</aside>
+						<div class="tsd-comment tsd-typography">
+							<div class="lead">
+								<p>Spinoffs are remixes of another user&#39;s Flipnote</p>
+							</div>
+						</div>
+					</section>
+					<section class="tsd-panel tsd-member tsd-kind-property tsd-parent-kind-class">
+						<a name="meta" class="tsd-anchor"></a>
+						<h3>meta</h3>
+						<div class="tsd-signature tsd-kind-icon">meta<span class="tsd-signature-symbol">:</span> <a href="../interfaces/flipnotemeta.html" class="tsd-signature-type">FlipnoteMeta</a></div>
+						<aside class="tsd-sources">
+							<ul>
+								<li>Defined in <a href="https://github.com/jaames/flipnote.js/blob/5edc3e4/src/parsers/FlipnoteParserBase.ts#L208">src/parsers/FlipnoteParserBase.ts:208</a></li>
+							</ul>
+						</aside>
+						<div class="tsd-comment tsd-typography">
+							<div class="lead">
+								<p>File metadata, see <a href="../interfaces/flipnotemeta.html">FlipnoteMeta</a> for structure</p>
+							</div>
+						</div>
+					</section>
+					<section class="tsd-panel tsd-member tsd-kind-property tsd-parent-kind-class">
+						<a name="numlayercolors" class="tsd-anchor"></a>
+						<h3>num<wbr>Layer<wbr>Colors</h3>
+						<div class="tsd-signature tsd-kind-icon">num<wbr>Layer<wbr>Colors<span class="tsd-signature-symbol">:</span> <span class="tsd-signature-type">number</span></div>
+						<aside class="tsd-sources">
+							<ul>
+								<li>Defined in <a href="https://github.com/jaames/flipnote.js/blob/5edc3e4/src/parsers/FlipnoteParserBase.ts#L192">src/parsers/FlipnoteParserBase.ts:192</a></li>
+							</ul>
+						</aside>
+						<div class="tsd-comment tsd-typography">
+							<div class="lead">
+								<p>Number of colors per layer (aside from transparent), reflects <a href="flipnoteparserbase.html#numlayercolors-1">FlipnoteParserBase.numLayerColors</a></p>
+							</div>
+						</div>
+					</section>
+					<section class="tsd-panel tsd-member tsd-kind-property tsd-parent-kind-class">
+						<a name="numlayers" class="tsd-anchor"></a>
+						<h3>num<wbr>Layers</h3>
+						<div class="tsd-signature tsd-kind-icon">num<wbr>Layers<span class="tsd-signature-symbol">:</span> <span class="tsd-signature-type">number</span></div>
+						<aside class="tsd-sources">
+							<ul>
+								<li>Defined in <a href="https://github.com/jaames/flipnote.js/blob/5edc3e4/src/parsers/FlipnoteParserBase.ts#L190">src/parsers/FlipnoteParserBase.ts:190</a></li>
+							</ul>
+						</aside>
+						<div class="tsd-comment tsd-typography">
+							<div class="lead">
+								<p>Number of animation frame layers, reflects <a href="flipnoteparserbase.html#numlayers-1">FlipnoteParserBase.numLayers</a></p>
+							</div>
+						</div>
+					</section>
+					<section class="tsd-panel tsd-member tsd-kind-property tsd-parent-kind-class">
+						<a name="palette" class="tsd-anchor"></a>
+						<h3>palette</h3>
+						<div class="tsd-signature tsd-kind-icon">palette<span class="tsd-signature-symbol">:</span> <a href="../globals.html#flipnotepalettedefinition" class="tsd-signature-type">FlipnotePaletteDefinition</a></div>
+						<aside class="tsd-sources">
+							<ul>
+								<li>Defined in <a href="https://github.com/jaames/flipnote.js/blob/5edc3e4/src/parsers/FlipnoteParserBase.ts#L206">src/parsers/FlipnoteParserBase.ts:206</a></li>
+							</ul>
+						</aside>
+						<div class="tsd-comment tsd-typography">
+							<div class="lead">
+								<p>Flipnote palette</p>
+							</div>
+						</div>
+					</section>
+					<section class="tsd-panel tsd-member tsd-kind-property tsd-parent-kind-class tsd-is-inherited">
+						<a name="pointer" class="tsd-anchor"></a>
+						<h3>pointer</h3>
+						<div class="tsd-signature tsd-kind-icon">pointer<span class="tsd-signature-symbol">:</span> <span class="tsd-signature-type">number</span></div>
+						<aside class="tsd-sources">
+							<p>Inherited from DataStream.pointer</p>
+							<ul>
+								<li>Defined in <a href="https://github.com/jaames/flipnote.js/blob/5edc3e4/src/utils/DataStream.ts#L16">src/utils/DataStream.ts:16</a></li>
+							</ul>
+						</aside>
+					</section>
+					<section class="tsd-panel tsd-member tsd-kind-property tsd-parent-kind-class">
+						<a name="publickey" class="tsd-anchor"></a>
+						<h3>public<wbr>Key</h3>
+						<div class="tsd-signature tsd-kind-icon">public<wbr>Key<span class="tsd-signature-symbol">:</span> <span class="tsd-signature-type">string</span></div>
+						<aside class="tsd-sources">
+							<ul>
+								<li>Defined in <a href="https://github.com/jaames/flipnote.js/blob/5edc3e4/src/parsers/FlipnoteParserBase.ts#L214">src/parsers/FlipnoteParserBase.ts:214</a></li>
+							</ul>
+						</aside>
+						<div class="tsd-comment tsd-typography">
+							<div class="lead">
+								<p>key used for Flipnote verification, in PEM format</p>
+							</div>
+						</div>
+					</section>
+					<section class="tsd-panel tsd-member tsd-kind-property tsd-parent-kind-class">
+						<a name="rawsamplerate" class="tsd-anchor"></a>
+						<h3>raw<wbr>Sample<wbr>Rate</h3>
+						<div class="tsd-signature tsd-kind-icon">raw<wbr>Sample<wbr>Rate<span class="tsd-signature-symbol">:</span> <span class="tsd-signature-type">number</span></div>
+						<aside class="tsd-sources">
+							<ul>
+								<li>Defined in <a href="https://github.com/jaames/flipnote.js/blob/5edc3e4/src/parsers/FlipnoteParserBase.ts#L200">src/parsers/FlipnoteParserBase.ts:200</a></li>
+							</ul>
+						</aside>
+						<div class="tsd-comment tsd-typography">
+							<div class="lead">
+								<p>Audio track base sample rate, reflects <a href="flipnoteparserbase.html#rawsamplerate-1">FlipnoteParserBase.rawSampleRate</a></p>
+							</div>
+						</div>
+					</section>
+					<section class="tsd-panel tsd-member tsd-kind-property tsd-parent-kind-class">
+						<a name="samplerate" class="tsd-anchor"></a>
+						<h3>sample<wbr>Rate</h3>
+						<div class="tsd-signature tsd-kind-icon">sample<wbr>Rate<span class="tsd-signature-symbol">:</span> <span class="tsd-signature-type">number</span></div>
+						<aside class="tsd-sources">
+							<ul>
+								<li>Defined in <a href="https://github.com/jaames/flipnote.js/blob/5edc3e4/src/parsers/FlipnoteParserBase.ts#L202">src/parsers/FlipnoteParserBase.ts:202</a></li>
+							</ul>
+						</aside>
+						<div class="tsd-comment tsd-typography">
+							<div class="lead">
+								<p>Audio output sample rate, reflects <a href="flipnoteparserbase.html#samplerate-1">FlipnoteParserBase.sampleRate</a></p>
+							</div>
+						</div>
+					</section>
+					<section class="tsd-panel tsd-member tsd-kind-property tsd-parent-kind-class">
+						<a name="soundeffecttracks" class="tsd-anchor"></a>
+						<h3>sound<wbr>Effect<wbr>Tracks</h3>
+						<div class="tsd-signature tsd-kind-icon">sound<wbr>Effect<wbr>Tracks<span class="tsd-signature-symbol">:</span> <a href="../enums/flipnotesoundeffecttrack.html" class="tsd-signature-type">FlipnoteSoundEffectTrack</a><span class="tsd-signature-symbol">[]</span></div>
+						<aside class="tsd-sources">
+							<ul>
+								<li>Defined in <a href="https://github.com/jaames/flipnote.js/blob/5edc3e4/src/parsers/FlipnoteParserBase.ts#L198">src/parsers/FlipnoteParserBase.ts:198</a></li>
+							</ul>
+						</aside>
+						<div class="tsd-comment tsd-typography">
+							<div class="lead">
+								<p>Which sound effect tracks are available in this format, reflects <a href="flipnoteparserbase.html#soundeffecttracks-1">FlipnoteParserBase.soundEffectTracks</a></p>
+							</div>
+						</div>
+					</section>
+					<section class="tsd-panel tsd-member tsd-kind-property tsd-parent-kind-class">
+						<a name="soundmeta" class="tsd-anchor"></a>
+						<h3>sound<wbr>Meta</h3>
+						<div class="tsd-signature tsd-kind-icon">sound<wbr>Meta<span class="tsd-signature-symbol">:</span> <span class="tsd-signature-type">Map</span><span class="tsd-signature-symbol">&lt;</span><a href="../enums/flipnoteaudiotrack.html" class="tsd-signature-type">FlipnoteAudioTrack</a><span class="tsd-signature-symbol">, </span><a href="../interfaces/flipnoteaudiotrackinfo.html" class="tsd-signature-type">FlipnoteAudioTrackInfo</a><span class="tsd-signature-symbol">&gt;</span><span class="tsd-signature-symbol"> = new Map()</span></div>
+						<aside class="tsd-sources">
+							<ul>
+								<li>Defined in <a href="https://github.com/jaames/flipnote.js/blob/5edc3e4/src/parsers/FlipnoteParserBase.ts#L210">src/parsers/FlipnoteParserBase.ts:210</a></li>
+							</ul>
+						</aside>
+						<div class="tsd-comment tsd-typography">
+							<div class="lead">
+								<p>File audio track info, see <a href="../interfaces/flipnoteaudiotrackinfo.html">FlipnoteAudioTrackInfo</a></p>
+							</div>
+						</div>
+					</section>
+					<section class="tsd-panel tsd-member tsd-kind-property tsd-parent-kind-class">
+						<a name="thumbframeindex" class="tsd-anchor"></a>
+						<h3>thumb<wbr>Frame<wbr>Index</h3>
+						<div class="tsd-signature tsd-kind-icon">thumb<wbr>Frame<wbr>Index<span class="tsd-signature-symbol">:</span> <span class="tsd-signature-type">number</span></div>
+						<aside class="tsd-sources">
+							<ul>
+								<li>Defined in <a href="https://github.com/jaames/flipnote.js/blob/5edc3e4/src/parsers/FlipnoteParserBase.ts#L239">src/parsers/FlipnoteParserBase.ts:239</a></li>
+							</ul>
+						</aside>
+						<div class="tsd-comment tsd-typography">
+							<div class="lead">
+								<p>Index of the animation frame used as the Flipnote&#39;s thumbnail image</p>
+							</div>
+						</div>
+					</section>
+					<section class="tsd-panel tsd-member tsd-kind-property tsd-parent-kind-class tsd-is-static">
+						<a name="aspect-1" class="tsd-anchor"></a>
+						<h3><span class="tsd-flag ts-flagStatic">Static</span> aspect</h3>
+						<div class="tsd-signature tsd-kind-icon">aspect<span class="tsd-signature-symbol">:</span> <span class="tsd-signature-type">number</span></div>
+						<aside class="tsd-sources">
+							<ul>
+								<li>Defined in <a href="https://github.com/jaames/flipnote.js/blob/5edc3e4/src/parsers/FlipnoteParserBase.ts#L149">src/parsers/FlipnoteParserBase.ts:149</a></li>
+							</ul>
+						</aside>
+						<div class="tsd-comment tsd-typography">
+							<div class="lead">
+								<p>Animation frame aspect ratio (height / width)</p>
+							</div>
+						</div>
+					</section>
+					<section class="tsd-panel tsd-member tsd-kind-property tsd-parent-kind-class tsd-is-static">
+						<a name="audiotracks-1" class="tsd-anchor"></a>
+						<h3><span class="tsd-flag ts-flagStatic">Static</span> audio<wbr>Tracks</h3>
+						<div class="tsd-signature tsd-kind-icon">audio<wbr>Tracks<span class="tsd-signature-symbol">:</span> <a href="../enums/flipnoteaudiotrack.html" class="tsd-signature-type">FlipnoteAudioTrack</a><span class="tsd-signature-symbol">[]</span></div>
+						<aside class="tsd-sources">
+							<ul>
+								<li>Defined in <a href="https://github.com/jaames/flipnote.js/blob/5edc3e4/src/parsers/FlipnoteParserBase.ts#L155">src/parsers/FlipnoteParserBase.ts:155</a></li>
+							</ul>
+						</aside>
+						<div class="tsd-comment tsd-typography">
+							<div class="lead">
+								<p>Which audio tracks are available in this format</p>
+							</div>
+						</div>
+					</section>
+					<section class="tsd-panel tsd-member tsd-kind-property tsd-parent-kind-class tsd-is-static">
+						<a name="format-1" class="tsd-anchor"></a>
+						<h3><span class="tsd-flag ts-flagStatic">Static</span> format</h3>
+						<div class="tsd-signature tsd-kind-icon">format<span class="tsd-signature-symbol">:</span> <a href="../enums/flipnoteformat.html" class="tsd-signature-type">FlipnoteFormat</a></div>
+						<aside class="tsd-sources">
+							<ul>
+								<li>Defined in <a href="https://github.com/jaames/flipnote.js/blob/5edc3e4/src/parsers/FlipnoteParserBase.ts#L143">src/parsers/FlipnoteParserBase.ts:143</a></li>
+							</ul>
+						</aside>
+						<div class="tsd-comment tsd-typography">
+							<div class="lead">
+								<p>File format type</p>
+							</div>
+						</div>
+					</section>
+					<section class="tsd-panel tsd-member tsd-kind-property tsd-parent-kind-class tsd-is-static">
+						<a name="globalpalette-1" class="tsd-anchor"></a>
+						<h3><span class="tsd-flag ts-flagStatic">Static</span> global<wbr>Palette</h3>
+						<div class="tsd-signature tsd-kind-icon">global<wbr>Palette<span class="tsd-signature-symbol">:</span> <a href="../globals.html#flipnotepalettecolor" class="tsd-signature-type">FlipnotePaletteColor</a><span class="tsd-signature-symbol">[]</span></div>
+						<aside class="tsd-sources">
+							<ul>
+								<li>Defined in <a href="https://github.com/jaames/flipnote.js/blob/5edc3e4/src/parsers/FlipnoteParserBase.ts#L163">src/parsers/FlipnoteParserBase.ts:163</a></li>
+							</ul>
+						</aside>
+						<div class="tsd-comment tsd-typography">
+							<div class="lead">
+								<p>Global animation frame color palette</p>
+							</div>
+						</div>
+					</section>
+					<section class="tsd-panel tsd-member tsd-kind-property tsd-parent-kind-class tsd-is-static">
+						<a name="height" class="tsd-anchor"></a>
+						<h3><span class="tsd-flag ts-flagStatic">Static</span> height</h3>
+						<div class="tsd-signature tsd-kind-icon">height<span class="tsd-signature-symbol">:</span> <span class="tsd-signature-type">number</span></div>
+						<aside class="tsd-sources">
+							<ul>
+								<li>Defined in <a href="https://github.com/jaames/flipnote.js/blob/5edc3e4/src/parsers/FlipnoteParserBase.ts#L147">src/parsers/FlipnoteParserBase.ts:147</a></li>
+							</ul>
+						</aside>
+						<div class="tsd-comment tsd-typography">
+							<div class="lead">
+								<p>Animation frame height</p>
+							</div>
+						</div>
+					</section>
+					<section class="tsd-panel tsd-member tsd-kind-property tsd-parent-kind-class tsd-is-static">
+						<a name="numlayercolors-1" class="tsd-anchor"></a>
+						<h3><span class="tsd-flag ts-flagStatic">Static</span> num<wbr>Layer<wbr>Colors</h3>
+						<div class="tsd-signature tsd-kind-icon">num<wbr>Layer<wbr>Colors<span class="tsd-signature-symbol">:</span> <span class="tsd-signature-type">number</span></div>
+						<aside class="tsd-sources">
+							<ul>
+								<li>Defined in <a href="https://github.com/jaames/flipnote.js/blob/5edc3e4/src/parsers/FlipnoteParserBase.ts#L153">src/parsers/FlipnoteParserBase.ts:153</a></li>
+							</ul>
+						</aside>
+						<div class="tsd-comment tsd-typography">
+							<div class="lead">
+								<p>Number of colors per layer (aside from transparent)</p>
+							</div>
+						</div>
+					</section>
+					<section class="tsd-panel tsd-member tsd-kind-property tsd-parent-kind-class tsd-is-static">
+						<a name="numlayers-1" class="tsd-anchor"></a>
+						<h3><span class="tsd-flag ts-flagStatic">Static</span> num<wbr>Layers</h3>
+						<div class="tsd-signature tsd-kind-icon">num<wbr>Layers<span class="tsd-signature-symbol">:</span> <span class="tsd-signature-type">number</span></div>
+						<aside class="tsd-sources">
+							<ul>
+								<li>Defined in <a href="https://github.com/jaames/flipnote.js/blob/5edc3e4/src/parsers/FlipnoteParserBase.ts#L151">src/parsers/FlipnoteParserBase.ts:151</a></li>
+							</ul>
+						</aside>
+						<div class="tsd-comment tsd-typography">
+							<div class="lead">
+								<p>Number of animation frame layers</p>
+							</div>
+						</div>
+					</section>
+					<section class="tsd-panel tsd-member tsd-kind-property tsd-parent-kind-class tsd-is-static">
+						<a name="publickey-1" class="tsd-anchor"></a>
+						<h3><span class="tsd-flag ts-flagStatic">Static</span> public<wbr>Key</h3>
+						<div class="tsd-signature tsd-kind-icon">public<wbr>Key<span class="tsd-signature-symbol">:</span> <span class="tsd-signature-type">string</span></div>
+						<aside class="tsd-sources">
+							<ul>
+								<li>Defined in <a href="https://github.com/jaames/flipnote.js/blob/5edc3e4/src/parsers/FlipnoteParserBase.ts#L165">src/parsers/FlipnoteParserBase.ts:165</a></li>
+							</ul>
+						</aside>
+						<div class="tsd-comment tsd-typography">
+							<div class="lead">
+								<p>key used for Flipnote verification, in PEM format</p>
+							</div>
+						</div>
+					</section>
+					<section class="tsd-panel tsd-member tsd-kind-property tsd-parent-kind-class tsd-is-static">
+						<a name="rawsamplerate-1" class="tsd-anchor"></a>
+						<h3><span class="tsd-flag ts-flagStatic">Static</span> raw<wbr>Sample<wbr>Rate</h3>
+						<div class="tsd-signature tsd-kind-icon">raw<wbr>Sample<wbr>Rate<span class="tsd-signature-symbol">:</span> <span class="tsd-signature-type">number</span></div>
+						<aside class="tsd-sources">
+							<ul>
+								<li>Defined in <a href="https://github.com/jaames/flipnote.js/blob/5edc3e4/src/parsers/FlipnoteParserBase.ts#L159">src/parsers/FlipnoteParserBase.ts:159</a></li>
+							</ul>
+						</aside>
+						<div class="tsd-comment tsd-typography">
+							<div class="lead">
+								<p>Audio track base sample rate</p>
+							</div>
+						</div>
+					</section>
+					<section class="tsd-panel tsd-member tsd-kind-property tsd-parent-kind-class tsd-is-static">
+						<a name="samplerate-1" class="tsd-anchor"></a>
+						<h3><span class="tsd-flag ts-flagStatic">Static</span> sample<wbr>Rate</h3>
+						<div class="tsd-signature tsd-kind-icon">sample<wbr>Rate<span class="tsd-signature-symbol">:</span> <span class="tsd-signature-type">number</span></div>
+						<aside class="tsd-sources">
+							<ul>
+								<li>Defined in <a href="https://github.com/jaames/flipnote.js/blob/5edc3e4/src/parsers/FlipnoteParserBase.ts#L161">src/parsers/FlipnoteParserBase.ts:161</a></li>
+							</ul>
+						</aside>
+						<div class="tsd-comment tsd-typography">
+							<div class="lead">
+								<p>Audio output sample rate</p>
+							</div>
+						</div>
+					</section>
+					<section class="tsd-panel tsd-member tsd-kind-property tsd-parent-kind-class tsd-is-static">
+						<a name="soundeffecttracks-1" class="tsd-anchor"></a>
+						<h3><span class="tsd-flag ts-flagStatic">Static</span> sound<wbr>Effect<wbr>Tracks</h3>
+						<div class="tsd-signature tsd-kind-icon">sound<wbr>Effect<wbr>Tracks<span class="tsd-signature-symbol">:</span> <a href="../enums/flipnotesoundeffecttrack.html" class="tsd-signature-type">FlipnoteSoundEffectTrack</a><span class="tsd-signature-symbol">[]</span></div>
+						<aside class="tsd-sources">
+							<ul>
+								<li>Defined in <a href="https://github.com/jaames/flipnote.js/blob/5edc3e4/src/parsers/FlipnoteParserBase.ts#L157">src/parsers/FlipnoteParserBase.ts:157</a></li>
+							</ul>
+						</aside>
+						<div class="tsd-comment tsd-typography">
+							<div class="lead">
+								<p>Which sound effect tracks are available in this format</p>
+							</div>
+						</div>
+					</section>
+					<section class="tsd-panel tsd-member tsd-kind-property tsd-parent-kind-class tsd-is-static">
+						<a name="width" class="tsd-anchor"></a>
+						<h3><span class="tsd-flag ts-flagStatic">Static</span> width</h3>
+						<div class="tsd-signature tsd-kind-icon">width<span class="tsd-signature-symbol">:</span> <span class="tsd-signature-type">number</span></div>
+						<aside class="tsd-sources">
+							<ul>
+								<li>Defined in <a href="https://github.com/jaames/flipnote.js/blob/5edc3e4/src/parsers/FlipnoteParserBase.ts#L145">src/parsers/FlipnoteParserBase.ts:145</a></li>
+							</ul>
+						</aside>
+						<div class="tsd-comment tsd-typography">
+							<div class="lead">
+								<p>Animation frame width</p>
+							</div>
+						</div>
+					</section>
+				</section>
+				<section class="tsd-panel-group tsd-member-group tsd-is-inherited">
+					<h2>Accessors</h2>
+					<section class="tsd-panel tsd-member tsd-kind-get-signature tsd-parent-kind-class tsd-is-inherited">
+						<a name="bytelength" class="tsd-anchor"></a>
+						<h3>byte<wbr>Length</h3>
+						<ul class="tsd-signatures tsd-kind-get-signature tsd-parent-kind-class tsd-is-inherited">
+							<li class="tsd-signature tsd-kind-icon"><span class="tsd-signature-symbol">get</span> byteLength<span class="tsd-signature-symbol">(</span><span class="tsd-signature-symbol">)</span><span class="tsd-signature-symbol">: </span><span class="tsd-signature-type">number</span></li>
+						</ul>
+						<ul class="tsd-descriptions">
+							<li class="tsd-description">
+								<aside class="tsd-sources">
+									<p>Inherited from DataStream.byteLength</p>
+									<ul>
+										<li>Defined in <a href="https://github.com/jaames/flipnote.js/blob/5edc3e4/src/utils/DataStream.ts#L29">src/utils/DataStream.ts:29</a></li>
+									</ul>
+								</aside>
+								<h4 class="tsd-returns-title">Returns <span class="tsd-signature-type">number</span></h4>
+							</li>
+						</ul>
+					</section>
+					<section class="tsd-panel tsd-member tsd-kind-get-signature tsd-parent-kind-class tsd-is-inherited">
+						<a name="bytes" class="tsd-anchor"></a>
+						<h3>bytes</h3>
+						<ul class="tsd-signatures tsd-kind-get-signature tsd-parent-kind-class tsd-is-inherited">
+							<li class="tsd-signature tsd-kind-icon"><span class="tsd-signature-symbol">get</span> bytes<span class="tsd-signature-symbol">(</span><span class="tsd-signature-symbol">)</span><span class="tsd-signature-symbol">: </span><span class="tsd-signature-type">Uint8Array</span></li>
+						</ul>
+						<ul class="tsd-descriptions">
+							<li class="tsd-description">
+								<aside class="tsd-sources">
+									<p>Inherited from DataStream.bytes</p>
+									<ul>
+										<li>Defined in <a href="https://github.com/jaames/flipnote.js/blob/5edc3e4/src/utils/DataStream.ts#L25">src/utils/DataStream.ts:25</a></li>
+									</ul>
+								</aside>
+								<h4 class="tsd-returns-title">Returns <span class="tsd-signature-type">Uint8Array</span></h4>
+							</li>
+						</ul>
+					</section>
+				</section>
+				<section class="tsd-panel-group tsd-member-group ">
+					<h2>Audio Methods</h2>
+					<section class="tsd-panel tsd-member tsd-kind-method tsd-parent-kind-class">
+						<a name="decodeaudiotrack" class="tsd-anchor"></a>
+						<h3><span class="tsd-flag ts-flagAbstract">Abstract</span> decode<wbr>Audio<wbr>Track</h3>
+						<ul class="tsd-signatures tsd-kind-method tsd-parent-kind-class">
+							<li class="tsd-signature tsd-kind-icon">decode<wbr>Audio<wbr>Track<span class="tsd-signature-symbol">(</span>trackId<span class="tsd-signature-symbol">: </span><a href="../enums/flipnoteaudiotrack.html" class="tsd-signature-type">FlipnoteAudioTrack</a><span class="tsd-signature-symbol">)</span><span class="tsd-signature-symbol">: </span><span class="tsd-signature-type">Int16Array</span></li>
+						</ul>
+						<ul class="tsd-descriptions">
+							<li class="tsd-description">
+								<aside class="tsd-sources">
+									<ul>
+										<li>Defined in <a href="https://github.com/jaames/flipnote.js/blob/5edc3e4/src/parsers/FlipnoteParserBase.ts#L625">src/parsers/FlipnoteParserBase.ts:625</a></li>
+									</ul>
+								</aside>
+								<div class="tsd-comment tsd-typography">
+									<div class="lead">
+										<p>Get the decoded audio data for a given track, using the track&#39;s native samplerate</p>
+									</div>
+								</div>
+								<h4 class="tsd-parameters-title">Parameters</h4>
+								<ul class="tsd-parameters">
+									<li>
+										<h5>trackId: <a href="../enums/flipnoteaudiotrack.html" class="tsd-signature-type">FlipnoteAudioTrack</a></h5>
+									</li>
+								</ul>
+								<h4 class="tsd-returns-title">Returns <span class="tsd-signature-type">Int16Array</span></h4>
+								<p>Signed 16-bit PCM audio</p>
+							</li>
+						</ul>
+					</section>
+					<section class="tsd-panel tsd-member tsd-kind-method tsd-parent-kind-class">
+						<a name="decodesoundflags" class="tsd-anchor"></a>
+						<h3><span class="tsd-flag ts-flagAbstract">Abstract</span> decode<wbr>Sound<wbr>Flags</h3>
+						<ul class="tsd-signatures tsd-kind-method tsd-parent-kind-class">
+							<li class="tsd-signature tsd-kind-icon">decode<wbr>Sound<wbr>Flags<span class="tsd-signature-symbol">(</span><span class="tsd-signature-symbol">)</span><span class="tsd-signature-symbol">: </span><span class="tsd-signature-type">boolean</span><span class="tsd-signature-symbol">[]</span><span class="tsd-signature-symbol">[]</span></li>
+						</ul>
+						<ul class="tsd-descriptions">
+							<li class="tsd-description">
+								<aside class="tsd-sources">
+									<ul>
+										<li>Defined in <a href="https://github.com/jaames/flipnote.js/blob/5edc3e4/src/parsers/FlipnoteParserBase.ts#L570">src/parsers/FlipnoteParserBase.ts:570</a></li>
+									</ul>
+								</aside>
+								<div class="tsd-comment tsd-typography">
+									<div class="lead">
+										<p>Get the sound effect flags for every frame in the Flipnote</p>
+									</div>
+								</div>
+								<h4 class="tsd-returns-title">Returns <span class="tsd-signature-type">boolean</span><span class="tsd-signature-symbol">[]</span><span class="tsd-signature-symbol">[]</span></h4>
+							</li>
+						</ul>
+					</section>
+					<section class="tsd-panel tsd-member tsd-kind-method tsd-parent-kind-class">
+						<a name="getaudiomasterpcm" class="tsd-anchor"></a>
+						<h3><span class="tsd-flag ts-flagAbstract">Abstract</span> get<wbr>Audio<wbr>Master<wbr>Pcm</h3>
+						<ul class="tsd-signatures tsd-kind-method tsd-parent-kind-class">
+							<li class="tsd-signature tsd-kind-icon">get<wbr>Audio<wbr>Master<wbr>Pcm<span class="tsd-signature-symbol">(</span>sampleRate<span class="tsd-signature-symbol">?: </span><span class="tsd-signature-type">number</span><span class="tsd-signature-symbol">)</span><span class="tsd-signature-symbol">: </span><span class="tsd-signature-type">Int16Array</span></li>
+						</ul>
+						<ul class="tsd-descriptions">
+							<li class="tsd-description">
+								<aside class="tsd-sources">
+									<ul>
+										<li>Defined in <a href="https://github.com/jaames/flipnote.js/blob/5edc3e4/src/parsers/FlipnoteParserBase.ts#L639">src/parsers/FlipnoteParserBase.ts:639</a></li>
+									</ul>
+								</aside>
+								<div class="tsd-comment tsd-typography">
+									<div class="lead">
+										<p>Get the full mixed audio for the Flipnote, using the specified samplerate</p>
+									</div>
+								</div>
+								<h4 class="tsd-parameters-title">Parameters</h4>
+								<ul class="tsd-parameters">
+									<li>
+										<h5><span class="tsd-flag ts-flagOptional">Optional</span> sampleRate: <span class="tsd-signature-type">number</span></h5>
+									</li>
+								</ul>
+								<h4 class="tsd-returns-title">Returns <span class="tsd-signature-type">Int16Array</span></h4>
+								<p>Signed 16-bit PCM audio</p>
+							</li>
+						</ul>
+					</section>
+					<section class="tsd-panel tsd-member tsd-kind-method tsd-parent-kind-class">
+						<a name="getaudiotrackpcm" class="tsd-anchor"></a>
+						<h3><span class="tsd-flag ts-flagAbstract">Abstract</span> get<wbr>Audio<wbr>Track<wbr>Pcm</h3>
+						<ul class="tsd-signatures tsd-kind-method tsd-parent-kind-class">
+							<li class="tsd-signature tsd-kind-icon">get<wbr>Audio<wbr>Track<wbr>Pcm<span class="tsd-signature-symbol">(</span>trackId<span class="tsd-signature-symbol">: </span><a href="../enums/flipnoteaudiotrack.html" class="tsd-signature-type">FlipnoteAudioTrack</a>, sampleRate<span class="tsd-signature-symbol">?: </span><span class="tsd-signature-type">number</span><span class="tsd-signature-symbol">)</span><span class="tsd-signature-symbol">: </span><span class="tsd-signature-type">Int16Array</span></li>
+						</ul>
+						<ul class="tsd-descriptions">
+							<li class="tsd-description">
+								<aside class="tsd-sources">
+									<ul>
+										<li>Defined in <a href="https://github.com/jaames/flipnote.js/blob/5edc3e4/src/parsers/FlipnoteParserBase.ts#L632">src/parsers/FlipnoteParserBase.ts:632</a></li>
+									</ul>
+								</aside>
+								<div class="tsd-comment tsd-typography">
+									<div class="lead">
+										<p>Get the decoded audio data for a given track, using the specified samplerate</p>
+									</div>
+								</div>
+								<h4 class="tsd-parameters-title">Parameters</h4>
+								<ul class="tsd-parameters">
+									<li>
+										<h5>trackId: <a href="../enums/flipnoteaudiotrack.html" class="tsd-signature-type">FlipnoteAudioTrack</a></h5>
+									</li>
+									<li>
+										<h5><span class="tsd-flag ts-flagOptional">Optional</span> sampleRate: <span class="tsd-signature-type">number</span></h5>
+									</li>
+								</ul>
+								<h4 class="tsd-returns-title">Returns <span class="tsd-signature-type">Int16Array</span></h4>
+								<p>Signed 16-bit PCM audio</p>
+							</li>
+						</ul>
+					</section>
+					<section class="tsd-panel tsd-member tsd-kind-method tsd-parent-kind-class">
+						<a name="getaudiotrackraw" class="tsd-anchor"></a>
+						<h3><span class="tsd-flag ts-flagAbstract">Abstract</span> get<wbr>Audio<wbr>Track<wbr>Raw</h3>
+						<ul class="tsd-signatures tsd-kind-method tsd-parent-kind-class">
+							<li class="tsd-signature tsd-kind-icon">get<wbr>Audio<wbr>Track<wbr>Raw<span class="tsd-signature-symbol">(</span>trackId<span class="tsd-signature-symbol">: </span><a href="../enums/flipnoteaudiotrack.html" class="tsd-signature-type">FlipnoteAudioTrack</a><span class="tsd-signature-symbol">)</span><span class="tsd-signature-symbol">: </span><span class="tsd-signature-type">Uint8Array</span></li>
+						</ul>
+						<ul class="tsd-descriptions">
+							<li class="tsd-description">
+								<aside class="tsd-sources">
+									<ul>
+										<li>Defined in <a href="https://github.com/jaames/flipnote.js/blob/5edc3e4/src/parsers/FlipnoteParserBase.ts#L618">src/parsers/FlipnoteParserBase.ts:618</a></li>
+									</ul>
+								</aside>
+								<div class="tsd-comment tsd-typography">
+									<div class="lead">
+										<p>Get the raw compressed audio data for a given track</p>
+									</div>
+								</div>
+								<h4 class="tsd-parameters-title">Parameters</h4>
+								<ul class="tsd-parameters">
+									<li>
+										<h5>trackId: <a href="../enums/flipnoteaudiotrack.html" class="tsd-signature-type">FlipnoteAudioTrack</a></h5>
+									</li>
+								</ul>
+								<h4 class="tsd-returns-title">Returns <span class="tsd-signature-type">Uint8Array</span></h4>
+								<p>byte array</p>
+							</li>
+						</ul>
+					</section>
+					<section class="tsd-panel tsd-member tsd-kind-method tsd-parent-kind-class">
+						<a name="getframesoundeffectflags" class="tsd-anchor"></a>
+						<h3><span class="tsd-flag ts-flagAbstract">Abstract</span> get<wbr>Frame<wbr>Sound<wbr>Effect<wbr>Flags</h3>
+						<ul class="tsd-signatures tsd-kind-method tsd-parent-kind-class">
+							<li class="tsd-signature tsd-kind-icon">get<wbr>Frame<wbr>Sound<wbr>Effect<wbr>Flags<span class="tsd-signature-symbol">(</span>frameIndex<span class="tsd-signature-symbol">: </span><span class="tsd-signature-type">number</span><span class="tsd-signature-symbol">)</span><span class="tsd-signature-symbol">: </span><a href="../globals.html#flipnotesoundeffectflags" class="tsd-signature-type">FlipnoteSoundEffectFlags</a></li>
+						</ul>
+						<ul class="tsd-descriptions">
+							<li class="tsd-description">
+								<aside class="tsd-sources">
+									<ul>
+										<li>Defined in <a href="https://github.com/jaames/flipnote.js/blob/5edc3e4/src/parsers/FlipnoteParserBase.ts#L582">src/parsers/FlipnoteParserBase.ts:582</a></li>
+									</ul>
+								</aside>
+								<div class="tsd-comment tsd-typography">
+									<div class="lead">
+										<p>Get the sound effect usage flags for a given frame</p>
+									</div>
+								</div>
+								<h4 class="tsd-parameters-title">Parameters</h4>
+								<ul class="tsd-parameters">
+									<li>
+										<h5>frameIndex: <span class="tsd-signature-type">number</span></h5>
+									</li>
+								</ul>
+								<h4 class="tsd-returns-title">Returns <a href="../globals.html#flipnotesoundeffectflags" class="tsd-signature-type">FlipnoteSoundEffectFlags</a></h4>
+							</li>
+						</ul>
+					</section>
+					<section class="tsd-panel tsd-member tsd-kind-method tsd-parent-kind-class">
+						<a name="getsoundeffectflags" class="tsd-anchor"></a>
+						<h3><span class="tsd-flag ts-flagAbstract">Abstract</span> get<wbr>Sound<wbr>Effect<wbr>Flags</h3>
+						<ul class="tsd-signatures tsd-kind-method tsd-parent-kind-class">
+							<li class="tsd-signature tsd-kind-icon">get<wbr>Sound<wbr>Effect<wbr>Flags<span class="tsd-signature-symbol">(</span><span class="tsd-signature-symbol">)</span><span class="tsd-signature-symbol">: </span><a href="../globals.html#flipnotesoundeffectflags" class="tsd-signature-type">FlipnoteSoundEffectFlags</a><span class="tsd-signature-symbol">[]</span></li>
+						</ul>
+						<ul class="tsd-descriptions">
+							<li class="tsd-description">
+								<aside class="tsd-sources">
+									<ul>
+										<li>Defined in <a href="https://github.com/jaames/flipnote.js/blob/5edc3e4/src/parsers/FlipnoteParserBase.ts#L576">src/parsers/FlipnoteParserBase.ts:576</a></li>
+									</ul>
+								</aside>
+								<div class="tsd-comment tsd-typography">
+									<div class="lead">
+										<p>Get the sound effect usage flags for every frame</p>
+									</div>
+								</div>
+								<h4 class="tsd-returns-title">Returns <a href="../globals.html#flipnotesoundeffectflags" class="tsd-signature-type">FlipnoteSoundEffectFlags</a><span class="tsd-signature-symbol">[]</span></h4>
+							</li>
+						</ul>
+					</section>
+					<section class="tsd-panel tsd-member tsd-kind-method tsd-parent-kind-class">
+						<a name="getsoundeffectflagsfortrack" class="tsd-anchor"></a>
+						<h3>get<wbr>Sound<wbr>Effect<wbr>Flags<wbr>For<wbr>Track</h3>
+						<ul class="tsd-signatures tsd-kind-method tsd-parent-kind-class">
+							<li class="tsd-signature tsd-kind-icon">get<wbr>Sound<wbr>Effect<wbr>Flags<wbr>For<wbr>Track<span class="tsd-signature-symbol">(</span>trackId<span class="tsd-signature-symbol">: </span><a href="../enums/flipnotesoundeffecttrack.html" class="tsd-signature-type">FlipnoteSoundEffectTrack</a><span class="tsd-signature-symbol">)</span><span class="tsd-signature-symbol">: </span><span class="tsd-signature-type">boolean</span><span class="tsd-signature-symbol">[]</span></li>
+						</ul>
+						<ul class="tsd-descriptions">
+							<li class="tsd-description">
+								<aside class="tsd-sources">
+									<ul>
+										<li>Defined in <a href="https://github.com/jaames/flipnote.js/blob/5edc3e4/src/parsers/FlipnoteParserBase.ts#L589">src/parsers/FlipnoteParserBase.ts:589</a></li>
+									</ul>
+								</aside>
+								<div class="tsd-comment tsd-typography">
+									<div class="lead">
+										<p>Get the usage flags for a given track across every frame</p>
+									</div>
+								</div>
+								<h4 class="tsd-parameters-title">Parameters</h4>
+								<ul class="tsd-parameters">
+									<li>
+										<h5>trackId: <a href="../enums/flipnotesoundeffecttrack.html" class="tsd-signature-type">FlipnoteSoundEffectTrack</a></h5>
+									</li>
+								</ul>
+								<h4 class="tsd-returns-title">Returns <span class="tsd-signature-type">boolean</span><span class="tsd-signature-symbol">[]</span></h4>
+								<p>an array of booleans for every frame, indicating whether the track is used on that frame</p>
+							</li>
+						</ul>
+					</section>
+					<section class="tsd-panel tsd-member tsd-kind-method tsd-parent-kind-class">
+						<a name="hasaudiotrack" class="tsd-anchor"></a>
+						<h3>has<wbr>Audio<wbr>Track</h3>
+						<ul class="tsd-signatures tsd-kind-method tsd-parent-kind-class">
+							<li class="tsd-signature tsd-kind-icon">has<wbr>Audio<wbr>Track<span class="tsd-signature-symbol">(</span>trackId<span class="tsd-signature-symbol">: </span><a href="../enums/flipnoteaudiotrack.html" class="tsd-signature-type">FlipnoteAudioTrack</a><span class="tsd-signature-symbol">)</span><span class="tsd-signature-symbol">: </span><span class="tsd-signature-type">boolean</span></li>
+						</ul>
+						<ul class="tsd-descriptions">
+							<li class="tsd-description">
+								<aside class="tsd-sources">
+									<ul>
+										<li>Defined in <a href="https://github.com/jaames/flipnote.js/blob/5edc3e4/src/parsers/FlipnoteParserBase.ts#L609">src/parsers/FlipnoteParserBase.ts:609</a></li>
+									</ul>
+								</aside>
+								<div class="tsd-comment tsd-typography">
+									<div class="lead">
+										<p>Does an audio track exist in the Flipnote?</p>
+									</div>
+								</div>
+								<h4 class="tsd-parameters-title">Parameters</h4>
+								<ul class="tsd-parameters">
+									<li>
+										<h5>trackId: <a href="../enums/flipnoteaudiotrack.html" class="tsd-signature-type">FlipnoteAudioTrack</a></h5>
+									</li>
+								</ul>
+								<h4 class="tsd-returns-title">Returns <span class="tsd-signature-type">boolean</span></h4>
+								<p>boolean</p>
+							</li>
+						</ul>
+					</section>
+					<section class="tsd-panel tsd-member tsd-kind-method tsd-parent-kind-class">
+						<a name="issoundeffectusedonframe" class="tsd-anchor"></a>
+						<h3>is<wbr>Sound<wbr>Effect<wbr>Used<wbr>OnFrame</h3>
+						<ul class="tsd-signatures tsd-kind-method tsd-parent-kind-class">
+							<li class="tsd-signature tsd-kind-icon">is<wbr>Sound<wbr>Effect<wbr>Used<wbr>OnFrame<span class="tsd-signature-symbol">(</span>trackId<span class="tsd-signature-symbol">: </span><a href="../enums/flipnotesoundeffecttrack.html" class="tsd-signature-type">FlipnoteSoundEffectTrack</a>, frameIndex<span class="tsd-signature-symbol">: </span><span class="tsd-signature-type">number</span><span class="tsd-signature-symbol">)</span><span class="tsd-signature-symbol">: </span><span class="tsd-signature-type">boolean</span></li>
+						</ul>
+						<ul class="tsd-descriptions">
+							<li class="tsd-description">
+								<aside class="tsd-sources">
+									<ul>
+										<li>Defined in <a href="https://github.com/jaames/flipnote.js/blob/5edc3e4/src/parsers/FlipnoteParserBase.ts#L597">src/parsers/FlipnoteParserBase.ts:597</a></li>
+									</ul>
+								</aside>
+								<div class="tsd-comment tsd-typography">
+									<div class="lead">
+										<p>Is a given track used on a given frame</p>
+									</div>
+								</div>
+								<h4 class="tsd-parameters-title">Parameters</h4>
+								<ul class="tsd-parameters">
+									<li>
+										<h5>trackId: <a href="../enums/flipnotesoundeffecttrack.html" class="tsd-signature-type">FlipnoteSoundEffectTrack</a></h5>
+									</li>
+									<li>
+										<h5>frameIndex: <span class="tsd-signature-type">number</span></h5>
+									</li>
+								</ul>
+								<h4 class="tsd-returns-title">Returns <span class="tsd-signature-type">boolean</span></h4>
+							</li>
+						</ul>
+					</section>
+				</section>
+				<section class="tsd-panel-group tsd-member-group ">
+					<h2>Image Methods</h2>
+					<section class="tsd-panel tsd-member tsd-kind-method tsd-parent-kind-class">
+						<a name="decodeframe" class="tsd-anchor"></a>
+						<h3><span class="tsd-flag ts-flagAbstract">Abstract</span> decode<wbr>Frame</h3>
+						<ul class="tsd-signatures tsd-kind-method tsd-parent-kind-class">
+							<li class="tsd-signature tsd-kind-icon">decode<wbr>Frame<span class="tsd-signature-symbol">(</span>frameIndex<span class="tsd-signature-symbol">: </span><span class="tsd-signature-type">number</span><span class="tsd-signature-symbol">)</span><span class="tsd-signature-symbol">: </span><span class="tsd-signature-type">Uint8Array</span><span class="tsd-signature-symbol">[]</span></li>
+						</ul>
+						<ul class="tsd-descriptions">
+							<li class="tsd-description">
+								<aside class="tsd-sources">
+									<ul>
+										<li>Defined in <a href="https://github.com/jaames/flipnote.js/blob/5edc3e4/src/parsers/FlipnoteParserBase.ts#L302">src/parsers/FlipnoteParserBase.ts:302</a></li>
+									</ul>
+								</aside>
+								<div class="tsd-comment tsd-typography">
+									<div class="lead">
+										<p>Decode a frame, returning the raw pixel buffers for each layer</p>
+									</div>
+								</div>
+								<h4 class="tsd-parameters-title">Parameters</h4>
+								<ul class="tsd-parameters">
+									<li>
+										<h5>frameIndex: <span class="tsd-signature-type">number</span></h5>
+									</li>
+								</ul>
+								<h4 class="tsd-returns-title">Returns <span class="tsd-signature-type">Uint8Array</span><span class="tsd-signature-symbol">[]</span></h4>
+							</li>
+						</ul>
+					</section>
+					<section class="tsd-panel tsd-member tsd-kind-method tsd-parent-kind-class">
+						<a name="getframecameraflags" class="tsd-anchor"></a>
+						<h3><span class="tsd-flag ts-flagAbstract">Abstract</span> get<wbr>Frame<wbr>Camera<wbr>Flags</h3>
+						<ul class="tsd-signatures tsd-kind-method tsd-parent-kind-class">
+							<li class="tsd-signature tsd-kind-icon">get<wbr>Frame<wbr>Camera<wbr>Flags<span class="tsd-signature-symbol">(</span>frameIndex<span class="tsd-signature-symbol">: </span><span class="tsd-signature-type">number</span><span class="tsd-signature-symbol">)</span><span class="tsd-signature-symbol">: </span><span class="tsd-signature-type">boolean</span><span class="tsd-signature-symbol">[]</span></li>
+						</ul>
+						<ul class="tsd-descriptions">
+							<li class="tsd-description">
+								<aside class="tsd-sources">
+									<ul>
+										<li>Defined in <a href="https://github.com/jaames/flipnote.js/blob/5edc3e4/src/parsers/FlipnoteParserBase.ts#L428">src/parsers/FlipnoteParserBase.ts:428</a></li>
+									</ul>
+								</aside>
+								<div class="tsd-comment tsd-typography">
+									<div class="lead">
+										<p>Get the camera flags for a given frame, if there are any</p>
+									</div>
+								</div>
+								<h4 class="tsd-parameters-title">Parameters</h4>
+								<ul class="tsd-parameters">
+									<li>
+										<h5>frameIndex: <span class="tsd-signature-type">number</span></h5>
+									</li>
+								</ul>
+								<h4 class="tsd-returns-title">Returns <span class="tsd-signature-type">boolean</span><span class="tsd-signature-symbol">[]</span></h4>
+								<p>Array of booleans, indicating whether each layer uses a photo or not</p>
+							</li>
+						</ul>
+					</section>
+					<section class="tsd-panel tsd-member tsd-kind-method tsd-parent-kind-class">
+						<a name="getframelayerdepths" class="tsd-anchor"></a>
+						<h3><span class="tsd-flag ts-flagAbstract">Abstract</span> get<wbr>Frame<wbr>Layer<wbr>Depths</h3>
+						<ul class="tsd-signatures tsd-kind-method tsd-parent-kind-class">
+							<li class="tsd-signature tsd-kind-icon">get<wbr>Frame<wbr>Layer<wbr>Depths<span class="tsd-signature-symbol">(</span>frameIndex<span class="tsd-signature-symbol">: </span><span class="tsd-signature-type">number</span><span class="tsd-signature-symbol">)</span><span class="tsd-signature-symbol">: </span><span class="tsd-signature-type">number</span><span class="tsd-signature-symbol">[]</span></li>
+						</ul>
+						<ul class="tsd-descriptions">
+							<li class="tsd-description">
+								<aside class="tsd-sources">
+									<ul>
+										<li>Defined in <a href="https://github.com/jaames/flipnote.js/blob/5edc3e4/src/parsers/FlipnoteParserBase.ts#L414">src/parsers/FlipnoteParserBase.ts:414</a></li>
+									</ul>
+								</aside>
+								<div class="tsd-comment tsd-typography">
+									<div class="lead">
+										<p>Get the 3D depths for each layer in a given frame.</p>
+									</div>
+								</div>
+								<h4 class="tsd-parameters-title">Parameters</h4>
+								<ul class="tsd-parameters">
+									<li>
+										<h5>frameIndex: <span class="tsd-signature-type">number</span></h5>
+									</li>
+								</ul>
+								<h4 class="tsd-returns-title">Returns <span class="tsd-signature-type">number</span><span class="tsd-signature-symbol">[]</span></h4>
+							</li>
+						</ul>
+					</section>
+					<section class="tsd-panel tsd-member tsd-kind-method tsd-parent-kind-class">
+						<a name="getframelayerorder" class="tsd-anchor"></a>
+						<h3><span class="tsd-flag ts-flagAbstract">Abstract</span> get<wbr>Frame<wbr>Layer<wbr>Order</h3>
+						<ul class="tsd-signatures tsd-kind-method tsd-parent-kind-class">
+							<li class="tsd-signature tsd-kind-icon">get<wbr>Frame<wbr>Layer<wbr>Order<span class="tsd-signature-symbol">(</span>frameIndex<span class="tsd-signature-symbol">: </span><span class="tsd-signature-type">number</span><span class="tsd-signature-symbol">)</span><span class="tsd-signature-symbol">: </span><span class="tsd-signature-type">number</span><span class="tsd-signature-symbol">[]</span></li>
+						</ul>
+						<ul class="tsd-descriptions">
+							<li class="tsd-description">
+								<aside class="tsd-sources">
+									<ul>
+										<li>Defined in <a href="https://github.com/jaames/flipnote.js/blob/5edc3e4/src/parsers/FlipnoteParserBase.ts#L434">src/parsers/FlipnoteParserBase.ts:434</a></li>
+									</ul>
+								</aside>
+								<div class="tsd-comment tsd-typography">
+									<div class="lead">
+										<p>Get the layer draw order for a given frame</p>
+									</div>
+								</div>
+								<h4 class="tsd-parameters-title">Parameters</h4>
+								<ul class="tsd-parameters">
+									<li>
+										<h5>frameIndex: <span class="tsd-signature-type">number</span></h5>
+									</li>
+								</ul>
+								<h4 class="tsd-returns-title">Returns <span class="tsd-signature-type">number</span><span class="tsd-signature-symbol">[]</span></h4>
+							</li>
+						</ul>
+					</section>
+					<section class="tsd-panel tsd-member tsd-kind-method tsd-parent-kind-class">
+						<a name="getframepalette" class="tsd-anchor"></a>
+						<h3><span class="tsd-flag ts-flagAbstract">Abstract</span> get<wbr>Frame<wbr>Palette</h3>
+						<ul class="tsd-signatures tsd-kind-method tsd-parent-kind-class">
+							<li class="tsd-signature tsd-kind-icon">get<wbr>Frame<wbr>Palette<span class="tsd-signature-symbol">(</span>frameIndex<span class="tsd-signature-symbol">: </span><span class="tsd-signature-type">number</span><span class="tsd-signature-symbol">)</span><span class="tsd-signature-symbol">: </span><a href="../globals.html#flipnotepalettecolor" class="tsd-signature-type">FlipnotePaletteColor</a><span class="tsd-signature-symbol">[]</span></li>
+						</ul>
+						<ul class="tsd-descriptions">
+							<li class="tsd-description">
+								<aside class="tsd-sources">
+									<ul>
+										<li>Defined in <a href="https://github.com/jaames/flipnote.js/blob/5edc3e4/src/parsers/FlipnoteParserBase.ts#L549">src/parsers/FlipnoteParserBase.ts:549</a></li>
+									</ul>
+								</aside>
+								<div class="tsd-comment tsd-typography">
+									<div class="lead">
+										<p>Get the color palette for a given frame, as a list of <code>[r,g,b,a]</code> colors</p>
+									</div>
+								</div>
+								<h4 class="tsd-parameters-title">Parameters</h4>
+								<ul class="tsd-parameters">
+									<li>
+										<h5>frameIndex: <span class="tsd-signature-type">number</span></h5>
+									</li>
+								</ul>
+								<h4 class="tsd-returns-title">Returns <a href="../globals.html#flipnotepalettecolor" class="tsd-signature-type">FlipnotePaletteColor</a><span class="tsd-signature-symbol">[]</span></h4>
+							</li>
+						</ul>
+					</section>
+					<section class="tsd-panel tsd-member tsd-kind-method tsd-parent-kind-class">
+						<a name="getframepaletteindices" class="tsd-anchor"></a>
+						<h3><span class="tsd-flag ts-flagAbstract">Abstract</span> get<wbr>Frame<wbr>Palette<wbr>Indices</h3>
+						<ul class="tsd-signatures tsd-kind-method tsd-parent-kind-class">
+							<li class="tsd-signature tsd-kind-icon">get<wbr>Frame<wbr>Palette<wbr>Indices<span class="tsd-signature-symbol">(</span>frameIndex<span class="tsd-signature-symbol">: </span><span class="tsd-signature-type">number</span><span class="tsd-signature-symbol">)</span><span class="tsd-signature-symbol">: </span><span class="tsd-signature-type">number</span><span class="tsd-signature-symbol">[]</span></li>
+						</ul>
+						<ul class="tsd-descriptions">
+							<li class="tsd-description">
+								<aside class="tsd-sources">
+									<ul>
+										<li>Defined in <a href="https://github.com/jaames/flipnote.js/blob/5edc3e4/src/parsers/FlipnoteParserBase.ts#L543">src/parsers/FlipnoteParserBase.ts:543</a></li>
+									</ul>
+								</aside>
+								<div class="tsd-comment tsd-typography">
+									<div class="lead">
+										<p>Get the color palette indices for a given frame. RGBA colors for these values can be indexed from <a href="flipnoteparserbase.html#globalpalette-1">FlipnoteParserBase.globalPalette</a></p>
+									</div>
+								</div>
+								<h4 class="tsd-parameters-title">Parameters</h4>
+								<ul class="tsd-parameters">
+									<li>
+										<h5>frameIndex: <span class="tsd-signature-type">number</span></h5>
+									</li>
+								</ul>
+								<h4 class="tsd-returns-title">Returns <span class="tsd-signature-type">number</span><span class="tsd-signature-symbol">[]</span></h4>
+							</li>
+						</ul>
+					</section>
+					<section class="tsd-panel tsd-member tsd-kind-method tsd-parent-kind-class">
+						<a name="getframepaletteuint32" class="tsd-anchor"></a>
+						<h3>get<wbr>Frame<wbr>Palette<wbr>Uint32</h3>
+						<ul class="tsd-signatures tsd-kind-method tsd-parent-kind-class">
+							<li class="tsd-signature tsd-kind-icon">get<wbr>Frame<wbr>Palette<wbr>Uint32<span class="tsd-signature-symbol">(</span>frameIndex<span class="tsd-signature-symbol">: </span><span class="tsd-signature-type">number</span>, paletteBuffer<span class="tsd-signature-symbol">?: </span><span class="tsd-signature-type">Uint32Array</span><span class="tsd-signature-symbol">)</span><span class="tsd-signature-symbol">: </span><span class="tsd-signature-type">Uint32Array</span></li>
+						</ul>
+						<ul class="tsd-descriptions">
+							<li class="tsd-description">
+								<aside class="tsd-sources">
+									<ul>
+										<li>Defined in <a href="https://github.com/jaames/flipnote.js/blob/5edc3e4/src/parsers/FlipnoteParserBase.ts#L555">src/parsers/FlipnoteParserBase.ts:555</a></li>
+									</ul>
+								</aside>
+								<div class="tsd-comment tsd-typography">
+									<div class="lead">
+										<p>Get the color palette for a given frame, as an uint32 array</p>
+									</div>
+								</div>
+								<h4 class="tsd-parameters-title">Parameters</h4>
+								<ul class="tsd-parameters">
+									<li>
+										<h5>frameIndex: <span class="tsd-signature-type">number</span></h5>
+									</li>
+									<li>
+										<h5><span class="tsd-flag ts-flagDefault value">Default value</span> paletteBuffer: <span class="tsd-signature-type">Uint32Array</span><span class="tsd-signature-symbol"> = new Uint32Array(16)</span></h5>
+									</li>
+								</ul>
+								<h4 class="tsd-returns-title">Returns <span class="tsd-signature-type">Uint32Array</span></h4>
+							</li>
+						</ul>
+					</section>
+					<section class="tsd-panel tsd-member tsd-kind-method tsd-parent-kind-class">
+						<a name="getframepixels" class="tsd-anchor"></a>
+						<h3>get<wbr>Frame<wbr>Pixels</h3>
+						<ul class="tsd-signatures tsd-kind-method tsd-parent-kind-class">
+							<li class="tsd-signature tsd-kind-icon">get<wbr>Frame<wbr>Pixels<span class="tsd-signature-symbol">(</span>frameIndex<span class="tsd-signature-symbol">: </span><span class="tsd-signature-type">number</span>, imageBuffer<span class="tsd-signature-symbol">?: </span><span class="tsd-signature-type">Uint8Array</span>, depthStrength<span class="tsd-signature-symbol">?: </span><span class="tsd-signature-type">number</span>, depthEye<span class="tsd-signature-symbol">?: </span><a href="../enums/flipnotestereoscopiceye.html" class="tsd-signature-type">FlipnoteStereoscopicEye</a><span class="tsd-signature-symbol">)</span><span class="tsd-signature-symbol">: </span><span class="tsd-signature-type">Uint8Array</span></li>
+						</ul>
+						<ul class="tsd-descriptions">
+							<li class="tsd-description">
+								<aside class="tsd-sources">
+									<ul>
+										<li>Defined in <a href="https://github.com/jaames/flipnote.js/blob/5edc3e4/src/parsers/FlipnoteParserBase.ts#L440">src/parsers/FlipnoteParserBase.ts:440</a></li>
+									</ul>
+								</aside>
+								<div class="tsd-comment tsd-typography">
+									<div class="lead">
+										<p>Get the image for a given frame, as palette indices</p>
+									</div>
+								</div>
+								<h4 class="tsd-parameters-title">Parameters</h4>
+								<ul class="tsd-parameters">
+									<li>
+										<h5>frameIndex: <span class="tsd-signature-type">number</span></h5>
+									</li>
+									<li>
+										<h5><span class="tsd-flag ts-flagDefault value">Default value</span> imageBuffer: <span class="tsd-signature-type">Uint8Array</span><span class="tsd-signature-symbol"> = new Uint8Array(this.imageWidth * this.imageHeight)</span></h5>
+									</li>
+									<li>
+										<h5><span class="tsd-flag ts-flagDefault value">Default value</span> depthStrength: <span class="tsd-signature-type">number</span><span class="tsd-signature-symbol"> = 0</span></h5>
+									</li>
+									<li>
+										<h5><span class="tsd-flag ts-flagDefault value">Default value</span> depthEye: <a href="../enums/flipnotestereoscopiceye.html" class="tsd-signature-type">FlipnoteStereoscopicEye</a><span class="tsd-signature-symbol"> = FlipnoteStereoscopicEye.Left</span></h5>
+									</li>
+								</ul>
+								<h4 class="tsd-returns-title">Returns <span class="tsd-signature-type">Uint8Array</span></h4>
+							</li>
+						</ul>
+					</section>
+					<section class="tsd-panel tsd-member tsd-kind-method tsd-parent-kind-class">
+						<a name="getframepixelsrgba" class="tsd-anchor"></a>
+						<h3>get<wbr>Frame<wbr>Pixels<wbr>Rgba</h3>
+						<ul class="tsd-signatures tsd-kind-method tsd-parent-kind-class">
+							<li class="tsd-signature tsd-kind-icon">get<wbr>Frame<wbr>Pixels<wbr>Rgba<span class="tsd-signature-symbol">(</span>frameIndex<span class="tsd-signature-symbol">: </span><span class="tsd-signature-type">number</span>, imageBuffer<span class="tsd-signature-symbol">?: </span><span class="tsd-signature-type">Uint32Array</span>, paletteBuffer<span class="tsd-signature-symbol">?: </span><span class="tsd-signature-type">Uint32Array</span>, depthStrength<span class="tsd-signature-symbol">?: </span><span class="tsd-signature-type">number</span>, depthEye<span class="tsd-signature-symbol">?: </span><a href="../enums/flipnotestereoscopiceye.html" class="tsd-signature-type">FlipnoteStereoscopicEye</a><span class="tsd-signature-symbol">)</span><span class="tsd-signature-symbol">: </span><span class="tsd-signature-type">Uint32Array</span></li>
+						</ul>
+						<ul class="tsd-descriptions">
+							<li class="tsd-description">
+								<aside class="tsd-sources">
+									<ul>
+										<li>Defined in <a href="https://github.com/jaames/flipnote.js/blob/5edc3e4/src/parsers/FlipnoteParserBase.ts#L490">src/parsers/FlipnoteParserBase.ts:490</a></li>
+									</ul>
+								</aside>
+								<div class="tsd-comment tsd-typography">
+									<div class="lead">
+										<p>Get the image for a given frame as an uint32 array of RGBA pixels</p>
+									</div>
+								</div>
+								<h4 class="tsd-parameters-title">Parameters</h4>
+								<ul class="tsd-parameters">
+									<li>
+										<h5>frameIndex: <span class="tsd-signature-type">number</span></h5>
+									</li>
+									<li>
+										<h5><span class="tsd-flag ts-flagDefault value">Default value</span> imageBuffer: <span class="tsd-signature-type">Uint32Array</span><span class="tsd-signature-symbol"> = new Uint32Array(this.imageWidth * this.imageHeight)</span></h5>
+									</li>
+									<li>
+										<h5><span class="tsd-flag ts-flagDefault value">Default value</span> paletteBuffer: <span class="tsd-signature-type">Uint32Array</span><span class="tsd-signature-symbol"> = new Uint32Array(16)</span></h5>
+									</li>
+									<li>
+										<h5><span class="tsd-flag ts-flagDefault value">Default value</span> depthStrength: <span class="tsd-signature-type">number</span><span class="tsd-signature-symbol"> = 0</span></h5>
+									</li>
+									<li>
+										<h5><span class="tsd-flag ts-flagDefault value">Default value</span> depthEye: <a href="../enums/flipnotestereoscopiceye.html" class="tsd-signature-type">FlipnoteStereoscopicEye</a><span class="tsd-signature-symbol"> = FlipnoteStereoscopicEye.Left</span></h5>
+									</li>
+								</ul>
+								<h4 class="tsd-returns-title">Returns <span class="tsd-signature-type">Uint32Array</span></h4>
+							</li>
+						</ul>
+					</section>
+					<section class="tsd-panel tsd-member tsd-kind-method tsd-parent-kind-class">
+						<a name="getiskeyframe" class="tsd-anchor"></a>
+						<h3><span class="tsd-flag ts-flagAbstract">Abstract</span> get<wbr>IsKey<wbr>Frame</h3>
+						<ul class="tsd-signatures tsd-kind-method tsd-parent-kind-class">
+							<li class="tsd-signature tsd-kind-icon">get<wbr>IsKey<wbr>Frame<span class="tsd-signature-symbol">(</span>frameIndex<span class="tsd-signature-symbol">: </span><span class="tsd-signature-type">number</span><span class="tsd-signature-symbol">)</span><span class="tsd-signature-symbol">: </span><span class="tsd-signature-type">boolean</span><span class="tsd-signature-symbol">[]</span></li>
+						</ul>
+						<ul class="tsd-descriptions">
+							<li class="tsd-description">
+								<aside class="tsd-sources">
+									<ul>
+										<li>Defined in <a href="https://github.com/jaames/flipnote.js/blob/5edc3e4/src/parsers/FlipnoteParserBase.ts#L407">src/parsers/FlipnoteParserBase.ts:407</a></li>
+									</ul>
+								</aside>
+								<div class="tsd-comment tsd-typography">
+									<div class="lead">
+										<p>Determines if a given frame is a video key frame or not. This returns an array of booleans for each layer, since keyframe encoding is done on a per-layer basis.</p>
+									</div>
+								</div>
+								<h4 class="tsd-parameters-title">Parameters</h4>
+								<ul class="tsd-parameters">
+									<li>
+										<h5>frameIndex: <span class="tsd-signature-type">number</span></h5>
+									</li>
+								</ul>
+								<h4 class="tsd-returns-title">Returns <span class="tsd-signature-type">boolean</span><span class="tsd-signature-symbol">[]</span></h4>
+							</li>
+						</ul>
+					</section>
+					<section class="tsd-panel tsd-member tsd-kind-method tsd-parent-kind-class">
+						<a name="getlayerpixels" class="tsd-anchor"></a>
+						<h3>get<wbr>Layer<wbr>Pixels</h3>
+						<ul class="tsd-signatures tsd-kind-method tsd-parent-kind-class">
+							<li class="tsd-signature tsd-kind-icon">get<wbr>Layer<wbr>Pixels<span class="tsd-signature-symbol">(</span>frameIndex<span class="tsd-signature-symbol">: </span><span class="tsd-signature-type">number</span>, layerIndex<span class="tsd-signature-symbol">: </span><span class="tsd-signature-type">number</span>, imageBuffer<span class="tsd-signature-symbol">?: </span><span class="tsd-signature-type">Uint8Array</span>, depthStrength<span class="tsd-signature-symbol">?: </span><span class="tsd-signature-type">number</span>, depthEye<span class="tsd-signature-symbol">?: </span><a href="../enums/flipnotestereoscopiceye.html" class="tsd-signature-type">FlipnoteStereoscopicEye</a><span class="tsd-signature-symbol">)</span><span class="tsd-signature-symbol">: </span><span class="tsd-signature-type">Uint8Array</span></li>
+						</ul>
+						<ul class="tsd-descriptions">
+							<li class="tsd-description">
+								<aside class="tsd-sources">
+									<ul>
+										<li>Defined in <a href="https://github.com/jaames/flipnote.js/blob/5edc3e4/src/parsers/FlipnoteParserBase.ts#L310">src/parsers/FlipnoteParserBase.ts:310</a></li>
+									</ul>
+								</aside>
+								<div class="tsd-comment tsd-typography">
+									<div class="lead">
+										<p>Get the pixels for a given frame layer, as palette indices
+											NOTE: layerIndex are not guaranteed to be sorted by 3D depth in KWZs, use <a href="flipnoteparserbase.html#getframelayerorder">getFrameLayerOrder</a> to get the correct sort order first
+										NOTE: if the visibility flag for this layer is turned off, the result will be empty</p>
+									</div>
+								</div>
+								<h4 class="tsd-parameters-title">Parameters</h4>
+								<ul class="tsd-parameters">
+									<li>
+										<h5>frameIndex: <span class="tsd-signature-type">number</span></h5>
+									</li>
+									<li>
+										<h5>layerIndex: <span class="tsd-signature-type">number</span></h5>
+									</li>
+									<li>
+										<h5><span class="tsd-flag ts-flagDefault value">Default value</span> imageBuffer: <span class="tsd-signature-type">Uint8Array</span><span class="tsd-signature-symbol"> = new Uint8Array(this.imageWidth * this.imageHeight)</span></h5>
+									</li>
+									<li>
+										<h5><span class="tsd-flag ts-flagDefault value">Default value</span> depthStrength: <span class="tsd-signature-type">number</span><span class="tsd-signature-symbol"> = 0</span></h5>
+									</li>
+									<li>
+										<h5><span class="tsd-flag ts-flagDefault value">Default value</span> depthEye: <a href="../enums/flipnotestereoscopiceye.html" class="tsd-signature-type">FlipnoteStereoscopicEye</a><span class="tsd-signature-symbol"> = FlipnoteStereoscopicEye.Left</span></h5>
+									</li>
+								</ul>
+								<h4 class="tsd-returns-title">Returns <span class="tsd-signature-type">Uint8Array</span></h4>
+							</li>
+						</ul>
+					</section>
+					<section class="tsd-panel tsd-member tsd-kind-method tsd-parent-kind-class">
+						<a name="getlayerpixelsrgba" class="tsd-anchor"></a>
+						<h3>get<wbr>Layer<wbr>Pixels<wbr>Rgba</h3>
+						<ul class="tsd-signatures tsd-kind-method tsd-parent-kind-class">
+							<li class="tsd-signature tsd-kind-icon">get<wbr>Layer<wbr>Pixels<wbr>Rgba<span class="tsd-signature-symbol">(</span>frameIndex<span class="tsd-signature-symbol">: </span><span class="tsd-signature-type">number</span>, layerIndex<span class="tsd-signature-symbol">: </span><span class="tsd-signature-type">number</span>, imageBuffer<span class="tsd-signature-symbol">?: </span><span class="tsd-signature-type">Uint32Array</span>, paletteBuffer<span class="tsd-signature-symbol">?: </span><span class="tsd-signature-type">Uint32Array</span>, depthStrength<span class="tsd-signature-symbol">?: </span><span class="tsd-signature-type">number</span>, depthEye<span class="tsd-signature-symbol">?: </span><a href="../enums/flipnotestereoscopiceye.html" class="tsd-signature-type">FlipnoteStereoscopicEye</a><span class="tsd-signature-symbol">)</span><span class="tsd-signature-symbol">: </span><span class="tsd-signature-type">Uint32Array</span></li>
+						</ul>
+						<ul class="tsd-descriptions">
+							<li class="tsd-description">
+								<aside class="tsd-sources">
+									<ul>
+										<li>Defined in <a href="https://github.com/jaames/flipnote.js/blob/5edc3e4/src/parsers/FlipnoteParserBase.ts#L358">src/parsers/FlipnoteParserBase.ts:358</a></li>
+									</ul>
+								</aside>
+								<div class="tsd-comment tsd-typography">
+									<div class="lead">
+										<p>Get the pixels for a given frame layer, as RGBA pixels
+											NOTE: layerIndex are not guaranteed to be sorted by 3D depth in KWZs, use <a href="flipnoteparserbase.html#getframelayerorder">getFrameLayerOrder</a> to get the correct sort order first
+										NOTE: if the visibility flag for this layer is turned off, the result will be empty</p>
+									</div>
+								</div>
+								<h4 class="tsd-parameters-title">Parameters</h4>
+								<ul class="tsd-parameters">
+									<li>
+										<h5>frameIndex: <span class="tsd-signature-type">number</span></h5>
+									</li>
+									<li>
+										<h5>layerIndex: <span class="tsd-signature-type">number</span></h5>
+									</li>
+									<li>
+										<h5><span class="tsd-flag ts-flagDefault value">Default value</span> imageBuffer: <span class="tsd-signature-type">Uint32Array</span><span class="tsd-signature-symbol"> = new Uint32Array(this.imageWidth * this.imageHeight)</span></h5>
+									</li>
+									<li>
+										<h5><span class="tsd-flag ts-flagDefault value">Default value</span> paletteBuffer: <span class="tsd-signature-type">Uint32Array</span><span class="tsd-signature-symbol"> = new Uint32Array(16)</span></h5>
+									</li>
+									<li>
+										<h5><span class="tsd-flag ts-flagDefault value">Default value</span> depthStrength: <span class="tsd-signature-type">number</span><span class="tsd-signature-symbol"> = 0</span></h5>
+									</li>
+									<li>
+										<h5><span class="tsd-flag ts-flagDefault value">Default value</span> depthEye: <a href="../enums/flipnotestereoscopiceye.html" class="tsd-signature-type">FlipnoteStereoscopicEye</a><span class="tsd-signature-symbol"> = FlipnoteStereoscopicEye.Left</span></h5>
+									</li>
+								</ul>
+								<h4 class="tsd-returns-title">Returns <span class="tsd-signature-type">Uint32Array</span></h4>
+							</li>
+						</ul>
+					</section>
+				</section>
+				<section class="tsd-panel-group tsd-member-group ">
+					<h2>Meta Methods</h2>
+					<section class="tsd-panel tsd-member tsd-kind-method tsd-parent-kind-class">
+						<a name="getframeauthor" class="tsd-anchor"></a>
+						<h3><span class="tsd-flag ts-flagAbstract">Abstract</span> get<wbr>Frame<wbr>Author</h3>
+						<ul class="tsd-signatures tsd-kind-method tsd-parent-kind-class">
+							<li class="tsd-signature tsd-kind-icon">get<wbr>Frame<wbr>Author<span class="tsd-signature-symbol">(</span>frameIndex<span class="tsd-signature-symbol">: </span><span class="tsd-signature-type">number</span><span class="tsd-signature-symbol">)</span><span class="tsd-signature-symbol">: </span><span class="tsd-signature-type">string</span></li>
+						</ul>
+						<ul class="tsd-descriptions">
+							<li class="tsd-description">
+								<aside class="tsd-sources">
+									<ul>
+										<li>Defined in <a href="https://github.com/jaames/flipnote.js/blob/5edc3e4/src/parsers/FlipnoteParserBase.ts#L421">src/parsers/FlipnoteParserBase.ts:421</a></li>
+									</ul>
+								</aside>
+								<div class="tsd-comment tsd-typography">
+									<div class="lead">
+										<p>Get the FSID for a given frame&#39;s original author.</p>
+									</div>
+								</div>
+								<h4 class="tsd-parameters-title">Parameters</h4>
+								<ul class="tsd-parameters">
+									<li>
+										<h5>frameIndex: <span class="tsd-signature-type">number</span></h5>
+									</li>
+								</ul>
+								<h4 class="tsd-returns-title">Returns <span class="tsd-signature-type">string</span></h4>
+							</li>
+						</ul>
+					</section>
+					<section class="tsd-panel tsd-member tsd-kind-method tsd-parent-kind-class">
+						<a name="getthumbnailimage" class="tsd-anchor"></a>
+						<h3><span class="tsd-flag ts-flagAbstract">Abstract</span> get<wbr>Thumbnail<wbr>Image</h3>
+						<ul class="tsd-signatures tsd-kind-method tsd-parent-kind-class">
+							<li class="tsd-signature tsd-kind-icon">get<wbr>Thumbnail<wbr>Image<span class="tsd-signature-symbol">(</span><span class="tsd-signature-symbol">)</span><span class="tsd-signature-symbol">: </span><a href="../globals.html#flipnotethumbimage" class="tsd-signature-type">FlipnoteThumbImage</a></li>
+						</ul>
+						<ul class="tsd-descriptions">
+							<li class="tsd-description">
+								<aside class="tsd-sources">
+									<ul>
+										<li>Defined in <a href="https://github.com/jaames/flipnote.js/blob/5edc3e4/src/parsers/FlipnoteParserBase.ts#L296">src/parsers/FlipnoteParserBase.ts:296</a></li>
+									</ul>
+								</aside>
+								<div class="tsd-comment tsd-typography">
+									<div class="lead">
+										<p>Decodes the thumbnail image embedded in the Flipnote. Will return a <a href="../globals.html#flipnotethumbimage">FlipnoteThumbImage</a> containing JPEG or raw RGBA data depending on the format.</p>
+									</div>
+									<p>Note: For most purposes, you should probably just decode the thumbnail frame instead, to get a higher resolution image.</p>
+								</div>
+								<h4 class="tsd-returns-title">Returns <a href="../globals.html#flipnotethumbimage" class="tsd-signature-type">FlipnoteThumbImage</a></h4>
+							</li>
+						</ul>
+					</section>
+				</section>
+				<section class="tsd-panel-group tsd-member-group ">
+					<h2>Other Methods</h2>
+					<section class="tsd-panel tsd-member tsd-kind-method tsd-parent-kind-class tsd-is-inherited">
+						<a name="readbytes" class="tsd-anchor"></a>
+						<h3>read<wbr>Bytes</h3>
+						<ul class="tsd-signatures tsd-kind-method tsd-parent-kind-class tsd-is-inherited">
+							<li class="tsd-signature tsd-kind-icon">read<wbr>Bytes<span class="tsd-signature-symbol">(</span>count<span class="tsd-signature-symbol">: </span><span class="tsd-signature-type">number</span><span class="tsd-signature-symbol">)</span><span class="tsd-signature-symbol">: </span><span class="tsd-signature-type">Uint8Array</span></li>
+						</ul>
+						<ul class="tsd-descriptions">
+							<li class="tsd-description">
+								<aside class="tsd-sources">
+									<p>Inherited from DataStream.readBytes</p>
+									<ul>
+										<li>Defined in <a href="https://github.com/jaames/flipnote.js/blob/5edc3e4/src/utils/DataStream.ts#L114">src/utils/DataStream.ts:114</a></li>
+									</ul>
+								</aside>
+								<h4 class="tsd-parameters-title">Parameters</h4>
+								<ul class="tsd-parameters">
+									<li>
+										<h5>count: <span class="tsd-signature-type">number</span></h5>
+									</li>
+								</ul>
+								<h4 class="tsd-returns-title">Returns <span class="tsd-signature-type">Uint8Array</span></h4>
+							</li>
+						</ul>
+					</section>
+					<section class="tsd-panel tsd-member tsd-kind-method tsd-parent-kind-class tsd-is-inherited">
+						<a name="readchars" class="tsd-anchor"></a>
+						<h3>read<wbr>Chars</h3>
+						<ul class="tsd-signatures tsd-kind-method tsd-parent-kind-class tsd-is-inherited">
+							<li class="tsd-signature tsd-kind-icon">read<wbr>Chars<span class="tsd-signature-symbol">(</span>count<span class="tsd-signature-symbol">: </span><span class="tsd-signature-type">number</span><span class="tsd-signature-symbol">)</span><span class="tsd-signature-symbol">: </span><span class="tsd-signature-type">string</span></li>
+						</ul>
+						<ul class="tsd-descriptions">
+							<li class="tsd-description">
+								<aside class="tsd-sources">
+									<p>Inherited from DataStream.readChars</p>
+									<ul>
+										<li>Defined in <a href="https://github.com/jaames/flipnote.js/blob/5edc3e4/src/utils/DataStream.ts#L134">src/utils/DataStream.ts:134</a></li>
+									</ul>
+								</aside>
+								<h4 class="tsd-parameters-title">Parameters</h4>
+								<ul class="tsd-parameters">
+									<li>
+										<h5>count: <span class="tsd-signature-type">number</span></h5>
+									</li>
+								</ul>
+								<h4 class="tsd-returns-title">Returns <span class="tsd-signature-type">string</span></h4>
+							</li>
+						</ul>
+					</section>
+					<section class="tsd-panel tsd-member tsd-kind-method tsd-parent-kind-class tsd-is-inherited">
+						<a name="readhex" class="tsd-anchor"></a>
+						<h3>read<wbr>Hex</h3>
+						<ul class="tsd-signatures tsd-kind-method tsd-parent-kind-class tsd-is-inherited">
+							<li class="tsd-signature tsd-kind-icon">read<wbr>Hex<span class="tsd-signature-symbol">(</span>count<span class="tsd-signature-symbol">: </span><span class="tsd-signature-type">number</span>, reverse<span class="tsd-signature-symbol">?: </span><span class="tsd-signature-type">boolean</span><span class="tsd-signature-symbol">)</span><span class="tsd-signature-symbol">: </span><span class="tsd-signature-type">string</span></li>
+						</ul>
+						<ul class="tsd-descriptions">
+							<li class="tsd-description">
+								<aside class="tsd-sources">
+									<p>Inherited from DataStream.readHex</p>
+									<ul>
+										<li>Defined in <a href="https://github.com/jaames/flipnote.js/blob/5edc3e4/src/utils/DataStream.ts#L124">src/utils/DataStream.ts:124</a></li>
+									</ul>
+								</aside>
+								<h4 class="tsd-parameters-title">Parameters</h4>
+								<ul class="tsd-parameters">
+									<li>
+										<h5>count: <span class="tsd-signature-type">number</span></h5>
+									</li>
+									<li>
+										<h5><span class="tsd-flag ts-flagDefault value">Default value</span> reverse: <span class="tsd-signature-type">boolean</span><span class="tsd-signature-symbol"> = false</span></h5>
+									</li>
+								</ul>
+								<h4 class="tsd-returns-title">Returns <span class="tsd-signature-type">string</span></h4>
+							</li>
+						</ul>
+					</section>
+					<section class="tsd-panel tsd-member tsd-kind-method tsd-parent-kind-class tsd-is-inherited">
+						<a name="readint16" class="tsd-anchor"></a>
+						<h3>read<wbr>Int16</h3>
+						<ul class="tsd-signatures tsd-kind-method tsd-parent-kind-class tsd-is-inherited">
+							<li class="tsd-signature tsd-kind-icon">read<wbr>Int16<span class="tsd-signature-symbol">(</span>littleEndian<span class="tsd-signature-symbol">?: </span><span class="tsd-signature-type">boolean</span><span class="tsd-signature-symbol">)</span><span class="tsd-signature-symbol">: </span><span class="tsd-signature-type">number</span></li>
+						</ul>
+						<ul class="tsd-descriptions">
+							<li class="tsd-description">
+								<aside class="tsd-sources">
+									<p>Inherited from DataStream.readInt16</p>
+									<ul>
+										<li>Defined in <a href="https://github.com/jaames/flipnote.js/blob/5edc3e4/src/utils/DataStream.ts#L81">src/utils/DataStream.ts:81</a></li>
+									</ul>
+								</aside>
+								<h4 class="tsd-parameters-title">Parameters</h4>
+								<ul class="tsd-parameters">
+									<li>
+										<h5><span class="tsd-flag ts-flagDefault value">Default value</span> littleEndian: <span class="tsd-signature-type">boolean</span><span class="tsd-signature-symbol"> = true</span></h5>
+									</li>
+								</ul>
+								<h4 class="tsd-returns-title">Returns <span class="tsd-signature-type">number</span></h4>
+							</li>
+						</ul>
+					</section>
+					<section class="tsd-panel tsd-member tsd-kind-method tsd-parent-kind-class tsd-is-inherited">
+						<a name="readint32" class="tsd-anchor"></a>
+						<h3>read<wbr>Int32</h3>
+						<ul class="tsd-signatures tsd-kind-method tsd-parent-kind-class tsd-is-inherited">
+							<li class="tsd-signature tsd-kind-icon">read<wbr>Int32<span class="tsd-signature-symbol">(</span>littleEndian<span class="tsd-signature-symbol">?: </span><span class="tsd-signature-type">boolean</span><span class="tsd-signature-symbol">)</span><span class="tsd-signature-symbol">: </span><span class="tsd-signature-type">number</span></li>
+						</ul>
+						<ul class="tsd-descriptions">
+							<li class="tsd-description">
+								<aside class="tsd-sources">
+									<p>Inherited from DataStream.readInt32</p>
+									<ul>
+										<li>Defined in <a href="https://github.com/jaames/flipnote.js/blob/5edc3e4/src/utils/DataStream.ts#L103">src/utils/DataStream.ts:103</a></li>
+									</ul>
+								</aside>
+								<h4 class="tsd-parameters-title">Parameters</h4>
+								<ul class="tsd-parameters">
+									<li>
+										<h5><span class="tsd-flag ts-flagDefault value">Default value</span> littleEndian: <span class="tsd-signature-type">boolean</span><span class="tsd-signature-symbol"> = true</span></h5>
+									</li>
+								</ul>
+								<h4 class="tsd-returns-title">Returns <span class="tsd-signature-type">number</span></h4>
+							</li>
+						</ul>
+					</section>
+					<section class="tsd-panel tsd-member tsd-kind-method tsd-parent-kind-class tsd-is-inherited">
+						<a name="readint8" class="tsd-anchor"></a>
+						<h3>read<wbr>Int8</h3>
+						<ul class="tsd-signatures tsd-kind-method tsd-parent-kind-class tsd-is-inherited">
+							<li class="tsd-signature tsd-kind-icon">read<wbr>Int8<span class="tsd-signature-symbol">(</span><span class="tsd-signature-symbol">)</span><span class="tsd-signature-symbol">: </span><span class="tsd-signature-type">number</span></li>
+						</ul>
+						<ul class="tsd-descriptions">
+							<li class="tsd-description">
+								<aside class="tsd-sources">
+									<p>Inherited from DataStream.readInt8</p>
+									<ul>
+										<li>Defined in <a href="https://github.com/jaames/flipnote.js/blob/5edc3e4/src/utils/DataStream.ts#L59">src/utils/DataStream.ts:59</a></li>
+									</ul>
+								</aside>
+								<h4 class="tsd-returns-title">Returns <span class="tsd-signature-type">number</span></h4>
+							</li>
+						</ul>
+					</section>
+					<section class="tsd-panel tsd-member tsd-kind-method tsd-parent-kind-class tsd-is-inherited">
+						<a name="readuint16" class="tsd-anchor"></a>
+						<h3>read<wbr>Uint16</h3>
+						<ul class="tsd-signatures tsd-kind-method tsd-parent-kind-class tsd-is-inherited">
+							<li class="tsd-signature tsd-kind-icon">read<wbr>Uint16<span class="tsd-signature-symbol">(</span>littleEndian<span class="tsd-signature-symbol">?: </span><span class="tsd-signature-type">boolean</span><span class="tsd-signature-symbol">)</span><span class="tsd-signature-symbol">: </span><span class="tsd-signature-type">number</span></li>
+						</ul>
+						<ul class="tsd-descriptions">
+							<li class="tsd-description">
+								<aside class="tsd-sources">
+									<p>Inherited from DataStream.readUint16</p>
+									<ul>
+										<li>Defined in <a href="https://github.com/jaames/flipnote.js/blob/5edc3e4/src/utils/DataStream.ts#L70">src/utils/DataStream.ts:70</a></li>
+									</ul>
+								</aside>
+								<h4 class="tsd-parameters-title">Parameters</h4>
+								<ul class="tsd-parameters">
+									<li>
+										<h5><span class="tsd-flag ts-flagDefault value">Default value</span> littleEndian: <span class="tsd-signature-type">boolean</span><span class="tsd-signature-symbol"> = true</span></h5>
+									</li>
+								</ul>
+								<h4 class="tsd-returns-title">Returns <span class="tsd-signature-type">number</span></h4>
+							</li>
+						</ul>
+					</section>
+					<section class="tsd-panel tsd-member tsd-kind-method tsd-parent-kind-class tsd-is-inherited">
+						<a name="readuint32" class="tsd-anchor"></a>
+						<h3>read<wbr>Uint32</h3>
+						<ul class="tsd-signatures tsd-kind-method tsd-parent-kind-class tsd-is-inherited">
+							<li class="tsd-signature tsd-kind-icon">read<wbr>Uint32<span class="tsd-signature-symbol">(</span>littleEndian<span class="tsd-signature-symbol">?: </span><span class="tsd-signature-type">boolean</span><span class="tsd-signature-symbol">)</span><span class="tsd-signature-symbol">: </span><span class="tsd-signature-type">number</span></li>
+						</ul>
+						<ul class="tsd-descriptions">
+							<li class="tsd-description">
+								<aside class="tsd-sources">
+									<p>Inherited from DataStream.readUint32</p>
+									<ul>
+										<li>Defined in <a href="https://github.com/jaames/flipnote.js/blob/5edc3e4/src/utils/DataStream.ts#L92">src/utils/DataStream.ts:92</a></li>
+									</ul>
+								</aside>
+								<h4 class="tsd-parameters-title">Parameters</h4>
+								<ul class="tsd-parameters">
+									<li>
+										<h5><span class="tsd-flag ts-flagDefault value">Default value</span> littleEndian: <span class="tsd-signature-type">boolean</span><span class="tsd-signature-symbol"> = true</span></h5>
+									</li>
+								</ul>
+								<h4 class="tsd-returns-title">Returns <span class="tsd-signature-type">number</span></h4>
+							</li>
+						</ul>
+					</section>
+					<section class="tsd-panel tsd-member tsd-kind-method tsd-parent-kind-class tsd-is-inherited">
+						<a name="readuint8" class="tsd-anchor"></a>
+						<h3>read<wbr>Uint8</h3>
+						<ul class="tsd-signatures tsd-kind-method tsd-parent-kind-class tsd-is-inherited">
+							<li class="tsd-signature tsd-kind-icon">read<wbr>Uint8<span class="tsd-signature-symbol">(</span><span class="tsd-signature-symbol">)</span><span class="tsd-signature-symbol">: </span><span class="tsd-signature-type">number</span></li>
+						</ul>
+						<ul class="tsd-descriptions">
+							<li class="tsd-description">
+								<aside class="tsd-sources">
+									<p>Inherited from DataStream.readUint8</p>
+									<ul>
+										<li>Defined in <a href="https://github.com/jaames/flipnote.js/blob/5edc3e4/src/utils/DataStream.ts#L48">src/utils/DataStream.ts:48</a></li>
+									</ul>
+								</aside>
+								<h4 class="tsd-returns-title">Returns <span class="tsd-signature-type">number</span></h4>
+							</li>
+						</ul>
+					</section>
+					<section class="tsd-panel tsd-member tsd-kind-method tsd-parent-kind-class tsd-is-inherited">
+						<a name="readwidechars" class="tsd-anchor"></a>
+						<h3>read<wbr>Wide<wbr>Chars</h3>
+						<ul class="tsd-signatures tsd-kind-method tsd-parent-kind-class tsd-is-inherited">
+							<li class="tsd-signature tsd-kind-icon">read<wbr>Wide<wbr>Chars<span class="tsd-signature-symbol">(</span>count<span class="tsd-signature-symbol">: </span><span class="tsd-signature-type">number</span><span class="tsd-signature-symbol">)</span><span class="tsd-signature-symbol">: </span><span class="tsd-signature-type">string</span></li>
+						</ul>
+						<ul class="tsd-descriptions">
+							<li class="tsd-description">
+								<aside class="tsd-sources">
+									<p>Inherited from DataStream.readWideChars</p>
+									<ul>
+										<li>Defined in <a href="https://github.com/jaames/flipnote.js/blob/5edc3e4/src/utils/DataStream.ts#L153">src/utils/DataStream.ts:153</a></li>
+									</ul>
+								</aside>
+								<h4 class="tsd-parameters-title">Parameters</h4>
+								<ul class="tsd-parameters">
+									<li>
+										<h5>count: <span class="tsd-signature-type">number</span></h5>
+									</li>
+								</ul>
+								<h4 class="tsd-returns-title">Returns <span class="tsd-signature-type">string</span></h4>
+							</li>
+						</ul>
+					</section>
+					<section class="tsd-panel tsd-member tsd-kind-method tsd-parent-kind-class tsd-is-inherited">
+						<a name="seek" class="tsd-anchor"></a>
+						<h3>seek</h3>
+						<ul class="tsd-signatures tsd-kind-method tsd-parent-kind-class tsd-is-inherited">
+							<li class="tsd-signature tsd-kind-icon">seek<span class="tsd-signature-symbol">(</span>offset<span class="tsd-signature-symbol">: </span><span class="tsd-signature-type">number</span>, whence<span class="tsd-signature-symbol">?: </span><span class="tsd-signature-type">SeekOrigin</span><span class="tsd-signature-symbol">)</span><span class="tsd-signature-symbol">: </span><span class="tsd-signature-type">void</span></li>
+						</ul>
+						<ul class="tsd-descriptions">
+							<li class="tsd-description">
+								<aside class="tsd-sources">
+									<p>Inherited from DataStream.seek</p>
+									<ul>
+										<li>Defined in <a href="https://github.com/jaames/flipnote.js/blob/5edc3e4/src/utils/DataStream.ts#L33">src/utils/DataStream.ts:33</a></li>
+									</ul>
+								</aside>
+								<h4 class="tsd-parameters-title">Parameters</h4>
+								<ul class="tsd-parameters">
+									<li>
+										<h5>offset: <span class="tsd-signature-type">number</span></h5>
+									</li>
+									<li>
+										<h5><span class="tsd-flag ts-flagOptional">Optional</span> whence: <span class="tsd-signature-type">SeekOrigin</span></h5>
+									</li>
+								</ul>
+								<h4 class="tsd-returns-title">Returns <span class="tsd-signature-type">void</span></h4>
+							</li>
+						</ul>
+					</section>
+					<section class="tsd-panel tsd-member tsd-kind-method tsd-parent-kind-class tsd-is-inherited">
+						<a name="writebytes" class="tsd-anchor"></a>
+						<h3>write<wbr>Bytes</h3>
+						<ul class="tsd-signatures tsd-kind-method tsd-parent-kind-class tsd-is-inherited">
+							<li class="tsd-signature tsd-kind-icon">write<wbr>Bytes<span class="tsd-signature-symbol">(</span>bytes<span class="tsd-signature-symbol">: </span><span class="tsd-signature-type">number</span><span class="tsd-signature-symbol">[]</span><span class="tsd-signature-symbol"> | </span><span class="tsd-signature-type">Uint8Array</span><span class="tsd-signature-symbol">)</span><span class="tsd-signature-symbol">: </span><span class="tsd-signature-type">void</span></li>
+						</ul>
+						<ul class="tsd-descriptions">
+							<li class="tsd-description">
+								<aside class="tsd-sources">
+									<p>Inherited from DataStream.writeBytes</p>
+									<ul>
+										<li>Defined in <a href="https://github.com/jaames/flipnote.js/blob/5edc3e4/src/utils/DataStream.ts#L120">src/utils/DataStream.ts:120</a></li>
+									</ul>
+								</aside>
+								<h4 class="tsd-parameters-title">Parameters</h4>
+								<ul class="tsd-parameters">
+									<li>
+										<h5>bytes: <span class="tsd-signature-type">number</span><span class="tsd-signature-symbol">[]</span><span class="tsd-signature-symbol"> | </span><span class="tsd-signature-type">Uint8Array</span></h5>
+									</li>
+								</ul>
+								<h4 class="tsd-returns-title">Returns <span class="tsd-signature-type">void</span></h4>
+							</li>
+						</ul>
+					</section>
+					<section class="tsd-panel tsd-member tsd-kind-method tsd-parent-kind-class tsd-is-inherited">
+						<a name="writechars" class="tsd-anchor"></a>
+						<h3>write<wbr>Chars</h3>
+						<ul class="tsd-signatures tsd-kind-method tsd-parent-kind-class tsd-is-inherited">
+							<li class="tsd-signature tsd-kind-icon">write<wbr>Chars<span class="tsd-signature-symbol">(</span>string<span class="tsd-signature-symbol">: </span><span class="tsd-signature-type">string</span><span class="tsd-signature-symbol">)</span><span class="tsd-signature-symbol">: </span><span class="tsd-signature-type">void</span></li>
+						</ul>
+						<ul class="tsd-descriptions">
+							<li class="tsd-description">
+								<aside class="tsd-sources">
+									<p>Inherited from DataStream.writeChars</p>
+									<ul>
+										<li>Defined in <a href="https://github.com/jaames/flipnote.js/blob/5edc3e4/src/utils/DataStream.ts#L146">src/utils/DataStream.ts:146</a></li>
+									</ul>
+								</aside>
+								<h4 class="tsd-parameters-title">Parameters</h4>
+								<ul class="tsd-parameters">
+									<li>
+										<h5>string: <span class="tsd-signature-type">string</span></h5>
+									</li>
+								</ul>
+								<h4 class="tsd-returns-title">Returns <span class="tsd-signature-type">void</span></h4>
+							</li>
+						</ul>
+					</section>
+					<section class="tsd-panel tsd-member tsd-kind-method tsd-parent-kind-class tsd-is-inherited">
+						<a name="writeint16" class="tsd-anchor"></a>
+						<h3>write<wbr>Int16</h3>
+						<ul class="tsd-signatures tsd-kind-method tsd-parent-kind-class tsd-is-inherited">
+							<li class="tsd-signature tsd-kind-icon">write<wbr>Int16<span class="tsd-signature-symbol">(</span>value<span class="tsd-signature-symbol">: </span><span class="tsd-signature-type">number</span>, littleEndian<span class="tsd-signature-symbol">?: </span><span class="tsd-signature-type">boolean</span><span class="tsd-signature-symbol">)</span><span class="tsd-signature-symbol">: </span><span class="tsd-signature-type">void</span></li>
+						</ul>
+						<ul class="tsd-descriptions">
+							<li class="tsd-description">
+								<aside class="tsd-sources">
+									<p>Inherited from DataStream.writeInt16</p>
+									<ul>
+										<li>Defined in <a href="https://github.com/jaames/flipnote.js/blob/5edc3e4/src/utils/DataStream.ts#L87">src/utils/DataStream.ts:87</a></li>
+									</ul>
+								</aside>
+								<h4 class="tsd-parameters-title">Parameters</h4>
+								<ul class="tsd-parameters">
+									<li>
+										<h5>value: <span class="tsd-signature-type">number</span></h5>
+									</li>
+									<li>
+										<h5><span class="tsd-flag ts-flagDefault value">Default value</span> littleEndian: <span class="tsd-signature-type">boolean</span><span class="tsd-signature-symbol"> = true</span></h5>
+									</li>
+								</ul>
+								<h4 class="tsd-returns-title">Returns <span class="tsd-signature-type">void</span></h4>
+							</li>
+						</ul>
+					</section>
+					<section class="tsd-panel tsd-member tsd-kind-method tsd-parent-kind-class tsd-is-inherited">
+						<a name="writeint32" class="tsd-anchor"></a>
+						<h3>write<wbr>Int32</h3>
+						<ul class="tsd-signatures tsd-kind-method tsd-parent-kind-class tsd-is-inherited">
+							<li class="tsd-signature tsd-kind-icon">write<wbr>Int32<span class="tsd-signature-symbol">(</span>value<span class="tsd-signature-symbol">: </span><span class="tsd-signature-type">number</span>, littleEndian<span class="tsd-signature-symbol">?: </span><span class="tsd-signature-type">boolean</span><span class="tsd-signature-symbol">)</span><span class="tsd-signature-symbol">: </span><span class="tsd-signature-type">void</span></li>
+						</ul>
+						<ul class="tsd-descriptions">
+							<li class="tsd-description">
+								<aside class="tsd-sources">
+									<p>Inherited from DataStream.writeInt32</p>
+									<ul>
+										<li>Defined in <a href="https://github.com/jaames/flipnote.js/blob/5edc3e4/src/utils/DataStream.ts#L109">src/utils/DataStream.ts:109</a></li>
+									</ul>
+								</aside>
+								<h4 class="tsd-parameters-title">Parameters</h4>
+								<ul class="tsd-parameters">
+									<li>
+										<h5>value: <span class="tsd-signature-type">number</span></h5>
+									</li>
+									<li>
+										<h5><span class="tsd-flag ts-flagDefault value">Default value</span> littleEndian: <span class="tsd-signature-type">boolean</span><span class="tsd-signature-symbol"> = true</span></h5>
+									</li>
+								</ul>
+								<h4 class="tsd-returns-title">Returns <span class="tsd-signature-type">void</span></h4>
+							</li>
+						</ul>
+					</section>
+					<section class="tsd-panel tsd-member tsd-kind-method tsd-parent-kind-class tsd-is-inherited">
+						<a name="writeint8" class="tsd-anchor"></a>
+						<h3>write<wbr>Int8</h3>
+						<ul class="tsd-signatures tsd-kind-method tsd-parent-kind-class tsd-is-inherited">
+							<li class="tsd-signature tsd-kind-icon">write<wbr>Int8<span class="tsd-signature-symbol">(</span>value<span class="tsd-signature-symbol">: </span><span class="tsd-signature-type">number</span><span class="tsd-signature-symbol">)</span><span class="tsd-signature-symbol">: </span><span class="tsd-signature-type">void</span></li>
+						</ul>
+						<ul class="tsd-descriptions">
+							<li class="tsd-description">
+								<aside class="tsd-sources">
+									<p>Inherited from DataStream.writeInt8</p>
+									<ul>
+										<li>Defined in <a href="https://github.com/jaames/flipnote.js/blob/5edc3e4/src/utils/DataStream.ts#L65">src/utils/DataStream.ts:65</a></li>
+									</ul>
+								</aside>
+								<h4 class="tsd-parameters-title">Parameters</h4>
+								<ul class="tsd-parameters">
+									<li>
+										<h5>value: <span class="tsd-signature-type">number</span></h5>
+									</li>
+								</ul>
+								<h4 class="tsd-returns-title">Returns <span class="tsd-signature-type">void</span></h4>
+							</li>
+						</ul>
+					</section>
+					<section class="tsd-panel tsd-member tsd-kind-method tsd-parent-kind-class tsd-is-inherited">
+						<a name="writeuint16" class="tsd-anchor"></a>
+						<h3>write<wbr>Uint16</h3>
+						<ul class="tsd-signatures tsd-kind-method tsd-parent-kind-class tsd-is-inherited">
+							<li class="tsd-signature tsd-kind-icon">write<wbr>Uint16<span class="tsd-signature-symbol">(</span>value<span class="tsd-signature-symbol">: </span><span class="tsd-signature-type">number</span>, littleEndian<span class="tsd-signature-symbol">?: </span><span class="tsd-signature-type">boolean</span><span class="tsd-signature-symbol">)</span><span class="tsd-signature-symbol">: </span><span class="tsd-signature-type">void</span></li>
+						</ul>
+						<ul class="tsd-descriptions">
+							<li class="tsd-description">
+								<aside class="tsd-sources">
+									<p>Inherited from DataStream.writeUint16</p>
+									<ul>
+										<li>Defined in <a href="https://github.com/jaames/flipnote.js/blob/5edc3e4/src/utils/DataStream.ts#L76">src/utils/DataStream.ts:76</a></li>
+									</ul>
+								</aside>
+								<h4 class="tsd-parameters-title">Parameters</h4>
+								<ul class="tsd-parameters">
+									<li>
+										<h5>value: <span class="tsd-signature-type">number</span></h5>
+									</li>
+									<li>
+										<h5><span class="tsd-flag ts-flagDefault value">Default value</span> littleEndian: <span class="tsd-signature-type">boolean</span><span class="tsd-signature-symbol"> = true</span></h5>
+									</li>
+								</ul>
+								<h4 class="tsd-returns-title">Returns <span class="tsd-signature-type">void</span></h4>
+							</li>
+						</ul>
+					</section>
+					<section class="tsd-panel tsd-member tsd-kind-method tsd-parent-kind-class tsd-is-inherited">
+						<a name="writeuint32" class="tsd-anchor"></a>
+						<h3>write<wbr>Uint32</h3>
+						<ul class="tsd-signatures tsd-kind-method tsd-parent-kind-class tsd-is-inherited">
+							<li class="tsd-signature tsd-kind-icon">write<wbr>Uint32<span class="tsd-signature-symbol">(</span>value<span class="tsd-signature-symbol">: </span><span class="tsd-signature-type">number</span>, littleEndian<span class="tsd-signature-symbol">?: </span><span class="tsd-signature-type">boolean</span><span class="tsd-signature-symbol">)</span><span class="tsd-signature-symbol">: </span><span class="tsd-signature-type">void</span></li>
+						</ul>
+						<ul class="tsd-descriptions">
+							<li class="tsd-description">
+								<aside class="tsd-sources">
+									<p>Inherited from DataStream.writeUint32</p>
+									<ul>
+										<li>Defined in <a href="https://github.com/jaames/flipnote.js/blob/5edc3e4/src/utils/DataStream.ts#L98">src/utils/DataStream.ts:98</a></li>
+									</ul>
+								</aside>
+								<h4 class="tsd-parameters-title">Parameters</h4>
+								<ul class="tsd-parameters">
+									<li>
+										<h5>value: <span class="tsd-signature-type">number</span></h5>
+									</li>
+									<li>
+										<h5><span class="tsd-flag ts-flagDefault value">Default value</span> littleEndian: <span class="tsd-signature-type">boolean</span><span class="tsd-signature-symbol"> = true</span></h5>
+									</li>
+								</ul>
+								<h4 class="tsd-returns-title">Returns <span class="tsd-signature-type">void</span></h4>
+							</li>
+						</ul>
+					</section>
+					<section class="tsd-panel tsd-member tsd-kind-method tsd-parent-kind-class tsd-is-inherited">
+						<a name="writeuint8" class="tsd-anchor"></a>
+						<h3>write<wbr>Uint8</h3>
+						<ul class="tsd-signatures tsd-kind-method tsd-parent-kind-class tsd-is-inherited">
+							<li class="tsd-signature tsd-kind-icon">write<wbr>Uint8<span class="tsd-signature-symbol">(</span>value<span class="tsd-signature-symbol">: </span><span class="tsd-signature-type">number</span><span class="tsd-signature-symbol">)</span><span class="tsd-signature-symbol">: </span><span class="tsd-signature-type">void</span></li>
+						</ul>
+						<ul class="tsd-descriptions">
+							<li class="tsd-description">
+								<aside class="tsd-sources">
+									<p>Inherited from DataStream.writeUint8</p>
+									<ul>
+										<li>Defined in <a href="https://github.com/jaames/flipnote.js/blob/5edc3e4/src/utils/DataStream.ts#L54">src/utils/DataStream.ts:54</a></li>
+									</ul>
+								</aside>
+								<h4 class="tsd-parameters-title">Parameters</h4>
+								<ul class="tsd-parameters">
+									<li>
+										<h5>value: <span class="tsd-signature-type">number</span></h5>
+									</li>
+								</ul>
+								<h4 class="tsd-returns-title">Returns <span class="tsd-signature-type">void</span></h4>
+							</li>
+						</ul>
+					</section>
+				</section>
+				<section class="tsd-panel-group tsd-member-group ">
+					<h2>Utility Methods</h2>
+					<section class="tsd-panel tsd-member tsd-kind-method tsd-parent-kind-class">
+						<a name="_symbol_iterator_" class="tsd-anchor"></a>
+						<h3>[<wbr>Symbol.iterator]</h3>
+						<ul class="tsd-signatures tsd-kind-method tsd-parent-kind-class">
+							<li class="tsd-signature tsd-kind-icon">[<wbr>Symbol.iterator]<span class="tsd-signature-symbol">(</span><span class="tsd-signature-symbol">)</span><span class="tsd-signature-symbol">: </span><span class="tsd-signature-type">Generator</span><span class="tsd-signature-symbol">&lt;</span><span class="tsd-signature-type">number</span><span class="tsd-signature-symbol">, </span><span class="tsd-signature-type">void</span><span class="tsd-signature-symbol">, </span><span class="tsd-signature-type">unknown</span><span class="tsd-signature-symbol">&gt;</span></li>
+						</ul>
+						<ul class="tsd-descriptions">
+							<li class="tsd-description">
+								<aside class="tsd-sources">
+									<ul>
+										<li>Defined in <a href="https://github.com/jaames/flipnote.js/blob/5edc3e4/src/parsers/FlipnoteParserBase.ts#L285">src/parsers/FlipnoteParserBase.ts:285</a></li>
+									</ul>
+								</aside>
+								<div class="tsd-comment tsd-typography">
+									<div class="lead">
+										<p>Allows for frame index iteration when using the parser instance as a for..of iterator</p>
+									</div>
+									<pre><code class="language-js"><span class="hljs-keyword">for</span> (<span class="hljs-keyword">const</span> frameIndex <span class="hljs-keyword">of</span> note) {
+  <span class="hljs-comment">// do something with frameIndex...</span>
+}
+</code></pre>
+								</div>
+								<h4 class="tsd-returns-title">Returns <span class="tsd-signature-type">Generator</span><span class="tsd-signature-symbol">&lt;</span><span class="tsd-signature-type">number</span><span class="tsd-signature-symbol">, </span><span class="tsd-signature-type">void</span><span class="tsd-signature-symbol">, </span><span class="tsd-signature-type">unknown</span><span class="tsd-signature-symbol">&gt;</span></h4>
+							</li>
+						</ul>
+					</section>
+					<section class="tsd-panel tsd-member tsd-kind-method tsd-parent-kind-class">
+						<a name="gettitle" class="tsd-anchor"></a>
+						<h3>get<wbr>Title</h3>
+						<ul class="tsd-signatures tsd-kind-method tsd-parent-kind-class">
+							<li class="tsd-signature tsd-kind-icon">get<wbr>Title<span class="tsd-signature-symbol">(</span>formats<span class="tsd-signature-symbol">?: </span><span class="tsd-signature-symbol">{ </span>COMMENT<span class="tsd-signature-symbol">: </span><span class="tsd-signature-type">string</span><span class="tsd-signature-symbol">; </span>FLIPNOTE<span class="tsd-signature-symbol">: </span><span class="tsd-signature-type">string</span><span class="tsd-signature-symbol">; </span>ICON<span class="tsd-signature-symbol">: </span><span class="tsd-signature-type">string</span><span class="tsd-signature-symbol"> }</span><span class="tsd-signature-symbol">)</span><span class="tsd-signature-symbol">: </span><span class="tsd-signature-type">string</span></li>
+						</ul>
+						<ul class="tsd-descriptions">
+							<li class="tsd-description">
+								<aside class="tsd-sources">
+									<ul>
+										<li>Defined in <a href="https://github.com/jaames/flipnote.js/blob/5edc3e4/src/parsers/FlipnoteParserBase.ts#L255">src/parsers/FlipnoteParserBase.ts:255</a></li>
+									</ul>
+								</aside>
+								<div class="tsd-comment tsd-typography">
+									<div class="lead">
+										<p>Get file default title - e.g. &quot;Flipnote by Y&quot;, &quot;Comment by X&quot;, etc.
+										A format object can be passed for localization, where <code>$USERNAME</code> gets replaced by author name:</p>
+										<pre><code class="language-js">{
+ <span class="hljs-attr">COMMENT</span>: <span class="hljs-string">&#x27;Comment by $USERNAME&#x27;</span>,
+ <span class="hljs-attr">FLIPNOTE</span>: <span class="hljs-string">&#x27;Flipnote by $USERNAME&#x27;</span>,
+ <span class="hljs-attr">ICON</span>: <span class="hljs-string">&#x27;Folder icon&#x27;</span>
+}
+</code></pre>
+									</div>
+								</div>
+								<h4 class="tsd-parameters-title">Parameters</h4>
+								<ul class="tsd-parameters">
+									<li>
+										<h5><span class="tsd-flag ts-flagDefault value">Default value</span> formats: <span class="tsd-signature-symbol">{ </span>COMMENT<span class="tsd-signature-symbol">: </span><span class="tsd-signature-type">string</span><span class="tsd-signature-symbol">; </span>FLIPNOTE<span class="tsd-signature-symbol">: </span><span class="tsd-signature-type">string</span><span class="tsd-signature-symbol">; </span>ICON<span class="tsd-signature-symbol">: </span><span class="tsd-signature-type">string</span><span class="tsd-signature-symbol"> }</span><span class="tsd-signature-symbol"> = this.titleFormats</span></h5>
+										<ul class="tsd-parameters">
+											<li class="tsd-parameter">
+												<h5>COMMENT<span class="tsd-signature-symbol">: </span><span class="tsd-signature-type">string</span></h5>
+											</li>
+											<li class="tsd-parameter">
+												<h5>FLIPNOTE<span class="tsd-signature-symbol">: </span><span class="tsd-signature-type">string</span></h5>
+											</li>
+											<li class="tsd-parameter">
+												<h5>ICON<span class="tsd-signature-symbol">: </span><span class="tsd-signature-type">string</span></h5>
+											</li>
+										</ul>
+									</li>
+								</ul>
+								<h4 class="tsd-returns-title">Returns <span class="tsd-signature-type">string</span></h4>
+							</li>
+						</ul>
+					</section>
+					<section class="tsd-panel tsd-member tsd-kind-method tsd-parent-kind-class">
+						<a name="tostring" class="tsd-anchor"></a>
+						<h3>to<wbr>String</h3>
+						<ul class="tsd-signatures tsd-kind-method tsd-parent-kind-class">
+							<li class="tsd-signature tsd-kind-icon">to<wbr>String<span class="tsd-signature-symbol">(</span><span class="tsd-signature-symbol">)</span><span class="tsd-signature-symbol">: </span><span class="tsd-signature-type">string</span></li>
+						</ul>
+						<ul class="tsd-descriptions">
+							<li class="tsd-description">
+								<aside class="tsd-sources">
+									<ul>
+										<li>Defined in <a href="https://github.com/jaames/flipnote.js/blob/5edc3e4/src/parsers/FlipnoteParserBase.ts#L271">src/parsers/FlipnoteParserBase.ts:271</a></li>
+									</ul>
+								</aside>
+								<div class="tsd-comment tsd-typography">
+									<div class="lead">
+										<p>Returns the Flipnote title when casting a parser instance to a string</p>
+									</div>
+									<pre><code class="language-js"><span class="hljs-keyword">const</span> str = <span class="hljs-string">&#x27;Title: &#x27;</span> + note;
+<span class="hljs-comment">// str === &#x27;Title: Flipnote by username&#x27;</span>
+</code></pre>
+								</div>
+								<h4 class="tsd-returns-title">Returns <span class="tsd-signature-type">string</span></h4>
+							</li>
+						</ul>
+					</section>
+				</section>
+				<section class="tsd-panel-group tsd-member-group ">
+					<h2>Verification Methods</h2>
+					<section class="tsd-panel tsd-member tsd-kind-method tsd-parent-kind-class">
+						<a name="getbody" class="tsd-anchor"></a>
+						<h3><span class="tsd-flag ts-flagAbstract">Abstract</span> get<wbr>Body</h3>
+						<ul class="tsd-signatures tsd-kind-method tsd-parent-kind-class">
+							<li class="tsd-signature tsd-kind-icon">get<wbr>Body<span class="tsd-signature-symbol">(</span><span class="tsd-signature-symbol">)</span><span class="tsd-signature-symbol">: </span><span class="tsd-signature-type">Uint8Array</span></li>
+						</ul>
+						<ul class="tsd-descriptions">
+							<li class="tsd-description">
+								<aside class="tsd-sources">
+									<ul>
+										<li>Defined in <a href="https://github.com/jaames/flipnote.js/blob/5edc3e4/src/parsers/FlipnoteParserBase.ts#L646">src/parsers/FlipnoteParserBase.ts:646</a></li>
+									</ul>
+								</aside>
+								<div class="tsd-comment tsd-typography">
+									<div class="lead">
+										<p>Get the body of the Flipnote - the data that is digested for computing the signature</p>
+									</div>
+								</div>
+								<h4 class="tsd-returns-title">Returns <span class="tsd-signature-type">Uint8Array</span></h4>
+								<p>content data as Uint8Array</p>
+							</li>
+						</ul>
+					</section>
+					<section class="tsd-panel tsd-member tsd-kind-method tsd-parent-kind-class">
+						<a name="getsignature" class="tsd-anchor"></a>
+						<h3><span class="tsd-flag ts-flagAbstract">Abstract</span> get<wbr>Signature</h3>
+						<ul class="tsd-signatures tsd-kind-method tsd-parent-kind-class">
+							<li class="tsd-signature tsd-kind-icon">get<wbr>Signature<span class="tsd-signature-symbol">(</span><span class="tsd-signature-symbol">)</span><span class="tsd-signature-symbol">: </span><span class="tsd-signature-type">Uint8Array</span></li>
+						</ul>
+						<ul class="tsd-descriptions">
+							<li class="tsd-description">
+								<aside class="tsd-sources">
+									<ul>
+										<li>Defined in <a href="https://github.com/jaames/flipnote.js/blob/5edc3e4/src/parsers/FlipnoteParserBase.ts#L653">src/parsers/FlipnoteParserBase.ts:653</a></li>
+									</ul>
+								</aside>
+								<div class="tsd-comment tsd-typography">
+									<div class="lead">
+										<p>Get the Flipnote&#39;s signature data</p>
+									</div>
+								</div>
+								<h4 class="tsd-returns-title">Returns <span class="tsd-signature-type">Uint8Array</span></h4>
+								<p>signature data as Uint8Array</p>
+							</li>
+						</ul>
+					</section>
+					<section class="tsd-panel tsd-member tsd-kind-method tsd-parent-kind-class">
+						<a name="verify" class="tsd-anchor"></a>
+						<h3><span class="tsd-flag ts-flagAbstract">Abstract</span> verify</h3>
+						<ul class="tsd-signatures tsd-kind-method tsd-parent-kind-class">
+							<li class="tsd-signature tsd-kind-icon">verify<span class="tsd-signature-symbol">(</span><span class="tsd-signature-symbol">)</span><span class="tsd-signature-symbol">: </span><span class="tsd-signature-type">Promise</span><span class="tsd-signature-symbol">&lt;</span><span class="tsd-signature-type">boolean</span><span class="tsd-signature-symbol">&gt;</span></li>
+						</ul>
+						<ul class="tsd-descriptions">
+							<li class="tsd-description">
+								<aside class="tsd-sources">
+									<ul>
+										<li>Defined in <a href="https://github.com/jaames/flipnote.js/blob/5edc3e4/src/parsers/FlipnoteParserBase.ts#L661">src/parsers/FlipnoteParserBase.ts:661</a></li>
+									</ul>
+								</aside>
+								<div class="tsd-comment tsd-typography">
+									<div class="lead">
+										<p>Verify whether this Flipnote&#39;s signature is valid</p>
+									</div>
+									<dl class="tsd-comment-tags">
+										<dt>async</dt>
+										<dd></dd>
+									</dl>
+								</div>
+								<h4 class="tsd-returns-title">Returns <span class="tsd-signature-type">Promise</span><span class="tsd-signature-symbol">&lt;</span><span class="tsd-signature-type">boolean</span><span class="tsd-signature-symbol">&gt;</span></h4>
+								<p>boolean</p>
+							</li>
+						</ul>
+					</section>
+				</section>
+				<section class="tsd-panel-group tsd-member-group ">
+					<h2>Object literals</h2>
+					<section class="tsd-panel tsd-member tsd-kind-object-literal tsd-parent-kind-class">
+						<a name="layervisibility" class="tsd-anchor"></a>
+						<h3>layer<wbr>Visibility</h3>
+						<div class="tsd-signature tsd-kind-icon">layer<wbr>Visibility<span class="tsd-signature-symbol">:</span> <span class="tsd-signature-type">object</span></div>
+						<aside class="tsd-sources">
+							<ul>
+								<li>Defined in <a href="https://github.com/jaames/flipnote.js/blob/5edc3e4/src/parsers/FlipnoteParserBase.ts#L212">src/parsers/FlipnoteParserBase.ts:212</a></li>
+							</ul>
+						</aside>
+						<div class="tsd-comment tsd-typography">
+							<div class="lead">
+								<p>Animation frame global layer visibility</p>
+							</div>
+						</div>
+						<section class="tsd-panel tsd-member tsd-kind-variable tsd-parent-kind-object-literal">
+							<a name="layervisibility.1" class="tsd-anchor"></a>
+							<h3>1</h3>
+							<div class="tsd-signature tsd-kind-icon">1<span class="tsd-signature-symbol">:</span> <span class="tsd-signature-type">true</span><span class="tsd-signature-symbol"> = true</span></div>
+							<aside class="tsd-sources">
+								<ul>
+									<li>Defined in <a href="https://github.com/jaames/flipnote.js/blob/5edc3e4/src/parsers/FlipnoteParserBase.ts#L212">src/parsers/FlipnoteParserBase.ts:212</a></li>
+								</ul>
+							</aside>
+						</section>
+						<section class="tsd-panel tsd-member tsd-kind-variable tsd-parent-kind-object-literal">
+							<a name="layervisibility.2" class="tsd-anchor"></a>
+							<h3>2</h3>
+							<div class="tsd-signature tsd-kind-icon">2<span class="tsd-signature-symbol">:</span> <span class="tsd-signature-type">true</span><span class="tsd-signature-symbol"> = true</span></div>
+							<aside class="tsd-sources">
+								<ul>
+									<li>Defined in <a href="https://github.com/jaames/flipnote.js/blob/5edc3e4/src/parsers/FlipnoteParserBase.ts#L212">src/parsers/FlipnoteParserBase.ts:212</a></li>
+								</ul>
+							</aside>
+						</section>
+						<section class="tsd-panel tsd-member tsd-kind-variable tsd-parent-kind-object-literal">
+							<a name="layervisibility.3" class="tsd-anchor"></a>
+							<h3>3</h3>
+							<div class="tsd-signature tsd-kind-icon">3<span class="tsd-signature-symbol">:</span> <span class="tsd-signature-type">true</span><span class="tsd-signature-symbol"> = true</span></div>
+							<aside class="tsd-sources">
+								<ul>
+									<li>Defined in <a href="https://github.com/jaames/flipnote.js/blob/5edc3e4/src/parsers/FlipnoteParserBase.ts#L212">src/parsers/FlipnoteParserBase.ts:212</a></li>
+								</ul>
+							</aside>
+						</section>
+					</section>
+					<section class="tsd-panel tsd-member tsd-kind-object-literal tsd-parent-kind-class">
+						<a name="titleformats" class="tsd-anchor"></a>
+						<h3>title<wbr>Formats</h3>
+						<div class="tsd-signature tsd-kind-icon">title<wbr>Formats<span class="tsd-signature-symbol">:</span> <span class="tsd-signature-type">object</span></div>
+						<aside class="tsd-sources">
+							<ul>
+								<li>Defined in <a href="https://github.com/jaames/flipnote.js/blob/5edc3e4/src/parsers/FlipnoteParserBase.ts#L174">src/parsers/FlipnoteParserBase.ts:174</a></li>
+							</ul>
+						</aside>
+						<div class="tsd-comment tsd-typography">
+							<div class="lead">
+								<p>Default formats used for {@link getTitle()}</p>
+							</div>
+						</div>
+						<section class="tsd-panel tsd-member tsd-kind-variable tsd-parent-kind-object-literal">
+							<a name="titleformats.comment" class="tsd-anchor"></a>
+							<h3>COMMENT</h3>
+							<div class="tsd-signature tsd-kind-icon">COMMENT<span class="tsd-signature-symbol">:</span> <span class="tsd-signature-type">string</span><span class="tsd-signature-symbol"> = &quot;Comment by $USERNAME&quot;</span></div>
+							<aside class="tsd-sources">
+								<ul>
+									<li>Defined in <a href="https://github.com/jaames/flipnote.js/blob/5edc3e4/src/parsers/FlipnoteParserBase.ts#L175">src/parsers/FlipnoteParserBase.ts:175</a></li>
+								</ul>
+							</aside>
+						</section>
+						<section class="tsd-panel tsd-member tsd-kind-variable tsd-parent-kind-object-literal">
+							<a name="titleformats.flipnote" class="tsd-anchor"></a>
+							<h3>FLIPNOTE</h3>
+							<div class="tsd-signature tsd-kind-icon">FLIPNOTE<span class="tsd-signature-symbol">:</span> <span class="tsd-signature-type">string</span><span class="tsd-signature-symbol"> = &quot;Flipnote by $USERNAME&quot;</span></div>
+							<aside class="tsd-sources">
+								<ul>
+									<li>Defined in <a href="https://github.com/jaames/flipnote.js/blob/5edc3e4/src/parsers/FlipnoteParserBase.ts#L176">src/parsers/FlipnoteParserBase.ts:176</a></li>
+								</ul>
+							</aside>
+						</section>
+						<section class="tsd-panel tsd-member tsd-kind-variable tsd-parent-kind-object-literal">
+							<a name="titleformats.icon" class="tsd-anchor"></a>
+							<h3>ICON</h3>
+							<div class="tsd-signature tsd-kind-icon">ICON<span class="tsd-signature-symbol">:</span> <span class="tsd-signature-type">string</span><span class="tsd-signature-symbol"> = &quot;Folder icon&quot;</span></div>
+							<aside class="tsd-sources">
+								<ul>
+									<li>Defined in <a href="https://github.com/jaames/flipnote.js/blob/5edc3e4/src/parsers/FlipnoteParserBase.ts#L177">src/parsers/FlipnoteParserBase.ts:177</a></li>
+								</ul>
+							</aside>
+						</section>
+					</section>
+				</section>
+			</div>
+		</div>
+		<div class="col-4 col-menu menu-sticky-wrap menu-highlight">
+			<nav class="tsd-navigation primary">
+				<ul>
+					<li class="label pp-nav pp-group">
+						<span>Docs</span>
+					</li>
+					<li class=" pp-nav pp-page">
+						<a href="../pages/docs/overview.html">Overview</a>
+					</li>
+					<li class=" pp-nav pp-page">
+						<a href="../pages/docs/get-started.html">Getting <wbr>Started</a>
+					</li>
+					<li class=" pp-nav pp-page">
+						<a href="../pages/docs/web-components.html">Web <wbr>Components</a>
+					</li>
+					<li class=" pp-nav pp-page">
+						<a href="../pages/docs/recipes.html">Recipes</a>
+					</li>
+					<li class=" pp-nav pp-page">
+						<a href="../pages/docs/acknowledgements.html">Acknowledgements</a>
+					</li>
+					<li class="globals  ">
+						<a href="../globals.html"><em>Globals</em></a>
+					</li>
+					<li class="label pp-nav pp-group">
+						<span>Links</span>
+					</li>
+					<li class=" pp-nav pp-page">
+						<a href="https://github.com/jaames/flipnote.js">Flipnote.js on GitHub</a>
+						<a href="https://github.com/jaames/flipnote.js/issues">Open an issue</a>
+						<a href="https://twitter.com/rakujira">Contact me on Twitter</a>
+				</li>                </ul>
+			</nav>
+			<nav class="tsd-navigation secondary menu-sticky">
+				<ul class="before-current">
+				</ul>
+				<ul class="current">
+					<li class="current tsd-kind-class">
+						<a href="flipnoteparserbase.html" class="tsd-kind-icon">Flipnote<wbr>Parser<wbr>Base</a>
+						<ul>
+							<li class=" tsd-kind-constructor tsd-parent-kind-class tsd-is-inherited">
+								<a href="flipnoteparserbase.html#constructor" class="tsd-kind-icon">constructor</a>
+							</li>
+							<li class=" tsd-kind-property tsd-parent-kind-class">
+								<a href="flipnoteparserbase.html#_symbol_tostringtag_" class="tsd-kind-icon">[<wbr>Symbol.to<wbr>String<wbr>Tag]</a>
+							</li>
+							<li class=" tsd-kind-property tsd-parent-kind-class">
+								<a href="flipnoteparserbase.html#aspect" class="tsd-kind-icon">aspect</a>
+							</li>
+							<li class=" tsd-kind-property tsd-parent-kind-class">
+								<a href="flipnoteparserbase.html#audioclipratio" class="tsd-kind-icon">audio<wbr>Clip<wbr>Ratio</a>
+							</li>
+							<li class=" tsd-kind-property tsd-parent-kind-class">
+								<a href="flipnoteparserbase.html#audiotracks" class="tsd-kind-icon">audio<wbr>Tracks</a>
+							</li>
+							<li class=" tsd-kind-property tsd-parent-kind-class">
+								<a href="flipnoteparserbase.html#bgmspeed" class="tsd-kind-icon">bgm<wbr>Speed</a>
+							</li>
+							<li class=" tsd-kind-property tsd-parent-kind-class">
+								<a href="flipnoteparserbase.html#bgmrate" class="tsd-kind-icon">bgmrate</a>
+							</li>
+							<li class=" tsd-kind-property tsd-parent-kind-class tsd-is-inherited">
+								<a href="flipnoteparserbase.html#buffer" class="tsd-kind-icon">buffer</a>
+							</li>
+							<li class=" tsd-kind-property tsd-parent-kind-class tsd-is-inherited">
+								<a href="flipnoteparserbase.html#data" class="tsd-kind-icon">data</a>
+							</li>
+							<li class=" tsd-kind-property tsd-parent-kind-class">
+								<a href="flipnoteparserbase.html#duration" class="tsd-kind-icon">duration</a>
+							</li>
+							<li class=" tsd-kind-property tsd-parent-kind-class">
+								<a href="flipnoteparserbase.html#format" class="tsd-kind-icon">format</a>
+							</li>
+							<li class=" tsd-kind-property tsd-parent-kind-class">
+								<a href="flipnoteparserbase.html#framecount" class="tsd-kind-icon">frame<wbr>Count</a>
+							</li>
+							<li class=" tsd-kind-property tsd-parent-kind-class">
+								<a href="flipnoteparserbase.html#framespeed" class="tsd-kind-icon">frame<wbr>Speed</a>
+							</li>
+							<li class=" tsd-kind-property tsd-parent-kind-class">
+								<a href="flipnoteparserbase.html#framerate" class="tsd-kind-icon">framerate</a>
+							</li>
+							<li class=" tsd-kind-property tsd-parent-kind-class">
+								<a href="flipnoteparserbase.html#globalpalette" class="tsd-kind-icon">global<wbr>Palette</a>
+							</li>
+							<li class=" tsd-kind-property tsd-parent-kind-class">
+								<a href="flipnoteparserbase.html#imageheight" class="tsd-kind-icon">image<wbr>Height</a>
+							</li>
+							<li class=" tsd-kind-property tsd-parent-kind-class">
+								<a href="flipnoteparserbase.html#imageoffsetx" class="tsd-kind-icon">image<wbr>OffsetX</a>
+							</li>
+							<li class=" tsd-kind-property tsd-parent-kind-class">
+								<a href="flipnoteparserbase.html#imageoffsety" class="tsd-kind-icon">image<wbr>OffsetY</a>
+							</li>
+							<li class=" tsd-kind-property tsd-parent-kind-class">
+								<a href="flipnoteparserbase.html#imagewidth" class="tsd-kind-icon">image<wbr>Width</a>
+							</li>
+							<li class=" tsd-kind-property tsd-parent-kind-class">
+								<a href="flipnoteparserbase.html#iscomment" class="tsd-kind-icon">is<wbr>Comment</a>
+							</li>
+							<li class=" tsd-kind-property tsd-parent-kind-class">
+								<a href="flipnoteparserbase.html#isdsilibrarynote" class="tsd-kind-icon">is<wbr>Dsi<wbr>Library<wbr>Note</a>
+							</li>
+							<li class=" tsd-kind-property tsd-parent-kind-class">
+								<a href="flipnoteparserbase.html#isfoldericon" class="tsd-kind-icon">is<wbr>Folder<wbr>Icon</a>
+							</li>
+							<li class=" tsd-kind-property tsd-parent-kind-class">
+								<a href="flipnoteparserbase.html#isspinoff" class="tsd-kind-icon">is<wbr>Spinoff</a>
+							</li>
+							<li class=" tsd-kind-property tsd-parent-kind-class">
+								<a href="flipnoteparserbase.html#meta" class="tsd-kind-icon">meta</a>
+							</li>
+							<li class=" tsd-kind-property tsd-parent-kind-class">
+								<a href="flipnoteparserbase.html#numlayercolors" class="tsd-kind-icon">num<wbr>Layer<wbr>Colors</a>
+							</li>
+							<li class=" tsd-kind-property tsd-parent-kind-class">
+								<a href="flipnoteparserbase.html#numlayers" class="tsd-kind-icon">num<wbr>Layers</a>
+							</li>
+							<li class=" tsd-kind-property tsd-parent-kind-class">
+								<a href="flipnoteparserbase.html#palette" class="tsd-kind-icon">palette</a>
+							</li>
+							<li class=" tsd-kind-property tsd-parent-kind-class tsd-is-inherited">
+								<a href="flipnoteparserbase.html#pointer" class="tsd-kind-icon">pointer</a>
+							</li>
+							<li class=" tsd-kind-property tsd-parent-kind-class">
+								<a href="flipnoteparserbase.html#publickey" class="tsd-kind-icon">public<wbr>Key</a>
+							</li>
+							<li class=" tsd-kind-property tsd-parent-kind-class">
+								<a href="flipnoteparserbase.html#rawsamplerate" class="tsd-kind-icon">raw<wbr>Sample<wbr>Rate</a>
+							</li>
+							<li class=" tsd-kind-property tsd-parent-kind-class">
+								<a href="flipnoteparserbase.html#samplerate" class="tsd-kind-icon">sample<wbr>Rate</a>
+							</li>
+							<li class=" tsd-kind-property tsd-parent-kind-class">
+								<a href="flipnoteparserbase.html#soundeffecttracks" class="tsd-kind-icon">sound<wbr>Effect<wbr>Tracks</a>
+							</li>
+							<li class=" tsd-kind-property tsd-parent-kind-class">
+								<a href="flipnoteparserbase.html#soundmeta" class="tsd-kind-icon">sound<wbr>Meta</a>
+							</li>
+							<li class=" tsd-kind-property tsd-parent-kind-class">
+								<a href="flipnoteparserbase.html#thumbframeindex" class="tsd-kind-icon">thumb<wbr>Frame<wbr>Index</a>
+							</li>
+							<li class=" tsd-kind-property tsd-parent-kind-class tsd-is-static">
+								<a href="flipnoteparserbase.html#aspect-1" class="tsd-kind-icon">aspect</a>
+							</li>
+							<li class=" tsd-kind-property tsd-parent-kind-class tsd-is-static">
+								<a href="flipnoteparserbase.html#audiotracks-1" class="tsd-kind-icon">audio<wbr>Tracks</a>
+							</li>
+							<li class=" tsd-kind-property tsd-parent-kind-class tsd-is-static">
+								<a href="flipnoteparserbase.html#format-1" class="tsd-kind-icon">format</a>
+							</li>
+							<li class=" tsd-kind-property tsd-parent-kind-class tsd-is-static">
+								<a href="flipnoteparserbase.html#globalpalette-1" class="tsd-kind-icon">global<wbr>Palette</a>
+							</li>
+							<li class=" tsd-kind-property tsd-parent-kind-class tsd-is-static">
+								<a href="flipnoteparserbase.html#height" class="tsd-kind-icon">height</a>
+							</li>
+							<li class=" tsd-kind-property tsd-parent-kind-class tsd-is-static">
+								<a href="flipnoteparserbase.html#numlayercolors-1" class="tsd-kind-icon">num<wbr>Layer<wbr>Colors</a>
+							</li>
+							<li class=" tsd-kind-property tsd-parent-kind-class tsd-is-static">
+								<a href="flipnoteparserbase.html#numlayers-1" class="tsd-kind-icon">num<wbr>Layers</a>
+							</li>
+							<li class=" tsd-kind-property tsd-parent-kind-class tsd-is-static">
+								<a href="flipnoteparserbase.html#publickey-1" class="tsd-kind-icon">public<wbr>Key</a>
+							</li>
+							<li class=" tsd-kind-property tsd-parent-kind-class tsd-is-static">
+								<a href="flipnoteparserbase.html#rawsamplerate-1" class="tsd-kind-icon">raw<wbr>Sample<wbr>Rate</a>
+							</li>
+							<li class=" tsd-kind-property tsd-parent-kind-class tsd-is-static">
+								<a href="flipnoteparserbase.html#samplerate-1" class="tsd-kind-icon">sample<wbr>Rate</a>
+							</li>
+							<li class=" tsd-kind-property tsd-parent-kind-class tsd-is-static">
+								<a href="flipnoteparserbase.html#soundeffecttracks-1" class="tsd-kind-icon">sound<wbr>Effect<wbr>Tracks</a>
+							</li>
+							<li class=" tsd-kind-property tsd-parent-kind-class tsd-is-static">
+								<a href="flipnoteparserbase.html#width" class="tsd-kind-icon">width</a>
+							</li>
+							<li class=" tsd-kind-get-signature tsd-parent-kind-class tsd-is-inherited">
+								<a href="flipnoteparserbase.html#bytelength" class="tsd-kind-icon">byte<wbr>Length</a>
+							</li>
+							<li class=" tsd-kind-get-signature tsd-parent-kind-class tsd-is-inherited">
+								<a href="flipnoteparserbase.html#bytes" class="tsd-kind-icon">bytes</a>
+							</li>
+							<li class=" tsd-kind-method tsd-parent-kind-class">
+								<a href="flipnoteparserbase.html#_symbol_iterator_" class="tsd-kind-icon">[<wbr>Symbol.iterator]</a>
+							</li>
+							<li class=" tsd-kind-method tsd-parent-kind-class">
+								<a href="flipnoteparserbase.html#decodeaudiotrack" class="tsd-kind-icon">decode<wbr>Audio<wbr>Track</a>
+							</li>
+							<li class=" tsd-kind-method tsd-parent-kind-class">
+								<a href="flipnoteparserbase.html#decodeframe" class="tsd-kind-icon">decode<wbr>Frame</a>
+							</li>
+							<li class=" tsd-kind-method tsd-parent-kind-class">
+								<a href="flipnoteparserbase.html#decodesoundflags" class="tsd-kind-icon">decode<wbr>Sound<wbr>Flags</a>
+							</li>
+							<li class=" tsd-kind-method tsd-parent-kind-class">
+								<a href="flipnoteparserbase.html#getaudiomasterpcm" class="tsd-kind-icon">get<wbr>Audio<wbr>Master<wbr>Pcm</a>
+							</li>
+							<li class=" tsd-kind-method tsd-parent-kind-class">
+								<a href="flipnoteparserbase.html#getaudiotrackpcm" class="tsd-kind-icon">get<wbr>Audio<wbr>Track<wbr>Pcm</a>
+							</li>
+							<li class=" tsd-kind-method tsd-parent-kind-class">
+								<a href="flipnoteparserbase.html#getaudiotrackraw" class="tsd-kind-icon">get<wbr>Audio<wbr>Track<wbr>Raw</a>
+							</li>
+							<li class=" tsd-kind-method tsd-parent-kind-class">
+								<a href="flipnoteparserbase.html#getbody" class="tsd-kind-icon">get<wbr>Body</a>
+							</li>
+							<li class=" tsd-kind-method tsd-parent-kind-class">
+								<a href="flipnoteparserbase.html#getframeauthor" class="tsd-kind-icon">get<wbr>Frame<wbr>Author</a>
+							</li>
+							<li class=" tsd-kind-method tsd-parent-kind-class">
+								<a href="flipnoteparserbase.html#getframecameraflags" class="tsd-kind-icon">get<wbr>Frame<wbr>Camera<wbr>Flags</a>
+							</li>
+							<li class=" tsd-kind-method tsd-parent-kind-class">
+								<a href="flipnoteparserbase.html#getframelayerdepths" class="tsd-kind-icon">get<wbr>Frame<wbr>Layer<wbr>Depths</a>
+							</li>
+							<li class=" tsd-kind-method tsd-parent-kind-class">
+								<a href="flipnoteparserbase.html#getframelayerorder" class="tsd-kind-icon">get<wbr>Frame<wbr>Layer<wbr>Order</a>
+							</li>
+							<li class=" tsd-kind-method tsd-parent-kind-class">
+								<a href="flipnoteparserbase.html#getframepalette" class="tsd-kind-icon">get<wbr>Frame<wbr>Palette</a>
+							</li>
+							<li class=" tsd-kind-method tsd-parent-kind-class">
+								<a href="flipnoteparserbase.html#getframepaletteindices" class="tsd-kind-icon">get<wbr>Frame<wbr>Palette<wbr>Indices</a>
+							</li>
+							<li class=" tsd-kind-method tsd-parent-kind-class">
+								<a href="flipnoteparserbase.html#getframepaletteuint32" class="tsd-kind-icon">get<wbr>Frame<wbr>Palette<wbr>Uint32</a>
+							</li>
+							<li class=" tsd-kind-method tsd-parent-kind-class">
+								<a href="flipnoteparserbase.html#getframepixels" class="tsd-kind-icon">get<wbr>Frame<wbr>Pixels</a>
+							</li>
+							<li class=" tsd-kind-method tsd-parent-kind-class">
+								<a href="flipnoteparserbase.html#getframepixelsrgba" class="tsd-kind-icon">get<wbr>Frame<wbr>Pixels<wbr>Rgba</a>
+							</li>
+							<li class=" tsd-kind-method tsd-parent-kind-class">
+								<a href="flipnoteparserbase.html#getframesoundeffectflags" class="tsd-kind-icon">get<wbr>Frame<wbr>Sound<wbr>Effect<wbr>Flags</a>
+							</li>
+							<li class=" tsd-kind-method tsd-parent-kind-class">
+								<a href="flipnoteparserbase.html#getiskeyframe" class="tsd-kind-icon">get<wbr>IsKey<wbr>Frame</a>
+							</li>
+							<li class=" tsd-kind-method tsd-parent-kind-class">
+								<a href="flipnoteparserbase.html#getlayerpixels" class="tsd-kind-icon">get<wbr>Layer<wbr>Pixels</a>
+							</li>
+							<li class=" tsd-kind-method tsd-parent-kind-class">
+								<a href="flipnoteparserbase.html#getlayerpixelsrgba" class="tsd-kind-icon">get<wbr>Layer<wbr>Pixels<wbr>Rgba</a>
+							</li>
+							<li class=" tsd-kind-method tsd-parent-kind-class">
+								<a href="flipnoteparserbase.html#getsignature" class="tsd-kind-icon">get<wbr>Signature</a>
+							</li>
+							<li class=" tsd-kind-method tsd-parent-kind-class">
+								<a href="flipnoteparserbase.html#getsoundeffectflags" class="tsd-kind-icon">get<wbr>Sound<wbr>Effect<wbr>Flags</a>
+							</li>
+							<li class=" tsd-kind-method tsd-parent-kind-class">
+								<a href="flipnoteparserbase.html#getsoundeffectflagsfortrack" class="tsd-kind-icon">get<wbr>Sound<wbr>Effect<wbr>Flags<wbr>For<wbr>Track</a>
+							</li>
+							<li class=" tsd-kind-method tsd-parent-kind-class">
+								<a href="flipnoteparserbase.html#getthumbnailimage" class="tsd-kind-icon">get<wbr>Thumbnail<wbr>Image</a>
+							</li>
+							<li class=" tsd-kind-method tsd-parent-kind-class">
+								<a href="flipnoteparserbase.html#gettitle" class="tsd-kind-icon">get<wbr>Title</a>
+							</li>
+							<li class=" tsd-kind-method tsd-parent-kind-class">
+								<a href="flipnoteparserbase.html#hasaudiotrack" class="tsd-kind-icon">has<wbr>Audio<wbr>Track</a>
+							</li>
+							<li class=" tsd-kind-method tsd-parent-kind-class">
+								<a href="flipnoteparserbase.html#issoundeffectusedonframe" class="tsd-kind-icon">is<wbr>Sound<wbr>Effect<wbr>Used<wbr>OnFrame</a>
+							</li>
+							<li class=" tsd-kind-method tsd-parent-kind-class tsd-is-inherited">
+								<a href="flipnoteparserbase.html#readbytes" class="tsd-kind-icon">read<wbr>Bytes</a>
+							</li>
+							<li class=" tsd-kind-method tsd-parent-kind-class tsd-is-inherited">
+								<a href="flipnoteparserbase.html#readchars" class="tsd-kind-icon">read<wbr>Chars</a>
+							</li>
+							<li class=" tsd-kind-method tsd-parent-kind-class tsd-is-inherited">
+								<a href="flipnoteparserbase.html#readhex" class="tsd-kind-icon">read<wbr>Hex</a>
+							</li>
+							<li class=" tsd-kind-method tsd-parent-kind-class tsd-is-inherited">
+								<a href="flipnoteparserbase.html#readint16" class="tsd-kind-icon">read<wbr>Int16</a>
+							</li>
+							<li class=" tsd-kind-method tsd-parent-kind-class tsd-is-inherited">
+								<a href="flipnoteparserbase.html#readint32" class="tsd-kind-icon">read<wbr>Int32</a>
+							</li>
+							<li class=" tsd-kind-method tsd-parent-kind-class tsd-is-inherited">
+								<a href="flipnoteparserbase.html#readint8" class="tsd-kind-icon">read<wbr>Int8</a>
+							</li>
+							<li class=" tsd-kind-method tsd-parent-kind-class tsd-is-inherited">
+								<a href="flipnoteparserbase.html#readuint16" class="tsd-kind-icon">read<wbr>Uint16</a>
+							</li>
+							<li class=" tsd-kind-method tsd-parent-kind-class tsd-is-inherited">
+								<a href="flipnoteparserbase.html#readuint32" class="tsd-kind-icon">read<wbr>Uint32</a>
+							</li>
+							<li class=" tsd-kind-method tsd-parent-kind-class tsd-is-inherited">
+								<a href="flipnoteparserbase.html#readuint8" class="tsd-kind-icon">read<wbr>Uint8</a>
+							</li>
+							<li class=" tsd-kind-method tsd-parent-kind-class tsd-is-inherited">
+								<a href="flipnoteparserbase.html#readwidechars" class="tsd-kind-icon">read<wbr>Wide<wbr>Chars</a>
+							</li>
+							<li class=" tsd-kind-method tsd-parent-kind-class tsd-is-inherited">
+								<a href="flipnoteparserbase.html#seek" class="tsd-kind-icon">seek</a>
+							</li>
+							<li class=" tsd-kind-method tsd-parent-kind-class">
+								<a href="flipnoteparserbase.html#tostring" class="tsd-kind-icon">to<wbr>String</a>
+							</li>
+							<li class=" tsd-kind-method tsd-parent-kind-class">
+								<a href="flipnoteparserbase.html#verify" class="tsd-kind-icon">verify</a>
+							</li>
+							<li class=" tsd-kind-method tsd-parent-kind-class tsd-is-inherited">
+								<a href="flipnoteparserbase.html#writebytes" class="tsd-kind-icon">write<wbr>Bytes</a>
+							</li>
+							<li class=" tsd-kind-method tsd-parent-kind-class tsd-is-inherited">
+								<a href="flipnoteparserbase.html#writechars" class="tsd-kind-icon">write<wbr>Chars</a>
+							</li>
+							<li class=" tsd-kind-method tsd-parent-kind-class tsd-is-inherited">
+								<a href="flipnoteparserbase.html#writeint16" class="tsd-kind-icon">write<wbr>Int16</a>
+							</li>
+							<li class=" tsd-kind-method tsd-parent-kind-class tsd-is-inherited">
+								<a href="flipnoteparserbase.html#writeint32" class="tsd-kind-icon">write<wbr>Int32</a>
+							</li>
+							<li class=" tsd-kind-method tsd-parent-kind-class tsd-is-inherited">
+								<a href="flipnoteparserbase.html#writeint8" class="tsd-kind-icon">write<wbr>Int8</a>
+							</li>
+							<li class=" tsd-kind-method tsd-parent-kind-class tsd-is-inherited">
+								<a href="flipnoteparserbase.html#writeuint16" class="tsd-kind-icon">write<wbr>Uint16</a>
+							</li>
+							<li class=" tsd-kind-method tsd-parent-kind-class tsd-is-inherited">
+								<a href="flipnoteparserbase.html#writeuint32" class="tsd-kind-icon">write<wbr>Uint32</a>
+							</li>
+							<li class=" tsd-kind-method tsd-parent-kind-class tsd-is-inherited">
+								<a href="flipnoteparserbase.html#writeuint8" class="tsd-kind-icon">write<wbr>Uint8</a>
+							</li>
+							<li class=" tsd-kind-object-literal tsd-parent-kind-class">
+								<a href="flipnoteparserbase.html#layervisibility" class="tsd-kind-icon">layer<wbr>Visibility</a>
+							</li>
+							<li class=" tsd-kind-object-literal tsd-parent-kind-class">
+								<a href="flipnoteparserbase.html#titleformats" class="tsd-kind-icon">title<wbr>Formats</a>
+							</li>
+						</ul>
+					</li>
+				</ul>
+				<ul class="after-current">
+				</ul>
+			</nav>
+		</div>
+	</div>
+</div>
+<footer class="with-border-bottom">
+	<div class="container">
+		<h2>Legend</h2>
+		<div class="tsd-legend-group">
+			<ul class="tsd-legend">
+				<li class="tsd-kind-constructor tsd-parent-kind-class"><span class="tsd-kind-icon">Constructor</span></li>
+				<li class="tsd-kind-property tsd-parent-kind-class"><span class="tsd-kind-icon">Property</span></li>
+				<li class="tsd-kind-method tsd-parent-kind-class"><span class="tsd-kind-icon">Method</span></li>
+				<li class="tsd-kind-accessor tsd-parent-kind-class"><span class="tsd-kind-icon">Accessor</span></li>
+			</ul>
+			<ul class="tsd-legend">
+				<li class="tsd-kind-constructor tsd-parent-kind-class tsd-is-inherited"><span class="tsd-kind-icon">Inherited constructor</span></li>
+				<li class="tsd-kind-property tsd-parent-kind-class tsd-is-inherited"><span class="tsd-kind-icon">Inherited property</span></li>
+				<li class="tsd-kind-method tsd-parent-kind-class tsd-is-inherited"><span class="tsd-kind-icon">Inherited method</span></li>
+			</ul>
+			<ul class="tsd-legend">
+				<li class="tsd-kind-property tsd-parent-kind-class tsd-is-static"><span class="tsd-kind-icon">Static property</span></li>
+				<li class="tsd-kind-method tsd-parent-kind-class tsd-is-static"><span class="tsd-kind-icon">Static method</span></li>
+			</ul>
+			<ul class="tsd-legend">
+				<li class="tsd-kind-property tsd-parent-kind-interface"><span class="tsd-kind-icon">Property</span></li>
+			</ul>
+		</div>
+	</div>
+	<div class="container">
+		<p>
+			Flipnote Studio and Flipnote Studio 3D are copyrights of Nintendo Co., Ltd. This project isn't affiliated with, or endorsed by them in any way.
+		</p>
+	</div>
+</footer>
+<div class="overlay"></div>
+<script src="../assets/js/flipnote.webcomponent.min.js"></script>
+<script src="../assets/js/main.js"></script>
+<script>if (location.protocol == 'file:') document.write('<script src="../assets/js/search.json"><' + '/script>');</script>
+<script async defer data-domain="flipnote.js.org" src="https://st2.jamesdaniel.dev/js/index.js"></script>
+</body>
+</html>
