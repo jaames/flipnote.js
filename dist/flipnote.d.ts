@@ -72,9 +72,31 @@ declare function isFsid(fsid: string): boolean;
  */
 declare function getPpmFsidRegion(fsid: string): FlipnoteRegion;
 /**
- * Get the region for any valid Flipnote Studio 3D user ID
+ * Get the region for any valid Flipnote Studio 3D user ID.
+ * NOTE: This may be incorrect for IDs that are not from the DSi Library.
  */
 declare function getKwzFsidRegion(fsid: string): FlipnoteRegion;
+/**
+ * Convert a KWZ Flipnote Studio ID (from a Nintendo DSi Library Flipnote) to the format used by PPM Flipnote Studio IDs.
+ * Will return `null` if the conversion could not be made.
+ */
+declare function convertKwzFsidToPpmFsid(fsid: string): string;
+/**
+ * Convert a PPM Flipnote Studio ID to the format used by KWZ Flipnote Studio IDs (as seen in Nintendo DSi Library Flipnotes).
+ * Will return `null` if the conversion could not be made.
+ *
+ * NOTE: KWZ Flipnote Studio IDs contain an extra two characters at the beginning. It is not possible to resolve these from a PPM Flipnote Studio ID.
+ */
+declare function convertPpmFsidToKwzFsidSuffix(fsid: string): string;
+/**
+ * Convert a PPM Flipnote Studio ID to an array of all possible matching KWZ Flipnote Studio IDs (as seen in Nintendo DSi Library Flipnotes).
+ * Will return `null` if the conversion could not be made.
+ */
+declare function convertPpmFsidToPossibleKwzFsids(fsid: string): string[];
+/**
+ * Tests if a KWZ Flipnote Studio ID (from a Nintendo DSi Library Flipnote) matches a given PPM-formatted Flipnote Studio ID.
+ */
+declare function testKwzFsidMatchesPpmFsid(kwzFsid: string, ppmFsid: string): boolean;
 /**
  * Get the region for any valid Flipnote Studio or Flipnote Studio 3D user ID
  */
@@ -88,6 +110,10 @@ declare const fsid_d_isKwzDsiLibraryFsid: typeof isKwzDsiLibraryFsid;
 declare const fsid_d_isFsid: typeof isFsid;
 declare const fsid_d_getPpmFsidRegion: typeof getPpmFsidRegion;
 declare const fsid_d_getKwzFsidRegion: typeof getKwzFsidRegion;
+declare const fsid_d_convertKwzFsidToPpmFsid: typeof convertKwzFsidToPpmFsid;
+declare const fsid_d_convertPpmFsidToKwzFsidSuffix: typeof convertPpmFsidToKwzFsidSuffix;
+declare const fsid_d_convertPpmFsidToPossibleKwzFsids: typeof convertPpmFsidToPossibleKwzFsids;
+declare const fsid_d_testKwzFsidMatchesPpmFsid: typeof testKwzFsidMatchesPpmFsid;
 declare const fsid_d_getFsidRegion: typeof getFsidRegion;
 declare namespace fsid_d {
   export {
@@ -98,6 +124,10 @@ declare namespace fsid_d {
     fsid_d_isFsid as isFsid,
     fsid_d_getPpmFsidRegion as getPpmFsidRegion,
     fsid_d_getKwzFsidRegion as getKwzFsidRegion,
+    fsid_d_convertKwzFsidToPpmFsid as convertKwzFsidToPpmFsid,
+    fsid_d_convertPpmFsidToKwzFsidSuffix as convertPpmFsidToKwzFsidSuffix,
+    fsid_d_convertPpmFsidToPossibleKwzFsids as convertPpmFsidToPossibleKwzFsids,
+    fsid_d_testKwzFsidMatchesPpmFsid as testKwzFsidMatchesPpmFsid,
     fsid_d_getFsidRegion as getFsidRegion,
   };
 }
@@ -109,6 +139,22 @@ declare enum FlipnoteFormat {
     /** Animation format used by Flipnote Studio 3D (Nintendo 3DS) */
     KWZ = "KWZ"
 }
+/** Buffer format for a FlipnoteThumbImage  */
+declare enum FlipnoteThumbImageFormat {
+    Jpeg = 0,
+    Rgba = 1
+}
+/** Represents a decoded Flipnote thumbnail image */
+declare type FlipnoteThumbImage = {
+    /**  */
+    format: FlipnoteThumbImageFormat;
+    /** Image width in pixels */
+    width: number;
+    /** Image height in pixels */
+    height: number;
+    /** Image data */
+    data: ArrayBuffer;
+};
 /** RGBA color */
 declare type FlipnotePaletteColor = [
     /** Red (0 to 255) */
@@ -122,6 +168,11 @@ declare type FlipnotePaletteColor = [
 ];
 /** Flipnote layer visibility */
 declare type FlipnoteLayerVisibility = Record<number, boolean>;
+/** stereoscopic eye view (left/right) for 3D effects */
+declare enum FlipnoteStereoscopicEye {
+    Left = 0,
+    Right = 1
+}
 /** Defines the colors used for a given Flipnote format */
 declare type FlipnotePaletteDefinition = Record<string, FlipnotePaletteColor>;
 /** Identifies a Flipnote audio track type */
@@ -205,9 +256,11 @@ declare abstract class FlipnoteParserBase extends DataStream {
     /** File format type */
     static format: FlipnoteFormat;
     /** Animation frame width */
-    static frameWidth: number;
+    static width: number;
     /** Animation frame height */
-    static frameHeight: number;
+    static height: number;
+    /** Animation frame aspect ratio (height / width) */
+    static aspect: number;
     /** Number of animation frame layers */
     static numLayers: number;
     /** Number of colors per layer (aside from transparent) */
@@ -239,6 +292,8 @@ declare abstract class FlipnoteParserBase extends DataStream {
     imageWidth: number;
     /** Animation frame height, reflects {@link FlipnoteParserBase.height} */
     imageHeight: number;
+    /** Animation frame aspect ratio (height / width), reflects {@link FlipnoteParserBase.aspect} */
+    aspect: number;
     /** X offset for the top-left corner of the animation frame */
     imageOffsetX: number;
     /** Y offset for the top-left corner of the animation frame */
@@ -296,7 +351,7 @@ declare abstract class FlipnoteParserBase extends DataStream {
     audioClipRatio: number;
     /**
      * Get file default title - e.g. "Flipnote by Y", "Comment by X", etc.
-     * A format object can be passed for localisation, where `$USERNAME` gets replaced by author name:
+     * A format object can be passed for localization, where `$USERNAME` gets replaced by author name:
      * ```js
      * {
      *  COMMENT: 'Comment by $USERNAME',
@@ -333,6 +388,13 @@ declare abstract class FlipnoteParserBase extends DataStream {
      */
     [Symbol.iterator](): Generator<number, void, unknown>;
     /**
+     * Decodes the thumbnail image embedded in the Flipnote. Will return a {@link FlipnoteThumbImage} containing JPEG or raw RGBA data depending on the format.
+     *
+     * Note: For most purposes, you should probably just decode the thumbnail frame instead, to get a higher resolution image.
+     * @category Meta
+     */
+    abstract getThumbnailImage(): FlipnoteThumbImage;
+    /**
      * Decode a frame, returning the raw pixel buffers for each layer
      * @category Image
     */
@@ -343,14 +405,38 @@ declare abstract class FlipnoteParserBase extends DataStream {
      * NOTE: if the visibility flag for this layer is turned off, the result will be empty
      * @category Image
     */
-    getLayerPixels(frameIndex: number, layerIndex: number, imageBuffer?: Uint8Array): Uint8Array;
+    getLayerPixels(frameIndex: number, layerIndex: number, imageBuffer?: Uint8Array, depthStrength?: number, depthEye?: FlipnoteStereoscopicEye): Uint8Array;
     /**
      * Get the pixels for a given frame layer, as RGBA pixels
      * NOTE: layerIndex are not guaranteed to be sorted by 3D depth in KWZs, use {@link getFrameLayerOrder} to get the correct sort order first
      * NOTE: if the visibility flag for this layer is turned off, the result will be empty
      * @category Image
     */
-    getLayerPixelsRgba(frameIndex: number, layerIndex: number, imageBuffer?: Uint32Array, paletteBuffer?: Uint32Array): Uint32Array;
+    getLayerPixelsRgba(frameIndex: number, layerIndex: number, imageBuffer?: Uint32Array, paletteBuffer?: Uint32Array, depthStrength?: number, depthEye?: FlipnoteStereoscopicEye): Uint32Array;
+    /**
+     * Determines if a given frame is a video key frame or not. This returns an array of booleans for each layer, since keyframe encoding is done on a per-layer basis.
+     * @param frameIndex
+     * @category Image
+    */
+    abstract getIsKeyFrame(frameIndex: number): boolean[];
+    /**
+     * Get the 3D depths for each layer in a given frame.
+     * @param frameIndex
+     * @category Image
+    */
+    abstract getFrameLayerDepths(frameIndex: number): number[];
+    /**
+     * Get the FSID for a given frame's original author.
+     * @param frameIndex
+     * @category Meta
+     */
+    abstract getFrameAuthor(frameIndex: number): string;
+    /**
+     * Get the camera flags for a given frame, if there are any
+     * @category Image
+     * @returns Array of booleans, indicating whether each layer uses a photo or not
+    */
+    abstract getFrameCameraFlags(frameIndex: number): boolean[];
     /**
      * Get the layer draw order for a given frame
      * @category Image
@@ -360,12 +446,12 @@ declare abstract class FlipnoteParserBase extends DataStream {
      * Get the image for a given frame, as palette indices
      * @category Image
     */
-    getFramePixels(frameIndex: number, imageBuffer?: Uint8Array): Uint8Array;
+    getFramePixels(frameIndex: number, imageBuffer?: Uint8Array, depthStrength?: number, depthEye?: FlipnoteStereoscopicEye): Uint8Array;
     /**
      * Get the image for a given frame as an uint32 array of RGBA pixels
      * @category Image
      */
-    getFramePixelsRgba(frameIndex: number, imageBuffer?: Uint32Array, paletteBuffer?: Uint32Array): Uint32Array;
+    getFramePixelsRgba(frameIndex: number, imageBuffer?: Uint32Array, paletteBuffer?: Uint32Array, depthStrength?: number, depthEye?: FlipnoteStereoscopicEye): Uint32Array;
     /**
      * Get the color palette indices for a given frame. RGBA colors for these values can be indexed from {@link FlipnoteParserBase.globalPalette}
      * @category Image
@@ -397,7 +483,7 @@ declare abstract class FlipnoteParserBase extends DataStream {
      */
     abstract getFrameSoundEffectFlags(frameIndex: number): FlipnoteSoundEffectFlags;
     /**
-     * Get the usage flags for a given track accross every frame
+     * Get the usage flags for a given track across every frame
      * @returns an array of booleans for every frame, indicating whether the track is used on that frame
      * @category Audio
      */
@@ -466,7 +552,7 @@ interface PpmMeta extends FlipnoteMeta {
     bgmSpeed: number;
 }
 /**
- * PPM parser options for enabling optimisations and other extra features.
+ * PPM parser options for enabling optimizations and other extra features.
  * None are currently implemented
  */
 declare type PpmParserSettings = {};
@@ -485,6 +571,8 @@ declare class PpmParser extends FlipnoteParserBase {
     static width: number;
     /** Animation frame height */
     static height: number;
+    /** Animation frame aspect ratio */
+    static aspect: number;
     /** Number of animation frame layers */
     static numLayers: number;
     /** Number of colors per layer (aside from transparent) */
@@ -509,6 +597,8 @@ declare class PpmParser extends FlipnoteParserBase {
     imageWidth: number;
     /** Animation frame height, reflects {@link PpmParser.height} */
     imageHeight: number;
+    /** Animation frame aspect ratio, reflects {@link PpmParser.aspect} */
+    aspect: number;
     /** X offset for the top-left corner of the animation frame */
     imageOffsetX: number;
     /** Y offset for the top-left corner of the animation frame */
@@ -557,16 +647,22 @@ declare class PpmParser extends FlipnoteParserBase {
     private decodeSoundHeader;
     private isKeyFrame;
     /**
+     * Decodes the thumbnail image embedded in the Flipnote. Will return a {@link FlipnoteThumbImage} containing raw RGBA data.
+     *
+     * Note: For most purposes, you should probably just decode the thumbnail frame to get a higher resolution image.
+     * @category Meta
+     */
+    getThumbnailImage(): {
+        format: FlipnoteThumbImageFormat;
+        width: number;
+        height: number;
+        data: ArrayBufferLike;
+    };
+    /**
      * Decode a frame, returning the raw pixel buffers for each layer
      * @category Image
     */
     decodeFrame(frameIndex: number): [Uint8Array, Uint8Array];
-    /**
-     * Get the layer draw order for a given frame
-     * @category Image
-     * @returns Array of layer indexes, in the order they should be drawn
-    */
-    getFrameLayerOrder(frameIndex?: number): number[];
     /**
      * Get the color palette indices for a given frame. RGBA colors for these values can be indexed from {@link PpmParser.globalPalette}
      *
@@ -587,6 +683,36 @@ declare class PpmParser extends FlipnoteParserBase {
      * @category Image
      */
     getFramePalette(frameIndex: number): FlipnotePaletteColor[];
+    /**
+     * Determines if a given frame is a video key frame or not. This returns an array of booleans for each layer, since in the KWZ format, keyframe encoding is done on a per-layer basis.
+     * @param frameIndex
+     * @category Image
+    */
+    getIsKeyFrame(frameIndex: number): boolean[];
+    /**
+     * Get the 3D depths for each layer in a given frame. The PPM format doesn't actually store this information, so `0` is returned for both layers. This method is only here for consistency with KWZ.
+     * @param frameIndex
+     * @category Image
+    */
+    getFrameLayerDepths(frameIndex: number): number[];
+    /**
+     * Get the FSID for a given frame's original author. The PPM format doesn't actually store this information, so the current author FSID is returned. This method is only here for consistency with KWZ.
+     * @param frameIndex
+     * @category Meta
+    */
+    getFrameAuthor(frameIndex: number): string;
+    /**
+     * Get the camera flags for a given frame. The PPM format doesn't actually store this information so `false` will be returned for both layers. This method is only here for consistency with KWZ.
+     * @category Image
+     * @returns Array of booleans, indicating whether each layer uses a photo or not
+    */
+    getFrameCameraFlags(frameIndex: number): boolean[];
+    /**
+     * Get the layer draw order for a given frame
+     * @category Image
+     * @returns Array of layer indices, in the order they should be drawn
+    */
+    getFrameLayerOrder(frameIndex: number): number[];
     /**
      * Get the sound effect flags for every frame in the Flipnote
      * @category Audio
@@ -652,7 +778,7 @@ interface KwzMeta extends FlipnoteMeta {
     creationTimestamp: Date;
 }
 /**
- * KWZ parser options for enabling optimisations and other extra features
+ * KWZ parser options for enabling optimizations and other extra features
  */
 declare type KwzParserSettings = {
     /**
@@ -714,13 +840,15 @@ declare class KwzParser extends FlipnoteParserBase {
     static width: number;
     /** Animation frame height */
     static height: number;
+    /** Animation frame aspect ratio */
+    static aspect: number;
     /** Number of animation frame layers */
     static numLayers: number;
     /** Number of colors per layer (aside from transparent) */
     static numLayerColors: number;
     /** Audio track base sample rate */
     static rawSampleRate: number;
-    /** Audio output sample rate. NOTE: probably isn't accurate, full KWZ audio stack is still on the todo */
+    /** Audio output sample rate  */
     static sampleRate: number;
     /** Which audio tracks are available in this format */
     static audioTracks: FlipnoteAudioTrack[];
@@ -738,6 +866,8 @@ declare class KwzParser extends FlipnoteParserBase {
     imageWidth: number;
     /** Animation frame height, reflects {@link KwzParser.height} */
     imageHeight: number;
+    /** Animation frame aspect ratio, reflects {@link KwzParser.aspect} */
+    aspect: number;
     /** X offset for the top-left corner of the animation frame */
     imageOffsetX: number;
     /** Y offset for the top-left corner of the animation frame */
@@ -788,6 +918,18 @@ declare class KwzParser extends FlipnoteParserBase {
     private getFrameOffsets;
     private decodeSoundHeader;
     /**
+     * Decodes the thumbnail image embedded in the Flipnote. Will return a {@link FlipnoteThumbImage} containing JPEG data.
+     *
+     * Note: For most purposes, you should probably just decode the thumbnail fraa to get a higher resolution image.
+     * @category Meta
+     */
+    getThumbnailImage(): {
+        format: FlipnoteThumbImageFormat;
+        width: number;
+        height: number;
+        data: ArrayBufferLike;
+    };
+    /**
      * Get the color palette indices for a given frame. RGBA colors for these values can be indexed from {@link KwzParser.globalPalette}
      *
      * Returns an array where:
@@ -816,15 +958,33 @@ declare class KwzParser extends FlipnoteParserBase {
     */
     getFramePalette(frameIndex: number): FlipnotePaletteColor[];
     private getFrameDiffingFlag;
-    private getFrameLayerSizes;
-    private getFrameLayerDepths;
-    private getFrameAuthor;
-    private decodeFrameSoundFlags;
-    private getFrameCameraFlags;
+    /**
+     * Determines if a given frame is a video key frame or not. This returns an array of booleans for each layer, since keyframe encoding is done on a per-layer basis.
+     * @param frameIndex
+     * @category Image
+    */
+    getIsKeyFrame(frameIndex: number): boolean[];
+    /**
+     * Get the 3D depths for each layer in a given frame.
+     * @param frameIndex
+     * @category Image
+    */
+    getFrameLayerDepths(frameIndex: number): number[];
+    /**
+     * Get the FSID for a given frame's original author.
+     * @param frameIndex
+     * @category Meta
+    */
+    getFrameAuthor(frameIndex: number): string;
+    /**
+     * Get the camera flags for a given frame
+     * @category Image
+     * @returns Array of booleans, indicating whether each layer uses a photo or not
+    */
+    getFrameCameraFlags(frameIndex: number): boolean[];
     /**
      * Get the layer draw order for a given frame
      * @category Image
-     * @returns Array of layer indexes, in the order they should be drawn
     */
     getFrameLayerOrder(frameIndex: number): number[];
     /**
@@ -832,6 +992,7 @@ declare class KwzParser extends FlipnoteParserBase {
      * @category Image
     */
     decodeFrame(frameIndex: number, diffingFlag?: number, isPrevFrame?: boolean): [Uint8Array, Uint8Array, Uint8Array];
+    private decodeFrameSoundFlags;
     /**
      * Get the sound effect flags for every frame in the Flipnote
      * @category Audio
@@ -990,6 +1151,11 @@ declare enum PlayerEvent {
 /** @internal */
 declare type PlayerEventMap = Map<PlayerEvent, Function[]>;
 
+declare enum CanvasStereoscopicMode {
+    None = 0,
+    Dual = 1,
+    Anaglyph = 2
+}
 /** @internal */
 declare abstract class CanvasInterface {
     note: FlipnoteParserBase;
@@ -999,12 +1165,16 @@ declare abstract class CanvasInterface {
     srcHeight: number;
     dstWidth: number;
     dstHeight: number;
-    prevFrameIndex: number;
-    constructor(parent: Element, width: number, height: number);
+    frameIndex: number;
+    supportedStereoscopeModes: CanvasStereoscopicMode[];
+    stereoscopeMode: CanvasStereoscopicMode;
+    stereoscopeStrength: number;
+    constructor(parent: Element, width: number, height: number, options?: {});
     abstract setCanvasSize(width: number, height: number): void;
     abstract setNote(note: FlipnoteParserBase): void;
     abstract clear(color?: [number, number, number, number]): void;
     abstract drawFrame(frameIndex: number): void;
+    abstract requestStereoScopeMode(mode: CanvasStereoscopicMode): void;
     abstract forceUpdate(): void;
     abstract getDataUrl(type?: string, quality?: any): string;
     abstract getBlob(type?: string, quality?: any): Promise<Blob>;
@@ -1055,14 +1225,26 @@ declare class WebglCanvas implements CanvasInterface {
      */
     dstHeight: number;
     /** */
-    prevFrameIndex: number;
+    frameIndex: number;
+    /** */
+    supportedStereoscopeModes: CanvasStereoscopicMode[];
+    /** */
+    stereoscopeMode: CanvasStereoscopicMode;
+    /** */
+    stereoscopeStrength: number;
     private options;
-    private program;
+    private layerProgram;
+    private upscaleProgram;
     private quadBuffer;
     private paletteBuffer;
-    private frameBuffer;
-    private frameBufferBytes;
+    private layerTexture;
+    private layerTexturePixelBuffer;
+    private layerTexturePixels;
     private frameTexture;
+    private frameBuffer;
+    private textureTypes;
+    private textureSizes;
+    private frameBufferTextures;
     private refs;
     private isCtxLost;
     /**
@@ -1080,6 +1262,10 @@ declare class WebglCanvas implements CanvasInterface {
     private createScreenQuad;
     private setBuffersAndAttribs;
     private createTexture;
+    private resizeTexture;
+    private createFramebuffer;
+    private useFramebuffer;
+    private resizeFramebuffer;
     /**
      * Resize the canvas surface
      * @param width - New canvas width, in CSS pixels
@@ -1089,9 +1275,7 @@ declare class WebglCanvas implements CanvasInterface {
      */
     setCanvasSize(width: number, height: number): void;
     /**
-     * Sets the size of the input pixel arrays
-     * @param width
-     * @param height
+     * Sets the note to use for this player
      */
     setNote(note: FlipnoteParserBase): void;
     /**
@@ -1104,11 +1288,14 @@ declare class WebglCanvas implements CanvasInterface {
      * @param frameIndex
      */
     drawFrame(frameIndex: number): void;
+    private upscale;
+    requestStereoScopeMode(mode: CanvasStereoscopicMode): void;
     forceUpdate(): void;
     /**
      * Returns true if the webGL context has returned an error
      */
     isErrorState(): boolean;
+    private drawLayers;
     /**
      * Only a certain number of WebGL contexts can be added to a single page before the browser will start culling old contexts.
      * This method returns true if it has been culled, false if not
@@ -1169,7 +1356,13 @@ declare class Html5Canvas implements CanvasInterface {
     /**  */
     srcHeight: number;
     /** */
-    prevFrameIndex: number;
+    frameIndex: number;
+    /** */
+    supportedStereoscopeModes: CanvasStereoscopicMode[];
+    /** */
+    stereoscopeMode: CanvasStereoscopicMode;
+    /** */
+    stereoscopeStrength: number;
     private options;
     private srcCanvas;
     private srcCtx;
@@ -1194,6 +1387,7 @@ declare class Html5Canvas implements CanvasInterface {
      */
     clear(color?: [number, number, number, number]): void;
     drawFrame(frameIndex: number): void;
+    requestStereoScopeMode(mode: CanvasStereoscopicMode): void;
     forceUpdate(): void;
     getDataUrl(type?: string, quality?: any): string;
     getBlob(type?: string, quality?: any): Promise<Blob>;
@@ -1203,7 +1397,7 @@ declare class Html5Canvas implements CanvasInterface {
 declare type UniversalCanvasOptions = WebglCanvasOptions & Html5CanvasOptions;
 declare class UniversalCanvas implements CanvasInterface {
     /** */
-    subRenderer: CanvasInterface;
+    renderer: CanvasInterface;
     /** */
     note: FlipnoteParserBase;
     /** View width (CSS pixels) */
@@ -1225,18 +1419,31 @@ declare class UniversalCanvas implements CanvasInterface {
     /**  */
     srcHeight: number;
     /** */
-    prevFrameIndex: number;
+    frameIndex: number;
+    /** */
+    isReady: boolean;
+    /** */
+    isHtml5: boolean;
+    /** */
+    supportedStereoscopeModes: CanvasStereoscopicMode[];
+    /** */
+    stereoscopeMode: CanvasStereoscopicMode;
+    /** */
+    stereoscopeStrength: number;
+    private rendererStack;
+    private rendererStackIdx;
     private parent;
     private options;
-    private isReady;
-    private isHtml5;
     constructor(parent: Element, width?: number, height?: number, options?: Partial<UniversalCanvasOptions>);
+    private setSubRenderer;
+    fallbackIfPossible(): void;
     switchToHtml5(): void;
     setCanvasSize(width: number, height: number): void;
     setNote(note: FlipnoteParserBase): void;
     clear(color?: [number, number, number, number]): void;
     drawFrame(frameIndex: number): void;
     forceUpdate(): void;
+    requestStereoScopeMode(mode: CanvasStereoscopicMode): void;
     getDataUrl(type?: string, quality?: any): string;
     getBlob(type?: string, quality?: any): Promise<Blob>;
     destroy(): void;
@@ -1785,7 +1992,7 @@ declare class Player {
      */
     ondurationchange: () => void;
     /**
-     * Fired when playbackc has looped after reaching the end
+     * Fired when playback has looped after reaching the end
      * @category playback
      * @event loop
      */
@@ -1801,7 +2008,7 @@ declare class Player {
      * @category audio
      * @event volumechange
      */
-    onvolumechane: (volume: number) => void;
+    onvolumechange: (volume: number) => void;
     /**
      * Fired when playback progress has changed
      * @category playback
@@ -1919,7 +2126,7 @@ declare class Player {
      */
     clearEvents(): void;
     /**
-     * Destroy a Player instace
+     * Destroy a Player instance
      * @category Lifecycle
      */
     destroy(): Promise<void>;
@@ -2055,7 +2262,7 @@ declare function PlayerMixin<TargetBase extends Constructor>(Target: TargetBase)
         ondurationchange: () => void;
         onloop: () => void;
         onended: () => void;
-        onvolumechane: (volume: number) => void;
+        onvolumechange: (volume: number) => void;
         onprogress: (progress: number) => void;
         ontimeupdate: (time: number) => void;
         onframeupdate: (frameIndex: number) => void;
@@ -2262,6 +2469,6 @@ declare class WavAudio extends EncoderBase {
 /**
  * flipnote.js library version (exported as `flipnote.version`). You can find the latest version on the project's [NPM](https://www.npmjs.com/package/flipnote.js) page.
  */
-declare const version: string;
+declare const version = "5.11.0";
 
 export { CanvasInterface, Flipnote, FlipnoteAudioTrack, FlipnoteAudioTrackInfo, FlipnoteFormat, FlipnoteLayerVisibility, FlipnoteMeta, FlipnotePaletteColor, FlipnotePaletteDefinition, FlipnoteParserSettings, FlipnoteRegion, FlipnoteSoundEffectFlags, FlipnoteSoundEffectTrack, FlipnoteSource, FlipnoteSourceParser, FlipnoteVersion, GifImage, Html5Canvas, KwzParser, KwzParserSettings, LoaderDefinition, LoaderDefinitionList, LoaderReject, LoaderResolve, Player, PlayerEvent, PlayerMixin, PpmParser, PpmParserSettings, UniversalCanvas, WavAudio, WebAudioPlayer, WebglCanvas, loadSource, parseSource, fsid_d as utils, version };

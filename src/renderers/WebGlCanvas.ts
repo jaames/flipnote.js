@@ -7,11 +7,15 @@ import {
   setUniforms,
 } from 'twgl.js';
 
-import type { FlipnoteParserBase } from '../parsers';
+import { FlipnoteParserBase, FlipnoteStereoscopicEye } from '../parsers';
 import { assert, assertBrowserEnv, isBrowser } from '../utils';
-import { CanvasInterface } from './CanvasInterface';
-import quadShader from './shaders/quad.vert';
-import drawFrame from './shaders/drawFrame.frag';
+import { CanvasInterface, CanvasStereoscopicMode } from './CanvasInterface';
+
+import vertShaderLayer from './shaders/layer.vert';
+import fragShaderLayer from './shaders/layer.frag'
+
+import vertShaderUpscale from './shaders/upscale.vert';
+import fragShaderUpscale from './shaders/upscale.frag';
 
 /** 
  * Keeps track of WebGl resources so they can be destroyed properly later
@@ -22,6 +26,7 @@ interface ResourceMap {
   shaders: WebGLShader[];
   textures: WebGLTexture[];
   buffers: WebGLBuffer[];
+  frameBuffers: WebGLFramebuffer[];
 };
 
 /**
@@ -60,45 +65,65 @@ export class WebglCanvas implements CanvasInterface {
   }
 
   /**  */
-  public note: FlipnoteParserBase;
+  note: FlipnoteParserBase;
   /** Canvas HTML element being used as a rendering surface */
-  public canvas: HTMLCanvasElement;
+  canvas: HTMLCanvasElement;
   /** Rendering context - see {@link https://developer.mozilla.org/en-US/docs/Web/API/WebGLRenderingContext} */
-  public gl: WebGLRenderingContext;
+  gl: WebGLRenderingContext;
   /** View width (CSS pixels) */
-  public width: number;
+  width: number;
   /** View height (CSS pixels) */
-  public height: number;
+  height: number;
   /** */
-  public srcWidth: number;
+  srcWidth: number;
   /** */
-  public srcHeight: number;
+  srcHeight: number;
   /** 
    * Backing canvas width (real pixels)
    * Note that this factors in device pixel ratio, so it may not reflect the size of the canvas in CSS pixels
    */
-  public dstWidth: number;
+  dstWidth: number;
   /** 
    * Backing canvas height (real pixels)
    * Note that this factors in device pixel ratio, so it may not reflect the size of the canvas in CSS pixels
    */
-  public dstHeight: number;
+  dstHeight: number;
   /** */
-  public prevFrameIndex: number;
+  frameIndex: number;
+  /** */
+  supportedStereoscopeModes = [
+    CanvasStereoscopicMode.None,
+    CanvasStereoscopicMode.Dual,
+    // CanvasStereoscopicMode.Anaglyph, // couldn't get this working, despite spending lots of time on it :/
+  ];
+  /** */
+  stereoscopeMode = CanvasStereoscopicMode.None;
+  /** */
+  stereoscopeStrength = 0;
 
   private options: WebglCanvasOptions;
-  private program: ProgramInfo; // for drawing renderbuffer w/ filtering
+  private layerProgram: ProgramInfo; // for drawing renderbuffer w/ filtering
+  private upscaleProgram: ProgramInfo; // for drawing renderbuffer w/ filtering
   private quadBuffer: BufferInfo;
   private paletteBuffer = new Uint32Array(16);
-  private frameBuffer: Uint32Array;
-  private frameBufferBytes: Uint8Array; // will be same memory as frameBuffer, just uint8 for webgl texture
+
+  private layerTexture: WebGLTexture;
+  private layerTexturePixelBuffer: Uint32Array;
+  private layerTexturePixels: Uint8Array; // will be same memory as layerTexturePixelBuffer, just uint8 for webgl texture
 
   private frameTexture: WebGLTexture;
+  private frameBuffer: WebGLFramebuffer;
+
+  private textureTypes = new Map<WebGLTexture, number>();
+  private textureSizes = new Map<WebGLTexture, { width: number, height: number }>();
+  private frameBufferTextures = new Map<WebGLFramebuffer, WebGLTexture>();
+
   private refs: ResourceMap = {
     programs: [],
     shaders: [],
     textures: [],
-    buffers: []
+    buffers: [],
+    frameBuffers: []
   };
   private isCtxLost = false;
 
@@ -131,17 +156,18 @@ export class WebglCanvas implements CanvasInterface {
     this.setCanvasSize(this.width, this.height);
     const gl = this.gl;
     if (this.checkContextLoss()) return;
-    this.program = this.createProgram(quadShader, drawFrame);
+    this.layerProgram = this.createProgram(vertShaderLayer, fragShaderLayer);
+    this.upscaleProgram = this.createProgram(vertShaderUpscale, fragShaderUpscale);
     this.quadBuffer = this.createScreenQuad(-1, -1, 2, 2, 1, 1);
-    this.setBuffersAndAttribs(this.program, this.quadBuffer);
+    this.setBuffersAndAttribs(this.layerProgram, this.quadBuffer);
+    this.layerTexture = this.createTexture(gl.RGBA, gl.LINEAR, gl.CLAMP_TO_EDGE);
+
     this.frameTexture = this.createTexture(gl.RGBA, gl.LINEAR, gl.CLAMP_TO_EDGE);
-    // set gl constants
-    gl.useProgram(this.program.program);
-    gl.bindTexture(gl.TEXTURE_2D, this.frameTexture);
+    this.frameBuffer = this.createFramebuffer(this.frameTexture);
   }
 
   private createProgram(vertexShaderSource: string, fragmentShaderSource: string) {
-    if(this.checkContextLoss()) return;
+    if (this.checkContextLoss()) return;
     const gl = this.gl;
     const vert = this.createShader(gl.VERTEX_SHADER, vertexShaderSource);
     const frag = this.createShader(gl.FRAGMENT_SHADER, fragmentShaderSource);
@@ -162,7 +188,7 @@ export class WebglCanvas implements CanvasInterface {
   }
 
   private createShader(type: number, source: string) {
-    if(this.checkContextLoss()) return;
+    if (this.checkContextLoss()) return;
     const gl = this.gl;
     const shader = gl.createShader(type);
     gl.shaderSource(shader, source);
@@ -179,7 +205,7 @@ export class WebglCanvas implements CanvasInterface {
 
   // creating a subdivided quad seems to produce slightly nicer texture filtering
   private createScreenQuad(x0: number, y0: number, width: number, height: number, xSubdivs: number, ySubdivs: number) {
-    if(this.checkContextLoss()) return;
+    if (this.checkContextLoss()) return;
     const numVerts = (xSubdivs + 1) * (ySubdivs + 1);
     const numVertsAcross = xSubdivs + 1;
     const positions = new Float32Array(numVerts * 2);
@@ -228,14 +254,14 @@ export class WebglCanvas implements CanvasInterface {
   }
 
   private setBuffersAndAttribs(program: ProgramInfo, buffer: BufferInfo) {
-    if(this.checkContextLoss()) return;
+    if (this.checkContextLoss()) return;
     const gl = this.gl;
     setAttributes(program.attribSetters, buffer.attribs);
     gl.bindBuffer(gl.ELEMENT_ARRAY_BUFFER, buffer.indices);
   }
 
   private createTexture(type: number, minMag: number, wrap: number, width = 1, height = 1) {
-    if(this.checkContextLoss()) return;
+    if (this.checkContextLoss()) return;
     const gl = this.gl;
     const tex = gl.createTexture();
     gl.bindTexture(gl.TEXTURE_2D, tex);
@@ -245,7 +271,51 @@ export class WebglCanvas implements CanvasInterface {
     gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MAG_FILTER, minMag);
     gl.texImage2D(gl.TEXTURE_2D, 0, type, width, height, 0, type, gl.UNSIGNED_BYTE, null);
     this.refs.textures.push(tex);
+    this.textureTypes.set(tex, type);
+    this.textureSizes.set(tex, { width, height });
     return tex;
+  }
+
+  private resizeTexture(texture: WebGLTexture, width: number, height: number) {
+    if (this.checkContextLoss()) return;
+    const gl = this.gl;
+    const textureType = this.textureTypes.get(texture);
+    gl.bindTexture(gl.TEXTURE_2D, texture);
+    gl.texImage2D(gl.TEXTURE_2D, 0, textureType, width, height, 0, textureType, gl.UNSIGNED_BYTE, null);
+    this.textureSizes.set(texture, { width, height });
+  }
+
+  private createFramebuffer(texture: WebGLTexture) {
+    if (this.checkContextLoss()) return;
+    const gl = this.gl;
+    const fb = gl.createFramebuffer();
+    gl.bindFramebuffer(gl.FRAMEBUFFER, fb);
+    gl.framebufferTexture2D(gl.FRAMEBUFFER, gl.COLOR_ATTACHMENT0, gl.TEXTURE_2D, texture, 0);
+    this.refs.frameBuffers.push(fb);
+    this.frameBufferTextures.set(fb, texture);
+    return fb;
+  }
+
+  private useFramebuffer(fb: WebGLFramebuffer, viewX?: number, viewY?: number, viewWidth?: number, viewHeight?: number) {
+    if (this.checkContextLoss()) return;
+    const gl = this.gl;
+    if (fb === null) {
+      gl.bindFramebuffer(gl.FRAMEBUFFER, null);
+      gl.viewport(viewX ?? 0, viewY ?? 0, viewWidth ?? gl.drawingBufferWidth, viewHeight ?? gl.drawingBufferHeight);
+    } 
+    else {
+      const tex = this.frameBufferTextures.get(fb);
+      const { width, height } = this.textureSizes.get(tex);
+      gl.bindFramebuffer(gl.FRAMEBUFFER, fb);
+      gl.viewport(viewX ?? 0, viewY ?? 0, viewWidth ?? width, viewHeight ?? height);
+    }
+  }
+
+  private resizeFramebuffer(fb: WebGLFramebuffer, width: number, height: number) {
+    if (this.checkContextLoss()) return;
+    const gl = this.gl;
+    const texture = this.frameBufferTextures.get(fb);
+    this.resizeTexture(texture, width, height);
   }
 
   /**
@@ -255,7 +325,7 @@ export class WebglCanvas implements CanvasInterface {
    * 
    * The ratio between `width` and `height` should be 3:4 for best results
    */
-  public setCanvasSize(width: number, height: number) {
+  setCanvasSize(width: number, height: number) {
     const dpi = this.options.useDpi ? (window.devicePixelRatio || 1) : 1;
     const internalWidth = width * dpi;
     const internalHeight = height * dpi;
@@ -267,28 +337,24 @@ export class WebglCanvas implements CanvasInterface {
     this.dstHeight = internalHeight;
     this.canvas.style.width = `${ width }px`;
     this.canvas.style.height = `${ height }px`;
-    const gl = this.gl;
-    if(this.checkContextLoss()) return;
-    gl.viewport(0, 0, gl.drawingBufferWidth, gl.drawingBufferHeight);
+    this.checkContextLoss();
   }
 
   /**
    * Sets the note to use for this player
    */
-  public setNote(note: FlipnoteParserBase) {
-    if(this.checkContextLoss()) return;
-    const gl = this.gl;
+  setNote(note: FlipnoteParserBase) {
+    if (this.checkContextLoss()) return;
     const width = note.imageWidth;
     const height = note.imageHeight;
     this.note = note;
     this.srcWidth = width;
     this.srcHeight = height;
-    // resize frame texture
-    gl.bindTexture(gl.TEXTURE_2D, this.frameTexture);
-    gl.texImage2D(gl.TEXTURE_2D, 0, gl.RGBA, this.srcWidth, this.srcHeight, 0, gl.RGBA, gl.UNSIGNED_BYTE, null);
-    this.frameBuffer = new Uint32Array(width * height);
-    this.frameBufferBytes = new Uint8Array(this.frameBuffer.buffer); // same memory buffer as rgbaData
-    this.prevFrameIndex = undefined;
+    this.resizeFramebuffer(this.frameBuffer, width, height);
+    this.resizeTexture(this.layerTexture, width, height);
+    this.layerTexturePixelBuffer = new Uint32Array(width * height);
+    this.layerTexturePixels = new Uint8Array(this.layerTexturePixelBuffer.buffer); // same memory buffer as rgbaData
+    this.frameIndex = undefined;
     // set canvas alt text
     this.canvas.title = note.getTitle();
   }
@@ -297,57 +363,118 @@ export class WebglCanvas implements CanvasInterface {
    * Clear the canvas
    * @param color optional RGBA color to use as a background color
    */
-  public clear(color?: [number, number, number, number]) {
-    if(this.checkContextLoss()) return;
-    if (color) {
-      const [r, g, b, a] = color;
-      this.gl.clearColor(r / 255, g / 255, b / 255, a /255);
-    }
-    this.gl.clear(this.gl.COLOR_BUFFER_BIT);
+  clear(color?: [number, number, number, number]) {
+    if (this.checkContextLoss()) return;
+    const gl = this.gl;
+    const paperColor = color ?? this.note.getFramePalette(this.frameIndex)[0];
+    const [r, g, b, a] = paperColor;
+    gl.clearColor(r / 255, g / 255, b / 255, a /255);
+    gl.clear(gl.COLOR_BUFFER_BIT);
   }
 
   /**
    * Draw a frame from the currently loaded Flipnote
    * @param frameIndex 
    */
-  public drawFrame(frameIndex: number) {
-    if(this.checkContextLoss()) return;
-    const {
-      gl,
-      srcWidth: textureWidth,
-      srcHeight: textureHeight,
-    } = this;
-    // get frame pixels as RGBA buffer
-    this.note.getFramePixelsRgba(frameIndex, this.frameBuffer, this.paletteBuffer);
-    // clear whatever's already been drawn
-    // const paperColor = note.getFramePalette(frameIndex)[0];
-    // this.clear(paperColor);
-    gl.clear(this.gl.COLOR_BUFFER_BIT);
-    // update texture
-    gl.texImage2D(gl.TEXTURE_2D, 0, gl.RGBA, textureWidth, textureHeight, 0, gl.RGBA, gl.UNSIGNED_BYTE, this.frameBufferBytes);
-    // prep uniforms
-    setUniforms(this.program, {
-      u_flipY: true,
+  drawFrame(frameIndex: number) {
+    if (this.checkContextLoss()) return;
+
+    const gl = this.gl;
+    const mode = this.stereoscopeMode;
+    const strength = this.stereoscopeStrength;
+    this.frameIndex = frameIndex;
+
+    if (mode === CanvasStereoscopicMode.None) {
+      this.drawLayers(frameIndex);
+      this.useFramebuffer(null);
+      this.upscale(gl.drawingBufferWidth, gl.drawingBufferHeight);
+    }
+    else if (mode === CanvasStereoscopicMode.Dual) {
+      this.drawLayers(frameIndex, strength, FlipnoteStereoscopicEye.Left);
+      this.useFramebuffer(null, 0, 0, gl.drawingBufferWidth / 2, gl.drawingBufferHeight);
+      this.upscale(gl.drawingBufferWidth / 2, gl.drawingBufferHeight);
+
+      this.drawLayers(frameIndex, strength, FlipnoteStereoscopicEye.Right);
+      this.useFramebuffer(null, gl.drawingBufferWidth / 2, 0, gl.drawingBufferWidth / 2, gl.drawingBufferHeight);
+      this.upscale(gl.drawingBufferWidth / 2, gl.drawingBufferHeight);
+    }
+  }
+
+  private upscale(width: number, height: number) {
+    if (this.checkContextLoss()) return;
+
+    const gl = this.gl;
+    gl.useProgram(this.upscaleProgram.program);
+
+    setUniforms(this.upscaleProgram, {
+      // u_flipY: true,
       u_tex: this.frameTexture,
       u_textureSize: [this.srcWidth, this.srcHeight],
-      u_screenSize: [gl.drawingBufferWidth, gl.drawingBufferHeight],
+      u_screenSize: [width, height],
     });
-    // draw!
+
     gl.drawElements(gl.TRIANGLES, this.quadBuffer.numElements, this.quadBuffer.elementType, 0);
-    this.prevFrameIndex = frameIndex;
+  }
+
+  requestStereoScopeMode(mode: CanvasStereoscopicMode) {
+    if (this.supportedStereoscopeModes.includes(mode))
+      this.stereoscopeMode = mode;
+    else
+      this.stereoscopeMode = CanvasStereoscopicMode.None;
+    this.forceUpdate();
   }
    
-  public forceUpdate() {
-    if (this.prevFrameIndex !== undefined)
-      this.drawFrame(this.prevFrameIndex);
+  forceUpdate() {
+    if (this.frameIndex !== undefined)
+      this.drawFrame(this.frameIndex);
   }
 
   /**
    * Returns true if the webGL context has returned an error
    */
-  public isErrorState() {
+  isErrorState() {
     const gl = this.gl;
     return gl === null || gl.getError() !== gl.NO_ERROR;
+  }
+
+  private drawLayers(
+    frameIndex: number,
+    depthStrength = 0,
+    depthEye: FlipnoteStereoscopicEye = FlipnoteStereoscopicEye.Left,
+    shouldClear = true,
+  ) {
+    const gl = this.gl;
+    const note = this.note;
+    const srcWidth = this.srcWidth;
+    const srcHeight = this.srcHeight;
+    const numLayers = note.numLayers;
+    const layerOrder = note.getFrameLayerOrder(frameIndex);
+    const layerDepths = note.getFrameLayerDepths(frameIndex);
+    
+    this.useFramebuffer(this.frameBuffer);
+
+    if (shouldClear)
+      this.clear();
+
+    gl.useProgram(this.layerProgram.program);
+
+    for (let i = 0; i < numLayers; i++) {
+      const layerIndex = layerOrder[i];
+      note.getLayerPixelsRgba(frameIndex, layerIndex, this.layerTexturePixelBuffer, this.paletteBuffer);
+      
+      setUniforms(this.layerProgram, {
+        u_flipY: true,
+        u_tex: this.layerTexture,
+        u_textureSize: [srcWidth, srcHeight],
+        u_3d_mode: this.stereoscopeMode,
+        u_3d_eye: depthEye,
+        u_3d_depth: layerDepths[layerIndex],
+        u_3d_strength: depthStrength,
+      });
+      
+      gl.texImage2D(gl.TEXTURE_2D, 0, gl.RGBA, srcWidth, srcHeight, 0, gl.RGBA, gl.UNSIGNED_BYTE, this.layerTexturePixels);
+      gl.drawElements(gl.TRIANGLES, this.quadBuffer.numElements, this.quadBuffer.elementType, 0);
+    }
   }
 
   /**
@@ -381,7 +508,7 @@ export class WebglCanvas implements CanvasInterface {
    * @param type image mime type (`image/jpeg`, `image/png`, etc)
    * @param quality image quality where supported, between 0 and 1
    */
-  public getDataUrl(type?: string, quality?: any) {
+  getDataUrl(type?: string, quality?: any) {
     return this.canvas.toDataURL(type, quality);
   }
 
@@ -392,7 +519,7 @@ export class WebglCanvas implements CanvasInterface {
   /**
    * Frees any resources used by this canvas instance
    */
-  public destroy() {
+  destroy() {
     const refs = this.refs;
     const gl = this.gl;
     const canvas = this.canvas;
@@ -408,13 +535,20 @@ export class WebglCanvas implements CanvasInterface {
       gl.deleteBuffer(buffer);
     });
     refs.buffers = [];
+    refs.frameBuffers.forEach((fb) => {
+      gl.deleteFramebuffer(fb);
+    });
+    refs.frameBuffers = [];
     refs.programs.forEach((program) => {
       gl.deleteProgram(program);
     });
     refs.programs = [];
     this.paletteBuffer = null;
-    this.frameBuffer = null;
-    this.frameBufferBytes = null;
+    this.layerTexturePixelBuffer = null;
+    this.layerTexturePixels = null;
+    this.textureTypes.clear();
+    this.textureSizes.clear();
+    this.frameBufferTextures.clear();
     if (canvas && canvas.parentElement) {
       // shrink the canvas to reduce memory usage until it is garbage collected
       canvas.width = 1;

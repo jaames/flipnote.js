@@ -1,5 +1,5 @@
 /*!!
-flipnote.js v5.8.5
+flipnote.js v5.11.0
 https://flipnote.js.org
 A JavaScript library for parsing, converting, and in-browser playback of the proprietary animation formats used by Nintendo's Flipnote Studio and Flipnote Studio 3D apps.
 2018 - 2022 James Daniel
@@ -311,7 +311,7 @@ async function rsaLoadPublicKey(pemKey, hashType) {
     // convert to byte array
     const keyBytes = new Uint8Array(keyPlaintext.length)
         .map((_, i) => keyPlaintext.charCodeAt(i));
-    // create cypto api key
+    // create crypto api key
     return await SUBTLE_CRYPTO.importKey('spki', keyBytes.buffer, {
         name: ALGORITHM,
         hash: hashType,
@@ -360,6 +360,27 @@ var FlipnoteRegion;
     FlipnoteRegion["UNKNOWN"] = "UNKNOWN";
 })(FlipnoteRegion || (FlipnoteRegion = {}));
 /**
+ * Match an FSID from Flipnote Studio
+ * e.g. 1440D700CEF78DA8
+ * @internal
+ */
+const REGEX_PPM_FSID = /^[0159]{1}[0-9A-F]{6}0[0-9A-F]{8}$/;
+/**
+ * @internal
+ * There are several known exceptions to the FSID format, all from Nintendo or Hatena developer and event accounts (mario, zelda 25th, etc).
+ * This list was compiled from data provided by the Flipnote Archive, so it can be considered comprehensive enough to match any Flipnote you may encounter.
+ */
+const PPM_FSID_SPECIAL_CASE = [
+    '01FACA7A4367FC5F', '03D6E959E2F9A42D',
+    '03F80445160587FA', '04068426E1008915',
+    '092A3EC8199FD5D5', '0B8D56BA1BD441B8',
+    '0E61C75C9B5AD90B', '14E494E35A443235'
+];
+/**
+ * @internal
+ */
+PPM_FSID_SPECIAL_CASE.map(id => convertPpmFsidToKwzFsidSuffix(id));
+/**
  * Get the region for any valid Flipnote Studio user ID
  */
 function getPpmFsidRegion(fsid) {
@@ -375,15 +396,24 @@ function getPpmFsidRegion(fsid) {
             return FlipnoteRegion.UNKNOWN;
     }
 }
+/**
+ * Convert a PPM Flipnote Studio ID to the format used by KWZ Flipnote Studio IDs (as seen in Nintendo DSi Library Flipnotes).
+ * Will return `null` if the conversion could not be made.
+ *
+ * NOTE: KWZ Flipnote Studio IDs contain an extra two characters at the beginning. It is not possible to resolve these from a PPM Flipnote Studio ID.
+ */
+function convertPpmFsidToKwzFsidSuffix(fsid) {
+    if (REGEX_PPM_FSID.test(fsid))
+        return (fsid.slice(14, 16) + fsid.slice(12, 14) + '-' + fsid.slice(10, 12) + fsid.slice(8, 10) + '-' + fsid.slice(6, 8) + fsid.slice(4, 6) + '-' + fsid.slice(2, 4) + fsid.slice(0, 2)).toLowerCase();
+    return null;
+}
 
 /** @internal */
 ((function () {
     if (!isBrowser) {
         return function () { };
     }
-    var a = document.createElement("a");
-    // document.body.appendChild(a);
-    // a.style.display = "none";
+    const a = document.createElement('a');
     return function (blob, filename) {
         const url = window.URL.createObjectURL(blob);
         a.href = url;
@@ -401,6 +431,18 @@ var FlipnoteFormat;
     /** Animation format used by Flipnote Studio 3D (Nintendo 3DS) */
     FlipnoteFormat["KWZ"] = "KWZ";
 })(FlipnoteFormat || (FlipnoteFormat = {}));
+/** Buffer format for a FlipnoteThumbImage  */
+var FlipnoteThumbImageFormat;
+(function (FlipnoteThumbImageFormat) {
+    FlipnoteThumbImageFormat[FlipnoteThumbImageFormat["Jpeg"] = 0] = "Jpeg";
+    FlipnoteThumbImageFormat[FlipnoteThumbImageFormat["Rgba"] = 1] = "Rgba";
+})(FlipnoteThumbImageFormat || (FlipnoteThumbImageFormat = {}));
+/** stereoscopic eye view (left/right) for 3D effects */
+var FlipnoteStereoscopicEye;
+(function (FlipnoteStereoscopicEye) {
+    FlipnoteStereoscopicEye[FlipnoteStereoscopicEye["Left"] = 0] = "Left";
+    FlipnoteStereoscopicEye[FlipnoteStereoscopicEye["Right"] = 1] = "Right";
+})(FlipnoteStereoscopicEye || (FlipnoteStereoscopicEye = {}));
 /** Identifies a Flipnote audio track type */
 var FlipnoteAudioTrack;
 (function (FlipnoteAudioTrack) {
@@ -456,7 +498,7 @@ class FlipnoteParserBase extends DataStream {
     }
     /**
      * Get file default title - e.g. "Flipnote by Y", "Comment by X", etc.
-     * A format object can be passed for localisation, where `$USERNAME` gets replaced by author name:
+     * A format object can be passed for localization, where `$USERNAME` gets replaced by author name:
      * ```js
      * {
      *  COMMENT: 'Comment by $USERNAME',
@@ -504,7 +546,7 @@ class FlipnoteParserBase extends DataStream {
      * NOTE: if the visibility flag for this layer is turned off, the result will be empty
      * @category Image
     */
-    getLayerPixels(frameIndex, layerIndex, imageBuffer = new Uint8Array(this.imageWidth * this.imageHeight)) {
+    getLayerPixels(frameIndex, layerIndex, imageBuffer = new Uint8Array(this.imageWidth * this.imageHeight), depthStrength = 0, depthEye = FlipnoteStereoscopicEye.Left) {
         assertRange(frameIndex, 0, this.frameCount - 1, 'Frame index');
         assertRange(layerIndex, 0, this.numLayers - 1, 'Layer index');
         // palette
@@ -513,8 +555,11 @@ class FlipnoteParserBase extends DataStream {
         // raw pixels
         const layers = this.decodeFrame(frameIndex);
         const layerBuffer = layers[layerIndex];
+        const depth = Math.floor(this.getFrameLayerDepths(frameIndex)[layerIndex] * depthStrength);
+        const depthShift = ((depthEye == FlipnoteStereoscopicEye.Left) ? -depth : depth);
         // image dimensions and crop
         const srcStride = this.srcWidth;
+        const dstStride = this.imageWidth;
         const width = this.imageWidth;
         const height = this.imageHeight;
         const xOffs = this.imageOffsetX;
@@ -528,7 +573,7 @@ class FlipnoteParserBase extends DataStream {
         for (let srcY = yOffs, dstY = 0; dstY < height; srcY++, dstY++) {
             for (let srcX = xOffs, dstX = 0; dstX < width; srcX++, dstX++) {
                 const srcPtr = srcY * srcStride + srcX;
-                const dstPtr = dstY * width + dstX;
+                const dstPtr = dstY * dstStride + dstX + depthShift;
                 let pixel = layerBuffer[srcPtr];
                 if (pixel !== 0)
                     imageBuffer[dstPtr] = palette[palettePtr + pixel];
@@ -542,7 +587,7 @@ class FlipnoteParserBase extends DataStream {
      * NOTE: if the visibility flag for this layer is turned off, the result will be empty
      * @category Image
     */
-    getLayerPixelsRgba(frameIndex, layerIndex, imageBuffer = new Uint32Array(this.imageWidth * this.imageHeight), paletteBuffer = new Uint32Array(16)) {
+    getLayerPixelsRgba(frameIndex, layerIndex, imageBuffer = new Uint32Array(this.imageWidth * this.imageHeight), paletteBuffer = new Uint32Array(16), depthStrength = 0, depthEye = FlipnoteStereoscopicEye.Left) {
         assertRange(frameIndex, 0, this.frameCount - 1, 'Frame index');
         assertRange(layerIndex, 0, this.numLayers - 1, 'Layer index');
         // palette
@@ -551,14 +596,18 @@ class FlipnoteParserBase extends DataStream {
         // raw pixels
         const layers = this.decodeFrame(frameIndex);
         const layerBuffer = layers[layerIndex];
+        // depths
+        const depth = Math.floor(this.getFrameLayerDepths(frameIndex)[layerIndex] * depthStrength);
+        const depthShift = ((depthEye == FlipnoteStereoscopicEye.Left) ? -depth : depth);
         // image dimensions and crop
         const srcStride = this.srcWidth;
-        const width = this.imageWidth;
+        const dstStride = this.imageWidth;
+        const width = this.imageWidth - depth;
         const height = this.imageHeight;
         const xOffs = this.imageOffsetX;
         const yOffs = this.imageOffsetY;
         // clear image buffer before writing
-        imageBuffer.fill(paletteBuffer[0]);
+        imageBuffer.fill(0);
         // handle layer visibility by returning a blank image if the layer is invisible
         if (!this.layerVisibility[layerIndex + 1])
             return imageBuffer;
@@ -566,7 +615,7 @@ class FlipnoteParserBase extends DataStream {
         for (let srcY = yOffs, dstY = 0; dstY < height; srcY++, dstY++) {
             for (let srcX = xOffs, dstX = 0; dstX < width; srcX++, dstX++) {
                 const srcPtr = srcY * srcStride + srcX;
-                const dstPtr = dstY * width + dstX;
+                const dstPtr = dstY * dstStride + dstX + depthShift;
                 let pixel = layerBuffer[srcPtr];
                 if (pixel !== 0)
                     imageBuffer[dstPtr] = paletteBuffer[palettePtr + pixel];
@@ -578,9 +627,10 @@ class FlipnoteParserBase extends DataStream {
      * Get the image for a given frame, as palette indices
      * @category Image
     */
-    getFramePixels(frameIndex, imageBuffer = new Uint8Array(this.imageWidth * this.imageHeight)) {
+    getFramePixels(frameIndex, imageBuffer = new Uint8Array(this.imageWidth * this.imageHeight), depthStrength = 0, depthEye = FlipnoteStereoscopicEye.Left) {
         // image dimensions and crop
         const srcStride = this.srcWidth;
+        this.imageWidth;
         const width = this.imageWidth;
         const height = this.imageHeight;
         const xOffs = this.imageOffsetX;
@@ -591,12 +641,15 @@ class FlipnoteParserBase extends DataStream {
         imageBuffer.fill(palette[0]);
         // get layer info + decode into buffers
         const layerOrder = this.getFrameLayerOrder(frameIndex);
+        const layerDepth = this.getFrameLayerDepths(frameIndex);
         const layers = this.decodeFrame(frameIndex);
         // merge layers into framebuffer
         for (let i = 0; i < this.numLayers; i++) {
             const layerIndex = layerOrder[i];
             const layerBuffer = layers[layerIndex];
             const palettePtr = layerIndex * this.numLayerColors;
+            const depth = Math.floor(layerDepth[layerIndex] * depthStrength);
+            const depthShift = ((depthEye == FlipnoteStereoscopicEye.Left) ? -depth : depth);
             // skip if layer is not visible
             if (!this.layerVisibility[layerIndex + 1])
                 continue;
@@ -604,7 +657,7 @@ class FlipnoteParserBase extends DataStream {
             for (let srcY = yOffs, dstY = 0; dstY < height; srcY++, dstY++) {
                 for (let srcX = xOffs, dstX = 0; dstX < width; srcX++, dstX++) {
                     const srcPtr = srcY * srcStride + srcX;
-                    const dstPtr = dstY * width + dstX;
+                    const dstPtr = dstY * width + dstX + depthShift;
                     let pixel = layerBuffer[srcPtr];
                     if (pixel !== 0)
                         imageBuffer[dstPtr] = palette[palettePtr + pixel];
@@ -617,10 +670,11 @@ class FlipnoteParserBase extends DataStream {
      * Get the image for a given frame as an uint32 array of RGBA pixels
      * @category Image
      */
-    getFramePixelsRgba(frameIndex, imageBuffer = new Uint32Array(this.imageWidth * this.imageHeight), paletteBuffer = new Uint32Array(16)) {
+    getFramePixelsRgba(frameIndex, imageBuffer = new Uint32Array(this.imageWidth * this.imageHeight), paletteBuffer = new Uint32Array(16), depthStrength = 0, depthEye = FlipnoteStereoscopicEye.Left) {
         assertRange(frameIndex, 0, this.frameCount - 1, 'Frame index');
         // image dimensions and crop
         const srcStride = this.srcWidth;
+        const dstStride = this.imageWidth;
         const width = this.imageWidth;
         const height = this.imageHeight;
         const xOffs = this.imageOffsetX;
@@ -631,20 +685,22 @@ class FlipnoteParserBase extends DataStream {
         imageBuffer.fill(paletteBuffer[0]);
         // get layer info + decode into buffers
         const layerOrder = this.getFrameLayerOrder(frameIndex);
+        const layerDepth = this.getFrameLayerDepths(frameIndex);
         const layers = this.decodeFrame(frameIndex);
         // merge layers into framebuffer
         for (let i = 0; i < this.numLayers; i++) {
             const layerIndex = layerOrder[i];
-            const layerBuffer = layers[layerIndex];
-            const palettePtr = layerIndex * this.numLayerColors;
             // skip if layer is not visible
             if (!this.layerVisibility[layerIndex + 1])
                 continue;
-            // merge layer into rgb buffer
-            for (let srcY = yOffs, dstY = 0; dstY < height; srcY++, dstY++) {
-                for (let srcX = xOffs, dstX = 0; dstX < width; srcX++, dstX++) {
+            const layerBuffer = layers[layerIndex];
+            const palettePtr = layerIndex * this.numLayerColors;
+            const depth = Math.floor(layerDepth[layerIndex] * depthStrength);
+            const depthShift = ((depthEye == FlipnoteStereoscopicEye.Left) ? -depth : depth);
+            for (let srcY = yOffs, dstY = 0; srcY < height; srcY++, dstY++) {
+                for (let srcX = xOffs, dstX = 0; srcX < width; srcX++, dstX++) {
                     const srcPtr = srcY * srcStride + srcX;
-                    const dstPtr = dstY * width + dstX;
+                    const dstPtr = dstY * dstStride + dstX + depthShift;
                     let pixel = layerBuffer[srcPtr];
                     if (pixel !== 0)
                         imageBuffer[dstPtr] = paletteBuffer[palettePtr + pixel];
@@ -665,12 +721,12 @@ class FlipnoteParserBase extends DataStream {
         return paletteBuffer;
     }
     /**
-     * Get the usage flags for a given track accross every frame
+     * Get the usage flags for a given track across every frame
      * @returns an array of booleans for every frame, indicating whether the track is used on that frame
      * @category Audio
      */
     getSoundEffectFlagsForTrack(trackId) {
-        return this.getSoundEffectFlags().map(frammeFlags => frammeFlags[trackId]);
+        return this.getSoundEffectFlags().map(flags => flags[trackId]);
     }
     ;
     /**
@@ -695,11 +751,11 @@ class FlipnoteParserBase extends DataStream {
 
 /**
  * PPM framerates in frames per second, indexed by the in-app frame speed.
- * Frame speed 0 is never noramally used
+ * Frame speed 0 is never normally used
  */
 const PPM_FRAMERATES = [0.5, 0.5, 1, 2, 4, 6, 12, 20, 30];
 /**
- * PPM color defines (red, green, blue, alpha)
+ * PPM frame color defines (red, green, blue, alpha)
  */
 const PPM_PALETTE = {
     WHITE: [0xff, 0xff, 0xff, 0xff],
@@ -707,6 +763,28 @@ const PPM_PALETTE = {
     RED: [0xff, 0x2a, 0x2a, 0xff],
     BLUE: [0x0a, 0x39, 0xff, 0xff]
 };
+/**
+ * @internal
+ * PPM thumbnail color defines (in ABGR order)
+ */
+const PPM_THUMB_PALETTE = [
+    0xFFFFFFFF,
+    0xFF525252,
+    0xFFFFFFFF,
+    0xFF9C9C9C,
+    0xFF4448FF,
+    0xFF4F51C8,
+    0xFFACADFF,
+    0xFF00FF00,
+    0xFFFF4048,
+    0xFFB84F51,
+    0xFFFFABAD,
+    0xFF00FF00,
+    0xFFB757B6,
+    0xFF00FF00,
+    0xFF00FF00,
+    0xFF00FF00,
+];
 /**
  * RSA public key used to verify that the PPM file signature is genuine.
  *
@@ -740,6 +818,8 @@ class PpmParser extends FlipnoteParserBase {
         this.imageWidth = PpmParser.width;
         /** Animation frame height, reflects {@link PpmParser.height} */
         this.imageHeight = PpmParser.height;
+        /** Animation frame aspect ratio, reflects {@link PpmParser.aspect} */
+        this.aspect = PpmParser.aspect;
         /** X offset for the top-left corner of the animation frame */
         this.imageOffsetX = 0;
         /** Y offset for the top-left corner of the animation frame */
@@ -910,6 +990,36 @@ class PpmParser extends FlipnoteParserBase {
         return (header >> 7) & 0x1;
     }
     /**
+     * Decodes the thumbnail image embedded in the Flipnote. Will return a {@link FlipnoteThumbImage} containing raw RGBA data.
+     *
+     * Note: For most purposes, you should probably just decode the thumbnail frame to get a higher resolution image.
+     * @category Meta
+     */
+    getThumbnailImage() {
+        this.seek(0xA0);
+        const data = this.readBytes(1536);
+        const pixels = new Uint32Array(64 * 48);
+        let ptr = 0;
+        for (let tileY = 0; tileY < 48; tileY += 8) {
+            for (let tileX = 0; tileX < 64; tileX += 8) {
+                for (let line = 0; line < 8; line += 1) {
+                    for (let pixel = 0; pixel < 8; pixel += 2) {
+                        const x = tileX + pixel;
+                        const y = tileY + line;
+                        pixels[y * 64 + x] = PPM_THUMB_PALETTE[data[ptr] & 0xF];
+                        pixels[y * 64 + x + 1] = PPM_THUMB_PALETTE[(data[ptr] << 4) & 0xF];
+                    }
+                }
+            }
+        }
+        return {
+            format: FlipnoteThumbImageFormat.Rgba,
+            width: 64,
+            height: 48,
+            data: pixels.buffer
+        };
+    }
+    /**
      * Decode a frame, returning the raw pixel buffers for each layer
      * @category Image
     */
@@ -995,7 +1105,7 @@ class PpmParser extends FlipnoteParserBase {
                         // read lineHeader as a big-endian int
                         var lineHeader = this.readUint32(false);
                         // loop through each bit in the line header
-                        // shift lineheader to the left by 1 bit every interation, 
+                        // shift lineheader to the left by 1 bit every iteration, 
                         // so on the next loop cycle the next bit will be checked
                         // and if the line header equals 0, no more bits are set, 
                         // the rest of the line is empty and can be skipped
@@ -1022,7 +1132,7 @@ class PpmParser extends FlipnoteParserBase {
                 }
             }
         }
-        // if the current frame is based on changes from the preivous one, merge them by XORing their values
+        // if the current frame is based on changes from the previous one, merge them by XORing their values
         const layer1 = this.layerBuffers[0];
         const layer2 = this.layerBuffers[1];
         const layer1Prev = this.prevLayerBuffers[0];
@@ -1063,15 +1173,6 @@ class PpmParser extends FlipnoteParserBase {
         return this.layerBuffers;
     }
     /**
-     * Get the layer draw order for a given frame
-     * @category Image
-     * @returns Array of layer indexes, in the order they should be drawn
-    */
-    getFrameLayerOrder(frameIndex) {
-        assertRange(frameIndex, 0, this.frameCount - 1, 'Frame index');
-        return [1, 0];
-    }
-    /**
      * Get the color palette indices for a given frame. RGBA colors for these values can be indexed from {@link PpmParser.globalPalette}
      *
      * Returns an array where:
@@ -1110,6 +1211,47 @@ class PpmParser extends FlipnoteParserBase {
         assertRange(frameIndex, 0, this.frameCount - 1, 'Frame index');
         const indices = this.getFramePaletteIndices(frameIndex);
         return indices.map(colorIndex => this.globalPalette[colorIndex]);
+    }
+    /**
+     * Determines if a given frame is a video key frame or not. This returns an array of booleans for each layer, since in the KWZ format, keyframe encoding is done on a per-layer basis.
+     * @param frameIndex
+     * @category Image
+    */
+    getIsKeyFrame(frameIndex) {
+        const flag = this.isKeyFrame(frameIndex) === 1;
+        return [flag, flag];
+    }
+    /**
+     * Get the 3D depths for each layer in a given frame. The PPM format doesn't actually store this information, so `0` is returned for both layers. This method is only here for consistency with KWZ.
+     * @param frameIndex
+     * @category Image
+    */
+    getFrameLayerDepths(frameIndex) {
+        return [0, 0];
+    }
+    /**
+     * Get the FSID for a given frame's original author. The PPM format doesn't actually store this information, so the current author FSID is returned. This method is only here for consistency with KWZ.
+     * @param frameIndex
+     * @category Meta
+    */
+    getFrameAuthor(frameIndex) {
+        return this.meta.current.fsid;
+    }
+    /**
+     * Get the camera flags for a given frame. The PPM format doesn't actually store this information so `false` will be returned for both layers. This method is only here for consistency with KWZ.
+     * @category Image
+     * @returns Array of booleans, indicating whether each layer uses a photo or not
+    */
+    getFrameCameraFlags(frameIndex) {
+        return [false, false];
+    }
+    /**
+     * Get the layer draw order for a given frame
+     * @category Image
+     * @returns Array of layer indices, in the order they should be drawn
+    */
+    getFrameLayerOrder(frameIndex) {
+        return [1, 0];
     }
     /**
      * Get the sound effect flags for every frame in the Flipnote
@@ -1177,7 +1319,6 @@ class PpmParser extends FlipnoteParserBase {
     */
     decodeAudioTrack(trackId) {
         // note this doesn't resample
-        // TODO: kinda slow, maybe use sample lookup table
         // decode a 4 bit IMA adpcm audio track
         // https://github.com/Flipnote-Collective/flipnote-studio-docs/wiki/PPM-format#sound-data
         const src = this.getAudioTrackRaw(trackId);
@@ -1313,6 +1454,8 @@ PpmParser.format = FlipnoteFormat.PPM;
 PpmParser.width = 256;
 /** Animation frame height */
 PpmParser.height = 192;
+/** Animation frame aspect ratio */
+PpmParser.aspect = 3 / 4;
 /** Number of animation frame layers */
 PpmParser.numLayers = 2;
 /** Number of colors per layer (aside from transparent) */

@@ -14,10 +14,12 @@
 
 ## Features
 
-* Full file parser implementations for animations from both Flipnote Studio and Flipnote Studio 3D - with a consistent API for reading metadata, rendering frames, mixing audio, verifying signatures, and more
+* Full file parser implementations for animations from both Flipnote Studio and Flipnote Studio 3D, with a consistent API for dealing with metadata, thumbnails, frames, audio, signatures, and more
+* High emphasis on accuracy, with reverse-engineered code being referenced as much as possible; frame rendering and audio mixing/interpolation are identical to console output
 * Realtime browser-based playback for frames and audio, with a player API based on the HTML5 Video and Audio APIs
 * Optional web component for easily embedding a Flipnote player UI on any web page
 * WebGL renderer with crisp pixel scaling (using sharp-bilinear filtering), with a HTML5 canvas fallback
+* Supports Flipnote Studio 3D's layer depth feature with [stereoscopic](https://en.wikipedia.org/wiki/Stereoscopy) rendering.
 * Built-in GIF and WAV converters
 * Works in web browser and NodeJS environments
 * Exports full Typescript types
@@ -27,7 +29,7 @@
 
 🔆 I consider this library to be feature complete - notwithstanding a new Flipnote Studio release, of course!
 
-It's been a fun pet project so I may return to do some tweaks, implement support for interesting web features as they come, etc, etc. Please also understand that I consider Flipnote encoding to be beyond the scope of what I set out to accomplish (making Flipnotes playable in-browser) and as such I will not be implementing it here.
+It's been a fun pet project so I may return to do some tweaks, implement support for interesting web features as they come, etc, etc. Please also understand that I consider Flipnote encoding to be beyond the scope of what I set out to accomplish (making Flipnote content viewable outside of the original apps) and as such I will not be implementing it here.
 
 ## Background
 

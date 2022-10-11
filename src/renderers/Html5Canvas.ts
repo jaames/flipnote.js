@@ -1,6 +1,6 @@
 import type { FlipnoteParserBase } from '../parsers';
 import { assert, assertBrowserEnv, isBrowser } from '../utils';
-import { CanvasInterface } from './CanvasInterface';
+import { CanvasInterface, CanvasStereoscopicMode } from './CanvasInterface';
 
 /**
  * Setup options for {@link Html5Canvas}
@@ -33,31 +33,39 @@ export class Html5Canvas implements CanvasInterface {
   }
 
   /** */
-  public note: FlipnoteParserBase;
+  note: FlipnoteParserBase;
   /** Canvas HTML element being used as a rendering surface */
-  public canvas: HTMLCanvasElement;
+  canvas: HTMLCanvasElement;
   /** Rendering context */
-  public ctx: CanvasRenderingContext2D;
+  ctx: CanvasRenderingContext2D;
   /** View width (CSS pixels) */
-  public width: number;
+  width: number;
   /** View height (CSS pixels) */
-  public height: number;
+  height: number;
   /** 
    * Backing canvas width (real pixels)
    * Note that this factors in device pixel ratio, so it may not reflect the size of the canvas in CSS pixels
   */
-  public dstWidth: number;
+  dstWidth: number;
   /** 
    * Backing canvas height (real pixels)
    * Note that this factors in device pixel ratio, so it may not reflect the size of the canvas in CSS pixels
   */
-  public dstHeight: number;
+  dstHeight: number;
   /**  */
-  public srcWidth: number;
+  srcWidth: number;
   /**  */
-  public srcHeight: number;
+  srcHeight: number;
   /** */
-  public prevFrameIndex: number;
+  frameIndex: number;
+  /** */
+  supportedStereoscopeModes = [
+    CanvasStereoscopicMode.None
+  ];
+  /** */
+  stereoscopeMode = CanvasStereoscopicMode.None;
+  /** */
+  stereoscopeStrength = 0;
 
   private options: Html5CanvasOptions;
   private srcCanvas: HTMLCanvasElement;
@@ -88,7 +96,7 @@ export class Html5Canvas implements CanvasInterface {
    * 
    * The ratio between `width` and `height` should be 3:4 for best results
    */
-  public setCanvasSize(width: number, height: number) {
+  setCanvasSize(width: number, height: number) {
     const canvas = this.canvas;
     const useDpi = this.options.useDpi;
     const dpi = useDpi ? (window.devicePixelRatio || 1) : 1;
@@ -106,7 +114,7 @@ export class Html5Canvas implements CanvasInterface {
   
   /**
    */
-  public setNote(note: FlipnoteParserBase) {
+  setNote(note: FlipnoteParserBase) {
     const width = note.imageWidth;
     const height = note.imageHeight;
     this.note = note;
@@ -118,7 +126,7 @@ export class Html5Canvas implements CanvasInterface {
     this.frameImage = this.srcCtx.createImageData(width, height);
     // uint32 view of the img buffer memory
     this.frameBuffer = new Uint32Array(this.frameImage.data.buffer);
-    this.prevFrameIndex = undefined;
+    this.frameIndex = undefined;
     // set canvas alt text
     this.canvas.title = note.getTitle();
   }
@@ -127,7 +135,7 @@ export class Html5Canvas implements CanvasInterface {
    * Clear the canvas
    * @param color optional RGBA color to use as a background color
    */
-  public clear(color?: [number, number, number, number]) {
+  clear(color?: [number, number, number, number]) {
     // clear framebuffer
     this.frameBuffer.fill(0);
     // clear canvas
@@ -140,7 +148,7 @@ export class Html5Canvas implements CanvasInterface {
     }
   }
 
-  public drawFrame(frameIndex: number) {
+  drawFrame(frameIndex: number) {
     // clear whatever's already been drawn
     this.clear();
     // optionally enable image smoothing
@@ -160,15 +168,23 @@ export class Html5Canvas implements CanvasInterface {
       this.dstWidth,
       this.dstHeight
     );
-    this.prevFrameIndex = frameIndex;
+    this.frameIndex = frameIndex;
   }
 
-  public forceUpdate() {
-    if (this.prevFrameIndex !== undefined)
-      this.drawFrame(this.prevFrameIndex);
+  requestStereoScopeMode(mode: CanvasStereoscopicMode) {
+    if (this.supportedStereoscopeModes.includes(mode))
+      this.stereoscopeMode = mode;
+    else
+      this.stereoscopeMode = CanvasStereoscopicMode.None;
+    this.forceUpdate();
   }
 
-  public getDataUrl(type?: string, quality?: any) {
+  forceUpdate() {
+    if (this.frameIndex !== undefined)
+      this.drawFrame(this.frameIndex);
+  }
+
+  getDataUrl(type?: string, quality?: any) {
     return this.canvas.toDataURL(type, quality);
   }
 
@@ -176,7 +192,7 @@ export class Html5Canvas implements CanvasInterface {
     return new Promise<Blob>((resolve, reject) => this.canvas.toBlob(resolve, type, quality));
   }
 
-  public destroy() {
+  destroy() {
     this.frameImage = null;
     this.paletteBuffer = null;
     this.frameBuffer = null;

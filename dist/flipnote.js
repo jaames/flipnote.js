@@ -1,12 +1,11 @@
 /*!!
-flipnote.js v5.9.0
+flipnote.js v5.11.0
 https://flipnote.js.org
 A JavaScript library for parsing, converting, and in-browser playback of the proprietary animation formats used by Nintendo's Flipnote Studio and Flipnote Studio 3D apps.
 2018 - 2022 James Daniel
 Flipnote Studio is (c) Nintendo Co., Ltd. This project isn't affiliated with or endorsed by them in any way.
 Keep on Flipnoting!
 */
-(function(l, r) { if (l.getElementById('livereloadscript')) return; r = l.createElement('script'); r.async = 1; r.src = '//' + (window.location.host || 'localhost').split(':')[0] + ':35729/livereload.js?snipver=1'; r.id = 'livereloadscript'; l.getElementsByTagName('head')[0].appendChild(r) })(window.document);
 (function (global, factory) {
     typeof exports === 'object' && typeof module !== 'undefined' ? factory(exports) :
     typeof define === 'function' && define.amd ? define(['exports'], factory) :
@@ -903,12 +902,12 @@ Keep on Flipnoting!
         FlipnoteThumbImageFormat[FlipnoteThumbImageFormat["Jpeg"] = 0] = "Jpeg";
         FlipnoteThumbImageFormat[FlipnoteThumbImageFormat["Rgba"] = 1] = "Rgba";
     })(FlipnoteThumbImageFormat || (FlipnoteThumbImageFormat = {}));
-    /** Stereographic eye view (left/right) for 3D effects */
-    var FlipnoteStereographEye;
-    (function (FlipnoteStereographEye) {
-        FlipnoteStereographEye[FlipnoteStereographEye["Left"] = 0] = "Left";
-        FlipnoteStereographEye[FlipnoteStereographEye["Right"] = 1] = "Right";
-    })(FlipnoteStereographEye || (FlipnoteStereographEye = {}));
+    /** stereoscopic eye view (left/right) for 3D effects */
+    var FlipnoteStereoscopicEye;
+    (function (FlipnoteStereoscopicEye) {
+        FlipnoteStereoscopicEye[FlipnoteStereoscopicEye["Left"] = 0] = "Left";
+        FlipnoteStereoscopicEye[FlipnoteStereoscopicEye["Right"] = 1] = "Right";
+    })(FlipnoteStereoscopicEye || (FlipnoteStereoscopicEye = {}));
     /** Identifies a Flipnote audio track type */
     exports.FlipnoteAudioTrack = void 0;
     (function (FlipnoteAudioTrack) {
@@ -1031,8 +1030,10 @@ Keep on Flipnoting!
          * NOTE: if the visibility flag for this layer is turned off, the result will be empty
          * @category Image
         */
-        FlipnoteParserBase.prototype.getLayerPixels = function (frameIndex, layerIndex, imageBuffer) {
+        FlipnoteParserBase.prototype.getLayerPixels = function (frameIndex, layerIndex, imageBuffer, depthStrength, depthEye) {
             if (imageBuffer === void 0) { imageBuffer = new Uint8Array(this.imageWidth * this.imageHeight); }
+            if (depthStrength === void 0) { depthStrength = 0; }
+            if (depthEye === void 0) { depthEye = FlipnoteStereoscopicEye.Left; }
             assertRange(frameIndex, 0, this.frameCount - 1, 'Frame index');
             assertRange(layerIndex, 0, this.numLayers - 1, 'Layer index');
             // palette
@@ -1041,8 +1042,11 @@ Keep on Flipnoting!
             // raw pixels
             var layers = this.decodeFrame(frameIndex);
             var layerBuffer = layers[layerIndex];
+            var depth = Math.floor(this.getFrameLayerDepths(frameIndex)[layerIndex] * depthStrength);
+            var depthShift = ((depthEye == FlipnoteStereoscopicEye.Left) ? -depth : depth);
             // image dimensions and crop
             var srcStride = this.srcWidth;
+            var dstStride = this.imageWidth;
             var width = this.imageWidth;
             var height = this.imageHeight;
             var xOffs = this.imageOffsetX;
@@ -1056,7 +1060,7 @@ Keep on Flipnoting!
             for (var srcY = yOffs, dstY = 0; dstY < height; srcY++, dstY++) {
                 for (var srcX = xOffs, dstX = 0; dstX < width; srcX++, dstX++) {
                     var srcPtr = srcY * srcStride + srcX;
-                    var dstPtr = dstY * width + dstX;
+                    var dstPtr = dstY * dstStride + dstX + depthShift;
                     var pixel = layerBuffer[srcPtr];
                     if (pixel !== 0)
                         imageBuffer[dstPtr] = palette[palettePtr + pixel];
@@ -1074,7 +1078,7 @@ Keep on Flipnoting!
             if (imageBuffer === void 0) { imageBuffer = new Uint32Array(this.imageWidth * this.imageHeight); }
             if (paletteBuffer === void 0) { paletteBuffer = new Uint32Array(16); }
             if (depthStrength === void 0) { depthStrength = 0; }
-            if (depthEye === void 0) { depthEye = FlipnoteStereographEye.Left; }
+            if (depthEye === void 0) { depthEye = FlipnoteStereoscopicEye.Left; }
             assertRange(frameIndex, 0, this.frameCount - 1, 'Frame index');
             assertRange(layerIndex, 0, this.numLayers - 1, 'Layer index');
             // palette
@@ -1084,25 +1088,25 @@ Keep on Flipnoting!
             var layers = this.decodeFrame(frameIndex);
             var layerBuffer = layers[layerIndex];
             // depths
-            var layerDepth = Math.floor(this.getFrameLayerDepths(frameIndex)[layerIndex] * depthStrength);
-            var layerShift = ((depthEye == FlipnoteStereographEye.Left) ? -layerDepth : layerDepth);
+            var depth = Math.floor(this.getFrameLayerDepths(frameIndex)[layerIndex] * depthStrength);
+            var depthShift = ((depthEye == FlipnoteStereoscopicEye.Left) ? -depth : depth);
             // image dimensions and crop
             var srcStride = this.srcWidth;
             var dstStride = this.imageWidth;
-            var width = this.imageWidth - layerDepth;
+            var width = this.imageWidth - depth;
             var height = this.imageHeight;
             var xOffs = this.imageOffsetX;
             var yOffs = this.imageOffsetY;
             // clear image buffer before writing
-            imageBuffer.fill(paletteBuffer[0]);
+            imageBuffer.fill(0);
             // handle layer visibility by returning a blank image if the layer is invisible
             if (!this.layerVisibility[layerIndex + 1])
                 return imageBuffer;
             // convert to palette indices and crop
             for (var srcY = yOffs, dstY = 0; dstY < height; srcY++, dstY++) {
-                for (var srcX = xOffs, dstX = layerShift; dstX < width; srcX++, dstX++) {
+                for (var srcX = xOffs, dstX = 0; dstX < width; srcX++, dstX++) {
                     var srcPtr = srcY * srcStride + srcX;
-                    var dstPtr = dstY * dstStride + dstX;
+                    var dstPtr = dstY * dstStride + dstX + depthShift;
                     var pixel = layerBuffer[srcPtr];
                     if (pixel !== 0)
                         imageBuffer[dstPtr] = paletteBuffer[palettePtr + pixel];
@@ -1114,10 +1118,13 @@ Keep on Flipnoting!
          * Get the image for a given frame, as palette indices
          * @category Image
         */
-        FlipnoteParserBase.prototype.getFramePixels = function (frameIndex, imageBuffer) {
+        FlipnoteParserBase.prototype.getFramePixels = function (frameIndex, imageBuffer, depthStrength, depthEye) {
             if (imageBuffer === void 0) { imageBuffer = new Uint8Array(this.imageWidth * this.imageHeight); }
+            if (depthStrength === void 0) { depthStrength = 0; }
+            if (depthEye === void 0) { depthEye = FlipnoteStereoscopicEye.Left; }
             // image dimensions and crop
             var srcStride = this.srcWidth;
+            this.imageWidth;
             var width = this.imageWidth;
             var height = this.imageHeight;
             var xOffs = this.imageOffsetX;
@@ -1128,12 +1135,15 @@ Keep on Flipnoting!
             imageBuffer.fill(palette[0]);
             // get layer info + decode into buffers
             var layerOrder = this.getFrameLayerOrder(frameIndex);
+            var layerDepth = this.getFrameLayerDepths(frameIndex);
             var layers = this.decodeFrame(frameIndex);
             // merge layers into framebuffer
             for (var i = 0; i < this.numLayers; i++) {
                 var layerIndex = layerOrder[i];
                 var layerBuffer = layers[layerIndex];
                 var palettePtr = layerIndex * this.numLayerColors;
+                var depth = Math.floor(layerDepth[layerIndex] * depthStrength);
+                var depthShift = ((depthEye == FlipnoteStereoscopicEye.Left) ? -depth : depth);
                 // skip if layer is not visible
                 if (!this.layerVisibility[layerIndex + 1])
                     continue;
@@ -1141,7 +1151,7 @@ Keep on Flipnoting!
                 for (var srcY = yOffs, dstY = 0; dstY < height; srcY++, dstY++) {
                     for (var srcX = xOffs, dstX = 0; dstX < width; srcX++, dstX++) {
                         var srcPtr = srcY * srcStride + srcX;
-                        var dstPtr = dstY * width + dstX;
+                        var dstPtr = dstY * width + dstX + depthShift;
                         var pixel = layerBuffer[srcPtr];
                         if (pixel !== 0)
                             imageBuffer[dstPtr] = palette[palettePtr + pixel];
@@ -1157,8 +1167,8 @@ Keep on Flipnoting!
         FlipnoteParserBase.prototype.getFramePixelsRgba = function (frameIndex, imageBuffer, paletteBuffer, depthStrength, depthEye) {
             if (imageBuffer === void 0) { imageBuffer = new Uint32Array(this.imageWidth * this.imageHeight); }
             if (paletteBuffer === void 0) { paletteBuffer = new Uint32Array(16); }
-            if (depthStrength === void 0) { depthStrength = 1; }
-            if (depthEye === void 0) { depthEye = FlipnoteStereographEye.Right; }
+            if (depthStrength === void 0) { depthStrength = 0; }
+            if (depthEye === void 0) { depthEye = FlipnoteStereoscopicEye.Left; }
             assertRange(frameIndex, 0, this.frameCount - 1, 'Frame index');
             // image dimensions and crop
             var srcStride = this.srcWidth;
@@ -1184,14 +1194,11 @@ Keep on Flipnoting!
                 var layerBuffer = layers[layerIndex];
                 var palettePtr = layerIndex * this.numLayerColors;
                 var depth = Math.floor(layerDepth[layerIndex] * depthStrength);
-                ((depthEye == FlipnoteStereographEye.Left) ? -depth : depth);
-                // const startY = Math.max(translateY, 0);
-                // const endX = Math.min(w + translateX, w);
-                // const endY = Math.min(h + translateY, h);
-                for (var srcY = yOffs, dstY = 0; dstY < height; srcY++, dstY++) {
-                    for (var srcX = xOffs, dstX = 0; dstX < width; srcX++, dstX++) {
+                var depthShift = ((depthEye == FlipnoteStereoscopicEye.Left) ? -depth : depth);
+                for (var srcY = yOffs, dstY = 0; srcY < height; srcY++, dstY++) {
+                    for (var srcX = xOffs, dstX = 0; srcX < width; srcX++, dstX++) {
                         var srcPtr = srcY * srcStride + srcX;
-                        var dstPtr = dstY * dstStride + dstX;
+                        var dstPtr = dstY * dstStride + dstX + depthShift;
                         var pixel = layerBuffer[srcPtr];
                         if (pixel !== 0)
                             imageBuffer[dstPtr] = paletteBuffer[palettePtr + pixel];
@@ -3296,6 +3303,13 @@ Keep on Flipnoting!
         return m + ":" + padNumber(s, 2);
     }
 
+    var CanvasStereoscopicMode;
+    (function (CanvasStereoscopicMode) {
+        CanvasStereoscopicMode[CanvasStereoscopicMode["None"] = 0] = "None";
+        CanvasStereoscopicMode[CanvasStereoscopicMode["Dual"] = 1] = "Dual";
+        // not actually supported, sorry!
+        CanvasStereoscopicMode[CanvasStereoscopicMode["Anaglyph"] = 2] = "Anaglyph";
+    })(CanvasStereoscopicMode || (CanvasStereoscopicMode = {}));
     /** @internal */
     var CanvasInterface = /** @class */ (function () {
         function CanvasInterface(parent, width, height, options) {
@@ -4974,9 +4988,13 @@ Keep on Flipnoting!
       return programInfo;
     }
 
-    var quadShader = "#define GLSLIFY 1\nattribute vec4 position;attribute vec2 texcoord;varying vec2 v_texel;varying vec2 v_uv;varying float v_scale;uniform bool u_flipY;uniform vec2 u_textureSize;uniform vec2 u_screenSize;void main(){v_uv=texcoord;v_scale=floor(u_screenSize.y/u_textureSize.y+0.01);gl_Position=position;if(u_flipY){gl_Position.y*=-1.;}}"; // eslint-disable-line
+    var vertShaderLayer = "#define GLSLIFY 1\nattribute vec4 position;attribute vec2 texcoord;varying vec2 v_uv;uniform bool u_flipY;uniform vec2 u_textureSize;uniform int u_3d_eye;uniform float u_3d_depth;uniform float u_3d_strength;void main(){vec4 pos=position;float depthDirection=u_3d_eye==0 ?-1.0 : 1.0;float depthShift=floor(u_3d_depth*u_3d_strength)/(u_textureSize.x/2.0)*depthDirection;pos.x+=depthShift;pos.y*=u_flipY ?-1.0 : 1.0;v_uv=texcoord;gl_Position=pos;}"; // eslint-disable-line
 
-    var drawFrame = "precision highp float;\n#define GLSLIFY 1\nvarying vec2 v_uv;uniform sampler2D u_tex;varying float v_scale;uniform vec2 u_textureSize;uniform vec2 u_screenSize;void main(){vec2 v_texel=v_uv*u_textureSize;vec2 texel_floored=floor(v_texel);vec2 s=fract(v_texel);float region_range=0.5-0.5/v_scale;vec2 center_dist=s-0.5;vec2 f=(center_dist-clamp(center_dist,-region_range,region_range))*v_scale+0.5;vec2 mod_texel=texel_floored+f;vec2 coord=mod_texel.xy/u_textureSize.xy;gl_FragColor=texture2D(u_tex,coord);}"; // eslint-disable-line
+    var fragShaderLayer = "precision highp float;\n#define GLSLIFY 1\nvarying vec2 v_uv;uniform sampler2D u_tex;uniform int u_3d_mode;void main(){vec4 col=texture2D(u_tex,v_uv);if(col.a==0.0){discard;}gl_FragColor=col;}"; // eslint-disable-line
+
+    var vertShaderUpscale = "#define GLSLIFY 1\nattribute vec4 position;attribute vec2 texcoord;varying vec2 v_texel;varying vec2 v_uv;varying float v_scale;uniform bool u_flipY;uniform vec2 u_textureSize;uniform vec2 u_screenSize;void main(){v_uv=texcoord;v_scale=floor(u_screenSize.y/u_textureSize.y+0.01);gl_Position=position;if(u_flipY){gl_Position.y*=-1.;}}"; // eslint-disable-line
+
+    var fragShaderUpscale = "precision highp float;\n#define GLSLIFY 1\nvarying vec2 v_uv;uniform sampler2D u_tex;varying float v_scale;uniform vec2 u_textureSize;uniform vec2 u_screenSize;void main(){vec2 v_texel=v_uv*u_textureSize;vec2 texel_floored=floor(v_texel);vec2 s=fract(v_texel);float region_range=0.5-0.5/v_scale;vec2 center_dist=s-0.5;vec2 f=(center_dist-clamp(center_dist,-region_range,region_range))*v_scale+0.5;vec2 mod_texel=texel_floored+f;vec2 coord=mod_texel.xy/u_textureSize.xy;gl_FragColor=texture2D(u_tex,coord);}"; // eslint-disable-line
 
     /**
      * Flipnote renderer for the {@link https://developer.mozilla.org/en-US/docs/Web/API/WebGL_API WebGL} API
@@ -4997,12 +5015,25 @@ Keep on Flipnoting!
             if (width === void 0) { width = 640; }
             if (height === void 0) { height = 480; }
             if (options === void 0) { options = {}; }
+            /** */
+            this.supportedStereoscopeModes = [
+                CanvasStereoscopicMode.None,
+                CanvasStereoscopicMode.Dual,
+            ];
+            /** */
+            this.stereoscopeMode = CanvasStereoscopicMode.None;
+            /** */
+            this.stereoscopeStrength = 0;
             this.paletteBuffer = new Uint32Array(16);
+            this.textureTypes = new Map();
+            this.textureSizes = new Map();
+            this.frameBufferTextures = new Map();
             this.refs = {
                 programs: [],
                 shaders: [],
                 textures: [],
-                buffers: []
+                buffers: [],
+                frameBuffers: []
             };
             this.isCtxLost = false;
             this.handleContextLoss = function (e) {
@@ -5049,13 +5080,13 @@ Keep on Flipnoting!
             var gl = this.gl;
             if (this.checkContextLoss())
                 return;
-            this.program = this.createProgram(quadShader, drawFrame);
+            this.layerProgram = this.createProgram(vertShaderLayer, fragShaderLayer);
+            this.upscaleProgram = this.createProgram(vertShaderUpscale, fragShaderUpscale);
             this.quadBuffer = this.createScreenQuad(-1, -1, 2, 2, 1, 1);
-            this.setBuffersAndAttribs(this.program, this.quadBuffer);
+            this.setBuffersAndAttribs(this.layerProgram, this.quadBuffer);
+            this.layerTexture = this.createTexture(gl.RGBA, gl.LINEAR, gl.CLAMP_TO_EDGE);
             this.frameTexture = this.createTexture(gl.RGBA, gl.LINEAR, gl.CLAMP_TO_EDGE);
-            // set gl constants
-            gl.useProgram(this.program.program);
-            gl.bindTexture(gl.TEXTURE_2D, this.frameTexture);
+            this.frameBuffer = this.createFramebuffer(this.frameTexture);
         };
         WebglCanvas.prototype.createProgram = function (vertexShaderSource, fragmentShaderSource) {
             if (this.checkContextLoss())
@@ -5165,7 +5196,51 @@ Keep on Flipnoting!
             gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MAG_FILTER, minMag);
             gl.texImage2D(gl.TEXTURE_2D, 0, type, width, height, 0, type, gl.UNSIGNED_BYTE, null);
             this.refs.textures.push(tex);
+            this.textureTypes.set(tex, type);
+            this.textureSizes.set(tex, { width: width, height: height });
             return tex;
+        };
+        WebglCanvas.prototype.resizeTexture = function (texture, width, height) {
+            if (this.checkContextLoss())
+                return;
+            var gl = this.gl;
+            var textureType = this.textureTypes.get(texture);
+            gl.bindTexture(gl.TEXTURE_2D, texture);
+            gl.texImage2D(gl.TEXTURE_2D, 0, textureType, width, height, 0, textureType, gl.UNSIGNED_BYTE, null);
+            this.textureSizes.set(texture, { width: width, height: height });
+        };
+        WebglCanvas.prototype.createFramebuffer = function (texture) {
+            if (this.checkContextLoss())
+                return;
+            var gl = this.gl;
+            var fb = gl.createFramebuffer();
+            gl.bindFramebuffer(gl.FRAMEBUFFER, fb);
+            gl.framebufferTexture2D(gl.FRAMEBUFFER, gl.COLOR_ATTACHMENT0, gl.TEXTURE_2D, texture, 0);
+            this.refs.frameBuffers.push(fb);
+            this.frameBufferTextures.set(fb, texture);
+            return fb;
+        };
+        WebglCanvas.prototype.useFramebuffer = function (fb, viewX, viewY, viewWidth, viewHeight) {
+            if (this.checkContextLoss())
+                return;
+            var gl = this.gl;
+            if (fb === null) {
+                gl.bindFramebuffer(gl.FRAMEBUFFER, null);
+                gl.viewport(viewX !== null && viewX !== void 0 ? viewX : 0, viewY !== null && viewY !== void 0 ? viewY : 0, viewWidth !== null && viewWidth !== void 0 ? viewWidth : gl.drawingBufferWidth, viewHeight !== null && viewHeight !== void 0 ? viewHeight : gl.drawingBufferHeight);
+            }
+            else {
+                var tex = this.frameBufferTextures.get(fb);
+                var _a = this.textureSizes.get(tex), width = _a.width, height = _a.height;
+                gl.bindFramebuffer(gl.FRAMEBUFFER, fb);
+                gl.viewport(viewX !== null && viewX !== void 0 ? viewX : 0, viewY !== null && viewY !== void 0 ? viewY : 0, viewWidth !== null && viewWidth !== void 0 ? viewWidth : width, viewHeight !== null && viewHeight !== void 0 ? viewHeight : height);
+            }
+        };
+        WebglCanvas.prototype.resizeFramebuffer = function (fb, width, height) {
+            if (this.checkContextLoss())
+                return;
+            this.gl;
+            var texture = this.frameBufferTextures.get(fb);
+            this.resizeTexture(texture, width, height);
         };
         /**
          * Resize the canvas surface
@@ -5186,10 +5261,7 @@ Keep on Flipnoting!
             this.dstHeight = internalHeight;
             this.canvas.style.width = width + "px";
             this.canvas.style.height = height + "px";
-            var gl = this.gl;
-            if (this.checkContextLoss())
-                return;
-            gl.viewport(0, 0, gl.drawingBufferWidth, gl.drawingBufferHeight);
+            this.checkContextLoss();
         };
         /**
          * Sets the note to use for this player
@@ -5197,18 +5269,16 @@ Keep on Flipnoting!
         WebglCanvas.prototype.setNote = function (note) {
             if (this.checkContextLoss())
                 return;
-            var gl = this.gl;
             var width = note.imageWidth;
             var height = note.imageHeight;
             this.note = note;
             this.srcWidth = width;
             this.srcHeight = height;
-            // resize frame texture
-            gl.bindTexture(gl.TEXTURE_2D, this.frameTexture);
-            gl.texImage2D(gl.TEXTURE_2D, 0, gl.RGBA, this.srcWidth, this.srcHeight, 0, gl.RGBA, gl.UNSIGNED_BYTE, null);
-            this.frameBuffer = new Uint32Array(width * height);
-            this.frameBufferBytes = new Uint8Array(this.frameBuffer.buffer); // same memory buffer as rgbaData
-            this.prevFrameIndex = undefined;
+            this.resizeFramebuffer(this.frameBuffer, width, height);
+            this.resizeTexture(this.layerTexture, width, height);
+            this.layerTexturePixelBuffer = new Uint32Array(width * height);
+            this.layerTexturePixels = new Uint8Array(this.layerTexturePixelBuffer.buffer); // same memory buffer as rgbaData
+            this.frameIndex = undefined;
             // set canvas alt text
             this.canvas.title = note.getTitle();
         };
@@ -5219,11 +5289,11 @@ Keep on Flipnoting!
         WebglCanvas.prototype.clear = function (color) {
             if (this.checkContextLoss())
                 return;
-            if (color) {
-                var _a = __read(color, 4), r = _a[0], g = _a[1], b = _a[2], a = _a[3];
-                this.gl.clearColor(r / 255, g / 255, b / 255, a / 255);
-            }
-            this.gl.clear(this.gl.COLOR_BUFFER_BIT);
+            var gl = this.gl;
+            var paperColor = color !== null && color !== void 0 ? color : this.note.getFramePalette(this.frameIndex)[0];
+            var _a = __read(paperColor, 4), r = _a[0], g = _a[1], b = _a[2], a = _a[3];
+            gl.clearColor(r / 255, g / 255, b / 255, a / 255);
+            gl.clear(gl.COLOR_BUFFER_BIT);
         };
         /**
          * Draw a frame from the currently loaded Flipnote
@@ -5232,29 +5302,47 @@ Keep on Flipnoting!
         WebglCanvas.prototype.drawFrame = function (frameIndex) {
             if (this.checkContextLoss())
                 return;
-            var _a = this, gl = _a.gl, textureWidth = _a.srcWidth, textureHeight = _a.srcHeight;
-            // get frame pixels as RGBA buffer
-            this.note.getFramePixelsRgba(frameIndex, this.frameBuffer, this.paletteBuffer);
-            // clear whatever's already been drawn
-            // const paperColor = note.getFramePalette(frameIndex)[0];
-            // this.clear(paperColor);
-            gl.clear(this.gl.COLOR_BUFFER_BIT);
-            // update texture
-            gl.texImage2D(gl.TEXTURE_2D, 0, gl.RGBA, textureWidth, textureHeight, 0, gl.RGBA, gl.UNSIGNED_BYTE, this.frameBufferBytes);
-            // prep uniforms
-            setUniforms(this.program, {
-                u_flipY: true,
+            var gl = this.gl;
+            var mode = this.stereoscopeMode;
+            var strength = this.stereoscopeStrength;
+            this.frameIndex = frameIndex;
+            if (mode === CanvasStereoscopicMode.None) {
+                this.drawLayers(frameIndex);
+                this.useFramebuffer(null);
+                this.upscale(gl.drawingBufferWidth, gl.drawingBufferHeight);
+            }
+            else if (mode === CanvasStereoscopicMode.Dual) {
+                this.drawLayers(frameIndex, strength, FlipnoteStereoscopicEye.Left);
+                this.useFramebuffer(null, 0, 0, gl.drawingBufferWidth / 2, gl.drawingBufferHeight);
+                this.upscale(gl.drawingBufferWidth / 2, gl.drawingBufferHeight);
+                this.drawLayers(frameIndex, strength, FlipnoteStereoscopicEye.Right);
+                this.useFramebuffer(null, gl.drawingBufferWidth / 2, 0, gl.drawingBufferWidth / 2, gl.drawingBufferHeight);
+                this.upscale(gl.drawingBufferWidth / 2, gl.drawingBufferHeight);
+            }
+        };
+        WebglCanvas.prototype.upscale = function (width, height) {
+            if (this.checkContextLoss())
+                return;
+            var gl = this.gl;
+            gl.useProgram(this.upscaleProgram.program);
+            setUniforms(this.upscaleProgram, {
+                // u_flipY: true,
                 u_tex: this.frameTexture,
                 u_textureSize: [this.srcWidth, this.srcHeight],
-                u_screenSize: [gl.drawingBufferWidth, gl.drawingBufferHeight],
+                u_screenSize: [width, height],
             });
-            // draw!
             gl.drawElements(gl.TRIANGLES, this.quadBuffer.numElements, this.quadBuffer.elementType, 0);
-            this.prevFrameIndex = frameIndex;
+        };
+        WebglCanvas.prototype.requestStereoScopeMode = function (mode) {
+            if (this.supportedStereoscopeModes.includes(mode))
+                this.stereoscopeMode = mode;
+            else
+                this.stereoscopeMode = CanvasStereoscopicMode.None;
+            this.forceUpdate();
         };
         WebglCanvas.prototype.forceUpdate = function () {
-            if (this.prevFrameIndex !== undefined)
-                this.drawFrame(this.prevFrameIndex);
+            if (this.frameIndex !== undefined)
+                this.drawFrame(this.frameIndex);
         };
         /**
          * Returns true if the webGL context has returned an error
@@ -5262,6 +5350,37 @@ Keep on Flipnoting!
         WebglCanvas.prototype.isErrorState = function () {
             var gl = this.gl;
             return gl === null || gl.getError() !== gl.NO_ERROR;
+        };
+        WebglCanvas.prototype.drawLayers = function (frameIndex, depthStrength, depthEye, shouldClear) {
+            if (depthStrength === void 0) { depthStrength = 0; }
+            if (depthEye === void 0) { depthEye = FlipnoteStereoscopicEye.Left; }
+            if (shouldClear === void 0) { shouldClear = true; }
+            var gl = this.gl;
+            var note = this.note;
+            var srcWidth = this.srcWidth;
+            var srcHeight = this.srcHeight;
+            var numLayers = note.numLayers;
+            var layerOrder = note.getFrameLayerOrder(frameIndex);
+            var layerDepths = note.getFrameLayerDepths(frameIndex);
+            this.useFramebuffer(this.frameBuffer);
+            if (shouldClear)
+                this.clear();
+            gl.useProgram(this.layerProgram.program);
+            for (var i = 0; i < numLayers; i++) {
+                var layerIndex = layerOrder[i];
+                note.getLayerPixelsRgba(frameIndex, layerIndex, this.layerTexturePixelBuffer, this.paletteBuffer);
+                setUniforms(this.layerProgram, {
+                    u_flipY: true,
+                    u_tex: this.layerTexture,
+                    u_textureSize: [srcWidth, srcHeight],
+                    u_3d_mode: this.stereoscopeMode,
+                    u_3d_eye: depthEye,
+                    u_3d_depth: layerDepths[layerIndex],
+                    u_3d_strength: depthStrength,
+                });
+                gl.texImage2D(gl.TEXTURE_2D, 0, gl.RGBA, srcWidth, srcHeight, 0, gl.RGBA, gl.UNSIGNED_BYTE, this.layerTexturePixels);
+                gl.drawElements(gl.TRIANGLES, this.quadBuffer.numElements, this.quadBuffer.elementType, 0);
+            }
         };
         /**
          * Only a certain number of WebGL contexts can be added to a single page before the browser will start culling old contexts.
@@ -5308,13 +5427,20 @@ Keep on Flipnoting!
                 gl.deleteBuffer(buffer);
             });
             refs.buffers = [];
+            refs.frameBuffers.forEach(function (fb) {
+                gl.deleteFramebuffer(fb);
+            });
+            refs.frameBuffers = [];
             refs.programs.forEach(function (program) {
                 gl.deleteProgram(program);
             });
             refs.programs = [];
             this.paletteBuffer = null;
-            this.frameBuffer = null;
-            this.frameBufferBytes = null;
+            this.layerTexturePixelBuffer = null;
+            this.layerTexturePixels = null;
+            this.textureTypes.clear();
+            this.textureSizes.clear();
+            this.frameBufferTextures.clear();
             if (canvas && canvas.parentElement) {
                 // shrink the canvas to reduce memory usage until it is garbage collected
                 canvas.width = 1;
@@ -5337,6 +5463,14 @@ Keep on Flipnoting!
     var Html5Canvas = /** @class */ (function () {
         function Html5Canvas(parent, width, height, options) {
             if (options === void 0) { options = {}; }
+            /** */
+            this.supportedStereoscopeModes = [
+                CanvasStereoscopicMode.None
+            ];
+            /** */
+            this.stereoscopeMode = CanvasStereoscopicMode.None;
+            /** */
+            this.stereoscopeStrength = 0;
             this.paletteBuffer = new Uint32Array(16);
             assertBrowserEnv();
             this.options = __assign(__assign({}, Html5Canvas.defaultOptions), options);
@@ -5398,7 +5532,7 @@ Keep on Flipnoting!
             this.frameImage = this.srcCtx.createImageData(width, height);
             // uint32 view of the img buffer memory
             this.frameBuffer = new Uint32Array(this.frameImage.data.buffer);
-            this.prevFrameIndex = undefined;
+            this.frameIndex = undefined;
             // set canvas alt text
             this.canvas.title = note.getTitle();
         };
@@ -5430,11 +5564,18 @@ Keep on Flipnoting!
             this.srcCtx.putImageData(this.frameImage, 0, 0);
             // composite src canvas to dst (so image scaling can be handled)
             this.ctx.drawImage(this.srcCanvas, 0, 0, this.srcWidth, this.srcHeight, 0, 0, this.dstWidth, this.dstHeight);
-            this.prevFrameIndex = frameIndex;
+            this.frameIndex = frameIndex;
+        };
+        Html5Canvas.prototype.requestStereoScopeMode = function (mode) {
+            if (this.supportedStereoscopeModes.includes(mode))
+                this.stereoscopeMode = mode;
+            else
+                this.stereoscopeMode = CanvasStereoscopicMode.None;
+            this.forceUpdate();
         };
         Html5Canvas.prototype.forceUpdate = function () {
-            if (this.prevFrameIndex !== undefined)
-                this.drawFrame(this.prevFrameIndex);
+            if (this.frameIndex !== undefined)
+                this.drawFrame(this.frameIndex);
         };
         Html5Canvas.prototype.getDataUrl = function (type, quality) {
             return this.canvas.toDataURL(type, quality);
@@ -5475,6 +5616,12 @@ Keep on Flipnoting!
             this.isReady = false;
             /** */
             this.isHtml5 = false;
+            /** */
+            this.supportedStereoscopeModes = [];
+            /** */
+            this.stereoscopeMode = CanvasStereoscopicMode.None;
+            /** */
+            this.stereoscopeStrength = 1;
             this.rendererStack = [
                 WebglCanvas,
                 Html5Canvas
@@ -5487,12 +5634,6 @@ Keep on Flipnoting!
             this.options = options;
             this.setSubRenderer(this.rendererStack[0]);
         }
-        UniversalCanvas.prototype.fallbackIfPossible = function () {
-            if (this.rendererStackIdx >= this.rendererStack.length)
-                throw new Error('No renderer to fall back to');
-            this.rendererStackIdx += 1;
-            this.setSubRenderer(this.rendererStack[this.rendererStackIdx]);
-        };
         UniversalCanvas.prototype.setSubRenderer = function (Canvas) {
             var _this = this;
             var _a;
@@ -5506,7 +5647,7 @@ Keep on Flipnoting!
                 return;
             if (this.note) {
                 renderer.setNote(this.note);
-                renderer.prevFrameIndex = (_a = this.renderer) === null || _a === void 0 ? void 0 : _a.prevFrameIndex;
+                renderer.frameIndex = (_a = this.renderer) === null || _a === void 0 ? void 0 : _a.frameIndex;
                 renderer.forceUpdate();
             }
             if (this.renderer)
@@ -5515,6 +5656,15 @@ Keep on Flipnoting!
             this.isReady = true;
             this.renderer = renderer;
             this.rendererStackIdx = this.rendererStack.indexOf(Canvas);
+            this.supportedStereoscopeModes = renderer.supportedStereoscopeModes;
+            renderer.stereoscopeStrength = this.stereoscopeStrength;
+            this.requestStereoScopeMode(this.stereoscopeMode);
+        };
+        UniversalCanvas.prototype.fallbackIfPossible = function () {
+            if (this.rendererStackIdx >= this.rendererStack.length)
+                throw new Error('No renderer to fall back to');
+            this.rendererStackIdx += 1;
+            this.setSubRenderer(this.rendererStack[this.rendererStackIdx]);
         };
         // for backwards compat
         UniversalCanvas.prototype.switchToHtml5 = function () {
@@ -5531,7 +5681,7 @@ Keep on Flipnoting!
         UniversalCanvas.prototype.setNote = function (note) {
             this.note = note;
             this.renderer.setNote(note);
-            this.prevFrameIndex = undefined;
+            this.frameIndex = undefined;
             this.srcWidth = this.renderer.srcWidth;
             this.srcHeight = this.renderer.srcHeight;
         };
@@ -5540,10 +5690,14 @@ Keep on Flipnoting!
         };
         UniversalCanvas.prototype.drawFrame = function (frameIndex) {
             this.renderer.drawFrame(frameIndex);
-            this.prevFrameIndex = frameIndex;
+            this.frameIndex = frameIndex;
         };
         UniversalCanvas.prototype.forceUpdate = function () {
             this.renderer.forceUpdate();
+        };
+        UniversalCanvas.prototype.requestStereoScopeMode = function (mode) {
+            this.renderer.requestStereoScopeMode(mode);
+            this.stereoscopeMode = this.renderer.stereoscopeMode;
         };
         UniversalCanvas.prototype.getDataUrl = function (type, quality) {
             return this.renderer.getDataUrl();
@@ -7445,7 +7599,7 @@ Keep on Flipnoting!
     /**
      * flipnote.js library version (exported as `flipnote.version`). You can find the latest version on the project's [NPM](https://www.npmjs.com/package/flipnote.js) page.
      */
-    var version = "5.9.0"; // replaced by @rollup/plugin-replace; see rollup.config.js
+    var version = "5.11.0"; // replaced by @rollup/plugin-replace; see rollup.config.js
 
     exports.CanvasInterface = CanvasInterface;
     exports.GifImage = GifImage;
@@ -7466,4 +7620,3 @@ Keep on Flipnoting!
     Object.defineProperty(exports, '__esModule', { value: true });
 
 }));
-//# sourceMappingURL=flipnote.js.map

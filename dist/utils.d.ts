@@ -242,9 +242,31 @@ declare function isFsid(fsid: string): boolean;
  */
 declare function getPpmFsidRegion(fsid: string): FlipnoteRegion;
 /**
- * Get the region for any valid Flipnote Studio 3D user ID
+ * Get the region for any valid Flipnote Studio 3D user ID.
+ * NOTE: This may be incorrect for IDs that are not from the DSi Library.
  */
 declare function getKwzFsidRegion(fsid: string): FlipnoteRegion;
+/**
+ * Convert a KWZ Flipnote Studio ID (from a Nintendo DSi Library Flipnote) to the format used by PPM Flipnote Studio IDs.
+ * Will return `null` if the conversion could not be made.
+ */
+declare function convertKwzFsidToPpmFsid(fsid: string): string;
+/**
+ * Convert a PPM Flipnote Studio ID to the format used by KWZ Flipnote Studio IDs (as seen in Nintendo DSi Library Flipnotes).
+ * Will return `null` if the conversion could not be made.
+ *
+ * NOTE: KWZ Flipnote Studio IDs contain an extra two characters at the beginning. It is not possible to resolve these from a PPM Flipnote Studio ID.
+ */
+declare function convertPpmFsidToKwzFsidSuffix(fsid: string): string;
+/**
+ * Convert a PPM Flipnote Studio ID to an array of all possible matching KWZ Flipnote Studio IDs (as seen in Nintendo DSi Library Flipnotes).
+ * Will return `null` if the conversion could not be made.
+ */
+declare function convertPpmFsidToPossibleKwzFsids(fsid: string): string[];
+/**
+ * Tests if a KWZ Flipnote Studio ID (from a Nintendo DSi Library Flipnote) matches a given PPM-formatted Flipnote Studio ID.
+ */
+declare function testKwzFsidMatchesPpmFsid(kwzFsid: string, ppmFsid: string): boolean;
 /**
  * Get the region for any valid Flipnote Studio or Flipnote Studio 3D user ID
  */
@@ -253,4 +275,4 @@ declare function getFsidRegion(fsid: string): FlipnoteRegion;
 /** @internal */
 declare const saveData: (blob: Blob, filename: string) => void;
 
-export { ADPCM_INDEX_TABLE_2BIT, ADPCM_INDEX_TABLE_4BIT, ADPCM_STEP_TABLE, AsyncTuple, ByteArray, DataStream, FlipnoteRegion, SeekOrigin, assert, assertBrowserEnv, assertExists, assertNodeEnv, assertRange, assertWebWorkerEnv, clamp, dateFromNintendoTimestamp, dynamicRequire, getFsidRegion, getGlobalObject, getKwzFsidRegion, getPpmFsidRegion, isBrowser, isFsid, isKwzDsiLibraryFsid, isKwzFsid, isNode, isPpmFsid, isWebWorker, lerp, nextPaint, pcmGetClippingRatio, pcmGetRms, pcmGetSample, pcmResampleLinear, pcmResampleNearestNeighbour, rsaLoadPublicKey, rsaVerify, saveData, timeGetNoteDuration, until };
+export { ADPCM_INDEX_TABLE_2BIT, ADPCM_INDEX_TABLE_4BIT, ADPCM_STEP_TABLE, AsyncTuple, ByteArray, DataStream, FlipnoteRegion, SeekOrigin, assert, assertBrowserEnv, assertExists, assertNodeEnv, assertRange, assertWebWorkerEnv, clamp, convertKwzFsidToPpmFsid, convertPpmFsidToKwzFsidSuffix, convertPpmFsidToPossibleKwzFsids, dateFromNintendoTimestamp, dynamicRequire, getFsidRegion, getGlobalObject, getKwzFsidRegion, getPpmFsidRegion, isBrowser, isFsid, isKwzDsiLibraryFsid, isKwzFsid, isNode, isPpmFsid, isWebWorker, lerp, nextPaint, pcmGetClippingRatio, pcmGetRms, pcmGetSample, pcmResampleLinear, pcmResampleNearestNeighbour, rsaLoadPublicKey, rsaVerify, saveData, testKwzFsidMatchesPpmFsid, timeGetNoteDuration, until };

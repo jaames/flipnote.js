@@ -1,5 +1,5 @@
 /*!!
-flipnote.js v5.8.5
+flipnote.js v5.11.0
 https://flipnote.js.org
 A JavaScript library for parsing, converting, and in-browser playback of the proprietary animation formats used by Nintendo's Flipnote Studio and Flipnote Studio 3D apps.
 2018 - 2022 James Daniel
@@ -42,7 +42,6 @@ class ByteArray {
         if (ptr > this.realSize)
             this.realSize = ptr;
         // update ptrs
-        // TODO: this is going to get hit a lot, maybe optimise?
         this.pageIdx = Math.floor(ptr / this.pageSize);
         this.pagePtr = ptr % this.pageSize;
         this.realPtr = ptr;
@@ -474,7 +473,7 @@ async function rsaLoadPublicKey(pemKey, hashType) {
     // convert to byte array
     const keyBytes = new Uint8Array(keyPlaintext.length)
         .map((_, i) => keyPlaintext.charCodeAt(i));
-    // create cypto api key
+    // create crypto api key
     return await SUBTLE_CRYPTO.importKey('spki', keyBytes.buffer, {
         name: ALGORITHM,
         hash: hashType,
@@ -560,6 +559,8 @@ const REGEX_KWZ_FSID = /^[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{6}$/;
 const REGEX_KWZ_DSI_LIBRARY_FSID = /^(00|10|12|14)[0-9a-f]{2}-[0-9a-f]{4}-[0-9a-f]{3}0-[0-9a-f]{4}[0159]{1}[0-9a-f]{1}$/;
 /**
  * @internal
+ * There are several known exceptions to the FSID format, all from Nintendo or Hatena developer and event accounts (mario, zelda 25th, etc).
+ * This list was compiled from data provided by the Flipnote Archive, so it can be considered comprehensive enough to match any Flipnote you may encounter.
  */
 const PPM_FSID_SPECIAL_CASE = [
     '01FACA7A4367FC5F', '03D6E959E2F9A42D',
@@ -568,12 +569,14 @@ const PPM_FSID_SPECIAL_CASE = [
     '0E61C75C9B5AD90B', '14E494E35A443235'
 ];
 /**
+ * @internal
+ */
+const KWZ_DSI_LIBRARY_FSID_SPECIAL_CASE_SUFFIX = PPM_FSID_SPECIAL_CASE.map(id => convertPpmFsidToKwzFsidSuffix(id));
+/**
  * Indicates whether the input is a valid Flipnote Studio user ID
  */
 function isPpmFsid(fsid) {
-    // The only known exception to the FSID format is the one Nintendo used for their event notes (mario, zelda 25th, etc)
-    // This is likely a goof on their part
-    return PPM_FSID_SPECIAL_CASE.includes(fsid) || REGEX_PPM_FSID.test(fsid);
+    return REGEX_PPM_FSID.test(fsid) || PPM_FSID_SPECIAL_CASE.includes(fsid);
 }
 /**
  * Indicates whether the input is a valid Flipnote Studio 3D user ID
@@ -585,8 +588,13 @@ function isKwzFsid(fsid) {
  * Indicates whether the input is a valid DSi Library user ID
  */
 function isKwzDsiLibraryFsid(fsid) {
-    // DSi Library equivalent of the 14E494E35A443235 ID exception
-    return fsid.endsWith('3532445AE394E414') || REGEX_KWZ_DSI_LIBRARY_FSID.test(fsid);
+    if (REGEX_KWZ_DSI_LIBRARY_FSID.test(fsid))
+        return true;
+    for (let suffix of KWZ_DSI_LIBRARY_FSID_SPECIAL_CASE_SUFFIX) {
+        if (fsid.endsWith(suffix))
+            return true;
+    }
+    return false;
 }
 /**
  * Indicates whether the input is a valid Flipnote Studio or Flipnote Studio 3D user ID
@@ -611,7 +619,8 @@ function getPpmFsidRegion(fsid) {
     }
 }
 /**
- * Get the region for any valid Flipnote Studio 3D user ID
+ * Get the region for any valid Flipnote Studio 3D user ID.
+ * NOTE: This may be incorrect for IDs that are not from the DSi Library.
  */
 function getKwzFsidRegion(fsid) {
     if (isKwzDsiLibraryFsid(fsid)) {
@@ -640,6 +649,49 @@ function getKwzFsidRegion(fsid) {
     }
 }
 /**
+ * Convert a KWZ Flipnote Studio ID (from a Nintendo DSi Library Flipnote) to the format used by PPM Flipnote Studio IDs.
+ * Will return `null` if the conversion could not be made.
+ */
+function convertKwzFsidToPpmFsid(fsid) {
+    if (REGEX_KWZ_DSI_LIBRARY_FSID.test(fsid))
+        return (fsid.slice(19, 21) + fsid.slice(17, 19) + fsid.slice(15, 17) + fsid.slice(12, 14) + fsid.slice(10, 12) + fsid.slice(7, 9) + fsid.slice(5, 7) + fsid.slice(2, 4)).toUpperCase();
+    return null;
+}
+/**
+ * Convert a PPM Flipnote Studio ID to the format used by KWZ Flipnote Studio IDs (as seen in Nintendo DSi Library Flipnotes).
+ * Will return `null` if the conversion could not be made.
+ *
+ * NOTE: KWZ Flipnote Studio IDs contain an extra two characters at the beginning. It is not possible to resolve these from a PPM Flipnote Studio ID.
+ */
+function convertPpmFsidToKwzFsidSuffix(fsid) {
+    if (REGEX_PPM_FSID.test(fsid))
+        return (fsid.slice(14, 16) + fsid.slice(12, 14) + '-' + fsid.slice(10, 12) + fsid.slice(8, 10) + '-' + fsid.slice(6, 8) + fsid.slice(4, 6) + '-' + fsid.slice(2, 4) + fsid.slice(0, 2)).toLowerCase();
+    return null;
+}
+/**
+ * Convert a PPM Flipnote Studio ID to an array of all possible matching KWZ Flipnote Studio IDs (as seen in Nintendo DSi Library Flipnotes).
+ * Will return `null` if the conversion could not be made.
+ */
+function convertPpmFsidToPossibleKwzFsids(fsid) {
+    const kwzIdSuffix = convertPpmFsidToKwzFsidSuffix(fsid);
+    if (kwzIdSuffix) {
+        return [
+            '00' + kwzIdSuffix,
+            '10' + kwzIdSuffix,
+            '12' + kwzIdSuffix,
+            '14' + kwzIdSuffix,
+        ];
+    }
+    return null;
+}
+/**
+ * Tests if a KWZ Flipnote Studio ID (from a Nintendo DSi Library Flipnote) matches a given PPM-formatted Flipnote Studio ID.
+ */
+function testKwzFsidMatchesPpmFsid(kwzFsid, ppmFsid) {
+    const ppmFromKwz = convertKwzFsidToPpmFsid(kwzFsid);
+    return ppmFromKwz == ppmFsid;
+}
+/**
  * Get the region for any valid Flipnote Studio or Flipnote Studio 3D user ID
  */
 function getFsidRegion(fsid) {
@@ -655,9 +707,7 @@ const saveData = (function () {
     if (!isBrowser) {
         return function () { };
     }
-    var a = document.createElement("a");
-    // document.body.appendChild(a);
-    // a.style.display = "none";
+    const a = document.createElement('a');
     return function (blob, filename) {
         const url = window.URL.createObjectURL(blob);
         a.href = url;
@@ -667,4 +717,4 @@ const saveData = (function () {
     };
 })();
 
-export { ADPCM_INDEX_TABLE_2BIT, ADPCM_INDEX_TABLE_4BIT, ADPCM_STEP_TABLE, ByteArray, DataStream, FlipnoteRegion, assert, assertBrowserEnv, assertExists, assertNodeEnv, assertRange, assertWebWorkerEnv, clamp, dateFromNintendoTimestamp, dynamicRequire, getFsidRegion, getGlobalObject, getKwzFsidRegion, getPpmFsidRegion, isBrowser, isFsid, isKwzDsiLibraryFsid, isKwzFsid, isNode, isPpmFsid, isWebWorker, lerp, nextPaint, pcmGetClippingRatio, pcmGetRms, pcmGetSample, pcmResampleLinear, pcmResampleNearestNeighbour, rsaLoadPublicKey, rsaVerify, saveData, timeGetNoteDuration, until };
+export { ADPCM_INDEX_TABLE_2BIT, ADPCM_INDEX_TABLE_4BIT, ADPCM_STEP_TABLE, ByteArray, DataStream, FlipnoteRegion, assert, assertBrowserEnv, assertExists, assertNodeEnv, assertRange, assertWebWorkerEnv, clamp, convertKwzFsidToPpmFsid, convertPpmFsidToKwzFsidSuffix, convertPpmFsidToPossibleKwzFsids, dateFromNintendoTimestamp, dynamicRequire, getFsidRegion, getGlobalObject, getKwzFsidRegion, getPpmFsidRegion, isBrowser, isFsid, isKwzDsiLibraryFsid, isKwzFsid, isNode, isPpmFsid, isWebWorker, lerp, nextPaint, pcmGetClippingRatio, pcmGetRms, pcmGetSample, pcmResampleLinear, pcmResampleNearestNeighbour, rsaLoadPublicKey, rsaVerify, saveData, testKwzFsidMatchesPpmFsid, timeGetNoteDuration, until };

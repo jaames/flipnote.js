@@ -1,5 +1,5 @@
 /*!!
-flipnote.js v5.8.5
+flipnote.js v5.11.0
 https://flipnote.js.org
 A JavaScript library for parsing, converting, and in-browser playback of the proprietary animation formats used by Nintendo's Flipnote Studio and Flipnote Studio 3D apps.
 2018 - 2022 James Daniel
@@ -86,6 +86,14 @@ function formatTime(seconds) {
     const s = Math.floor(seconds % 60);
     return `${m}:${padNumber(s, 2)}`;
 }
+
+var CanvasStereoscopicMode;
+(function (CanvasStereoscopicMode) {
+    CanvasStereoscopicMode[CanvasStereoscopicMode["None"] = 0] = "None";
+    CanvasStereoscopicMode[CanvasStereoscopicMode["Dual"] = 1] = "Dual";
+    // not actually supported, sorry!
+    CanvasStereoscopicMode[CanvasStereoscopicMode["Anaglyph"] = 2] = "Anaglyph";
+})(CanvasStereoscopicMode || (CanvasStereoscopicMode = {}));
 
 /* @license twgl.js 4.21.2 Copyright (c) 2015, Gregg Tavares All Rights Reserved.
 Available via the MIT license.
@@ -1883,15 +1891,45 @@ var FlipnoteRegion;
     /** Unidentified (possibly never used) */
     FlipnoteRegion["UNKNOWN"] = "UNKNOWN";
 })(FlipnoteRegion || (FlipnoteRegion = {}));
+/**
+ * Match an FSID from Flipnote Studio
+ * e.g. 1440D700CEF78DA8
+ * @internal
+ */
+const REGEX_PPM_FSID = /^[0159]{1}[0-9A-F]{6}0[0-9A-F]{8}$/;
+/**
+ * @internal
+ * There are several known exceptions to the FSID format, all from Nintendo or Hatena developer and event accounts (mario, zelda 25th, etc).
+ * This list was compiled from data provided by the Flipnote Archive, so it can be considered comprehensive enough to match any Flipnote you may encounter.
+ */
+const PPM_FSID_SPECIAL_CASE = [
+    '01FACA7A4367FC5F', '03D6E959E2F9A42D',
+    '03F80445160587FA', '04068426E1008915',
+    '092A3EC8199FD5D5', '0B8D56BA1BD441B8',
+    '0E61C75C9B5AD90B', '14E494E35A443235'
+];
+/**
+ * @internal
+ */
+PPM_FSID_SPECIAL_CASE.map(id => convertPpmFsidToKwzFsidSuffix(id));
+/**
+ * Convert a PPM Flipnote Studio ID to the format used by KWZ Flipnote Studio IDs (as seen in Nintendo DSi Library Flipnotes).
+ * Will return `null` if the conversion could not be made.
+ *
+ * NOTE: KWZ Flipnote Studio IDs contain an extra two characters at the beginning. It is not possible to resolve these from a PPM Flipnote Studio ID.
+ */
+function convertPpmFsidToKwzFsidSuffix(fsid) {
+    if (REGEX_PPM_FSID.test(fsid))
+        return (fsid.slice(14, 16) + fsid.slice(12, 14) + '-' + fsid.slice(10, 12) + fsid.slice(8, 10) + '-' + fsid.slice(6, 8) + fsid.slice(4, 6) + '-' + fsid.slice(2, 4) + fsid.slice(0, 2)).toLowerCase();
+    return null;
+}
 
 /** @internal */
 ((function () {
     if (!isBrowser) {
         return function () { };
     }
-    var a = document.createElement("a");
-    // document.body.appendChild(a);
-    // a.style.display = "none";
+    const a = document.createElement('a');
     return function (blob, filename) {
         const url = window.URL.createObjectURL(blob);
         a.href = url;
@@ -1901,9 +1939,141 @@ var FlipnoteRegion;
     };
 }))();
 
-var quadShader = "#define GLSLIFY 1\nattribute vec4 position;attribute vec2 texcoord;varying vec2 v_texel;varying vec2 v_uv;varying float v_scale;uniform bool u_flipY;uniform vec2 u_textureSize;uniform vec2 u_screenSize;void main(){v_uv=texcoord;v_scale=floor(u_screenSize.y/u_textureSize.y+0.01);gl_Position=position;if(u_flipY){gl_Position.y*=-1.;}}"; // eslint-disable-line
+/** Identifies which animation format a Flipnote uses */
+var FlipnoteFormat;
+(function (FlipnoteFormat) {
+    /** Animation format used by Flipnote Studio (Nintendo DSiWare) */
+    FlipnoteFormat["PPM"] = "PPM";
+    /** Animation format used by Flipnote Studio 3D (Nintendo 3DS) */
+    FlipnoteFormat["KWZ"] = "KWZ";
+})(FlipnoteFormat || (FlipnoteFormat = {}));
+/** Buffer format for a FlipnoteThumbImage  */
+var FlipnoteThumbImageFormat;
+(function (FlipnoteThumbImageFormat) {
+    FlipnoteThumbImageFormat[FlipnoteThumbImageFormat["Jpeg"] = 0] = "Jpeg";
+    FlipnoteThumbImageFormat[FlipnoteThumbImageFormat["Rgba"] = 1] = "Rgba";
+})(FlipnoteThumbImageFormat || (FlipnoteThumbImageFormat = {}));
+/** stereoscopic eye view (left/right) for 3D effects */
+var FlipnoteStereoscopicEye;
+(function (FlipnoteStereoscopicEye) {
+    FlipnoteStereoscopicEye[FlipnoteStereoscopicEye["Left"] = 0] = "Left";
+    FlipnoteStereoscopicEye[FlipnoteStereoscopicEye["Right"] = 1] = "Right";
+})(FlipnoteStereoscopicEye || (FlipnoteStereoscopicEye = {}));
+/** Identifies a Flipnote audio track type */
+var FlipnoteAudioTrack;
+(function (FlipnoteAudioTrack) {
+    /** Background music track */
+    FlipnoteAudioTrack[FlipnoteAudioTrack["BGM"] = 0] = "BGM";
+    /** Sound effect 1 track */
+    FlipnoteAudioTrack[FlipnoteAudioTrack["SE1"] = 1] = "SE1";
+    /** Sound effect 2 track */
+    FlipnoteAudioTrack[FlipnoteAudioTrack["SE2"] = 2] = "SE2";
+    /** Sound effect 3 track */
+    FlipnoteAudioTrack[FlipnoteAudioTrack["SE3"] = 3] = "SE3";
+    /** Sound effect 4 track (only used by KWZ files) */
+    FlipnoteAudioTrack[FlipnoteAudioTrack["SE4"] = 4] = "SE4";
+})(FlipnoteAudioTrack || (FlipnoteAudioTrack = {}));
+/** {@link FlipnoteAudioTrack}, but just sound effect tracks */
+var FlipnoteSoundEffectTrack;
+(function (FlipnoteSoundEffectTrack) {
+    FlipnoteSoundEffectTrack[FlipnoteSoundEffectTrack["SE1"] = 1] = "SE1";
+    FlipnoteSoundEffectTrack[FlipnoteSoundEffectTrack["SE2"] = 2] = "SE2";
+    FlipnoteSoundEffectTrack[FlipnoteSoundEffectTrack["SE3"] = 3] = "SE3";
+    FlipnoteSoundEffectTrack[FlipnoteSoundEffectTrack["SE4"] = 4] = "SE4";
+})(FlipnoteSoundEffectTrack || (FlipnoteSoundEffectTrack = {}));
 
-var drawFrame = "precision highp float;\n#define GLSLIFY 1\nvarying vec2 v_uv;uniform sampler2D u_tex;varying float v_scale;uniform vec2 u_textureSize;uniform vec2 u_screenSize;void main(){vec2 v_texel=v_uv*u_textureSize;vec2 texel_floored=floor(v_texel);vec2 s=fract(v_texel);float region_range=0.5-0.5/v_scale;vec2 center_dist=s-0.5;vec2 f=(center_dist-clamp(center_dist,-region_range,region_range))*v_scale+0.5;vec2 mod_texel=texel_floored+f;vec2 coord=mod_texel.xy/u_textureSize.xy;gl_FragColor=texture2D(u_tex,coord);}"; // eslint-disable-line
+/** Which audio tracks are available in this format */
+[
+    FlipnoteAudioTrack.BGM,
+    FlipnoteAudioTrack.SE1,
+    FlipnoteAudioTrack.SE2,
+    FlipnoteAudioTrack.SE3
+];
+/** Which sound effect tracks are available in this format */
+[
+    FlipnoteSoundEffectTrack.SE1,
+    FlipnoteSoundEffectTrack.SE2,
+    FlipnoteSoundEffectTrack.SE3,
+];
+
+/**
+ * Pre computed bitmasks for readBits; done as a slight optimisation
+ * @internal
+ */
+const BITMASKS = new Uint16Array(16);
+for (let i = 0; i < 16; i++) {
+    BITMASKS[i] = (1 << i) - 1;
+}
+/**
+ * Every possible sequence of pixels for each 8-pixel line
+ * @internal
+ */
+const KWZ_LINE_TABLE = new Uint8Array(6561 * 8);
+/**
+ * Same lines as KWZ_LINE_TABLE, but the pixels are shift-rotated to the left by one place
+ * @internal
+ */
+const KWZ_LINE_TABLE_SHIFT = new Uint8Array(6561 * 8);
+/** @internal */
+var offset = 0;
+for (let a = 0; a < 3; a++)
+    for (let b = 0; b < 3; b++)
+        for (let c = 0; c < 3; c++)
+            for (let d = 0; d < 3; d++)
+                for (let e = 0; e < 3; e++)
+                    for (let f = 0; f < 3; f++)
+                        for (let g = 0; g < 3; g++)
+                            for (let h = 0; h < 3; h++) {
+                                KWZ_LINE_TABLE.set([b, a, d, c, f, e, h, g], offset);
+                                KWZ_LINE_TABLE_SHIFT.set([a, d, c, f, e, h, g, b], offset);
+                                offset += 8;
+                            }
+/**
+ * Commonly used lines - represents lines where all the pixels are empty, full,
+ * or include a pattern produced by the paint tool, etc
+ * @internal
+ */
+const KWZ_LINE_TABLE_COMMON = new Uint8Array(32 * 8);
+/**
+ * Same lines as common line table, but shift-rotates one place to the left
+ * @internal
+ */
+const KWZ_LINE_TABLE_COMMON_SHIFT = new Uint8Array(32 * 8);
+[
+    0x0000, 0x0CD0, 0x19A0, 0x02D9, 0x088B, 0x0051, 0x00F3, 0x0009,
+    0x001B, 0x0001, 0x0003, 0x05B2, 0x1116, 0x00A2, 0x01E6, 0x0012,
+    0x0036, 0x0002, 0x0006, 0x0B64, 0x08DC, 0x0144, 0x00FC, 0x0024,
+    0x001C, 0x0004, 0x0334, 0x099C, 0x0668, 0x1338, 0x1004, 0x166C
+].forEach((value, i) => {
+    const lineTablePtr = value * 8;
+    const pixels = KWZ_LINE_TABLE.subarray(lineTablePtr, lineTablePtr + 8);
+    const shiftPixels = KWZ_LINE_TABLE_SHIFT.subarray(lineTablePtr, lineTablePtr + 8);
+    KWZ_LINE_TABLE_COMMON.set(pixels, i * 8);
+    KWZ_LINE_TABLE_COMMON_SHIFT.set(shiftPixels, i * 8);
+});
+/** Which audio tracks are available in this format */
+[
+    FlipnoteAudioTrack.BGM,
+    FlipnoteAudioTrack.SE1,
+    FlipnoteAudioTrack.SE2,
+    FlipnoteAudioTrack.SE3,
+    FlipnoteAudioTrack.SE4,
+];
+/** Which sound effect tracks are available in this format */
+[
+    FlipnoteSoundEffectTrack.SE1,
+    FlipnoteSoundEffectTrack.SE2,
+    FlipnoteSoundEffectTrack.SE3,
+    FlipnoteSoundEffectTrack.SE4,
+];
+
+var vertShaderLayer = "#define GLSLIFY 1\nattribute vec4 position;attribute vec2 texcoord;varying vec2 v_uv;uniform bool u_flipY;uniform vec2 u_textureSize;uniform int u_3d_eye;uniform float u_3d_depth;uniform float u_3d_strength;void main(){vec4 pos=position;float depthDirection=u_3d_eye==0 ?-1.0 : 1.0;float depthShift=floor(u_3d_depth*u_3d_strength)/(u_textureSize.x/2.0)*depthDirection;pos.x+=depthShift;pos.y*=u_flipY ?-1.0 : 1.0;v_uv=texcoord;gl_Position=pos;}"; // eslint-disable-line
+
+var fragShaderLayer = "precision highp float;\n#define GLSLIFY 1\nvarying vec2 v_uv;uniform sampler2D u_tex;uniform int u_3d_mode;void main(){vec4 col=texture2D(u_tex,v_uv);if(col.a==0.0){discard;}gl_FragColor=col;}"; // eslint-disable-line
+
+var vertShaderUpscale = "#define GLSLIFY 1\nattribute vec4 position;attribute vec2 texcoord;varying vec2 v_texel;varying vec2 v_uv;varying float v_scale;uniform bool u_flipY;uniform vec2 u_textureSize;uniform vec2 u_screenSize;void main(){v_uv=texcoord;v_scale=floor(u_screenSize.y/u_textureSize.y+0.01);gl_Position=position;if(u_flipY){gl_Position.y*=-1.;}}"; // eslint-disable-line
+
+var fragShaderUpscale = "precision highp float;\n#define GLSLIFY 1\nvarying vec2 v_uv;uniform sampler2D u_tex;varying float v_scale;uniform vec2 u_textureSize;uniform vec2 u_screenSize;void main(){vec2 v_texel=v_uv*u_textureSize;vec2 texel_floored=floor(v_texel);vec2 s=fract(v_texel);float region_range=0.5-0.5/v_scale;vec2 center_dist=s-0.5;vec2 f=(center_dist-clamp(center_dist,-region_range,region_range))*v_scale+0.5;vec2 mod_texel=texel_floored+f;vec2 coord=mod_texel.xy/u_textureSize.xy;gl_FragColor=texture2D(u_tex,coord);}"; // eslint-disable-line
 
 /**
  * Flipnote renderer for the {@link https://developer.mozilla.org/en-US/docs/Web/API/WebGL_API WebGL} API
@@ -1920,18 +2090,31 @@ class WebglCanvas {
      * The ratio between `width` and `height` should be 3:4 for best results
      */
     constructor(parent, width = 640, height = 480, options = {}) {
+        /** */
+        this.supportedStereoscopeModes = [
+            CanvasStereoscopicMode.None,
+            CanvasStereoscopicMode.Dual,
+        ];
+        /** */
+        this.stereoscopeMode = CanvasStereoscopicMode.None;
+        /** */
+        this.stereoscopeStrength = 0;
         this.paletteBuffer = new Uint32Array(16);
+        this.textureTypes = new Map();
+        this.textureSizes = new Map();
+        this.frameBufferTextures = new Map();
         this.refs = {
             programs: [],
             shaders: [],
             textures: [],
-            buffers: []
+            buffers: [],
+            frameBuffers: []
         };
         this.isCtxLost = false;
         this.handleContextLoss = (e) => {
+            this.destroy();
             if (e)
                 e.preventDefault();
-            this.destroy();
             if (!this.isCtxLost)
                 this.options.onlost();
             this.isCtxLost = true;
@@ -1972,13 +2155,13 @@ class WebglCanvas {
         const gl = this.gl;
         if (this.checkContextLoss())
             return;
-        this.program = this.createProgram(quadShader, drawFrame);
+        this.layerProgram = this.createProgram(vertShaderLayer, fragShaderLayer);
+        this.upscaleProgram = this.createProgram(vertShaderUpscale, fragShaderUpscale);
         this.quadBuffer = this.createScreenQuad(-1, -1, 2, 2, 1, 1);
-        this.setBuffersAndAttribs(this.program, this.quadBuffer);
+        this.setBuffersAndAttribs(this.layerProgram, this.quadBuffer);
+        this.layerTexture = this.createTexture(gl.RGBA, gl.LINEAR, gl.CLAMP_TO_EDGE);
         this.frameTexture = this.createTexture(gl.RGBA, gl.LINEAR, gl.CLAMP_TO_EDGE);
-        // set gl constants
-        gl.useProgram(this.program.program);
-        gl.bindTexture(gl.TEXTURE_2D, this.frameTexture);
+        this.frameBuffer = this.createFramebuffer(this.frameTexture);
     }
     createProgram(vertexShaderSource, fragmentShaderSource) {
         if (this.checkContextLoss())
@@ -2086,7 +2269,51 @@ class WebglCanvas {
         gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MAG_FILTER, minMag);
         gl.texImage2D(gl.TEXTURE_2D, 0, type, width, height, 0, type, gl.UNSIGNED_BYTE, null);
         this.refs.textures.push(tex);
+        this.textureTypes.set(tex, type);
+        this.textureSizes.set(tex, { width, height });
         return tex;
+    }
+    resizeTexture(texture, width, height) {
+        if (this.checkContextLoss())
+            return;
+        const gl = this.gl;
+        const textureType = this.textureTypes.get(texture);
+        gl.bindTexture(gl.TEXTURE_2D, texture);
+        gl.texImage2D(gl.TEXTURE_2D, 0, textureType, width, height, 0, textureType, gl.UNSIGNED_BYTE, null);
+        this.textureSizes.set(texture, { width, height });
+    }
+    createFramebuffer(texture) {
+        if (this.checkContextLoss())
+            return;
+        const gl = this.gl;
+        const fb = gl.createFramebuffer();
+        gl.bindFramebuffer(gl.FRAMEBUFFER, fb);
+        gl.framebufferTexture2D(gl.FRAMEBUFFER, gl.COLOR_ATTACHMENT0, gl.TEXTURE_2D, texture, 0);
+        this.refs.frameBuffers.push(fb);
+        this.frameBufferTextures.set(fb, texture);
+        return fb;
+    }
+    useFramebuffer(fb, viewX, viewY, viewWidth, viewHeight) {
+        if (this.checkContextLoss())
+            return;
+        const gl = this.gl;
+        if (fb === null) {
+            gl.bindFramebuffer(gl.FRAMEBUFFER, null);
+            gl.viewport(viewX !== null && viewX !== void 0 ? viewX : 0, viewY !== null && viewY !== void 0 ? viewY : 0, viewWidth !== null && viewWidth !== void 0 ? viewWidth : gl.drawingBufferWidth, viewHeight !== null && viewHeight !== void 0 ? viewHeight : gl.drawingBufferHeight);
+        }
+        else {
+            const tex = this.frameBufferTextures.get(fb);
+            const { width, height } = this.textureSizes.get(tex);
+            gl.bindFramebuffer(gl.FRAMEBUFFER, fb);
+            gl.viewport(viewX !== null && viewX !== void 0 ? viewX : 0, viewY !== null && viewY !== void 0 ? viewY : 0, viewWidth !== null && viewWidth !== void 0 ? viewWidth : width, viewHeight !== null && viewHeight !== void 0 ? viewHeight : height);
+        }
+    }
+    resizeFramebuffer(fb, width, height) {
+        if (this.checkContextLoss())
+            return;
+        this.gl;
+        const texture = this.frameBufferTextures.get(fb);
+        this.resizeTexture(texture, width, height);
     }
     /**
      * Resize the canvas surface
@@ -2107,31 +2334,24 @@ class WebglCanvas {
         this.dstHeight = internalHeight;
         this.canvas.style.width = `${width}px`;
         this.canvas.style.height = `${height}px`;
-        const gl = this.gl;
-        if (this.checkContextLoss())
-            return;
-        gl.viewport(0, 0, gl.drawingBufferWidth, gl.drawingBufferHeight);
+        this.checkContextLoss();
     }
     /**
-     * Sets the size of the input pixel arrays
-     * @param width
-     * @param height
+     * Sets the note to use for this player
      */
     setNote(note) {
         if (this.checkContextLoss())
             return;
-        const gl = this.gl;
         const width = note.imageWidth;
         const height = note.imageHeight;
         this.note = note;
         this.srcWidth = width;
         this.srcHeight = height;
-        // resize frame texture
-        gl.bindTexture(gl.TEXTURE_2D, this.frameTexture);
-        gl.texImage2D(gl.TEXTURE_2D, 0, gl.RGBA, this.srcWidth, this.srcHeight, 0, gl.RGBA, gl.UNSIGNED_BYTE, null);
-        this.frameBuffer = new Uint32Array(width * height);
-        this.frameBufferBytes = new Uint8Array(this.frameBuffer.buffer); // same memory buffer as rgbaData
-        this.prevFrameIndex = undefined;
+        this.resizeFramebuffer(this.frameBuffer, width, height);
+        this.resizeTexture(this.layerTexture, width, height);
+        this.layerTexturePixelBuffer = new Uint32Array(width * height);
+        this.layerTexturePixels = new Uint8Array(this.layerTexturePixelBuffer.buffer); // same memory buffer as rgbaData
+        this.frameIndex = undefined;
         // set canvas alt text
         this.canvas.title = note.getTitle();
     }
@@ -2142,11 +2362,11 @@ class WebglCanvas {
     clear(color) {
         if (this.checkContextLoss())
             return;
-        if (color) {
-            const [r, g, b, a] = color;
-            this.gl.clearColor(r / 255, g / 255, b / 255, a / 255);
-        }
-        this.gl.clear(this.gl.COLOR_BUFFER_BIT);
+        const gl = this.gl;
+        const paperColor = color !== null && color !== void 0 ? color : this.note.getFramePalette(this.frameIndex)[0];
+        const [r, g, b, a] = paperColor;
+        gl.clearColor(r / 255, g / 255, b / 255, a / 255);
+        gl.clear(gl.COLOR_BUFFER_BIT);
     }
     /**
      * Draw a frame from the currently loaded Flipnote
@@ -2155,29 +2375,47 @@ class WebglCanvas {
     drawFrame(frameIndex) {
         if (this.checkContextLoss())
             return;
-        const { gl, srcWidth: textureWidth, srcHeight: textureHeight, } = this;
-        // get frame pixels as RGBA buffer
-        this.note.getFramePixelsRgba(frameIndex, this.frameBuffer, this.paletteBuffer);
-        // clear whatever's already been drawn
-        // const paperColor = note.getFramePalette(frameIndex)[0];
-        // this.clear(paperColor);
-        gl.clear(this.gl.COLOR_BUFFER_BIT);
-        // update texture
-        gl.texImage2D(gl.TEXTURE_2D, 0, gl.RGBA, textureWidth, textureHeight, 0, gl.RGBA, gl.UNSIGNED_BYTE, this.frameBufferBytes);
-        // prep uniforms
-        setUniforms(this.program, {
-            u_flipY: true,
+        const gl = this.gl;
+        const mode = this.stereoscopeMode;
+        const strength = this.stereoscopeStrength;
+        this.frameIndex = frameIndex;
+        if (mode === CanvasStereoscopicMode.None) {
+            this.drawLayers(frameIndex);
+            this.useFramebuffer(null);
+            this.upscale(gl.drawingBufferWidth, gl.drawingBufferHeight);
+        }
+        else if (mode === CanvasStereoscopicMode.Dual) {
+            this.drawLayers(frameIndex, strength, FlipnoteStereoscopicEye.Left);
+            this.useFramebuffer(null, 0, 0, gl.drawingBufferWidth / 2, gl.drawingBufferHeight);
+            this.upscale(gl.drawingBufferWidth / 2, gl.drawingBufferHeight);
+            this.drawLayers(frameIndex, strength, FlipnoteStereoscopicEye.Right);
+            this.useFramebuffer(null, gl.drawingBufferWidth / 2, 0, gl.drawingBufferWidth / 2, gl.drawingBufferHeight);
+            this.upscale(gl.drawingBufferWidth / 2, gl.drawingBufferHeight);
+        }
+    }
+    upscale(width, height) {
+        if (this.checkContextLoss())
+            return;
+        const gl = this.gl;
+        gl.useProgram(this.upscaleProgram.program);
+        setUniforms(this.upscaleProgram, {
+            // u_flipY: true,
             u_tex: this.frameTexture,
             u_textureSize: [this.srcWidth, this.srcHeight],
-            u_screenSize: [gl.drawingBufferWidth, gl.drawingBufferHeight],
+            u_screenSize: [width, height],
         });
-        // draw!
         gl.drawElements(gl.TRIANGLES, this.quadBuffer.numElements, this.quadBuffer.elementType, 0);
-        this.prevFrameIndex = frameIndex;
+    }
+    requestStereoScopeMode(mode) {
+        if (this.supportedStereoscopeModes.includes(mode))
+            this.stereoscopeMode = mode;
+        else
+            this.stereoscopeMode = CanvasStereoscopicMode.None;
+        this.forceUpdate();
     }
     forceUpdate() {
-        if (this.prevFrameIndex !== undefined)
-            this.drawFrame(this.prevFrameIndex);
+        if (this.frameIndex !== undefined)
+            this.drawFrame(this.frameIndex);
     }
     /**
      * Returns true if the webGL context has returned an error
@@ -2185,6 +2423,34 @@ class WebglCanvas {
     isErrorState() {
         const gl = this.gl;
         return gl === null || gl.getError() !== gl.NO_ERROR;
+    }
+    drawLayers(frameIndex, depthStrength = 0, depthEye = FlipnoteStereoscopicEye.Left, shouldClear = true) {
+        const gl = this.gl;
+        const note = this.note;
+        const srcWidth = this.srcWidth;
+        const srcHeight = this.srcHeight;
+        const numLayers = note.numLayers;
+        const layerOrder = note.getFrameLayerOrder(frameIndex);
+        const layerDepths = note.getFrameLayerDepths(frameIndex);
+        this.useFramebuffer(this.frameBuffer);
+        if (shouldClear)
+            this.clear();
+        gl.useProgram(this.layerProgram.program);
+        for (let i = 0; i < numLayers; i++) {
+            const layerIndex = layerOrder[i];
+            note.getLayerPixelsRgba(frameIndex, layerIndex, this.layerTexturePixelBuffer, this.paletteBuffer);
+            setUniforms(this.layerProgram, {
+                u_flipY: true,
+                u_tex: this.layerTexture,
+                u_textureSize: [srcWidth, srcHeight],
+                u_3d_mode: this.stereoscopeMode,
+                u_3d_eye: depthEye,
+                u_3d_depth: layerDepths[layerIndex],
+                u_3d_strength: depthStrength,
+            });
+            gl.texImage2D(gl.TEXTURE_2D, 0, gl.RGBA, srcWidth, srcHeight, 0, gl.RGBA, gl.UNSIGNED_BYTE, this.layerTexturePixels);
+            gl.drawElements(gl.TRIANGLES, this.quadBuffer.numElements, this.quadBuffer.elementType, 0);
+        }
     }
     /**
      * Only a certain number of WebGL contexts can be added to a single page before the browser will start culling old contexts.
@@ -2226,13 +2492,20 @@ class WebglCanvas {
             gl.deleteBuffer(buffer);
         });
         refs.buffers = [];
+        refs.frameBuffers.forEach((fb) => {
+            gl.deleteFramebuffer(fb);
+        });
+        refs.frameBuffers = [];
         refs.programs.forEach((program) => {
             gl.deleteProgram(program);
         });
         refs.programs = [];
         this.paletteBuffer = null;
-        this.frameBuffer = null;
-        this.frameBufferBytes = null;
+        this.layerTexturePixelBuffer = null;
+        this.layerTexturePixels = null;
+        this.textureTypes.clear();
+        this.textureSizes.clear();
+        this.frameBufferTextures.clear();
         if (canvas && canvas.parentElement) {
             // shrink the canvas to reduce memory usage until it is garbage collected
             canvas.width = 1;
@@ -2253,6 +2526,14 @@ WebglCanvas.defaultOptions = {
  */
 class Html5Canvas {
     constructor(parent, width, height, options = {}) {
+        /** */
+        this.supportedStereoscopeModes = [
+            CanvasStereoscopicMode.None
+        ];
+        /** */
+        this.stereoscopeMode = CanvasStereoscopicMode.None;
+        /** */
+        this.stereoscopeStrength = 0;
         this.paletteBuffer = new Uint32Array(16);
         assertBrowserEnv();
         this.options = { ...Html5Canvas.defaultOptions, ...options };
@@ -2314,7 +2595,7 @@ class Html5Canvas {
         this.frameImage = this.srcCtx.createImageData(width, height);
         // uint32 view of the img buffer memory
         this.frameBuffer = new Uint32Array(this.frameImage.data.buffer);
-        this.prevFrameIndex = undefined;
+        this.frameIndex = undefined;
         // set canvas alt text
         this.canvas.title = note.getTitle();
     }
@@ -2346,11 +2627,18 @@ class Html5Canvas {
         this.srcCtx.putImageData(this.frameImage, 0, 0);
         // composite src canvas to dst (so image scaling can be handled)
         this.ctx.drawImage(this.srcCanvas, 0, 0, this.srcWidth, this.srcHeight, 0, 0, this.dstWidth, this.dstHeight);
-        this.prevFrameIndex = frameIndex;
+        this.frameIndex = frameIndex;
+    }
+    requestStereoScopeMode(mode) {
+        if (this.supportedStereoscopeModes.includes(mode))
+            this.stereoscopeMode = mode;
+        else
+            this.stereoscopeMode = CanvasStereoscopicMode.None;
+        this.forceUpdate();
     }
     forceUpdate() {
-        if (this.prevFrameIndex !== undefined)
-            this.drawFrame(this.prevFrameIndex);
+        if (this.frameIndex !== undefined)
+            this.drawFrame(this.frameIndex);
     }
     getDataUrl(type, quality) {
         return this.canvas.toDataURL(type, quality);
@@ -2378,44 +2666,68 @@ Html5Canvas.defaultOptions = {
 
 class UniversalCanvas {
     constructor(parent, width = 640, height = 480, options = {}) {
-        this.options = {};
+        /** */
         this.isReady = false;
+        /** */
         this.isHtml5 = false;
+        /** */
+        this.supportedStereoscopeModes = [];
+        /** */
+        this.stereoscopeMode = CanvasStereoscopicMode.None;
+        /** */
+        this.stereoscopeStrength = 1;
+        this.rendererStack = [
+            WebglCanvas,
+            Html5Canvas
+        ];
+        this.rendererStackIdx = 0;
+        this.options = {};
+        this.width = width;
+        this.height = height;
         this.parent = parent;
         this.options = options;
-        try {
-            this.subRenderer = new WebglCanvas(parent, width, height, {
-                ...options,
-                // attempt to switch renderer
-                onlost: () => {
-                    console.warn('WebGL failed, attempting HTML5 fallback');
-                    if (this.isReady && !this.isHtml5) // if the error happened after canvas creation
-                        this.switchToHtml5();
-                    else
-                        throw '';
-                }
-            });
-        }
-        catch {
-            this.switchToHtml5();
-        }
-        this.isReady = true;
+        this.setSubRenderer(this.rendererStack[0]);
     }
-    switchToHtml5() {
+    setSubRenderer(Canvas) {
         var _a;
-        const renderer = new Html5Canvas(this.parent, this.width, this.height, this.options);
+        let immediateLoss = false;
+        const renderer = new Canvas(this.parent, this.width, this.height, {
+            ...this.options,
+            onlost: () => {
+                immediateLoss = true;
+                this.fallbackIfPossible();
+            }
+        });
+        // if onlost was called immediately, we succeed to the fallback
+        if (immediateLoss)
+            return;
         if (this.note) {
             renderer.setNote(this.note);
-            renderer.prevFrameIndex = (_a = this.subRenderer) === null || _a === void 0 ? void 0 : _a.prevFrameIndex;
+            renderer.frameIndex = (_a = this.renderer) === null || _a === void 0 ? void 0 : _a.frameIndex;
             renderer.forceUpdate();
         }
-        if (this.subRenderer)
-            this.subRenderer.destroy();
-        this.isHtml5 = true;
-        this.subRenderer = renderer;
+        if (this.renderer)
+            this.renderer.destroy();
+        this.isHtml5 = renderer instanceof Html5Canvas;
+        this.isReady = true;
+        this.renderer = renderer;
+        this.rendererStackIdx = this.rendererStack.indexOf(Canvas);
+        this.supportedStereoscopeModes = renderer.supportedStereoscopeModes;
+        renderer.stereoscopeStrength = this.stereoscopeStrength;
+        this.requestStereoScopeMode(this.stereoscopeMode);
+    }
+    fallbackIfPossible() {
+        if (this.rendererStackIdx >= this.rendererStack.length)
+            throw new Error('No renderer to fall back to');
+        this.rendererStackIdx += 1;
+        this.setSubRenderer(this.rendererStack[this.rendererStackIdx]);
+    }
+    // for backwards compat
+    switchToHtml5() {
+        this.setSubRenderer(Html5Canvas);
     }
     setCanvasSize(width, height) {
-        const renderer = this.subRenderer;
+        const renderer = this.renderer;
         renderer.setCanvasSize(width, height);
         this.width = width;
         this.width = height;
@@ -2424,29 +2736,33 @@ class UniversalCanvas {
     }
     setNote(note) {
         this.note = note;
-        this.subRenderer.setNote(note);
-        this.prevFrameIndex = undefined;
-        this.srcWidth = this.subRenderer.srcWidth;
-        this.srcHeight = this.subRenderer.srcHeight;
+        this.renderer.setNote(note);
+        this.frameIndex = undefined;
+        this.srcWidth = this.renderer.srcWidth;
+        this.srcHeight = this.renderer.srcHeight;
     }
     clear(color) {
-        this.subRenderer.clear(color);
+        this.renderer.clear(color);
     }
     drawFrame(frameIndex) {
-        this.subRenderer.drawFrame(frameIndex);
-        this.prevFrameIndex = frameIndex;
+        this.renderer.drawFrame(frameIndex);
+        this.frameIndex = frameIndex;
     }
     forceUpdate() {
-        this.subRenderer.forceUpdate();
+        this.renderer.forceUpdate();
+    }
+    requestStereoScopeMode(mode) {
+        this.renderer.requestStereoScopeMode(mode);
+        this.stereoscopeMode = this.renderer.stereoscopeMode;
     }
     getDataUrl(type, quality) {
-        return this.subRenderer.getDataUrl();
+        return this.renderer.getDataUrl();
     }
     async getBlob(type, quality) {
-        return this.subRenderer.getBlob();
+        return this.renderer.getBlob();
     }
     destroy() {
-        this.subRenderer.destroy();
+        this.renderer.destroy();
         this.note = null;
     }
 }
@@ -3382,7 +3698,8 @@ class Player {
         const quality = {
             creationTime: 0,
             droppedVideoFrames: 0,
-            // corruptedVideoFrames: 0,
+            // @ts-ignore
+            corruptedVideoFrames: 0,
             totalVideoFrames: this.frameCount
         };
         return quality;
@@ -3458,7 +3775,7 @@ class Player {
         this.events.clear();
     }
     /**
-     * Destroy a Player instace
+     * Destroy a Player instance
      * @category Lifecycle
      */
     async destroy() {

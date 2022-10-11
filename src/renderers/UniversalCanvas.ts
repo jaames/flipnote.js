@@ -1,4 +1,4 @@
-import { CanvasInterface, CanvasConstructor } from './CanvasInterface';
+import { CanvasInterface, CanvasConstructor, CanvasStereoscopicMode } from './CanvasInterface';
 import { WebglCanvas, WebglCanvasOptions } from './WebGlCanvas';
 import { Html5Canvas, Html5CanvasOptions } from './Html5Canvas';
 import { FlipnoteParserBase } from '../parsers';
@@ -8,33 +8,39 @@ export type UniversalCanvasOptions = WebglCanvasOptions & Html5CanvasOptions;
 export class UniversalCanvas implements CanvasInterface {
 
   /** */
-  public subRenderer: CanvasInterface;
+  renderer: CanvasInterface;
   /** */
-  public note: FlipnoteParserBase;
+  note: FlipnoteParserBase;
   /** View width (CSS pixels) */
-  public width: number;
+  width: number;
   /** View height (CSS pixels) */
-  public height: number;
+  height: number;
   /** 
    * Backing canvas width (real pixels)
    * Note that this factors in device pixel ratio, so it may not reflect the size of the canvas in CSS pixels
   */
-  public dstWidth: number;
+  dstWidth: number;
   /** 
    * Backing canvas height (real pixels)
    * Note that this factors in device pixel ratio, so it may not reflect the size of the canvas in CSS pixels
   */
-  public dstHeight: number;
+  dstHeight: number;
   /**  */
-  public srcWidth: number;
+  srcWidth: number;
   /**  */
-  public srcHeight: number;
+  srcHeight: number;
   /** */
-  public prevFrameIndex: number;
+  frameIndex: number;
   /** */
-  public isReady = false;
+  isReady = false;
   /** */
-  public isHtml5 = false;
+  isHtml5 = false;
+  /** */
+  supportedStereoscopeModes: CanvasStereoscopicMode[] = [];
+  /** */
+  stereoscopeMode = CanvasStereoscopicMode.None;
+  /** */
+  stereoscopeStrength = 1;
 
   private rendererStack: CanvasConstructor[] = [
     WebglCanvas,
@@ -50,14 +56,6 @@ export class UniversalCanvas implements CanvasInterface {
     this.parent = parent;
     this.options = options;
     this.setSubRenderer(this.rendererStack[0]);
-  }
-
-  public fallbackIfPossible() {
-    if (this.rendererStackIdx >= this.rendererStack.length)
-      throw new Error('No renderer to fall back to');
-
-    this.rendererStackIdx += 1;
-    this.setSubRenderer(this.rendererStack[this.rendererStackIdx]);
   }
 
   private setSubRenderer(Canvas: CanvasConstructor) {
@@ -77,26 +75,37 @@ export class UniversalCanvas implements CanvasInterface {
     
     if (this.note) {
       renderer.setNote(this.note);
-      renderer.prevFrameIndex = this.subRenderer?.prevFrameIndex;
+      renderer.frameIndex = this.renderer?.frameIndex;
       renderer.forceUpdate();
     }
 
-    if (this.subRenderer)
-      this.subRenderer.destroy();
+    if (this.renderer)
+      this.renderer.destroy();
 
     this.isHtml5 = renderer instanceof Html5Canvas;
     this.isReady = true;
-    this.subRenderer = renderer;
+    this.renderer = renderer;
     this.rendererStackIdx = this.rendererStack.indexOf(Canvas);
+    this.supportedStereoscopeModes = renderer.supportedStereoscopeModes;
+    renderer.stereoscopeStrength = this.stereoscopeStrength;
+    this.requestStereoScopeMode(this.stereoscopeMode);
+  }
+
+  fallbackIfPossible() {
+    if (this.rendererStackIdx >= this.rendererStack.length)
+      throw new Error('No renderer to fall back to');
+
+    this.rendererStackIdx += 1;
+    this.setSubRenderer(this.rendererStack[this.rendererStackIdx]);
   }
 
   // for backwards compat
-  public switchToHtml5() {
+  switchToHtml5() {
     this.setSubRenderer(Html5Canvas);
   }
 
-  public setCanvasSize(width: number, height: number) {
-    const renderer = this.subRenderer;
+  setCanvasSize(width: number, height: number) {
+    const renderer = this.renderer;
     renderer.setCanvasSize(width, height);
     this.width = width;
     this.width = height;
@@ -104,37 +113,42 @@ export class UniversalCanvas implements CanvasInterface {
     this.dstHeight = renderer.dstHeight;
   }
 
-  public setNote(note: FlipnoteParserBase) {
+  setNote(note: FlipnoteParserBase) {
     this.note = note;
-    this.subRenderer.setNote(note);
-    this.prevFrameIndex = undefined;
-    this.srcWidth = this.subRenderer.srcWidth;
-    this.srcHeight = this.subRenderer.srcHeight;
+    this.renderer.setNote(note);
+    this.frameIndex = undefined;
+    this.srcWidth = this.renderer.srcWidth;
+    this.srcHeight = this.renderer.srcHeight;
   }
 
-  public clear(color?: [number, number, number, number]) {
-    this.subRenderer.clear(color);
+  clear(color?: [number, number, number, number]) {
+    this.renderer.clear(color);
   }
 
-  public drawFrame(frameIndex: number) {
-    this.subRenderer.drawFrame(frameIndex);
-    this.prevFrameIndex = frameIndex;
+  drawFrame(frameIndex: number) {
+    this.renderer.drawFrame(frameIndex);
+    this.frameIndex = frameIndex;
   }
 
-  public forceUpdate() {
-    this.subRenderer.forceUpdate();
+  forceUpdate() {
+    this.renderer.forceUpdate();
+  }
+  
+  requestStereoScopeMode(mode: CanvasStereoscopicMode) {
+    this.renderer.requestStereoScopeMode(mode);
+    this.stereoscopeMode = this.renderer.stereoscopeMode;
   }
 
-  public getDataUrl(type?: string, quality?: any) {
-    return this.subRenderer.getDataUrl();
+  getDataUrl(type?: string, quality?: any) {
+    return this.renderer.getDataUrl();
   }
 
   async getBlob(type?: string, quality?: any) {
-    return this.subRenderer.getBlob();
+    return this.renderer.getBlob();
   }
 
-  public destroy() {
-    this.subRenderer.destroy();
+  destroy() {
+    this.renderer.destroy();
     this.note = null;
   }
 

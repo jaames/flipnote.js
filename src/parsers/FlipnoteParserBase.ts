@@ -47,8 +47,8 @@ export type FlipnotePaletteColor = [
 /** Flipnote layer visibility */
 export type FlipnoteLayerVisibility = Record<number, boolean>;
 
-/** Stereographic eye view (left/right) for 3D effects */
-export enum FlipnoteStereographEye {
+/** stereoscopic eye view (left/right) for 3D effects */
+export enum FlipnoteStereoscopicEye {
   Left,
   Right
 };
@@ -311,8 +311,8 @@ export abstract class FlipnoteParserBase extends DataStream {
     frameIndex: number,
     layerIndex: number,
     imageBuffer = new Uint8Array(this.imageWidth * this.imageHeight),
-    depthStrength = 0.5,
-    depthEye: FlipnoteStereographEye = FlipnoteStereographEye.Right,
+    depthStrength = 0,
+    depthEye: FlipnoteStereoscopicEye = FlipnoteStereoscopicEye.Left,
   ) {
     assertRange(frameIndex, 0, this.frameCount - 1, 'Frame index');
     assertRange(layerIndex, 0, this.numLayers - 1, 'Layer index');
@@ -323,7 +323,7 @@ export abstract class FlipnoteParserBase extends DataStream {
     const layers = this.decodeFrame(frameIndex);
     const layerBuffer = layers[layerIndex];
     const depth = Math.floor(this.getFrameLayerDepths(frameIndex)[layerIndex] * depthStrength);
-    const depthShift = ((depthEye == FlipnoteStereographEye.Left) ? -depth : depth);
+    const depthShift = ((depthEye == FlipnoteStereoscopicEye.Left) ? -depth : depth);
     // image dimensions and crop
     const srcStride = this.srcWidth;
     const dstStride = this.imageWidth;
@@ -361,7 +361,7 @@ export abstract class FlipnoteParserBase extends DataStream {
     imageBuffer = new Uint32Array(this.imageWidth * this.imageHeight),
     paletteBuffer = new Uint32Array(16),
     depthStrength = 0,
-    depthEye: FlipnoteStereographEye = FlipnoteStereographEye.Left,
+    depthEye: FlipnoteStereoscopicEye = FlipnoteStereoscopicEye.Left,
   ) {
     assertRange(frameIndex, 0, this.frameCount - 1, 'Frame index');
     assertRange(layerIndex, 0, this.numLayers - 1, 'Layer index');
@@ -373,7 +373,7 @@ export abstract class FlipnoteParserBase extends DataStream {
     const layerBuffer = layers[layerIndex];
     // depths
     const depth = Math.floor(this.getFrameLayerDepths(frameIndex)[layerIndex] * depthStrength);
-    const depthShift = ((depthEye == FlipnoteStereographEye.Left) ? -depth : depth)
+    const depthShift = ((depthEye == FlipnoteStereoscopicEye.Left) ? -depth : depth)
     // image dimensions and crop
     const srcStride = this.srcWidth;
     const dstStride = this.imageWidth;
@@ -382,7 +382,7 @@ export abstract class FlipnoteParserBase extends DataStream {
     const xOffs = this.imageOffsetX;
     const yOffs = this.imageOffsetY;
     // clear image buffer before writing
-    imageBuffer.fill(paletteBuffer[0]);
+    imageBuffer.fill(0);
     // handle layer visibility by returning a blank image if the layer is invisible
     if (!this.layerVisibility[layerIndex + 1])
       return imageBuffer;
@@ -440,8 +440,8 @@ export abstract class FlipnoteParserBase extends DataStream {
   getFramePixels(
     frameIndex: number,
     imageBuffer = new Uint8Array(this.imageWidth * this.imageHeight),
-    depthStrength = 0.5,
-    depthEye: FlipnoteStereographEye = FlipnoteStereographEye.Right,
+    depthStrength = 0,
+    depthEye: FlipnoteStereoscopicEye = FlipnoteStereoscopicEye.Left,
   ) {
     // image dimensions and crop
     const srcStride = this.srcWidth;
@@ -464,7 +464,7 @@ export abstract class FlipnoteParserBase extends DataStream {
       const layerBuffer = layers[layerIndex];
       const palettePtr = layerIndex * this.numLayerColors;
       const depth = Math.floor(layerDepth[layerIndex] * depthStrength);
-      const depthShift = ((depthEye == FlipnoteStereographEye.Left) ? -depth : depth);
+      const depthShift = ((depthEye == FlipnoteStereoscopicEye.Left) ? -depth : depth);
       // skip if layer is not visible
       if (!this.layerVisibility[layerIndex + 1])
         continue;
@@ -491,8 +491,8 @@ export abstract class FlipnoteParserBase extends DataStream {
     frameIndex: number,
     imageBuffer = new Uint32Array(this.imageWidth * this.imageHeight),
     paletteBuffer = new Uint32Array(16),
-    depthStrength = 0.5,
-    depthEye: FlipnoteStereographEye = FlipnoteStereographEye.Right,
+    depthStrength = 0,
+    depthEye: FlipnoteStereoscopicEye = FlipnoteStereoscopicEye.Left,
   ) {
     assertRange(frameIndex, 0, this.frameCount - 1, 'Frame index');
     // image dimensions and crop
@@ -521,7 +521,7 @@ export abstract class FlipnoteParserBase extends DataStream {
       const layerBuffer = layers[layerIndex];
       const palettePtr = layerIndex * this.numLayerColors;
       const depth = Math.floor(layerDepth[layerIndex] * depthStrength);
-      const depthShift = ((depthEye == FlipnoteStereographEye.Left) ? -depth : depth);
+      const depthShift = ((depthEye == FlipnoteStereoscopicEye.Left) ? -depth : depth);
 
       for (let srcY = yOffs, dstY = 0; srcY < height; srcY++, dstY++) {
         for (let srcX = xOffs, dstX = 0; srcX < width; srcX++, dstX++) {

@@ -58,6 +58,22 @@ declare enum FlipnoteFormat {
     /** Animation format used by Flipnote Studio 3D (Nintendo 3DS) */
     KWZ = "KWZ"
 }
+/** Buffer format for a FlipnoteThumbImage  */
+declare enum FlipnoteThumbImageFormat {
+    Jpeg = 0,
+    Rgba = 1
+}
+/** Represents a decoded Flipnote thumbnail image */
+declare type FlipnoteThumbImage = {
+    /**  */
+    format: FlipnoteThumbImageFormat;
+    /** Image width in pixels */
+    width: number;
+    /** Image height in pixels */
+    height: number;
+    /** Image data */
+    data: ArrayBuffer;
+};
 /** RGBA color */
 declare type FlipnotePaletteColor = [
     /** Red (0 to 255) */
@@ -71,6 +87,11 @@ declare type FlipnotePaletteColor = [
 ];
 /** Flipnote layer visibility */
 declare type FlipnoteLayerVisibility = Record<number, boolean>;
+/** stereoscopic eye view (left/right) for 3D effects */
+declare enum FlipnoteStereoscopicEye {
+    Left = 0,
+    Right = 1
+}
 /** Defines the colors used for a given Flipnote format */
 declare type FlipnotePaletteDefinition = Record<string, FlipnotePaletteColor>;
 /** Identifies a Flipnote audio track type */
@@ -154,9 +175,11 @@ declare abstract class FlipnoteParserBase extends DataStream {
     /** File format type */
     static format: FlipnoteFormat;
     /** Animation frame width */
-    static frameWidth: number;
+    static width: number;
     /** Animation frame height */
-    static frameHeight: number;
+    static height: number;
+    /** Animation frame aspect ratio (height / width) */
+    static aspect: number;
     /** Number of animation frame layers */
     static numLayers: number;
     /** Number of colors per layer (aside from transparent) */
@@ -188,6 +211,8 @@ declare abstract class FlipnoteParserBase extends DataStream {
     imageWidth: number;
     /** Animation frame height, reflects {@link FlipnoteParserBase.height} */
     imageHeight: number;
+    /** Animation frame aspect ratio (height / width), reflects {@link FlipnoteParserBase.aspect} */
+    aspect: number;
     /** X offset for the top-left corner of the animation frame */
     imageOffsetX: number;
     /** Y offset for the top-left corner of the animation frame */
@@ -245,7 +270,7 @@ declare abstract class FlipnoteParserBase extends DataStream {
     audioClipRatio: number;
     /**
      * Get file default title - e.g. "Flipnote by Y", "Comment by X", etc.
-     * A format object can be passed for localisation, where `$USERNAME` gets replaced by author name:
+     * A format object can be passed for localization, where `$USERNAME` gets replaced by author name:
      * ```js
      * {
      *  COMMENT: 'Comment by $USERNAME',
@@ -282,6 +307,13 @@ declare abstract class FlipnoteParserBase extends DataStream {
      */
     [Symbol.iterator](): Generator<number, void, unknown>;
     /**
+     * Decodes the thumbnail image embedded in the Flipnote. Will return a {@link FlipnoteThumbImage} containing JPEG or raw RGBA data depending on the format.
+     *
+     * Note: For most purposes, you should probably just decode the thumbnail frame instead, to get a higher resolution image.
+     * @category Meta
+     */
+    abstract getThumbnailImage(): FlipnoteThumbImage;
+    /**
      * Decode a frame, returning the raw pixel buffers for each layer
      * @category Image
     */
@@ -292,14 +324,38 @@ declare abstract class FlipnoteParserBase extends DataStream {
      * NOTE: if the visibility flag for this layer is turned off, the result will be empty
      * @category Image
     */
-    getLayerPixels(frameIndex: number, layerIndex: number, imageBuffer?: Uint8Array): Uint8Array;
+    getLayerPixels(frameIndex: number, layerIndex: number, imageBuffer?: Uint8Array, depthStrength?: number, depthEye?: FlipnoteStereoscopicEye): Uint8Array;
     /**
      * Get the pixels for a given frame layer, as RGBA pixels
      * NOTE: layerIndex are not guaranteed to be sorted by 3D depth in KWZs, use {@link getFrameLayerOrder} to get the correct sort order first
      * NOTE: if the visibility flag for this layer is turned off, the result will be empty
      * @category Image
     */
-    getLayerPixelsRgba(frameIndex: number, layerIndex: number, imageBuffer?: Uint32Array, paletteBuffer?: Uint32Array): Uint32Array;
+    getLayerPixelsRgba(frameIndex: number, layerIndex: number, imageBuffer?: Uint32Array, paletteBuffer?: Uint32Array, depthStrength?: number, depthEye?: FlipnoteStereoscopicEye): Uint32Array;
+    /**
+     * Determines if a given frame is a video key frame or not. This returns an array of booleans for each layer, since keyframe encoding is done on a per-layer basis.
+     * @param frameIndex
+     * @category Image
+    */
+    abstract getIsKeyFrame(frameIndex: number): boolean[];
+    /**
+     * Get the 3D depths for each layer in a given frame.
+     * @param frameIndex
+     * @category Image
+    */
+    abstract getFrameLayerDepths(frameIndex: number): number[];
+    /**
+     * Get the FSID for a given frame's original author.
+     * @param frameIndex
+     * @category Meta
+     */
+    abstract getFrameAuthor(frameIndex: number): string;
+    /**
+     * Get the camera flags for a given frame, if there are any
+     * @category Image
+     * @returns Array of booleans, indicating whether each layer uses a photo or not
+    */
+    abstract getFrameCameraFlags(frameIndex: number): boolean[];
     /**
      * Get the layer draw order for a given frame
      * @category Image
@@ -309,12 +365,12 @@ declare abstract class FlipnoteParserBase extends DataStream {
      * Get the image for a given frame, as palette indices
      * @category Image
     */
-    getFramePixels(frameIndex: number, imageBuffer?: Uint8Array): Uint8Array;
+    getFramePixels(frameIndex: number, imageBuffer?: Uint8Array, depthStrength?: number, depthEye?: FlipnoteStereoscopicEye): Uint8Array;
     /**
      * Get the image for a given frame as an uint32 array of RGBA pixels
      * @category Image
      */
-    getFramePixelsRgba(frameIndex: number, imageBuffer?: Uint32Array, paletteBuffer?: Uint32Array): Uint32Array;
+    getFramePixelsRgba(frameIndex: number, imageBuffer?: Uint32Array, paletteBuffer?: Uint32Array, depthStrength?: number, depthEye?: FlipnoteStereoscopicEye): Uint32Array;
     /**
      * Get the color palette indices for a given frame. RGBA colors for these values can be indexed from {@link FlipnoteParserBase.globalPalette}
      * @category Image
@@ -346,7 +402,7 @@ declare abstract class FlipnoteParserBase extends DataStream {
      */
     abstract getFrameSoundEffectFlags(frameIndex: number): FlipnoteSoundEffectFlags;
     /**
-     * Get the usage flags for a given track accross every frame
+     * Get the usage flags for a given track across every frame
      * @returns an array of booleans for every frame, indicating whether the track is used on that frame
      * @category Audio
      */
@@ -415,7 +471,7 @@ interface PpmMeta extends FlipnoteMeta {
     bgmSpeed: number;
 }
 /**
- * PPM parser options for enabling optimisations and other extra features.
+ * PPM parser options for enabling optimizations and other extra features.
  * None are currently implemented
  */
 declare type PpmParserSettings = {};
@@ -434,6 +490,8 @@ declare class PpmParser extends FlipnoteParserBase {
     static width: number;
     /** Animation frame height */
     static height: number;
+    /** Animation frame aspect ratio */
+    static aspect: number;
     /** Number of animation frame layers */
     static numLayers: number;
     /** Number of colors per layer (aside from transparent) */
@@ -458,6 +516,8 @@ declare class PpmParser extends FlipnoteParserBase {
     imageWidth: number;
     /** Animation frame height, reflects {@link PpmParser.height} */
     imageHeight: number;
+    /** Animation frame aspect ratio, reflects {@link PpmParser.aspect} */
+    aspect: number;
     /** X offset for the top-left corner of the animation frame */
     imageOffsetX: number;
     /** Y offset for the top-left corner of the animation frame */
@@ -506,16 +566,22 @@ declare class PpmParser extends FlipnoteParserBase {
     private decodeSoundHeader;
     private isKeyFrame;
     /**
+     * Decodes the thumbnail image embedded in the Flipnote. Will return a {@link FlipnoteThumbImage} containing raw RGBA data.
+     *
+     * Note: For most purposes, you should probably just decode the thumbnail frame to get a higher resolution image.
+     * @category Meta
+     */
+    getThumbnailImage(): {
+        format: FlipnoteThumbImageFormat;
+        width: number;
+        height: number;
+        data: ArrayBufferLike;
+    };
+    /**
      * Decode a frame, returning the raw pixel buffers for each layer
      * @category Image
     */
     decodeFrame(frameIndex: number): [Uint8Array, Uint8Array];
-    /**
-     * Get the layer draw order for a given frame
-     * @category Image
-     * @returns Array of layer indexes, in the order they should be drawn
-    */
-    getFrameLayerOrder(frameIndex?: number): number[];
     /**
      * Get the color palette indices for a given frame. RGBA colors for these values can be indexed from {@link PpmParser.globalPalette}
      *
@@ -536,6 +602,36 @@ declare class PpmParser extends FlipnoteParserBase {
      * @category Image
      */
     getFramePalette(frameIndex: number): FlipnotePaletteColor[];
+    /**
+     * Determines if a given frame is a video key frame or not. This returns an array of booleans for each layer, since in the KWZ format, keyframe encoding is done on a per-layer basis.
+     * @param frameIndex
+     * @category Image
+    */
+    getIsKeyFrame(frameIndex: number): boolean[];
+    /**
+     * Get the 3D depths for each layer in a given frame. The PPM format doesn't actually store this information, so `0` is returned for both layers. This method is only here for consistency with KWZ.
+     * @param frameIndex
+     * @category Image
+    */
+    getFrameLayerDepths(frameIndex: number): number[];
+    /**
+     * Get the FSID for a given frame's original author. The PPM format doesn't actually store this information, so the current author FSID is returned. This method is only here for consistency with KWZ.
+     * @param frameIndex
+     * @category Meta
+    */
+    getFrameAuthor(frameIndex: number): string;
+    /**
+     * Get the camera flags for a given frame. The PPM format doesn't actually store this information so `false` will be returned for both layers. This method is only here for consistency with KWZ.
+     * @category Image
+     * @returns Array of booleans, indicating whether each layer uses a photo or not
+    */
+    getFrameCameraFlags(frameIndex: number): boolean[];
+    /**
+     * Get the layer draw order for a given frame
+     * @category Image
+     * @returns Array of layer indices, in the order they should be drawn
+    */
+    getFrameLayerOrder(frameIndex: number): number[];
     /**
      * Get the sound effect flags for every frame in the Flipnote
      * @category Audio

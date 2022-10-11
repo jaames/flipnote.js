@@ -1,38 +1,51 @@
-import type { FlipnoteParserBase } from '../parsers';
+import type { FlipnoteParserBase, FlipnoteStereoscopicEye } from '../parsers';
 
 /** @internal */
 export type CanvasConstructor = {
   new(parent: Element, width: number, height: number, options?: {}): CanvasInterface
 }
 
+export enum CanvasStereoscopicMode {
+  None,
+  Dual,
+  // not actually supported, sorry!
+  Anaglyph,
+};
+
 /** @internal */
 export abstract class CanvasInterface {
 
-  public note: FlipnoteParserBase;
-  public width: number;
-  public height: number;
+  note: FlipnoteParserBase;
+  width: number;
+  height: number;
 
-  public srcWidth: number;
-  public srcHeight: number;
-  public dstWidth: number;
-  public dstHeight: number;
-  public prevFrameIndex: number;
+  srcWidth: number;
+  srcHeight: number;
+  dstWidth: number;
+  dstHeight: number;
+  frameIndex: number;
+
+  supportedStereoscopeModes: CanvasStereoscopicMode[];
+  stereoscopeMode: CanvasStereoscopicMode;
+  stereoscopeStrength: number;
 
   constructor (parent: Element, width: number, height: number, options?: {}) {}
 
-  public abstract setCanvasSize(width: number, height: number): void
+  abstract setCanvasSize(width: number, height: number): void
 
-  public abstract setNote(note: FlipnoteParserBase): void
+  abstract setNote(note: FlipnoteParserBase): void
 
-  public abstract clear(color?: [number, number, number, number]): void
+  abstract clear(color?: [number, number, number, number]): void
 
-  public abstract drawFrame(frameIndex: number): void
+  abstract drawFrame(frameIndex: number): void
 
-  public abstract forceUpdate(): void;
+  abstract requestStereoScopeMode(mode: CanvasStereoscopicMode): void;
 
-  public abstract getDataUrl(type?: string, quality?: any): string
+  abstract forceUpdate(): void;
 
-  public abstract getBlob(type?: string, quality?: any): Promise<Blob>
+  abstract getDataUrl(type?: string, quality?: any): string
 
-  public abstract destroy(): void
+  abstract getBlob(type?: string, quality?: any): Promise<Blob>
+
+  abstract destroy(): void
 }
