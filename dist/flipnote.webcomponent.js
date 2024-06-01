@@ -5063,8 +5063,9 @@ kQIDAQAB
                   const srcHeight = this.srcHeight;
                   const sx = gl.drawingBufferWidth / srcWidth;
                   const sy = gl.drawingBufferHeight / srcHeight;
-                  viewWidth = gl.drawingBufferWidth * (sx - 1);
-                  viewHeight = gl.drawingBufferHeight * (sy - 1);
+                  const adj = srcWidth === 256 ? 1 : 0; // ??????? why
+                  viewWidth = gl.drawingBufferWidth * (sx - adj);
+                  viewHeight = gl.drawingBufferHeight * (sy - adj);
                   viewX = -(viewWidth - srcWidth * sx);
                   viewY = -(viewHeight - srcHeight * sy);
               }

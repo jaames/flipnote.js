@@ -5317,8 +5317,9 @@ Keep on Flipnoting!
                     var srcHeight = this.srcHeight;
                     var sx = gl.drawingBufferWidth / srcWidth;
                     var sy = gl.drawingBufferHeight / srcHeight;
-                    viewWidth = gl.drawingBufferWidth * (sx - 1);
-                    viewHeight = gl.drawingBufferHeight * (sy - 1);
+                    var adj = srcWidth === 256 ? 1 : 0; // ??????? why
+                    viewWidth = gl.drawingBufferWidth * (sx - adj);
+                    viewHeight = gl.drawingBufferHeight * (sy - adj);
                     viewX = -(viewWidth - srcWidth * sx);
                     viewY = -(viewHeight - srcHeight * sy);
                 }
