@@ -1,21 +1,17 @@
 {
   "compilerOptions": {
-    "baseUrl": "./",
-    "outDir": "./dist/",
-    "noImplicitAny": true,
-    "moduleResolution": "node",
+    "baseUrl": ".",
+    "outDir": "dist",
     "module": "esnext",
-    "target": "es5",
-    "lib": [
-      "ES2020",
-      "dom",
-    ],
-    "jsx": "react",
-    "allowJs": false,
-    "allowSyntheticDefaultImports": true,
+    "target": "es2020",
+    "noImplicitAny": true,
+    "lib": ["dom", "dom.iterable", "esnext"],
+    "moduleResolution": "node",
+    "resolveJsonModule": true,
+    "noUnusedLocals": false,
     "experimentalDecorators": true,
-    "esModuleInterop": true,
-    "downlevelIteration": true,
+    "allowSyntheticDefaultImports": true,
+    "forceConsistentCasingInFileNames": true,
     "paths": {
       "*" : ["src/types/*"]
     },

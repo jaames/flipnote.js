@@ -1,5 +1,5 @@
 import { assert, isBrowser } from '../utils';
-import { LoaderDefinition } from './LoaderDefinition';
+import { LoaderDefinition } from './loaderDefinition';
 
 /** 
  * Loader for File objects (browser only)

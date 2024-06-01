@@ -1,5 +1,5 @@
 import { LitElement, html, css, customElement, property, internalProperty } from 'lit-element';
-import { Flipnote, FlipnoteFormat } from '../Flipnote';
+import { Flipnote, FlipnoteFormat } from '../flipnote';
 import { parseSource } from '../parseSource';
 import { GifImage } from '../encoders';
 

@@ -1,6 +1,6 @@
 import { isNode, assertNodeEnv, dynamicRequire } from '../utils';
-import { ServerResponse } from 'http';
-import { LoaderDefinition } from './LoaderDefinition';
+import type { ServerResponse } from 'http';
+import { LoaderDefinition } from './loaderDefinition';
 
 /** 
  * Loader for web url strings (Node only)
