@@ -2,7 +2,7 @@
 flipnote.js v5.11.0
 https://flipnote.js.org
 A JavaScript library for parsing, converting, and in-browser playback of the proprietary animation formats used by Nintendo's Flipnote Studio and Flipnote Studio 3D apps.
-2018 - 2022 James Daniel
+2018 - 2024 James Daniel
 Flipnote Studio is (c) Nintendo Co., Ltd. This project isn't affiliated with or endorsed by them in any way.
 Keep on Flipnoting!
 */
@@ -25,13 +25,13 @@ class DataStream {
     }
     seek(offset, whence) {
         switch (whence) {
-            case 2 /* End */:
+            case 2 /* SeekOrigin.End */:
                 this.pointer = this.data.byteLength + offset;
                 break;
-            case 1 /* Current */:
+            case 1 /* SeekOrigin.Current */:
                 this.pointer += offset;
                 break;
-            case 0 /* Begin */:
+            case 0 /* SeekOrigin.Begin */:
             default:
                 this.pointer = offset;
                 break;
@@ -423,6 +423,7 @@ function convertPpmFsidToKwzFsidSuffix(fsid) {
     };
 }))();
 
+var _a$1;
 /** Identifies which animation format a Flipnote uses */
 var FlipnoteFormat;
 (function (FlipnoteFormat) {
@@ -478,7 +479,7 @@ class FlipnoteParserBase extends DataStream {
         super(...arguments);
         /** Instance file format info */
         /** Custom object tag */
-        this[Symbol.toStringTag] = 'Flipnote';
+        this[_a$1] = 'Flipnote';
         /** Default formats used for {@link getTitle()} */
         this.titleFormats = {
             COMMENT: 'Comment by $USERNAME',
@@ -536,7 +537,7 @@ class FlipnoteParserBase extends DataStream {
      * ```
      * @category Utility
      */
-    *[Symbol.iterator]() {
+    *[(_a$1 = Symbol.toStringTag, Symbol.iterator)]() {
         for (let i = 0; i < this.frameCount; i++)
             yield i;
     }
@@ -749,6 +750,7 @@ class FlipnoteParserBase extends DataStream {
     }
 }
 
+var _a;
 /**
  * PPM framerates in frames per second, indexed by the in-app frame speed.
  * Frame speed 0 is never normally used
@@ -813,7 +815,7 @@ class PpmParser extends FlipnoteParserBase {
         /** File format type, reflects {@link PpmParser.format} */
         this.format = FlipnoteFormat.PPM;
         /** Custom object tag */
-        this[Symbol.toStringTag] = 'Flipnote Studio PPM animation file';
+        this[_a] = 'Flipnote Studio PPM animation file';
         /** Animation frame width, reflects {@link PpmParser.width} */
         this.imageWidth = PpmParser.width;
         /** Animation frame height, reflects {@link PpmParser.height} */
@@ -1195,7 +1197,7 @@ class PpmParser extends FlipnoteParserBase {
         return [
             isInverted ? 1 : 0,
             penMap[(header >> 1) & 0x3],
-            penMap[(header >> 3) & 0x3],
+            penMap[(header >> 3) & 0x3], // layer 2 color
         ];
     }
     /**
@@ -1271,7 +1273,7 @@ class PpmParser extends FlipnoteParserBase {
             this.soundFlags[i] = [
                 (byte & 0x1) !== 0,
                 (byte & 0x2) !== 0,
-                (byte & 0x4) !== 0,
+                (byte & 0x4) !== 0, // SE3 bitflag
             ];
         }
         return this.soundFlags;
@@ -1446,6 +1448,7 @@ class PpmParser extends FlipnoteParserBase {
         return await rsaVerify(key, this.getSignature(), this.getBody());
     }
 }
+_a = Symbol.toStringTag;
 /** Default PPM parser settings */
 PpmParser.defaultSettings = {};
 /** File format type */

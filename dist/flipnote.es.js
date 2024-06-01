@@ -2,7 +2,7 @@
 flipnote.js v5.11.0
 https://flipnote.js.org
 A JavaScript library for parsing, converting, and in-browser playback of the proprietary animation formats used by Nintendo's Flipnote Studio and Flipnote Studio 3D apps.
-2018 - 2022 James Daniel
+2018 - 2024 James Daniel
 Flipnote Studio is (c) Nintendo Co., Ltd. This project isn't affiliated with or endorsed by them in any way.
 Keep on Flipnoting!
 */
@@ -109,13 +109,13 @@ class DataStream {
     }
     seek(offset, whence) {
         switch (whence) {
-            case 2 /* End */:
+            case 2 /* SeekOrigin.End */:
                 this.pointer = this.data.byteLength + offset;
                 break;
-            case 1 /* Current */:
+            case 1 /* SeekOrigin.Current */:
                 this.pointer += offset;
                 break;
-            case 0 /* Begin */:
+            case 0 /* SeekOrigin.Begin */:
             default:
                 this.pointer = offset;
                 break;
@@ -707,6 +707,7 @@ var fsid = /*#__PURE__*/Object.freeze({
     };
 }))();
 
+var _a$2;
 /** Identifies which animation format a Flipnote uses */
 var FlipnoteFormat;
 (function (FlipnoteFormat) {
@@ -762,7 +763,7 @@ class FlipnoteParserBase extends DataStream {
         super(...arguments);
         /** Instance file format info */
         /** Custom object tag */
-        this[Symbol.toStringTag] = 'Flipnote';
+        this[_a$2] = 'Flipnote';
         /** Default formats used for {@link getTitle()} */
         this.titleFormats = {
             COMMENT: 'Comment by $USERNAME',
@@ -820,7 +821,7 @@ class FlipnoteParserBase extends DataStream {
      * ```
      * @category Utility
      */
-    *[Symbol.iterator]() {
+    *[(_a$2 = Symbol.toStringTag, Symbol.iterator)]() {
         for (let i = 0; i < this.frameCount; i++)
             yield i;
     }
@@ -1033,6 +1034,7 @@ class FlipnoteParserBase extends DataStream {
     }
 }
 
+var _a$1;
 /**
  * PPM framerates in frames per second, indexed by the in-app frame speed.
  * Frame speed 0 is never normally used
@@ -1097,7 +1099,7 @@ class PpmParser extends FlipnoteParserBase {
         /** File format type, reflects {@link PpmParser.format} */
         this.format = FlipnoteFormat.PPM;
         /** Custom object tag */
-        this[Symbol.toStringTag] = 'Flipnote Studio PPM animation file';
+        this[_a$1] = 'Flipnote Studio PPM animation file';
         /** Animation frame width, reflects {@link PpmParser.width} */
         this.imageWidth = PpmParser.width;
         /** Animation frame height, reflects {@link PpmParser.height} */
@@ -1479,7 +1481,7 @@ class PpmParser extends FlipnoteParserBase {
         return [
             isInverted ? 1 : 0,
             penMap[(header >> 1) & 0x3],
-            penMap[(header >> 3) & 0x3],
+            penMap[(header >> 3) & 0x3], // layer 2 color
         ];
     }
     /**
@@ -1555,7 +1557,7 @@ class PpmParser extends FlipnoteParserBase {
             this.soundFlags[i] = [
                 (byte & 0x1) !== 0,
                 (byte & 0x2) !== 0,
-                (byte & 0x4) !== 0,
+                (byte & 0x4) !== 0, // SE3 bitflag
             ];
         }
         return this.soundFlags;
@@ -1730,6 +1732,7 @@ class PpmParser extends FlipnoteParserBase {
         return await rsaVerify(key, this.getSignature(), this.getBody());
     }
 }
+_a$1 = Symbol.toStringTag;
 /** Default PPM parser settings */
 PpmParser.defaultSettings = {};
 /** File format type */
@@ -1771,6 +1774,7 @@ PpmParser.globalPalette = [
 /** Public key used for Flipnote verification, in PEM format */
 PpmParser.publicKey = PPM_PUBLIC_KEY;
 
+var _a;
 /**
  * KWZ framerates in frames per second, indexed by the in-app frame speed
  */
@@ -1873,7 +1877,7 @@ class KwzParser extends FlipnoteParserBase {
         /** File format type, reflects {@link KwzParser.format} */
         this.format = FlipnoteFormat.KWZ;
         /** Custom object tag */
-        this[Symbol.toStringTag] = 'Flipnote Studio 3D KWZ animation file';
+        this[_a] = 'Flipnote Studio 3D KWZ animation file';
         /** Animation frame width, reflects {@link KwzParser.width} */
         this.imageWidth = KwzParser.width;
         /** Animation frame height, reflects {@link KwzParser.height} */
@@ -2738,6 +2742,7 @@ class KwzParser extends FlipnoteParserBase {
         return await rsaVerify(key, this.getSignature(), this.getBody());
     }
 }
+_a = Symbol.toStringTag;
 /** Default KWZ parser settings */
 KwzParser.defaultSettings = {
     quickMeta: false,
@@ -3061,7 +3066,7 @@ class CanvasInterface {
     constructor(parent, width, height, options) { }
 }
 
-/* @license twgl.js 4.21.2 Copyright (c) 2015, Gregg Tavares All Rights Reserved.
+/* @license twgl.js 4.24.0 Copyright (c) 2015, Gregg Tavares All Rights Reserved.
 Available via the MIT license.
 see: http://github.com/greggman/twgl.js for details */
 
@@ -3542,6 +3547,9 @@ function getNumElementsFromAttributes(gl, attribs) {
     key = Object.keys(attribs)[0];
   }
   const attrib = attribs[key];
+  if (!attrib.buffer) {
+    return 1; // There's no buffer
+  }
   gl.bindBuffer(ARRAY_BUFFER, attrib.buffer);
   const numBytes = gl.getBufferParameter(ARRAY_BUFFER, BUFFER_SIZE);
   gl.bindBuffer(ARRAY_BUFFER, null);
@@ -3728,6 +3736,7 @@ function isWebGL2(gl) {
 const TEXTURE0                       = 0x84c0;
 
 const ARRAY_BUFFER$1                   = 0x8892;
+const ELEMENT_ARRAY_BUFFER$1           = 0x8893;
 
 const ACTIVE_UNIFORMS                = 0x8b86;
 const ACTIVE_ATTRIBUTES              = 0x8b89;
@@ -3788,6 +3797,7 @@ const typeMap = {};
 
 /**
  * Returns the corresponding bind point for a given sampler type
+ * @private
  */
 function getBindPointForSamplerType(gl, type) {
   return typeMap[type].bindPoint;
@@ -4543,6 +4553,7 @@ function setUniformTree(tree, values) {
  *     struct Light {
  *       float intensity;
  *       vec4 color;
+ *       float nearFar[2];
  *     };
  *     uniform Light lights[2];
  *
@@ -4550,8 +4561,8 @@ function setUniformTree(tree, values) {
  *
  *     twgl.setUniforms(programInfo, {
  *       lights: [
- *         { intensity: 5.0, color: [1, 0, 0, 1] },
- *         { intensity: 2.0, color: [0, 0, 1, 1] },
+ *         { intensity: 5.0, color: [1, 0, 0, 1], nearFar[0.1, 10] },
+ *         { intensity: 2.0, color: [0, 0, 1, 1], nearFar[0.2, 15] },
  *       ],
  *     });
  *
@@ -4560,17 +4571,24 @@ function setUniformTree(tree, values) {
  *     twgl.setUniforms(programInfo, {
  *       "lights[0].intensity": 5.0,
  *       "lights[0].color": [1, 0, 0, 1],
+ *       "lights[0].nearFar": [0.1, 10],
  *       "lights[1].intensity": 2.0,
  *       "lights[1].color": [0, 0, 1, 1],
+ *       "lights[1].nearFar": [0.2, 15],
  *     });
  *
  *   You can also specify partial paths
  *
  *     twgl.setUniforms(programInfo, {
- *       'lights[1]: { intensity: 5.0, color: [1, 0, 0, 1] },
+ *       'lights[1]': { intensity: 5.0, color: [1, 0, 0, 1], nearFar[0.2, 15] },
  *     });
  *
  *   But you can not specify leaf array indices
+ *
+ *     twgl.setUniforms(programInfo, {
+ *       'lights[1].nearFar[1]': 15,     // BAD! nearFar is a leaf
+ *       'lights[1].nearFar': [0.2, 15], // GOOD
+ *     });
  *
  * @memberOf module:twgl/programs
  */
@@ -4678,12 +4696,61 @@ function createAttributeSetters(gl, program) {
  * @param {Object.<string, module:twgl.AttribInfo>} buffers AttribInfos mapped by attribute name.
  * @memberOf module:twgl/programs
  * @deprecated use {@link module:twgl.setBuffersAndAttributes}
+ * @private
  */
 function setAttributes(setters, buffers) {
   for (const name in buffers) {
     const setter = setters[name];
     if (setter) {
       setter(buffers[name]);
+    }
+  }
+}
+
+/**
+ * Sets attributes and buffers including the `ELEMENT_ARRAY_BUFFER` if appropriate
+ *
+ * Example:
+ *
+ *     const programInfo = createProgramInfo(
+ *         gl, ["some-vs", "some-fs");
+ *
+ *     const arrays = {
+ *       position: { numComponents: 3, data: [0, 0, 0, 10, 0, 0, 0, 10, 0, 10, 10, 0], },
+ *       texcoord: { numComponents: 2, data: [0, 0, 0, 1, 1, 0, 1, 1],                 },
+ *     };
+ *
+ *     const bufferInfo = createBufferInfoFromArrays(gl, arrays);
+ *
+ *     gl.useProgram(programInfo.program);
+ *
+ * This will automatically bind the buffers AND set the
+ * attributes.
+ *
+ *     setBuffersAndAttributes(gl, programInfo, bufferInfo);
+ *
+ * For the example above it is equivalent to
+ *
+ *     gl.bindBuffer(gl.ARRAY_BUFFER, positionBuffer);
+ *     gl.enableVertexAttribArray(a_positionLocation);
+ *     gl.vertexAttribPointer(a_positionLocation, 3, gl.FLOAT, false, 0, 0);
+ *     gl.bindBuffer(gl.ARRAY_BUFFER, texcoordBuffer);
+ *     gl.enableVertexAttribArray(a_texcoordLocation);
+ *     gl.vertexAttribPointer(a_texcoordLocation, 4, gl.FLOAT, false, 0, 0);
+ *
+ * @param {WebGLRenderingContext} gl A WebGLRenderingContext.
+ * @param {(module:twgl.ProgramInfo|Object.<string, function>)} setters A `ProgramInfo` as returned from {@link module:twgl.createProgramInfo} or Attribute setters as returned from {@link module:twgl.createAttributeSetters}
+ * @param {(module:twgl.BufferInfo|module:twgl.VertexArrayInfo)} buffers a `BufferInfo` as returned from {@link module:twgl.createBufferInfoFromArrays}.
+ *   or a `VertexArrayInfo` as returned from {@link module:twgl.createVertexArrayInfo}
+ * @memberOf module:twgl/programs
+ */
+function setBuffersAndAttributes(gl, programInfo, buffers) {
+  if (buffers.vertexArrayObject) {
+    gl.bindVertexArray(buffers.vertexArrayObject);
+  } else {
+    setAttributes(programInfo.attribSetters || programInfo, buffers.attribs);
+    if (buffers.indices) {
+      gl.bindBuffer(ELEMENT_ARRAY_BUFFER$1, buffers.indices);
     }
   }
 }
@@ -4746,6 +4813,16 @@ var fragShaderUpscale = "precision highp float;\n#define GLSLIFY 1\nvarying vec2
  * Only available in browser contexts
  */
 class WebglCanvas {
+    static isSupported() {
+        if (!isBrowser)
+            return false;
+        let testCanvas = document.createElement('canvas');
+        let testCtx = testCanvas.getContext('2d');
+        const supported = testCtx !== null;
+        testCanvas = null;
+        testCtx = null;
+        return supported;
+    }
     /**
      * Creates a new WebGlCanvas instance
      * @param el - Canvas HTML element to use as a rendering surface
@@ -4759,6 +4836,7 @@ class WebglCanvas {
         this.supportedStereoscopeModes = [
             CanvasStereoscopicMode.None,
             CanvasStereoscopicMode.Dual,
+            // CanvasStereoscopicMode.Anaglyph, // couldn't get this working, despite spending lots of time on it :/
         ];
         /** */
         this.stereoscopeMode = CanvasStereoscopicMode.None;
@@ -4768,6 +4846,7 @@ class WebglCanvas {
         this.textureTypes = new Map();
         this.textureSizes = new Map();
         this.frameBufferTextures = new Map();
+        this.applyFirefoxFix = false;
         this.refs = {
             programs: [],
             shaders: [],
@@ -4805,16 +4884,6 @@ class WebglCanvas {
             parent.appendChild(this.canvas);
         this.init();
     }
-    static isSupported() {
-        if (!isBrowser)
-            return false;
-        let testCanvas = document.createElement('canvas');
-        let testCtx = testCanvas.getContext('2d');
-        const supported = testCtx !== null;
-        testCanvas = null;
-        testCtx = null;
-        return supported;
-    }
     init() {
         this.setCanvasSize(this.width, this.height);
         const gl = this.gl;
@@ -4827,6 +4896,11 @@ class WebglCanvas {
         this.layerTexture = this.createTexture(gl.RGBA, gl.LINEAR, gl.CLAMP_TO_EDGE);
         this.frameTexture = this.createTexture(gl.RGBA, gl.LINEAR, gl.CLAMP_TO_EDGE);
         this.frameBuffer = this.createFramebuffer(this.frameTexture);
+        const debugInfo = gl.getExtension('WEBGL_debug_renderer_info');
+        const renderer = gl.getParameter(debugInfo.UNMASKED_RENDERER_WEBGL);
+        const userAgent = navigator.userAgent;
+        const isMacFirefox = userAgent.includes('Firefox') && userAgent.includes('Mac');
+        this.applyFirefoxFix = isMacFirefox && renderer.includes('Apple M');
     }
     createProgram(vertexShaderSource, fragmentShaderSource) {
         if (this.checkContextLoss())
@@ -4918,9 +4992,7 @@ class WebglCanvas {
     setBuffersAndAttribs(program, buffer) {
         if (this.checkContextLoss())
             return;
-        const gl = this.gl;
-        setAttributes(program.attribSetters, buffer.attribs);
-        gl.bindBuffer(gl.ELEMENT_ARRAY_BUFFER, buffer.indices);
+        setBuffersAndAttributes(this.gl, program.attribSetters, buffer);
     }
     createTexture(type, minMag, wrap, width = 1, height = 1) {
         if (this.checkContextLoss())
@@ -4964,6 +5036,22 @@ class WebglCanvas {
         const gl = this.gl;
         if (fb === null) {
             gl.bindFramebuffer(gl.FRAMEBUFFER, null);
+            /**
+             * Firefox on Apple Silicon Macs seems to have some kind of viewport sizing bug that I can't track down.
+             * Details here: https://github.com/jaames/flipnote.js/issues/30#issuecomment-2134602056
+             * Not sure what's causing it, but this hack fixes it for now.
+             * Need to test whether only specific versions of Firefox are affected, if it's only an Apple Silicon thing, etc, etc...
+             */
+            if (this.applyFirefoxFix) {
+                const srcWidth = this.srcWidth;
+                const srcHeight = this.srcHeight;
+                const sx = gl.drawingBufferWidth / srcWidth;
+                const sy = gl.drawingBufferHeight / srcHeight;
+                viewWidth = gl.drawingBufferWidth * (sx - 1);
+                viewHeight = gl.drawingBufferHeight * (sy - 1);
+                viewX = -(viewWidth - srcWidth * sx);
+                viewY = -(viewHeight - srcHeight * sy);
+            }
             gl.viewport(viewX !== null && viewX !== void 0 ? viewX : 0, viewY !== null && viewY !== void 0 ? viewY : 0, viewWidth !== null && viewWidth !== void 0 ? viewWidth : gl.drawingBufferWidth, viewHeight !== null && viewHeight !== void 0 ? viewHeight : gl.drawingBufferHeight);
         }
         else {
@@ -4976,7 +5064,6 @@ class WebglCanvas {
     resizeFramebuffer(fb, width, height) {
         if (this.checkContextLoss())
             return;
-        this.gl;
         const texture = this.frameBufferTextures.get(fb);
         this.resizeTexture(texture, width, height);
     }
@@ -5190,6 +5277,16 @@ WebglCanvas.defaultOptions = {
  * Flipnote renderer for the [HTML5 2D canvas API](https://developer.mozilla.org/en-US/docs/Web/API/CanvasRenderingContext2D)
  */
 class Html5Canvas {
+    static isSupported() {
+        if (!isBrowser)
+            return false;
+        let testCanvas = document.createElement('canvas');
+        let testCtx = testCanvas.getContext('2d');
+        const supported = testCtx !== null;
+        testCanvas = null;
+        testCtx = null;
+        return supported;
+    }
     constructor(parent, width, height, options = {}) {
         /** */
         this.supportedStereoscopeModes = [
@@ -5213,16 +5310,6 @@ class Html5Canvas {
         if (parent)
             parent.appendChild(this.canvas);
         this.setCanvasSize(width, height);
-    }
-    static isSupported() {
-        if (!isBrowser)
-            return false;
-        let testCanvas = document.createElement('canvas');
-        let testCtx = testCanvas.getContext('2d');
-        const supported = testCtx !== null;
-        testCanvas = null;
-        testCtx = null;
-        return supported;
     }
     /**
      * Resize the canvas surface

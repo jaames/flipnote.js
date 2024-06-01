@@ -1,14 +1,14 @@
 import {
   ProgramInfo,
   BufferInfo,
-  setAttributes,
+  setBuffersAndAttributes,
   createProgramInfoFromProgram,
   createBufferInfoFromArrays,
   setUniforms,
 } from 'twgl.js';
 
 import { FlipnoteParserBase, FlipnoteStereoscopicEye } from '../parsers';
-import { assert, assertBrowserEnv, isBrowser } from '../utils';
+import { assertBrowserEnv, isBrowser } from '../utils';
 import { CanvasInterface, CanvasStereoscopicMode } from './CanvasInterface';
 
 import vertShaderLayer from './shaders/layer.vert';
@@ -118,6 +118,8 @@ export class WebglCanvas implements CanvasInterface {
   private textureSizes = new Map<WebGLTexture, { width: number, height: number }>();
   private frameBufferTextures = new Map<WebGLFramebuffer, WebGLTexture>();
 
+  private applyFirefoxFix = false;
+
   private refs: ResourceMap = {
     programs: [],
     shaders: [],
@@ -164,6 +166,12 @@ export class WebglCanvas implements CanvasInterface {
 
     this.frameTexture = this.createTexture(gl.RGBA, gl.LINEAR, gl.CLAMP_TO_EDGE);
     this.frameBuffer = this.createFramebuffer(this.frameTexture);
+
+    const debugInfo = gl.getExtension('WEBGL_debug_renderer_info');
+    const renderer = gl.getParameter(debugInfo.UNMASKED_RENDERER_WEBGL);
+    const userAgent = navigator.userAgent;
+    const isMacFirefox = userAgent.includes('Firefox') && userAgent.includes('Mac');
+    this.applyFirefoxFix = isMacFirefox && renderer.includes('Apple M');
   }
 
   private createProgram(vertexShaderSource: string, fragmentShaderSource: string) {
@@ -255,9 +263,7 @@ export class WebglCanvas implements CanvasInterface {
 
   private setBuffersAndAttribs(program: ProgramInfo, buffer: BufferInfo) {
     if (this.checkContextLoss()) return;
-    const gl = this.gl;
-    setAttributes(program.attribSetters, buffer.attribs);
-    gl.bindBuffer(gl.ELEMENT_ARRAY_BUFFER, buffer.indices);
+    setBuffersAndAttributes(this.gl, program.attribSetters, buffer);
   }
 
   private createTexture(type: number, minMag: number, wrap: number, width = 1, height = 1) {
@@ -301,6 +307,22 @@ export class WebglCanvas implements CanvasInterface {
     const gl = this.gl;
     if (fb === null) {
       gl.bindFramebuffer(gl.FRAMEBUFFER, null);
+      /**
+       * Firefox on Apple Silicon Macs seems to have some kind of viewport sizing bug that I can't track down.
+       * Details here: https://github.com/jaames/flipnote.js/issues/30#issuecomment-2134602056
+       * Not sure what's causing it, but this hack fixes it for now.
+       * Need to test whether only specific versions of Firefox are affected, if it's only an Apple Silicon thing, etc, etc...
+       */
+      if (this.applyFirefoxFix) {
+        const srcWidth = this.srcWidth;
+        const srcHeight = this.srcHeight;
+        const sx = gl.drawingBufferWidth / srcWidth;
+        const sy = gl.drawingBufferHeight / srcHeight;
+        viewWidth = gl.drawingBufferWidth * (sx - 1);
+        viewHeight = gl.drawingBufferHeight * (sy - 1);
+        viewX = -(viewWidth - srcWidth * sx);
+        viewY = -(viewHeight - srcHeight * sy);
+      }
       gl.viewport(viewX ?? 0, viewY ?? 0, viewWidth ?? gl.drawingBufferWidth, viewHeight ?? gl.drawingBufferHeight);
     } 
     else {
@@ -313,7 +335,6 @@ export class WebglCanvas implements CanvasInterface {
 
   private resizeFramebuffer(fb: WebGLFramebuffer, width: number, height: number) {
     if (this.checkContextLoss()) return;
-    const gl = this.gl;
     const texture = this.frameBufferTextures.get(fb);
     this.resizeTexture(texture, width, height);
   }
@@ -368,7 +389,7 @@ export class WebglCanvas implements CanvasInterface {
     const gl = this.gl;
     const paperColor = color ?? this.note.getFramePalette(this.frameIndex)[0];
     const [r, g, b, a] = paperColor;
-    gl.clearColor(r / 255, g / 255, b / 255, a /255);
+    gl.clearColor(r / 255, g / 255, b / 255, a / 255);
     gl.clear(gl.COLOR_BUFFER_BIT);
   }
 

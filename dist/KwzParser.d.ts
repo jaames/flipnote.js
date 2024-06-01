@@ -64,7 +64,7 @@ declare enum FlipnoteThumbImageFormat {
     Rgba = 1
 }
 /** Represents a decoded Flipnote thumbnail image */
-declare type FlipnoteThumbImage = {
+type FlipnoteThumbImage = {
     /**  */
     format: FlipnoteThumbImageFormat;
     /** Image width in pixels */
@@ -75,7 +75,7 @@ declare type FlipnoteThumbImage = {
     data: ArrayBuffer;
 };
 /** RGBA color */
-declare type FlipnotePaletteColor = [
+type FlipnotePaletteColor = [
     /** Red (0 to 255) */
     number,
     /** Green (0 to 255) */
@@ -86,14 +86,14 @@ declare type FlipnotePaletteColor = [
     number
 ];
 /** Flipnote layer visibility */
-declare type FlipnoteLayerVisibility = Record<number, boolean>;
+type FlipnoteLayerVisibility = Record<number, boolean>;
 /** stereoscopic eye view (left/right) for 3D effects */
 declare enum FlipnoteStereoscopicEye {
     Left = 0,
     Right = 1
 }
 /** Defines the colors used for a given Flipnote format */
-declare type FlipnotePaletteDefinition = Record<string, FlipnotePaletteColor>;
+type FlipnotePaletteDefinition = Record<string, FlipnotePaletteColor>;
 /** Identifies a Flipnote audio track type */
 declare enum FlipnoteAudioTrack {
     /** Background music track */
@@ -120,7 +120,7 @@ declare enum FlipnoteSoundEffectTrack {
     SE4 = 4
 }
 /** Flipnote sound flags, indicating which sound effect tracks are used on a given frame */
-declare type FlipnoteSoundEffectFlags = Record<FlipnoteSoundEffectTrack, boolean>;
+type FlipnoteSoundEffectFlags = Record<FlipnoteSoundEffectTrack, boolean>;
 /**
  * Flipnote version info - provides details about a particular Flipnote version and its author
  */
@@ -467,12 +467,12 @@ declare abstract class FlipnoteParserBase extends DataStream {
  * KWZ section types
  * @internal
  */
-declare type KwzSectionMagic = 'KFH' | 'KTN' | 'KMC' | 'KMI' | 'KSN' | 'KIC';
+type KwzSectionMagic = 'KFH' | 'KTN' | 'KMC' | 'KMI' | 'KSN' | 'KIC';
 /**
  * KWZ section map, tracking their offset and length
  * @internal
  */
-declare type KwzSectionMap = Map<KwzSectionMagic, {
+type KwzSectionMap = Map<KwzSectionMagic, {
     ptr: number;
     length: number;
 }>;
@@ -503,7 +503,7 @@ interface KwzFrameMeta {
 /**
  * KWZ parser options for enabling optimizations and other extra features
  */
-declare type KwzParserSettings = {
+type KwzParserSettings = {
     /**
      * Skip full metadata parsing for quickness
      */

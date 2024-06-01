@@ -2,7 +2,7 @@
 flipnote.js v5.11.0
 https://flipnote.js.org
 A JavaScript library for parsing, converting, and in-browser playback of the proprietary animation formats used by Nintendo's Flipnote Studio and Flipnote Studio 3D apps.
-2018 - 2022 James Daniel
+2018 - 2024 James Daniel
 Flipnote Studio is (c) Nintendo Co., Ltd. This project isn't affiliated with or endorsed by them in any way.
 Keep on Flipnoting!
 */
@@ -12,7 +12,7 @@ Keep on Flipnoting!
     (global = typeof globalThis !== 'undefined' ? globalThis : global || self, factory(global.flipnote = {}));
 })(this, (function (exports) { 'use strict';
 
-    /*! *****************************************************************************
+    /******************************************************************************
     Copyright (c) Microsoft Corporation.
 
     Permission to use, copy, modify, and/or distribute this software for any
@@ -26,7 +26,7 @@ Keep on Flipnoting!
     OTHER TORTIOUS ACTION, ARISING OUT OF OR IN CONNECTION WITH THE USE OR
     PERFORMANCE OF THIS SOFTWARE.
     ***************************************************************************** */
-    /* global Reflect, Promise */
+    /* global Reflect, Promise, SuppressedError, Symbol */
 
     var extendStatics = function(d, b) {
         extendStatics = Object.setPrototypeOf ||
@@ -70,7 +70,7 @@ Keep on Flipnoting!
         function verb(n) { return function (v) { return step([n, v]); }; }
         function step(op) {
             if (f) throw new TypeError("Generator is already executing.");
-            while (_) try {
+            while (g && (g = 0, op[0] && (_ = 0)), _) try {
                 if (f = 1, y && (t = op[0] & 2 ? y["return"] : op[0] ? y["throw"] || ((t = y["return"]) && t.call(y), 0) : y.next) && !(t = t.call(y, op[1])).done) return t;
                 if (y = 0, t) op = [op[0] & 2, t.value];
                 switch (op[0]) {
@@ -121,12 +121,20 @@ Keep on Flipnoting!
         return ar;
     }
 
-    /** @deprecated */
-    function __spread() {
-        for (var ar = [], i = 0; i < arguments.length; i++)
-            ar = ar.concat(__read(arguments[i]));
-        return ar;
+    function __spreadArray(to, from, pack) {
+        if (pack || arguments.length === 2) for (var i = 0, l = from.length, ar; i < l; i++) {
+            if (ar || !(i in from)) {
+                if (!ar) ar = Array.prototype.slice.call(from, 0, i);
+                ar[i] = from[i];
+            }
+        }
+        return to.concat(ar || Array.prototype.slice.call(from));
     }
+
+    typeof SuppressedError === "function" ? SuppressedError : function (error, suppressed, message) {
+        var e = new Error(message);
+        return e.name = "SuppressedError", e.error = error, e.suppressed = suppressed, e;
+    };
 
     /** @internal */
     var ByteArray = /** @class */ (function () {
@@ -244,13 +252,13 @@ Keep on Flipnoting!
         });
         DataStream.prototype.seek = function (offset, whence) {
             switch (whence) {
-                case 2 /* End */:
+                case 2 /* SeekOrigin.End */:
                     this.pointer = this.data.byteLength + offset;
                     break;
-                case 1 /* Current */:
+                case 1 /* SeekOrigin.Current */:
                     this.pointer += offset;
                     break;
-                case 0 /* Begin */:
+                case 0 /* SeekOrigin.Begin */:
                 default:
                     this.pointer = offset;
                     break;
@@ -492,7 +500,7 @@ Keep on Flipnoting!
      */
     function assertRange(value, min, max, name) {
         if (name === void 0) { name = ''; }
-        assert(value >= min && value <= max, (name || 'value') + " " + value + " should be between " + min + " and " + max);
+        assert(value >= min && value <= max, "".concat(name || 'value', " ").concat(value, " should be between ").concat(min, " and ").concat(max));
     }
 
     /**
@@ -509,7 +517,7 @@ Keep on Flipnoting!
             return nodeModule.require(p);
         }
         catch (_a) {
-            throw new Error("Could not require(" + p + ")");
+            throw new Error("Could not require(".concat(p, ")"));
         }
     }
     /**
@@ -888,6 +896,7 @@ Keep on Flipnoting!
         };
     }))();
 
+    var _a;
     /** Identifies which animation format a Flipnote uses */
     exports.FlipnoteFormat = void 0;
     (function (FlipnoteFormat) {
@@ -944,7 +953,7 @@ Keep on Flipnoting!
             var _this = _super !== null && _super.apply(this, arguments) || this;
             /** Instance file format info */
             /** Custom object tag */
-            _this[Symbol.toStringTag] = 'Flipnote';
+            _this[_a] = 'Flipnote';
             /** Default formats used for {@link getTitle()} */
             _this.titleFormats = {
                 COMMENT: 'Comment by $USERNAME',
@@ -1004,19 +1013,19 @@ Keep on Flipnoting!
          * ```
          * @category Utility
          */
-        FlipnoteParserBase.prototype[Symbol.iterator] = function () {
+        FlipnoteParserBase.prototype[(_a = Symbol.toStringTag, Symbol.iterator)] = function () {
             var i;
-            return __generator(this, function (_a) {
-                switch (_a.label) {
+            return __generator(this, function (_b) {
+                switch (_b.label) {
                     case 0:
                         i = 0;
-                        _a.label = 1;
+                        _b.label = 1;
                     case 1:
                         if (!(i < this.frameCount)) return [3 /*break*/, 4];
                         return [4 /*yield*/, i];
                     case 2:
-                        _a.sent();
-                        _a.label = 3;
+                        _b.sent();
+                        _b.label = 3;
                     case 3:
                         i++;
                         return [3 /*break*/, 1];
@@ -1216,8 +1225,8 @@ Keep on Flipnoting!
             assertRange(frameIndex, 0, this.frameCount - 1, 'Frame index');
             var colors = this.getFramePalette(frameIndex);
             paletteBuffer.fill(0);
-            colors.forEach(function (_a, i) {
-                var _b = __read(_a, 4), r = _b[0], g = _b[1], b = _b[2], a = _b[3];
+            colors.forEach(function (_b, i) {
+                var _c = __read(_b, 4), r = _c[0], g = _c[1], b = _c[2], a = _c[3];
                 return paletteBuffer[i] = (a << 24) | (b << 16) | (g << 8) | r;
             });
             return paletteBuffer;
@@ -1311,7 +1320,7 @@ Keep on Flipnoting!
             /** File format type, reflects {@link PpmParser.format} */
             _this.format = exports.FlipnoteFormat.PPM;
             /** Custom object tag */
-            _this[Symbol.toStringTag] = 'Flipnote Studio PPM animation file';
+            _this[_a] = 'Flipnote Studio PPM animation file';
             /** Animation frame width, reflects {@link PpmParser.width} */
             _this.imageWidth = PpmParser.width;
             /** Animation frame height, reflects {@link PpmParser.height} */
@@ -1385,7 +1394,7 @@ Keep on Flipnoting!
             var mac = this.readHex(3);
             var random = this.readChars(13);
             var edits = this.readUint16().toString().padStart(3, '0');
-            return mac + "_" + random + "_" + edits;
+            return "".concat(mac, "_").concat(random, "_").concat(edits);
         };
         PpmParser.prototype.decodeMeta = function () {
             // https://github.com/Flipnote-Collective/flipnote-studio-docs/wiki/PPM-format#metadata
@@ -1455,7 +1464,7 @@ Keep on Flipnoting!
             var frameOffsets = new Uint32Array(numOffsets);
             for (var n = 0; n < numOffsets; n++) {
                 var ptr = 0x06A8 + offsetTableLength + this.readUint32();
-                assert(ptr < this.byteLength, "Frame " + n + " pointer is out of bounds");
+                assert(ptr < this.byteLength, "Frame ".concat(n, " pointer is out of bounds"));
                 frameOffsets[n] = ptr;
             }
             this.frameOffsets = frameOffsets;
@@ -1694,7 +1703,7 @@ Keep on Flipnoting!
             return [
                 isInverted ? 1 : 0,
                 penMap[(header >> 1) & 0x3],
-                penMap[(header >> 3) & 0x3],
+                penMap[(header >> 3) & 0x3], // layer 2 color
             ];
         };
         /**
@@ -1771,7 +1780,7 @@ Keep on Flipnoting!
                 this.soundFlags[i] = [
                     (byte & 0x1) !== 0,
                     (byte & 0x2) !== 0,
-                    (byte & 0x4) !== 0,
+                    (byte & 0x4) !== 0, // SE3 bitflag
                 ];
             }
             return this.soundFlags;
@@ -1782,12 +1791,12 @@ Keep on Flipnoting!
          */
         PpmParser.prototype.getSoundEffectFlags = function () {
             return this.decodeSoundFlags().map(function (frameFlags) {
-                var _a;
-                return (_a = {},
-                    _a[exports.FlipnoteSoundEffectTrack.SE1] = frameFlags[0],
-                    _a[exports.FlipnoteSoundEffectTrack.SE2] = frameFlags[1],
-                    _a[exports.FlipnoteSoundEffectTrack.SE3] = frameFlags[2],
-                    _a);
+                var _b;
+                return (_b = {},
+                    _b[exports.FlipnoteSoundEffectTrack.SE1] = frameFlags[0],
+                    _b[exports.FlipnoteSoundEffectTrack.SE2] = frameFlags[1],
+                    _b[exports.FlipnoteSoundEffectTrack.SE3] = frameFlags[2],
+                    _b);
             });
         };
         /**
@@ -1795,15 +1804,15 @@ Keep on Flipnoting!
          * @category Audio
          */
         PpmParser.prototype.getFrameSoundEffectFlags = function (frameIndex) {
-            var _a;
+            var _b;
             assertRange(frameIndex, 0, this.frameCount - 1, 'Frame index');
             this.seek(0x06A0 + this.frameDataLength + frameIndex);
             var byte = this.readUint8();
-            return _a = {},
-                _a[exports.FlipnoteSoundEffectTrack.SE1] = (byte & 0x1) !== 0,
-                _a[exports.FlipnoteSoundEffectTrack.SE2] = (byte & 0x2) !== 0,
-                _a[exports.FlipnoteSoundEffectTrack.SE3] = (byte & 0x4) !== 0,
-                _a;
+            return _b = {},
+                _b[exports.FlipnoteSoundEffectTrack.SE1] = (byte & 0x1) !== 0,
+                _b[exports.FlipnoteSoundEffectTrack.SE2] = (byte & 0x2) !== 0,
+                _b[exports.FlipnoteSoundEffectTrack.SE3] = (byte & 0x4) !== 0,
+                _b;
         };
         /**
          * Get the raw compressed audio data for a given track
@@ -1951,17 +1960,19 @@ Keep on Flipnoting!
         PpmParser.prototype.verify = function () {
             return __awaiter(this, void 0, void 0, function () {
                 var key;
-                return __generator(this, function (_a) {
-                    switch (_a.label) {
+                return __generator(this, function (_b) {
+                    switch (_b.label) {
                         case 0: return [4 /*yield*/, rsaLoadPublicKey(PPM_PUBLIC_KEY, 'SHA-1')];
                         case 1:
-                            key = _a.sent();
+                            key = _b.sent();
                             return [4 /*yield*/, rsaVerify(key, this.getSignature(), this.getBody())];
-                        case 2: return [2 /*return*/, _a.sent()];
+                        case 2: return [2 /*return*/, _b.sent()];
                     }
                 });
             });
         };
+        var _a;
+        _a = Symbol.toStringTag;
         /** Default PPM parser settings */
         PpmParser.defaultSettings = {};
         /** File format type */
@@ -2101,7 +2112,7 @@ Keep on Flipnoting!
             /** File format type, reflects {@link KwzParser.format} */
             _this.format = exports.FlipnoteFormat.KWZ;
             /** Custom object tag */
-            _this[Symbol.toStringTag] = 'Flipnote Studio 3D KWZ animation file';
+            _this[_a] = 'Flipnote Studio 3D KWZ animation file';
             /** Animation frame width, reflects {@link KwzParser.width} */
             _this.imageWidth = KwzParser.width;
             /** Animation frame height, reflects {@link KwzParser.height} */
@@ -2227,7 +2238,7 @@ Keep on Flipnoting!
                 return hex_1.slice(2, 18);
             }
             var hex = this.readHex(10);
-            return (hex.slice(0, 4) + "-" + hex.slice(4, 8) + "-" + hex.slice(8, 12) + "-" + hex.slice(12, 18)).toLowerCase();
+            return "".concat(hex.slice(0, 4), "-").concat(hex.slice(4, 8), "-").concat(hex.slice(8, 12), "-").concat(hex.slice(12, 18)).toLowerCase();
         };
         KwzParser.prototype.readFilename = function () {
             var ptr = this.pointer;
@@ -2241,7 +2252,7 @@ Keep on Flipnoting!
             var random = this.readChars(13);
             var edits = this.readUint16().toString().padStart(3, '0');
             this.seek(ptr + 28);
-            return mac + "_" + random + "_" + edits;
+            return "".concat(mac, "_").concat(random, "_").concat(edits);
         };
         KwzParser.prototype.decodeMeta = function () {
             if (this.settings.quickMeta)
@@ -2353,8 +2364,8 @@ Keep on Flipnoting!
                 frameDataOffsets[frameIndex] = frameDataPtr;
                 frameMetaPtr += 28;
                 frameDataPtr += layerASize + layerBSize + layerCSize;
-                assert(frameMetaPtr < this.byteLength, "frame" + frameIndex + " meta pointer out of bounds");
-                assert(frameDataPtr < this.byteLength, "frame" + frameIndex + " data pointer out of bounds");
+                assert(frameMetaPtr < this.byteLength, "frame".concat(frameIndex, " meta pointer out of bounds"));
+                assert(frameDataPtr < this.byteLength, "frame".concat(frameIndex, " data pointer out of bounds"));
                 frameLayerSizes.push([layerASize, layerBSize, layerCSize]);
             }
             this.frameMetaOffsets = frameMetaOffsets;
@@ -2736,13 +2747,13 @@ Keep on Flipnoting!
          */
         KwzParser.prototype.getSoundEffectFlags = function () {
             return this.decodeSoundFlags().map(function (frameFlags) {
-                var _a;
-                return (_a = {},
-                    _a[exports.FlipnoteSoundEffectTrack.SE1] = frameFlags[0],
-                    _a[exports.FlipnoteSoundEffectTrack.SE2] = frameFlags[1],
-                    _a[exports.FlipnoteSoundEffectTrack.SE3] = frameFlags[2],
-                    _a[exports.FlipnoteSoundEffectTrack.SE4] = frameFlags[3],
-                    _a);
+                var _b;
+                return (_b = {},
+                    _b[exports.FlipnoteSoundEffectTrack.SE1] = frameFlags[0],
+                    _b[exports.FlipnoteSoundEffectTrack.SE2] = frameFlags[1],
+                    _b[exports.FlipnoteSoundEffectTrack.SE3] = frameFlags[2],
+                    _b[exports.FlipnoteSoundEffectTrack.SE4] = frameFlags[3],
+                    _b);
             });
         };
         /**
@@ -2751,14 +2762,14 @@ Keep on Flipnoting!
          * @category Audio
          */
         KwzParser.prototype.getFrameSoundEffectFlags = function (frameIndex) {
-            var _a;
+            var _b;
             var frameFlags = this.decodeFrameSoundFlags(frameIndex);
-            return _a = {},
-                _a[exports.FlipnoteSoundEffectTrack.SE1] = frameFlags[0],
-                _a[exports.FlipnoteSoundEffectTrack.SE2] = frameFlags[1],
-                _a[exports.FlipnoteSoundEffectTrack.SE3] = frameFlags[2],
-                _a[exports.FlipnoteSoundEffectTrack.SE4] = frameFlags[3],
-                _a;
+            return _b = {},
+                _b[exports.FlipnoteSoundEffectTrack.SE1] = frameFlags[0],
+                _b[exports.FlipnoteSoundEffectTrack.SE2] = frameFlags[1],
+                _b[exports.FlipnoteSoundEffectTrack.SE3] = frameFlags[2],
+                _b[exports.FlipnoteSoundEffectTrack.SE4] = frameFlags[3],
+                _b;
         };
         /**
          * Get the raw compressed audio data for a given track
@@ -2978,17 +2989,19 @@ Keep on Flipnoting!
         KwzParser.prototype.verify = function () {
             return __awaiter(this, void 0, void 0, function () {
                 var key;
-                return __generator(this, function (_a) {
-                    switch (_a.label) {
+                return __generator(this, function (_b) {
+                    switch (_b.label) {
                         case 0: return [4 /*yield*/, rsaLoadPublicKey(KWZ_PUBLIC_KEY, 'SHA-256')];
                         case 1:
-                            key = _a.sent();
+                            key = _b.sent();
                             return [4 /*yield*/, rsaVerify(key, this.getSignature(), this.getBody())];
-                        case 2: return [2 /*return*/, _a.sent()];
+                        case 2: return [2 /*return*/, _b.sent()];
                     }
                 });
             });
         };
+        var _a;
+        _a = Symbol.toStringTag;
         /** Default KWZ parser settings */
         KwzParser.defaultSettings = {
             quickMeta: false,
@@ -3300,7 +3313,7 @@ Keep on Flipnoting!
     function formatTime(seconds) {
         var m = Math.floor((seconds % 3600) / 60);
         var s = Math.floor(seconds % 60);
-        return m + ":" + padNumber(s, 2);
+        return "".concat(m, ":").concat(padNumber(s, 2));
     }
 
     var CanvasStereoscopicMode;
@@ -3317,7 +3330,7 @@ Keep on Flipnoting!
         return CanvasInterface;
     }());
 
-    /* @license twgl.js 4.21.2 Copyright (c) 2015, Gregg Tavares All Rights Reserved.
+    /* @license twgl.js 4.24.0 Copyright (c) 2015, Gregg Tavares All Rights Reserved.
     Available via the MIT license.
     see: http://github.com/greggman/twgl.js for details */
 
@@ -3798,6 +3811,9 @@ Keep on Flipnoting!
         key = Object.keys(attribs)[0];
       }
       const attrib = attribs[key];
+      if (!attrib.buffer) {
+        return 1; // There's no buffer
+      }
       gl.bindBuffer(ARRAY_BUFFER, attrib.buffer);
       const numBytes = gl.getBufferParameter(ARRAY_BUFFER, BUFFER_SIZE);
       gl.bindBuffer(ARRAY_BUFFER, null);
@@ -3984,6 +4000,7 @@ Keep on Flipnoting!
     const TEXTURE0                       = 0x84c0;
 
     const ARRAY_BUFFER$1                   = 0x8892;
+    const ELEMENT_ARRAY_BUFFER$1           = 0x8893;
 
     const ACTIVE_UNIFORMS                = 0x8b86;
     const ACTIVE_ATTRIBUTES              = 0x8b89;
@@ -4044,6 +4061,7 @@ Keep on Flipnoting!
 
     /**
      * Returns the corresponding bind point for a given sampler type
+     * @private
      */
     function getBindPointForSamplerType(gl, type) {
       return typeMap[type].bindPoint;
@@ -4799,6 +4817,7 @@ Keep on Flipnoting!
      *     struct Light {
      *       float intensity;
      *       vec4 color;
+     *       float nearFar[2];
      *     };
      *     uniform Light lights[2];
      *
@@ -4806,8 +4825,8 @@ Keep on Flipnoting!
      *
      *     twgl.setUniforms(programInfo, {
      *       lights: [
-     *         { intensity: 5.0, color: [1, 0, 0, 1] },
-     *         { intensity: 2.0, color: [0, 0, 1, 1] },
+     *         { intensity: 5.0, color: [1, 0, 0, 1], nearFar[0.1, 10] },
+     *         { intensity: 2.0, color: [0, 0, 1, 1], nearFar[0.2, 15] },
      *       ],
      *     });
      *
@@ -4816,17 +4835,24 @@ Keep on Flipnoting!
      *     twgl.setUniforms(programInfo, {
      *       "lights[0].intensity": 5.0,
      *       "lights[0].color": [1, 0, 0, 1],
+     *       "lights[0].nearFar": [0.1, 10],
      *       "lights[1].intensity": 2.0,
      *       "lights[1].color": [0, 0, 1, 1],
+     *       "lights[1].nearFar": [0.2, 15],
      *     });
      *
      *   You can also specify partial paths
      *
      *     twgl.setUniforms(programInfo, {
-     *       'lights[1]: { intensity: 5.0, color: [1, 0, 0, 1] },
+     *       'lights[1]': { intensity: 5.0, color: [1, 0, 0, 1], nearFar[0.2, 15] },
      *     });
      *
      *   But you can not specify leaf array indices
+     *
+     *     twgl.setUniforms(programInfo, {
+     *       'lights[1].nearFar[1]': 15,     // BAD! nearFar is a leaf
+     *       'lights[1].nearFar': [0.2, 15], // GOOD
+     *     });
      *
      * @memberOf module:twgl/programs
      */
@@ -4934,12 +4960,61 @@ Keep on Flipnoting!
      * @param {Object.<string, module:twgl.AttribInfo>} buffers AttribInfos mapped by attribute name.
      * @memberOf module:twgl/programs
      * @deprecated use {@link module:twgl.setBuffersAndAttributes}
+     * @private
      */
     function setAttributes(setters, buffers) {
       for (const name in buffers) {
         const setter = setters[name];
         if (setter) {
           setter(buffers[name]);
+        }
+      }
+    }
+
+    /**
+     * Sets attributes and buffers including the `ELEMENT_ARRAY_BUFFER` if appropriate
+     *
+     * Example:
+     *
+     *     const programInfo = createProgramInfo(
+     *         gl, ["some-vs", "some-fs");
+     *
+     *     const arrays = {
+     *       position: { numComponents: 3, data: [0, 0, 0, 10, 0, 0, 0, 10, 0, 10, 10, 0], },
+     *       texcoord: { numComponents: 2, data: [0, 0, 0, 1, 1, 0, 1, 1],                 },
+     *     };
+     *
+     *     const bufferInfo = createBufferInfoFromArrays(gl, arrays);
+     *
+     *     gl.useProgram(programInfo.program);
+     *
+     * This will automatically bind the buffers AND set the
+     * attributes.
+     *
+     *     setBuffersAndAttributes(gl, programInfo, bufferInfo);
+     *
+     * For the example above it is equivalent to
+     *
+     *     gl.bindBuffer(gl.ARRAY_BUFFER, positionBuffer);
+     *     gl.enableVertexAttribArray(a_positionLocation);
+     *     gl.vertexAttribPointer(a_positionLocation, 3, gl.FLOAT, false, 0, 0);
+     *     gl.bindBuffer(gl.ARRAY_BUFFER, texcoordBuffer);
+     *     gl.enableVertexAttribArray(a_texcoordLocation);
+     *     gl.vertexAttribPointer(a_texcoordLocation, 4, gl.FLOAT, false, 0, 0);
+     *
+     * @param {WebGLRenderingContext} gl A WebGLRenderingContext.
+     * @param {(module:twgl.ProgramInfo|Object.<string, function>)} setters A `ProgramInfo` as returned from {@link module:twgl.createProgramInfo} or Attribute setters as returned from {@link module:twgl.createAttributeSetters}
+     * @param {(module:twgl.BufferInfo|module:twgl.VertexArrayInfo)} buffers a `BufferInfo` as returned from {@link module:twgl.createBufferInfoFromArrays}.
+     *   or a `VertexArrayInfo` as returned from {@link module:twgl.createVertexArrayInfo}
+     * @memberOf module:twgl/programs
+     */
+    function setBuffersAndAttributes(gl, programInfo, buffers) {
+      if (buffers.vertexArrayObject) {
+        gl.bindVertexArray(buffers.vertexArrayObject);
+      } else {
+        setAttributes(programInfo.attribSetters || programInfo, buffers.attribs);
+        if (buffers.indices) {
+          gl.bindBuffer(ELEMENT_ARRAY_BUFFER$1, buffers.indices);
         }
       }
     }
@@ -5011,14 +5086,15 @@ Keep on Flipnoting!
          * The ratio between `width` and `height` should be 3:4 for best results
          */
         function WebglCanvas(parent, width, height, options) {
-            var _this = this;
             if (width === void 0) { width = 640; }
             if (height === void 0) { height = 480; }
             if (options === void 0) { options = {}; }
+            var _this = this;
             /** */
             this.supportedStereoscopeModes = [
                 CanvasStereoscopicMode.None,
                 CanvasStereoscopicMode.Dual,
+                // CanvasStereoscopicMode.Anaglyph, // couldn't get this working, despite spending lots of time on it :/
             ];
             /** */
             this.stereoscopeMode = CanvasStereoscopicMode.None;
@@ -5028,6 +5104,7 @@ Keep on Flipnoting!
             this.textureTypes = new Map();
             this.textureSizes = new Map();
             this.frameBufferTextures = new Map();
+            this.applyFirefoxFix = false;
             this.refs = {
                 programs: [],
                 shaders: [],
@@ -5087,6 +5164,11 @@ Keep on Flipnoting!
             this.layerTexture = this.createTexture(gl.RGBA, gl.LINEAR, gl.CLAMP_TO_EDGE);
             this.frameTexture = this.createTexture(gl.RGBA, gl.LINEAR, gl.CLAMP_TO_EDGE);
             this.frameBuffer = this.createFramebuffer(this.frameTexture);
+            var debugInfo = gl.getExtension('WEBGL_debug_renderer_info');
+            var renderer = gl.getParameter(debugInfo.UNMASKED_RENDERER_WEBGL);
+            var userAgent = navigator.userAgent;
+            var isMacFirefox = userAgent.includes('Firefox') && userAgent.includes('Mac');
+            this.applyFirefoxFix = isMacFirefox && renderer.includes('Apple M');
         };
         WebglCanvas.prototype.createProgram = function (vertexShaderSource, fragmentShaderSource) {
             if (this.checkContextLoss())
@@ -5178,9 +5260,7 @@ Keep on Flipnoting!
         WebglCanvas.prototype.setBuffersAndAttribs = function (program, buffer) {
             if (this.checkContextLoss())
                 return;
-            var gl = this.gl;
-            setAttributes(program.attribSetters, buffer.attribs);
-            gl.bindBuffer(gl.ELEMENT_ARRAY_BUFFER, buffer.indices);
+            setBuffersAndAttributes(this.gl, program.attribSetters, buffer);
         };
         WebglCanvas.prototype.createTexture = function (type, minMag, wrap, width, height) {
             if (width === void 0) { width = 1; }
@@ -5226,6 +5306,22 @@ Keep on Flipnoting!
             var gl = this.gl;
             if (fb === null) {
                 gl.bindFramebuffer(gl.FRAMEBUFFER, null);
+                /**
+                 * Firefox on Apple Silicon Macs seems to have some kind of viewport sizing bug that I can't track down.
+                 * Details here: https://github.com/jaames/flipnote.js/issues/30#issuecomment-2134602056
+                 * Not sure what's causing it, but this hack fixes it for now.
+                 * Need to test whether only specific versions of Firefox are affected, if it's only an Apple Silicon thing, etc, etc...
+                 */
+                if (this.applyFirefoxFix) {
+                    var srcWidth = this.srcWidth;
+                    var srcHeight = this.srcHeight;
+                    var sx = gl.drawingBufferWidth / srcWidth;
+                    var sy = gl.drawingBufferHeight / srcHeight;
+                    viewWidth = gl.drawingBufferWidth * (sx - 1);
+                    viewHeight = gl.drawingBufferHeight * (sy - 1);
+                    viewX = -(viewWidth - srcWidth * sx);
+                    viewY = -(viewHeight - srcHeight * sy);
+                }
                 gl.viewport(viewX !== null && viewX !== void 0 ? viewX : 0, viewY !== null && viewY !== void 0 ? viewY : 0, viewWidth !== null && viewWidth !== void 0 ? viewWidth : gl.drawingBufferWidth, viewHeight !== null && viewHeight !== void 0 ? viewHeight : gl.drawingBufferHeight);
             }
             else {
@@ -5238,7 +5334,6 @@ Keep on Flipnoting!
         WebglCanvas.prototype.resizeFramebuffer = function (fb, width, height) {
             if (this.checkContextLoss())
                 return;
-            this.gl;
             var texture = this.frameBufferTextures.get(fb);
             this.resizeTexture(texture, width, height);
         };
@@ -5259,8 +5354,8 @@ Keep on Flipnoting!
             this.canvas.height = internalHeight;
             this.dstWidth = internalWidth;
             this.dstHeight = internalHeight;
-            this.canvas.style.width = width + "px";
-            this.canvas.style.height = height + "px";
+            this.canvas.style.width = "".concat(width, "px");
+            this.canvas.style.height = "".concat(height, "px");
             this.checkContextLoss();
         };
         /**
@@ -5513,8 +5608,8 @@ Keep on Flipnoting!
             this.height = height;
             this.dstWidth = internalWidth;
             this.dstHeight = internalHeight;
-            canvas.style.width = width + "px";
-            canvas.style.height = height + "px";
+            canvas.style.width = "".concat(width, "px");
+            canvas.style.height = "".concat(height, "px");
             canvas.width = internalWidth;
             canvas.height = internalHeight;
         };
@@ -5548,7 +5643,7 @@ Keep on Flipnoting!
             // fill canvas with paper color
             if (color) {
                 var _a = __read(color, 4), r = _a[0], g = _a[1], b = _a[2], a = _a[3];
-                this.ctx.fillStyle = "rgba(" + r + ", " + g + ", " + b + ", " + a + ")";
+                this.ctx.fillStyle = "rgba(".concat(r, ", ").concat(g, ", ").concat(b, ", ").concat(a, ")");
                 this.ctx.fillRect(0, 0, this.dstWidth, this.dstHeight);
             }
         };
@@ -5971,8 +6066,8 @@ Keep on Flipnoting!
          * The ratio between `width` and `height` should be 3:4 for best results
          */
         function Player(parent, width, height, parserSettings) {
-            var _this = this;
             if (parserSettings === void 0) { parserSettings = {}; }
+            var _this = this;
             /** Animation duration, in seconds */
             this.duration = 0;
             /** Automatically begin playback after a Flipnote is loaded */
@@ -6254,7 +6349,7 @@ Keep on Flipnoting!
                             _a = __read.apply(void 0, [_b.sent(), 2]), err = _a[0], note = _a[1];
                             if (err) {
                                 this.emit(exports.PlayerEvent.Error, err);
-                                throw new Error("Error loading Flipnote: " + err.message);
+                                throw new Error("Error loading Flipnote: ".concat(err.message));
                             }
                             this.lastParser = getParser;
                             this.lastLoaders = loaders;
@@ -6373,7 +6468,7 @@ Keep on Flipnoting!
         Player.prototype.getTimeCounter = function () {
             var currentTime = formatTime(Math.max(this.currentTime, 0));
             var duration = formatTime(this.duration);
-            return currentTime + " / " + duration;
+            return "".concat(currentTime, " / ").concat(duration);
         };
         /**
          * Get the current frame index as a counter string, like `"001 / 999"`
@@ -6382,7 +6477,7 @@ Keep on Flipnoting!
         Player.prototype.getFrameCounter = function () {
             var frame = padNumber(this.currentFrame + 1, 3);
             var total = padNumber(this.frameCount, 3);
-            return frame + " / " + total;
+            return "".concat(frame, " / ").concat(total);
         };
         /**
          * Set the current playback progress as a percentage (`0` to `100`)
@@ -6610,7 +6705,7 @@ Keep on Flipnoting!
          */
         Player.prototype.resize = function (width, height) {
             if (height !== width * .75)
-                console.warn("Canvas width to height ratio should be 3:4 for best results (got " + width + "x" + height + ")");
+                console.warn("Canvas width to height ratio should be 3:4 for best results (got ".concat(width, "x").concat(height, ")"));
             this.renderer.setCanvasSize(width, height);
             this.forceUpdate();
         };
@@ -6834,7 +6929,7 @@ Keep on Flipnoting!
                 var callbackList = events.get(eventType);
                 callbackList.forEach(function (callback) { return callback.apply(null, args); });
                 // call onwhatever() function for this event, if one has been added
-                var listenerName = "on" + eventType;
+                var listenerName = "on".concat(eventType);
                 var thisAsAny = this;
                 if (typeof thisAsAny[listenerName] === 'function')
                     thisAsAny[listenerName].apply(null, args);
@@ -6842,7 +6937,7 @@ Keep on Flipnoting!
             // "any" event listeners fire for all events, and receive eventType as their first param
             if (events.has(exports.PlayerEvent.__Any)) {
                 var callbackList = events.get(exports.PlayerEvent.__Any);
-                callbackList.forEach(function (callback) { return callback.apply(null, __spread([eventType], args)); });
+                callbackList.forEach(function (callback) { return callback.apply(null, __spreadArray([eventType], __read(args), false)); });
             }
         };
         /**
@@ -6992,7 +7087,7 @@ Keep on Flipnoting!
                         for (var _i = 0; _i < arguments.length; _i++) {
                             args[_i] = arguments[_i];
                         }
-                        return (_a = this.player)[key].apply(_a, __spread(args));
+                        return (_a = this.player)[key].apply(_a, __spreadArray([], __read(args), false));
                     } }));
             }
             // override getters and setters so that e.g. `property` will always reflect `this.player.property`

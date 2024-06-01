@@ -2,7 +2,7 @@
 flipnote.js v5.11.0
 https://flipnote.js.org
 A JavaScript library for parsing, converting, and in-browser playback of the proprietary animation formats used by Nintendo's Flipnote Studio and Flipnote Studio 3D apps.
-2018 - 2022 James Daniel
+2018 - 2024 James Daniel
 Flipnote Studio is (c) Nintendo Co., Ltd. This project isn't affiliated with or endorsed by them in any way.
 Keep on Flipnoting!
 */
@@ -115,13 +115,13 @@ Keep on Flipnoting!
       }
       seek(offset, whence) {
           switch (whence) {
-              case 2 /* End */:
+              case 2 /* SeekOrigin.End */:
                   this.pointer = this.data.byteLength + offset;
                   break;
-              case 1 /* Current */:
+              case 1 /* SeekOrigin.Current */:
                   this.pointer += offset;
                   break;
-              case 0 /* Begin */:
+              case 0 /* SeekOrigin.Begin */:
               default:
                   this.pointer = offset;
                   break;
@@ -723,6 +723,7 @@ Keep on Flipnoting!
       };
   }))();
 
+  var _a$3;
   /** Identifies which animation format a Flipnote uses */
   exports.FlipnoteFormat = void 0;
   (function (FlipnoteFormat) {
@@ -778,7 +779,7 @@ Keep on Flipnoting!
           super(...arguments);
           /** Instance file format info */
           /** Custom object tag */
-          this[Symbol.toStringTag] = 'Flipnote';
+          this[_a$3] = 'Flipnote';
           /** Default formats used for {@link getTitle()} */
           this.titleFormats = {
               COMMENT: 'Comment by $USERNAME',
@@ -836,7 +837,7 @@ Keep on Flipnoting!
        * ```
        * @category Utility
        */
-      *[Symbol.iterator]() {
+      *[(_a$3 = Symbol.toStringTag, Symbol.iterator)]() {
           for (let i = 0; i < this.frameCount; i++)
               yield i;
       }
@@ -1049,6 +1050,7 @@ Keep on Flipnoting!
       }
   }
 
+  var _a$2;
   /**
    * PPM framerates in frames per second, indexed by the in-app frame speed.
    * Frame speed 0 is never normally used
@@ -1113,7 +1115,7 @@ MIGfMA0GCSqGSIb3DQEBAQUAA4GNADCBiQKBgQDCPLwTL6oSflv+gjywi/sM0TUB
           /** File format type, reflects {@link PpmParser.format} */
           this.format = exports.FlipnoteFormat.PPM;
           /** Custom object tag */
-          this[Symbol.toStringTag] = 'Flipnote Studio PPM animation file';
+          this[_a$2] = 'Flipnote Studio PPM animation file';
           /** Animation frame width, reflects {@link PpmParser.width} */
           this.imageWidth = PpmParser.width;
           /** Animation frame height, reflects {@link PpmParser.height} */
@@ -1495,7 +1497,7 @@ MIGfMA0GCSqGSIb3DQEBAQUAA4GNADCBiQKBgQDCPLwTL6oSflv+gjywi/sM0TUB
           return [
               isInverted ? 1 : 0,
               penMap[(header >> 1) & 0x3],
-              penMap[(header >> 3) & 0x3],
+              penMap[(header >> 3) & 0x3], // layer 2 color
           ];
       }
       /**
@@ -1571,7 +1573,7 @@ MIGfMA0GCSqGSIb3DQEBAQUAA4GNADCBiQKBgQDCPLwTL6oSflv+gjywi/sM0TUB
               this.soundFlags[i] = [
                   (byte & 0x1) !== 0,
                   (byte & 0x2) !== 0,
-                  (byte & 0x4) !== 0,
+                  (byte & 0x4) !== 0, // SE3 bitflag
               ];
           }
           return this.soundFlags;
@@ -1746,6 +1748,7 @@ MIGfMA0GCSqGSIb3DQEBAQUAA4GNADCBiQKBgQDCPLwTL6oSflv+gjywi/sM0TUB
           return await rsaVerify(key, this.getSignature(), this.getBody());
       }
   }
+  _a$2 = Symbol.toStringTag;
   /** Default PPM parser settings */
   PpmParser.defaultSettings = {};
   /** File format type */
@@ -1787,6 +1790,7 @@ MIGfMA0GCSqGSIb3DQEBAQUAA4GNADCBiQKBgQDCPLwTL6oSflv+gjywi/sM0TUB
   /** Public key used for Flipnote verification, in PEM format */
   PpmParser.publicKey = PPM_PUBLIC_KEY;
 
+  var _a$1;
   /**
    * KWZ framerates in frames per second, indexed by the in-app frame speed
    */
@@ -1889,7 +1893,7 @@ kQIDAQAB
           /** File format type, reflects {@link KwzParser.format} */
           this.format = exports.FlipnoteFormat.KWZ;
           /** Custom object tag */
-          this[Symbol.toStringTag] = 'Flipnote Studio 3D KWZ animation file';
+          this[_a$1] = 'Flipnote Studio 3D KWZ animation file';
           /** Animation frame width, reflects {@link KwzParser.width} */
           this.imageWidth = KwzParser.width;
           /** Animation frame height, reflects {@link KwzParser.height} */
@@ -2754,6 +2758,7 @@ kQIDAQAB
           return await rsaVerify(key, this.getSignature(), this.getBody());
       }
   }
+  _a$1 = Symbol.toStringTag;
   /** Default KWZ parser settings */
   KwzParser.defaultSettings = {
       quickMeta: false,
@@ -3077,7 +3082,7 @@ kQIDAQAB
       constructor(parent, width, height, options) { }
   }
 
-  /* @license twgl.js 4.21.2 Copyright (c) 2015, Gregg Tavares All Rights Reserved.
+  /* @license twgl.js 4.24.0 Copyright (c) 2015, Gregg Tavares All Rights Reserved.
   Available via the MIT license.
   see: http://github.com/greggman/twgl.js for details */
 
@@ -3558,6 +3563,9 @@ kQIDAQAB
       key = Object.keys(attribs)[0];
     }
     const attrib = attribs[key];
+    if (!attrib.buffer) {
+      return 1; // There's no buffer
+    }
     gl.bindBuffer(ARRAY_BUFFER, attrib.buffer);
     const numBytes = gl.getBufferParameter(ARRAY_BUFFER, BUFFER_SIZE);
     gl.bindBuffer(ARRAY_BUFFER, null);
@@ -3744,6 +3752,7 @@ kQIDAQAB
   const TEXTURE0                       = 0x84c0;
 
   const ARRAY_BUFFER$1                   = 0x8892;
+  const ELEMENT_ARRAY_BUFFER$1           = 0x8893;
 
   const ACTIVE_UNIFORMS                = 0x8b86;
   const ACTIVE_ATTRIBUTES              = 0x8b89;
@@ -3804,6 +3813,7 @@ kQIDAQAB
 
   /**
    * Returns the corresponding bind point for a given sampler type
+   * @private
    */
   function getBindPointForSamplerType(gl, type) {
     return typeMap[type].bindPoint;
@@ -4559,6 +4569,7 @@ kQIDAQAB
    *     struct Light {
    *       float intensity;
    *       vec4 color;
+   *       float nearFar[2];
    *     };
    *     uniform Light lights[2];
    *
@@ -4566,8 +4577,8 @@ kQIDAQAB
    *
    *     twgl.setUniforms(programInfo, {
    *       lights: [
-   *         { intensity: 5.0, color: [1, 0, 0, 1] },
-   *         { intensity: 2.0, color: [0, 0, 1, 1] },
+   *         { intensity: 5.0, color: [1, 0, 0, 1], nearFar[0.1, 10] },
+   *         { intensity: 2.0, color: [0, 0, 1, 1], nearFar[0.2, 15] },
    *       ],
    *     });
    *
@@ -4576,17 +4587,24 @@ kQIDAQAB
    *     twgl.setUniforms(programInfo, {
    *       "lights[0].intensity": 5.0,
    *       "lights[0].color": [1, 0, 0, 1],
+   *       "lights[0].nearFar": [0.1, 10],
    *       "lights[1].intensity": 2.0,
    *       "lights[1].color": [0, 0, 1, 1],
+   *       "lights[1].nearFar": [0.2, 15],
    *     });
    *
    *   You can also specify partial paths
    *
    *     twgl.setUniforms(programInfo, {
-   *       'lights[1]: { intensity: 5.0, color: [1, 0, 0, 1] },
+   *       'lights[1]': { intensity: 5.0, color: [1, 0, 0, 1], nearFar[0.2, 15] },
    *     });
    *
    *   But you can not specify leaf array indices
+   *
+   *     twgl.setUniforms(programInfo, {
+   *       'lights[1].nearFar[1]': 15,     // BAD! nearFar is a leaf
+   *       'lights[1].nearFar': [0.2, 15], // GOOD
+   *     });
    *
    * @memberOf module:twgl/programs
    */
@@ -4694,12 +4712,61 @@ kQIDAQAB
    * @param {Object.<string, module:twgl.AttribInfo>} buffers AttribInfos mapped by attribute name.
    * @memberOf module:twgl/programs
    * @deprecated use {@link module:twgl.setBuffersAndAttributes}
+   * @private
    */
   function setAttributes(setters, buffers) {
     for (const name in buffers) {
       const setter = setters[name];
       if (setter) {
         setter(buffers[name]);
+      }
+    }
+  }
+
+  /**
+   * Sets attributes and buffers including the `ELEMENT_ARRAY_BUFFER` if appropriate
+   *
+   * Example:
+   *
+   *     const programInfo = createProgramInfo(
+   *         gl, ["some-vs", "some-fs");
+   *
+   *     const arrays = {
+   *       position: { numComponents: 3, data: [0, 0, 0, 10, 0, 0, 0, 10, 0, 10, 10, 0], },
+   *       texcoord: { numComponents: 2, data: [0, 0, 0, 1, 1, 0, 1, 1],                 },
+   *     };
+   *
+   *     const bufferInfo = createBufferInfoFromArrays(gl, arrays);
+   *
+   *     gl.useProgram(programInfo.program);
+   *
+   * This will automatically bind the buffers AND set the
+   * attributes.
+   *
+   *     setBuffersAndAttributes(gl, programInfo, bufferInfo);
+   *
+   * For the example above it is equivalent to
+   *
+   *     gl.bindBuffer(gl.ARRAY_BUFFER, positionBuffer);
+   *     gl.enableVertexAttribArray(a_positionLocation);
+   *     gl.vertexAttribPointer(a_positionLocation, 3, gl.FLOAT, false, 0, 0);
+   *     gl.bindBuffer(gl.ARRAY_BUFFER, texcoordBuffer);
+   *     gl.enableVertexAttribArray(a_texcoordLocation);
+   *     gl.vertexAttribPointer(a_texcoordLocation, 4, gl.FLOAT, false, 0, 0);
+   *
+   * @param {WebGLRenderingContext} gl A WebGLRenderingContext.
+   * @param {(module:twgl.ProgramInfo|Object.<string, function>)} setters A `ProgramInfo` as returned from {@link module:twgl.createProgramInfo} or Attribute setters as returned from {@link module:twgl.createAttributeSetters}
+   * @param {(module:twgl.BufferInfo|module:twgl.VertexArrayInfo)} buffers a `BufferInfo` as returned from {@link module:twgl.createBufferInfoFromArrays}.
+   *   or a `VertexArrayInfo` as returned from {@link module:twgl.createVertexArrayInfo}
+   * @memberOf module:twgl/programs
+   */
+  function setBuffersAndAttributes(gl, programInfo, buffers) {
+    if (buffers.vertexArrayObject) {
+      gl.bindVertexArray(buffers.vertexArrayObject);
+    } else {
+      setAttributes(programInfo.attribSetters || programInfo, buffers.attribs);
+      if (buffers.indices) {
+        gl.bindBuffer(ELEMENT_ARRAY_BUFFER$1, buffers.indices);
       }
     }
   }
@@ -4762,6 +4829,16 @@ kQIDAQAB
    * Only available in browser contexts
    */
   class WebglCanvas {
+      static isSupported() {
+          if (!isBrowser)
+              return false;
+          let testCanvas = document.createElement('canvas');
+          let testCtx = testCanvas.getContext('2d');
+          const supported = testCtx !== null;
+          testCanvas = null;
+          testCtx = null;
+          return supported;
+      }
       /**
        * Creates a new WebGlCanvas instance
        * @param el - Canvas HTML element to use as a rendering surface
@@ -4775,6 +4852,7 @@ kQIDAQAB
           this.supportedStereoscopeModes = [
               CanvasStereoscopicMode.None,
               CanvasStereoscopicMode.Dual,
+              // CanvasStereoscopicMode.Anaglyph, // couldn't get this working, despite spending lots of time on it :/
           ];
           /** */
           this.stereoscopeMode = CanvasStereoscopicMode.None;
@@ -4784,6 +4862,7 @@ kQIDAQAB
           this.textureTypes = new Map();
           this.textureSizes = new Map();
           this.frameBufferTextures = new Map();
+          this.applyFirefoxFix = false;
           this.refs = {
               programs: [],
               shaders: [],
@@ -4821,16 +4900,6 @@ kQIDAQAB
               parent.appendChild(this.canvas);
           this.init();
       }
-      static isSupported() {
-          if (!isBrowser)
-              return false;
-          let testCanvas = document.createElement('canvas');
-          let testCtx = testCanvas.getContext('2d');
-          const supported = testCtx !== null;
-          testCanvas = null;
-          testCtx = null;
-          return supported;
-      }
       init() {
           this.setCanvasSize(this.width, this.height);
           const gl = this.gl;
@@ -4843,6 +4912,11 @@ kQIDAQAB
           this.layerTexture = this.createTexture(gl.RGBA, gl.LINEAR, gl.CLAMP_TO_EDGE);
           this.frameTexture = this.createTexture(gl.RGBA, gl.LINEAR, gl.CLAMP_TO_EDGE);
           this.frameBuffer = this.createFramebuffer(this.frameTexture);
+          const debugInfo = gl.getExtension('WEBGL_debug_renderer_info');
+          const renderer = gl.getParameter(debugInfo.UNMASKED_RENDERER_WEBGL);
+          const userAgent = navigator.userAgent;
+          const isMacFirefox = userAgent.includes('Firefox') && userAgent.includes('Mac');
+          this.applyFirefoxFix = isMacFirefox && renderer.includes('Apple M');
       }
       createProgram(vertexShaderSource, fragmentShaderSource) {
           if (this.checkContextLoss())
@@ -4934,9 +5008,7 @@ kQIDAQAB
       setBuffersAndAttribs(program, buffer) {
           if (this.checkContextLoss())
               return;
-          const gl = this.gl;
-          setAttributes(program.attribSetters, buffer.attribs);
-          gl.bindBuffer(gl.ELEMENT_ARRAY_BUFFER, buffer.indices);
+          setBuffersAndAttributes(this.gl, program.attribSetters, buffer);
       }
       createTexture(type, minMag, wrap, width = 1, height = 1) {
           if (this.checkContextLoss())
@@ -4980,6 +5052,22 @@ kQIDAQAB
           const gl = this.gl;
           if (fb === null) {
               gl.bindFramebuffer(gl.FRAMEBUFFER, null);
+              /**
+               * Firefox on Apple Silicon Macs seems to have some kind of viewport sizing bug that I can't track down.
+               * Details here: https://github.com/jaames/flipnote.js/issues/30#issuecomment-2134602056
+               * Not sure what's causing it, but this hack fixes it for now.
+               * Need to test whether only specific versions of Firefox are affected, if it's only an Apple Silicon thing, etc, etc...
+               */
+              if (this.applyFirefoxFix) {
+                  const srcWidth = this.srcWidth;
+                  const srcHeight = this.srcHeight;
+                  const sx = gl.drawingBufferWidth / srcWidth;
+                  const sy = gl.drawingBufferHeight / srcHeight;
+                  viewWidth = gl.drawingBufferWidth * (sx - 1);
+                  viewHeight = gl.drawingBufferHeight * (sy - 1);
+                  viewX = -(viewWidth - srcWidth * sx);
+                  viewY = -(viewHeight - srcHeight * sy);
+              }
               gl.viewport(viewX !== null && viewX !== void 0 ? viewX : 0, viewY !== null && viewY !== void 0 ? viewY : 0, viewWidth !== null && viewWidth !== void 0 ? viewWidth : gl.drawingBufferWidth, viewHeight !== null && viewHeight !== void 0 ? viewHeight : gl.drawingBufferHeight);
           }
           else {
@@ -4992,7 +5080,6 @@ kQIDAQAB
       resizeFramebuffer(fb, width, height) {
           if (this.checkContextLoss())
               return;
-          this.gl;
           const texture = this.frameBufferTextures.get(fb);
           this.resizeTexture(texture, width, height);
       }
@@ -5206,6 +5293,16 @@ kQIDAQAB
    * Flipnote renderer for the [HTML5 2D canvas API](https://developer.mozilla.org/en-US/docs/Web/API/CanvasRenderingContext2D)
    */
   class Html5Canvas {
+      static isSupported() {
+          if (!isBrowser)
+              return false;
+          let testCanvas = document.createElement('canvas');
+          let testCtx = testCanvas.getContext('2d');
+          const supported = testCtx !== null;
+          testCanvas = null;
+          testCtx = null;
+          return supported;
+      }
       constructor(parent, width, height, options = {}) {
           /** */
           this.supportedStereoscopeModes = [
@@ -5229,16 +5326,6 @@ kQIDAQAB
           if (parent)
               parent.appendChild(this.canvas);
           this.setCanvasSize(width, height);
-      }
-      static isSupported() {
-          if (!isBrowser)
-              return false;
-          let testCanvas = document.createElement('canvas');
-          let testCtx = testCanvas.getContext('2d');
-          const supported = testCtx !== null;
-          testCanvas = null;
-          testCtx = null;
-          return supported;
       }
       /**
        * Resize the canvas surface
@@ -7115,7 +7202,7 @@ kQIDAQAB
    */
   const version = "5.11.0"; // replaced by @rollup/plugin-replace; see rollup.config.js
 
-  /*! *****************************************************************************
+  /******************************************************************************
   Copyright (c) Microsoft Corporation.
 
   Permission to use, copy, modify, and/or distribute this software for any
@@ -7136,6 +7223,11 @@ kQIDAQAB
       else for (var i = decorators.length - 1; i >= 0; i--) if (d = decorators[i]) r = (c < 3 ? d(r) : c > 3 ? d(target, key, r) : d(target, key)) || r;
       return c > 3 && r && Object.defineProperty(target, key, r), r;
   }
+
+  typeof SuppressedError === "function" ? SuppressedError : function (error, suppressed, message) {
+      var e = new Error(message);
+      return e.name = "SuppressedError", e.error = error, e.suppressed = suppressed, e;
+  };
 
   /**
    * @license
@@ -8794,6 +8886,7 @@ kQIDAQAB
                   return value === null ? null : Number(value);
               case Object:
               case Array:
+                  // Type assert to adhere to Bazel's "must type assert JSON parse" rule.
                   return JSON.parse(value);
           }
           return value;
@@ -9358,8 +9451,29 @@ kQIDAQAB
        *       await this._myChild.updateComplete;
        *     }
        *   }
+       * @deprecated Override `getUpdateComplete()` instead for forward
+       *     compatibility with `lit-element` 3.0 / `@lit/reactive-element`.
        */
       _getUpdateComplete() {
+          return this.getUpdateComplete();
+      }
+      /**
+       * Override point for the `updateComplete` promise.
+       *
+       * It is not safe to override the `updateComplete` getter directly due to a
+       * limitation in TypeScript which means it is not possible to call a
+       * superclass getter (e.g. `super.updateComplete.then(...)`) when the target
+       * language is ES5 (https://github.com/microsoft/TypeScript/issues/338).
+       * This method should be overridden instead. For example:
+       *
+       *   class MyElement extends LitElement {
+       *     async getUpdateComplete() {
+       *       await super.getUpdateComplete();
+       *       await this._myChild.updateComplete;
+       *     }
+       *   }
+       */
+      getUpdateComplete() {
           return this._updatePromise;
       }
       /**
@@ -9543,8 +9657,10 @@ kQIDAQAB
    *
    * Properties declared this way must not be used from HTML or HTML templating
    * systems, they're solely for properties internal to the element. These
-   * properties may be renamed by optimization tools like closure compiler.
+   * properties may be renamed by optimization tools like the Closure Compiler.
    * @category Decorator
+   * @deprecated `internalProperty` has been renamed to `state` in lit-element
+   *     3.0. Please update to `state` now to be compatible with 3.0.
    */
   function internalProperty(options) {
       return property({ attribute: false, hasChanged: options === null || options === void 0 ? void 0 : options.hasChanged });
@@ -9588,7 +9704,8 @@ kQIDAQAB
               configurable: true,
           };
           if (cache) {
-              const key = typeof name === 'symbol' ? Symbol() : `__${name}`;
+              const prop = name !== undefined ? name : protoOrDescriptor.key;
+              const key = typeof prop === 'symbol' ? Symbol() : `__${prop}`;
               descriptor.get = function () {
                   if (this[key] === undefined) {
                       (this[key] =
@@ -9707,7 +9824,7 @@ kQIDAQAB
   // This line will be used in regexes to search for LitElement usage.
   // TODO(justinfagnani): inject version number at build time
   (window['litElementVersions'] || (window['litElementVersions'] = []))
-      .push('2.4.0');
+      .push('2.5.1');
   /**
    * Sentinal value used to avoid calling lit-html's render function when
    * subclasses do not implement `render`
@@ -9807,7 +9924,7 @@ kQIDAQAB
        * @returns {Element|DocumentFragment} Returns a node into which to render.
        */
       createRenderRoot() {
-          return this.attachShadow({ mode: 'open' });
+          return this.attachShadow(this.constructor.shadowRootOptions);
       }
       /**
        * Applies styling to the element shadowRoot using the [[`styles`]]
@@ -9914,6 +10031,8 @@ kQIDAQAB
    * @nocollapse
    */
   LitElement.render = render;
+  /** @nocollapse */
+  LitElement.shadowRootOptions = { mode: 'open' };
 
   /// <reference types="resize-observer-browser" /> 
   /**
@@ -9921,69 +10040,6 @@ kQIDAQAB
    * @internal
    */
   let PlayerComponent$1 = class PlayerComponent extends PlayerMixin(LitElement) {
-      constructor() {
-          super();
-          this._width = 'auto';
-          this._cssWidth = 'auto';
-          this._progress = 0;
-          this._counter = '';
-          this._isLoading = false;
-          this._isError = false;
-          this._isPlaying = false;
-          this._isMuted = false;
-          this._volumeLevel = 0;
-          this._isPlayerAvailable = false;
-          this.handleResize = (entries) => {
-              this.updateCanvasSize();
-          };
-          this.handleKeyInput = (e) => {
-              e.preventDefault();
-              switch (e.key.toLowerCase()) {
-                  case ' ':
-                      this.togglePlay();
-                      break;
-                  case 'a':
-                  case 'arrowleft':
-                      if (e.shiftKey)
-                          this.firstFrame();
-                      else
-                          this.prevFrame();
-                      break;
-                  case 'd':
-                  case 'arrowright':
-                      if (e.shiftKey)
-                          this.lastFrame();
-                      else
-                          this.nextFrame();
-                      break;
-              }
-          };
-          this.handlePlayToggle = (e) => {
-              this.focus();
-              this.togglePlay();
-          };
-          this.handleMuteToggle = (e) => {
-              this.focus();
-              this.toggleMuted();
-          };
-          this.handleProgressSliderChange = (e) => {
-              this.focus();
-              this.seek(e.detail.value);
-          };
-          this.handleProgressSliderInputStart = () => {
-              this.focus();
-              this.startSeek();
-          };
-          this.handleProgressSliderInputEnd = () => {
-              this.focus();
-              this.endSeek();
-          };
-          this.handleVolumeBarChange = (e) => {
-              this.focus();
-              this.setVolume(e.detail.value);
-          };
-          this._resizeObserver = new ResizeObserver(this.handleResize);
-      }
       static get styles() {
           return css `
 
@@ -10158,6 +10214,69 @@ kQIDAQAB
           const oldValue = this.player.autoplay;
           this.player.autoplay = value;
           this.requestUpdate('autoplay', oldValue);
+      }
+      constructor() {
+          super();
+          this._width = 'auto';
+          this._cssWidth = 'auto';
+          this._progress = 0;
+          this._counter = '';
+          this._isLoading = false;
+          this._isError = false;
+          this._isPlaying = false;
+          this._isMuted = false;
+          this._volumeLevel = 0;
+          this._isPlayerAvailable = false;
+          this.handleResize = (entries) => {
+              this.updateCanvasSize();
+          };
+          this.handleKeyInput = (e) => {
+              e.preventDefault();
+              switch (e.key.toLowerCase()) {
+                  case ' ':
+                      this.togglePlay();
+                      break;
+                  case 'a':
+                  case 'arrowleft':
+                      if (e.shiftKey)
+                          this.firstFrame();
+                      else
+                          this.prevFrame();
+                      break;
+                  case 'd':
+                  case 'arrowright':
+                      if (e.shiftKey)
+                          this.lastFrame();
+                      else
+                          this.nextFrame();
+                      break;
+              }
+          };
+          this.handlePlayToggle = (e) => {
+              this.focus();
+              this.togglePlay();
+          };
+          this.handleMuteToggle = (e) => {
+              this.focus();
+              this.toggleMuted();
+          };
+          this.handleProgressSliderChange = (e) => {
+              this.focus();
+              this.seek(e.detail.value);
+          };
+          this.handleProgressSliderInputStart = () => {
+              this.focus();
+              this.startSeek();
+          };
+          this.handleProgressSliderInputEnd = () => {
+              this.focus();
+              this.endSeek();
+          };
+          this.handleVolumeBarChange = (e) => {
+              this.focus();
+              this.setVolume(e.detail.value);
+          };
+          this._resizeObserver = new ResizeObserver(this.handleResize);
       }
       /** @internal */
       render() {

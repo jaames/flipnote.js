@@ -110,7 +110,7 @@ declare function nextPaint(callback: Function): void;
 /**
  * @internal
  */
-declare type HashType = 'SHA-1' | 'SHA-256';
+type HashType = 'SHA-1' | 'SHA-256';
 /**
  * @internal
  */
@@ -188,7 +188,7 @@ declare function assertRange(value: number, min: number, max: number, name?: str
 /**
  * @internal
  */
-declare type AsyncTuple<ErrorType extends any = Error, DataType extends any = unknown> = [ErrorType, null] | [null, DataType];
+type AsyncTuple<ErrorType extends any = Error, DataType extends any = unknown> = [ErrorType, null] | [null, DataType];
 /**
  * Gracefully handles a given Promise factory.
  * @internal

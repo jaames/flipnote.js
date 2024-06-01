@@ -148,7 +148,7 @@ declare enum FlipnoteThumbImageFormat {
     Rgba = 1
 }
 /** Represents a decoded Flipnote thumbnail image */
-declare type FlipnoteThumbImage = {
+type FlipnoteThumbImage = {
     /**  */
     format: FlipnoteThumbImageFormat;
     /** Image width in pixels */
@@ -159,7 +159,7 @@ declare type FlipnoteThumbImage = {
     data: ArrayBuffer;
 };
 /** RGBA color */
-declare type FlipnotePaletteColor = [
+type FlipnotePaletteColor = [
     /** Red (0 to 255) */
     number,
     /** Green (0 to 255) */
@@ -170,14 +170,14 @@ declare type FlipnotePaletteColor = [
     number
 ];
 /** Flipnote layer visibility */
-declare type FlipnoteLayerVisibility = Record<number, boolean>;
+type FlipnoteLayerVisibility = Record<number, boolean>;
 /** stereoscopic eye view (left/right) for 3D effects */
 declare enum FlipnoteStereoscopicEye {
     Left = 0,
     Right = 1
 }
 /** Defines the colors used for a given Flipnote format */
-declare type FlipnotePaletteDefinition = Record<string, FlipnotePaletteColor>;
+type FlipnotePaletteDefinition = Record<string, FlipnotePaletteColor>;
 /** Identifies a Flipnote audio track type */
 declare enum FlipnoteAudioTrack {
     /** Background music track */
@@ -204,7 +204,7 @@ declare enum FlipnoteSoundEffectTrack {
     SE4 = 4
 }
 /** Flipnote sound flags, indicating which sound effect tracks are used on a given frame */
-declare type FlipnoteSoundEffectFlags = Record<FlipnoteSoundEffectTrack, boolean>;
+type FlipnoteSoundEffectFlags = Record<FlipnoteSoundEffectTrack, boolean>;
 /**
  * Flipnote version info - provides details about a particular Flipnote version and its author
  */
@@ -558,7 +558,7 @@ interface PpmMeta extends FlipnoteMeta {
  * PPM parser options for enabling optimizations and other extra features.
  * None are currently implemented
  */
-declare type PpmParserSettings = {};
+type PpmParserSettings = {};
 /**
  * Parser class for (DSiWare) Flipnote Studio's PPM animation format.
  *
@@ -783,7 +783,7 @@ interface KwzMeta extends FlipnoteMeta {
 /**
  * KWZ parser options for enabling optimizations and other extra features
  */
-declare type KwzParserSettings = {
+type KwzParserSettings = {
     /**
      * Skip full metadata parsing for quickness
      */
@@ -1056,21 +1056,21 @@ declare class KwzParser extends FlipnoteParserBase {
 }
 
 /** Optional settings to pass to a Flipnote parser instance. See {@link PpmParserSettings} and {@link KwzParserSettings} */
-declare type FlipnoteParserSettings = Partial<PpmParserSettings & KwzParserSettings>;
+type FlipnoteParserSettings = Partial<PpmParserSettings & KwzParserSettings>;
 /** Flipnote type. An object with this type is guranteed to implement the {@link FlipnoteParser} API. */
-declare type Flipnote = FlipnoteParserBase;
+type Flipnote = FlipnoteParserBase;
 
 /**
  * Resolution function passed to a loader's `load` method. Call when a Flipnote has been loaded successfully.
  * The result should be Flipnote file data as an ArrayBuffer.
  * @category Loader
  */
-declare type LoaderResolve = (result: ArrayBuffer) => void;
+type LoaderResolve = (result: ArrayBuffer) => void;
 /**
  * Rejection function passed to a loader's `load` method. Call when a Flipnote couldn't be loaded.
  * @category Loader
  */
-declare type LoaderReject = (err?: any) => void;
+type LoaderReject = (err?: any) => void;
 /**
  * Loader interface
  * The goal of a loader is to be able to tell when it can handle a particular source type, and then resolve an ArrayBuffer for that source.
@@ -1088,7 +1088,7 @@ interface LoaderDefinition<T> {
  * Loaders are tried in sequence until a matching one is found for the requested input.
  * @category Loader
  */
-declare type LoaderDefinitionList = LoaderDefinition<any>[];
+type LoaderDefinitionList = LoaderDefinition<any>[];
 /** @internal */
 declare function loadSource(source: any, loaders?: LoaderDefinitionList): Promise<ArrayBuffer>;
 
@@ -1099,11 +1099,11 @@ declare function loadSource(source: any, loaders?: LoaderDefinitionList): Promis
  * - A {@link https://developer.mozilla.org/en-US/docs/Web/API/File | File} object (Browser only)
  * - A {@link https://nodejs.org/api/buffer.html | Buffer} object (NodeJS only)
  */
-declare type FlipnoteSource = string | ArrayBuffer | Buffer | File;
+type FlipnoteSource = string | ArrayBuffer | Buffer | File;
 /**
  * Implements loading a Flipnote from a given source type, and returns a promise which resolves to a {@link Flipnote} parser instance.
  */
-declare type FlipnoteSourceParser<S = FlipnoteSource, D = Flipnote> = (source: S, parserConfig?: Partial<FlipnoteParserSettings>, loaders?: LoaderDefinitionList) => Promise<D>;
+type FlipnoteSourceParser<S = FlipnoteSource, D = Flipnote> = (source: S, parserConfig?: Partial<FlipnoteParserSettings>, loaders?: LoaderDefinitionList) => Promise<D>;
 /**
  * Load a Flipnote from a given source, returning a promise with a parser object.
  * It will auto-detect the Flipnote format and return either a {@link PpmParser} or {@link KwzParser} accordingly.
@@ -1152,7 +1152,7 @@ declare enum PlayerEvent {
     Destroy = "destroy"
 }
 /** @internal */
-declare type PlayerEventMap = Map<PlayerEvent, Function[]>;
+type PlayerEventMap = Map<PlayerEvent, Function[]>;
 
 declare enum CanvasStereoscopicMode {
     None = 0,
@@ -1248,6 +1248,7 @@ declare class WebglCanvas implements CanvasInterface {
     private textureTypes;
     private textureSizes;
     private frameBufferTextures;
+    private applyFirefoxFix;
     private refs;
     private isCtxLost;
     /**
@@ -1397,7 +1398,7 @@ declare class Html5Canvas implements CanvasInterface {
     destroy(): void;
 }
 
-declare type UniversalCanvasOptions = WebglCanvasOptions & Html5CanvasOptions;
+type UniversalCanvasOptions = WebglCanvasOptions & Html5CanvasOptions;
 declare class UniversalCanvas implements CanvasInterface {
     /** */
     renderer: CanvasInterface;
@@ -1453,7 +1454,7 @@ declare class UniversalCanvas implements CanvasInterface {
 }
 
 /** PCM audio buffer types. Supports s16_le, or float32_le with a range of -1.0 to 1.0 */
-declare type PcmAudioBuffer = Int16Array | Float32Array;
+type PcmAudioBuffer = Int16Array | Float32Array;
 /**
  * Audio player built around the {@link https://developer.mozilla.org/en-US/docs/Web/API/Web_Audio_API | Web Audio API}
  *
@@ -1523,7 +1524,7 @@ declare class WebAudioPlayer {
     destroy(): Promise<void>;
 }
 
-declare type PlayerLayerVisibility = Record<number, boolean>;
+type PlayerLayerVisibility = Record<number, boolean>;
 /**
  * Flipnote Player API (exported as `flipnote.Player`) - provides a {@link https://developer.mozilla.org/en-US/docs/Web/API/HTMLMediaElement | MediaElement}-like interface for loading Flipnotes and playing them.
  * This is intended for cases where you want to implement your own player UI, if you just want a pre-built player with some nice UI controls, check out the {@page Web Components} page instead!
@@ -2142,7 +2143,7 @@ declare class Player {
 }
 
 /** @internal */
-declare type Constructor<T = {}> = new (...args: any[]) => T;
+type Constructor<T = {}> = new (...args: any[]) => T;
 /**
  * This is a bit of a hack to get a player component class to wrap a Player instance,
  * while also inheriting all of the Player API's methods and properties.
@@ -2165,7 +2166,9 @@ declare function PlayerMixin<TargetBase extends Constructor>(Target: TargetBase)
         readonly noteFormat: FlipnoteFormat;
         readonly meta: FlipnoteMeta;
         readonly duration: number;
-        readonly layerVisibility: Record<number, boolean>;
+        readonly layerVisibility: {
+            [x: number]: boolean;
+        };
         autoplay: boolean;
         el: Element;
         parserSettings: Partial<KwzParserSettings>;
@@ -2326,7 +2329,7 @@ declare abstract class EncoderBase {
 /**
  * GIF RGBA palette color definition
  */
-declare type GifPaletteColor = [
+type GifPaletteColor = [
     /** Red (0 to 255) */
     number,
     /** Green (0 to 255) */
@@ -2484,7 +2487,9 @@ declare const PlayerComponent_base: {
         readonly noteFormat: FlipnoteFormat;
         readonly meta: FlipnoteMeta;
         readonly duration: number;
-        readonly layerVisibility: Record<number, boolean>;
+        readonly layerVisibility: {
+            [x: number]: boolean;
+        };
         autoplay: boolean;
         el: Element;
         parserSettings: Partial<KwzParserSettings>;
@@ -2665,7 +2670,7 @@ declare class PlayerComponent$1 extends PlayerComponent_base {
 }
 
 /** @internal */
-declare type SliderOrientation = 'horizontal' | 'vertical';
+type SliderOrientation = 'horizontal' | 'vertical';
 /**
  * @category Web Component
  * @internal

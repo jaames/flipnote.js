@@ -2,7 +2,7 @@
 flipnote.js v5.11.0
 https://flipnote.js.org
 A JavaScript library for parsing, converting, and in-browser playback of the proprietary animation formats used by Nintendo's Flipnote Studio and Flipnote Studio 3D apps.
-2018 - 2022 James Daniel
+2018 - 2024 James Daniel
 Flipnote Studio is (c) Nintendo Co., Ltd. This project isn't affiliated with or endorsed by them in any way.
 Keep on Flipnoting!
 */
@@ -109,13 +109,13 @@ class DataStream {
     }
     seek(offset, whence) {
         switch (whence) {
-            case 2 /* End */:
+            case 2 /* SeekOrigin.End */:
                 this.pointer = this.data.byteLength + offset;
                 break;
-            case 1 /* Current */:
+            case 1 /* SeekOrigin.Current */:
                 this.pointer += offset;
                 break;
-            case 0 /* Begin */:
+            case 0 /* SeekOrigin.Begin */:
             default:
                 this.pointer = offset;
                 break;

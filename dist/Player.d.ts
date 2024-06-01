@@ -65,7 +65,7 @@ declare enum FlipnoteThumbImageFormat {
     Rgba = 1
 }
 /** Represents a decoded Flipnote thumbnail image */
-declare type FlipnoteThumbImage = {
+type FlipnoteThumbImage = {
     /**  */
     format: FlipnoteThumbImageFormat;
     /** Image width in pixels */
@@ -76,7 +76,7 @@ declare type FlipnoteThumbImage = {
     data: ArrayBuffer;
 };
 /** RGBA color */
-declare type FlipnotePaletteColor = [
+type FlipnotePaletteColor = [
     /** Red (0 to 255) */
     number,
     /** Green (0 to 255) */
@@ -87,14 +87,14 @@ declare type FlipnotePaletteColor = [
     number
 ];
 /** Flipnote layer visibility */
-declare type FlipnoteLayerVisibility = Record<number, boolean>;
+type FlipnoteLayerVisibility = Record<number, boolean>;
 /** stereoscopic eye view (left/right) for 3D effects */
 declare enum FlipnoteStereoscopicEye {
     Left = 0,
     Right = 1
 }
 /** Defines the colors used for a given Flipnote format */
-declare type FlipnotePaletteDefinition = Record<string, FlipnotePaletteColor>;
+type FlipnotePaletteDefinition = Record<string, FlipnotePaletteColor>;
 /** Identifies a Flipnote audio track type */
 declare enum FlipnoteAudioTrack {
     /** Background music track */
@@ -121,7 +121,7 @@ declare enum FlipnoteSoundEffectTrack {
     SE4 = 4
 }
 /** Flipnote sound flags, indicating which sound effect tracks are used on a given frame */
-declare type FlipnoteSoundEffectFlags = Record<FlipnoteSoundEffectTrack, boolean>;
+type FlipnoteSoundEffectFlags = Record<FlipnoteSoundEffectTrack, boolean>;
 /**
  * Flipnote version info - provides details about a particular Flipnote version and its author
  */
@@ -468,12 +468,12 @@ declare abstract class FlipnoteParserBase extends DataStream {
  * PPM parser options for enabling optimizations and other extra features.
  * None are currently implemented
  */
-declare type PpmParserSettings = {};
+type PpmParserSettings = {};
 
 /**
  * KWZ parser options for enabling optimizations and other extra features
  */
-declare type KwzParserSettings = {
+type KwzParserSettings = {
     /**
      * Skip full metadata parsing for quickness
      */
@@ -520,21 +520,21 @@ declare type KwzParserSettings = {
 };
 
 /** Optional settings to pass to a Flipnote parser instance. See {@link PpmParserSettings} and {@link KwzParserSettings} */
-declare type FlipnoteParserSettings = Partial<PpmParserSettings & KwzParserSettings>;
+type FlipnoteParserSettings = Partial<PpmParserSettings & KwzParserSettings>;
 /** Flipnote type. An object with this type is guranteed to implement the {@link FlipnoteParser} API. */
-declare type Flipnote = FlipnoteParserBase;
+type Flipnote = FlipnoteParserBase;
 
 /**
  * Resolution function passed to a loader's `load` method. Call when a Flipnote has been loaded successfully.
  * The result should be Flipnote file data as an ArrayBuffer.
  * @category Loader
  */
-declare type LoaderResolve = (result: ArrayBuffer) => void;
+type LoaderResolve = (result: ArrayBuffer) => void;
 /**
  * Rejection function passed to a loader's `load` method. Call when a Flipnote couldn't be loaded.
  * @category Loader
  */
-declare type LoaderReject = (err?: any) => void;
+type LoaderReject = (err?: any) => void;
 /**
  * Loader interface
  * The goal of a loader is to be able to tell when it can handle a particular source type, and then resolve an ArrayBuffer for that source.
@@ -552,7 +552,7 @@ interface LoaderDefinition<T> {
  * Loaders are tried in sequence until a matching one is found for the requested input.
  * @category Loader
  */
-declare type LoaderDefinitionList = LoaderDefinition<any>[];
+type LoaderDefinitionList = LoaderDefinition<any>[];
 
 /**
  * Source to load a Flipnote from. Depending on the operating envionment, this can be:
@@ -561,11 +561,11 @@ declare type LoaderDefinitionList = LoaderDefinition<any>[];
  * - A {@link https://developer.mozilla.org/en-US/docs/Web/API/File | File} object (Browser only)
  * - A {@link https://nodejs.org/api/buffer.html | Buffer} object (NodeJS only)
  */
-declare type FlipnoteSource = string | ArrayBuffer | Buffer | File;
+type FlipnoteSource = string | ArrayBuffer | Buffer | File;
 /**
  * Implements loading a Flipnote from a given source type, and returns a promise which resolves to a {@link Flipnote} parser instance.
  */
-declare type FlipnoteSourceParser<S = FlipnoteSource, D = Flipnote> = (source: S, parserConfig?: Partial<FlipnoteParserSettings>, loaders?: LoaderDefinitionList) => Promise<D>;
+type FlipnoteSourceParser<S = FlipnoteSource, D = Flipnote> = (source: S, parserConfig?: Partial<FlipnoteParserSettings>, loaders?: LoaderDefinitionList) => Promise<D>;
 
 /**
  * Player event types
@@ -600,7 +600,7 @@ declare enum PlayerEvent {
     Destroy = "destroy"
 }
 /** @internal */
-declare type PlayerEventMap = Map<PlayerEvent, Function[]>;
+type PlayerEventMap = Map<PlayerEvent, Function[]>;
 /** @internal */
 declare const supportedEvents: PlayerEvent[];
 
@@ -656,7 +656,7 @@ interface Html5CanvasOptions {
     useSmoothing: boolean;
 }
 
-declare type UniversalCanvasOptions = WebglCanvasOptions & Html5CanvasOptions;
+type UniversalCanvasOptions = WebglCanvasOptions & Html5CanvasOptions;
 declare class UniversalCanvas implements CanvasInterface {
     /** */
     renderer: CanvasInterface;
@@ -712,7 +712,7 @@ declare class UniversalCanvas implements CanvasInterface {
 }
 
 /** PCM audio buffer types. Supports s16_le, or float32_le with a range of -1.0 to 1.0 */
-declare type PcmAudioBuffer = Int16Array | Float32Array;
+type PcmAudioBuffer = Int16Array | Float32Array;
 /**
  * Audio player built around the {@link https://developer.mozilla.org/en-US/docs/Web/API/Web_Audio_API | Web Audio API}
  *
@@ -782,7 +782,7 @@ declare class WebAudioPlayer {
     destroy(): Promise<void>;
 }
 
-declare type PlayerLayerVisibility = Record<number, boolean>;
+type PlayerLayerVisibility = Record<number, boolean>;
 /**
  * Flipnote Player API (exported as `flipnote.Player`) - provides a {@link https://developer.mozilla.org/en-US/docs/Web/API/HTMLMediaElement | MediaElement}-like interface for loading Flipnotes and playing them.
  * This is intended for cases where you want to implement your own player UI, if you just want a pre-built player with some nice UI controls, check out the {@page Web Components} page instead!
