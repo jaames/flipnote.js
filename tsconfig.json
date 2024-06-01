@@ -1,4 +1,9 @@
 {
+  "include": [
+    "src/**/*",
+    "buildSupport/**/*",
+    "rollup.config.ts"
+  ],
   "compilerOptions": {
     "baseUrl": ".",
     "outDir": "dist",

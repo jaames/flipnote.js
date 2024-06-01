@@ -1,10 +1,9 @@
 /*!!
-flipnote.js v5.11.0
-https://flipnote.js.org
-A JavaScript library for parsing, converting, and in-browser playback of the proprietary animation formats used by Nintendo's Flipnote Studio and Flipnote Studio 3D apps.
-2018 - 2024 James Daniel
-Flipnote Studio is (c) Nintendo Co., Ltd. This project isn't affiliated with or endorsed by them in any way.
-Keep on Flipnoting!
+ * flipnote.js v5.12.0
+ * https://flipnote.js.org
+ * A JavaScript library for Flipnote Studio animation files
+ * 2018 - 2024 James Daniel
+ * Flipnote Studio is (c) Nintendo Co., Ltd. This project isn't affiliated with or endorsed by them in any way.
 */
 var CanvasStereoscopicMode;
 (function (CanvasStereoscopicMode) {
@@ -21,6 +20,28 @@ class CanvasInterface {
 /* @license twgl.js 4.24.0 Copyright (c) 2015, Gregg Tavares All Rights Reserved.
 Available via the MIT license.
 see: http://github.com/greggman/twgl.js for details */
+/*
+ * Copyright 2019 Gregg Tavares
+ *
+ * Permission is hereby granted, free of charge, to any person obtaining a
+ * copy of this software and associated documentation files (the "Software"),
+ * to deal in the Software without restriction, including without limitation
+ * the rights to use, copy, modify, merge, publish, distribute, sublicense,
+ * and/or sell copies of the Software, and to permit persons to whom the
+ * Software is furnished to do so, subject to the following conditions:
+ *
+ * The above copyright notice and this permission notice shall be included in
+ * all copies or substantial portions of the Software.
+ *
+ * THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
+ * IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
+ * FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT.  IN NO EVENT SHALL
+ * THE AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
+ * LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING
+ * FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER
+ * DEALINGS IN THE SOFTWARE.
+ */
+
 
 /*
  * Copyright 2019 Gregg Tavares
@@ -52,6 +73,36 @@ const UNSIGNED_SHORT                 = 0x1403;
 const INT                            = 0x1404;
 const UNSIGNED_INT                   = 0x1405;
 const FLOAT                          = 0x1406;
+const UNSIGNED_SHORT_4_4_4_4       = 0x8033;
+const UNSIGNED_SHORT_5_5_5_1       = 0x8034;
+const UNSIGNED_SHORT_5_6_5         = 0x8363;
+const HALF_FLOAT                   = 0x140B;
+const UNSIGNED_INT_2_10_10_10_REV  = 0x8368;
+const UNSIGNED_INT_10F_11F_11F_REV = 0x8C3B;
+const UNSIGNED_INT_5_9_9_9_REV     = 0x8C3E;
+const FLOAT_32_UNSIGNED_INT_24_8_REV = 0x8DAD;
+const UNSIGNED_INT_24_8            = 0x84FA;
+
+const glTypeToTypedArray = {};
+{
+  const tt = glTypeToTypedArray;
+  tt[BYTE]                           = Int8Array;
+  tt[UNSIGNED_BYTE]                  = Uint8Array;
+  tt[SHORT]                          = Int16Array;
+  tt[UNSIGNED_SHORT]                 = Uint16Array;
+  tt[INT]                            = Int32Array;
+  tt[UNSIGNED_INT]                   = Uint32Array;
+  tt[FLOAT]                          = Float32Array;
+  tt[UNSIGNED_SHORT_4_4_4_4]         = Uint16Array;
+  tt[UNSIGNED_SHORT_5_5_5_1]         = Uint16Array;
+  tt[UNSIGNED_SHORT_5_6_5]           = Uint16Array;
+  tt[HALF_FLOAT]                     = Uint16Array;
+  tt[UNSIGNED_INT_2_10_10_10_REV]    = Uint32Array;
+  tt[UNSIGNED_INT_10F_11F_11F_REV]   = Uint32Array;
+  tt[UNSIGNED_INT_5_9_9_9_REV]       = Uint32Array;
+  tt[FLOAT_32_UNSIGNED_INT_24_8_REV] = Uint32Array;
+  tt[UNSIGNED_INT_24_8]              = Uint32Array;
+}
 
 /**
  * Get the GL type for a typedArray
@@ -683,6 +734,56 @@ function isWebGL2(gl) {
   // This might also be the correct check but I'm assuming it's slow-ish
   // return gl instanceof WebGL2RenderingContext;
   return !!gl.texStorage2D;
+}
+
+// NOTE: Chrome supports 2D canvas in a Worker (behind flag as of v64 but
+//       not only does Firefox NOT support it but Firefox freezes immediately
+//       if you try to create one instead of just returning null and continuing.
+//  : (global.OffscreenCanvas && (new global.OffscreenCanvas(1, 1)).getContext("2d"));  // OffscreenCanvas may not support 2d
+
+// NOTE: We can maybe remove some of the need for the 2d canvas. In WebGL2
+// we can use the various unpack settings. Otherwise we could try using
+// the ability of an ImageBitmap to be cut. Unfortunately cutting an ImageBitmap
+// is async and the current TWGL code expects a non-Async result though that
+// might not be a problem. ImageBitmap though is not available in Edge or Safari
+// as of 2018-01-02
+
+/* PixelFormat */
+const ALPHA                          = 0x1906;
+const RGB                            = 0x1907;
+const RGBA                           = 0x1908;
+const LUMINANCE                      = 0x1909;
+const LUMINANCE_ALPHA                = 0x190A;
+const DEPTH_COMPONENT                = 0x1902;
+const DEPTH_STENCIL                  = 0x84F9;
+
+const RG                           = 0x8227;
+const RG_INTEGER                   = 0x8228;
+const RED                          = 0x1903;
+const RED_INTEGER                  = 0x8D94;
+const RGB_INTEGER                  = 0x8D98;
+const RGBA_INTEGER                 = 0x8D99;
+
+const formatInfo = {};
+{
+  // NOTE: this is named `numColorComponents` vs `numComponents` so we can let Uglify mangle
+  // the name.
+  const f = formatInfo;
+  f[ALPHA]           = { numColorComponents: 1, };
+  f[LUMINANCE]       = { numColorComponents: 1, };
+  f[LUMINANCE_ALPHA] = { numColorComponents: 2, };
+  f[RGB]             = { numColorComponents: 3, };
+  f[RGBA]            = { numColorComponents: 4, };
+  f[RED]             = { numColorComponents: 1, };
+  f[RED_INTEGER]     = { numColorComponents: 1, };
+  f[RG]              = { numColorComponents: 2, };
+  f[RG_INTEGER]      = { numColorComponents: 2, };
+  f[RGB]             = { numColorComponents: 3, };
+  f[RGB_INTEGER]     = { numColorComponents: 3, };
+  f[RGBA]            = { numColorComponents: 4, };
+  f[RGBA_INTEGER]    = { numColorComponents: 4, };
+  f[DEPTH_COMPONENT] = { numColorComponents: 1, };
+  f[DEPTH_STENCIL]   = { numColorComponents: 2, };
 }
 
 const TEXTURE0                       = 0x84c0;
@@ -1756,10 +1857,8 @@ function createProgramInfoFromProgram(gl, program) {
  * @internal
  */
 function assert(condition, errMsg = 'Assert failed') {
-    if (!condition) {
-        console.trace(errMsg);
+    if (!condition)
         throw new Error(errMsg);
-    }
 }
 
 /**
@@ -1863,10 +1962,14 @@ const REGEX_PPM_FSID = /^[0159]{1}[0-9A-F]{6}0[0-9A-F]{8}$/;
  * This list was compiled from data provided by the Flipnote Archive, so it can be considered comprehensive enough to match any Flipnote you may encounter.
  */
 const PPM_FSID_SPECIAL_CASE = [
-    '01FACA7A4367FC5F', '03D6E959E2F9A42D',
-    '03F80445160587FA', '04068426E1008915',
-    '092A3EC8199FD5D5', '0B8D56BA1BD441B8',
-    '0E61C75C9B5AD90B', '14E494E35A443235'
+    '01FACA7A4367FC5F',
+    '03D6E959E2F9A42D',
+    '03F80445160587FA',
+    '04068426E1008915',
+    '092A3EC8199FD5D5',
+    '0B8D56BA1BD441B8',
+    '0E61C75C9B5AD90B',
+    '14E494E35A443235'
 ];
 /**
  * @internal
@@ -2285,13 +2388,13 @@ class WebglCanvas {
                 viewX = -(viewWidth - srcWidth * sx);
                 viewY = -(viewHeight - srcHeight * sy);
             }
-            gl.viewport(viewX !== null && viewX !== void 0 ? viewX : 0, viewY !== null && viewY !== void 0 ? viewY : 0, viewWidth !== null && viewWidth !== void 0 ? viewWidth : gl.drawingBufferWidth, viewHeight !== null && viewHeight !== void 0 ? viewHeight : gl.drawingBufferHeight);
+            gl.viewport(viewX ?? 0, viewY ?? 0, viewWidth ?? gl.drawingBufferWidth, viewHeight ?? gl.drawingBufferHeight);
         }
         else {
             const tex = this.frameBufferTextures.get(fb);
             const { width, height } = this.textureSizes.get(tex);
             gl.bindFramebuffer(gl.FRAMEBUFFER, fb);
-            gl.viewport(viewX !== null && viewX !== void 0 ? viewX : 0, viewY !== null && viewY !== void 0 ? viewY : 0, viewWidth !== null && viewWidth !== void 0 ? viewWidth : width, viewHeight !== null && viewHeight !== void 0 ? viewHeight : height);
+            gl.viewport(viewX ?? 0, viewY ?? 0, viewWidth ?? width, viewHeight ?? height);
         }
     }
     resizeFramebuffer(fb, width, height) {
@@ -2348,7 +2451,7 @@ class WebglCanvas {
         if (this.checkContextLoss())
             return;
         const gl = this.gl;
-        const paperColor = color !== null && color !== void 0 ? color : this.note.getFramePalette(this.frameIndex)[0];
+        const paperColor = color ?? this.note.getFramePalette(this.frameIndex)[0];
         const [r, g, b, a] = paperColor;
         gl.clearColor(r / 255, g / 255, b / 255, a / 255);
         gl.clear(gl.COLOR_BUFFER_BIT);
@@ -2674,7 +2777,6 @@ class UniversalCanvas {
         this.setSubRenderer(this.rendererStack[0]);
     }
     setSubRenderer(Canvas) {
-        var _a;
         let immediateLoss = false;
         const renderer = new Canvas(this.parent, this.width, this.height, {
             ...this.options,
@@ -2688,7 +2790,7 @@ class UniversalCanvas {
             return;
         if (this.note) {
             renderer.setNote(this.note);
-            renderer.frameIndex = (_a = this.renderer) === null || _a === void 0 ? void 0 : _a.frameIndex;
+            renderer.frameIndex = this.renderer?.frameIndex;
             renderer.forceUpdate();
         }
         if (this.renderer)

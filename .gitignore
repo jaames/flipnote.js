@@ -6,6 +6,9 @@ demo/samples
 test/samples
 # ts temp stuff
 types
+# extraneous types
+dist/esm/types
+dist/cjs/types
 
 # Docpage stuff
 www

@@ -1,0 +1,3 @@
+# extraneous types
+dist/esm/types
+dist/cjs/types

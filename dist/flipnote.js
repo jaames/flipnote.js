@@ -1,10 +1,9 @@
 /*!!
-flipnote.js v5.11.0
-https://flipnote.js.org
-A JavaScript library for parsing, converting, and in-browser playback of the proprietary animation formats used by Nintendo's Flipnote Studio and Flipnote Studio 3D apps.
-2018 - 2024 James Daniel
-Flipnote Studio is (c) Nintendo Co., Ltd. This project isn't affiliated with or endorsed by them in any way.
-Keep on Flipnoting!
+ * flipnote.js v5.12.0
+ * https://flipnote.js.org
+ * A JavaScript library for Flipnote Studio animation files
+ * 2018 - 2024 James Daniel
+ * Flipnote Studio is (c) Nintendo Co., Ltd. This project isn't affiliated with or endorsed by them in any way.
 */
 (function (global, factory) {
     typeof exports === 'object' && typeof module !== 'undefined' ? factory(exports) :
@@ -12,133 +11,9 @@ Keep on Flipnoting!
     (global = typeof globalThis !== 'undefined' ? globalThis : global || self, factory(global.flipnote = {}));
 })(this, (function (exports) { 'use strict';
 
-    /******************************************************************************
-    Copyright (c) Microsoft Corporation.
-
-    Permission to use, copy, modify, and/or distribute this software for any
-    purpose with or without fee is hereby granted.
-
-    THE SOFTWARE IS PROVIDED "AS IS" AND THE AUTHOR DISCLAIMS ALL WARRANTIES WITH
-    REGARD TO THIS SOFTWARE INCLUDING ALL IMPLIED WARRANTIES OF MERCHANTABILITY
-    AND FITNESS. IN NO EVENT SHALL THE AUTHOR BE LIABLE FOR ANY SPECIAL, DIRECT,
-    INDIRECT, OR CONSEQUENTIAL DAMAGES OR ANY DAMAGES WHATSOEVER RESULTING FROM
-    LOSS OF USE, DATA OR PROFITS, WHETHER IN AN ACTION OF CONTRACT, NEGLIGENCE OR
-    OTHER TORTIOUS ACTION, ARISING OUT OF OR IN CONNECTION WITH THE USE OR
-    PERFORMANCE OF THIS SOFTWARE.
-    ***************************************************************************** */
-    /* global Reflect, Promise, SuppressedError, Symbol */
-
-    var extendStatics = function(d, b) {
-        extendStatics = Object.setPrototypeOf ||
-            ({ __proto__: [] } instanceof Array && function (d, b) { d.__proto__ = b; }) ||
-            function (d, b) { for (var p in b) if (Object.prototype.hasOwnProperty.call(b, p)) d[p] = b[p]; };
-        return extendStatics(d, b);
-    };
-
-    function __extends(d, b) {
-        if (typeof b !== "function" && b !== null)
-            throw new TypeError("Class extends value " + String(b) + " is not a constructor or null");
-        extendStatics(d, b);
-        function __() { this.constructor = d; }
-        d.prototype = b === null ? Object.create(b) : (__.prototype = b.prototype, new __());
-    }
-
-    var __assign = function() {
-        __assign = Object.assign || function __assign(t) {
-            for (var s, i = 1, n = arguments.length; i < n; i++) {
-                s = arguments[i];
-                for (var p in s) if (Object.prototype.hasOwnProperty.call(s, p)) t[p] = s[p];
-            }
-            return t;
-        };
-        return __assign.apply(this, arguments);
-    };
-
-    function __awaiter(thisArg, _arguments, P, generator) {
-        function adopt(value) { return value instanceof P ? value : new P(function (resolve) { resolve(value); }); }
-        return new (P || (P = Promise))(function (resolve, reject) {
-            function fulfilled(value) { try { step(generator.next(value)); } catch (e) { reject(e); } }
-            function rejected(value) { try { step(generator["throw"](value)); } catch (e) { reject(e); } }
-            function step(result) { result.done ? resolve(result.value) : adopt(result.value).then(fulfilled, rejected); }
-            step((generator = generator.apply(thisArg, _arguments || [])).next());
-        });
-    }
-
-    function __generator(thisArg, body) {
-        var _ = { label: 0, sent: function() { if (t[0] & 1) throw t[1]; return t[1]; }, trys: [], ops: [] }, f, y, t, g;
-        return g = { next: verb(0), "throw": verb(1), "return": verb(2) }, typeof Symbol === "function" && (g[Symbol.iterator] = function() { return this; }), g;
-        function verb(n) { return function (v) { return step([n, v]); }; }
-        function step(op) {
-            if (f) throw new TypeError("Generator is already executing.");
-            while (g && (g = 0, op[0] && (_ = 0)), _) try {
-                if (f = 1, y && (t = op[0] & 2 ? y["return"] : op[0] ? y["throw"] || ((t = y["return"]) && t.call(y), 0) : y.next) && !(t = t.call(y, op[1])).done) return t;
-                if (y = 0, t) op = [op[0] & 2, t.value];
-                switch (op[0]) {
-                    case 0: case 1: t = op; break;
-                    case 4: _.label++; return { value: op[1], done: false };
-                    case 5: _.label++; y = op[1]; op = [0]; continue;
-                    case 7: op = _.ops.pop(); _.trys.pop(); continue;
-                    default:
-                        if (!(t = _.trys, t = t.length > 0 && t[t.length - 1]) && (op[0] === 6 || op[0] === 2)) { _ = 0; continue; }
-                        if (op[0] === 3 && (!t || (op[1] > t[0] && op[1] < t[3]))) { _.label = op[1]; break; }
-                        if (op[0] === 6 && _.label < t[1]) { _.label = t[1]; t = op; break; }
-                        if (t && _.label < t[2]) { _.label = t[2]; _.ops.push(op); break; }
-                        if (t[2]) _.ops.pop();
-                        _.trys.pop(); continue;
-                }
-                op = body.call(thisArg, _);
-            } catch (e) { op = [6, e]; y = 0; } finally { f = t = 0; }
-            if (op[0] & 5) throw op[1]; return { value: op[0] ? op[1] : void 0, done: true };
-        }
-    }
-
-    function __values(o) {
-        var s = typeof Symbol === "function" && Symbol.iterator, m = s && o[s], i = 0;
-        if (m) return m.call(o);
-        if (o && typeof o.length === "number") return {
-            next: function () {
-                if (o && i >= o.length) o = void 0;
-                return { value: o && o[i++], done: !o };
-            }
-        };
-        throw new TypeError(s ? "Object is not iterable." : "Symbol.iterator is not defined.");
-    }
-
-    function __read(o, n) {
-        var m = typeof Symbol === "function" && o[Symbol.iterator];
-        if (!m) return o;
-        var i = m.call(o), r, ar = [], e;
-        try {
-            while ((n === void 0 || n-- > 0) && !(r = i.next()).done) ar.push(r.value);
-        }
-        catch (error) { e = { error: error }; }
-        finally {
-            try {
-                if (r && !r.done && (m = i["return"])) m.call(i);
-            }
-            finally { if (e) throw e.error; }
-        }
-        return ar;
-    }
-
-    function __spreadArray(to, from, pack) {
-        if (pack || arguments.length === 2) for (var i = 0, l = from.length, ar; i < l; i++) {
-            if (ar || !(i in from)) {
-                if (!ar) ar = Array.prototype.slice.call(from, 0, i);
-                ar[i] = from[i];
-            }
-        }
-        return to.concat(ar || Array.prototype.slice.call(from));
-    }
-
-    typeof SuppressedError === "function" ? SuppressedError : function (error, suppressed, message) {
-        var e = new Error(message);
-        return e.name = "SuppressedError", e.error = error, e.suppressed = suppressed, e;
-    };
-
     /** @internal */
-    var ByteArray = /** @class */ (function () {
-        function ByteArray() {
+    class ByteArray {
+        constructor() {
             // sizes
             this.pageSize = 2048 * 2;
             this.allocSize = 0; // allocated size counting all pages
@@ -152,22 +27,18 @@ Keep on Flipnoting!
             this.realPtr = 0; // position in file
             this.newPage();
         }
-        Object.defineProperty(ByteArray.prototype, "pointer", {
-            get: function () {
-                return this.realPtr;
-            },
-            set: function (ptr) {
-                this.setPointer(ptr);
-            },
-            enumerable: false,
-            configurable: true
-        });
-        ByteArray.prototype.newPage = function () {
+        set pointer(ptr) {
+            this.setPointer(ptr);
+        }
+        get pointer() {
+            return this.realPtr;
+        }
+        newPage() {
             this.pages[this.numPages] = new Uint8Array(this.pageSize);
             this.numPages = this.pages.length;
             this.allocSize = this.numPages * this.pageSize;
-        };
-        ByteArray.prototype.setPointer = function (ptr) {
+        }
+        setPointer(ptr) {
             // allocate enough pages to include pointer
             while (ptr >= this.allocSize) {
                 this.newPage();
@@ -179,78 +50,69 @@ Keep on Flipnoting!
             this.pageIdx = Math.floor(ptr / this.pageSize);
             this.pagePtr = ptr % this.pageSize;
             this.realPtr = ptr;
-        };
-        ByteArray.prototype.writeByte = function (value) {
+        }
+        writeByte(value) {
             this.pages[this.pageIdx][this.pagePtr] = value;
             this.setPointer(this.realPtr + 1);
-        };
-        ByteArray.prototype.writeBytes = function (bytes, srcPtr, length) {
-            for (var l = length || bytes.length, i = srcPtr || 0; i < l; i++)
+        }
+        writeBytes(bytes, srcPtr, length) {
+            for (let l = length || bytes.length, i = srcPtr || 0; i < l; i++)
                 this.writeByte(bytes[i]);
-        };
-        ByteArray.prototype.writeChars = function (str) {
-            for (var i = 0; i < str.length; i++) {
+        }
+        writeChars(str) {
+            for (let i = 0; i < str.length; i++) {
                 this.writeByte(str.charCodeAt(i));
             }
-        };
-        ByteArray.prototype.writeU8 = function (value) {
+        }
+        writeU8(value) {
             this.writeByte(value & 0xFF);
-        };
-        ByteArray.prototype.writeU16 = function (value) {
+        }
+        writeU16(value) {
             this.writeByte((value >>> 0) & 0xFF);
             this.writeByte((value >>> 8) & 0xFF);
-        };
-        ByteArray.prototype.writeU32 = function (value) {
+        }
+        writeU32(value) {
             this.writeByte((value >>> 0) & 0xFF);
             this.writeByte((value >>> 8) & 0xFF);
             this.writeByte((value >>> 16) & 0xFF);
             this.writeByte((value >>> 24) & 0xFF);
-        };
-        ByteArray.prototype.getBytes = function () {
-            var bytes = new Uint8Array(this.realSize);
-            var numPages = this.numPages;
-            for (var i = 0; i < numPages; i++) {
-                var page = this.pages[i];
+        }
+        getBytes() {
+            const bytes = new Uint8Array(this.realSize);
+            const numPages = this.numPages;
+            for (let i = 0; i < numPages; i++) {
+                const page = this.pages[i];
                 if (i === numPages - 1) // last page
                     bytes.set(page.slice(0, this.realSize % this.pageSize), i * this.pageSize);
                 else
                     bytes.set(page, i * this.pageSize);
             }
             return bytes;
-        };
-        ByteArray.prototype.getBuffer = function () {
-            var bytes = this.getBytes();
+        }
+        getBuffer() {
+            const bytes = this.getBytes();
             return bytes.buffer;
-        };
-        return ByteArray;
-    }());
+        }
+    }
 
     /**
      * Wrapper around the DataView API to keep track of the offset into the data
      * also provides some utils for reading ascii strings etc
      * @internal
      */
-    var DataStream = /** @class */ (function () {
-        function DataStream(arrayBuffer) {
+    class DataStream {
+        constructor(arrayBuffer) {
             this.buffer = arrayBuffer;
             this.data = new DataView(arrayBuffer);
             this.pointer = 0;
         }
-        Object.defineProperty(DataStream.prototype, "bytes", {
-            get: function () {
-                return new Uint8Array(this.buffer);
-            },
-            enumerable: false,
-            configurable: true
-        });
-        Object.defineProperty(DataStream.prototype, "byteLength", {
-            get: function () {
-                return this.data.byteLength;
-            },
-            enumerable: false,
-            configurable: true
-        });
-        DataStream.prototype.seek = function (offset, whence) {
+        get bytes() {
+            return new Uint8Array(this.buffer);
+        }
+        get byteLength() {
+            return this.data.byteLength;
+        }
+        seek(offset, whence) {
             switch (whence) {
                 case 2 /* SeekOrigin.End */:
                     this.pointer = this.data.byteLength + offset;
@@ -263,132 +125,121 @@ Keep on Flipnoting!
                     this.pointer = offset;
                     break;
             }
-        };
-        DataStream.prototype.readUint8 = function () {
-            var val = this.data.getUint8(this.pointer);
+        }
+        readUint8() {
+            const val = this.data.getUint8(this.pointer);
             this.pointer += 1;
             return val;
-        };
-        DataStream.prototype.writeUint8 = function (value) {
+        }
+        writeUint8(value) {
             this.data.setUint8(this.pointer, value);
             this.pointer += 1;
-        };
-        DataStream.prototype.readInt8 = function () {
-            var val = this.data.getInt8(this.pointer);
+        }
+        readInt8() {
+            const val = this.data.getInt8(this.pointer);
             this.pointer += 1;
             return val;
-        };
-        DataStream.prototype.writeInt8 = function (value) {
+        }
+        writeInt8(value) {
             this.data.setInt8(this.pointer, value);
             this.pointer += 1;
-        };
-        DataStream.prototype.readUint16 = function (littleEndian) {
-            if (littleEndian === void 0) { littleEndian = true; }
-            var val = this.data.getUint16(this.pointer, littleEndian);
+        }
+        readUint16(littleEndian = true) {
+            const val = this.data.getUint16(this.pointer, littleEndian);
             this.pointer += 2;
             return val;
-        };
-        DataStream.prototype.writeUint16 = function (value, littleEndian) {
-            if (littleEndian === void 0) { littleEndian = true; }
+        }
+        writeUint16(value, littleEndian = true) {
             this.data.setUint16(this.pointer, value, littleEndian);
             this.pointer += 2;
-        };
-        DataStream.prototype.readInt16 = function (littleEndian) {
-            if (littleEndian === void 0) { littleEndian = true; }
-            var val = this.data.getInt16(this.pointer, littleEndian);
+        }
+        readInt16(littleEndian = true) {
+            const val = this.data.getInt16(this.pointer, littleEndian);
             this.pointer += 2;
             return val;
-        };
-        DataStream.prototype.writeInt16 = function (value, littleEndian) {
-            if (littleEndian === void 0) { littleEndian = true; }
+        }
+        writeInt16(value, littleEndian = true) {
             this.data.setInt16(this.pointer, value, littleEndian);
             this.pointer += 2;
-        };
-        DataStream.prototype.readUint32 = function (littleEndian) {
-            if (littleEndian === void 0) { littleEndian = true; }
-            var val = this.data.getUint32(this.pointer, littleEndian);
+        }
+        readUint32(littleEndian = true) {
+            const val = this.data.getUint32(this.pointer, littleEndian);
             this.pointer += 4;
             return val;
-        };
-        DataStream.prototype.writeUint32 = function (value, littleEndian) {
-            if (littleEndian === void 0) { littleEndian = true; }
+        }
+        writeUint32(value, littleEndian = true) {
             this.data.setUint32(this.pointer, value, littleEndian);
             this.pointer += 4;
-        };
-        DataStream.prototype.readInt32 = function (littleEndian) {
-            if (littleEndian === void 0) { littleEndian = true; }
-            var val = this.data.getInt32(this.pointer, littleEndian);
+        }
+        readInt32(littleEndian = true) {
+            const val = this.data.getInt32(this.pointer, littleEndian);
             this.pointer += 4;
             return val;
-        };
-        DataStream.prototype.writeInt32 = function (value, littleEndian) {
-            if (littleEndian === void 0) { littleEndian = true; }
+        }
+        writeInt32(value, littleEndian = true) {
             this.data.setInt32(this.pointer, value, littleEndian);
             this.pointer += 4;
-        };
-        DataStream.prototype.readBytes = function (count) {
-            var bytes = new Uint8Array(this.data.buffer, this.pointer, count);
+        }
+        readBytes(count) {
+            const bytes = new Uint8Array(this.data.buffer, this.pointer, count);
             this.pointer += bytes.byteLength;
             return bytes;
-        };
-        DataStream.prototype.writeBytes = function (bytes) {
-            var _this = this;
-            bytes.forEach(function (byte) { return _this.writeUint8(byte); });
-        };
-        DataStream.prototype.readHex = function (count, reverse) {
-            if (reverse === void 0) { reverse = false; }
-            var bytes = this.readBytes(count);
-            var hex = [];
-            for (var i = 0; i < bytes.length; i++) {
+        }
+        writeBytes(bytes) {
+            bytes.forEach((byte) => this.writeUint8(byte));
+        }
+        readHex(count, reverse = false) {
+            const bytes = this.readBytes(count);
+            let hex = [];
+            for (let i = 0; i < bytes.length; i++) {
                 hex.push(bytes[i].toString(16).padStart(2, '0'));
             }
             if (reverse)
                 hex.reverse();
             return hex.join('').toUpperCase();
-        };
-        DataStream.prototype.readChars = function (count) {
-            var chars = this.readBytes(count);
-            var str = '';
-            for (var i = 0; i < chars.length; i++) {
-                var char = chars[i];
+        }
+        readChars(count) {
+            const chars = this.readBytes(count);
+            let str = '';
+            for (let i = 0; i < chars.length; i++) {
+                const char = chars[i];
                 if (char === 0)
                     break;
                 str += String.fromCharCode(char);
             }
             return str;
-        };
-        DataStream.prototype.writeChars = function (string) {
-            for (var i = 0; i < string.length; i++) {
-                var char = string.charCodeAt(i);
+        }
+        writeChars(string) {
+            for (let i = 0; i < string.length; i++) {
+                const char = string.charCodeAt(i);
                 this.writeUint8(char);
             }
-        };
-        DataStream.prototype.readWideChars = function (count) {
-            var chars = new Uint16Array(this.data.buffer, this.pointer, count);
-            var str = '';
-            for (var i = 0; i < chars.length; i++) {
-                var char = chars[i];
+        }
+        readWideChars(count) {
+            const chars = new Uint16Array(this.data.buffer, this.pointer, count);
+            let str = '';
+            for (let i = 0; i < chars.length; i++) {
+                const char = chars[i];
                 if (char == 0)
                     break;
                 str += String.fromCharCode(char);
             }
             this.pointer += chars.byteLength;
             return str;
-        };
-        return DataStream;
-    }());
+        }
+    }
 
     /** @internal */
-    var ADPCM_INDEX_TABLE_2BIT = new Int8Array([
+    const ADPCM_INDEX_TABLE_2BIT = new Int8Array([
         -1, 2, -1, 2
     ]);
     /** @internal */
-    var ADPCM_INDEX_TABLE_4BIT = new Int8Array([
+    const ADPCM_INDEX_TABLE_4BIT = new Int8Array([
         -1, -1, -1, -1, 2, 4, 6, 8,
         -1, -1, -1, -1, 2, 4, 6, 8
     ]);
     /** @internal */
-    var ADPCM_STEP_TABLE = new Int16Array([
+    const ADPCM_STEP_TABLE = new Int16Array([
         7, 8, 9, 10, 11, 12, 13, 14, 16, 17,
         19, 21, 23, 25, 28, 31, 34, 37, 41, 45,
         50, 55, 60, 66, 73, 80, 88, 97, 107, 118,
@@ -414,7 +265,7 @@ Keep on Flipnoting!
      * Interpolate between a and b - returns a if fac = 0, b if fac = 1, and somewhere between if 0 < fac < 1
      * @internal
      */
-    var lerp = function (a, b, fac) { return a + fac * (b - a); };
+    const lerp = (a, b, fac) => a + fac * (b - a);
     /** @internal */
     function pcmGetSample(src, srcSize, srcPtr) {
         if (srcPtr < 0 || srcPtr >= srcSize)
@@ -427,12 +278,12 @@ Keep on Flipnoting!
      * @internal
      */
     function pcmResampleNearestNeighbour(src, srcFreq, dstFreq) {
-        var srcLength = src.length;
-        var srcDuration = srcLength / srcFreq;
-        var dstLength = srcDuration * dstFreq;
-        var dst = new Int16Array(dstLength);
-        var adjFreq = srcFreq / dstFreq;
-        for (var dstPtr = 0; dstPtr < dstLength; dstPtr++) {
+        const srcLength = src.length;
+        const srcDuration = srcLength / srcFreq;
+        const dstLength = srcDuration * dstFreq;
+        const dst = new Int16Array(dstLength);
+        const adjFreq = srcFreq / dstFreq;
+        for (let dstPtr = 0; dstPtr < dstLength; dstPtr++) {
             dst[dstPtr] = pcmGetSample(src, srcLength, Math.floor(dstPtr * adjFreq));
         }
         return dst;
@@ -442,12 +293,12 @@ Keep on Flipnoting!
      * @internal
      */
     function pcmResampleLinear(src, srcFreq, dstFreq) {
-        var srcLength = src.length;
-        var srcDuration = srcLength / srcFreq;
-        var dstLength = srcDuration * dstFreq;
-        var dst = new Int16Array(dstLength);
-        var adjFreq = srcFreq / dstFreq;
-        for (var dstPtr = 0, adj = 0, srcPtr = 0, weight = 0; dstPtr < dstLength; dstPtr++) {
+        const srcLength = src.length;
+        const srcDuration = srcLength / srcFreq;
+        const dstLength = srcDuration * dstFreq;
+        const dst = new Int16Array(dstLength);
+        const adjFreq = srcFreq / dstFreq;
+        for (let dstPtr = 0, adj = 0, srcPtr = 0, weight = 0; dstPtr < dstLength; dstPtr++) {
             adj = dstPtr * adjFreq;
             srcPtr = Math.floor(adj);
             weight = adj % 1;
@@ -461,10 +312,10 @@ Keep on Flipnoting!
      * @internal
      */
     function pcmGetClippingRatio(src) {
-        var numSamples = src.length;
-        var numClippedSamples = 0;
-        for (var i = 0; i < numSamples; i++) {
-            var sample = src[i];
+        const numSamples = src.length;
+        let numClippedSamples = 0;
+        for (let i = 0; i < numSamples; i++) {
+            const sample = src[i];
             if (sample <= -32768 || sample >= 32767)
                 numClippedSamples += 1;
         }
@@ -475,9 +326,9 @@ Keep on Flipnoting!
      * @internal
      */
     function pcmGetRms(src) {
-        var numSamples = src.length;
-        var rms = 0;
-        for (var i = 0; i < numSamples; i++) {
+        const numSamples = src.length;
+        let rms = 0;
+        for (let i = 0; i < numSamples; i++) {
             rms += Math.pow(src[i], 2);
         }
         return Math.sqrt(rms / numSamples);
@@ -487,20 +338,16 @@ Keep on Flipnoting!
      * Assert condition is true
      * @internal
      */
-    function assert(condition, errMsg) {
-        if (errMsg === void 0) { errMsg = 'Assert failed'; }
-        if (!condition) {
-            console.trace(errMsg);
+    function assert(condition, errMsg = 'Assert failed') {
+        if (!condition)
             throw new Error(errMsg);
-        }
     }
     /**
-     * Assert that a numberical value is between upper and lower bounds
+     * Assert that a numerical value is between upper and lower bounds
      * @internal
      */
-    function assertRange(value, min, max, name) {
-        if (name === void 0) { name = ''; }
-        assert(value >= min && value <= max, "".concat(name || 'value', " ").concat(value, " should be between ").concat(min, " and ").concat(max));
+    function assertRange(value, min, max, name = '') {
+        assert(value >= min && value <= max, `${name || 'value'} ${value} should be between ${min} and ${max}`);
     }
 
     /**
@@ -516,8 +363,8 @@ Keep on Flipnoting!
         try {
             return nodeModule.require(p);
         }
-        catch (_a) {
-            throw new Error("Could not require(".concat(p, ")"));
+        catch {
+            throw new Error(`Could not require(${p})`);
         }
     }
     /**
@@ -540,7 +387,7 @@ Keep on Flipnoting!
      * Is the code running in a browser environment?
      * @internal
      */
-    var isBrowser = typeof window !== 'undefined'
+    const isBrowser = typeof window !== 'undefined'
         && typeof window.document !== 'undefined';
     /**
      * Assert that the current environment should support browser APIs
@@ -553,7 +400,7 @@ Keep on Flipnoting!
      * Is the code running in a Node environment?
      * @internal
      */
-    var isNode = typeof process !== 'undefined'
+    const isNode = typeof process !== 'undefined'
         && process.versions != null
         && process.versions.node != null;
     /**
@@ -568,7 +415,7 @@ Keep on Flipnoting!
      * Is the code running in a Web Worker enviornment?
      * @internal
      */
-    var isWebWorker = typeof self === 'object'
+    const isWebWorker = typeof self === 'object'
         && self.constructor
         && self.constructor.name === 'DedicatedWorkerGlobalScope';
 
@@ -576,10 +423,10 @@ Keep on Flipnoting!
      * same SubtleCrypto API is available in browser and node, but in node it isn't global
      * @internal
      */
-    var SUBTLE_CRYPTO = (function () {
+    const SUBTLE_CRYPTO = (() => {
         if (isBrowser || isWebWorker) {
-            var global_1 = getGlobalObject();
-            return (global_1.crypto || global_1.msCrypto).subtle;
+            const global = getGlobalObject();
+            return (global.crypto || global.msCrypto).subtle;
         }
         else if (isNode)
             return dynamicRequire(module, 'crypto').webcrypto.subtle;
@@ -588,46 +435,32 @@ Keep on Flipnoting!
      * crypto algo used
      * @internal
      */
-    var ALGORITHM = 'RSASSA-PKCS1-v1_5';
+    const ALGORITHM = 'RSASSA-PKCS1-v1_5';
     /**
      * @internal
      */
-    function rsaLoadPublicKey(pemKey, hashType) {
-        return __awaiter(this, void 0, void 0, function () {
-            var lines, keyPlaintext, keyBytes;
-            return __generator(this, function (_a) {
-                switch (_a.label) {
-                    case 0:
-                        lines = pemKey
-                            .split('\n')
-                            .filter(function (line) { return !line.startsWith('-----') && !line.endsWith('-----'); })
-                            .join('');
-                        keyPlaintext = atob(lines);
-                        keyBytes = new Uint8Array(keyPlaintext.length)
-                            .map(function (_, i) { return keyPlaintext.charCodeAt(i); });
-                        return [4 /*yield*/, SUBTLE_CRYPTO.importKey('spki', keyBytes.buffer, {
-                                name: ALGORITHM,
-                                hash: hashType,
-                            }, false, ['verify'])];
-                    case 1: 
-                    // create crypto api key
-                    return [2 /*return*/, _a.sent()];
-                }
-            });
-        });
+    async function rsaLoadPublicKey(pemKey, hashType) {
+        // remove PEM header and footer
+        const lines = pemKey
+            .split('\n')
+            .filter(line => !line.startsWith('-----') && !line.endsWith('-----'))
+            .join('');
+        // base64 decode
+        const keyPlaintext = atob(lines);
+        // convert to byte array
+        const keyBytes = new Uint8Array(keyPlaintext.length)
+            .map((_, i) => keyPlaintext.charCodeAt(i));
+        // create crypto api key
+        return await SUBTLE_CRYPTO.importKey('spki', keyBytes.buffer, {
+            name: ALGORITHM,
+            hash: hashType,
+        }, false, ['verify']);
     }
     /**
      * @internal
      */
-    function rsaVerify(key, signature, data) {
-        return __awaiter(this, void 0, void 0, function () {
-            return __generator(this, function (_a) {
-                switch (_a.label) {
-                    case 0: return [4 /*yield*/, SUBTLE_CRYPTO.verify(ALGORITHM, key, signature, data)];
-                    case 1: return [2 /*return*/, _a.sent()];
-                }
-            });
-        });
+    async function rsaVerify(key, signature, data) {
+        return await SUBTLE_CRYPTO.verify(ALGORITHM, key, signature, data);
     }
 
     /**
@@ -636,31 +469,23 @@ Keep on Flipnoting!
      * @example
      * const [ error, data ] = await until(() => asyncAction())
      */
-    var until = function (promise) { return __awaiter(void 0, void 0, void 0, function () {
-        var data, error_1;
-        return __generator(this, function (_a) {
-            switch (_a.label) {
-                case 0:
-                    _a.trys.push([0, 2, , 3]);
-                    return [4 /*yield*/, promise().catch(function (error) {
-                            throw error;
-                        })];
-                case 1:
-                    data = _a.sent();
-                    return [2 /*return*/, [null, data]];
-                case 2:
-                    error_1 = _a.sent();
-                    return [2 /*return*/, [error_1, null]];
-                case 3: return [2 /*return*/];
-            }
-        });
-    }); };
+    const until = async (promise) => {
+        try {
+            const data = await promise().catch((error) => {
+                throw error;
+            });
+            return [null, data];
+        }
+        catch (error) {
+            return [error, null];
+        }
+    };
 
     /**
      * Number of seconds between the UNIX timestamp epoch (jan 1 1970) and the Nintendo timestamp epoch (jan 1 2000)
      * @internal
      */
-    var UNIX_EPOCH_2000 = 946684800;
+    const UNIX_EPOCH_2000 = 946684800;
     /**
      * Convert a Nintendo DS or 3DS timestamp int to a JS Date object
      * @internal
@@ -696,34 +521,38 @@ Keep on Flipnoting!
      * e.g. 1440D700CEF78DA8
      * @internal
      */
-    var REGEX_PPM_FSID = /^[0159]{1}[0-9A-F]{6}0[0-9A-F]{8}$/;
+    const REGEX_PPM_FSID = /^[0159]{1}[0-9A-F]{6}0[0-9A-F]{8}$/;
     /**
      * Match an FSID from Flipnote Studio 3D
      * e.g. 003f-0b7e-82a6-fe0bda
      * @internal
      */
-    var REGEX_KWZ_FSID = /^[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{6}$/;
+    const REGEX_KWZ_FSID = /^[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{6}$/;
     /**
      * Match an FSID from a DSi Library note (PPM to KWZ conversion)
      * e.g. 10b8-b909-5180-9b2013
      * @internal
      */
-    var REGEX_KWZ_DSI_LIBRARY_FSID = /^(00|10|12|14)[0-9a-f]{2}-[0-9a-f]{4}-[0-9a-f]{3}0-[0-9a-f]{4}[0159]{1}[0-9a-f]{1}$/;
+    const REGEX_KWZ_DSI_LIBRARY_FSID = /^(00|10|12|14)[0-9a-f]{2}-[0-9a-f]{4}-[0-9a-f]{3}0-[0-9a-f]{4}[0159]{1}[0-9a-f]{1}$/;
     /**
      * @internal
      * There are several known exceptions to the FSID format, all from Nintendo or Hatena developer and event accounts (mario, zelda 25th, etc).
      * This list was compiled from data provided by the Flipnote Archive, so it can be considered comprehensive enough to match any Flipnote you may encounter.
      */
-    var PPM_FSID_SPECIAL_CASE = [
-        '01FACA7A4367FC5F', '03D6E959E2F9A42D',
-        '03F80445160587FA', '04068426E1008915',
-        '092A3EC8199FD5D5', '0B8D56BA1BD441B8',
-        '0E61C75C9B5AD90B', '14E494E35A443235'
+    const PPM_FSID_SPECIAL_CASE = [
+        '01FACA7A4367FC5F',
+        '03D6E959E2F9A42D',
+        '03F80445160587FA',
+        '04068426E1008915',
+        '092A3EC8199FD5D5',
+        '0B8D56BA1BD441B8',
+        '0E61C75C9B5AD90B',
+        '14E494E35A443235'
     ];
     /**
      * @internal
      */
-    var KWZ_DSI_LIBRARY_FSID_SPECIAL_CASE_SUFFIX = PPM_FSID_SPECIAL_CASE.map(function (id) { return convertPpmFsidToKwzFsidSuffix(id); });
+    const KWZ_DSI_LIBRARY_FSID_SPECIAL_CASE_SUFFIX = PPM_FSID_SPECIAL_CASE.map(id => convertPpmFsidToKwzFsidSuffix(id));
     /**
      * Indicates whether the input is a valid Flipnote Studio user ID
      */
@@ -740,22 +569,11 @@ Keep on Flipnoting!
      * Indicates whether the input is a valid DSi Library user ID
      */
     function isKwzDsiLibraryFsid(fsid) {
-        var e_1, _a;
         if (REGEX_KWZ_DSI_LIBRARY_FSID.test(fsid))
             return true;
-        try {
-            for (var KWZ_DSI_LIBRARY_FSID_SPECIAL_CASE_SUFFIX_1 = __values(KWZ_DSI_LIBRARY_FSID_SPECIAL_CASE_SUFFIX), KWZ_DSI_LIBRARY_FSID_SPECIAL_CASE_SUFFIX_1_1 = KWZ_DSI_LIBRARY_FSID_SPECIAL_CASE_SUFFIX_1.next(); !KWZ_DSI_LIBRARY_FSID_SPECIAL_CASE_SUFFIX_1_1.done; KWZ_DSI_LIBRARY_FSID_SPECIAL_CASE_SUFFIX_1_1 = KWZ_DSI_LIBRARY_FSID_SPECIAL_CASE_SUFFIX_1.next()) {
-                var suffix = KWZ_DSI_LIBRARY_FSID_SPECIAL_CASE_SUFFIX_1_1.value;
-                if (fsid.endsWith(suffix))
-                    return true;
-            }
-        }
-        catch (e_1_1) { e_1 = { error: e_1_1 }; }
-        finally {
-            try {
-                if (KWZ_DSI_LIBRARY_FSID_SPECIAL_CASE_SUFFIX_1_1 && !KWZ_DSI_LIBRARY_FSID_SPECIAL_CASE_SUFFIX_1_1.done && (_a = KWZ_DSI_LIBRARY_FSID_SPECIAL_CASE_SUFFIX_1.return)) _a.call(KWZ_DSI_LIBRARY_FSID_SPECIAL_CASE_SUFFIX_1);
-            }
-            finally { if (e_1) throw e_1.error; }
+        for (let suffix of KWZ_DSI_LIBRARY_FSID_SPECIAL_CASE_SUFFIX) {
+            if (fsid.endsWith(suffix))
+                return true;
         }
         return false;
     }
@@ -836,7 +654,7 @@ Keep on Flipnoting!
      * Will return `null` if the conversion could not be made.
      */
     function convertPpmFsidToPossibleKwzFsids(fsid) {
-        var kwzIdSuffix = convertPpmFsidToKwzFsidSuffix(fsid);
+        const kwzIdSuffix = convertPpmFsidToKwzFsidSuffix(fsid);
         if (kwzIdSuffix) {
             return [
                 '00' + kwzIdSuffix,
@@ -851,7 +669,7 @@ Keep on Flipnoting!
      * Tests if a KWZ Flipnote Studio ID (from a Nintendo DSi Library Flipnote) matches a given PPM-formatted Flipnote Studio ID.
      */
     function testKwzFsidMatchesPpmFsid(kwzFsid, ppmFsid) {
-        var ppmFromKwz = convertKwzFsidToPpmFsid(kwzFsid);
+        const ppmFromKwz = convertKwzFsidToPpmFsid(kwzFsid);
         return ppmFromKwz == ppmFsid;
     }
     /**
@@ -868,17 +686,17 @@ Keep on Flipnoting!
     var fsid = /*#__PURE__*/Object.freeze({
         __proto__: null,
         get FlipnoteRegion () { return exports.FlipnoteRegion; },
-        isPpmFsid: isPpmFsid,
-        isKwzFsid: isKwzFsid,
-        isKwzDsiLibraryFsid: isKwzDsiLibraryFsid,
-        isFsid: isFsid,
-        getPpmFsidRegion: getPpmFsidRegion,
-        getKwzFsidRegion: getKwzFsidRegion,
         convertKwzFsidToPpmFsid: convertKwzFsidToPpmFsid,
         convertPpmFsidToKwzFsidSuffix: convertPpmFsidToKwzFsidSuffix,
         convertPpmFsidToPossibleKwzFsids: convertPpmFsidToPossibleKwzFsids,
-        testKwzFsidMatchesPpmFsid: testKwzFsidMatchesPpmFsid,
-        getFsidRegion: getFsidRegion
+        getFsidRegion: getFsidRegion,
+        getKwzFsidRegion: getKwzFsidRegion,
+        getPpmFsidRegion: getPpmFsidRegion,
+        isFsid: isFsid,
+        isKwzDsiLibraryFsid: isKwzDsiLibraryFsid,
+        isKwzFsid: isKwzFsid,
+        isPpmFsid: isPpmFsid,
+        testKwzFsidMatchesPpmFsid: testKwzFsidMatchesPpmFsid
     });
 
     /** @internal */
@@ -886,9 +704,9 @@ Keep on Flipnoting!
         if (!isBrowser) {
             return function () { };
         }
-        var a = document.createElement('a');
+        const a = document.createElement('a');
         return function (blob, filename) {
-            var url = window.URL.createObjectURL(blob);
+            const url = window.URL.createObjectURL(blob);
             a.href = url;
             a.download = filename;
             a.click();
@@ -896,7 +714,7 @@ Keep on Flipnoting!
         };
     }))();
 
-    var _a;
+    var _a$2;
     /** Identifies which animation format a Flipnote uses */
     exports.FlipnoteFormat = void 0;
     (function (FlipnoteFormat) {
@@ -946,31 +764,29 @@ Keep on Flipnoting!
      * it just provides a consistent API for every format parser to implement.
      * @category File Parser
     */
-    var FlipnoteParserBase = /** @class */ (function (_super) {
-        __extends(FlipnoteParserBase, _super);
-        function FlipnoteParserBase() {
+    class FlipnoteParserBase extends DataStream {
+        constructor() {
             /** Static file format info */
-            var _this = _super !== null && _super.apply(this, arguments) || this;
+            super(...arguments);
             /** Instance file format info */
             /** Custom object tag */
-            _this[_a] = 'Flipnote';
+            this[_a$2] = 'Flipnote';
             /** Default formats used for {@link getTitle()} */
-            _this.titleFormats = {
+            this.titleFormats = {
                 COMMENT: 'Comment by $USERNAME',
                 FLIPNOTE: 'Flipnote by $USERNAME',
                 ICON: 'Folder icon'
             };
             /** File audio track info, see {@link FlipnoteAudioTrackInfo} */
-            _this.soundMeta = new Map();
+            this.soundMeta = new Map();
             /** Animation frame global layer visibility */
-            _this.layerVisibility = { 1: true, 2: true, 3: true };
+            this.layerVisibility = { 1: true, 2: true, 3: true };
             /** (KWZ only) Indicates whether or not this file is a Flipnote Studio 3D folder icon */
-            _this.isFolderIcon = false;
+            this.isFolderIcon = false;
             /** (KWZ only) Indicates whether or not this file is a handwritten comment from Flipnote Gallery World */
-            _this.isComment = false;
+            this.isComment = false;
             /** (KWZ only) Indicates whether or not this Flipnote is a PPM to KWZ conversion from Flipnote Studio 3D's DSi Library service */
-            _this.isDsiLibraryNote = false;
-            return _this;
+            this.isDsiLibraryNote = false;
         }
         /**
          * Get file default title - e.g. "Flipnote by Y", "Comment by X", etc.
@@ -984,13 +800,12 @@ Keep on Flipnoting!
          * ```
          * @category Utility
          */
-        FlipnoteParserBase.prototype.getTitle = function (formats) {
-            if (formats === void 0) { formats = this.titleFormats; }
+        getTitle(formats = this.titleFormats) {
             if (this.isFolderIcon)
                 return formats.ICON;
-            var title = this.isComment ? formats.COMMENT : formats.FLIPNOTE;
+            const title = this.isComment ? formats.COMMENT : formats.FLIPNOTE;
             return title.replace('$USERNAME', this.meta.current.username);
-        };
+        }
         /**
          * Returns the Flipnote title when casting a parser instance to a string
          *
@@ -1000,9 +815,9 @@ Keep on Flipnoting!
          * ```
          * @category Utility
          */
-        FlipnoteParserBase.prototype.toString = function () {
+        toString() {
             return this.getTitle();
-        };
+        }
         /**
          * Allows for frame index iteration when using the parser instance as a for..of iterator
          *
@@ -1013,262 +828,229 @@ Keep on Flipnoting!
          * ```
          * @category Utility
          */
-        FlipnoteParserBase.prototype[(_a = Symbol.toStringTag, Symbol.iterator)] = function () {
-            var i;
-            return __generator(this, function (_b) {
-                switch (_b.label) {
-                    case 0:
-                        i = 0;
-                        _b.label = 1;
-                    case 1:
-                        if (!(i < this.frameCount)) return [3 /*break*/, 4];
-                        return [4 /*yield*/, i];
-                    case 2:
-                        _b.sent();
-                        _b.label = 3;
-                    case 3:
-                        i++;
-                        return [3 /*break*/, 1];
-                    case 4: return [2 /*return*/];
-                }
-            });
-        };
+        *[(_a$2 = Symbol.toStringTag, Symbol.iterator)]() {
+            for (let i = 0; i < this.frameCount; i++)
+                yield i;
+        }
         /**
          * Get the pixels for a given frame layer, as palette indices
          * NOTE: layerIndex are not guaranteed to be sorted by 3D depth in KWZs, use {@link getFrameLayerOrder} to get the correct sort order first
          * NOTE: if the visibility flag for this layer is turned off, the result will be empty
          * @category Image
         */
-        FlipnoteParserBase.prototype.getLayerPixels = function (frameIndex, layerIndex, imageBuffer, depthStrength, depthEye) {
-            if (imageBuffer === void 0) { imageBuffer = new Uint8Array(this.imageWidth * this.imageHeight); }
-            if (depthStrength === void 0) { depthStrength = 0; }
-            if (depthEye === void 0) { depthEye = FlipnoteStereoscopicEye.Left; }
+        getLayerPixels(frameIndex, layerIndex, imageBuffer = new Uint8Array(this.imageWidth * this.imageHeight), depthStrength = 0, depthEye = FlipnoteStereoscopicEye.Left) {
             assertRange(frameIndex, 0, this.frameCount - 1, 'Frame index');
             assertRange(layerIndex, 0, this.numLayers - 1, 'Layer index');
             // palette
-            var palette = this.getFramePaletteIndices(frameIndex);
-            var palettePtr = layerIndex * this.numLayerColors;
+            const palette = this.getFramePaletteIndices(frameIndex);
+            const palettePtr = layerIndex * this.numLayerColors;
             // raw pixels
-            var layers = this.decodeFrame(frameIndex);
-            var layerBuffer = layers[layerIndex];
-            var depth = Math.floor(this.getFrameLayerDepths(frameIndex)[layerIndex] * depthStrength);
-            var depthShift = ((depthEye == FlipnoteStereoscopicEye.Left) ? -depth : depth);
+            const layers = this.decodeFrame(frameIndex);
+            const layerBuffer = layers[layerIndex];
+            const depth = Math.floor(this.getFrameLayerDepths(frameIndex)[layerIndex] * depthStrength);
+            const depthShift = ((depthEye == FlipnoteStereoscopicEye.Left) ? -depth : depth);
             // image dimensions and crop
-            var srcStride = this.srcWidth;
-            var dstStride = this.imageWidth;
-            var width = this.imageWidth;
-            var height = this.imageHeight;
-            var xOffs = this.imageOffsetX;
-            var yOffs = this.imageOffsetY;
+            const srcStride = this.srcWidth;
+            const dstStride = this.imageWidth;
+            const width = this.imageWidth;
+            const height = this.imageHeight;
+            const xOffs = this.imageOffsetX;
+            const yOffs = this.imageOffsetY;
             // clear image buffer before writing
             imageBuffer.fill(0);
             // handle layer visibility by returning a blank image if the layer is invisible
             if (!this.layerVisibility[layerIndex + 1])
                 return imageBuffer;
             // convert to palette indices and crop
-            for (var srcY = yOffs, dstY = 0; dstY < height; srcY++, dstY++) {
-                for (var srcX = xOffs, dstX = 0; dstX < width; srcX++, dstX++) {
-                    var srcPtr = srcY * srcStride + srcX;
-                    var dstPtr = dstY * dstStride + dstX + depthShift;
-                    var pixel = layerBuffer[srcPtr];
+            for (let srcY = yOffs, dstY = 0; dstY < height; srcY++, dstY++) {
+                for (let srcX = xOffs, dstX = 0; dstX < width; srcX++, dstX++) {
+                    const srcPtr = srcY * srcStride + srcX;
+                    const dstPtr = dstY * dstStride + dstX + depthShift;
+                    let pixel = layerBuffer[srcPtr];
                     if (pixel !== 0)
                         imageBuffer[dstPtr] = palette[palettePtr + pixel];
                 }
             }
             return imageBuffer;
-        };
+        }
         /**
          * Get the pixels for a given frame layer, as RGBA pixels
          * NOTE: layerIndex are not guaranteed to be sorted by 3D depth in KWZs, use {@link getFrameLayerOrder} to get the correct sort order first
          * NOTE: if the visibility flag for this layer is turned off, the result will be empty
          * @category Image
         */
-        FlipnoteParserBase.prototype.getLayerPixelsRgba = function (frameIndex, layerIndex, imageBuffer, paletteBuffer, depthStrength, depthEye) {
-            if (imageBuffer === void 0) { imageBuffer = new Uint32Array(this.imageWidth * this.imageHeight); }
-            if (paletteBuffer === void 0) { paletteBuffer = new Uint32Array(16); }
-            if (depthStrength === void 0) { depthStrength = 0; }
-            if (depthEye === void 0) { depthEye = FlipnoteStereoscopicEye.Left; }
+        getLayerPixelsRgba(frameIndex, layerIndex, imageBuffer = new Uint32Array(this.imageWidth * this.imageHeight), paletteBuffer = new Uint32Array(16), depthStrength = 0, depthEye = FlipnoteStereoscopicEye.Left) {
             assertRange(frameIndex, 0, this.frameCount - 1, 'Frame index');
             assertRange(layerIndex, 0, this.numLayers - 1, 'Layer index');
             // palette
             this.getFramePaletteUint32(frameIndex, paletteBuffer);
-            var palettePtr = layerIndex * this.numLayerColors;
+            const palettePtr = layerIndex * this.numLayerColors;
             // raw pixels
-            var layers = this.decodeFrame(frameIndex);
-            var layerBuffer = layers[layerIndex];
+            const layers = this.decodeFrame(frameIndex);
+            const layerBuffer = layers[layerIndex];
             // depths
-            var depth = Math.floor(this.getFrameLayerDepths(frameIndex)[layerIndex] * depthStrength);
-            var depthShift = ((depthEye == FlipnoteStereoscopicEye.Left) ? -depth : depth);
+            const depth = Math.floor(this.getFrameLayerDepths(frameIndex)[layerIndex] * depthStrength);
+            const depthShift = ((depthEye == FlipnoteStereoscopicEye.Left) ? -depth : depth);
             // image dimensions and crop
-            var srcStride = this.srcWidth;
-            var dstStride = this.imageWidth;
-            var width = this.imageWidth - depth;
-            var height = this.imageHeight;
-            var xOffs = this.imageOffsetX;
-            var yOffs = this.imageOffsetY;
+            const srcStride = this.srcWidth;
+            const dstStride = this.imageWidth;
+            const width = this.imageWidth - depth;
+            const height = this.imageHeight;
+            const xOffs = this.imageOffsetX;
+            const yOffs = this.imageOffsetY;
             // clear image buffer before writing
             imageBuffer.fill(0);
             // handle layer visibility by returning a blank image if the layer is invisible
             if (!this.layerVisibility[layerIndex + 1])
                 return imageBuffer;
             // convert to palette indices and crop
-            for (var srcY = yOffs, dstY = 0; dstY < height; srcY++, dstY++) {
-                for (var srcX = xOffs, dstX = 0; dstX < width; srcX++, dstX++) {
-                    var srcPtr = srcY * srcStride + srcX;
-                    var dstPtr = dstY * dstStride + dstX + depthShift;
-                    var pixel = layerBuffer[srcPtr];
+            for (let srcY = yOffs, dstY = 0; dstY < height; srcY++, dstY++) {
+                for (let srcX = xOffs, dstX = 0; dstX < width; srcX++, dstX++) {
+                    const srcPtr = srcY * srcStride + srcX;
+                    const dstPtr = dstY * dstStride + dstX + depthShift;
+                    let pixel = layerBuffer[srcPtr];
                     if (pixel !== 0)
                         imageBuffer[dstPtr] = paletteBuffer[palettePtr + pixel];
                 }
             }
             return imageBuffer;
-        };
+        }
         /**
          * Get the image for a given frame, as palette indices
          * @category Image
         */
-        FlipnoteParserBase.prototype.getFramePixels = function (frameIndex, imageBuffer, depthStrength, depthEye) {
-            if (imageBuffer === void 0) { imageBuffer = new Uint8Array(this.imageWidth * this.imageHeight); }
-            if (depthStrength === void 0) { depthStrength = 0; }
-            if (depthEye === void 0) { depthEye = FlipnoteStereoscopicEye.Left; }
+        getFramePixels(frameIndex, imageBuffer = new Uint8Array(this.imageWidth * this.imageHeight), depthStrength = 0, depthEye = FlipnoteStereoscopicEye.Left) {
             // image dimensions and crop
-            var srcStride = this.srcWidth;
+            const srcStride = this.srcWidth;
             this.imageWidth;
-            var width = this.imageWidth;
-            var height = this.imageHeight;
-            var xOffs = this.imageOffsetX;
-            var yOffs = this.imageOffsetY;
+            const width = this.imageWidth;
+            const height = this.imageHeight;
+            const xOffs = this.imageOffsetX;
+            const yOffs = this.imageOffsetY;
             // palette
-            var palette = this.getFramePaletteIndices(frameIndex);
+            const palette = this.getFramePaletteIndices(frameIndex);
             // clear framebuffer with paper color
             imageBuffer.fill(palette[0]);
             // get layer info + decode into buffers
-            var layerOrder = this.getFrameLayerOrder(frameIndex);
-            var layerDepth = this.getFrameLayerDepths(frameIndex);
-            var layers = this.decodeFrame(frameIndex);
+            const layerOrder = this.getFrameLayerOrder(frameIndex);
+            const layerDepth = this.getFrameLayerDepths(frameIndex);
+            const layers = this.decodeFrame(frameIndex);
             // merge layers into framebuffer
-            for (var i = 0; i < this.numLayers; i++) {
-                var layerIndex = layerOrder[i];
-                var layerBuffer = layers[layerIndex];
-                var palettePtr = layerIndex * this.numLayerColors;
-                var depth = Math.floor(layerDepth[layerIndex] * depthStrength);
-                var depthShift = ((depthEye == FlipnoteStereoscopicEye.Left) ? -depth : depth);
+            for (let i = 0; i < this.numLayers; i++) {
+                const layerIndex = layerOrder[i];
+                const layerBuffer = layers[layerIndex];
+                const palettePtr = layerIndex * this.numLayerColors;
+                const depth = Math.floor(layerDepth[layerIndex] * depthStrength);
+                const depthShift = ((depthEye == FlipnoteStereoscopicEye.Left) ? -depth : depth);
                 // skip if layer is not visible
                 if (!this.layerVisibility[layerIndex + 1])
                     continue;
                 // merge layer into rgb buffer
-                for (var srcY = yOffs, dstY = 0; dstY < height; srcY++, dstY++) {
-                    for (var srcX = xOffs, dstX = 0; dstX < width; srcX++, dstX++) {
-                        var srcPtr = srcY * srcStride + srcX;
-                        var dstPtr = dstY * width + dstX + depthShift;
-                        var pixel = layerBuffer[srcPtr];
+                for (let srcY = yOffs, dstY = 0; dstY < height; srcY++, dstY++) {
+                    for (let srcX = xOffs, dstX = 0; dstX < width; srcX++, dstX++) {
+                        const srcPtr = srcY * srcStride + srcX;
+                        const dstPtr = dstY * width + dstX + depthShift;
+                        let pixel = layerBuffer[srcPtr];
                         if (pixel !== 0)
                             imageBuffer[dstPtr] = palette[palettePtr + pixel];
                     }
                 }
             }
             return imageBuffer;
-        };
+        }
         /**
          * Get the image for a given frame as an uint32 array of RGBA pixels
          * @category Image
          */
-        FlipnoteParserBase.prototype.getFramePixelsRgba = function (frameIndex, imageBuffer, paletteBuffer, depthStrength, depthEye) {
-            if (imageBuffer === void 0) { imageBuffer = new Uint32Array(this.imageWidth * this.imageHeight); }
-            if (paletteBuffer === void 0) { paletteBuffer = new Uint32Array(16); }
-            if (depthStrength === void 0) { depthStrength = 0; }
-            if (depthEye === void 0) { depthEye = FlipnoteStereoscopicEye.Left; }
+        getFramePixelsRgba(frameIndex, imageBuffer = new Uint32Array(this.imageWidth * this.imageHeight), paletteBuffer = new Uint32Array(16), depthStrength = 0, depthEye = FlipnoteStereoscopicEye.Left) {
             assertRange(frameIndex, 0, this.frameCount - 1, 'Frame index');
             // image dimensions and crop
-            var srcStride = this.srcWidth;
-            var dstStride = this.imageWidth;
-            var width = this.imageWidth;
-            var height = this.imageHeight;
-            var xOffs = this.imageOffsetX;
-            var yOffs = this.imageOffsetY;
+            const srcStride = this.srcWidth;
+            const dstStride = this.imageWidth;
+            const width = this.imageWidth;
+            const height = this.imageHeight;
+            const xOffs = this.imageOffsetX;
+            const yOffs = this.imageOffsetY;
             // palette
             this.getFramePaletteUint32(frameIndex, paletteBuffer);
             // clear framebuffer with paper color
             imageBuffer.fill(paletteBuffer[0]);
             // get layer info + decode into buffers
-            var layerOrder = this.getFrameLayerOrder(frameIndex);
-            var layerDepth = this.getFrameLayerDepths(frameIndex);
-            var layers = this.decodeFrame(frameIndex);
+            const layerOrder = this.getFrameLayerOrder(frameIndex);
+            const layerDepth = this.getFrameLayerDepths(frameIndex);
+            const layers = this.decodeFrame(frameIndex);
             // merge layers into framebuffer
-            for (var i = 0; i < this.numLayers; i++) {
-                var layerIndex = layerOrder[i];
+            for (let i = 0; i < this.numLayers; i++) {
+                const layerIndex = layerOrder[i];
                 // skip if layer is not visible
                 if (!this.layerVisibility[layerIndex + 1])
                     continue;
-                var layerBuffer = layers[layerIndex];
-                var palettePtr = layerIndex * this.numLayerColors;
-                var depth = Math.floor(layerDepth[layerIndex] * depthStrength);
-                var depthShift = ((depthEye == FlipnoteStereoscopicEye.Left) ? -depth : depth);
-                for (var srcY = yOffs, dstY = 0; srcY < height; srcY++, dstY++) {
-                    for (var srcX = xOffs, dstX = 0; srcX < width; srcX++, dstX++) {
-                        var srcPtr = srcY * srcStride + srcX;
-                        var dstPtr = dstY * dstStride + dstX + depthShift;
-                        var pixel = layerBuffer[srcPtr];
+                const layerBuffer = layers[layerIndex];
+                const palettePtr = layerIndex * this.numLayerColors;
+                const depth = Math.floor(layerDepth[layerIndex] * depthStrength);
+                const depthShift = ((depthEye == FlipnoteStereoscopicEye.Left) ? -depth : depth);
+                for (let srcY = yOffs, dstY = 0; srcY < height; srcY++, dstY++) {
+                    for (let srcX = xOffs, dstX = 0; srcX < width; srcX++, dstX++) {
+                        const srcPtr = srcY * srcStride + srcX;
+                        const dstPtr = dstY * dstStride + dstX + depthShift;
+                        let pixel = layerBuffer[srcPtr];
                         if (pixel !== 0)
                             imageBuffer[dstPtr] = paletteBuffer[palettePtr + pixel];
                     }
                 }
             }
             return imageBuffer;
-        };
+        }
         /**
          * Get the color palette for a given frame, as an uint32 array
          * @category Image
         */
-        FlipnoteParserBase.prototype.getFramePaletteUint32 = function (frameIndex, paletteBuffer) {
-            if (paletteBuffer === void 0) { paletteBuffer = new Uint32Array(16); }
+        getFramePaletteUint32(frameIndex, paletteBuffer = new Uint32Array(16)) {
             assertRange(frameIndex, 0, this.frameCount - 1, 'Frame index');
-            var colors = this.getFramePalette(frameIndex);
+            const colors = this.getFramePalette(frameIndex);
             paletteBuffer.fill(0);
-            colors.forEach(function (_b, i) {
-                var _c = __read(_b, 4), r = _c[0], g = _c[1], b = _c[2], a = _c[3];
-                return paletteBuffer[i] = (a << 24) | (b << 16) | (g << 8) | r;
-            });
+            colors.forEach(([r, g, b, a], i) => paletteBuffer[i] = (a << 24) | (b << 16) | (g << 8) | r);
             return paletteBuffer;
-        };
+        }
         /**
          * Get the usage flags for a given track across every frame
          * @returns an array of booleans for every frame, indicating whether the track is used on that frame
          * @category Audio
          */
-        FlipnoteParserBase.prototype.getSoundEffectFlagsForTrack = function (trackId) {
-            return this.getSoundEffectFlags().map(function (flags) { return flags[trackId]; });
-        };
+        getSoundEffectFlagsForTrack(trackId) {
+            return this.getSoundEffectFlags().map(flags => flags[trackId]);
+        }
+        ;
         /**
          * Is a given track used on a given frame
          * @category Audio
          */
-        FlipnoteParserBase.prototype.isSoundEffectUsedOnFrame = function (trackId, frameIndex) {
+        isSoundEffectUsedOnFrame(trackId, frameIndex) {
             assertRange(frameIndex, 0, this.frameCount - 1, 'Frame index');
             if (!this.soundEffectTracks.includes(trackId))
                 return false;
             return this.getFrameSoundEffectFlags(frameIndex)[trackId];
-        };
+        }
         /**
          * Does an audio track exist in the Flipnote?
          * @returns boolean
          * @category Audio
         */
-        FlipnoteParserBase.prototype.hasAudioTrack = function (trackId) {
+        hasAudioTrack(trackId) {
             return this.soundMeta.has(trackId) && this.soundMeta.get(trackId).length > 0;
-        };
-        return FlipnoteParserBase;
-    }(DataStream));
+        }
+    }
 
+    var _a$1;
     /**
      * PPM framerates in frames per second, indexed by the in-app frame speed.
      * Frame speed 0 is never normally used
      */
-    var PPM_FRAMERATES = [0.5, 0.5, 1, 2, 4, 6, 12, 20, 30];
+    const PPM_FRAMERATES = [0.5, 0.5, 1, 2, 4, 6, 12, 20, 30];
     /**
      * PPM frame color defines (red, green, blue, alpha)
      */
-    var PPM_PALETTE = {
+    const PPM_PALETTE = {
         WHITE: [0xff, 0xff, 0xff, 0xff],
         BLACK: [0x0e, 0x0e, 0x0e, 0xff],
         RED: [0xff, 0x2a, 0x2a, 0xff],
@@ -1278,7 +1060,7 @@ Keep on Flipnoting!
      * @internal
      * PPM thumbnail color defines (in ABGR order)
      */
-    var PPM_THUMB_PALETTE = [
+    const PPM_THUMB_PALETTE = [
         0xFFFFFFFF,
         0xFF525252,
         0xFFFFFFFF,
@@ -1301,80 +1083,83 @@ Keep on Flipnoting!
      *
      * This **cannot** be used to resign Flipnotes, it can only verify that they are valid
      */
-    var PPM_PUBLIC_KEY = "-----BEGIN PUBLIC KEY-----\nMIGfMA0GCSqGSIb3DQEBAQUAA4GNADCBiQKBgQDCPLwTL6oSflv+gjywi/sM0TUB\n90xqOvuCpjduETjPoN2FwMebxNjdKIqHUyDu4AvrQ6BDJc6gKUbZ1E27BGZoCPH4\n9zQRb+zAM6M9EjHwQ6BABr0u2TcF7xGg2uQ9MBWz9AfbVQ91NjfrNWo0f7UPmffv\n1VvixmTk1BCtavZxBwIDAQAB\n-----END PUBLIC KEY-----";
+    const PPM_PUBLIC_KEY = `-----BEGIN PUBLIC KEY-----
+MIGfMA0GCSqGSIb3DQEBAQUAA4GNADCBiQKBgQDCPLwTL6oSflv+gjywi/sM0TUB
+90xqOvuCpjduETjPoN2FwMebxNjdKIqHUyDu4AvrQ6BDJc6gKUbZ1E27BGZoCPH4
+9zQRb+zAM6M9EjHwQ6BABr0u2TcF7xGg2uQ9MBWz9AfbVQ91NjfrNWo0f7UPmffv
+1VvixmTk1BCtavZxBwIDAQAB
+-----END PUBLIC KEY-----`;
     /**
      * Parser class for (DSiWare) Flipnote Studio's PPM animation format.
      *
      * Format docs: https://github.com/Flipnote-Collective/flipnote-studio-docs/wiki/PPM-format
      * @category File Parser
      */
-    var PpmParser = /** @class */ (function (_super) {
-        __extends(PpmParser, _super);
+    class PpmParser extends FlipnoteParserBase {
         /**
          * Create a new PPM file parser instance
          * @param arrayBuffer an ArrayBuffer containing file data
          * @param settings parser settings (none currently implemented)
          */
-        function PpmParser(arrayBuffer, settings) {
-            var _this = _super.call(this, arrayBuffer) || this;
+        constructor(arrayBuffer, settings = {}) {
+            super(arrayBuffer);
             /** File format type, reflects {@link PpmParser.format} */
-            _this.format = exports.FlipnoteFormat.PPM;
+            this.format = exports.FlipnoteFormat.PPM;
             /** Custom object tag */
-            _this[_a] = 'Flipnote Studio PPM animation file';
+            this[_a$1] = 'Flipnote Studio PPM animation file';
             /** Animation frame width, reflects {@link PpmParser.width} */
-            _this.imageWidth = PpmParser.width;
+            this.imageWidth = PpmParser.width;
             /** Animation frame height, reflects {@link PpmParser.height} */
-            _this.imageHeight = PpmParser.height;
+            this.imageHeight = PpmParser.height;
             /** Animation frame aspect ratio, reflects {@link PpmParser.aspect} */
-            _this.aspect = PpmParser.aspect;
+            this.aspect = PpmParser.aspect;
             /** X offset for the top-left corner of the animation frame */
-            _this.imageOffsetX = 0;
+            this.imageOffsetX = 0;
             /** Y offset for the top-left corner of the animation frame */
-            _this.imageOffsetY = 0;
+            this.imageOffsetY = 0;
             /** Number of animation frame layers, reflects {@link PpmParser.numLayers} */
-            _this.numLayers = PpmParser.numLayers;
+            this.numLayers = PpmParser.numLayers;
             /** Number of colors per layer (aside from transparent), reflects {@link PpmParser.numLayerColors} */
-            _this.numLayerColors = PpmParser.numLayerColors;
+            this.numLayerColors = PpmParser.numLayerColors;
             /** key used for Flipnote verification, in PEM format */
-            _this.publicKey = PpmParser.publicKey;
+            this.publicKey = PpmParser.publicKey;
             /** @internal */
-            _this.srcWidth = PpmParser.width;
+            this.srcWidth = PpmParser.width;
             /** Which audio tracks are available in this format, reflects {@link PpmParser.audioTracks} */
-            _this.audioTracks = PpmParser.audioTracks;
+            this.audioTracks = PpmParser.audioTracks;
             /** Which sound effect tracks are available in this format, reflects {@link PpmParser.soundEffectTracks} */
-            _this.soundEffectTracks = PpmParser.soundEffectTracks;
+            this.soundEffectTracks = PpmParser.soundEffectTracks;
             /** Audio track base sample rate, reflects {@link PpmParser.rawSampleRate} */
-            _this.rawSampleRate = PpmParser.rawSampleRate;
+            this.rawSampleRate = PpmParser.rawSampleRate;
             /** Audio output sample rate, reflects {@link PpmParser.sampleRate} */
-            _this.sampleRate = PpmParser.sampleRate;
+            this.sampleRate = PpmParser.sampleRate;
             /** Global animation frame color palette, reflects {@link PpmParser.globalPalette} */
-            _this.globalPalette = PpmParser.globalPalette;
-            _this.prevDecodedFrame = null;
-            _this.decodeHeader();
-            _this.decodeAnimationHeader();
-            _this.decodeSoundHeader();
+            this.globalPalette = PpmParser.globalPalette;
+            this.prevDecodedFrame = null;
+            this.decodeHeader();
+            this.decodeAnimationHeader();
+            this.decodeSoundHeader();
             // this is always true afaik, it's likely just a remnant from development
             // doesn't hurt to be accurate though...
-            if (((_this.version >> 4) & 0xf) !== 0) {
-                _this.decodeMeta();
+            if (((this.version >> 4) & 0xf) !== 0) {
+                this.decodeMeta();
             }
             // create image buffers
-            _this.layerBuffers = [
+            this.layerBuffers = [
                 new Uint8Array(PpmParser.width * PpmParser.height),
                 new Uint8Array(PpmParser.width * PpmParser.height)
             ];
-            _this.prevLayerBuffers = [
+            this.prevLayerBuffers = [
                 new Uint8Array(PpmParser.width * PpmParser.height),
                 new Uint8Array(PpmParser.width * PpmParser.height)
             ];
-            _this.lineEncodingBuffers = [
+            this.lineEncodingBuffers = [
                 new Uint8Array(PpmParser.height),
                 new Uint8Array(PpmParser.height)
             ];
-            _this.prevDecodedFrame = null;
-            return _this;
+            this.prevDecodedFrame = null;
         }
-        PpmParser.prototype.decodeHeader = function () {
+        decodeHeader() {
             assert(16 < this.byteLength);
             this.seek(4);
             // decode header
@@ -1384,36 +1169,36 @@ Keep on Flipnoting!
             this.frameCount = this.readUint16() + 1;
             this.version = this.readUint16();
             // sound data offset = frame data offset + frame data length + sound effect flags
-            var soundDataOffset = 0x06A0 + this.frameDataLength + this.frameCount;
+            let soundDataOffset = 0x06A0 + this.frameDataLength + this.frameCount;
             if (soundDataOffset % 4 !== 0)
                 soundDataOffset += 4 - (soundDataOffset % 4);
             assert(soundDataOffset < this.byteLength);
             this.soundDataOffset = soundDataOffset;
-        };
-        PpmParser.prototype.readFilename = function () {
-            var mac = this.readHex(3);
-            var random = this.readChars(13);
-            var edits = this.readUint16().toString().padStart(3, '0');
-            return "".concat(mac, "_").concat(random, "_").concat(edits);
-        };
-        PpmParser.prototype.decodeMeta = function () {
+        }
+        readFilename() {
+            const mac = this.readHex(3);
+            const random = this.readChars(13);
+            const edits = this.readUint16().toString().padStart(3, '0');
+            return `${mac}_${random}_${edits}`;
+        }
+        decodeMeta() {
             // https://github.com/Flipnote-Collective/flipnote-studio-docs/wiki/PPM-format#metadata
             assert(0x06A8 < this.byteLength);
             this.seek(0x10);
-            var lock = this.readUint16();
-            var thumbIndex = this.readInt16();
-            var rootAuthorName = this.readWideChars(11);
-            var parentAuthorName = this.readWideChars(11);
-            var currentAuthorName = this.readWideChars(11);
-            var parentAuthorId = this.readHex(8, true);
-            var currentAuthorId = this.readHex(8, true);
-            var parentFilename = this.readFilename();
-            var currentFilename = this.readFilename();
-            var rootAuthorId = this.readHex(8, true);
+            const lock = this.readUint16();
+            const thumbIndex = this.readInt16();
+            const rootAuthorName = this.readWideChars(11);
+            const parentAuthorName = this.readWideChars(11);
+            const currentAuthorName = this.readWideChars(11);
+            const parentAuthorId = this.readHex(8, true);
+            const currentAuthorId = this.readHex(8, true);
+            const parentFilename = this.readFilename();
+            const currentFilename = this.readFilename();
+            const rootAuthorId = this.readHex(8, true);
             this.seek(0x9A);
-            var timestamp = dateFromNintendoTimestamp(this.readInt32());
+            const timestamp = dateFromNintendoTimestamp(this.readInt32());
             this.seek(0x06A6);
-            var flags = this.readUint16();
+            const flags = this.readUint16();
             this.thumbFrameIndex = thumbIndex;
             this.layerVisibility = {
                 1: (flags & 0x10) === 0,
@@ -1450,33 +1235,33 @@ Keep on Flipnoting!
                     filename: currentFilename
                 },
             };
-        };
-        PpmParser.prototype.decodeAnimationHeader = function () {
+        }
+        decodeAnimationHeader() {
             // jump to the start of the animation data section
             // https://github.com/Flipnote-Collective/flipnote-studio-docs/wiki/PPM-format#animation-header
             this.seek(0x06A0);
-            var offsetTableLength = this.readUint16();
-            var numOffsets = offsetTableLength / 4;
+            const offsetTableLength = this.readUint16();
+            const numOffsets = offsetTableLength / 4;
             assert(numOffsets <= this.frameCount);
             // skip padding + flags
             this.seek(0x06A8);
             // read frame offsets and build them into a table
-            var frameOffsets = new Uint32Array(numOffsets);
-            for (var n = 0; n < numOffsets; n++) {
-                var ptr = 0x06A8 + offsetTableLength + this.readUint32();
-                assert(ptr < this.byteLength, "Frame ".concat(n, " pointer is out of bounds"));
+            const frameOffsets = new Uint32Array(numOffsets);
+            for (let n = 0; n < numOffsets; n++) {
+                const ptr = 0x06A8 + offsetTableLength + this.readUint32();
+                assert(ptr < this.byteLength, `Frame ${n} pointer is out of bounds`);
                 frameOffsets[n] = ptr;
             }
             this.frameOffsets = frameOffsets;
-        };
-        PpmParser.prototype.decodeSoundHeader = function () {
+        }
+        decodeSoundHeader() {
             // https://github.com/Flipnote-Collective/flipnote-studio-docs/wiki/PPM-format#sound-header
-            var ptr = this.soundDataOffset;
+            let ptr = this.soundDataOffset;
             this.seek(ptr);
-            var bgmLen = this.readUint32();
-            var se1Len = this.readUint32();
-            var se2Len = this.readUint32();
-            var se3Len = this.readUint32();
+            const bgmLen = this.readUint32();
+            const se1Len = this.readUint32();
+            const se2Len = this.readUint32();
+            const se3Len = this.readUint32();
             this.frameSpeed = 8 - this.readUint8();
             this.bgmSpeed = 8 - this.readUint8();
             assert(this.frameSpeed <= 8 && this.bgmSpeed <= 8);
@@ -1484,36 +1269,36 @@ Keep on Flipnoting!
             this.framerate = PPM_FRAMERATES[this.frameSpeed];
             this.duration = timeGetNoteDuration(this.frameCount, this.framerate);
             this.bgmrate = PPM_FRAMERATES[this.bgmSpeed];
-            var soundMeta = new Map();
+            const soundMeta = new Map();
             soundMeta.set(exports.FlipnoteAudioTrack.BGM, { ptr: ptr, length: bgmLen });
             soundMeta.set(exports.FlipnoteAudioTrack.SE1, { ptr: ptr += bgmLen, length: se1Len });
             soundMeta.set(exports.FlipnoteAudioTrack.SE2, { ptr: ptr += se1Len, length: se2Len });
             soundMeta.set(exports.FlipnoteAudioTrack.SE3, { ptr: ptr += se2Len, length: se3Len });
             this.soundMeta = soundMeta;
-        };
-        PpmParser.prototype.isKeyFrame = function (frameIndex) {
+        }
+        isKeyFrame(frameIndex) {
             assertRange(frameIndex, 0, this.frameCount - 1, 'Frame index');
             this.seek(this.frameOffsets[frameIndex]);
-            var header = this.readUint8();
+            const header = this.readUint8();
             return (header >> 7) & 0x1;
-        };
+        }
         /**
          * Decodes the thumbnail image embedded in the Flipnote. Will return a {@link FlipnoteThumbImage} containing raw RGBA data.
          *
          * Note: For most purposes, you should probably just decode the thumbnail frame to get a higher resolution image.
          * @category Meta
          */
-        PpmParser.prototype.getThumbnailImage = function () {
+        getThumbnailImage() {
             this.seek(0xA0);
-            var data = this.readBytes(1536);
-            var pixels = new Uint32Array(64 * 48);
-            var ptr = 0;
-            for (var tileY = 0; tileY < 48; tileY += 8) {
-                for (var tileX = 0; tileX < 64; tileX += 8) {
-                    for (var line = 0; line < 8; line += 1) {
-                        for (var pixel = 0; pixel < 8; pixel += 2) {
-                            var x = tileX + pixel;
-                            var y = tileY + line;
+            const data = this.readBytes(1536);
+            const pixels = new Uint32Array(64 * 48);
+            let ptr = 0;
+            for (let tileY = 0; tileY < 48; tileY += 8) {
+                for (let tileX = 0; tileX < 64; tileX += 8) {
+                    for (let line = 0; line < 8; line += 1) {
+                        for (let pixel = 0; pixel < 8; pixel += 2) {
+                            const x = tileX + pixel;
+                            const y = tileY + line;
                             pixels[y * 64 + x] = PPM_THUMB_PALETTE[data[ptr] & 0xF];
                             pixels[y * 64 + x + 1] = PPM_THUMB_PALETTE[(data[ptr] << 4) & 0xF];
                         }
@@ -1526,12 +1311,12 @@ Keep on Flipnoting!
                 height: 48,
                 data: pixels.buffer
             };
-        };
+        }
         /**
          * Decode a frame, returning the raw pixel buffers for each layer
          * @category Image
         */
-        PpmParser.prototype.decodeFrame = function (frameIndex) {
+        decodeFrame(frameIndex) {
             assertRange(frameIndex, 0, this.frameCount - 1, 'Frame index');
             // return existing layer buffers if no new frame has been decoded since the last call
             if (this.prevDecodedFrame === frameIndex)
@@ -1542,24 +1327,24 @@ Keep on Flipnoting!
             this.prevDecodedFrame = frameIndex;
             // https://github.com/Flipnote-Collective/flipnote-studio-docs/wiki/PPM-format#animation-data
             this.seek(this.frameOffsets[frameIndex]);
-            var header = this.readUint8();
-            var isKeyFrame = (header >> 7) & 0x1;
-            var isTranslated = (header >> 5) & 0x3;
+            const header = this.readUint8();
+            const isKeyFrame = (header >> 7) & 0x1;
+            const isTranslated = (header >> 5) & 0x3;
             // reset current layer buffers
             this.layerBuffers[0].fill(0);
             this.layerBuffers[1].fill(0);
-            var translateX = 0;
-            var translateY = 0;
+            let translateX = 0;
+            let translateY = 0;
             if (isTranslated) {
                 translateX = this.readInt8();
                 translateY = this.readInt8();
             }
             // unpack line encodings for each layer
-            for (var layerIndex = 0; layerIndex < 2; layerIndex++) {
-                var lineEncodingBuffer = this.lineEncodingBuffers[layerIndex];
+            for (let layerIndex = 0; layerIndex < 2; layerIndex++) {
+                const lineEncodingBuffer = this.lineEncodingBuffers[layerIndex];
                 lineEncodingBuffer.fill(0);
-                for (var ptr = 0; ptr < lineEncodingBuffer.length;) {
-                    var byte = this.readUint8();
+                for (let ptr = 0; ptr < lineEncodingBuffer.length;) {
+                    let byte = this.readUint8();
                     // the 4 lines in this byte are all empty (type 0) - skip
                     if (byte === 0) {
                         ptr += 4;
@@ -1573,12 +1358,12 @@ Keep on Flipnoting!
                 }
             }
             // unpack layer bitmaps
-            for (var layerIndex = 0; layerIndex < 2; layerIndex++) {
-                var pixelBuffer = this.layerBuffers[layerIndex];
-                var lineEncodingBuffer = this.lineEncodingBuffers[layerIndex];
-                for (var y = 0; y < PpmParser.height; y++) {
-                    var pixelBufferPtr = y * PpmParser.width;
-                    var lineType = lineEncodingBuffer[y];
+            for (let layerIndex = 0; layerIndex < 2; layerIndex++) {
+                const pixelBuffer = this.layerBuffers[layerIndex];
+                const lineEncodingBuffer = this.lineEncodingBuffers[layerIndex];
+                for (let y = 0; y < PpmParser.height; y++) {
+                    let pixelBufferPtr = y * PpmParser.width;
+                    const lineType = lineEncodingBuffer[y];
                     switch (lineType) {
                         // line type 0 = blank line, decode nothing
                         case 0:
@@ -1596,12 +1381,12 @@ Keep on Flipnoting!
                                 // if the bit is set, this 8-pix wide chunk is stored
                                 // else we can just leave it blank and move on to the next chunk
                                 if (lineHeader & 0x80000000) {
-                                    var chunk = this.readUint8();
+                                    let chunk = this.readUint8();
                                     // unpack chunk bits
                                     // the chunk if shifted right 1 bit on every loop
                                     // if the chunk equals 0, no more bits are set, 
                                     // so the rest of the chunk is empty and can be skipped
-                                    for (var pixel = 0; chunk !== 0; pixel++, chunk >>= 1)
+                                    for (let pixel = 0; chunk !== 0; pixel++, chunk >>= 1)
                                         pixelBuffer[pixelBufferPtr + pixel] = chunk & 0x1;
                                 }
                             }
@@ -1621,16 +1406,16 @@ Keep on Flipnoting!
                                 // if the bit is set, this 8-pix wide chunk is stored
                                 // else we can just leave it blank and move on to the next chunk
                                 if (lineHeader & 0x80000000) {
-                                    var chunk = this.readUint8();
+                                    let chunk = this.readUint8();
                                     // unpack chunk bits
-                                    for (var pixel = 0; pixel < 8; pixel++, chunk >>= 1)
+                                    for (let pixel = 0; pixel < 8; pixel++, chunk >>= 1)
                                         pixelBuffer[pixelBufferPtr + pixel] = chunk & 0x1;
                                 }
                             }
                             break;
                         // line type 3 = raw bitmap line
                         case 3:
-                            for (var chunk = 0, i = 0; i < PpmParser.width; i++) {
+                            for (let chunk = 0, i = 0; i < PpmParser.width; i++) {
                                 if (i % 8 === 0)
                                     chunk = this.readUint8();
                                 pixelBuffer[pixelBufferPtr++] = chunk & 0x1;
@@ -1641,32 +1426,32 @@ Keep on Flipnoting!
                 }
             }
             // if the current frame is based on changes from the previous one, merge them by XORing their values
-            var layer1 = this.layerBuffers[0];
-            var layer2 = this.layerBuffers[1];
-            var layer1Prev = this.prevLayerBuffers[0];
-            var layer2Prev = this.prevLayerBuffers[1];
+            const layer1 = this.layerBuffers[0];
+            const layer2 = this.layerBuffers[1];
+            const layer1Prev = this.prevLayerBuffers[0];
+            const layer2Prev = this.prevLayerBuffers[1];
             // fast diffing if the frame isn't translated
             if (!isKeyFrame && translateX === 0 && translateY === 0) {
-                var size = PpmParser.height * PpmParser.width;
-                for (var i = 0; i < size; i++) {
+                const size = PpmParser.height * PpmParser.width;
+                for (let i = 0; i < size; i++) {
                     layer1[i] ^= layer1Prev[i];
                     layer2[i] ^= layer2Prev[i];
                 }
             }
             // slower diffing if the frame is translated
             else if (!isKeyFrame) {
-                var w = PpmParser.width;
-                var h = PpmParser.height;
-                var startX = Math.max(translateX, 0);
-                var startY = Math.max(translateY, 0);
-                var endX = Math.min(w + translateX, w);
-                var endY = Math.min(h + translateY, h);
-                var shift = translateY * w + translateX;
-                var dest = void 0, src = void 0;
+                const w = PpmParser.width;
+                const h = PpmParser.height;
+                const startX = Math.max(translateX, 0);
+                const startY = Math.max(translateY, 0);
+                const endX = Math.min(w + translateX, w);
+                const endY = Math.min(h + translateY, h);
+                const shift = translateY * w + translateX;
+                let dest, src;
                 // loop through each line
-                for (var y = startY; y < endY; y++) {
+                for (let y = startY; y < endY; y++) {
                     // loop through each pixel in the line
-                    for (var x = startX; x < endX; x++) {
+                    for (let x = startX; x < endX; x++) {
                         dest = y * w + x;
                         src = dest - shift;
                         // diff pixels with a binary XOR
@@ -1679,7 +1464,7 @@ Keep on Flipnoting!
             this.prevLayerBuffers[0].set(this.layerBuffers[0]);
             this.prevLayerBuffers[1].set(this.layerBuffers[1]);
             return this.layerBuffers;
-        };
+        }
         /**
          * Get the color palette indices for a given frame. RGBA colors for these values can be indexed from {@link PpmParser.globalPalette}
          *
@@ -1689,23 +1474,23 @@ Keep on Flipnoting!
          *  - index 2 is the layer 2 color index
          * @category Image
         */
-        PpmParser.prototype.getFramePaletteIndices = function (frameIndex) {
+        getFramePaletteIndices(frameIndex) {
             assertRange(frameIndex, 0, this.frameCount - 1, 'Frame index');
             this.seek(this.frameOffsets[frameIndex]);
-            var header = this.readUint8();
-            var isInverted = (header & 0x1) !== 1;
-            var penMap = [
-                isInverted ? 0 : 1,
+            const header = this.readUint8();
+            const isInverted = (header & 0x1) !== 1;
+            const penMap = [
+                isInverted ? 0 : 1, // pen index 0 isn't used in normal cases
                 isInverted ? 0 : 1,
                 2,
                 3,
             ];
             return [
-                isInverted ? 1 : 0,
-                penMap[(header >> 1) & 0x3],
+                isInverted ? 1 : 0, // paper
+                penMap[(header >> 1) & 0x3], // layer 1 color
                 penMap[(header >> 3) & 0x3], // layer 2 color
             ];
-        };
+        }
         /**
          * Get the RGBA colors for a given frame
          *
@@ -1715,134 +1500,131 @@ Keep on Flipnoting!
          *  - index 2 is the layer 2 color
          * @category Image
          */
-        PpmParser.prototype.getFramePalette = function (frameIndex) {
-            var _this = this;
+        getFramePalette(frameIndex) {
             assertRange(frameIndex, 0, this.frameCount - 1, 'Frame index');
-            var indices = this.getFramePaletteIndices(frameIndex);
-            return indices.map(function (colorIndex) { return _this.globalPalette[colorIndex]; });
-        };
+            const indices = this.getFramePaletteIndices(frameIndex);
+            return indices.map(colorIndex => this.globalPalette[colorIndex]);
+        }
         /**
          * Determines if a given frame is a video key frame or not. This returns an array of booleans for each layer, since in the KWZ format, keyframe encoding is done on a per-layer basis.
          * @param frameIndex
          * @category Image
         */
-        PpmParser.prototype.getIsKeyFrame = function (frameIndex) {
-            var flag = this.isKeyFrame(frameIndex) === 1;
+        getIsKeyFrame(frameIndex) {
+            const flag = this.isKeyFrame(frameIndex) === 1;
             return [flag, flag];
-        };
+        }
         /**
          * Get the 3D depths for each layer in a given frame. The PPM format doesn't actually store this information, so `0` is returned for both layers. This method is only here for consistency with KWZ.
          * @param frameIndex
          * @category Image
         */
-        PpmParser.prototype.getFrameLayerDepths = function (frameIndex) {
+        getFrameLayerDepths(frameIndex) {
             return [0, 0];
-        };
+        }
         /**
          * Get the FSID for a given frame's original author. The PPM format doesn't actually store this information, so the current author FSID is returned. This method is only here for consistency with KWZ.
          * @param frameIndex
          * @category Meta
         */
-        PpmParser.prototype.getFrameAuthor = function (frameIndex) {
+        getFrameAuthor(frameIndex) {
             return this.meta.current.fsid;
-        };
+        }
         /**
          * Get the camera flags for a given frame. The PPM format doesn't actually store this information so `false` will be returned for both layers. This method is only here for consistency with KWZ.
          * @category Image
          * @returns Array of booleans, indicating whether each layer uses a photo or not
         */
-        PpmParser.prototype.getFrameCameraFlags = function (frameIndex) {
+        getFrameCameraFlags(frameIndex) {
             return [false, false];
-        };
+        }
         /**
          * Get the layer draw order for a given frame
          * @category Image
          * @returns Array of layer indices, in the order they should be drawn
         */
-        PpmParser.prototype.getFrameLayerOrder = function (frameIndex) {
+        getFrameLayerOrder(frameIndex) {
             return [1, 0];
-        };
+        }
         /**
          * Get the sound effect flags for every frame in the Flipnote
          * @category Audio
         */
-        PpmParser.prototype.decodeSoundFlags = function () {
+        decodeSoundFlags() {
             if (this.soundFlags !== undefined)
                 return this.soundFlags;
             assert(0x06A0 + this.frameDataLength < this.byteLength);
             // https://github.com/Flipnote-Collective/flipnote-studio-docs/wiki/PPM-format#sound-effect-flags
             this.seek(0x06A0 + this.frameDataLength);
-            var numFlags = this.frameCount;
-            var flags = this.readBytes(numFlags);
+            const numFlags = this.frameCount;
+            const flags = this.readBytes(numFlags);
             this.soundFlags = new Array(numFlags);
-            for (var i = 0; i < numFlags; i++) {
-                var byte = flags[i];
+            for (let i = 0; i < numFlags; i++) {
+                const byte = flags[i];
                 this.soundFlags[i] = [
-                    (byte & 0x1) !== 0,
-                    (byte & 0x2) !== 0,
+                    (byte & 0x1) !== 0, // SE1 bitflag
+                    (byte & 0x2) !== 0, // SE2 bitflag
                     (byte & 0x4) !== 0, // SE3 bitflag
                 ];
             }
             return this.soundFlags;
-        };
+        }
         /**
          * Get the sound effect usage flags for every frame
          * @category Audio
          */
-        PpmParser.prototype.getSoundEffectFlags = function () {
-            return this.decodeSoundFlags().map(function (frameFlags) {
-                var _b;
-                return (_b = {},
-                    _b[exports.FlipnoteSoundEffectTrack.SE1] = frameFlags[0],
-                    _b[exports.FlipnoteSoundEffectTrack.SE2] = frameFlags[1],
-                    _b[exports.FlipnoteSoundEffectTrack.SE3] = frameFlags[2],
-                    _b);
-            });
-        };
+        getSoundEffectFlags() {
+            return this.decodeSoundFlags().map(frameFlags => ({
+                [exports.FlipnoteSoundEffectTrack.SE1]: frameFlags[0],
+                [exports.FlipnoteSoundEffectTrack.SE2]: frameFlags[1],
+                [exports.FlipnoteSoundEffectTrack.SE3]: frameFlags[2],
+                [exports.FlipnoteSoundEffectTrack.SE4]: false
+            }));
+        }
         /**
          * Get the sound effect usage flags for a given frame
          * @category Audio
          */
-        PpmParser.prototype.getFrameSoundEffectFlags = function (frameIndex) {
-            var _b;
+        getFrameSoundEffectFlags(frameIndex) {
             assertRange(frameIndex, 0, this.frameCount - 1, 'Frame index');
             this.seek(0x06A0 + this.frameDataLength + frameIndex);
-            var byte = this.readUint8();
-            return _b = {},
-                _b[exports.FlipnoteSoundEffectTrack.SE1] = (byte & 0x1) !== 0,
-                _b[exports.FlipnoteSoundEffectTrack.SE2] = (byte & 0x2) !== 0,
-                _b[exports.FlipnoteSoundEffectTrack.SE3] = (byte & 0x4) !== 0,
-                _b;
-        };
+            const byte = this.readUint8();
+            return {
+                [exports.FlipnoteSoundEffectTrack.SE1]: (byte & 0x1) !== 0,
+                [exports.FlipnoteSoundEffectTrack.SE2]: (byte & 0x2) !== 0,
+                [exports.FlipnoteSoundEffectTrack.SE3]: (byte & 0x4) !== 0,
+                [exports.FlipnoteSoundEffectTrack.SE4]: false
+            };
+        }
         /**
          * Get the raw compressed audio data for a given track
          * @returns byte array
          * @category Audio
         */
-        PpmParser.prototype.getAudioTrackRaw = function (trackId) {
-            var trackMeta = this.soundMeta.get(trackId);
+        getAudioTrackRaw(trackId) {
+            const trackMeta = this.soundMeta.get(trackId);
             assert(trackMeta.ptr + trackMeta.length < this.byteLength);
             this.seek(trackMeta.ptr);
             return this.readBytes(trackMeta.length);
-        };
+        }
         /**
          * Get the decoded audio data for a given track, using the track's native samplerate
          * @returns Signed 16-bit PCM audio
          * @category Audio
         */
-        PpmParser.prototype.decodeAudioTrack = function (trackId) {
+        decodeAudioTrack(trackId) {
             // note this doesn't resample
             // decode a 4 bit IMA adpcm audio track
             // https://github.com/Flipnote-Collective/flipnote-studio-docs/wiki/PPM-format#sound-data
-            var src = this.getAudioTrackRaw(trackId);
-            var srcSize = src.length;
-            var dst = new Int16Array(srcSize * 2);
-            var srcPtr = 0;
-            var dstPtr = 0;
-            var sample = 0;
-            var stepIndex = 0;
-            var predictor = 0;
-            var lowNibble = true;
+            const src = this.getAudioTrackRaw(trackId);
+            const srcSize = src.length;
+            const dst = new Int16Array(srcSize * 2);
+            let srcPtr = 0;
+            let dstPtr = 0;
+            let sample = 0;
+            let stepIndex = 0;
+            let predictor = 0;
+            let lowNibble = true;
             while (srcPtr < srcSize) {
                 // switch between high and low nibble each loop iteration
                 // increments srcPtr after every high nibble
@@ -1851,8 +1633,8 @@ Keep on Flipnoting!
                 else
                     sample = src[srcPtr++] >> 4;
                 lowNibble = !lowNibble;
-                var step = ADPCM_STEP_TABLE[stepIndex];
-                var diff = step >> 3;
+                const step = ADPCM_STEP_TABLE[stepIndex];
+                let diff = step >> 3;
                 if (sample & 1)
                     diff += step >> 2;
                 if (sample & 2)
@@ -1868,64 +1650,61 @@ Keep on Flipnoting!
                 dst[dstPtr++] = predictor;
             }
             return dst;
-        };
+        }
         /**
          * Get the decoded audio data for a given track, using the specified samplerate
          * @returns Signed 16-bit PCM audio
          * @category Audio
         */
-        PpmParser.prototype.getAudioTrackPcm = function (trackId, dstFreq) {
-            if (dstFreq === void 0) { dstFreq = this.sampleRate; }
-            var srcPcm = this.decodeAudioTrack(trackId);
-            var srcFreq = this.rawSampleRate;
+        getAudioTrackPcm(trackId, dstFreq = this.sampleRate) {
+            const srcPcm = this.decodeAudioTrack(trackId);
+            let srcFreq = this.rawSampleRate;
             if (trackId === exports.FlipnoteAudioTrack.BGM) {
-                var bgmAdjust = (1 / this.bgmrate) / (1 / this.framerate);
+                const bgmAdjust = (1 / this.bgmrate) / (1 / this.framerate);
                 srcFreq = this.rawSampleRate * bgmAdjust;
             }
             if (srcFreq !== dstFreq)
                 return pcmResampleNearestNeighbour(srcPcm, srcFreq, dstFreq);
             return srcPcm;
-        };
-        PpmParser.prototype.pcmAudioMix = function (src, dst, dstOffset) {
-            if (dstOffset === void 0) { dstOffset = 0; }
-            var srcSize = src.length;
-            var dstSize = dst.length;
-            for (var n = 0; n < srcSize; n++) {
+        }
+        pcmAudioMix(src, dst, dstOffset = 0) {
+            const srcSize = src.length;
+            const dstSize = dst.length;
+            for (let n = 0; n < srcSize; n++) {
                 if (dstOffset + n > dstSize)
                     break;
                 // half src volume
-                var samp = dst[dstOffset + n] + (src[n] / 2);
+                const samp = dst[dstOffset + n] + (src[n] / 2);
                 dst[dstOffset + n] = clamp(samp, -32768, 32767);
             }
-        };
+        }
         /**
          * Get the full mixed audio for the Flipnote, using the specified samplerate
          * @returns Signed 16-bit PCM audio
          * @category Audio
         */
-        PpmParser.prototype.getAudioMasterPcm = function (dstFreq) {
-            if (dstFreq === void 0) { dstFreq = this.sampleRate; }
-            var dstSize = Math.ceil(this.duration * dstFreq);
-            var master = new Int16Array(dstSize);
-            var hasBgm = this.hasAudioTrack(exports.FlipnoteAudioTrack.BGM);
-            var hasSe1 = this.hasAudioTrack(exports.FlipnoteAudioTrack.SE1);
-            var hasSe2 = this.hasAudioTrack(exports.FlipnoteAudioTrack.SE2);
-            var hasSe3 = this.hasAudioTrack(exports.FlipnoteAudioTrack.SE3);
+        getAudioMasterPcm(dstFreq = this.sampleRate) {
+            const dstSize = Math.ceil(this.duration * dstFreq);
+            const master = new Int16Array(dstSize);
+            const hasBgm = this.hasAudioTrack(exports.FlipnoteAudioTrack.BGM);
+            const hasSe1 = this.hasAudioTrack(exports.FlipnoteAudioTrack.SE1);
+            const hasSe2 = this.hasAudioTrack(exports.FlipnoteAudioTrack.SE2);
+            const hasSe3 = this.hasAudioTrack(exports.FlipnoteAudioTrack.SE3);
             // Mix background music
             if (hasBgm) {
-                var bgmPcm = this.getAudioTrackPcm(exports.FlipnoteAudioTrack.BGM, dstFreq);
+                const bgmPcm = this.getAudioTrackPcm(exports.FlipnoteAudioTrack.BGM, dstFreq);
                 this.pcmAudioMix(bgmPcm, master, 0);
             }
             // Mix sound effects
             if (hasSe1 || hasSe2 || hasSe3) {
-                var samplesPerFrame = dstFreq / this.framerate;
-                var se1Pcm = hasSe1 ? this.getAudioTrackPcm(exports.FlipnoteAudioTrack.SE1, dstFreq) : null;
-                var se2Pcm = hasSe2 ? this.getAudioTrackPcm(exports.FlipnoteAudioTrack.SE2, dstFreq) : null;
-                var se3Pcm = hasSe3 ? this.getAudioTrackPcm(exports.FlipnoteAudioTrack.SE3, dstFreq) : null;
-                var seFlags = this.decodeSoundFlags();
-                for (var frame = 0; frame < this.frameCount; frame++) {
-                    var seOffset = Math.ceil(frame * samplesPerFrame);
-                    var flag = seFlags[frame];
+                const samplesPerFrame = dstFreq / this.framerate;
+                const se1Pcm = hasSe1 ? this.getAudioTrackPcm(exports.FlipnoteAudioTrack.SE1, dstFreq) : null;
+                const se2Pcm = hasSe2 ? this.getAudioTrackPcm(exports.FlipnoteAudioTrack.SE2, dstFreq) : null;
+                const se3Pcm = hasSe3 ? this.getAudioTrackPcm(exports.FlipnoteAudioTrack.SE3, dstFreq) : null;
+                const seFlags = this.decodeSoundFlags();
+                for (let frame = 0; frame < this.frameCount; frame++) {
+                    const seOffset = Math.ceil(frame * samplesPerFrame);
+                    const flag = seFlags[frame];
                     if (hasSe1 && flag[0])
                         this.pcmAudioMix(se1Pcm, master, seOffset);
                     if (hasSe2 && flag[1])
@@ -1936,94 +1715,83 @@ Keep on Flipnoting!
             }
             this.audioClipRatio = pcmGetClippingRatio(master);
             return master;
-        };
+        }
         /**
          * Get the body of the Flipnote - the data that is digested for the signature
          * @category Verification
          */
-        PpmParser.prototype.getBody = function () {
-            var bodyEnd = this.soundDataOffset + this.soundDataLength + 32;
+        getBody() {
+            const bodyEnd = this.soundDataOffset + this.soundDataLength + 32;
             return this.bytes.subarray(0, bodyEnd);
-        };
+        }
         /**
         * Get the Flipnote's signature data
         * @category Verification
         */
-        PpmParser.prototype.getSignature = function () {
-            var bodyEnd = this.soundDataOffset + this.soundDataLength + 32;
+        getSignature() {
+            const bodyEnd = this.soundDataOffset + this.soundDataLength + 32;
             return this.bytes.subarray(bodyEnd, bodyEnd + 128);
-        };
+        }
         /**
          * Verify whether this Flipnote's signature is valid
          * @category Verification
          */
-        PpmParser.prototype.verify = function () {
-            return __awaiter(this, void 0, void 0, function () {
-                var key;
-                return __generator(this, function (_b) {
-                    switch (_b.label) {
-                        case 0: return [4 /*yield*/, rsaLoadPublicKey(PPM_PUBLIC_KEY, 'SHA-1')];
-                        case 1:
-                            key = _b.sent();
-                            return [4 /*yield*/, rsaVerify(key, this.getSignature(), this.getBody())];
-                        case 2: return [2 /*return*/, _b.sent()];
-                    }
-                });
-            });
-        };
-        var _a;
-        _a = Symbol.toStringTag;
-        /** Default PPM parser settings */
-        PpmParser.defaultSettings = {};
-        /** File format type */
-        PpmParser.format = exports.FlipnoteFormat.PPM;
-        /** Animation frame width */
-        PpmParser.width = 256;
-        /** Animation frame height */
-        PpmParser.height = 192;
-        /** Animation frame aspect ratio */
-        PpmParser.aspect = 3 / 4;
-        /** Number of animation frame layers */
-        PpmParser.numLayers = 2;
-        /** Number of colors per layer (aside from transparent) */
-        PpmParser.numLayerColors = 1;
-        /** Audio track base sample rate */
-        PpmParser.rawSampleRate = 8192;
-        /** Nintendo DSi audio output rate */
-        PpmParser.sampleRate = 32768;
-        /** Which audio tracks are available in this format */
-        PpmParser.audioTracks = [
-            exports.FlipnoteAudioTrack.BGM,
-            exports.FlipnoteAudioTrack.SE1,
-            exports.FlipnoteAudioTrack.SE2,
-            exports.FlipnoteAudioTrack.SE3
-        ];
-        /** Which sound effect tracks are available in this format */
-        PpmParser.soundEffectTracks = [
-            exports.FlipnoteSoundEffectTrack.SE1,
-            exports.FlipnoteSoundEffectTrack.SE2,
-            exports.FlipnoteSoundEffectTrack.SE3,
-        ];
-        /** Global animation frame color palette */
-        PpmParser.globalPalette = [
-            PPM_PALETTE.WHITE,
-            PPM_PALETTE.BLACK,
-            PPM_PALETTE.RED,
-            PPM_PALETTE.BLUE
-        ];
-        /** Public key used for Flipnote verification, in PEM format */
-        PpmParser.publicKey = PPM_PUBLIC_KEY;
-        return PpmParser;
-    }(FlipnoteParserBase));
+        async verify() {
+            const key = await rsaLoadPublicKey(PPM_PUBLIC_KEY, 'SHA-1');
+            return await rsaVerify(key, this.getSignature(), this.getBody());
+        }
+    }
+    _a$1 = Symbol.toStringTag;
+    /** Default PPM parser settings */
+    PpmParser.defaultSettings = {};
+    /** File format type */
+    PpmParser.format = exports.FlipnoteFormat.PPM;
+    /** Animation frame width */
+    PpmParser.width = 256;
+    /** Animation frame height */
+    PpmParser.height = 192;
+    /** Animation frame aspect ratio */
+    PpmParser.aspect = 3 / 4;
+    /** Number of animation frame layers */
+    PpmParser.numLayers = 2;
+    /** Number of colors per layer (aside from transparent) */
+    PpmParser.numLayerColors = 1;
+    /** Audio track base sample rate */
+    PpmParser.rawSampleRate = 8192;
+    /** Nintendo DSi audio output rate */
+    PpmParser.sampleRate = 32768;
+    /** Which audio tracks are available in this format */
+    PpmParser.audioTracks = [
+        exports.FlipnoteAudioTrack.BGM,
+        exports.FlipnoteAudioTrack.SE1,
+        exports.FlipnoteAudioTrack.SE2,
+        exports.FlipnoteAudioTrack.SE3
+    ];
+    /** Which sound effect tracks are available in this format */
+    PpmParser.soundEffectTracks = [
+        exports.FlipnoteSoundEffectTrack.SE1,
+        exports.FlipnoteSoundEffectTrack.SE2,
+        exports.FlipnoteSoundEffectTrack.SE3,
+    ];
+    /** Global animation frame color palette */
+    PpmParser.globalPalette = [
+        PPM_PALETTE.WHITE,
+        PPM_PALETTE.BLACK,
+        PPM_PALETTE.RED,
+        PPM_PALETTE.BLUE
+    ];
+    /** Public key used for Flipnote verification, in PEM format */
+    PpmParser.publicKey = PPM_PUBLIC_KEY;
 
+    var _a;
     /**
      * KWZ framerates in frames per second, indexed by the in-app frame speed
      */
-    var KWZ_FRAMERATES = [.2, .5, 1, 2, 4, 6, 8, 12, 20, 24, 30];
+    const KWZ_FRAMERATES = [.2, .5, 1, 2, 4, 6, 8, 12, 20, 24, 30];
     /**
      * KWZ color defines (red, green, blue, alpha)
      */
-    var KWZ_PALETTE = {
+    const KWZ_PALETTE = {
         WHITE: [0xff, 0xff, 0xff, 0xff],
         BLACK: [0x10, 0x10, 0x10, 0xff],
         RED: [0xff, 0x10, 0x10, 0xff],
@@ -2037,35 +1805,43 @@ Keep on Flipnoting!
      *
      * This **cannot** be used to resign Flipnotes, it can only verify that they are valid
      */
-    var KWZ_PUBLIC_KEY = "-----BEGIN PUBLIC KEY-----\nMIIBIjANBgkqhkiG9w0BAQEFAAOCAQ8AMIIBCgKCAQEAuv+zHAXXvbbtRqxADDeJ\nArX2b9RMxj3T+qpRg3FnIE/jeU3tj7eoDzsMduY+D/UT9CSnP+QHYY/vf0n5lqX9\ns6ljoZAmyUuruyj1e5Bg+fkDEu/yPEPQjqhbyywCyYL4TEAOJveopUBx9fdQxUJ6\nJ4J5oCE/Im1kFrlGW+puARiHmt3mmUyNzO8bI/Jx3cGSfoOHJG1foEaQsI5aaKqA\npBqxtzvwqMhudcZtAWSyRMBMlndvkRnVTDNTfTXLOYdHShCIgnKULCTH87uLBIP/\nnsmr4/bnQz8q2rp/HyVO+0yjR6mVr0NX5APJQ+6riJmGg3t3VOldhKP7aTHDUW+h\nkQIDAQAB\n-----END PUBLIC KEY-----";
+    const KWZ_PUBLIC_KEY = `-----BEGIN PUBLIC KEY-----
+MIIBIjANBgkqhkiG9w0BAQEFAAOCAQ8AMIIBCgKCAQEAuv+zHAXXvbbtRqxADDeJ
+ArX2b9RMxj3T+qpRg3FnIE/jeU3tj7eoDzsMduY+D/UT9CSnP+QHYY/vf0n5lqX9
+s6ljoZAmyUuruyj1e5Bg+fkDEu/yPEPQjqhbyywCyYL4TEAOJveopUBx9fdQxUJ6
+J4J5oCE/Im1kFrlGW+puARiHmt3mmUyNzO8bI/Jx3cGSfoOHJG1foEaQsI5aaKqA
+pBqxtzvwqMhudcZtAWSyRMBMlndvkRnVTDNTfTXLOYdHShCIgnKULCTH87uLBIP/
+nsmr4/bnQz8q2rp/HyVO+0yjR6mVr0NX5APJQ+6riJmGg3t3VOldhKP7aTHDUW+h
+kQIDAQAB
+-----END PUBLIC KEY-----`;
     /**
      * Pre computed bitmasks for readBits; done as a slight optimisation
      * @internal
      */
-    var BITMASKS = new Uint16Array(16);
-    for (var i = 0; i < 16; i++) {
+    const BITMASKS = new Uint16Array(16);
+    for (let i = 0; i < 16; i++) {
         BITMASKS[i] = (1 << i) - 1;
     }
     /**
      * Every possible sequence of pixels for each 8-pixel line
      * @internal
      */
-    var KWZ_LINE_TABLE = new Uint8Array(6561 * 8);
+    const KWZ_LINE_TABLE = new Uint8Array(6561 * 8);
     /**
      * Same lines as KWZ_LINE_TABLE, but the pixels are shift-rotated to the left by one place
      * @internal
      */
-    var KWZ_LINE_TABLE_SHIFT = new Uint8Array(6561 * 8);
+    const KWZ_LINE_TABLE_SHIFT = new Uint8Array(6561 * 8);
     /** @internal */
     var offset = 0;
-    for (var a = 0; a < 3; a++)
-        for (var b = 0; b < 3; b++)
-            for (var c = 0; c < 3; c++)
-                for (var d = 0; d < 3; d++)
-                    for (var e = 0; e < 3; e++)
-                        for (var f = 0; f < 3; f++)
-                            for (var g = 0; g < 3; g++)
-                                for (var h = 0; h < 3; h++) {
+    for (let a = 0; a < 3; a++)
+        for (let b = 0; b < 3; b++)
+            for (let c = 0; c < 3; c++)
+                for (let d = 0; d < 3; d++)
+                    for (let e = 0; e < 3; e++)
+                        for (let f = 0; f < 3; f++)
+                            for (let g = 0; g < 3; g++)
+                                for (let h = 0; h < 3; h++) {
                                     KWZ_LINE_TABLE.set([b, a, d, c, f, e, h, g], offset);
                                     KWZ_LINE_TABLE_SHIFT.set([a, d, c, f, e, h, g, b], offset);
                                     offset += 8;
@@ -2075,21 +1851,21 @@ Keep on Flipnoting!
      * or include a pattern produced by the paint tool, etc
      * @internal
      */
-    var KWZ_LINE_TABLE_COMMON = new Uint8Array(32 * 8);
+    const KWZ_LINE_TABLE_COMMON = new Uint8Array(32 * 8);
     /**
      * Same lines as common line table, but shift-rotates one place to the left
      * @internal
      */
-    var KWZ_LINE_TABLE_COMMON_SHIFT = new Uint8Array(32 * 8);
+    const KWZ_LINE_TABLE_COMMON_SHIFT = new Uint8Array(32 * 8);
     [
         0x0000, 0x0CD0, 0x19A0, 0x02D9, 0x088B, 0x0051, 0x00F3, 0x0009,
         0x001B, 0x0001, 0x0003, 0x05B2, 0x1116, 0x00A2, 0x01E6, 0x0012,
         0x0036, 0x0002, 0x0006, 0x0B64, 0x08DC, 0x0144, 0x00FC, 0x0024,
         0x001C, 0x0004, 0x0334, 0x099C, 0x0668, 0x1338, 0x1004, 0x166C
-    ].forEach(function (value, i) {
-        var lineTablePtr = value * 8;
-        var pixels = KWZ_LINE_TABLE.subarray(lineTablePtr, lineTablePtr + 8);
-        var shiftPixels = KWZ_LINE_TABLE_SHIFT.subarray(lineTablePtr, lineTablePtr + 8);
+    ].forEach((value, i) => {
+        const lineTablePtr = value * 8;
+        const pixels = KWZ_LINE_TABLE.subarray(lineTablePtr, lineTablePtr + 8);
+        const shiftPixels = KWZ_LINE_TABLE_SHIFT.subarray(lineTablePtr, lineTablePtr + 8);
         KWZ_LINE_TABLE_COMMON.set(pixels, i * 8);
         KWZ_LINE_TABLE_COMMON_SHIFT.set(shiftPixels, i * 8);
     });
@@ -2099,184 +1875,181 @@ Keep on Flipnoting!
      * KWZ format docs: https://github.com/Flipnote-Collective/flipnote-studio-3d-docs/wiki/KWZ-Format
      * @category File Parser
      */
-    var KwzParser = /** @class */ (function (_super) {
-        __extends(KwzParser, _super);
+    class KwzParser extends FlipnoteParserBase {
         /**
          * Create a new KWZ file parser instance
          * @param arrayBuffer an ArrayBuffer containing file data
          * @param settings parser settings
          */
-        function KwzParser(arrayBuffer, settings) {
-            if (settings === void 0) { settings = {}; }
-            var _this = _super.call(this, arrayBuffer) || this;
+        constructor(arrayBuffer, settings = {}) {
+            super(arrayBuffer);
             /** File format type, reflects {@link KwzParser.format} */
-            _this.format = exports.FlipnoteFormat.KWZ;
+            this.format = exports.FlipnoteFormat.KWZ;
             /** Custom object tag */
-            _this[_a] = 'Flipnote Studio 3D KWZ animation file';
+            this[_a] = 'Flipnote Studio 3D KWZ animation file';
             /** Animation frame width, reflects {@link KwzParser.width} */
-            _this.imageWidth = KwzParser.width;
+            this.imageWidth = KwzParser.width;
             /** Animation frame height, reflects {@link KwzParser.height} */
-            _this.imageHeight = KwzParser.height;
+            this.imageHeight = KwzParser.height;
             /** Animation frame aspect ratio, reflects {@link KwzParser.aspect} */
-            _this.aspect = KwzParser.aspect;
+            this.aspect = KwzParser.aspect;
             /** X offset for the top-left corner of the animation frame */
-            _this.imageOffsetX = 0;
+            this.imageOffsetX = 0;
             /** Y offset for the top-left corner of the animation frame */
-            _this.imageOffsetY = 0;
+            this.imageOffsetY = 0;
             /** Number of animation frame layers, reflects {@link KwzParser.numLayers} */
-            _this.numLayers = KwzParser.numLayers;
+            this.numLayers = KwzParser.numLayers;
             /** Number of colors per layer (aside from transparent), reflects {@link KwzParser.numLayerColors} */
-            _this.numLayerColors = KwzParser.numLayerColors;
+            this.numLayerColors = KwzParser.numLayerColors;
             /** key used for Flipnote verification, in PEM format */
-            _this.publicKey = KwzParser.publicKey;
+            this.publicKey = KwzParser.publicKey;
             /** @internal */
-            _this.srcWidth = KwzParser.width;
+            this.srcWidth = KwzParser.width;
             /** Which audio tracks are available in this format, reflects {@link KwzParser.audioTracks} */
-            _this.audioTracks = KwzParser.audioTracks;
+            this.audioTracks = KwzParser.audioTracks;
             /** Which sound effect tracks are available in this format, reflects {@link KwzParser.soundEffectTracks} */
-            _this.soundEffectTracks = KwzParser.soundEffectTracks;
+            this.soundEffectTracks = KwzParser.soundEffectTracks;
             /** Audio track base sample rate, reflects {@link KwzParser.rawSampleRate} */
-            _this.rawSampleRate = KwzParser.rawSampleRate;
+            this.rawSampleRate = KwzParser.rawSampleRate;
             /** Audio output sample rate, reflects {@link KwzParser.sampleRate} */
-            _this.sampleRate = KwzParser.sampleRate;
+            this.sampleRate = KwzParser.sampleRate;
             /** Global animation frame color palette, reflects {@link KwzParser.globalPalette} */
-            _this.globalPalette = KwzParser.globalPalette;
-            _this.prevDecodedFrame = null;
-            _this.bitIndex = 0;
-            _this.bitValue = 0;
-            _this.settings = __assign(__assign({}, KwzParser.defaultSettings), settings);
-            _this.layerBuffers = [
+            this.globalPalette = KwzParser.globalPalette;
+            this.prevDecodedFrame = null;
+            this.bitIndex = 0;
+            this.bitValue = 0;
+            this.settings = { ...KwzParser.defaultSettings, ...settings };
+            this.layerBuffers = [
                 new Uint8Array(KwzParser.width * KwzParser.height),
                 new Uint8Array(KwzParser.width * KwzParser.height),
                 new Uint8Array(KwzParser.width * KwzParser.height),
             ];
             // skip through the file and read all of the section headers so we can locate them
-            _this.buildSectionMap();
+            this.buildSectionMap();
             // if the KIC section is present, we're dealing with a folder icon
             // these are single-frame KWZs without a KFH section for metadata, or a KSN section for sound
             // while the data for a full frame (320*240) is present, only the top-left 24*24 pixels are used
-            if (_this.sectionMap.has('KIC')) {
-                _this.isFolderIcon = true;
+            if (this.sectionMap.has('KIC')) {
+                this.isFolderIcon = true;
                 // icons still use the full 320 * 240 frame size, so we just set up our image crop to deal with that
-                _this.imageWidth = 24;
-                _this.imageHeight = 24;
-                _this.frameCount = 1;
-                _this.frameSpeed = 0;
-                _this.framerate = KWZ_FRAMERATES[0];
-                _this.thumbFrameIndex = 0;
-                _this.getFrameOffsets();
+                this.imageWidth = 24;
+                this.imageHeight = 24;
+                this.frameCount = 1;
+                this.frameSpeed = 0;
+                this.framerate = KWZ_FRAMERATES[0];
+                this.thumbFrameIndex = 0;
+                this.getFrameOffsets();
             }
             // if the KSN section is not present, then this is a handwritten comment from the Flipnote Gallery World online service
             // these are single-frame KWZs, just with no sound
-            else if (!_this.sectionMap.has('KSN')) {
-                _this.isComment = true;
-                _this.decodeMeta();
-                _this.getFrameOffsets();
+            else if (!this.sectionMap.has('KSN')) {
+                this.isComment = true;
+                this.decodeMeta();
+                this.getFrameOffsets();
             }
             // else let's assume this is a regular note
             else {
-                _this.decodeMeta();
-                _this.getFrameOffsets();
-                _this.decodeSoundHeader();
+                this.decodeMeta();
+                this.getFrameOffsets();
+                this.decodeSoundHeader();
             }
             // apply special optimizations for converted DSi library notes
-            if (_this.settings.dsiLibraryNote) {
-                _this.isDsiLibraryNote = true;
+            if (this.settings.dsiLibraryNote) {
+                this.isDsiLibraryNote = true;
             }
             // automatically crop out the border around every frame
-            if (_this.settings.borderCrop) {
+            if (this.settings.borderCrop) {
                 // dsi library notes can be cropped to their original resolution
-                if (_this.isDsiLibraryNote) {
-                    _this.imageOffsetX = 32;
-                    _this.imageOffsetY = 24;
-                    _this.imageWidth = 256;
-                    _this.imageHeight = 192;
+                if (this.isDsiLibraryNote) {
+                    this.imageOffsetX = 32;
+                    this.imageOffsetY = 24;
+                    this.imageWidth = 256;
+                    this.imageHeight = 192;
                 }
                 // even standard notes have a bit of a border...
-                else if (!_this.isFolderIcon) {
-                    _this.imageOffsetX = 5;
-                    _this.imageOffsetY = 5;
-                    _this.imageWidth = 310;
-                    _this.imageHeight = 230;
+                else if (!this.isFolderIcon) {
+                    this.imageOffsetX = 5;
+                    this.imageOffsetY = 5;
+                    this.imageWidth = 310;
+                    this.imageHeight = 230;
                 }
             }
-            return _this;
         }
-        KwzParser.prototype.buildSectionMap = function () {
-            var fileSize = this.byteLength - 256;
-            var sectionMap = new Map();
-            var sectionCount = 0;
-            var ptr = 0;
+        buildSectionMap() {
+            const fileSize = this.byteLength - 256;
+            const sectionMap = new Map();
+            let sectionCount = 0;
+            let ptr = 0;
             // counting sections should mitigate against one of mrnbayoh's notehax exploits
             while (ptr < fileSize && sectionCount < 6) {
                 this.seek(ptr);
-                var magic = this.readChars(4).substring(0, 3);
-                var length_1 = this.readUint32();
-                sectionMap.set(magic, { ptr: ptr, length: length_1 });
-                ptr += length_1 + 8;
+                const magic = this.readChars(4).substring(0, 3);
+                const length = this.readUint32();
+                sectionMap.set(magic, { ptr, length });
+                ptr += length + 8;
                 sectionCount += 1;
             }
             this.bodyEndOffset = ptr;
             this.sectionMap = sectionMap;
             assert(sectionMap.has('KMC') && sectionMap.has('KMI'));
-        };
-        KwzParser.prototype.readBits = function (num) {
+        }
+        readBits(num) {
             // assert(num < 16);
             if (this.bitIndex + num > 16) {
-                var nextBits = this.readUint16();
+                const nextBits = this.readUint16();
                 this.bitValue |= nextBits << (16 - this.bitIndex);
                 this.bitIndex -= 16;
             }
-            var result = this.bitValue & BITMASKS[num];
+            const result = this.bitValue & BITMASKS[num];
             this.bitValue >>= num;
             this.bitIndex += num;
             return result;
-        };
-        KwzParser.prototype.readFsid = function () {
+        }
+        readFsid() {
             if (this.settings.dsiLibraryNote) { // format as DSi PPM FSID
-                var hex_1 = this.readHex(10, true);
-                return hex_1.slice(2, 18);
+                const hex = this.readHex(10, true);
+                return hex.slice(2, 18);
             }
-            var hex = this.readHex(10);
-            return "".concat(hex.slice(0, 4), "-").concat(hex.slice(4, 8), "-").concat(hex.slice(8, 12), "-").concat(hex.slice(12, 18)).toLowerCase();
-        };
-        KwzParser.prototype.readFilename = function () {
-            var ptr = this.pointer;
-            var chars = this.readChars(28);
+            const hex = this.readHex(10);
+            return `${hex.slice(0, 4)}-${hex.slice(4, 8)}-${hex.slice(8, 12)}-${hex.slice(12, 18)}`.toLowerCase();
+        }
+        readFilename() {
+            const ptr = this.pointer;
+            const chars = this.readChars(28);
             if (chars.length === 28)
                 return chars;
             // Otherwise, this is likely a DSi Library note, 
             // where sometimes Nintendo's buggy PPM converter includes the original packed PPM filename
             this.seek(ptr);
-            var mac = this.readHex(3);
-            var random = this.readChars(13);
-            var edits = this.readUint16().toString().padStart(3, '0');
+            const mac = this.readHex(3);
+            const random = this.readChars(13);
+            const edits = this.readUint16().toString().padStart(3, '0');
             this.seek(ptr + 28);
-            return "".concat(mac, "_").concat(random, "_").concat(edits);
-        };
-        KwzParser.prototype.decodeMeta = function () {
+            return `${mac}_${random}_${edits}`;
+        }
+        decodeMeta() {
             if (this.settings.quickMeta)
                 return this.decodeMetaQuick();
             assert(this.sectionMap.has('KFH'));
             this.seek(this.sectionMap.get('KFH').ptr + 12);
-            var creationTime = dateFromNintendoTimestamp(this.readUint32());
-            var modifiedTime = dateFromNintendoTimestamp(this.readUint32());
+            const creationTime = dateFromNintendoTimestamp(this.readUint32());
+            const modifiedTime = dateFromNintendoTimestamp(this.readUint32());
             // const simonTime = 
             this.readUint32();
-            var rootAuthorId = this.readFsid();
-            var parentAuthorId = this.readFsid();
-            var currentAuthorId = this.readFsid();
-            var rootAuthorName = this.readWideChars(11);
-            var parentAuthorName = this.readWideChars(11);
-            var currentAuthorName = this.readWideChars(11);
-            var rootFilename = this.readFilename();
-            var parentFilename = this.readFilename();
-            var currentFilename = this.readFilename();
-            var frameCount = this.readUint16();
-            var thumbIndex = this.readUint16();
-            var flags = this.readUint16();
-            var frameSpeed = this.readUint8();
-            var layerFlags = this.readUint8();
+            const rootAuthorId = this.readFsid();
+            const parentAuthorId = this.readFsid();
+            const currentAuthorId = this.readFsid();
+            const rootAuthorName = this.readWideChars(11);
+            const parentAuthorName = this.readWideChars(11);
+            const currentAuthorName = this.readWideChars(11);
+            const rootFilename = this.readFilename();
+            const parentFilename = this.readFilename();
+            const currentFilename = this.readFilename();
+            const frameCount = this.readUint16();
+            const thumbIndex = this.readUint16();
+            const flags = this.readUint16();
+            const frameSpeed = this.readUint8();
+            const layerFlags = this.readUint8();
             this.isSpinoff = (currentAuthorId !== parentAuthorId) || (currentAuthorId !== rootAuthorId);
             this.frameCount = frameCount;
             this.frameSpeed = frameSpeed;
@@ -2324,15 +2097,15 @@ Keep on Flipnoting!
                     isDsiFilename: currentFilename.length !== 28
                 },
             };
-        };
-        KwzParser.prototype.decodeMetaQuick = function () {
+        }
+        decodeMetaQuick() {
             assert(this.sectionMap.has('KFH'));
             this.seek(this.sectionMap.get('KFH').ptr + 0x8 + 0xC4);
-            var frameCount = this.readUint16();
-            var thumbFrameIndex = this.readUint16();
+            const frameCount = this.readUint16();
+            const thumbFrameIndex = this.readUint16();
             this.readUint16();
-            var frameSpeed = this.readUint8();
-            var layerFlags = this.readUint8();
+            const frameSpeed = this.readUint8();
+            const layerFlags = this.readUint8();
             this.frameCount = frameCount;
             this.thumbFrameIndex = thumbFrameIndex;
             this.frameSpeed = frameSpeed;
@@ -2343,69 +2116,69 @@ Keep on Flipnoting!
                 2: (layerFlags & 0x2) === 0,
                 3: (layerFlags & 0x3) === 0,
             };
-        };
-        KwzParser.prototype.getFrameOffsets = function () {
+        }
+        getFrameOffsets() {
             assert(this.sectionMap.has('KMI') && this.sectionMap.has('KMC'));
-            var numFrames = this.frameCount;
-            var kmiSection = this.sectionMap.get('KMI');
-            var kmcSection = this.sectionMap.get('KMC');
+            const numFrames = this.frameCount;
+            const kmiSection = this.sectionMap.get('KMI');
+            const kmcSection = this.sectionMap.get('KMC');
             assert(kmiSection.length / 28 >= numFrames);
-            var frameMetaOffsets = new Uint32Array(numFrames);
-            var frameDataOffsets = new Uint32Array(numFrames);
-            var frameLayerSizes = [];
-            var frameMetaPtr = kmiSection.ptr + 8;
-            var frameDataPtr = kmcSection.ptr + 12;
-            for (var frameIndex = 0; frameIndex < numFrames; frameIndex++) {
+            const frameMetaOffsets = new Uint32Array(numFrames);
+            const frameDataOffsets = new Uint32Array(numFrames);
+            const frameLayerSizes = [];
+            let frameMetaPtr = kmiSection.ptr + 8;
+            let frameDataPtr = kmcSection.ptr + 12;
+            for (let frameIndex = 0; frameIndex < numFrames; frameIndex++) {
                 this.seek(frameMetaPtr + 4);
-                var layerASize = this.readUint16();
-                var layerBSize = this.readUint16();
-                var layerCSize = this.readUint16();
+                const layerASize = this.readUint16();
+                const layerBSize = this.readUint16();
+                const layerCSize = this.readUint16();
                 frameMetaOffsets[frameIndex] = frameMetaPtr;
                 frameDataOffsets[frameIndex] = frameDataPtr;
                 frameMetaPtr += 28;
                 frameDataPtr += layerASize + layerBSize + layerCSize;
-                assert(frameMetaPtr < this.byteLength, "frame".concat(frameIndex, " meta pointer out of bounds"));
-                assert(frameDataPtr < this.byteLength, "frame".concat(frameIndex, " data pointer out of bounds"));
+                assert(frameMetaPtr < this.byteLength, `frame${frameIndex} meta pointer out of bounds`);
+                assert(frameDataPtr < this.byteLength, `frame${frameIndex} data pointer out of bounds`);
                 frameLayerSizes.push([layerASize, layerBSize, layerCSize]);
             }
             this.frameMetaOffsets = frameMetaOffsets;
             this.frameDataOffsets = frameDataOffsets;
             this.frameLayerSizes = frameLayerSizes;
-        };
-        KwzParser.prototype.decodeSoundHeader = function () {
+        }
+        decodeSoundHeader() {
             assert(this.sectionMap.has('KSN'));
-            var ptr = this.sectionMap.get('KSN').ptr + 8;
+            let ptr = this.sectionMap.get('KSN').ptr + 8;
             this.seek(ptr);
             this.bgmSpeed = this.readUint32();
             assert(this.bgmSpeed <= 10);
             this.bgmrate = KWZ_FRAMERATES[this.bgmSpeed];
-            var trackSizes = new Uint32Array(this.buffer, ptr + 4, 20);
-            var soundMeta = new Map();
+            const trackSizes = new Uint32Array(this.buffer, ptr + 4, 20);
+            const soundMeta = new Map();
             soundMeta.set(exports.FlipnoteAudioTrack.BGM, { ptr: ptr += 28, length: trackSizes[0] });
             soundMeta.set(exports.FlipnoteAudioTrack.SE1, { ptr: ptr += trackSizes[0], length: trackSizes[1] });
             soundMeta.set(exports.FlipnoteAudioTrack.SE2, { ptr: ptr += trackSizes[1], length: trackSizes[2] });
             soundMeta.set(exports.FlipnoteAudioTrack.SE3, { ptr: ptr += trackSizes[2], length: trackSizes[3] });
             soundMeta.set(exports.FlipnoteAudioTrack.SE4, { ptr: ptr += trackSizes[3], length: trackSizes[4] });
             this.soundMeta = soundMeta;
-        };
+        }
         /**
          * Decodes the thumbnail image embedded in the Flipnote. Will return a {@link FlipnoteThumbImage} containing JPEG data.
          *
          * Note: For most purposes, you should probably just decode the thumbnail fraa to get a higher resolution image.
          * @category Meta
          */
-        KwzParser.prototype.getThumbnailImage = function () {
+        getThumbnailImage() {
             assert(this.sectionMap.has('KTN'), 'KTN section missing - Note that folder icons and comments do not contain thumbnail data');
-            var ktn = this.sectionMap.get('KTN');
+            const ktn = this.sectionMap.get('KTN');
             this.seek(ktn.ptr + 12);
-            var bytes = this.readBytes(ktn.length - 12);
+            const bytes = this.readBytes(ktn.length - 12);
             return {
                 format: FlipnoteThumbImageFormat.Jpeg,
                 width: 80,
                 height: 64,
                 data: bytes.buffer
             };
-        };
+        }
         /**
          * Get the color palette indices for a given frame. RGBA colors for these values can be indexed from {@link KwzParser.globalPalette}
          *
@@ -2419,10 +2192,10 @@ Keep on Flipnoting!
          *  - index 6 is the layer C color 2 index
          * @category Image
         */
-        KwzParser.prototype.getFramePaletteIndices = function (frameIndex) {
+        getFramePaletteIndices(frameIndex) {
             assertRange(frameIndex, 0, this.frameCount - 1, 'Frame index');
             this.seek(this.frameMetaOffsets[frameIndex]);
-            var flags = this.readUint32();
+            const flags = this.readUint32();
             return [
                 flags & 0xF,
                 (flags >> 8) & 0xF,
@@ -2432,7 +2205,7 @@ Keep on Flipnoting!
                 (flags >> 24) & 0xF,
                 (flags >> 28) & 0xF,
             ];
-        };
+        }
         /**
          * Get the RGBA colors for a given frame
          *
@@ -2446,36 +2219,35 @@ Keep on Flipnoting!
          *  - index 6 is the layer C color 2
          * @category Image
         */
-        KwzParser.prototype.getFramePalette = function (frameIndex) {
-            var _this = this;
+        getFramePalette(frameIndex) {
             assertRange(frameIndex, 0, this.frameCount - 1, 'Frame index');
-            var indices = this.getFramePaletteIndices(frameIndex);
-            return indices.map(function (colorIndex) { return _this.globalPalette[colorIndex]; });
-        };
-        KwzParser.prototype.getFrameDiffingFlag = function (frameIndex) {
+            const indices = this.getFramePaletteIndices(frameIndex);
+            return indices.map(colorIndex => this.globalPalette[colorIndex]);
+        }
+        getFrameDiffingFlag(frameIndex) {
             assertRange(frameIndex, 0, this.frameCount - 1, 'Frame index');
             this.seek(this.frameMetaOffsets[frameIndex]);
             return (this.readUint32() >> 4) & 0x07;
-        };
+        }
         /**
          * Determines if a given frame is a video key frame or not. This returns an array of booleans for each layer, since keyframe encoding is done on a per-layer basis.
          * @param frameIndex
          * @category Image
         */
-        KwzParser.prototype.getIsKeyFrame = function (frameIndex) {
-            var flag = this.getFrameDiffingFlag(frameIndex);
+        getIsKeyFrame(frameIndex) {
+            const flag = this.getFrameDiffingFlag(frameIndex);
             return [
                 (flag & 0x1) === 0,
                 (flag & 0x2) === 0,
                 (flag & 0x4) === 0,
             ];
-        };
+        }
         /**
          * Get the 3D depths for each layer in a given frame.
          * @param frameIndex
          * @category Image
         */
-        KwzParser.prototype.getFrameLayerDepths = function (frameIndex) {
+        getFrameLayerDepths(frameIndex) {
             assertRange(frameIndex, 0, this.frameCount - 1, 'Frame index');
             this.seek(this.frameMetaOffsets[frameIndex] + 0x14);
             return [
@@ -2483,47 +2255,45 @@ Keep on Flipnoting!
                 this.readUint8(),
                 this.readUint8()
             ];
-        };
+        }
         /**
          * Get the FSID for a given frame's original author.
          * @param frameIndex
          * @category Meta
         */
-        KwzParser.prototype.getFrameAuthor = function (frameIndex) {
+        getFrameAuthor(frameIndex) {
             assertRange(frameIndex, 0, this.frameCount - 1, 'Frame index');
             this.seek(this.frameMetaOffsets[frameIndex] + 0xA);
             return this.readFsid();
-        };
+        }
         /**
          * Get the camera flags for a given frame
          * @category Image
          * @returns Array of booleans, indicating whether each layer uses a photo or not
         */
-        KwzParser.prototype.getFrameCameraFlags = function (frameIndex) {
+        getFrameCameraFlags(frameIndex) {
             this.seek(this.frameMetaOffsets[frameIndex] + 0x1A);
-            var cameraFlags = this.readUint8();
+            const cameraFlags = this.readUint8();
             return [
                 (cameraFlags & 0x1) !== 0,
                 (cameraFlags & 0x2) !== 0,
                 (cameraFlags & 0x4) !== 0,
             ];
-        };
+        }
         /**
          * Get the layer draw order for a given frame
          * @category Image
         */
-        KwzParser.prototype.getFrameLayerOrder = function (frameIndex) {
+        getFrameLayerOrder(frameIndex) {
             assertRange(frameIndex, 0, this.frameCount - 1, 'Frame index');
-            var depths = this.getFrameLayerDepths(frameIndex);
-            return [2, 1, 0].sort(function (a, b) { return depths[b] - depths[a]; });
-        };
+            const depths = this.getFrameLayerDepths(frameIndex);
+            return [2, 1, 0].sort((a, b) => depths[b] - depths[a]);
+        }
         /**
          * Decode a frame, returning the raw pixel buffers for each layer
          * @category Image
         */
-        KwzParser.prototype.decodeFrame = function (frameIndex, diffingFlag, isPrevFrame) {
-            if (diffingFlag === void 0) { diffingFlag = 0x7; }
-            if (isPrevFrame === void 0) { isPrevFrame = false; }
+        decodeFrame(frameIndex, diffingFlag = 0x7, isPrevFrame = false) {
             assertRange(frameIndex, 0, this.frameCount - 1, 'Frame index');
             // return existing layer buffers if no new frame has been decoded since the last call
             if (this.prevDecodedFrame === frameIndex)
@@ -2538,16 +2308,16 @@ Keep on Flipnoting!
                 if (diffingFlag !== 0)
                     this.decodeFrame(frameIndex - 1, diffingFlag, true);
             }
-            var framePtr = this.frameDataOffsets[frameIndex];
-            var layerSizes = this.frameLayerSizes[frameIndex];
-            for (var layerIndex = 0; layerIndex < 3; layerIndex++) {
+            let framePtr = this.frameDataOffsets[frameIndex];
+            const layerSizes = this.frameLayerSizes[frameIndex];
+            for (let layerIndex = 0; layerIndex < 3; layerIndex++) {
                 // dsi gallery conversions don't use the third layer, so it can be skipped if this is set
                 if (this.settings.dsiLibraryNote && layerIndex === 3)
                     break;
                 this.seek(framePtr);
-                var layerSize = layerSizes[layerIndex];
+                let layerSize = layerSizes[layerIndex];
                 framePtr += layerSize;
-                var pixelBuffer = this.layerBuffers[layerIndex];
+                const pixelBuffer = this.layerBuffers[layerIndex];
                 // if the layer is 38 bytes then it hasn't changed at all since the previous frame, so we can skip it
                 if (layerSize === 38)
                     continue;
@@ -2558,16 +2328,16 @@ Keep on Flipnoting!
                 this.bitIndex = 16;
                 this.bitValue = 0;
                 // tile skip counter
-                var skipTileCounter = 0;
-                for (var tileOffsetY = 0; tileOffsetY < 240; tileOffsetY += 128) {
-                    for (var tileOffsetX = 0; tileOffsetX < 320; tileOffsetX += 128) {
+                let skipTileCounter = 0;
+                for (let tileOffsetY = 0; tileOffsetY < 240; tileOffsetY += 128) {
+                    for (let tileOffsetX = 0; tileOffsetX < 320; tileOffsetX += 128) {
                         // loop small tiles
-                        for (var subTileOffsetY = 0; subTileOffsetY < 128; subTileOffsetY += 8) {
-                            var y = tileOffsetY + subTileOffsetY;
+                        for (let subTileOffsetY = 0; subTileOffsetY < 128; subTileOffsetY += 8) {
+                            const y = tileOffsetY + subTileOffsetY;
                             if (y >= 240)
                                 break;
-                            for (var subTileOffsetX = 0; subTileOffsetX < 128; subTileOffsetX += 8) {
-                                var x = tileOffsetX + subTileOffsetX;
+                            for (let subTileOffsetX = 0; subTileOffsetX < 128; subTileOffsetX += 8) {
+                                const x = tileOffsetX + subTileOffsetX;
                                 if (x >= 320)
                                     break;
                                 // continue to next tile loop if skipTileCounter is > 0
@@ -2575,11 +2345,11 @@ Keep on Flipnoting!
                                     skipTileCounter -= 1;
                                     continue;
                                 }
-                                var pixelBufferPtr = y * KwzParser.width + x;
-                                var tileType = this.readBits(3);
+                                let pixelBufferPtr = y * KwzParser.width + x;
+                                const tileType = this.readBits(3);
                                 if (tileType === 0) {
-                                    var linePtr = this.readBits(5) * 8;
-                                    var pixels = KWZ_LINE_TABLE_COMMON.subarray(linePtr, linePtr + 8);
+                                    const linePtr = this.readBits(5) * 8;
+                                    const pixels = KWZ_LINE_TABLE_COMMON.subarray(linePtr, linePtr + 8);
                                     pixelBuffer.set(pixels, pixelBufferPtr);
                                     pixelBuffer.set(pixels, pixelBufferPtr += 320);
                                     pixelBuffer.set(pixels, pixelBufferPtr += 320);
@@ -2590,8 +2360,8 @@ Keep on Flipnoting!
                                     pixelBuffer.set(pixels, pixelBufferPtr += 320);
                                 }
                                 else if (tileType === 1) {
-                                    var linePtr = this.readBits(13) * 8;
-                                    var pixels = KWZ_LINE_TABLE.subarray(linePtr, linePtr + 8);
+                                    const linePtr = this.readBits(13) * 8;
+                                    const pixels = KWZ_LINE_TABLE.subarray(linePtr, linePtr + 8);
                                     pixelBuffer.set(pixels, pixelBufferPtr);
                                     pixelBuffer.set(pixels, pixelBufferPtr += 320);
                                     pixelBuffer.set(pixels, pixelBufferPtr += 320);
@@ -2602,9 +2372,9 @@ Keep on Flipnoting!
                                     pixelBuffer.set(pixels, pixelBufferPtr += 320);
                                 }
                                 else if (tileType === 2) {
-                                    var linePtr = this.readBits(5) * 8;
-                                    var a = KWZ_LINE_TABLE_COMMON.subarray(linePtr, linePtr + 8);
-                                    var b = KWZ_LINE_TABLE_COMMON_SHIFT.subarray(linePtr, linePtr + 8);
+                                    const linePtr = this.readBits(5) * 8;
+                                    const a = KWZ_LINE_TABLE_COMMON.subarray(linePtr, linePtr + 8);
+                                    const b = KWZ_LINE_TABLE_COMMON_SHIFT.subarray(linePtr, linePtr + 8);
                                     pixelBuffer.set(a, pixelBufferPtr);
                                     pixelBuffer.set(b, pixelBufferPtr += 320);
                                     pixelBuffer.set(a, pixelBufferPtr += 320);
@@ -2615,9 +2385,9 @@ Keep on Flipnoting!
                                     pixelBuffer.set(b, pixelBufferPtr += 320);
                                 }
                                 else if (tileType === 3) {
-                                    var linePtr = this.readBits(13) * 8;
-                                    var a = KWZ_LINE_TABLE.subarray(linePtr, linePtr + 8);
-                                    var b = KWZ_LINE_TABLE_SHIFT.subarray(linePtr, linePtr + 8);
+                                    const linePtr = this.readBits(13) * 8;
+                                    const a = KWZ_LINE_TABLE.subarray(linePtr, linePtr + 8);
+                                    const b = KWZ_LINE_TABLE_SHIFT.subarray(linePtr, linePtr + 8);
                                     pixelBuffer.set(a, pixelBufferPtr);
                                     pixelBuffer.set(b, pixelBufferPtr += 320);
                                     pixelBuffer.set(a, pixelBufferPtr += 320);
@@ -2629,16 +2399,16 @@ Keep on Flipnoting!
                                 }
                                 // most common tile type
                                 else if (tileType === 4) {
-                                    var flags = this.readBits(8);
-                                    for (var mask = 1; mask < 0xFF; mask <<= 1) {
+                                    const flags = this.readBits(8);
+                                    for (let mask = 1; mask < 0xFF; mask <<= 1) {
                                         if (flags & mask) {
-                                            var linePtr = this.readBits(5) * 8;
-                                            var pixels = KWZ_LINE_TABLE_COMMON.subarray(linePtr, linePtr + 8);
+                                            const linePtr = this.readBits(5) * 8;
+                                            const pixels = KWZ_LINE_TABLE_COMMON.subarray(linePtr, linePtr + 8);
                                             pixelBuffer.set(pixels, pixelBufferPtr);
                                         }
                                         else {
-                                            var linePtr = this.readBits(13) * 8;
-                                            var pixels = KWZ_LINE_TABLE.subarray(linePtr, linePtr + 8);
+                                            const linePtr = this.readBits(13) * 8;
+                                            const pixels = KWZ_LINE_TABLE.subarray(linePtr, linePtr + 8);
                                             pixelBuffer.set(pixels, pixelBufferPtr);
                                         }
                                         pixelBufferPtr += 320;
@@ -2650,19 +2420,19 @@ Keep on Flipnoting!
                                 }
                                 // type 6 doesnt exist
                                 else if (tileType === 7) {
-                                    var pattern = this.readBits(2);
-                                    var useCommonLines = this.readBits(1);
-                                    var a = void 0, b = void 0;
+                                    let pattern = this.readBits(2);
+                                    let useCommonLines = this.readBits(1);
+                                    let a, b;
                                     if (useCommonLines !== 0) {
-                                        var linePtrA = this.readBits(5) * 8;
-                                        var linePtrB = this.readBits(5) * 8;
+                                        const linePtrA = this.readBits(5) * 8;
+                                        const linePtrB = this.readBits(5) * 8;
                                         a = KWZ_LINE_TABLE_COMMON.subarray(linePtrA, linePtrA + 8);
                                         b = KWZ_LINE_TABLE_COMMON.subarray(linePtrB, linePtrB + 8);
                                         pattern += 1;
                                     }
                                     else {
-                                        var linePtrA = this.readBits(13) * 8;
-                                        var linePtrB = this.readBits(13) * 8;
+                                        const linePtrA = this.readBits(13) * 8;
+                                        const linePtrB = this.readBits(13) * 8;
                                         a = KWZ_LINE_TABLE.subarray(linePtrA, linePtrA + 8);
                                         b = KWZ_LINE_TABLE.subarray(linePtrB, linePtrB + 8);
                                     }
@@ -2716,83 +2486,76 @@ Keep on Flipnoting!
             }
             this.prevDecodedFrame = frameIndex;
             return this.layerBuffers;
-        };
-        KwzParser.prototype.decodeFrameSoundFlags = function (frameIndex) {
+        }
+        decodeFrameSoundFlags(frameIndex) {
             assertRange(frameIndex, 0, this.frameCount - 1, 'Frame index');
             this.seek(this.frameMetaOffsets[frameIndex] + 0x17);
-            var soundFlags = this.readUint8();
+            const soundFlags = this.readUint8();
             return [
                 (soundFlags & 0x1) !== 0,
                 (soundFlags & 0x2) !== 0,
                 (soundFlags & 0x4) !== 0,
                 (soundFlags & 0x8) !== 0,
             ];
-        };
+        }
         /**
          * Get the sound effect flags for every frame in the Flipnote
          * @category Audio
         */
-        KwzParser.prototype.decodeSoundFlags = function () {
-            var _this = this;
+        decodeSoundFlags() {
             if (this.soundFlags !== undefined)
                 return this.soundFlags;
             this.soundFlags = new Array(this.frameCount)
                 .fill(false)
-                .map(function (_, i) { return _this.decodeFrameSoundFlags(i); });
+                .map((_, i) => this.decodeFrameSoundFlags(i));
             return this.soundFlags;
-        };
+        }
         /**
          * Get the sound effect usage flags for every frame
          * @category Audio
          */
-        KwzParser.prototype.getSoundEffectFlags = function () {
-            return this.decodeSoundFlags().map(function (frameFlags) {
-                var _b;
-                return (_b = {},
-                    _b[exports.FlipnoteSoundEffectTrack.SE1] = frameFlags[0],
-                    _b[exports.FlipnoteSoundEffectTrack.SE2] = frameFlags[1],
-                    _b[exports.FlipnoteSoundEffectTrack.SE3] = frameFlags[2],
-                    _b[exports.FlipnoteSoundEffectTrack.SE4] = frameFlags[3],
-                    _b);
-            });
-        };
+        getSoundEffectFlags() {
+            return this.decodeSoundFlags().map((frameFlags) => ({
+                [exports.FlipnoteSoundEffectTrack.SE1]: frameFlags[0],
+                [exports.FlipnoteSoundEffectTrack.SE2]: frameFlags[1],
+                [exports.FlipnoteSoundEffectTrack.SE3]: frameFlags[2],
+                [exports.FlipnoteSoundEffectTrack.SE4]: frameFlags[3],
+            }));
+        }
         /**
          * Get the sound effect usage for a given frame
          * @param frameIndex
          * @category Audio
          */
-        KwzParser.prototype.getFrameSoundEffectFlags = function (frameIndex) {
-            var _b;
-            var frameFlags = this.decodeFrameSoundFlags(frameIndex);
-            return _b = {},
-                _b[exports.FlipnoteSoundEffectTrack.SE1] = frameFlags[0],
-                _b[exports.FlipnoteSoundEffectTrack.SE2] = frameFlags[1],
-                _b[exports.FlipnoteSoundEffectTrack.SE3] = frameFlags[2],
-                _b[exports.FlipnoteSoundEffectTrack.SE4] = frameFlags[3],
-                _b;
-        };
+        getFrameSoundEffectFlags(frameIndex) {
+            const frameFlags = this.decodeFrameSoundFlags(frameIndex);
+            return {
+                [exports.FlipnoteSoundEffectTrack.SE1]: frameFlags[0],
+                [exports.FlipnoteSoundEffectTrack.SE2]: frameFlags[1],
+                [exports.FlipnoteSoundEffectTrack.SE3]: frameFlags[2],
+                [exports.FlipnoteSoundEffectTrack.SE4]: frameFlags[3],
+            };
+        }
         /**
          * Get the raw compressed audio data for a given track
          * @returns Byte array
          * @category Audio
         */
-        KwzParser.prototype.getAudioTrackRaw = function (trackId) {
-            var trackMeta = this.soundMeta.get(trackId);
+        getAudioTrackRaw(trackId) {
+            const trackMeta = this.soundMeta.get(trackId);
             assert(trackMeta.ptr + trackMeta.length < this.byteLength);
             return new Uint8Array(this.buffer, trackMeta.ptr, trackMeta.length);
-        };
-        KwzParser.prototype.decodeAdpcm = function (src, dst, predictor, stepIndex) {
-            if (predictor === void 0) { predictor = 0; }
-            if (stepIndex === void 0) { stepIndex = 0; }
-            var srcSize = src.length;
-            var dstPtr = 0;
-            var sample = 0;
-            var step = 0;
-            var diff = 0;
+        }
+        decodeAdpcm(src, dst, predictor = 0, stepIndex = 0) {
+            const srcSize = src.length;
+            let dstPtr = 0;
+            let sample = 0;
+            let step = 0;
+            let diff = 0;
             // loop through each byte in the raw adpcm data
-            for (var srcPtr = 0; srcPtr < srcSize; srcPtr++) {
-                var currByte = src[srcPtr];
-                var currBit = 0;
+            for (let srcPtr = 0; srcPtr < srcSize; srcPtr++) {
+                let currByte = src[srcPtr];
+                let currBit = 0;
                 while (currBit < 8) {
                     // 2 bit sample
                     if (stepIndex < 18 || currBit > 4) {
@@ -2834,26 +2597,26 @@ Keep on Flipnoting!
                 }
             }
             return dstPtr;
-        };
+        }
         /**
          * Get the decoded audio data for a given track, using the track's native samplerate
          * @returns Signed 16-bit PCM audio
          * @category Audio
         */
-        KwzParser.prototype.decodeAudioTrack = function (trackId) {
-            var settings = this.settings;
-            var src = this.getAudioTrackRaw(trackId);
-            var dstSize = this.rawSampleRate * 60; // enough for 60 seconds, the max bgm size
-            var dst = new Int16Array(dstSize);
+        decodeAudioTrack(trackId) {
+            const settings = this.settings;
+            const src = this.getAudioTrackRaw(trackId);
+            const dstSize = this.rawSampleRate * 60; // enough for 60 seconds, the max bgm size
+            const dst = new Int16Array(dstSize);
             // initial decoder state
-            var predictor = 0;
-            var stepIndex = 40;
+            let predictor = 0;
+            let stepIndex = 40;
             // Nintendo messed up the initial adpcm state for a bunch of the PPM conversions on DSi Library
             // they are effectively random, so you can optionally provide your own state values, or let the lib make a best guess
             if (this.isDsiLibraryNote) {
                 if (trackId === exports.FlipnoteAudioTrack.BGM) {
                     // passing an initial index or predictor value should disable bruteforcing
-                    var doGuess = true;
+                    let doGuess = true;
                     // allow manual overrides for default predictor
                     if (settings.initialBgmPredictor !== null) {
                         predictor = settings.initialBgmPredictor;
@@ -2866,11 +2629,11 @@ Keep on Flipnoting!
                     }
                     // bruteforce step index by finding the lowest track root mean square 
                     if (doGuess && settings.guessInitialBgmState) {
-                        var bestRms = 0xFFFFFFFF; // arbitrarily large
-                        var bestStepIndex = 0;
+                        let bestRms = 0xFFFFFFFF; // arbitrarily large
+                        let bestStepIndex = 0;
                         for (stepIndex = 0; stepIndex <= 40; stepIndex++) {
-                            var dstPtr_1 = this.decodeAdpcm(src, dst, predictor, stepIndex);
-                            var rms = pcmGetRms(dst.subarray(0, dstPtr_1)); // uses same underlying memory as dst
+                            const dstPtr = this.decodeAdpcm(src, dst, predictor, stepIndex);
+                            const rms = pcmGetRms(dst.subarray(0, dstPtr)); // uses same underlying memory as dst
                             if (rms < bestRms) {
                                 bestRms = rms;
                                 bestStepIndex = stepIndex;
@@ -2880,7 +2643,7 @@ Keep on Flipnoting!
                     }
                 }
                 else {
-                    var trackIndex = this.soundEffectTracks.indexOf(trackId);
+                    const trackIndex = this.soundEffectTracks.indexOf(trackId);
                     // allow manual overrides for default predictor
                     if (Array.isArray(settings.initialSePredictors) && settings.initialSePredictors[trackIndex] !== undefined)
                         predictor = settings.initialSePredictors[trackIndex];
@@ -2890,69 +2653,66 @@ Keep on Flipnoting!
                 }
             }
             // decode track
-            var dstPtr = this.decodeAdpcm(src, dst, predictor, stepIndex);
+            const dstPtr = this.decodeAdpcm(src, dst, predictor, stepIndex);
             // copy part of dst with slice() so dst buffer can be garbage collected
             return dst.slice(0, dstPtr);
-        };
+        }
         /**
          * Get the decoded audio data for a given track, using the specified samplerate
          * @returns Signed 16-bit PCM audio
          * @category Audio
         */
-        KwzParser.prototype.getAudioTrackPcm = function (trackId, dstFreq) {
-            if (dstFreq === void 0) { dstFreq = this.sampleRate; }
-            var srcPcm = this.decodeAudioTrack(trackId);
-            var srcFreq = this.rawSampleRate;
+        getAudioTrackPcm(trackId, dstFreq = this.sampleRate) {
+            const srcPcm = this.decodeAudioTrack(trackId);
+            let srcFreq = this.rawSampleRate;
             if (trackId === exports.FlipnoteAudioTrack.BGM) {
-                var bgmAdjust = (1 / this.bgmrate) / (1 / this.framerate);
+                const bgmAdjust = (1 / this.bgmrate) / (1 / this.framerate);
                 srcFreq = this.rawSampleRate * bgmAdjust;
             }
             if (srcFreq !== dstFreq)
                 return pcmResampleLinear(srcPcm, srcFreq, dstFreq);
             return srcPcm;
-        };
-        KwzParser.prototype.pcmAudioMix = function (src, dst, dstOffset) {
-            if (dstOffset === void 0) { dstOffset = 0; }
-            var srcSize = src.length;
-            var dstSize = dst.length;
-            for (var n = 0; n < srcSize; n++) {
+        }
+        pcmAudioMix(src, dst, dstOffset = 0) {
+            const srcSize = src.length;
+            const dstSize = dst.length;
+            for (let n = 0; n < srcSize; n++) {
                 if (dstOffset + n > dstSize)
                     break;
                 // half src volume
-                var samp = dst[dstOffset + n] + src[n];
+                const samp = dst[dstOffset + n] + src[n];
                 dst[dstOffset + n] = clamp(samp, -32768, 32767);
             }
-        };
+        }
         /**
          * Get the full mixed audio for the Flipnote, using the specified samplerate
          * @returns Signed 16-bit PCM audio
          * @category Audio
         */
-        KwzParser.prototype.getAudioMasterPcm = function (dstFreq) {
-            if (dstFreq === void 0) { dstFreq = this.sampleRate; }
-            var dstSize = Math.ceil(this.duration * dstFreq);
-            var master = new Int16Array(dstSize);
-            var hasBgm = this.hasAudioTrack(exports.FlipnoteAudioTrack.BGM);
-            var hasSe1 = this.hasAudioTrack(exports.FlipnoteAudioTrack.SE1);
-            var hasSe2 = this.hasAudioTrack(exports.FlipnoteAudioTrack.SE2);
-            var hasSe3 = this.hasAudioTrack(exports.FlipnoteAudioTrack.SE3);
-            var hasSe4 = this.hasAudioTrack(exports.FlipnoteAudioTrack.SE4);
+        getAudioMasterPcm(dstFreq = this.sampleRate) {
+            const dstSize = Math.ceil(this.duration * dstFreq);
+            const master = new Int16Array(dstSize);
+            const hasBgm = this.hasAudioTrack(exports.FlipnoteAudioTrack.BGM);
+            const hasSe1 = this.hasAudioTrack(exports.FlipnoteAudioTrack.SE1);
+            const hasSe2 = this.hasAudioTrack(exports.FlipnoteAudioTrack.SE2);
+            const hasSe3 = this.hasAudioTrack(exports.FlipnoteAudioTrack.SE3);
+            const hasSe4 = this.hasAudioTrack(exports.FlipnoteAudioTrack.SE4);
             // Mix background music
             if (hasBgm) {
-                var bgmPcm = this.getAudioTrackPcm(exports.FlipnoteAudioTrack.BGM, dstFreq);
+                const bgmPcm = this.getAudioTrackPcm(exports.FlipnoteAudioTrack.BGM, dstFreq);
                 this.pcmAudioMix(bgmPcm, master, 0);
             }
             // Mix sound effects
             if (hasSe1 || hasSe2 || hasSe3 || hasSe4) {
-                var samplesPerFrame = dstFreq / this.framerate;
-                var se1Pcm = hasSe1 ? this.getAudioTrackPcm(exports.FlipnoteAudioTrack.SE1, dstFreq) : null;
-                var se2Pcm = hasSe2 ? this.getAudioTrackPcm(exports.FlipnoteAudioTrack.SE2, dstFreq) : null;
-                var se3Pcm = hasSe3 ? this.getAudioTrackPcm(exports.FlipnoteAudioTrack.SE3, dstFreq) : null;
-                var se4Pcm = hasSe4 ? this.getAudioTrackPcm(exports.FlipnoteAudioTrack.SE4, dstFreq) : null;
-                var soundEffectFlags = this.decodeSoundFlags();
-                for (var i = 0; i < this.frameCount; i++) {
-                    var seFlags = soundEffectFlags[i];
-                    var seOffset = Math.ceil(i * samplesPerFrame);
+                const samplesPerFrame = dstFreq / this.framerate;
+                const se1Pcm = hasSe1 ? this.getAudioTrackPcm(exports.FlipnoteAudioTrack.SE1, dstFreq) : null;
+                const se2Pcm = hasSe2 ? this.getAudioTrackPcm(exports.FlipnoteAudioTrack.SE2, dstFreq) : null;
+                const se3Pcm = hasSe3 ? this.getAudioTrackPcm(exports.FlipnoteAudioTrack.SE3, dstFreq) : null;
+                const se4Pcm = hasSe4 ? this.getAudioTrackPcm(exports.FlipnoteAudioTrack.SE4, dstFreq) : null;
+                const soundEffectFlags = this.decodeSoundFlags();
+                for (let i = 0; i < this.frameCount; i++) {
+                    const seFlags = soundEffectFlags[i];
+                    const seOffset = Math.ceil(i * samplesPerFrame);
                     if (hasSe1 && seFlags[0])
                         this.pcmAudioMix(se1Pcm, master, seOffset);
                     if (hasSe2 && seFlags[1])
@@ -2965,110 +2725,98 @@ Keep on Flipnoting!
             }
             this.audioClipRatio = pcmGetClippingRatio(master);
             return master;
-        };
+        }
         /**
          * Get the body of the Flipnote - the data that is digested for the signature
          * @category Verification
          */
-        KwzParser.prototype.getBody = function () {
-            var bodyEnd = this.bodyEndOffset;
+        getBody() {
+            const bodyEnd = this.bodyEndOffset;
             return this.bytes.subarray(0, bodyEnd);
-        };
+        }
         /**
          * Get the Flipnote's signature data
          * @category Verification
          */
-        KwzParser.prototype.getSignature = function () {
-            var bodyEnd = this.bodyEndOffset;
+        getSignature() {
+            const bodyEnd = this.bodyEndOffset;
             return this.bytes.subarray(bodyEnd, bodyEnd + 256);
-        };
+        }
         /**
          * Verify whether this Flipnote's signature is valid
          * @category Verification
          */
-        KwzParser.prototype.verify = function () {
-            return __awaiter(this, void 0, void 0, function () {
-                var key;
-                return __generator(this, function (_b) {
-                    switch (_b.label) {
-                        case 0: return [4 /*yield*/, rsaLoadPublicKey(KWZ_PUBLIC_KEY, 'SHA-256')];
-                        case 1:
-                            key = _b.sent();
-                            return [4 /*yield*/, rsaVerify(key, this.getSignature(), this.getBody())];
-                        case 2: return [2 /*return*/, _b.sent()];
-                    }
-                });
-            });
-        };
-        var _a;
-        _a = Symbol.toStringTag;
-        /** Default KWZ parser settings */
-        KwzParser.defaultSettings = {
-            quickMeta: false,
-            dsiLibraryNote: false,
-            borderCrop: false,
-            guessInitialBgmState: true,
-            initialBgmPredictor: null,
-            initialBgmStepIndex: null,
-            initialSePredictors: null,
-            initialSeStepIndices: null,
-        };
-        /** File format type */
-        KwzParser.format = exports.FlipnoteFormat.KWZ;
-        /** Animation frame width */
-        KwzParser.width = 320;
-        /** Animation frame height */
-        KwzParser.height = 240;
-        /** Animation frame aspect ratio */
-        KwzParser.aspect = 3 / 4;
-        /** Number of animation frame layers */
-        KwzParser.numLayers = 3;
-        /** Number of colors per layer (aside from transparent) */
-        KwzParser.numLayerColors = 2;
-        /** Audio track base sample rate */
-        KwzParser.rawSampleRate = 16364;
-        /** Audio output sample rate  */
-        KwzParser.sampleRate = 32768;
-        /** Which audio tracks are available in this format */
-        KwzParser.audioTracks = [
-            exports.FlipnoteAudioTrack.BGM,
-            exports.FlipnoteAudioTrack.SE1,
-            exports.FlipnoteAudioTrack.SE2,
-            exports.FlipnoteAudioTrack.SE3,
-            exports.FlipnoteAudioTrack.SE4,
-        ];
-        /** Which sound effect tracks are available in this format */
-        KwzParser.soundEffectTracks = [
-            exports.FlipnoteSoundEffectTrack.SE1,
-            exports.FlipnoteSoundEffectTrack.SE2,
-            exports.FlipnoteSoundEffectTrack.SE3,
-            exports.FlipnoteSoundEffectTrack.SE4,
-        ];
-        /** Global animation frame color palette */
-        KwzParser.globalPalette = [
-            KWZ_PALETTE.WHITE,
-            KWZ_PALETTE.BLACK,
-            KWZ_PALETTE.RED,
-            KWZ_PALETTE.YELLOW,
-            KWZ_PALETTE.GREEN,
-            KWZ_PALETTE.BLUE,
-            KWZ_PALETTE.NONE,
-        ];
-        /** Public key used for Flipnote verification, in PEM format */
-        KwzParser.publicKey = KWZ_PUBLIC_KEY;
-        return KwzParser;
-    }(FlipnoteParserBase));
+        async verify() {
+            const key = await rsaLoadPublicKey(KWZ_PUBLIC_KEY, 'SHA-256');
+            return await rsaVerify(key, this.getSignature(), this.getBody());
+        }
+    }
+    _a = Symbol.toStringTag;
+    /** Default KWZ parser settings */
+    KwzParser.defaultSettings = {
+        quickMeta: false,
+        dsiLibraryNote: false,
+        borderCrop: false,
+        guessInitialBgmState: true,
+        initialBgmPredictor: null,
+        initialBgmStepIndex: null,
+        initialSePredictors: null,
+        initialSeStepIndices: null,
+    };
+    /** File format type */
+    KwzParser.format = exports.FlipnoteFormat.KWZ;
+    /** Animation frame width */
+    KwzParser.width = 320;
+    /** Animation frame height */
+    KwzParser.height = 240;
+    /** Animation frame aspect ratio */
+    KwzParser.aspect = 3 / 4;
+    /** Number of animation frame layers */
+    KwzParser.numLayers = 3;
+    /** Number of colors per layer (aside from transparent) */
+    KwzParser.numLayerColors = 2;
+    /** Audio track base sample rate */
+    KwzParser.rawSampleRate = 16364;
+    /** Audio output sample rate  */
+    KwzParser.sampleRate = 32768;
+    /** Which audio tracks are available in this format */
+    KwzParser.audioTracks = [
+        exports.FlipnoteAudioTrack.BGM,
+        exports.FlipnoteAudioTrack.SE1,
+        exports.FlipnoteAudioTrack.SE2,
+        exports.FlipnoteAudioTrack.SE3,
+        exports.FlipnoteAudioTrack.SE4,
+    ];
+    /** Which sound effect tracks are available in this format */
+    KwzParser.soundEffectTracks = [
+        exports.FlipnoteSoundEffectTrack.SE1,
+        exports.FlipnoteSoundEffectTrack.SE2,
+        exports.FlipnoteSoundEffectTrack.SE3,
+        exports.FlipnoteSoundEffectTrack.SE4,
+    ];
+    /** Global animation frame color palette */
+    KwzParser.globalPalette = [
+        KWZ_PALETTE.WHITE,
+        KWZ_PALETTE.BLACK,
+        KWZ_PALETTE.RED,
+        KWZ_PALETTE.YELLOW,
+        KWZ_PALETTE.GREEN,
+        KWZ_PALETTE.BLUE,
+        KWZ_PALETTE.NONE,
+    ];
+    /** Public key used for Flipnote verification, in PEM format */
+    KwzParser.publicKey = KWZ_PUBLIC_KEY;
 
     /**
      * Loader for web url strings (Browser only)
      * @category Loader
      */
-    var webUrlLoader = {
+    const webUrlLoader = {
         matches: function (source) {
             return isBrowser && typeof source === 'string';
         },
         load: function (source, resolve, reject) {
-            var xhr = new XMLHttpRequest();
+            const xhr = new XMLHttpRequest();
             xhr.open('GET', source, true);
             xhr.responseType = 'arraybuffer';
             xhr.onreadystatechange = function (e) {
@@ -3091,21 +2839,21 @@ Keep on Flipnoting!
      * Loader for web url strings (Node only)
      * @category Loader
      */
-    var nodeUrlLoader = {
+    const nodeUrlLoader = {
         matches: function (source) {
             return isNode && typeof source === 'string';
         },
         load: function (source, resolve, reject) {
             assertNodeEnv();
-            var http = dynamicRequire(module, 'https');
-            http.get(source, function (res) {
-                var chunks = [];
-                res.on('data', function (chunk) { return chunks.push(chunk); });
-                res.on('end', function () {
-                    var buffer = Buffer.concat(chunks);
+            const http = dynamicRequire(module, 'https');
+            http.get(source, (res) => {
+                const chunks = [];
+                res.on('data', chunk => chunks.push(chunk));
+                res.on('end', () => {
+                    const buffer = Buffer.concat(chunks);
                     resolve(buffer.buffer);
                 });
-                res.on('error', function (err) { return reject(err); });
+                res.on('error', (err) => reject(err));
             });
         }
     };
@@ -3114,7 +2862,7 @@ Keep on Flipnoting!
      * Loader for File objects (browser only)
      * @category Loader
      */
-    var fileLoader = {
+    const fileLoader = {
         matches: function (source) {
             return isBrowser
                 && typeof File !== 'undefined'
@@ -3122,11 +2870,11 @@ Keep on Flipnoting!
                 && source instanceof File;
         },
         load: function (source, resolve, reject) {
-            var reader = new FileReader();
-            reader.onload = function (event) {
+            const reader = new FileReader();
+            reader.onload = (event) => {
                 resolve(reader.result);
             };
-            reader.onerror = function (event) {
+            reader.onerror = (event) => {
                 reject({ type: 'fileReadError' });
             };
             reader.readAsArrayBuffer(source);
@@ -3137,7 +2885,7 @@ Keep on Flipnoting!
      * Loader for Blob objects (browser only)
      * @category Loader
      */
-    var blobLoader = {
+    const blobLoader = {
         matches: function (source) {
             return isBrowser
                 && typeof Blob !== 'undefined'
@@ -3156,7 +2904,7 @@ Keep on Flipnoting!
      * Loader for Buffer objects (Node only)
      * @category Loader
      */
-    var nodeBufferLoader = {
+    const nodeBufferLoader = {
         matches: function (source) {
             return isNode && (source instanceof Buffer);
         },
@@ -3169,7 +2917,7 @@ Keep on Flipnoting!
      * Loader for ArrayBuffer objects
      * @category Loader
      */
-    var arrayBufferLoader = {
+    const arrayBufferLoader = {
         matches: function (source) {
             return (source instanceof ArrayBuffer);
         },
@@ -3179,7 +2927,7 @@ Keep on Flipnoting!
     };
 
     /** @category Loader */
-    var DEFAULT_LOADERS = [
+    const DEFAULT_LOADERS = [
         webUrlLoader,
         nodeUrlLoader,
         fileLoader,
@@ -3188,11 +2936,10 @@ Keep on Flipnoting!
         arrayBufferLoader
     ];
     /** @internal */
-    function loadSource(source, loaders) {
-        if (loaders === void 0) { loaders = DEFAULT_LOADERS; }
-        return new Promise(function (resolve, reject) {
-            for (var i = 0; i < loaders.length; i++) {
-                var loader = loaders[i];
+    function loadSource(source, loaders = DEFAULT_LOADERS) {
+        return new Promise((resolve, reject) => {
+            for (let i = 0; i < loaders.length; i++) {
+                const loader = loaders[i];
                 if (loader.matches(source))
                     return loader.load(source, resolve, reject);
             }
@@ -3213,13 +2960,13 @@ Keep on Flipnoting!
      * @param parserConfig - Config settings to pass to the parser, see {@link FlipnoteParserSettings}
      * @param loaders - Optional list of file loaders ({@link LoaderDefinition}) when attempting to load a Flipnote. Loaders are tried in sequence until a matching one is found for the requested input.
      */
-    var parseSource = function (source, parserConfig, loaders) {
+    const parseSource = (source, parserConfig, loaders) => {
         return loadSource(source, loaders)
-            .then(function (arrayBuffer) {
-            return new Promise(function (resolve, reject) {
+            .then((arrayBuffer) => {
+            return new Promise((resolve, reject) => {
                 // check the buffer's magic to identify which format it uses
-                var magicBytes = new Uint8Array(arrayBuffer.slice(0, 4));
-                var magic = (magicBytes[0] << 24) | (magicBytes[1] << 16) | (magicBytes[2] << 8) | magicBytes[3];
+                const magicBytes = new Uint8Array(arrayBuffer.slice(0, 4));
+                const magic = (magicBytes[0] << 24) | (magicBytes[1] << 16) | (magicBytes[2] << 8) | magicBytes[3];
                 // check if magic is PARA (ppm magic)
                 if (magic === 0x50415241)
                     resolve(new PpmParser(arrayBuffer, parserConfig));
@@ -3269,7 +3016,7 @@ Keep on Flipnoting!
         PlayerEvent["Destroy"] = "destroy";
     })(exports.PlayerEvent || (exports.PlayerEvent = {}));
     /** @internal */
-    var supportedEvents = [
+    const supportedEvents = [
         exports.PlayerEvent.Play,
         exports.PlayerEvent.Pause,
         exports.PlayerEvent.CanPlay,
@@ -3301,8 +3048,8 @@ Keep on Flipnoting!
     function createTimeRanges(ranges) {
         return {
             length: ranges.length,
-            start: function (i) { return ranges[i][0]; },
-            end: function (i) { return ranges[i][1]; },
+            start: (i) => ranges[i][0],
+            end: (i) => ranges[i][1],
         };
     }
     /** @internal */
@@ -3311,9 +3058,9 @@ Keep on Flipnoting!
     }
     /** @internal */
     function formatTime(seconds) {
-        var m = Math.floor((seconds % 3600) / 60);
-        var s = Math.floor(seconds % 60);
-        return "".concat(m, ":").concat(padNumber(s, 2));
+        const m = Math.floor((seconds % 3600) / 60);
+        const s = Math.floor(seconds % 60);
+        return `${m}:${padNumber(s, 2)}`;
     }
 
     var CanvasStereoscopicMode;
@@ -3324,15 +3071,35 @@ Keep on Flipnoting!
         CanvasStereoscopicMode[CanvasStereoscopicMode["Anaglyph"] = 2] = "Anaglyph";
     })(CanvasStereoscopicMode || (CanvasStereoscopicMode = {}));
     /** @internal */
-    var CanvasInterface = /** @class */ (function () {
-        function CanvasInterface(parent, width, height, options) {
-        }
-        return CanvasInterface;
-    }());
+    class CanvasInterface {
+        constructor(parent, width, height, options) { }
+    }
 
     /* @license twgl.js 4.24.0 Copyright (c) 2015, Gregg Tavares All Rights Reserved.
     Available via the MIT license.
     see: http://github.com/greggman/twgl.js for details */
+    /*
+     * Copyright 2019 Gregg Tavares
+     *
+     * Permission is hereby granted, free of charge, to any person obtaining a
+     * copy of this software and associated documentation files (the "Software"),
+     * to deal in the Software without restriction, including without limitation
+     * the rights to use, copy, modify, merge, publish, distribute, sublicense,
+     * and/or sell copies of the Software, and to permit persons to whom the
+     * Software is furnished to do so, subject to the following conditions:
+     *
+     * The above copyright notice and this permission notice shall be included in
+     * all copies or substantial portions of the Software.
+     *
+     * THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
+     * IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
+     * FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT.  IN NO EVENT SHALL
+     * THE AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
+     * LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING
+     * FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER
+     * DEALINGS IN THE SOFTWARE.
+     */
+
 
     /*
      * Copyright 2019 Gregg Tavares
@@ -3364,6 +3131,36 @@ Keep on Flipnoting!
     const INT                            = 0x1404;
     const UNSIGNED_INT                   = 0x1405;
     const FLOAT                          = 0x1406;
+    const UNSIGNED_SHORT_4_4_4_4       = 0x8033;
+    const UNSIGNED_SHORT_5_5_5_1       = 0x8034;
+    const UNSIGNED_SHORT_5_6_5         = 0x8363;
+    const HALF_FLOAT                   = 0x140B;
+    const UNSIGNED_INT_2_10_10_10_REV  = 0x8368;
+    const UNSIGNED_INT_10F_11F_11F_REV = 0x8C3B;
+    const UNSIGNED_INT_5_9_9_9_REV     = 0x8C3E;
+    const FLOAT_32_UNSIGNED_INT_24_8_REV = 0x8DAD;
+    const UNSIGNED_INT_24_8            = 0x84FA;
+
+    const glTypeToTypedArray = {};
+    {
+      const tt = glTypeToTypedArray;
+      tt[BYTE]                           = Int8Array;
+      tt[UNSIGNED_BYTE]                  = Uint8Array;
+      tt[SHORT]                          = Int16Array;
+      tt[UNSIGNED_SHORT]                 = Uint16Array;
+      tt[INT]                            = Int32Array;
+      tt[UNSIGNED_INT]                   = Uint32Array;
+      tt[FLOAT]                          = Float32Array;
+      tt[UNSIGNED_SHORT_4_4_4_4]         = Uint16Array;
+      tt[UNSIGNED_SHORT_5_5_5_1]         = Uint16Array;
+      tt[UNSIGNED_SHORT_5_6_5]           = Uint16Array;
+      tt[HALF_FLOAT]                     = Uint16Array;
+      tt[UNSIGNED_INT_2_10_10_10_REV]    = Uint32Array;
+      tt[UNSIGNED_INT_10F_11F_11F_REV]   = Uint32Array;
+      tt[UNSIGNED_INT_5_9_9_9_REV]       = Uint32Array;
+      tt[FLOAT_32_UNSIGNED_INT_24_8_REV] = Uint32Array;
+      tt[UNSIGNED_INT_24_8]              = Uint32Array;
+    }
 
     /**
      * Get the GL type for a typedArray
@@ -3995,6 +3792,56 @@ Keep on Flipnoting!
       // This might also be the correct check but I'm assuming it's slow-ish
       // return gl instanceof WebGL2RenderingContext;
       return !!gl.texStorage2D;
+    }
+
+    // NOTE: Chrome supports 2D canvas in a Worker (behind flag as of v64 but
+    //       not only does Firefox NOT support it but Firefox freezes immediately
+    //       if you try to create one instead of just returning null and continuing.
+    //  : (global.OffscreenCanvas && (new global.OffscreenCanvas(1, 1)).getContext("2d"));  // OffscreenCanvas may not support 2d
+
+    // NOTE: We can maybe remove some of the need for the 2d canvas. In WebGL2
+    // we can use the various unpack settings. Otherwise we could try using
+    // the ability of an ImageBitmap to be cut. Unfortunately cutting an ImageBitmap
+    // is async and the current TWGL code expects a non-Async result though that
+    // might not be a problem. ImageBitmap though is not available in Edge or Safari
+    // as of 2018-01-02
+
+    /* PixelFormat */
+    const ALPHA                          = 0x1906;
+    const RGB                            = 0x1907;
+    const RGBA                           = 0x1908;
+    const LUMINANCE                      = 0x1909;
+    const LUMINANCE_ALPHA                = 0x190A;
+    const DEPTH_COMPONENT                = 0x1902;
+    const DEPTH_STENCIL                  = 0x84F9;
+
+    const RG                           = 0x8227;
+    const RG_INTEGER                   = 0x8228;
+    const RED                          = 0x1903;
+    const RED_INTEGER                  = 0x8D94;
+    const RGB_INTEGER                  = 0x8D98;
+    const RGBA_INTEGER                 = 0x8D99;
+
+    const formatInfo = {};
+    {
+      // NOTE: this is named `numColorComponents` vs `numComponents` so we can let Uglify mangle
+      // the name.
+      const f = formatInfo;
+      f[ALPHA]           = { numColorComponents: 1, };
+      f[LUMINANCE]       = { numColorComponents: 1, };
+      f[LUMINANCE_ALPHA] = { numColorComponents: 2, };
+      f[RGB]             = { numColorComponents: 3, };
+      f[RGBA]            = { numColorComponents: 4, };
+      f[RED]             = { numColorComponents: 1, };
+      f[RED_INTEGER]     = { numColorComponents: 1, };
+      f[RG]              = { numColorComponents: 2, };
+      f[RG_INTEGER]      = { numColorComponents: 2, };
+      f[RGB]             = { numColorComponents: 3, };
+      f[RGB_INTEGER]     = { numColorComponents: 3, };
+      f[RGBA]            = { numColorComponents: 4, };
+      f[RGBA_INTEGER]    = { numColorComponents: 4, };
+      f[DEPTH_COMPONENT] = { numColorComponents: 1, };
+      f[DEPTH_STENCIL]   = { numColorComponents: 2, };
     }
 
     const TEXTURE0                       = 0x84c0;
@@ -5076,7 +4923,17 @@ Keep on Flipnoting!
      *
      * Only available in browser contexts
      */
-    var WebglCanvas = /** @class */ (function () {
+    class WebglCanvas {
+        static isSupported() {
+            if (!isBrowser)
+                return false;
+            let testCanvas = document.createElement('canvas');
+            let testCtx = testCanvas.getContext('2d');
+            const supported = testCtx !== null;
+            testCanvas = null;
+            testCtx = null;
+            return supported;
+        }
         /**
          * Creates a new WebGlCanvas instance
          * @param el - Canvas HTML element to use as a rendering surface
@@ -5085,11 +4942,7 @@ Keep on Flipnoting!
          *
          * The ratio between `width` and `height` should be 3:4 for best results
          */
-        function WebglCanvas(parent, width, height, options) {
-            if (width === void 0) { width = 640; }
-            if (height === void 0) { height = 480; }
-            if (options === void 0) { options = {}; }
-            var _this = this;
+        constructor(parent, width = 640, height = 480, options = {}) {
             /** */
             this.supportedStereoscopeModes = [
                 CanvasStereoscopicMode.None,
@@ -5113,21 +4966,21 @@ Keep on Flipnoting!
                 frameBuffers: []
             };
             this.isCtxLost = false;
-            this.handleContextLoss = function (e) {
-                _this.destroy();
+            this.handleContextLoss = (e) => {
+                this.destroy();
                 if (e)
                     e.preventDefault();
-                if (!_this.isCtxLost)
-                    _this.options.onlost();
-                _this.isCtxLost = true;
+                if (!this.isCtxLost)
+                    this.options.onlost();
+                this.isCtxLost = true;
             };
-            this.handleContextRestored = function (e) {
-                _this.isCtxLost = false;
-                _this.init();
-                _this.options.onrestored();
+            this.handleContextRestored = (e) => {
+                this.isCtxLost = false;
+                this.init();
+                this.options.onrestored();
             };
             assertBrowserEnv();
-            this.options = __assign(__assign({}, WebglCanvas.defaultOptions), options);
+            this.options = { ...WebglCanvas.defaultOptions, ...options };
             this.width = width;
             this.height = height;
             this.canvas = document.createElement('canvas');
@@ -5142,19 +4995,9 @@ Keep on Flipnoting!
                 parent.appendChild(this.canvas);
             this.init();
         }
-        WebglCanvas.isSupported = function () {
-            if (!isBrowser)
-                return false;
-            var testCanvas = document.createElement('canvas');
-            var testCtx = testCanvas.getContext('2d');
-            var supported = testCtx !== null;
-            testCanvas = null;
-            testCtx = null;
-            return supported;
-        };
-        WebglCanvas.prototype.init = function () {
+        init() {
             this.setCanvasSize(this.width, this.height);
-            var gl = this.gl;
+            const gl = this.gl;
             if (this.checkContextLoss())
                 return;
             this.layerProgram = this.createProgram(vertShaderLayer, fragShaderLayer);
@@ -5164,73 +5007,73 @@ Keep on Flipnoting!
             this.layerTexture = this.createTexture(gl.RGBA, gl.LINEAR, gl.CLAMP_TO_EDGE);
             this.frameTexture = this.createTexture(gl.RGBA, gl.LINEAR, gl.CLAMP_TO_EDGE);
             this.frameBuffer = this.createFramebuffer(this.frameTexture);
-            var debugInfo = gl.getExtension('WEBGL_debug_renderer_info');
-            var renderer = gl.getParameter(debugInfo.UNMASKED_RENDERER_WEBGL);
-            var userAgent = navigator.userAgent;
-            var isMacFirefox = userAgent.includes('Firefox') && userAgent.includes('Mac');
+            const debugInfo = gl.getExtension('WEBGL_debug_renderer_info');
+            const renderer = gl.getParameter(debugInfo.UNMASKED_RENDERER_WEBGL);
+            const userAgent = navigator.userAgent;
+            const isMacFirefox = userAgent.includes('Firefox') && userAgent.includes('Mac');
             this.applyFirefoxFix = isMacFirefox && renderer.includes('Apple M');
-        };
-        WebglCanvas.prototype.createProgram = function (vertexShaderSource, fragmentShaderSource) {
+        }
+        createProgram(vertexShaderSource, fragmentShaderSource) {
             if (this.checkContextLoss())
                 return;
-            var gl = this.gl;
-            var vert = this.createShader(gl.VERTEX_SHADER, vertexShaderSource);
-            var frag = this.createShader(gl.FRAGMENT_SHADER, fragmentShaderSource);
-            var program = gl.createProgram();
+            const gl = this.gl;
+            const vert = this.createShader(gl.VERTEX_SHADER, vertexShaderSource);
+            const frag = this.createShader(gl.FRAGMENT_SHADER, fragmentShaderSource);
+            const program = gl.createProgram();
             // set up shaders
             gl.attachShader(program, vert);
             gl.attachShader(program, frag);
             // link program
             gl.linkProgram(program);
             if (!gl.getProgramParameter(program, gl.LINK_STATUS)) {
-                var log = gl.getProgramInfoLog(program);
+                const log = gl.getProgramInfoLog(program);
                 gl.deleteProgram(program);
                 throw new Error(log);
             }
-            var programInfo = createProgramInfoFromProgram(gl, program);
+            const programInfo = createProgramInfoFromProgram(gl, program);
             this.refs.programs.push(program);
             return programInfo;
-        };
-        WebglCanvas.prototype.createShader = function (type, source) {
+        }
+        createShader(type, source) {
             if (this.checkContextLoss())
                 return;
-            var gl = this.gl;
-            var shader = gl.createShader(type);
+            const gl = this.gl;
+            const shader = gl.createShader(type);
             gl.shaderSource(shader, source);
             gl.compileShader(shader);
             // test if shader compilation was successful
             if (!gl.getShaderParameter(shader, gl.COMPILE_STATUS)) {
-                var log = gl.getShaderInfoLog(shader);
+                const log = gl.getShaderInfoLog(shader);
                 gl.deleteShader(shader);
                 throw new Error(log);
             }
             this.refs.shaders.push(shader);
             return shader;
-        };
+        }
         // creating a subdivided quad seems to produce slightly nicer texture filtering
-        WebglCanvas.prototype.createScreenQuad = function (x0, y0, width, height, xSubdivs, ySubdivs) {
+        createScreenQuad(x0, y0, width, height, xSubdivs, ySubdivs) {
             if (this.checkContextLoss())
                 return;
-            var numVerts = (xSubdivs + 1) * (ySubdivs + 1);
-            var numVertsAcross = xSubdivs + 1;
-            var positions = new Float32Array(numVerts * 2);
-            var texCoords = new Float32Array(numVerts * 2);
-            var positionPtr = 0;
-            var texCoordPtr = 0;
-            for (var y = 0; y <= ySubdivs; y++) {
-                for (var x = 0; x <= xSubdivs; x++) {
-                    var u = x / xSubdivs;
-                    var v = y / ySubdivs;
+            const numVerts = (xSubdivs + 1) * (ySubdivs + 1);
+            const numVertsAcross = xSubdivs + 1;
+            const positions = new Float32Array(numVerts * 2);
+            const texCoords = new Float32Array(numVerts * 2);
+            let positionPtr = 0;
+            let texCoordPtr = 0;
+            for (let y = 0; y <= ySubdivs; y++) {
+                for (let x = 0; x <= xSubdivs; x++) {
+                    const u = x / xSubdivs;
+                    const v = y / ySubdivs;
                     positions[positionPtr++] = x0 + width * u;
                     positions[positionPtr++] = y0 + height * v;
                     texCoords[texCoordPtr++] = u;
                     texCoords[texCoordPtr++] = v;
                 }
             }
-            var indices = new Uint16Array(xSubdivs * ySubdivs * 2 * 3);
-            var indicesPtr = 0;
-            for (var y = 0; y < ySubdivs; y++) {
-                for (var x = 0; x < xSubdivs; x++) {
+            const indices = new Uint16Array(xSubdivs * ySubdivs * 2 * 3);
+            let indicesPtr = 0;
+            for (let y = 0; y < ySubdivs; y++) {
+                for (let x = 0; x < xSubdivs; x++) {
                     // triangle 1
                     indices[indicesPtr++] = (y + 0) * numVertsAcross + x;
                     indices[indicesPtr++] = (y + 1) * numVertsAcross + x;
@@ -5241,7 +5084,7 @@ Keep on Flipnoting!
                     indices[indicesPtr++] = (y + 1) * numVertsAcross + x + 1;
                 }
             }
-            var bufferInfo = createBufferInfoFromArrays(this.gl, {
+            const bufferInfo = createBufferInfoFromArrays(this.gl, {
                 position: {
                     numComponents: 2,
                     data: positions
@@ -5253,22 +5096,20 @@ Keep on Flipnoting!
                 indices: indices
             });
             // collect references to buffer objects
-            for (var name_1 in bufferInfo.attribs)
-                this.refs.buffers.push(bufferInfo.attribs[name_1].buffer);
+            for (let name in bufferInfo.attribs)
+                this.refs.buffers.push(bufferInfo.attribs[name].buffer);
             return bufferInfo;
-        };
-        WebglCanvas.prototype.setBuffersAndAttribs = function (program, buffer) {
+        }
+        setBuffersAndAttribs(program, buffer) {
             if (this.checkContextLoss())
                 return;
             setBuffersAndAttributes(this.gl, program.attribSetters, buffer);
-        };
-        WebglCanvas.prototype.createTexture = function (type, minMag, wrap, width, height) {
-            if (width === void 0) { width = 1; }
-            if (height === void 0) { height = 1; }
+        }
+        createTexture(type, minMag, wrap, width = 1, height = 1) {
             if (this.checkContextLoss())
                 return;
-            var gl = this.gl;
-            var tex = gl.createTexture();
+            const gl = this.gl;
+            const tex = gl.createTexture();
             gl.bindTexture(gl.TEXTURE_2D, tex);
             gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_S, wrap);
             gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_T, wrap);
@@ -5277,33 +5118,33 @@ Keep on Flipnoting!
             gl.texImage2D(gl.TEXTURE_2D, 0, type, width, height, 0, type, gl.UNSIGNED_BYTE, null);
             this.refs.textures.push(tex);
             this.textureTypes.set(tex, type);
-            this.textureSizes.set(tex, { width: width, height: height });
+            this.textureSizes.set(tex, { width, height });
             return tex;
-        };
-        WebglCanvas.prototype.resizeTexture = function (texture, width, height) {
+        }
+        resizeTexture(texture, width, height) {
             if (this.checkContextLoss())
                 return;
-            var gl = this.gl;
-            var textureType = this.textureTypes.get(texture);
+            const gl = this.gl;
+            const textureType = this.textureTypes.get(texture);
             gl.bindTexture(gl.TEXTURE_2D, texture);
             gl.texImage2D(gl.TEXTURE_2D, 0, textureType, width, height, 0, textureType, gl.UNSIGNED_BYTE, null);
-            this.textureSizes.set(texture, { width: width, height: height });
-        };
-        WebglCanvas.prototype.createFramebuffer = function (texture) {
+            this.textureSizes.set(texture, { width, height });
+        }
+        createFramebuffer(texture) {
             if (this.checkContextLoss())
                 return;
-            var gl = this.gl;
-            var fb = gl.createFramebuffer();
+            const gl = this.gl;
+            const fb = gl.createFramebuffer();
             gl.bindFramebuffer(gl.FRAMEBUFFER, fb);
             gl.framebufferTexture2D(gl.FRAMEBUFFER, gl.COLOR_ATTACHMENT0, gl.TEXTURE_2D, texture, 0);
             this.refs.frameBuffers.push(fb);
             this.frameBufferTextures.set(fb, texture);
             return fb;
-        };
-        WebglCanvas.prototype.useFramebuffer = function (fb, viewX, viewY, viewWidth, viewHeight) {
+        }
+        useFramebuffer(fb, viewX, viewY, viewWidth, viewHeight) {
             if (this.checkContextLoss())
                 return;
-            var gl = this.gl;
+            const gl = this.gl;
             if (fb === null) {
                 gl.bindFramebuffer(gl.FRAMEBUFFER, null);
                 /**
@@ -5313,31 +5154,31 @@ Keep on Flipnoting!
                  * Need to test whether only specific versions of Firefox are affected, if it's only an Apple Silicon thing, etc, etc...
                  */
                 if (this.applyFirefoxFix) {
-                    var srcWidth = this.srcWidth;
-                    var srcHeight = this.srcHeight;
-                    var sx = gl.drawingBufferWidth / srcWidth;
-                    var sy = gl.drawingBufferHeight / srcHeight;
-                    var adj = srcWidth === 256 ? 1 : 0; // ??????? why
+                    const srcWidth = this.srcWidth;
+                    const srcHeight = this.srcHeight;
+                    const sx = gl.drawingBufferWidth / srcWidth;
+                    const sy = gl.drawingBufferHeight / srcHeight;
+                    const adj = srcWidth === 256 ? 1 : 0; // ??????? why
                     viewWidth = gl.drawingBufferWidth * (sx - adj);
                     viewHeight = gl.drawingBufferHeight * (sy - adj);
                     viewX = -(viewWidth - srcWidth * sx);
                     viewY = -(viewHeight - srcHeight * sy);
                 }
-                gl.viewport(viewX !== null && viewX !== void 0 ? viewX : 0, viewY !== null && viewY !== void 0 ? viewY : 0, viewWidth !== null && viewWidth !== void 0 ? viewWidth : gl.drawingBufferWidth, viewHeight !== null && viewHeight !== void 0 ? viewHeight : gl.drawingBufferHeight);
+                gl.viewport(viewX ?? 0, viewY ?? 0, viewWidth ?? gl.drawingBufferWidth, viewHeight ?? gl.drawingBufferHeight);
             }
             else {
-                var tex = this.frameBufferTextures.get(fb);
-                var _a = this.textureSizes.get(tex), width = _a.width, height = _a.height;
+                const tex = this.frameBufferTextures.get(fb);
+                const { width, height } = this.textureSizes.get(tex);
                 gl.bindFramebuffer(gl.FRAMEBUFFER, fb);
-                gl.viewport(viewX !== null && viewX !== void 0 ? viewX : 0, viewY !== null && viewY !== void 0 ? viewY : 0, viewWidth !== null && viewWidth !== void 0 ? viewWidth : width, viewHeight !== null && viewHeight !== void 0 ? viewHeight : height);
+                gl.viewport(viewX ?? 0, viewY ?? 0, viewWidth ?? width, viewHeight ?? height);
             }
-        };
-        WebglCanvas.prototype.resizeFramebuffer = function (fb, width, height) {
+        }
+        resizeFramebuffer(fb, width, height) {
             if (this.checkContextLoss())
                 return;
-            var texture = this.frameBufferTextures.get(fb);
+            const texture = this.frameBufferTextures.get(fb);
             this.resizeTexture(texture, width, height);
-        };
+        }
         /**
          * Resize the canvas surface
          * @param width - New canvas width, in CSS pixels
@@ -5345,28 +5186,28 @@ Keep on Flipnoting!
          *
          * The ratio between `width` and `height` should be 3:4 for best results
          */
-        WebglCanvas.prototype.setCanvasSize = function (width, height) {
-            var dpi = this.options.useDpi ? (window.devicePixelRatio || 1) : 1;
-            var internalWidth = width * dpi;
-            var internalHeight = height * dpi;
+        setCanvasSize(width, height) {
+            const dpi = this.options.useDpi ? (window.devicePixelRatio || 1) : 1;
+            const internalWidth = width * dpi;
+            const internalHeight = height * dpi;
             this.width = width;
             this.height = height;
             this.canvas.width = internalWidth;
             this.canvas.height = internalHeight;
             this.dstWidth = internalWidth;
             this.dstHeight = internalHeight;
-            this.canvas.style.width = "".concat(width, "px");
-            this.canvas.style.height = "".concat(height, "px");
+            this.canvas.style.width = `${width}px`;
+            this.canvas.style.height = `${height}px`;
             this.checkContextLoss();
-        };
+        }
         /**
          * Sets the note to use for this player
          */
-        WebglCanvas.prototype.setNote = function (note) {
+        setNote(note) {
             if (this.checkContextLoss())
                 return;
-            var width = note.imageWidth;
-            var height = note.imageHeight;
+            const width = note.imageWidth;
+            const height = note.imageHeight;
             this.note = note;
             this.srcWidth = width;
             this.srcHeight = height;
@@ -5377,30 +5218,30 @@ Keep on Flipnoting!
             this.frameIndex = undefined;
             // set canvas alt text
             this.canvas.title = note.getTitle();
-        };
+        }
         /**
          * Clear the canvas
          * @param color optional RGBA color to use as a background color
          */
-        WebglCanvas.prototype.clear = function (color) {
+        clear(color) {
             if (this.checkContextLoss())
                 return;
-            var gl = this.gl;
-            var paperColor = color !== null && color !== void 0 ? color : this.note.getFramePalette(this.frameIndex)[0];
-            var _a = __read(paperColor, 4), r = _a[0], g = _a[1], b = _a[2], a = _a[3];
+            const gl = this.gl;
+            const paperColor = color ?? this.note.getFramePalette(this.frameIndex)[0];
+            const [r, g, b, a] = paperColor;
             gl.clearColor(r / 255, g / 255, b / 255, a / 255);
             gl.clear(gl.COLOR_BUFFER_BIT);
-        };
+        }
         /**
          * Draw a frame from the currently loaded Flipnote
          * @param frameIndex
          */
-        WebglCanvas.prototype.drawFrame = function (frameIndex) {
+        drawFrame(frameIndex) {
             if (this.checkContextLoss())
                 return;
-            var gl = this.gl;
-            var mode = this.stereoscopeMode;
-            var strength = this.stereoscopeStrength;
+            const gl = this.gl;
+            const mode = this.stereoscopeMode;
+            const strength = this.stereoscopeStrength;
             this.frameIndex = frameIndex;
             if (mode === CanvasStereoscopicMode.None) {
                 this.drawLayers(frameIndex);
@@ -5415,11 +5256,11 @@ Keep on Flipnoting!
                 this.useFramebuffer(null, gl.drawingBufferWidth / 2, 0, gl.drawingBufferWidth / 2, gl.drawingBufferHeight);
                 this.upscale(gl.drawingBufferWidth / 2, gl.drawingBufferHeight);
             }
-        };
-        WebglCanvas.prototype.upscale = function (width, height) {
+        }
+        upscale(width, height) {
             if (this.checkContextLoss())
                 return;
-            var gl = this.gl;
+            const gl = this.gl;
             gl.useProgram(this.upscaleProgram.program);
             setUniforms(this.upscaleProgram, {
                 // u_flipY: true,
@@ -5428,42 +5269,39 @@ Keep on Flipnoting!
                 u_screenSize: [width, height],
             });
             gl.drawElements(gl.TRIANGLES, this.quadBuffer.numElements, this.quadBuffer.elementType, 0);
-        };
-        WebglCanvas.prototype.requestStereoScopeMode = function (mode) {
+        }
+        requestStereoScopeMode(mode) {
             if (this.supportedStereoscopeModes.includes(mode))
                 this.stereoscopeMode = mode;
             else
                 this.stereoscopeMode = CanvasStereoscopicMode.None;
             this.forceUpdate();
-        };
-        WebglCanvas.prototype.forceUpdate = function () {
+        }
+        forceUpdate() {
             if (this.frameIndex !== undefined)
                 this.drawFrame(this.frameIndex);
-        };
+        }
         /**
          * Returns true if the webGL context has returned an error
          */
-        WebglCanvas.prototype.isErrorState = function () {
-            var gl = this.gl;
+        isErrorState() {
+            const gl = this.gl;
             return gl === null || gl.getError() !== gl.NO_ERROR;
-        };
-        WebglCanvas.prototype.drawLayers = function (frameIndex, depthStrength, depthEye, shouldClear) {
-            if (depthStrength === void 0) { depthStrength = 0; }
-            if (depthEye === void 0) { depthEye = FlipnoteStereoscopicEye.Left; }
-            if (shouldClear === void 0) { shouldClear = true; }
-            var gl = this.gl;
-            var note = this.note;
-            var srcWidth = this.srcWidth;
-            var srcHeight = this.srcHeight;
-            var numLayers = note.numLayers;
-            var layerOrder = note.getFrameLayerOrder(frameIndex);
-            var layerDepths = note.getFrameLayerDepths(frameIndex);
+        }
+        drawLayers(frameIndex, depthStrength = 0, depthEye = FlipnoteStereoscopicEye.Left, shouldClear = true) {
+            const gl = this.gl;
+            const note = this.note;
+            const srcWidth = this.srcWidth;
+            const srcHeight = this.srcHeight;
+            const numLayers = note.numLayers;
+            const layerOrder = note.getFrameLayerOrder(frameIndex);
+            const layerDepths = note.getFrameLayerDepths(frameIndex);
             this.useFramebuffer(this.frameBuffer);
             if (shouldClear)
                 this.clear();
             gl.useProgram(this.layerProgram.program);
-            for (var i = 0; i < numLayers; i++) {
-                var layerIndex = layerOrder[i];
+            for (let i = 0; i < numLayers; i++) {
+                const layerIndex = layerOrder[i];
                 note.getLayerPixelsRgba(frameIndex, layerIndex, this.layerTexturePixelBuffer, this.paletteBuffer);
                 setUniforms(this.layerProgram, {
                     u_flipY: true,
@@ -5477,57 +5315,52 @@ Keep on Flipnoting!
                 gl.texImage2D(gl.TEXTURE_2D, 0, gl.RGBA, srcWidth, srcHeight, 0, gl.RGBA, gl.UNSIGNED_BYTE, this.layerTexturePixels);
                 gl.drawElements(gl.TRIANGLES, this.quadBuffer.numElements, this.quadBuffer.elementType, 0);
             }
-        };
+        }
         /**
          * Only a certain number of WebGL contexts can be added to a single page before the browser will start culling old contexts.
          * This method returns true if it has been culled, false if not
          */
-        WebglCanvas.prototype.checkContextLoss = function () {
-            var isLost = this.isCtxLost || this.isErrorState();
+        checkContextLoss() {
+            const isLost = this.isCtxLost || this.isErrorState();
             if (isLost)
                 this.handleContextLoss();
             return isLost;
-        };
+        }
         /**
          *
          * @param type image mime type (`image/jpeg`, `image/png`, etc)
          * @param quality image quality where supported, between 0 and 1
          */
-        WebglCanvas.prototype.getDataUrl = function (type, quality) {
+        getDataUrl(type, quality) {
             return this.canvas.toDataURL(type, quality);
-        };
-        WebglCanvas.prototype.getBlob = function (type, quality) {
-            return __awaiter(this, void 0, void 0, function () {
-                var _this = this;
-                return __generator(this, function (_a) {
-                    return [2 /*return*/, new Promise(function (resolve, reject) { return _this.canvas.toBlob(resolve, type, quality); })];
-                });
-            });
-        };
+        }
+        async getBlob(type, quality) {
+            return new Promise((resolve, reject) => this.canvas.toBlob(resolve, type, quality));
+        }
         /**
          * Frees any resources used by this canvas instance
          */
-        WebglCanvas.prototype.destroy = function () {
-            var refs = this.refs;
-            var gl = this.gl;
-            var canvas = this.canvas;
-            refs.shaders.forEach(function (shader) {
+        destroy() {
+            const refs = this.refs;
+            const gl = this.gl;
+            const canvas = this.canvas;
+            refs.shaders.forEach((shader) => {
                 gl.deleteShader(shader);
             });
             refs.shaders = [];
-            refs.textures.forEach(function (texture) {
+            refs.textures.forEach((texture) => {
                 gl.deleteTexture(texture);
             });
             refs.textures = [];
-            refs.buffers.forEach(function (buffer) {
+            refs.buffers.forEach((buffer) => {
                 gl.deleteBuffer(buffer);
             });
             refs.buffers = [];
-            refs.frameBuffers.forEach(function (fb) {
+            refs.frameBuffers.forEach((fb) => {
                 gl.deleteFramebuffer(fb);
             });
             refs.frameBuffers = [];
-            refs.programs.forEach(function (program) {
+            refs.programs.forEach((program) => {
                 gl.deleteProgram(program);
             });
             refs.programs = [];
@@ -5544,21 +5377,29 @@ Keep on Flipnoting!
                 // remove canvas from dom
                 canvas.parentNode.removeChild(canvas);
             }
-        };
-        WebglCanvas.defaultOptions = {
-            onlost: function () { },
-            onrestored: function () { },
-            useDpi: true
-        };
-        return WebglCanvas;
-    }());
+        }
+    }
+    WebglCanvas.defaultOptions = {
+        onlost: () => { },
+        onrestored: () => { },
+        useDpi: true
+    };
 
     /**
      * Flipnote renderer for the [HTML5 2D canvas API](https://developer.mozilla.org/en-US/docs/Web/API/CanvasRenderingContext2D)
      */
-    var Html5Canvas = /** @class */ (function () {
-        function Html5Canvas(parent, width, height, options) {
-            if (options === void 0) { options = {}; }
+    class Html5Canvas {
+        static isSupported() {
+            if (!isBrowser)
+                return false;
+            let testCanvas = document.createElement('canvas');
+            let testCtx = testCanvas.getContext('2d');
+            const supported = testCtx !== null;
+            testCanvas = null;
+            testCtx = null;
+            return supported;
+        }
+        constructor(parent, width, height, options = {}) {
             /** */
             this.supportedStereoscopeModes = [
                 CanvasStereoscopicMode.None
@@ -5569,7 +5410,7 @@ Keep on Flipnoting!
             this.stereoscopeStrength = 0;
             this.paletteBuffer = new Uint32Array(16);
             assertBrowserEnv();
-            this.options = __assign(__assign({}, Html5Canvas.defaultOptions), options);
+            this.options = { ...Html5Canvas.defaultOptions, ...options };
             this.width = width;
             this.height = height;
             this.canvas = document.createElement('canvas');
@@ -5582,16 +5423,6 @@ Keep on Flipnoting!
                 parent.appendChild(this.canvas);
             this.setCanvasSize(width, height);
         }
-        Html5Canvas.isSupported = function () {
-            if (!isBrowser)
-                return false;
-            var testCanvas = document.createElement('canvas');
-            var testCtx = testCanvas.getContext('2d');
-            var supported = testCtx !== null;
-            testCanvas = null;
-            testCtx = null;
-            return supported;
-        };
         /**
          * Resize the canvas surface
          * @param width - New canvas width, in CSS pixels
@@ -5599,26 +5430,26 @@ Keep on Flipnoting!
          *
          * The ratio between `width` and `height` should be 3:4 for best results
          */
-        Html5Canvas.prototype.setCanvasSize = function (width, height) {
-            var canvas = this.canvas;
-            var useDpi = this.options.useDpi;
-            var dpi = useDpi ? (window.devicePixelRatio || 1) : 1;
-            var internalWidth = width * dpi;
-            var internalHeight = height * dpi;
+        setCanvasSize(width, height) {
+            const canvas = this.canvas;
+            const useDpi = this.options.useDpi;
+            const dpi = useDpi ? (window.devicePixelRatio || 1) : 1;
+            const internalWidth = width * dpi;
+            const internalHeight = height * dpi;
             this.width = width;
             this.height = height;
             this.dstWidth = internalWidth;
             this.dstHeight = internalHeight;
-            canvas.style.width = "".concat(width, "px");
-            canvas.style.height = "".concat(height, "px");
+            canvas.style.width = `${width}px`;
+            canvas.style.height = `${height}px`;
             canvas.width = internalWidth;
             canvas.height = internalHeight;
-        };
+        }
         /**
          */
-        Html5Canvas.prototype.setNote = function (note) {
-            var width = note.imageWidth;
-            var height = note.imageHeight;
+        setNote(note) {
+            const width = note.imageWidth;
+            const height = note.imageHeight;
             this.note = note;
             this.srcWidth = width;
             this.srcHeight = height;
@@ -5631,24 +5462,24 @@ Keep on Flipnoting!
             this.frameIndex = undefined;
             // set canvas alt text
             this.canvas.title = note.getTitle();
-        };
+        }
         /**
          * Clear the canvas
          * @param color optional RGBA color to use as a background color
          */
-        Html5Canvas.prototype.clear = function (color) {
+        clear(color) {
             // clear framebuffer
             this.frameBuffer.fill(0);
             // clear canvas
             this.ctx.clearRect(0, 0, this.dstWidth, this.dstHeight);
             // fill canvas with paper color
             if (color) {
-                var _a = __read(color, 4), r = _a[0], g = _a[1], b = _a[2], a = _a[3];
-                this.ctx.fillStyle = "rgba(".concat(r, ", ").concat(g, ", ").concat(b, ", ").concat(a, ")");
+                const [r, g, b, a] = color;
+                this.ctx.fillStyle = `rgba(${r}, ${g}, ${b}, ${a})`;
                 this.ctx.fillRect(0, 0, this.dstWidth, this.dstHeight);
             }
-        };
-        Html5Canvas.prototype.drawFrame = function (frameIndex) {
+        }
+        drawFrame(frameIndex) {
             // clear whatever's already been drawn
             this.clear();
             // optionally enable image smoothing
@@ -5661,30 +5492,25 @@ Keep on Flipnoting!
             // composite src canvas to dst (so image scaling can be handled)
             this.ctx.drawImage(this.srcCanvas, 0, 0, this.srcWidth, this.srcHeight, 0, 0, this.dstWidth, this.dstHeight);
             this.frameIndex = frameIndex;
-        };
-        Html5Canvas.prototype.requestStereoScopeMode = function (mode) {
+        }
+        requestStereoScopeMode(mode) {
             if (this.supportedStereoscopeModes.includes(mode))
                 this.stereoscopeMode = mode;
             else
                 this.stereoscopeMode = CanvasStereoscopicMode.None;
             this.forceUpdate();
-        };
-        Html5Canvas.prototype.forceUpdate = function () {
+        }
+        forceUpdate() {
             if (this.frameIndex !== undefined)
                 this.drawFrame(this.frameIndex);
-        };
-        Html5Canvas.prototype.getDataUrl = function (type, quality) {
+        }
+        getDataUrl(type, quality) {
             return this.canvas.toDataURL(type, quality);
-        };
-        Html5Canvas.prototype.getBlob = function (type, quality) {
-            return __awaiter(this, void 0, void 0, function () {
-                var _this = this;
-                return __generator(this, function (_a) {
-                    return [2 /*return*/, new Promise(function (resolve, reject) { return _this.canvas.toBlob(resolve, type, quality); })];
-                });
-            });
-        };
-        Html5Canvas.prototype.destroy = function () {
+        }
+        async getBlob(type, quality) {
+            return new Promise((resolve, reject) => this.canvas.toBlob(resolve, type, quality));
+        }
+        destroy() {
             this.frameImage = null;
             this.paletteBuffer = null;
             this.frameBuffer = null;
@@ -5695,19 +5521,15 @@ Keep on Flipnoting!
             this.srcCanvas.width = 1;
             this.srcCanvas.height = 1;
             this.srcCanvas = null;
-        };
-        Html5Canvas.defaultOptions = {
-            useDpi: true,
-            useSmoothing: true,
-        };
-        return Html5Canvas;
-    }());
+        }
+    }
+    Html5Canvas.defaultOptions = {
+        useDpi: true,
+        useSmoothing: true,
+    };
 
-    var UniversalCanvas = /** @class */ (function () {
-        function UniversalCanvas(parent, width, height, options) {
-            if (width === void 0) { width = 640; }
-            if (height === void 0) { height = 480; }
-            if (options === void 0) { options = {}; }
+    class UniversalCanvas {
+        constructor(parent, width = 640, height = 480, options = {}) {
             /** */
             this.isReady = false;
             /** */
@@ -5730,20 +5552,21 @@ Keep on Flipnoting!
             this.options = options;
             this.setSubRenderer(this.rendererStack[0]);
         }
-        UniversalCanvas.prototype.setSubRenderer = function (Canvas) {
-            var _this = this;
-            var _a;
-            var immediateLoss = false;
-            var renderer = new Canvas(this.parent, this.width, this.height, __assign(__assign({}, this.options), { onlost: function () {
+        setSubRenderer(Canvas) {
+            let immediateLoss = false;
+            const renderer = new Canvas(this.parent, this.width, this.height, {
+                ...this.options,
+                onlost: () => {
                     immediateLoss = true;
-                    _this.fallbackIfPossible();
-                } }));
+                    this.fallbackIfPossible();
+                }
+            });
             // if onlost was called immediately, we succeed to the fallback
             if (immediateLoss)
                 return;
             if (this.note) {
                 renderer.setNote(this.note);
-                renderer.frameIndex = (_a = this.renderer) === null || _a === void 0 ? void 0 : _a.frameIndex;
+                renderer.frameIndex = this.renderer?.frameIndex;
                 renderer.forceUpdate();
             }
             if (this.renderer)
@@ -5755,65 +5578,60 @@ Keep on Flipnoting!
             this.supportedStereoscopeModes = renderer.supportedStereoscopeModes;
             renderer.stereoscopeStrength = this.stereoscopeStrength;
             this.requestStereoScopeMode(this.stereoscopeMode);
-        };
-        UniversalCanvas.prototype.fallbackIfPossible = function () {
+        }
+        fallbackIfPossible() {
             if (this.rendererStackIdx >= this.rendererStack.length)
                 throw new Error('No renderer to fall back to');
             this.rendererStackIdx += 1;
             this.setSubRenderer(this.rendererStack[this.rendererStackIdx]);
-        };
+        }
         // for backwards compat
-        UniversalCanvas.prototype.switchToHtml5 = function () {
+        switchToHtml5() {
             this.setSubRenderer(Html5Canvas);
-        };
-        UniversalCanvas.prototype.setCanvasSize = function (width, height) {
-            var renderer = this.renderer;
+        }
+        setCanvasSize(width, height) {
+            const renderer = this.renderer;
             renderer.setCanvasSize(width, height);
             this.width = width;
             this.width = height;
             this.dstWidth = renderer.dstWidth;
             this.dstHeight = renderer.dstHeight;
-        };
-        UniversalCanvas.prototype.setNote = function (note) {
+        }
+        setNote(note) {
             this.note = note;
             this.renderer.setNote(note);
             this.frameIndex = undefined;
             this.srcWidth = this.renderer.srcWidth;
             this.srcHeight = this.renderer.srcHeight;
-        };
-        UniversalCanvas.prototype.clear = function (color) {
+        }
+        clear(color) {
             this.renderer.clear(color);
-        };
-        UniversalCanvas.prototype.drawFrame = function (frameIndex) {
+        }
+        drawFrame(frameIndex) {
             this.renderer.drawFrame(frameIndex);
             this.frameIndex = frameIndex;
-        };
-        UniversalCanvas.prototype.forceUpdate = function () {
+        }
+        forceUpdate() {
             this.renderer.forceUpdate();
-        };
-        UniversalCanvas.prototype.requestStereoScopeMode = function (mode) {
+        }
+        requestStereoScopeMode(mode) {
             this.renderer.requestStereoScopeMode(mode);
             this.stereoscopeMode = this.renderer.stereoscopeMode;
-        };
-        UniversalCanvas.prototype.getDataUrl = function (type, quality) {
+        }
+        getDataUrl(type, quality) {
             return this.renderer.getDataUrl();
-        };
-        UniversalCanvas.prototype.getBlob = function (type, quality) {
-            return __awaiter(this, void 0, void 0, function () {
-                return __generator(this, function (_a) {
-                    return [2 /*return*/, this.renderer.getBlob()];
-                });
-            });
-        };
-        UniversalCanvas.prototype.destroy = function () {
+        }
+        async getBlob(type, quality) {
+            return this.renderer.getBlob();
+        }
+        destroy() {
             this.renderer.destroy();
             this.note = null;
-        };
-        return UniversalCanvas;
-    }());
+        }
+    }
 
     /** @internal */
-    var _AudioContext = (function () {
+    const _AudioContext = (() => {
         if (isBrowser)
             return (window.AudioContext || window.webkitAudioContext);
         return null;
@@ -5823,8 +5641,8 @@ Keep on Flipnoting!
      *
      * Capable of playing PCM streams, with volume adjustment and an optional equalizer. Only available in browser contexts
      */
-    var WebAudioPlayer = /** @class */ (function () {
-        function WebAudioPlayer() {
+    class WebAudioPlayer {
+        constructor() {
             /** Whether the audio is being run through an equalizer or not */
             this.useEq = false;
             /** Whether to connect the output to an audio analyser (see {@link analyser}) */
@@ -5848,64 +5666,54 @@ Keep on Flipnoting!
             this.nodeRefs = [];
             assertBrowserEnv();
         }
-        Object.defineProperty(WebAudioPlayer.prototype, "volume", {
-            get: function () {
-                return this._volume;
-            },
-            /** The audio output volume. Range is 0 to 1 */
-            set: function (value) {
-                this.setVolume(value);
-            },
-            enumerable: false,
-            configurable: true
-        });
-        Object.defineProperty(WebAudioPlayer.prototype, "loop", {
-            get: function () {
-                return this._loop;
-            },
-            /** Whether the audio should loop after it has ended */
-            set: function (value) {
-                this._loop = value;
-                if (this.source)
-                    this.source.loop = value;
-            },
-            enumerable: false,
-            configurable: true
-        });
-        WebAudioPlayer.prototype.getCtx = function () {
+        /** The audio output volume. Range is 0 to 1 */
+        set volume(value) {
+            this.setVolume(value);
+        }
+        get volume() {
+            return this._volume;
+        }
+        /** Whether the audio should loop after it has ended */
+        set loop(value) {
+            this._loop = value;
+            if (this.source)
+                this.source.loop = value;
+        }
+        get loop() {
+            return this._loop;
+        }
+        getCtx() {
             if (!this.ctx)
                 this.ctx = new _AudioContext();
             return this.ctx;
-        };
+        }
         /**
          * Set the audio buffer to play
          * @param inputBuffer
          * @param sampleRate - For best results, this should be a multiple of 16364
          */
-        WebAudioPlayer.prototype.setBuffer = function (inputBuffer, sampleRate) {
-            var ctx = this.getCtx();
-            var numSamples = inputBuffer.length;
-            var audioBuffer = ctx.createBuffer(1, numSamples, sampleRate);
-            var channelData = audioBuffer.getChannelData(0);
+        setBuffer(inputBuffer, sampleRate) {
+            const ctx = this.getCtx();
+            const numSamples = inputBuffer.length;
+            const audioBuffer = ctx.createBuffer(1, numSamples, sampleRate);
+            const channelData = audioBuffer.getChannelData(0);
             if (inputBuffer instanceof Float32Array)
                 channelData.set(inputBuffer, 0);
             else if (inputBuffer instanceof Int16Array) {
-                for (var i = 0; i < numSamples; i++) {
+                for (let i = 0; i < numSamples; i++) {
                     channelData[i] = inputBuffer[i] / 32768;
                 }
             }
             this.buffer = audioBuffer;
             this.sampleRate = sampleRate;
-        };
-        WebAudioPlayer.prototype.connectEqNodesTo = function (inNode) {
-            var _this = this;
-            var ctx = this.getCtx();
-            var eqSettings = this.eqSettings;
-            var lastNode = inNode;
-            eqSettings.forEach(function (_a, index) {
-                var _b = __read(_a, 2), frequency = _b[0], gain = _b[1];
-                var node = ctx.createBiquadFilter();
-                _this.nodeRefs.push(node);
+        }
+        connectEqNodesTo(inNode) {
+            const ctx = this.getCtx();
+            const eqSettings = this.eqSettings;
+            let lastNode = inNode;
+            eqSettings.forEach(([frequency, gain], index) => {
+                const node = ctx.createBiquadFilter();
+                this.nodeRefs.push(node);
                 node.frequency.value = frequency;
                 node.gain.value = gain;
                 if (index === 0)
@@ -5918,24 +5726,24 @@ Keep on Flipnoting!
                 lastNode = node;
             });
             return lastNode;
-        };
-        WebAudioPlayer.prototype.initNodes = function () {
-            var ctx = this.getCtx();
+        }
+        initNodes() {
+            const ctx = this.getCtx();
             this.nodeRefs = [];
-            var source = ctx.createBufferSource();
+            const source = ctx.createBufferSource();
             this.nodeRefs.push(source);
             source.buffer = this.buffer;
-            var gainNode = ctx.createGain();
+            const gainNode = ctx.createGain();
             this.nodeRefs.push(gainNode);
             if (this.useEq) {
-                var eq = this.connectEqNodesTo(source);
+                const eq = this.connectEqNodesTo(source);
                 eq.connect(gainNode);
             }
             else {
                 source.connect(gainNode);
             }
             if (this.useAnalyser) {
-                var analyserNode = ctx.createAnalyser();
+                const analyserNode = ctx.createAnalyser();
                 this.nodeRefs.push(analyserNode);
                 this.analyser = analyserNode;
                 gainNode.connect(analyserNode);
@@ -5948,77 +5756,63 @@ Keep on Flipnoting!
             this.source = source;
             this.gainNode = gainNode;
             this.setVolume(this._volume);
-        };
-        WebAudioPlayer.prototype.setAnalyserEnabled = function (on) {
+        }
+        setAnalyserEnabled(on) {
             this.useAnalyser = on;
             this.initNodes();
-        };
+        }
         /**
          * Sets the audio volume level
          * @param value - range is 0 to 1
          */
-        WebAudioPlayer.prototype.setVolume = function (value) {
+        setVolume(value) {
             this._volume = value;
             if (this.gainNode) {
                 // human perception of loudness is logarithmic, rather than linear
                 // https://www.dr-lex.be/info-stuff/volumecontrols.html
                 this.gainNode.gain.value = Math.pow(value, 2);
             }
-        };
+        }
         /**
          * Begin playback from a specific point
          *
          * Note that the WebAudioPlayer doesn't keep track of audio playback itself. We rely on the {@link Player} API for that.
          * @param currentTime initial playback position, in seconds
          */
-        WebAudioPlayer.prototype.playFrom = function (currentTime) {
+        playFrom(currentTime) {
             this.initNodes();
             this._startTime = currentTime;
             this._ctxStartTime = this.ctx.currentTime;
             this.source.loop = this._loop;
             this.source.start(0, currentTime);
-        };
+        }
         /**
          * Stops the audio playback
          */
-        WebAudioPlayer.prototype.stop = function () {
+        stop() {
             if (this.source)
                 this.source.stop(0);
-        };
+        }
         /**
          * Get the current playback time, in seconds
          */
-        WebAudioPlayer.prototype.getCurrentTime = function () {
+        getCurrentTime() {
             return this._startTime + (this.ctx.currentTime - this._ctxStartTime);
-        };
+        }
         /**
          * Frees any resources used by this canvas instance
          */
-        WebAudioPlayer.prototype.destroy = function () {
-            return __awaiter(this, void 0, void 0, function () {
-                var ctx;
-                return __generator(this, function (_a) {
-                    switch (_a.label) {
-                        case 0:
-                            this.stop();
-                            ctx = this.getCtx();
-                            this.nodeRefs.forEach(function (node) { return node.disconnect(); });
-                            this.nodeRefs = [];
-                            this.analyser = undefined;
-                            if (!(ctx.state !== 'closed' && typeof ctx.close === 'function')) return [3 /*break*/, 2];
-                            return [4 /*yield*/, ctx.close()];
-                        case 1:
-                            _a.sent();
-                            _a.label = 2;
-                        case 2:
-                            this.buffer = null;
-                            return [2 /*return*/];
-                    }
-                });
-            });
-        };
-        return WebAudioPlayer;
-    }());
+        async destroy() {
+            this.stop();
+            const ctx = this.getCtx();
+            this.nodeRefs.forEach(node => node.disconnect());
+            this.nodeRefs = [];
+            this.analyser = undefined;
+            if (ctx.state !== 'closed' && typeof ctx.close === 'function')
+                await ctx.close();
+            this.buffer = null;
+        }
+    }
 
     /**
      * Flipnote Player API (exported as `flipnote.Player`) - provides a {@link https://developer.mozilla.org/en-US/docs/Web/API/HTMLMediaElement | MediaElement}-like interface for loading Flipnotes and playing them.
@@ -6056,7 +5850,7 @@ Keep on Flipnoting!
      *  });
      * ```
      */
-    var Player = /** @class */ (function () {
+    class Player {
         /**
          * Create a new Player instance
          *
@@ -6066,9 +5860,7 @@ Keep on Flipnoting!
          *
          * The ratio between `width` and `height` should be 3:4 for best results
          */
-        function Player(parent, width, height, parserSettings) {
-            if (parserSettings === void 0) { parserSettings = {}; }
-            var _this = this;
+        constructor(parent, width, height, parserSettings = {}) {
             /** Animation duration, in seconds */
             this.duration = 0;
             /** Automatically begin playback after a Flipnote is loaded */
@@ -6116,286 +5908,193 @@ Keep on Flipnoting!
              * @internal
              * @category Playback Control
              */
-            this.playbackLoop = function (timestamp) {
-                if (!_this.isPlaying)
+            this.playbackLoop = (timestamp) => {
+                if (!this.isPlaying)
                     return;
-                var now = timestamp / 1000;
-                var duration = _this.duration;
-                var currAudioTime = _this.audio.getCurrentTime();
-                var currPlaybackTime = now - _this.playbackStartTime;
+                const now = timestamp / 1000;
+                const duration = this.duration;
+                const currAudioTime = this.audio.getCurrentTime();
+                let currPlaybackTime = now - this.playbackStartTime;
                 // try to keep playback time in sync with the audio if there's any slipping
                 if (Math.abs((currPlaybackTime % duration) - (currAudioTime % duration)) > 0.01)
                     currPlaybackTime = currAudioTime;
                 // handle playback end, if reached
                 if (currPlaybackTime >= duration) {
-                    if (_this.loop) {
-                        _this.playbackStartTime = now;
-                        _this.emit(exports.PlayerEvent.Loop);
+                    if (this.loop) {
+                        this.playbackStartTime = now;
+                        this.emit(exports.PlayerEvent.Loop);
                     }
                     else {
-                        _this.pause();
-                        _this._hasEnded = true;
-                        _this.emit(exports.PlayerEvent.Ended);
+                        this.pause();
+                        this._hasEnded = true;
+                        this.emit(exports.PlayerEvent.Ended);
                         return;
                     }
                 }
-                _this.setCurrentTime(currPlaybackTime % duration);
-                _this.playbackLoopId = requestAnimationFrame(_this.playbackLoop);
+                this.setCurrentTime(currPlaybackTime % duration);
+                this.playbackLoopId = requestAnimationFrame(this.playbackLoop);
             };
             assertBrowserEnv();
             // if parent is a string, use it to select an Element, else assume it's an Element
-            var mountPoint = ('string' == typeof parent) ? document.querySelector(parent) : parent;
+            const mountPoint = ('string' == typeof parent) ? document.querySelector(parent) : parent;
             this.parserSettings = parserSettings;
             this.renderer = new UniversalCanvas(mountPoint, width, height, {
-                onlost: function () { return _this.emit(exports.PlayerEvent.Error); },
-                onrestored: function () { return _this.reload(); }
+                onlost: () => this.emit(exports.PlayerEvent.Error),
+                onrestored: () => this.reload()
             });
             this.audio = new WebAudioPlayer();
             this.el = mountPoint;
             // this.canvasEl = this.renderer.el;
         }
-        Object.defineProperty(Player.prototype, "src", {
-            /** The currently loaded Flipnote source, if there is one */
-            get: function () {
-                return this._src;
-            },
-            set: function (source) {
-                throw new Error('Setting a Player source has been deprecated, please use the load() method instead');
-            },
-            enumerable: false,
-            configurable: true
-        });
-        Object.defineProperty(Player.prototype, "paused", {
-            /** Indicates whether playback is currently paused */
-            get: function () {
-                return !this.isPlaying;
-            },
-            set: function (isPaused) {
-                if (isPaused)
-                    this.pause();
-                else
-                    this.play();
-            },
-            enumerable: false,
-            configurable: true
-        });
-        Object.defineProperty(Player.prototype, "currentFrame", {
-            /** Current animation frame index */
-            get: function () {
-                return this._frame;
-            },
-            set: function (frameIndex) {
-                this.setCurrentFrame(frameIndex);
-            },
-            enumerable: false,
-            configurable: true
-        });
-        Object.defineProperty(Player.prototype, "currentTime", {
-            /** Current animation playback position, in seconds */
-            get: function () {
-                return this.isNoteLoaded ? this.playbackTime : null;
-            },
-            set: function (value) {
-                this.setCurrentTime(value);
-            },
-            enumerable: false,
-            configurable: true
-        });
-        Object.defineProperty(Player.prototype, "progress", {
-            /** Current animation playback progress, as a percentage out of 100 */
-            get: function () {
-                return this.isNoteLoaded ? (this.playbackTime / this.duration) * 100 : null;
-            },
-            set: function (value) {
-                this.setProgress(value);
-            },
-            enumerable: false,
-            configurable: true
-        });
-        Object.defineProperty(Player.prototype, "volume", {
-            /** Audio volume, range `0` to `1` */
-            get: function () {
-                return this.getVolume();
-            },
-            set: function (value) {
-                this.setVolume(value);
-            },
-            enumerable: false,
-            configurable: true
-        });
-        Object.defineProperty(Player.prototype, "muted", {
-            /** Audio mute state */
-            get: function () {
-                return this.getMuted();
-            },
-            set: function (value) {
-                this.setMuted(value);
-            },
-            enumerable: false,
-            configurable: true
-        });
-        Object.defineProperty(Player.prototype, "loop", {
-            /** Indicates whether playback should loop once the end is reached */
-            get: function () {
-                return this.getLoop();
-            },
-            set: function (value) {
-                this.setLoop(value);
-            },
-            enumerable: false,
-            configurable: true
-        });
-        Object.defineProperty(Player.prototype, "framerate", {
-            /** Animation frame rate, measured in frames per second */
-            get: function () {
-                return this.note.framerate;
-            },
-            enumerable: false,
-            configurable: true
-        });
-        Object.defineProperty(Player.prototype, "frameCount", {
-            /** Animation frame count */
-            get: function () {
-                return this.note.frameCount;
-            },
-            enumerable: false,
-            configurable: true
-        });
-        Object.defineProperty(Player.prototype, "frameSpeed", {
-            /** Animation frame speed */
-            get: function () {
-                return this.note.frameSpeed;
-            },
-            enumerable: false,
-            configurable: true
-        });
-        Object.defineProperty(Player.prototype, "buffered", {
-            /**
-             * Implementation of the `HTMLMediaElement` {@link https://developer.mozilla.org/en-US/docs/Web/API/HTMLMediaElement/buffered | buffered } property
-             * @category HTMLVideoElement compatibility
-             */
-            get: function () {
-                return createTimeRanges([[0, this.duration]]);
-            },
-            enumerable: false,
-            configurable: true
-        });
-        Object.defineProperty(Player.prototype, "seekable", {
-            /**
-             * Implementation of the `HTMLMediaElement` {@link https://developer.mozilla.org/en-US/docs/Web/API/HTMLMediaElement/seekable | seekable} property
-             * @category HTMLVideoElement compatibility
-             */
-            get: function () {
-                return createTimeRanges([[0, this.duration]]);
-            },
-            enumerable: false,
-            configurable: true
-        });
-        Object.defineProperty(Player.prototype, "currentSrc", {
-            /**
-             * Implementation of the `HTMLMediaElement` {@link https://developer.mozilla.org/en-US/docs/Web/API/HTMLMediaElement/currentSrc | currentSrc} property
-             * @category HTMLVideoElement compatibility
-             */
-            get: function () {
-                return this._src;
-            },
-            enumerable: false,
-            configurable: true
-        });
-        Object.defineProperty(Player.prototype, "videoWidth", {
-            /**
-             * Implementation of the `HTMLVideoElement` {@link https://developer.mozilla.org/en-US/docs/Web/API/HTMLVideoElement/videoWidth | videoWidth} property
-             * @category HTMLVideoElement compatibility
-             */
-            get: function () {
-                return this.isNoteLoaded ? this.note.imageWidth : 0;
-            },
-            enumerable: false,
-            configurable: true
-        });
-        Object.defineProperty(Player.prototype, "videoHeight", {
-            /**
-             * Implementation of the `HTMLVideoElement` {@link https://developer.mozilla.org/en-US/docs/Web/API/HTMLVideoElement/videoHeight | videoHeight} property
-             * @category HTMLVideoElement compatibility
-             */
-            get: function () {
-                return this.isNoteLoaded ? this.note.imageHeight : 0;
-            },
-            enumerable: false,
-            configurable: true
-        });
+        /** The currently loaded Flipnote source, if there is one */
+        get src() {
+            return this._src;
+        }
+        set src(source) {
+            throw new Error('Setting a Player source has been deprecated, please use the load() method instead');
+        }
+        /** Indicates whether playback is currently paused */
+        get paused() {
+            return !this.isPlaying;
+        }
+        set paused(isPaused) {
+            if (isPaused)
+                this.pause();
+            else
+                this.play();
+        }
+        /** Current animation frame index */
+        get currentFrame() {
+            return this._frame;
+        }
+        set currentFrame(frameIndex) {
+            this.setCurrentFrame(frameIndex);
+        }
+        /** Current animation playback position, in seconds */
+        get currentTime() {
+            return this.isNoteLoaded ? this.playbackTime : null;
+        }
+        set currentTime(value) {
+            this.setCurrentTime(value);
+        }
+        /** Current animation playback progress, as a percentage out of 100 */
+        get progress() {
+            return this.isNoteLoaded ? (this.playbackTime / this.duration) * 100 : null;
+        }
+        set progress(value) {
+            this.setProgress(value);
+        }
+        /** Audio volume, range `0` to `1` */
+        get volume() {
+            return this.getVolume();
+        }
+        set volume(value) {
+            this.setVolume(value);
+        }
+        /** Audio mute state */
+        get muted() {
+            return this.getMuted();
+        }
+        set muted(value) {
+            this.setMuted(value);
+        }
+        /** Indicates whether playback should loop once the end is reached */
+        get loop() {
+            return this.getLoop();
+        }
+        set loop(value) {
+            this.setLoop(value);
+        }
+        /** Animation frame rate, measured in frames per second */
+        get framerate() {
+            return this.note.framerate;
+        }
+        /** Animation frame count */
+        get frameCount() {
+            return this.note.frameCount;
+        }
+        /** Animation frame speed */
+        get frameSpeed() {
+            return this.note.frameSpeed;
+        }
+        /**
+         * Implementation of the `HTMLMediaElement` {@link https://developer.mozilla.org/en-US/docs/Web/API/HTMLMediaElement/buffered | buffered } property
+         * @category HTMLVideoElement compatibility
+         */
+        get buffered() {
+            return createTimeRanges([[0, this.duration]]);
+        }
+        /**
+         * Implementation of the `HTMLMediaElement` {@link https://developer.mozilla.org/en-US/docs/Web/API/HTMLMediaElement/seekable | seekable} property
+         * @category HTMLVideoElement compatibility
+         */
+        get seekable() {
+            return createTimeRanges([[0, this.duration]]);
+        }
+        /**
+         * Implementation of the `HTMLMediaElement` {@link https://developer.mozilla.org/en-US/docs/Web/API/HTMLMediaElement/currentSrc | currentSrc} property
+         * @category HTMLVideoElement compatibility
+         */
+        get currentSrc() {
+            return this._src;
+        }
+        /**
+         * Implementation of the `HTMLVideoElement` {@link https://developer.mozilla.org/en-US/docs/Web/API/HTMLVideoElement/videoWidth | videoWidth} property
+         * @category HTMLVideoElement compatibility
+         */
+        get videoWidth() {
+            return this.isNoteLoaded ? this.note.imageWidth : 0;
+        }
+        /**
+         * Implementation of the `HTMLVideoElement` {@link https://developer.mozilla.org/en-US/docs/Web/API/HTMLVideoElement/videoHeight | videoHeight} property
+         * @category HTMLVideoElement compatibility
+         */
+        get videoHeight() {
+            return this.isNoteLoaded ? this.note.imageHeight : 0;
+        }
         /**
          * Open a Flipnote from a source
          * @category Lifecycle
          */
-        Player.prototype.load = function (source, getParser, loaders) {
-            return __awaiter(this, void 0, void 0, function () {
-                var _a, err, note;
-                var _this = this;
-                return __generator(this, function (_b) {
-                    switch (_b.label) {
-                        case 0:
-                            // close currently open note first
-                            if (this.isNoteLoaded)
-                                this.closeNote();
-                            // keep track of source
-                            this._src = source;
-                            // if no source specified, just reset everything
-                            if (!source)
-                                return [2 /*return*/, this.openNote(this.note)];
-                            // otherwise do a normal load
-                            this.emit(exports.PlayerEvent.LoadStart);
-                            return [4 /*yield*/, until(function () { return getParser(source, _this.parserSettings, loaders); })];
-                        case 1:
-                            _a = __read.apply(void 0, [_b.sent(), 2]), err = _a[0], note = _a[1];
-                            if (err) {
-                                this.emit(exports.PlayerEvent.Error, err);
-                                throw new Error("Error loading Flipnote: ".concat(err.message));
-                            }
-                            this.lastParser = getParser;
-                            this.lastLoaders = loaders;
-                            this.openNote(note);
-                            return [2 /*return*/];
-                    }
-                });
-            });
-        };
+        async load(source, getParser, loaders) {
+            // close currently open note first
+            if (this.isNoteLoaded)
+                this.closeNote();
+            // keep track of source
+            this._src = source;
+            // if no source specified, just reset everything
+            if (!source)
+                return this.openNote(this.note);
+            // otherwise do a normal load
+            this.emit(exports.PlayerEvent.LoadStart);
+            const [err, note] = await until(() => getParser(source, this.parserSettings, loaders));
+            if (err) {
+                this.emit(exports.PlayerEvent.Error, err);
+                throw new Error(`Error loading Flipnote: ${err.message}`);
+            }
+            this.lastParser = getParser;
+            this.lastLoaders = loaders;
+            this.openNote(note);
+        }
         /**
          * Reload the current Flipnote
          */
-        Player.prototype.reload = function () {
-            return __awaiter(this, void 0, void 0, function () {
-                return __generator(this, function (_a) {
-                    switch (_a.label) {
-                        case 0:
-                            if (!(this.note && this.lastParser)) return [3 /*break*/, 2];
-                            return [4 /*yield*/, this.load(this.note.buffer, this.lastParser, this.lastLoaders)];
-                        case 1: return [2 /*return*/, _a.sent()];
-                        case 2: return [2 /*return*/];
-                    }
-                });
-            });
-        };
+        async reload() {
+            if (this.note && this.lastParser)
+                return await this.load(this.note.buffer, this.lastParser, this.lastLoaders);
+        }
         /**
          * Reload the current Flipnote
          */
-        Player.prototype.updateSettings = function (settings) {
-            return __awaiter(this, void 0, void 0, function () {
-                return __generator(this, function (_a) {
-                    switch (_a.label) {
-                        case 0:
-                            this.parserSettings = settings;
-                            return [4 /*yield*/, this.reload()];
-                        case 1: return [2 /*return*/, _a.sent()];
-                    }
-                });
-            });
-        };
+        async updateSettings(settings) {
+            this.parserSettings = settings;
+            return await this.reload();
+        }
         /**
          * Close the currently loaded Flipnote
          * @category Lifecycle
          */
-        Player.prototype.closeNote = function () {
+        closeNote() {
             this.pause();
             this.note = null;
             this.isNoteLoaded = false;
@@ -6411,12 +6110,12 @@ Keep on Flipnoting!
             this.hasPlaybackStarted = false;
             this.showThumbnail = true;
             this.renderer.clear();
-        };
+        }
         /**
          * Open a Flipnote into the player
          * @category Lifecycle
          */
-        Player.prototype.openNote = function (note) {
+        openNote(note) {
             if (this.isNoteLoaded)
                 this.closeNote();
             this.note = note;
@@ -6443,91 +6142,85 @@ Keep on Flipnoting!
             this.emit(exports.PlayerEvent.Ready);
             if (this.autoplay)
                 this.play();
-        };
+        }
         /**
          * Set the current playback time
          * @category Playback Control
          */
-        Player.prototype.setCurrentTime = function (value) {
+        setCurrentTime(value) {
             this.assertNoteLoaded();
-            var i = Math.floor(value / (1 / this.framerate));
+            const i = Math.floor(value / (1 / this.framerate));
             this.setCurrentFrame(i);
             this.playbackTime = value;
             this.emit(exports.PlayerEvent.Progress, this.progress);
-        };
+        }
         /**
          * Get the current playback time
          * @category Playback Control
          */
-        Player.prototype.getCurrentTime = function () {
+        getCurrentTime() {
             return this.currentTime;
-        };
+        }
         /**
          * Get the current time as a counter string, like `"0:00 / 1:00"`
          * @category Playback Control
          */
-        Player.prototype.getTimeCounter = function () {
-            var currentTime = formatTime(Math.max(this.currentTime, 0));
-            var duration = formatTime(this.duration);
-            return "".concat(currentTime, " / ").concat(duration);
-        };
+        getTimeCounter() {
+            const currentTime = formatTime(Math.max(this.currentTime, 0));
+            const duration = formatTime(this.duration);
+            return `${currentTime} / ${duration}`;
+        }
         /**
          * Get the current frame index as a counter string, like `"001 / 999"`
          * @category Playback Control
          */
-        Player.prototype.getFrameCounter = function () {
-            var frame = padNumber(this.currentFrame + 1, 3);
-            var total = padNumber(this.frameCount, 3);
-            return "".concat(frame, " / ").concat(total);
-        };
+        getFrameCounter() {
+            const frame = padNumber(this.currentFrame + 1, 3);
+            const total = padNumber(this.frameCount, 3);
+            return `${frame} / ${total}`;
+        }
         /**
          * Set the current playback progress as a percentage (`0` to `100`)
          * @category Playback Control
          */
-        Player.prototype.setProgress = function (value) {
+        setProgress(value) {
             this.assertNoteLoaded();
             assertRange(value, 0, 100, 'progress');
             this.currentTime = this.duration * (value / 100);
-        };
+        }
         /**
          * Get the current playback progress as a percentage (0 to 100)
          * @category Playback Control
          */
-        Player.prototype.getProgress = function () {
+        getProgress() {
             return this.progress;
-        };
+        }
         /**
          * Begin animation playback starting at the current position
          * @category Playback Control
          */
-        Player.prototype.play = function () {
-            return __awaiter(this, void 0, void 0, function () {
-                var now;
-                return __generator(this, function (_a) {
-                    this.assertNoteLoaded();
-                    if (this.isPlaying)
-                        return [2 /*return*/];
-                    // if the flipnote hasn't looped and is at the end, rewind it to 0
-                    if (this._hasEnded) {
-                        this.playbackTime = 0;
-                        this._hasEnded = false;
-                    }
-                    now = performance.now();
-                    this.playbackStartTime = (now / 1000) - this.playbackTime;
-                    this.isPlaying = true;
-                    this.hasPlaybackStarted = true;
-                    this.playAudio();
-                    this.playbackLoop(now);
-                    this.emit(exports.PlayerEvent.Play);
-                    return [2 /*return*/];
-                });
-            });
-        };
+        async play() {
+            this.assertNoteLoaded();
+            if (this.isPlaying)
+                return;
+            // if the flipnote hasn't looped and is at the end, rewind it to 0
+            if (this._hasEnded) {
+                this.playbackTime = 0;
+                this._hasEnded = false;
+            }
+            const now = performance.now();
+            this.playbackStartTime = (now / 1000) - this.playbackTime;
+            this.isPlaying = true;
+            this.hasPlaybackStarted = true;
+            this.playAudio();
+            this.playbackLoop(now);
+            this.emit(exports.PlayerEvent.Play);
+        }
         /**
          * Pause animation playback at the current position
          * @category Playback Control
          */
-        Player.prototype.pause = function () {
+        pause() {
             if (!this.isPlaying)
                 return;
             this.isPlaying = false;
@@ -6535,60 +6228,60 @@ Keep on Flipnoting!
                 cancelAnimationFrame(this.playbackLoopId);
             this.stopAudio();
             this.emit(exports.PlayerEvent.Pause);
-        };
+        }
         /**
          * Resumes animation playback if paused, otherwise pauses
          * @category Playback Control
          */
-        Player.prototype.togglePlay = function () {
+        togglePlay() {
             if (!this.isPlaying)
                 this.play();
             else
                 this.pause();
-        };
+        }
         /**
          * Determines if playback is currently paused
          * @category Playback Control
          */
-        Player.prototype.getPaused = function () {
+        getPaused() {
             return !this.isPlaying;
-        };
+        }
         /**
          * Get the duration of the Flipnote in seconds
          * @category Playback Control
          */
-        Player.prototype.getDuration = function () {
+        getDuration() {
             return this.duration;
-        };
+        }
         /**
          * Determines if playback is looped
          * @category Playback Control
          */
-        Player.prototype.getLoop = function () {
+        getLoop() {
             return this._loop;
-        };
+        }
         /**
          * Set the playback loop
          * @category Playback Control
          */
-        Player.prototype.setLoop = function (loop) {
+        setLoop(loop) {
             this._loop = loop;
             this.audio.loop = loop;
-        };
+        }
         /**
          * Switch the playback loop between on and off
          * @category Playback Control
          */
-        Player.prototype.toggleLoop = function () {
+        toggleLoop() {
             this.setLoop(!this._loop);
-        };
+        }
         /**
          * Jump to a given animation frame
          * @category Frame Control
          */
-        Player.prototype.setCurrentFrame = function (newFrameValue) {
+        setCurrentFrame(newFrameValue) {
             this.assertNoteLoaded();
-            var newFrameIndex = Math.max(0, Math.min(Math.floor(newFrameValue), this.frameCount - 1));
+            const newFrameIndex = Math.max(0, Math.min(Math.floor(newFrameValue), this.frameCount - 1));
             if (newFrameIndex === this.currentFrame && !this.showThumbnail)
                 return;
             this._frame = newFrameIndex;
@@ -6601,100 +6294,100 @@ Keep on Flipnoting!
             this.emit(exports.PlayerEvent.FrameUpdate, this.currentFrame);
             this.emit(exports.PlayerEvent.Progress, this.progress);
             this.emit(exports.PlayerEvent.TimeUpdate, this.currentFrame);
-        };
+        }
         /**
          * Jump to the next animation frame
          * If the animation loops, and is currently on its last frame, it will wrap to the first frame
          * @category Frame Control
          */
-        Player.prototype.nextFrame = function () {
+        nextFrame() {
             if ((this.loop) && (this.currentFrame === this.frameCount - 1))
                 this.currentFrame = 0;
             else
                 this.currentFrame += 1;
             this.emit(exports.PlayerEvent.FrameNext);
-        };
+        }
         /**
          * Jump to the next animation frame
          * If the animation loops, and is currently on its first frame, it will wrap to the last frame
          * @category Frame Control
          */
-        Player.prototype.prevFrame = function () {
+        prevFrame() {
             if ((this.loop) && (this.currentFrame === 0))
                 this.currentFrame = this.frameCount - 1;
             else
                 this.currentFrame -= 1;
             this.emit(exports.PlayerEvent.FramePrev);
-        };
+        }
         /**
          * Jump to the last animation frame
          * @category Frame Control
          */
-        Player.prototype.lastFrame = function () {
+        lastFrame() {
             this.currentFrame = this.frameCount - 1;
             this.emit(exports.PlayerEvent.FrameLast);
-        };
+        }
         /**
          * Jump to the first animation frame
          * @category Frame Control
          */
-        Player.prototype.firstFrame = function () {
+        firstFrame() {
             this.currentFrame = 0;
             this.emit(exports.PlayerEvent.FrameFirst);
-        };
+        }
         /**
          * Jump to the thumbnail frame
          * @category Frame Control
          */
-        Player.prototype.thumbnailFrame = function () {
+        thumbnailFrame() {
             this.currentFrame = this.note.thumbFrameIndex;
-        };
+        }
         /**
          * Begins a seek operation
          * @category Playback Control
          */
-        Player.prototype.startSeek = function () {
+        startSeek() {
             if (!this.isSeeking) {
                 this.emit(exports.PlayerEvent.SeekStart);
                 this.wasPlaying = this.isPlaying;
                 this.pause();
                 this.isSeeking = true;
             }
-        };
+        }
         /**
          * Seek the playback progress to a different position
          * @param position - animation playback position, range `0` to `1`
          * @category Playback Control
          */
-        Player.prototype.seek = function (position) {
+        seek(position) {
             if (this.isSeeking)
                 this.progress = position * 100;
-        };
+        }
         /**
          * Ends a seek operation
          * @category Playback Control
          */
-        Player.prototype.endSeek = function () {
+        endSeek() {
             if (this.isSeeking && this.wasPlaying === true)
                 this.play();
             this.wasPlaying = false;
             this.isSeeking = false;
-        };
+        }
         /**
          * Draws the specified animation frame to the canvas. Note that this doesn't update the playback time or anything, it simply decodes a given frame and displays it.
          * @param frameIndex
          * @category Display Control
          */
-        Player.prototype.drawFrame = function (frameIndex) {
+        drawFrame(frameIndex) {
             this.renderer.drawFrame(frameIndex);
-        };
+        }
         /**
          * Forces the current animation frame to be redrawn
          * @category Display Control
          */
-        Player.prototype.forceUpdate = function () {
+        forceUpdate() {
             this.renderer.forceUpdate();
-        };
+        }
         /**
          * Resize the playback canvas to a new size
          * @param width - new canvas width (pixels)
@@ -6704,12 +6397,12 @@ Keep on Flipnoting!
          *
          * @category Display Control
          */
-        Player.prototype.resize = function (width, height) {
+        resize(width, height) {
             if (height !== width * .75)
-                console.warn("Canvas width to height ratio should be 3:4 for best results (got ".concat(width, "x").concat(height, ")"));
+                console.warn(`Canvas width to height ratio should be 3:4 for best results (got ${width}x${height})`);
             this.renderer.setCanvasSize(width, height);
             this.forceUpdate();
-        };
+        }
         /**
          * Sets whether an animation layer should be visible throughout the entire animation
          * @param layer - layer index, starting at 1
@@ -6717,46 +6410,46 @@ Keep on Flipnoting!
          *
          * @category Display Control
          */
-        Player.prototype.setLayerVisibility = function (layer, value) {
+        setLayerVisibility(layer, value) {
             this.note.layerVisibility[layer] = value;
             this.layerVisibility[layer] = value;
             this.forceUpdate();
-        };
+        }
         /**
          * Returns the visibility state for a given layer
          * @param layer - layer index, starting at 1
          *
          * @category Display Control
          */
-        Player.prototype.getLayerVisibility = function (layer) {
+        getLayerVisibility(layer) {
             return this.layerVisibility[layer];
-        };
+        }
         /**
          * Toggles whether an animation layer should be visible throughout the entire animation
          *
          * @category Display Control
          */
-        Player.prototype.toggleLayerVisibility = function (layerIndex) {
+        toggleLayerVisibility(layerIndex) {
             this.setLayerVisibility(layerIndex, !this.layerVisibility[layerIndex]);
-        };
-        Player.prototype.playAudio = function () {
+        }
+        playAudio() {
             this.audio.playFrom(this.currentTime);
-        };
-        Player.prototype.stopAudio = function () {
+        }
+        stopAudio() {
             this.audio.stop();
-        };
+        }
         /**
          * Toggle audio Sudomemo equalizer filter
          * @category Audio Control
          */
-        Player.prototype.toggleAudioEq = function () {
+        toggleAudioEq() {
             this.setAudioEq(!this.audio.useEq);
-        };
+        }
         /**
          * Turn audio Sudomemo equalizer filter on or off
          * @category Audio Control
          */
-        Player.prototype.setAudioEq = function (state) {
+        setAudioEq(state) {
             if (this.isPlaying) {
                 this.wasPlaying = true;
                 this.stopAudio();
@@ -6766,83 +6459,83 @@ Keep on Flipnoting!
                 this.wasPlaying = false;
                 this.playAudio();
             }
-        };
+        }
         /**
          * Turn the audio off
          * @category Audio Control
          */
-        Player.prototype.mute = function () {
+        mute() {
             this.setMuted(true);
-        };
+        }
         /**
          * Turn the audio on
          * @category Audio Control
          */
-        Player.prototype.unmute = function () {
+        unmute() {
             this.setMuted(false);
-        };
+        }
         /**
          * Turn the audio on or off
          * @category Audio Control
          */
-        Player.prototype.setMuted = function (isMute) {
+        setMuted(isMute) {
             if (isMute)
                 this.audio.volume = 0;
             else
                 this.audio.volume = this._volume;
             this._muted = isMute;
             this.emit(exports.PlayerEvent.VolumeChange, this.audio.volume);
-        };
+        }
         /**
          * Get the audio mute state
          * @category Audio Control
          */
-        Player.prototype.getMuted = function () {
+        getMuted() {
             return this.volume === 0 ? true : this._muted;
-        };
+        }
         /**
          * Switch the audio between muted and unmuted
          * @category Audio Control
          */
-        Player.prototype.toggleMuted = function () {
+        toggleMuted() {
             this.setMuted(!this._muted);
-        };
+        }
         /**
          * Set the audio volume
          * @category Audio Control
          */
-        Player.prototype.setVolume = function (volume) {
+        setVolume(volume) {
             assertRange(volume, 0, 1, 'volume');
             this._volume = volume;
             this.audio.volume = volume;
             this.emit(exports.PlayerEvent.VolumeChange, this.audio.volume);
-        };
+        }
         /**
          * Get the current audio volume
          * @category Audio Control
          */
-        Player.prototype.getVolume = function () {
+        getVolume() {
             return this._muted ? 0 : this._volume;
-        };
+        }
         /**
          * Implementation of the `HTMLVideoElement` {@link https://developer.mozilla.org/en-US/docs/Web/API/HTMLVideoElement/seekToNextFrame | seekToNextFrame} method
          * @category HTMLVideoElement compatibility
          */
-        Player.prototype.seekToNextFrame = function () {
+        seekToNextFrame() {
             this.nextFrame();
-        };
+        }
         /**
          * Implementation of the `HTMLMediaElement` {@link https://developer.mozilla.org/en-US/docs/Web/API/HTMLMediaElement/fastSeek | fastSeek} method
          * @category HTMLVideoElement compatibility
          */
-        Player.prototype.fastSeek = function (time) {
+        fastSeek(time) {
             this.currentTime = time;
-        };
+        }
         /**
          * Implementation of the `HTMLVideoElement` {@link https://developer.mozilla.org/en-US/docs/Web/API/HTMLVideoElement/getVideoPlaybackQuality | getVideoPlaybackQuality } method
          * @category HTMLVideoElement compatibility
          */
-        Player.prototype.canPlayType = function (mediaType) {
+        canPlayType(mediaType) {
             switch (mediaType) {
                 case 'application/x-ppm':
                 case 'application/x-kwz':
@@ -6859,13 +6552,13 @@ Keep on Flipnoting!
                 default:
                     return '';
             }
-        };
+        }
         /**
          * Implementation of the `HTMLVideoElement` [https://developer.mozilla.org/en-US/docs/Web/API/HTMLVideoElement/getVideoPlaybackQuality](getVideoPlaybackQuality) method
          * @category HTMLVideoElement compatibility
          */
-        Player.prototype.getVideoPlaybackQuality = function () {
-            var quality = {
+        getVideoPlaybackQuality() {
+            const quality = {
                 creationTime: 0,
                 droppedVideoFrames: 0,
                 // @ts-ignore
@@ -6873,118 +6566,101 @@ Keep on Flipnoting!
                 totalVideoFrames: this.frameCount
             };
             return quality;
-        };
+        }
         /**
          * Implementation of the `HTMLVideoElement` [https://developer.mozilla.org/en-US/docs/Web/API/HTMLVideoElement/requestPictureInPicture](requestPictureInPicture) method. Not currently working, only a stub.
          * @category HTMLVideoElement compatibility
          */
-        Player.prototype.requestPictureInPicture = function () {
+        requestPictureInPicture() {
             throw new Error('Not implemented');
-        };
+        }
         /**
          * Implementation of the `HTMLVideoElement` [https://developer.mozilla.org/en-US/docs/Web/API/HTMLVideoElement/captureStream](captureStream) method. Not currently working, only a stub.
          * @category HTMLVideoElement compatibility
          */
-        Player.prototype.captureStream = function () {
+        captureStream() {
             throw new Error('Not implemented');
-        };
+        }
         /**
          * Add an event callback
          * @category Event API
          */
-        Player.prototype.on = function (eventType, listener) {
-            var events = this.events;
-            var eventList = Array.isArray(eventType) ? eventType : [eventType];
-            eventList.forEach(function (eventType) {
+        on(eventType, listener) {
+            const events = this.events;
+            const eventList = Array.isArray(eventType) ? eventType : [eventType];
+            eventList.forEach(eventType => {
                 if (!events.has(eventType))
                     events.set(eventType, [listener]);
                 else
                     events.get(eventType).push(listener);
             });
-        };
+        }
         /**
          * Remove an event callback
          * @category Event API
          */
-        Player.prototype.off = function (eventType, callback) {
-            var events = this.events;
-            var eventList = Array.isArray(eventType) ? eventType : [eventType];
-            eventList.forEach(function (eventType) {
+        off(eventType, callback) {
+            const events = this.events;
+            const eventList = Array.isArray(eventType) ? eventType : [eventType];
+            eventList.forEach(eventType => {
                 if (!events.has(eventType))
                     return;
-                var callbackList = events.get(eventType);
+                const callbackList = events.get(eventType);
                 events.set(eventType, callbackList.splice(callbackList.indexOf(callback), 1));
             });
-        };
+        }
         /**
          * Emit an event - mostly used internally
          * @category Event API
          */
-        Player.prototype.emit = function (eventType) {
-            var args = [];
-            for (var _i = 1; _i < arguments.length; _i++) {
-                args[_i - 1] = arguments[_i];
-            }
-            var events = this.events;
+        emit(eventType, ...args) {
+            const events = this.events;
             if (eventType !== exports.PlayerEvent.__Any && events.has(eventType)) {
-                var callbackList = events.get(eventType);
-                callbackList.forEach(function (callback) { return callback.apply(null, args); });
+                const callbackList = events.get(eventType);
+                callbackList.forEach(callback => callback.apply(null, args));
                 // call onwhatever() function for this event, if one has been added
-                var listenerName = "on".concat(eventType);
-                var thisAsAny = this;
+                const listenerName = `on${eventType}`;
+                const thisAsAny = this;
                 if (typeof thisAsAny[listenerName] === 'function')
                     thisAsAny[listenerName].apply(null, args);
             }
             // "any" event listeners fire for all events, and receive eventType as their first param
             if (events.has(exports.PlayerEvent.__Any)) {
-                var callbackList = events.get(exports.PlayerEvent.__Any);
-                callbackList.forEach(function (callback) { return callback.apply(null, __spreadArray([eventType], __read(args), false)); });
+                const callbackList = events.get(exports.PlayerEvent.__Any);
+                callbackList.forEach(callback => callback.apply(null, [eventType, ...args]));
             }
-        };
+        }
         /**
          * Remove all registered event callbacks
          * @category Event API
          */
-        Player.prototype.clearEvents = function () {
+        clearEvents() {
             this.events.clear();
-        };
+        }
         /**
          * Destroy a Player instance
          * @category Lifecycle
          */
-        Player.prototype.destroy = function () {
-            return __awaiter(this, void 0, void 0, function () {
-                return __generator(this, function (_a) {
-                    switch (_a.label) {
-                        case 0:
-                            this.clearEvents();
-                            this.emit(exports.PlayerEvent.Destroy);
-                            this.closeNote();
-                            return [4 /*yield*/, this.renderer.destroy()];
-                        case 1:
-                            _a.sent();
-                            return [4 /*yield*/, this.audio.destroy()];
-                        case 2:
-                            _a.sent();
-                            return [2 /*return*/];
-                    }
-                });
-            });
-        };
+        async destroy() {
+            this.clearEvents();
+            this.emit(exports.PlayerEvent.Destroy);
+            this.closeNote();
+            await this.renderer.destroy();
+            await this.audio.destroy();
+        }
         /**
          * Returns true if the player supports a given event or method name
          */
-        Player.prototype.supports = function (name) {
-            var isEvent = this.supportedEvents.includes(name);
-            var isMethod = typeof this[name] === 'function';
+        supports(name) {
+            const isEvent = this.supportedEvents.includes(name);
+            const isMethod = typeof this[name] === 'function';
             return isEvent || isMethod;
-        };
+        }
         /** @internal */
-        Player.prototype.assertNoteLoaded = function () {
+        assertNoteLoaded() {
             assert(this.isNoteLoaded, 'No Flipnote is currently loaded in this player');
-        };
-        return Player;
-    }());
+        }
+    }
 
     /**
      * This is a bit of a hack to get a player component class to wrap a Player instance,
@@ -6999,126 +6675,73 @@ Keep on Flipnoting!
      * @internal
      */
     function PlayerMixin(Target) {
-        var e_1, _a;
-        var PlayerMixinClass = /** @class */ (function (_super) {
-            __extends(PlayerMixinClass, _super);
-            function PlayerMixinClass() {
-                return _super !== null && _super.apply(this, arguments) || this;
+        class PlayerMixinClass extends Target {
+            // Mixin needs to re-define all the normal player properties, but most should be made readonly anyway...
+            get renderer() {
+                return this.player.renderer;
             }
-            Object.defineProperty(PlayerMixinClass.prototype, "renderer", {
-                // Mixin needs to re-define all the normal player properties, but most should be made readonly anyway...
-                get: function () {
-                    return this.player.renderer;
-                },
-                enumerable: false,
-                configurable: true
-            });
-            Object.defineProperty(PlayerMixinClass.prototype, "audio", {
-                get: function () {
-                    return this.player.audio;
-                },
-                enumerable: false,
-                configurable: true
-            });
-            Object.defineProperty(PlayerMixinClass.prototype, "canvasEl", {
-                get: function () {
-                    return this.player.canvasEl;
-                },
-                enumerable: false,
-                configurable: true
-            });
-            Object.defineProperty(PlayerMixinClass.prototype, "note", {
-                get: function () {
-                    return this.player.note;
-                },
-                enumerable: false,
-                configurable: true
-            });
-            Object.defineProperty(PlayerMixinClass.prototype, "noteFormat", {
-                get: function () {
-                    return this.player.noteFormat;
-                },
-                enumerable: false,
-                configurable: true
-            });
-            Object.defineProperty(PlayerMixinClass.prototype, "meta", {
-                get: function () {
-                    return this.player.meta;
-                },
-                enumerable: false,
-                configurable: true
-            });
-            Object.defineProperty(PlayerMixinClass.prototype, "duration", {
-                get: function () {
-                    return this.player.duration;
-                },
-                enumerable: false,
-                configurable: true
-            });
-            Object.defineProperty(PlayerMixinClass.prototype, "layerVisibility", {
-                get: function () {
-                    return this.player.layerVisibility;
-                },
-                enumerable: false,
-                configurable: true
-            });
-            Object.defineProperty(PlayerMixinClass.prototype, "autoplay", {
-                get: function () {
-                    return this.player.autoplay;
-                },
-                set: function (value) {
-                    this.player.autoplay = value;
-                },
-                enumerable: false,
-                configurable: true
-            });
-            return PlayerMixinClass;
-        }(Target));
-        var _loop_1 = function (key) {
-            var desc = Object.getOwnPropertyDescriptor(Player.prototype, key);
+            get audio() {
+                return this.player.audio;
+            }
+            get canvasEl() {
+                return this.player.canvasEl;
+            }
+            get note() {
+                return this.player.note;
+            }
+            get noteFormat() {
+                return this.player.noteFormat;
+            }
+            get meta() {
+                return this.player.meta;
+            }
+            get duration() {
+                return this.player.duration;
+            }
+            get layerVisibility() {
+                return this.player.layerVisibility;
+            }
+            get autoplay() {
+                return this.player.autoplay;
+            }
+            set autoplay(value) {
+                this.player.autoplay = value;
+            }
+        }
+        // add all Player API methods and getter/setter props to target
+        for (let key of Reflect.ownKeys(Player.prototype)) {
+            let desc = Object.getOwnPropertyDescriptor(Player.prototype, key);
             // don't override stuff that already exists, and ignore JS prototype junk
             if (key in Target.prototype || key === 'constructor' || key === 'name' || key === 'prototype') {
-                return "continue";
+                continue;
             }
             // override methods to call e.g. `this.player.methodName()` when `methodName()` is called
             else if (desc.value && typeof desc.value === 'function') {
-                Object.defineProperty(PlayerMixinClass.prototype, key, __assign(__assign({}, desc), { value: function () {
-                        var _a;
-                        var args = [];
-                        for (var _i = 0; _i < arguments.length; _i++) {
-                            args[_i] = arguments[_i];
-                        }
-                        return (_a = this.player)[key].apply(_a, __spreadArray([], __read(args), false));
-                    } }));
+                Object.defineProperty(PlayerMixinClass.prototype, key, {
+                    ...desc,
+                    value: function (...args) {
+                        return this.player[key](...args);
+                    }
+                });
             }
             // override getters and setters so that e.g. `property` will always reflect `this.player.property`
             else if (desc.get || desc.set) {
-                Object.defineProperty(PlayerMixinClass.prototype, key, __assign(__assign({}, desc), { set: function (value) {
+                Object.defineProperty(PlayerMixinClass.prototype, key, {
+                    ...desc,
+                    set: function (value) {
                         this.player[key] = value;
-                    }, get: function () {
+                    },
+                    get: function () {
                         return this.player[key];
-                    } }));
+                    }
+                });
             }
-        };
-        try {
-            // add all Player API methods and getter/setter props to target
-            for (var _b = __values(Reflect.ownKeys(Player.prototype)), _c = _b.next(); !_c.done; _c = _b.next()) {
-                var key = _c.value;
-                _loop_1(key);
-            }
-        }
-        catch (e_1_1) { e_1 = { error: e_1_1 }; }
-        finally {
-            try {
-                if (_c && !_c.done && (_a = _b.return)) _a.call(_b);
-            }
-            finally { if (e_1) throw e_1.error; }
         }
         return PlayerMixinClass;
     }
 
-    var EncoderBase = /** @class */ (function () {
-        function EncoderBase() {
+    class EncoderBase {
+        constructor() {
             this.dataUrl = null;
         }
         /**
@@ -7126,42 +6749,41 @@ Keep on Flipnoting!
          *
          * Note: This method does not work outside of NodeJS environments
          */
-        EncoderBase.prototype.getBuffer = function () {
+        getBuffer() {
             assertNodeEnv();
             return Buffer.from(this.getArrayBuffer());
-        };
+        }
         /**
          * Returns the file data as a {@link https://developer.mozilla.org/en-US/docs/Web/API/Blob | Blob}
          */
-        EncoderBase.prototype.getBlob = function () {
+        getBlob() {
             assertBrowserEnv();
             return new Blob([this.getArrayBuffer()], {
                 type: this.mimeType
             });
-        };
+        }
         /**
          * Returns the file data as an {@link https://developer.mozilla.org/en-US/docs/Web/API/URL/createObjectURL | Object URL}
          *
          * Note: This method does not work outside of browser environments
          */
-        EncoderBase.prototype.getUrl = function () {
+        getUrl() {
             assertBrowserEnv();
             if (this.dataUrl)
                 return this.dataUrl;
             return window.URL.createObjectURL(this.getBlob());
-        };
+        }
         /**
          * Revokes this file's {@link https://developer.mozilla.org/en-US/docs/Web/API/URL/createObjectURL | Object URL} if one has been created, use this when the url created with {@link getUrl} is no longer needed, to preserve memory.
          *
          * Note: This method does not work outside of browser environments
          */
-        EncoderBase.prototype.revokeUrl = function () {
+        revokeUrl() {
             assertBrowserEnv();
             if (this.dataUrl)
                 window.URL.revokeObjectURL(this.dataUrl);
-        };
-        return EncoderBase;
-    }());
+        }
+    }
 
     /*
       LZWEncoder.js
@@ -7186,20 +6808,20 @@ Keep on Flipnoting!
       Joe Orost (decvax!vax135!petsd!joe)
     */
     /** @internal */
-    var EOF = -1;
+    const EOF = -1;
     /** @internal */
-    var BITS = 12;
+    const BITS = 12;
     /** @internal */
-    var HSIZE = 5003; // 80% occupancy
+    const HSIZE = 5003; // 80% occupancy
     /** @internal */
-    var masks = [
+    const masks = [
         0x0000, 0x0001, 0x0003, 0x0007, 0x000F, 0x001F,
         0x003F, 0x007F, 0x00FF, 0x01FF, 0x03FF, 0x07FF,
         0x0FFF, 0x1FFF, 0x3FFF, 0x7FFF, 0xFFFF
     ];
     /** @internal */
-    var LzwCompressor = /** @class */ (function () {
-        function LzwCompressor(width, height, colorDepth) {
+    class LzwCompressor {
+        constructor(width, height, colorDepth) {
             this.accum = new Uint8Array(256);
             this.htab = new Int32Array(HSIZE);
             this.codetab = new Int32Array(HSIZE);
@@ -7229,7 +6851,7 @@ Keep on Flipnoting!
             this.colorDepth = colorDepth;
             this.reset();
         }
-        LzwCompressor.prototype.reset = function () {
+        reset() {
             this.initCodeSize = Math.max(2, this.colorDepth);
             this.accum.fill(0);
             this.htab.fill(0);
@@ -7256,28 +6878,28 @@ Keep on Flipnoting!
             this.g_init_bits = undefined;
             this.ClearCode = undefined;
             this.EOFCode = undefined;
-        };
+        }
         // Add a character to the end of the current packet, and if it is 254
         // characters, flush the packet to disk.
-        LzwCompressor.prototype.char_out = function (c, outs) {
+        char_out(c, outs) {
             this.accum[this.a_count++] = c;
             if (this.a_count >= 254)
                 this.flush_char(outs);
-        };
+        }
         // Clear out the hash table
         // table clear for block compress
-        LzwCompressor.prototype.cl_block = function (outs) {
+        cl_block(outs) {
             this.cl_hash(HSIZE);
             this.free_ent = this.ClearCode + 2;
             this.clear_flg = true;
             this.output(this.ClearCode, outs);
-        };
+        }
         // Reset code table
-        LzwCompressor.prototype.cl_hash = function (hsize) {
+        cl_hash(hsize) {
             for (var i = 0; i < hsize; ++i)
                 this.htab[i] = -1;
-        };
-        LzwCompressor.prototype.compress = function (init_bits, outs) {
+        }
+        compress(init_bits, outs) {
             var fcode, c, i, ent, disp, hsize_reg, hshift;
             // Set up the globals: this.g_init_bits - initial number of bits
             this.g_init_bits = init_bits;
@@ -7332,35 +6954,35 @@ Keep on Flipnoting!
             // Put out the final code.
             this.output(ent, outs);
             this.output(this.EOFCode, outs);
-        };
-        LzwCompressor.prototype.encode = function (pixels, outs) {
+        }
+        encode(pixels, outs) {
             this.pixels = pixels;
             outs.writeByte(this.initCodeSize); // write 'initial code size' byte
             this.remaining = this.width * this.height; // reset navigation variables
             this.curPixel = 0;
             this.compress(this.initCodeSize + 1, outs); // compress and write the pixel data
             outs.writeByte(0); // write block terminator
-        };
+        }
         // Flush the packet to disk, and reset the this.accumulator
-        LzwCompressor.prototype.flush_char = function (outs) {
+        flush_char(outs) {
             if (this.a_count > 0) {
                 outs.writeByte(this.a_count);
                 outs.writeBytes(this.accum, 0, this.a_count);
                 this.a_count = 0;
             }
-        };
-        LzwCompressor.prototype.get_maxcode = function (n_bits) {
+        }
+        get_maxcode(n_bits) {
             return (1 << n_bits) - 1;
-        };
+        }
         // Return the next pixel from the image
-        LzwCompressor.prototype.nextPixel = function () {
+        nextPixel() {
             if (this.remaining === 0)
                 return EOF;
             --this.remaining;
             var pix = this.pixels[this.curPixel++];
             return pix & 0xff;
-        };
-        LzwCompressor.prototype.output = function (code, outs) {
+        }
+        output(code, outs) {
             this.cur_accum &= masks[this.cur_bits];
             if (this.cur_bits > 0)
                 this.cur_accum |= (code << this.cur_bits);
@@ -7396,9 +7018,8 @@ Keep on Flipnoting!
                 }
                 this.flush_char(outs);
             }
-        };
-        return LzwCompressor;
-    }());
+        }
+    }
 
     /**
      * GIF image encoder
@@ -7406,26 +7027,23 @@ Keep on Flipnoting!
      * Supports static single-frame GIF export as well as animated GIF
      * @category File Encoder
      */
-    var GifImage = /** @class */ (function (_super) {
-        __extends(GifImage, _super);
+    class GifImage extends EncoderBase {
         /**
          * Create a new GIF image object
          * @param width image width
          * @param height image height
          * @param settings whether the gif should loop, the delay between frames, etc. See {@link GifEncoderSettings}
          */
-        function GifImage(width, height, settings) {
-            if (settings === void 0) { settings = {}; }
-            var _this = _super.call(this) || this;
-            _this.mimeType = 'gif/image';
+        constructor(width, height, settings = {}) {
+            super();
+            this.mimeType = 'gif/image';
             /** Number of current GIF frames */
-            _this.frameCount = 0;
-            _this.width = width;
-            _this.height = height;
-            _this.data = new ByteArray();
-            _this.settings = __assign(__assign({}, GifImage.defaultSettings), settings);
-            _this.compressor = new LzwCompressor(width, height, settings.colorDepth);
-            return _this;
+            this.frameCount = 0;
+            this.width = width;
+            this.height = height;
+            this.data = new ByteArray();
+            this.settings = { ...GifImage.defaultSettings, ...settings };
+            this.compressor = new LzwCompressor(width, height, settings.colorDepth);
         }
         /**
          * Create an animated GIF image from a Flipnote
@@ -7434,45 +7052,50 @@ Keep on Flipnoting!
          * @param flipnote {@link Flipnote} object ({@link PpmParser} or {@link KwzParser} instance)
          * @param settings whether the gif should loop, the delay between frames, etc. See {@link GifEncoderSettings}
          */
-        GifImage.fromFlipnote = function (flipnote, settings) {
-            var _a;
-            if (settings === void 0) { settings = {}; }
-            var gif = new GifImage(flipnote.imageWidth, flipnote.imageHeight, __assign({ delay: 100 / flipnote.framerate, repeat: ((_a = flipnote.meta) === null || _a === void 0 ? void 0 : _a.loop) ? -1 : 0 }, settings));
+        static fromFlipnote(flipnote, settings = {}) {
+            const gif = new GifImage(flipnote.imageWidth, flipnote.imageHeight, {
+                delay: 100 / flipnote.framerate,
+                repeat: flipnote.meta?.loop ? -1 : 0,
+                ...settings
+            });
             gif.palette = flipnote.globalPalette;
-            for (var frameIndex = 0; frameIndex < flipnote.frameCount; frameIndex++)
+            for (let frameIndex = 0; frameIndex < flipnote.frameCount; frameIndex++)
                 gif.writeFrame(flipnote.getFramePixels(frameIndex));
             gif.finish();
             return gif;
-        };
+        }
         /**
          * Create an GIF image from a single Flipnote frame
          * @param flipnote
          * @param frameIndex animation frame index to encode
          * @param settings whether the gif should loop, the delay between frames, etc. See {@link GifEncoderSettings}
          */
-        GifImage.fromFlipnoteFrame = function (flipnote, frameIndex, settings) {
-            if (settings === void 0) { settings = {}; }
-            var gif = new GifImage(flipnote.imageWidth, flipnote.imageHeight, __assign({ delay: 0, repeat: 0 }, settings));
+        static fromFlipnoteFrame(flipnote, frameIndex, settings = {}) {
+            const gif = new GifImage(flipnote.imageWidth, flipnote.imageHeight, {
+                delay: 0,
+                repeat: 0,
+                ...settings,
+            });
             gif.palette = flipnote.globalPalette;
             gif.writeFrame(flipnote.getFramePixels(frameIndex));
             gif.finish();
             return gif;
-        };
+        }
         /**
          * Add a frame to the GIF image
          * @param pixels Raw pixels to encode, must be an uncompressed 8bit array of palette indices with a size matching image width * image height
          */
-        GifImage.prototype.writeFrame = function (pixels) {
+        writeFrame(pixels) {
             if (this.frameCount === 0)
                 this.writeFirstFrame(pixels);
             else
                 this.writeAdditionalFrame(pixels);
             this.frameCount += 1;
-        };
-        GifImage.prototype.finish = function () {
+        }
+        finish() {
             this.data.writeByte(0x3B);
-        };
-        GifImage.prototype.writeFirstFrame = function (pixels) {
+        }
+        writeFirstFrame(pixels) {
             this.writeHeader();
             this.writeLogicalScreenDescriptor();
             this.writeColorTable();
@@ -7480,16 +7103,16 @@ Keep on Flipnoting!
             this.writeGraphicControlExt();
             this.writeImageDescriptor();
             this.writePixels(pixels);
-        };
-        GifImage.prototype.writeAdditionalFrame = function (pixels) {
+        }
+        writeAdditionalFrame(pixels) {
             this.writeGraphicControlExt();
             this.writeImageDescriptor();
             this.writePixels(pixels);
-        };
-        GifImage.prototype.writeHeader = function () {
+        }
+        writeHeader() {
             this.data.writeChars('GIF89a');
-        };
-        GifImage.prototype.writeGraphicControlExt = function () {
+        }
+        writeGraphicControlExt() {
             this.data.writeByte(0x21); // extension introducer
             this.data.writeByte(0xf9); // GCE label
             this.data.writeByte(4); // data block size
@@ -7498,24 +7121,24 @@ Keep on Flipnoting!
             this.data.writeU16(this.settings.delay); // delay x 1/100 sec
             this.data.writeByte(0); // transparent color index
             this.data.writeByte(0); // block terminator
-        };
-        GifImage.prototype.writeLogicalScreenDescriptor = function () {
-            var palette = this.palette;
-            var colorDepth = this.settings.colorDepth;
-            var globalColorTableFlag = 1;
-            var sortFlag = 0;
-            var globalColorTableSize = this.colorTableSize(palette.length) - 1;
-            var fields = (globalColorTableFlag << 7) |
+        }
+        writeLogicalScreenDescriptor() {
+            const palette = this.palette;
+            const colorDepth = this.settings.colorDepth;
+            const globalColorTableFlag = 1;
+            const sortFlag = 0;
+            const globalColorTableSize = this.colorTableSize(palette.length) - 1;
+            const fields = (globalColorTableFlag << 7) |
                 ((colorDepth - 1) << 4) |
                 (sortFlag << 3) |
                 globalColorTableSize;
-            var backgroundColorIndex = 0;
-            var pixelAspectRatio = 0;
+            const backgroundColorIndex = 0;
+            const pixelAspectRatio = 0;
             this.data.writeU16(this.width);
             this.data.writeU16(this.height);
             this.data.writeBytes([fields, backgroundColorIndex, pixelAspectRatio]);
-        };
-        GifImage.prototype.writeNetscapeExt = function () {
+        }
+        writeNetscapeExt() {
             this.data.writeByte(0x21); // extension introducer
             this.data.writeByte(0xff); // app extension label
             this.data.writeByte(11); // block size
@@ -7524,12 +7147,12 @@ Keep on Flipnoting!
             this.data.writeByte(1); // loop sub-block id
             this.data.writeU16(this.settings.repeat); // loop count (extra iterations, 0=repeat forever)
             this.data.writeByte(0); // block terminator
-        };
-        GifImage.prototype.writeColorTable = function () {
-            var palette = this.palette;
-            var colorTableLength = 1 << this.colorTableSize(palette.length);
-            for (var i = 0; i < colorTableLength; i++) {
-                var color = [0, 0, 0];
+        }
+        writeColorTable() {
+            const palette = this.palette;
+            const colorTableLength = 1 << this.colorTableSize(palette.length);
+            for (let i = 0; i < colorTableLength; i++) {
+                let color = [0, 0, 0];
                 if (i < palette.length) {
                     color = palette[i];
                 }
@@ -7537,51 +7160,50 @@ Keep on Flipnoting!
                 this.data.writeByte(color[1]);
                 this.data.writeByte(color[2]);
             }
-        };
-        GifImage.prototype.writeImageDescriptor = function () {
+        }
+        writeImageDescriptor() {
             this.data.writeByte(0x2c); // image separator
             this.data.writeU16(0); // x position
             this.data.writeU16(0); // y position
             this.data.writeU16(this.width); // image size
             this.data.writeU16(this.height);
             this.data.writeByte(0); // global palette
-        };
-        GifImage.prototype.colorTableSize = function (length) {
+        }
+        colorTableSize(length) {
             return Math.max(Math.ceil(Math.log2(length)), 1);
-        };
-        GifImage.prototype.writePixels = function (pixels) {
+        }
+        writePixels(pixels) {
             this.compressor.colorDepth = this.settings.colorDepth;
             this.compressor.reset();
             this.compressor.encode(pixels, this.data);
-        };
+        }
         /**
          * Returns the GIF image data as an {@link https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/ArrayBuffer | ArrayBuffer}
          */
-        GifImage.prototype.getArrayBuffer = function () {
+        getArrayBuffer() {
             return this.data.getBuffer();
-        };
+        }
         /**
           * Returns the GIF image data as an {@link https://developer.mozilla.org/en-US/docs/Web/API/HTMLImageElement/Image | Image} object
           *
           * Note: This method does not work outside of browser environments
           */
-        GifImage.prototype.getImage = function () {
+        getImage() {
             assertBrowserEnv();
-            var img = new Image(this.width, this.height);
+            const img = new Image(this.width, this.height);
             img.src = this.getUrl();
             return img;
-        };
-        /**
-         * Default GIF encoder settings
-         */
-        GifImage.defaultSettings = {
-            // transparentBg: false,
-            delay: 100,
-            repeat: -1,
-            colorDepth: 8
-        };
-        return GifImage;
-    }(EncoderBase));
+        }
+    }
+    /**
+     * Default GIF encoder settings
+     */
+    GifImage.defaultSettings = {
+        // transparentBg: false,
+        delay: 100,
+        repeat: -1,
+        colorDepth: 8
+    };
 
     /**
      * Wav audio object. Used to create a {@link https://en.wikipedia.org/wiki/WAV | WAV} file from a PCM audio stream or a {@link Flipnote} object.
@@ -7590,25 +7212,22 @@ Keep on Flipnoting!
      *
      * @category File Encoder
      */
-    var WavAudio = /** @class */ (function (_super) {
-        __extends(WavAudio, _super);
+    class WavAudio extends EncoderBase {
         /**
          * Create a new WAV audio object
          * @param sampleRate audio samplerate
          * @param channels number of audio channels
          * @param bitsPerSample number of bits per sample
          */
-        function WavAudio(sampleRate, channels, bitsPerSample) {
-            if (channels === void 0) { channels = 1; }
-            if (bitsPerSample === void 0) { bitsPerSample = 16; }
-            var _this = _super.call(this) || this;
-            _this.sampleRate = sampleRate;
-            _this.channels = channels;
-            _this.bitsPerSample = bitsPerSample;
+        constructor(sampleRate, channels = 1, bitsPerSample = 16) {
+            super();
+            this.sampleRate = sampleRate;
+            this.channels = channels;
+            this.bitsPerSample = bitsPerSample;
             // Write WAV file header
             // Reference: http://www.topherlee.com/software/pcm-tut-wavformat.html
-            var headerBuffer = new ArrayBuffer(44);
-            var header = new DataStream(headerBuffer);
+            const headerBuffer = new ArrayBuffer(44);
+            const header = new DataStream(headerBuffer);
             // 'RIFF' indent
             header.writeChars('RIFF');
             // filesize (set later)
@@ -7622,53 +7241,52 @@ Keep on Flipnoting!
             // specify audio format is pcm (type 1)
             header.writeUint16(1);
             // number of audio channels
-            header.writeUint16(_this.channels);
+            header.writeUint16(this.channels);
             // audio sample rate
-            header.writeUint32(_this.sampleRate);
+            header.writeUint32(this.sampleRate);
             // byterate = (sampleRate * bitsPerSample * channelCount) / 8
-            header.writeUint32((_this.sampleRate * _this.bitsPerSample * _this.channels) / 8);
+            header.writeUint32((this.sampleRate * this.bitsPerSample * this.channels) / 8);
             // blockalign = (bitsPerSample * channels) / 8
-            header.writeUint16((_this.bitsPerSample * _this.channels) / 8);
+            header.writeUint16((this.bitsPerSample * this.channels) / 8);
             // bits per sample
-            header.writeUint16(_this.bitsPerSample);
+            header.writeUint16(this.bitsPerSample);
             // 'data' section header
             header.writeChars('data');
             // data section length (set later)
             header.writeUint32(0);
-            _this.header = header;
-            _this.pcmData = null;
-            return _this;
+            this.header = header;
+            this.pcmData = null;
         }
         /**
          * Create a WAV audio file from a Flipnote's master audio track
          * @param flipnote
          * @param trackId
          */
-        WavAudio.fromFlipnote = function (note) {
-            var sampleRate = note.sampleRate;
-            var wav = new WavAudio(sampleRate, 1, 16);
-            var pcm = note.getAudioMasterPcm(sampleRate);
+        static fromFlipnote(note) {
+            const sampleRate = note.sampleRate;
+            const wav = new WavAudio(sampleRate, 1, 16);
+            const pcm = note.getAudioMasterPcm(sampleRate);
             wav.writeSamples(pcm);
             return wav;
-        };
+        }
         /**
          * Create a WAV audio file from a given Flipnote audio track
          * @param flipnote
          * @param trackId
          */
-        WavAudio.fromFlipnoteTrack = function (flipnote, trackId) {
-            var sampleRate = flipnote.sampleRate;
-            var wav = new WavAudio(sampleRate, 1, 16);
-            var pcm = flipnote.getAudioTrackPcm(trackId, sampleRate);
+        static fromFlipnoteTrack(flipnote, trackId) {
+            const sampleRate = flipnote.sampleRate;
+            const wav = new WavAudio(sampleRate, 1, 16);
+            const pcm = flipnote.getAudioTrackPcm(trackId, sampleRate);
             wav.writeSamples(pcm);
             return wav;
-        };
+        }
         /**
          * Add PCM audio frames to the WAV
          * @param pcmData signed int16 PCM audio samples
          */
-        WavAudio.prototype.writeSamples = function (pcmData) {
-            var header = this.header;
+        writeSamples(pcmData) {
+            let header = this.header;
             // fill in filesize
             header.seek(4);
             header.writeUint32(header.byteLength + pcmData.byteLength);
@@ -7676,26 +7294,26 @@ Keep on Flipnoting!
             header.seek(40);
             header.writeUint32(pcmData.byteLength);
             this.pcmData = pcmData;
-        };
+        }
         /**
          * Returns the WAV audio data as an {@link https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/ArrayBuffer | ArrayBuffer}
          */
-        WavAudio.prototype.getArrayBuffer = function () {
-            var headerBytes = this.header.bytes;
-            var pcmBytes = new Uint8Array(this.pcmData.buffer);
-            var resultBytes = new Uint8Array(this.header.byteLength + this.pcmData.byteLength);
+        getArrayBuffer() {
+            const headerBytes = this.header.bytes;
+            const pcmBytes = new Uint8Array(this.pcmData.buffer);
+            const resultBytes = new Uint8Array(this.header.byteLength + this.pcmData.byteLength);
             resultBytes.set(headerBytes);
             resultBytes.set(pcmBytes, headerBytes.byteLength);
             return resultBytes.buffer;
-        };
-        return WavAudio;
-    }(EncoderBase));
+        }
+    }
 
     // Entrypoint for web and node
     /**
-     * flipnote.js library version (exported as `flipnote.version`). You can find the latest version on the project's [NPM](https://www.npmjs.com/package/flipnote.js) page.
+     * flipnote.js library version (exported as `flipnote.version`).
+     * You can find the latest version on the project's [NPM](https://www.npmjs.com/package/flipnote.js) page.
      */
-    var version = "5.11.0"; // replaced by @rollup/plugin-replace; see rollup.config.js
+    const version = "5.12.0"; // replaced by @rollup/plugin-replace;
 
     exports.CanvasInterface = CanvasInterface;
     exports.GifImage = GifImage;
@@ -7713,6 +7331,5 @@ Keep on Flipnoting!
     exports.utils = fsid;
     exports.version = version;
 
-    Object.defineProperty(exports, '__esModule', { value: true });
-
 }));
+//# sourceMappingURL=flipnote.js.map
