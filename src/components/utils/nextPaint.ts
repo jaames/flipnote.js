@@ -1,4 +1,4 @@
-import { isBrowser } from '../utils';
+import { isBrowser } from '../../utils';
 
 /** @internal */
 const raf = isBrowser && (window.requestAnimationFrame || (window as any).webkitRequestAnimationFrame);

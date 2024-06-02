@@ -1,15 +1,12 @@
 /*!!
- * flipnote.js v5.12.0
+ * flipnote.js v6.0.0
  * https://flipnote.js.org
  * A JavaScript library for Flipnote Studio animation files
  * 2018 - 2024 James Daniel
  * Flipnote Studio is (c) Nintendo Co., Ltd. This project isn't affiliated with or endorsed by them in any way.
 */
-(function (global, factory) {
-    typeof exports === 'object' && typeof module !== 'undefined' ? factory(exports) :
-    typeof define === 'function' && define.amd ? define(['exports'], factory) :
-    (global = typeof globalThis !== 'undefined' ? globalThis : global || self, factory(global.flipnote = {}));
-})(this, (function (exports) { 'use strict';
+var flipnote = (function (exports) {
+    'use strict';
 
     /** @internal */
     class ByteArray {
@@ -724,7 +721,7 @@
         };
     }))();
 
-    var _a$3;
+    var _a$2;
     /** Identifies which animation format a Flipnote uses */
     exports.FlipnoteFormat = void 0;
     (function (FlipnoteFormat) {
@@ -780,7 +777,7 @@
             super(...arguments);
             /** Instance file format info */
             /** Custom object tag */
-            this[_a$3] = 'Flipnote';
+            this[_a$2] = 'Flipnote';
             /** Default formats used for {@link getTitle()} */
             this.titleFormats = {
                 COMMENT: 'Comment by $USERNAME',
@@ -838,7 +835,7 @@
          * ```
          * @category Utility
          */
-        *[(_a$3 = Symbol.toStringTag, Symbol.iterator)]() {
+        *[(_a$2 = Symbol.toStringTag, Symbol.iterator)]() {
             for (let i = 0; i < this.frameCount; i++)
                 yield i;
         }
@@ -1051,7 +1048,7 @@
         }
     }
 
-    var _a$2;
+    var _a$1;
     /**
      * PPM framerates in frames per second, indexed by the in-app frame speed.
      * Frame speed 0 is never normally used
@@ -1116,7 +1113,7 @@ MIGfMA0GCSqGSIb3DQEBAQUAA4GNADCBiQKBgQDCPLwTL6oSflv+gjywi/sM0TUB
             /** File format type, reflects {@link PpmParser.format} */
             this.format = exports.FlipnoteFormat.PPM;
             /** Custom object tag */
-            this[_a$2] = 'Flipnote Studio PPM animation file';
+            this[_a$1] = 'Flipnote Studio PPM animation file';
             /** Animation frame width, reflects {@link PpmParser.width} */
             this.imageWidth = PpmParser.width;
             /** Animation frame height, reflects {@link PpmParser.height} */
@@ -1751,7 +1748,7 @@ MIGfMA0GCSqGSIb3DQEBAQUAA4GNADCBiQKBgQDCPLwTL6oSflv+gjywi/sM0TUB
             return await rsaVerify(key, this.getSignature(), this.getBody());
         }
     }
-    _a$2 = Symbol.toStringTag;
+    _a$1 = Symbol.toStringTag;
     /** Default PPM parser settings */
     PpmParser.defaultSettings = {};
     /** File format type */
@@ -1793,7 +1790,7 @@ MIGfMA0GCSqGSIb3DQEBAQUAA4GNADCBiQKBgQDCPLwTL6oSflv+gjywi/sM0TUB
     /** Public key used for Flipnote verification, in PEM format */
     PpmParser.publicKey = PPM_PUBLIC_KEY;
 
-    var _a$1;
+    var _a;
     /**
      * KWZ framerates in frames per second, indexed by the in-app frame speed
      */
@@ -1896,7 +1893,7 @@ kQIDAQAB
             /** File format type, reflects {@link KwzParser.format} */
             this.format = exports.FlipnoteFormat.KWZ;
             /** Custom object tag */
-            this[_a$1] = 'Flipnote Studio 3D KWZ animation file';
+            this[_a] = 'Flipnote Studio 3D KWZ animation file';
             /** Animation frame width, reflects {@link KwzParser.width} */
             this.imageWidth = KwzParser.width;
             /** Animation frame height, reflects {@link KwzParser.height} */
@@ -2761,7 +2758,7 @@ kQIDAQAB
             return await rsaVerify(key, this.getSignature(), this.getBody());
         }
     }
-    _a$1 = Symbol.toStringTag;
+    _a = Symbol.toStringTag;
     /** Default KWZ parser settings */
     KwzParser.defaultSettings = {
         quickMeta: false,
@@ -3085,7 +3082,7 @@ kQIDAQAB
         constructor(parent, width, height, options) { }
     }
 
-    /* @license twgl.js 4.24.0 Copyright (c) 2015, Gregg Tavares All Rights Reserved.
+    /* @license twgl.js 5.5.4 Copyright (c) 2015, Gregg Tavares All Rights Reserved.
     Available via the MIT license.
     see: http://github.com/greggman/twgl.js for details */
     /*
@@ -3134,42 +3131,42 @@ kQIDAQAB
      */
 
     /* DataType */
-    const BYTE                           = 0x1400;
-    const UNSIGNED_BYTE                  = 0x1401;
-    const SHORT                          = 0x1402;
-    const UNSIGNED_SHORT                 = 0x1403;
-    const INT                            = 0x1404;
-    const UNSIGNED_INT                   = 0x1405;
-    const FLOAT                          = 0x1406;
-    const UNSIGNED_SHORT_4_4_4_4       = 0x8033;
-    const UNSIGNED_SHORT_5_5_5_1       = 0x8034;
-    const UNSIGNED_SHORT_5_6_5         = 0x8363;
-    const HALF_FLOAT                   = 0x140B;
-    const UNSIGNED_INT_2_10_10_10_REV  = 0x8368;
-    const UNSIGNED_INT_10F_11F_11F_REV = 0x8C3B;
-    const UNSIGNED_INT_5_9_9_9_REV     = 0x8C3E;
-    const FLOAT_32_UNSIGNED_INT_24_8_REV = 0x8DAD;
-    const UNSIGNED_INT_24_8            = 0x84FA;
+    const BYTE$2                           = 0x1400;
+    const UNSIGNED_BYTE$3                  = 0x1401;
+    const SHORT$2                          = 0x1402;
+    const UNSIGNED_SHORT$3                 = 0x1403;
+    const INT$3                            = 0x1404;
+    const UNSIGNED_INT$3                   = 0x1405;
+    const FLOAT$3                          = 0x1406;
+    const UNSIGNED_SHORT_4_4_4_4$1       = 0x8033;
+    const UNSIGNED_SHORT_5_5_5_1$1       = 0x8034;
+    const UNSIGNED_SHORT_5_6_5$1         = 0x8363;
+    const HALF_FLOAT$1                   = 0x140B;
+    const UNSIGNED_INT_2_10_10_10_REV$1  = 0x8368;
+    const UNSIGNED_INT_10F_11F_11F_REV$1 = 0x8C3B;
+    const UNSIGNED_INT_5_9_9_9_REV$1     = 0x8C3E;
+    const FLOAT_32_UNSIGNED_INT_24_8_REV$1 = 0x8DAD;
+    const UNSIGNED_INT_24_8$1            = 0x84FA;
 
     const glTypeToTypedArray = {};
     {
       const tt = glTypeToTypedArray;
-      tt[BYTE]                           = Int8Array;
-      tt[UNSIGNED_BYTE]                  = Uint8Array;
-      tt[SHORT]                          = Int16Array;
-      tt[UNSIGNED_SHORT]                 = Uint16Array;
-      tt[INT]                            = Int32Array;
-      tt[UNSIGNED_INT]                   = Uint32Array;
-      tt[FLOAT]                          = Float32Array;
-      tt[UNSIGNED_SHORT_4_4_4_4]         = Uint16Array;
-      tt[UNSIGNED_SHORT_5_5_5_1]         = Uint16Array;
-      tt[UNSIGNED_SHORT_5_6_5]           = Uint16Array;
-      tt[HALF_FLOAT]                     = Uint16Array;
-      tt[UNSIGNED_INT_2_10_10_10_REV]    = Uint32Array;
-      tt[UNSIGNED_INT_10F_11F_11F_REV]   = Uint32Array;
-      tt[UNSIGNED_INT_5_9_9_9_REV]       = Uint32Array;
-      tt[FLOAT_32_UNSIGNED_INT_24_8_REV] = Uint32Array;
-      tt[UNSIGNED_INT_24_8]              = Uint32Array;
+      tt[BYTE$2]                           = Int8Array;
+      tt[UNSIGNED_BYTE$3]                  = Uint8Array;
+      tt[SHORT$2]                          = Int16Array;
+      tt[UNSIGNED_SHORT$3]                 = Uint16Array;
+      tt[INT$3]                            = Int32Array;
+      tt[UNSIGNED_INT$3]                   = Uint32Array;
+      tt[FLOAT$3]                          = Float32Array;
+      tt[UNSIGNED_SHORT_4_4_4_4$1]         = Uint16Array;
+      tt[UNSIGNED_SHORT_5_5_5_1$1]         = Uint16Array;
+      tt[UNSIGNED_SHORT_5_6_5$1]           = Uint16Array;
+      tt[HALF_FLOAT$1]                     = Uint16Array;
+      tt[UNSIGNED_INT_2_10_10_10_REV$1]    = Uint32Array;
+      tt[UNSIGNED_INT_10F_11F_11F_REV$1]   = Uint32Array;
+      tt[UNSIGNED_INT_5_9_9_9_REV$1]       = Uint32Array;
+      tt[FLOAT_32_UNSIGNED_INT_24_8_REV$1] = Uint32Array;
+      tt[UNSIGNED_INT_24_8$1]              = Uint32Array;
     }
 
     /**
@@ -3180,14 +3177,14 @@ kQIDAQAB
      * @memberOf module:twgl/typedArray
      */
     function getGLTypeForTypedArray(typedArray) {
-      if (typedArray instanceof Int8Array)         { return BYTE; }           // eslint-disable-line
-      if (typedArray instanceof Uint8Array)        { return UNSIGNED_BYTE; }  // eslint-disable-line
-      if (typedArray instanceof Uint8ClampedArray) { return UNSIGNED_BYTE; }  // eslint-disable-line
-      if (typedArray instanceof Int16Array)        { return SHORT; }          // eslint-disable-line
-      if (typedArray instanceof Uint16Array)       { return UNSIGNED_SHORT; } // eslint-disable-line
-      if (typedArray instanceof Int32Array)        { return INT; }            // eslint-disable-line
-      if (typedArray instanceof Uint32Array)       { return UNSIGNED_INT; }   // eslint-disable-line
-      if (typedArray instanceof Float32Array)      { return FLOAT; }          // eslint-disable-line
+      if (typedArray instanceof Int8Array)         { return BYTE$2; }           // eslint-disable-line
+      if (typedArray instanceof Uint8Array)        { return UNSIGNED_BYTE$3; }  // eslint-disable-line
+      if (typedArray instanceof Uint8ClampedArray) { return UNSIGNED_BYTE$3; }  // eslint-disable-line
+      if (typedArray instanceof Int16Array)        { return SHORT$2; }          // eslint-disable-line
+      if (typedArray instanceof Uint16Array)       { return UNSIGNED_SHORT$3; } // eslint-disable-line
+      if (typedArray instanceof Int32Array)        { return INT$3; }            // eslint-disable-line
+      if (typedArray instanceof Uint32Array)       { return UNSIGNED_INT$3; }   // eslint-disable-line
+      if (typedArray instanceof Float32Array)      { return FLOAT$3; }          // eslint-disable-line
       throw new Error('unsupported typed array type');
     }
 
@@ -3199,18 +3196,32 @@ kQIDAQAB
      * @memberOf module:twgl/typedArray
      */
     function getGLTypeForTypedArrayType(typedArrayType) {
-      if (typedArrayType === Int8Array)         { return BYTE; }           // eslint-disable-line
-      if (typedArrayType === Uint8Array)        { return UNSIGNED_BYTE; }  // eslint-disable-line
-      if (typedArrayType === Uint8ClampedArray) { return UNSIGNED_BYTE; }  // eslint-disable-line
-      if (typedArrayType === Int16Array)        { return SHORT; }          // eslint-disable-line
-      if (typedArrayType === Uint16Array)       { return UNSIGNED_SHORT; } // eslint-disable-line
-      if (typedArrayType === Int32Array)        { return INT; }            // eslint-disable-line
-      if (typedArrayType === Uint32Array)       { return UNSIGNED_INT; }   // eslint-disable-line
-      if (typedArrayType === Float32Array)      { return FLOAT; }          // eslint-disable-line
+      if (typedArrayType === Int8Array)         { return BYTE$2; }           // eslint-disable-line
+      if (typedArrayType === Uint8Array)        { return UNSIGNED_BYTE$3; }  // eslint-disable-line
+      if (typedArrayType === Uint8ClampedArray) { return UNSIGNED_BYTE$3; }  // eslint-disable-line
+      if (typedArrayType === Int16Array)        { return SHORT$2; }          // eslint-disable-line
+      if (typedArrayType === Uint16Array)       { return UNSIGNED_SHORT$3; } // eslint-disable-line
+      if (typedArrayType === Int32Array)        { return INT$3; }            // eslint-disable-line
+      if (typedArrayType === Uint32Array)       { return UNSIGNED_INT$3; }   // eslint-disable-line
+      if (typedArrayType === Float32Array)      { return FLOAT$3; }          // eslint-disable-line
       throw new Error('unsupported typed array type');
     }
 
-    const isArrayBuffer = typeof SharedArrayBuffer !== 'undefined'
+    /**
+     * Get the typed array constructor for a given GL type
+     * @param {number} type the GL type. (eg: `gl.UNSIGNED_INT`)
+     * @return {function} the constructor for a the corresponding typed array. (eg. `Uint32Array`).
+     * @memberOf module:twgl/typedArray
+     */
+    function getTypedArrayTypeForGLType(type) {
+      const CTOR = glTypeToTypedArray[type];
+      if (!CTOR) {
+        throw new Error('unknown gl type');
+      }
+      return CTOR;
+    }
+
+    const isArrayBuffer$1 = typeof SharedArrayBuffer !== 'undefined'
       ? function isArrayBufferOrSharedArrayBuffer(a) {
         return a && a.buffer && (a.buffer instanceof ArrayBuffer || a.buffer instanceof SharedArrayBuffer);
       }
@@ -3218,12 +3229,32 @@ kQIDAQAB
         return a && a.buffer && a.buffer instanceof ArrayBuffer;
       };
 
+    const isTypeWeakMaps = new Map();
+
+    function isType(object, type) {
+      if (!object || typeof object !== 'object') {
+        return false;
+      }
+      let weakMap = isTypeWeakMaps.get(type);
+      if (!weakMap) {
+        weakMap = new WeakMap();
+        isTypeWeakMaps.set(type, weakMap);
+      }
+      let isOfType = weakMap.get(object);
+      if (isOfType === undefined) {
+        const s = Object.prototype.toString.call(object);
+        isOfType = s.substring(8, s.length - 1) === type;
+        weakMap.set(object, isOfType);
+      }
+      return isOfType;
+    }
+
     function isBuffer(gl, t) {
-      return typeof WebGLBuffer !== 'undefined' && t instanceof WebGLBuffer;
+      return typeof WebGLBuffer !== 'undefined' && isType(t, 'WebGLBuffer');
     }
 
     function isTexture(gl, t) {
-      return typeof WebGLTexture !== 'undefined' && t instanceof WebGLTexture;
+      return typeof WebGLTexture !== 'undefined' && isType(t, 'WebGLTexture');
     }
 
     /*
@@ -3249,18 +3280,18 @@ kQIDAQAB
      */
 
     const STATIC_DRAW                  = 0x88e4;
-    const ARRAY_BUFFER                 = 0x8892;
-    const ELEMENT_ARRAY_BUFFER         = 0x8893;
+    const ARRAY_BUFFER$1                 = 0x8892;
+    const ELEMENT_ARRAY_BUFFER$2         = 0x8893;
     const BUFFER_SIZE                  = 0x8764;
 
     const BYTE$1                         = 0x1400;
-    const UNSIGNED_BYTE$1                = 0x1401;
+    const UNSIGNED_BYTE$2                = 0x1401;
     const SHORT$1                        = 0x1402;
-    const UNSIGNED_SHORT$1               = 0x1403;
-    const INT$1                          = 0x1404;
-    const UNSIGNED_INT$1                 = 0x1405;
-    const FLOAT$1                        = 0x1406;
-    const defaults = {
+    const UNSIGNED_SHORT$2               = 0x1403;
+    const INT$2                          = 0x1404;
+    const UNSIGNED_INT$2                 = 0x1405;
+    const FLOAT$2                        = 0x1406;
+    const defaults$2 = {
       attribPrefix: "",
     };
 
@@ -3284,7 +3315,7 @@ kQIDAQAB
       if (isBuffer(gl, typedArray)) {
         return typedArray;
       }
-      type = type || ARRAY_BUFFER;
+      type = type || ARRAY_BUFFER$1;
       const buffer = gl.createBuffer();
       setBufferFromTypedArray(gl, type, buffer, typedArray, drawType);
       return buffer;
@@ -3296,21 +3327,13 @@ kQIDAQAB
 
     // This is really just a guess. Though I can't really imagine using
     // anything else? Maybe for some compression?
-    function getNormalizationForTypedArray(typedArray) {
-      if (typedArray instanceof Int8Array)    { return true; }  // eslint-disable-line
-      if (typedArray instanceof Uint8Array)   { return true; }  // eslint-disable-line
-      return false;
-    }
-
-    // This is really just a guess. Though I can't really imagine using
-    // anything else? Maybe for some compression?
     function getNormalizationForTypedArrayType(typedArrayType) {
       if (typedArrayType === Int8Array)    { return true; }  // eslint-disable-line
       if (typedArrayType === Uint8Array)   { return true; }  // eslint-disable-line
       return false;
     }
 
-    function getArray(array) {
+    function getArray$1(array) {
       return array.length ? array : array.data;
     }
 
@@ -3334,16 +3357,16 @@ kQIDAQAB
       return numComponents;
     }
 
-    function getNumComponents(array, arrayName) {
-      return array.numComponents || array.size || guessNumComponentsFromName(arrayName, getArray(array).length);
+    function getNumComponents$1(array, arrayName, numValues) {
+      return array.numComponents || array.size || guessNumComponentsFromName(arrayName, numValues || getArray$1(array).length);
     }
 
     function makeTypedArray(array, name) {
-      if (isArrayBuffer(array)) {
+      if (isArrayBuffer$1(array)) {
         return array;
       }
 
-      if (isArrayBuffer(array.data)) {
+      if (isArrayBuffer$1(array.data)) {
         return array.data;
       }
 
@@ -3353,7 +3376,7 @@ kQIDAQAB
         };
       }
 
-      let Type = array.type;
+      let Type = array.type ? typedArrayTypeFromGLTypeOrTypedArrayCtor(array.type) : undefined;
       if (!Type) {
         if (isIndices(name)) {
           Type = Uint16Array;
@@ -3362,6 +3385,52 @@ kQIDAQAB
         }
       }
       return new Type(array.data);
+    }
+
+    function glTypeFromGLTypeOrTypedArrayType(glTypeOrTypedArrayCtor) {
+      return typeof glTypeOrTypedArrayCtor === 'number'
+          ? glTypeOrTypedArrayCtor
+          : glTypeOrTypedArrayCtor ? getGLTypeForTypedArrayType(glTypeOrTypedArrayCtor) : FLOAT$2;
+    }
+
+    function typedArrayTypeFromGLTypeOrTypedArrayCtor(glTypeOrTypedArrayCtor) {
+      return typeof glTypeOrTypedArrayCtor === 'number'
+          ? getTypedArrayTypeForGLType(glTypeOrTypedArrayCtor)
+          : glTypeOrTypedArrayCtor || Float32Array;
+    }
+
+    function attribBufferFromBuffer(gl, array/*, arrayName */) {
+      return {
+        buffer: array.buffer,
+        numValues: 2 * 3 * 4,  // safely divided by 2, 3, 4
+        type: glTypeFromGLTypeOrTypedArrayType(array.type),
+        arrayType: typedArrayTypeFromGLTypeOrTypedArrayCtor(array.type),
+      };
+    }
+
+    function attribBufferFromSize(gl, array/*, arrayName*/) {
+      const numValues = array.data || array;
+      const arrayType = typedArrayTypeFromGLTypeOrTypedArrayCtor(array.type);
+      const numBytes = numValues * arrayType.BYTES_PER_ELEMENT;
+      const buffer = gl.createBuffer();
+      gl.bindBuffer(ARRAY_BUFFER$1, buffer);
+      gl.bufferData(ARRAY_BUFFER$1, numBytes, array.drawType || STATIC_DRAW);
+      return {
+        buffer,
+        numValues,
+        type: getGLTypeForTypedArrayType(arrayType),
+        arrayType,
+      };
+    }
+
+    function attribBufferFromArrayLike(gl, array, arrayName) {
+      const typedArray = makeTypedArray(array, arrayName);
+      return {
+        arrayType: typedArray.constructor,
+        buffer: createBufferFromTypedArray(gl, typedArray, undefined, array.drawType),
+        type: getGLTypeForTypedArray(typedArray),
+        numValues: 0,
+      };
     }
 
     /**
@@ -3377,11 +3446,16 @@ kQIDAQAB
      * @property {boolean} [normalize] whether or not to normalize the data. Default = false
      * @property {number} [offset] offset into buffer in bytes. Default = 0
      * @property {number} [stride] the stride in bytes per element. Default = 0
-     * @property {number} [divisor] the divisor in instances. Default = undefined. Note: undefined = don't call gl.vertexAttribDivisor
-     *    where as anything else = do call it with this value
+     * @property {number} [divisor] the divisor in instances. Default = 0.
+     *    Requires WebGL2 or the ANGLE_instanced_arrays extension.
+     *    and, if you're using WebGL1 you must have called {@link module:twgl.addExtensionsToContext}
      * @property {WebGLBuffer} buffer the buffer that contains the data for this attribute
      * @property {number} [drawType] the draw type passed to gl.bufferData. Default = gl.STATIC_DRAW
      * @memberOf module:twgl
+     */
+
+    /**
+     * @typedef {(Int8ArrayConstructor|Uint8ArrayConstructor|Int16ArrayConstructor|Uint16ArrayConstructor|Int32ArrayConstructor|Uint32ArrayConstructor|Float32ArrayConstructor)} TypedArrayConstructor
      */
 
     /**
@@ -3389,19 +3463,21 @@ kQIDAQAB
      * @typedef {Object} FullArraySpec
      * @property {number[]|ArrayBufferView} [value] a constant value for the attribute. Note: if this is set the attribute will be
      *    disabled and set to this constant value and all other values will be ignored.
-     * @property {(number|number[]|ArrayBufferView)} data The data of the array. A number alone becomes the number of elements of type.
+     * @property {(number|number[]|ArrayBufferView)} [data] The data of the array. A number alone becomes the number of elements of type.
      * @property {number} [numComponents] number of components for `vertexAttribPointer`. Default is based on the name of the array.
      *    If `coord` is in the name assumes `numComponents = 2`.
      *    If `color` is in the name assumes `numComponents = 4`.
      *    otherwise assumes `numComponents = 3`
-     * @property {constructor} [type] type. This is only used if `data` is a JavaScript array. It is the constructor for the typedarray. (eg. `Uint8Array`).
-     * For example if you want colors in a `Uint8Array` you might have a `FullArraySpec` like `{ type: Uint8Array, data: [255,0,255,255, ...], }`.
+     * @property {number|TypedArrayConstructor} [type] type. This is used if `data` is a JavaScript array, or `buffer` is passed in, or `data` is a number.
+     *   It can either be the constructor for a typedarray. (eg. `Uint8Array`) OR a WebGL type, (eg `gl.UNSIGNED_BYTE`).
+     *   For example if you want colors in a `Uint8Array` you might have a `FullArraySpec` like `{ type: gl.UNSIGNED_BYTE, data: [255,0,255,255, ...], }`.
      * @property {number} [size] synonym for `numComponents`.
      * @property {boolean} [normalize] normalize for `vertexAttribPointer`. Default is true if type is `Int8Array` or `Uint8Array` otherwise false.
      * @property {number} [stride] stride for `vertexAttribPointer`. Default = 0
      * @property {number} [offset] offset for `vertexAttribPointer`. Default = 0
-     * @property {number} [divisor] divisor for `vertexAttribDivisor`. Default = undefined. Note: undefined = don't call gl.vertexAttribDivisor
-     *    where as anything else = do call it with this value
+     * @property {number} [divisor] divisor for `vertexAttribDivisor`. Default = 0.
+     *     Requires WebGL2 or the ANGLE_instanced_arrays extension.
+     *     and, if you using WebGL1 you must have called {@link module:twgl.addExtensionsToContext}
      * @property {string} [attrib] name of attribute this array maps to. Defaults to same name as array prefixed by the default attribPrefix.
      * @property {string} [name] synonym for `attrib`.
      * @property {string} [attribName] synonym for `attrib`.
@@ -3416,6 +3492,7 @@ kQIDAQAB
      *           position: bufferInfo1.attribs.position,  // use the same buffer from bufferInfo1
      *         });
      *
+     * @property {number} [drawType] the draw type passed to gl.bufferData. Default = gl.STATIC_DRAW
      * @memberOf module:twgl
      */
 
@@ -3535,41 +3612,26 @@ kQIDAQAB
       Object.keys(arrays).forEach(function(arrayName) {
         if (!isIndices(arrayName)) {
           const array = arrays[arrayName];
-          const attribName = array.attrib || array.name || array.attribName || (defaults.attribPrefix + arrayName);
+          const attribName = array.attrib || array.name || array.attribName || (defaults$2.attribPrefix + arrayName);
           if (array.value) {
-            if (!Array.isArray(array.value) && !isArrayBuffer(array.value)) {
+            if (!Array.isArray(array.value) && !isArrayBuffer$1(array.value)) {
               throw new Error('array.value is not array or typedarray');
             }
             attribs[attribName] = {
               value: array.value,
             };
           } else {
-            let buffer;
-            let type;
-            let normalization;
-            let numComponents;
+            let fn;
             if (array.buffer && array.buffer instanceof WebGLBuffer) {
-              buffer = array.buffer;
-              numComponents = array.numComponents || array.size;
-              type = array.type;
-              normalization = array.normalize;
+              fn = attribBufferFromBuffer;
             } else if (typeof array === "number" || typeof array.data === "number") {
-              const numValues = array.data || array;
-              const arrayType = array.type || Float32Array;
-              const numBytes = numValues * arrayType.BYTES_PER_ELEMENT;
-              type = getGLTypeForTypedArrayType(arrayType);
-              normalization = array.normalize !== undefined ? array.normalize : getNormalizationForTypedArrayType(arrayType);
-              numComponents = array.numComponents || array.size || guessNumComponentsFromName(arrayName, numValues);
-              buffer = gl.createBuffer();
-              gl.bindBuffer(ARRAY_BUFFER, buffer);
-              gl.bufferData(ARRAY_BUFFER, numBytes, array.drawType || STATIC_DRAW);
+              fn = attribBufferFromSize;
             } else {
-              const typedArray = makeTypedArray(array, arrayName);
-              buffer = createBufferFromTypedArray(gl, typedArray, undefined, array.drawType);
-              type = getGLTypeForTypedArray(typedArray);
-              normalization = array.normalize !== undefined ? array.normalize : getNormalizationForTypedArray(typedArray);
-              numComponents = getNumComponents(array, arrayName);
+              fn = attribBufferFromArrayLike;
             }
+            const {buffer, type, numValues, arrayType} = fn(gl, array, arrayName);
+            const normalization = array.normalize !== undefined ? array.normalize : getNormalizationForTypedArrayType(arrayType);
+            const numComponents = getNumComponents$1(array, arrayName, numValues);
             attribs[attribName] = {
               buffer:        buffer,
               numComponents: numComponents,
@@ -3583,18 +3645,18 @@ kQIDAQAB
           }
         }
       });
-      gl.bindBuffer(ARRAY_BUFFER, null);
+      gl.bindBuffer(ARRAY_BUFFER$1, null);
       return attribs;
     }
 
     function getBytesPerValueForGLType(gl, type) {
       if (type === BYTE$1)           return 1;  // eslint-disable-line
-      if (type === UNSIGNED_BYTE$1)  return 1;  // eslint-disable-line
+      if (type === UNSIGNED_BYTE$2)  return 1;  // eslint-disable-line
       if (type === SHORT$1)          return 2;  // eslint-disable-line
-      if (type === UNSIGNED_SHORT$1) return 2;  // eslint-disable-line
-      if (type === INT$1)            return 4;  // eslint-disable-line
-      if (type === UNSIGNED_INT$1)   return 4;  // eslint-disable-line
-      if (type === FLOAT$1)          return 4;  // eslint-disable-line
+      if (type === UNSIGNED_SHORT$2) return 2;  // eslint-disable-line
+      if (type === INT$2)            return 4;  // eslint-disable-line
+      if (type === UNSIGNED_INT$2)   return 4;  // eslint-disable-line
+      if (type === FLOAT$2)          return 4;  // eslint-disable-line
       return 0;
     }
 
@@ -3609,7 +3671,7 @@ kQIDAQAB
         if (key in attribs) {
           break;
         }
-        key = defaults.attribPrefix + key;
+        key = defaults$2.attribPrefix + key;
         if (key in attribs) {
           break;
         }
@@ -3621,9 +3683,9 @@ kQIDAQAB
       if (!attrib.buffer) {
         return 1; // There's no buffer
       }
-      gl.bindBuffer(ARRAY_BUFFER, attrib.buffer);
-      const numBytes = gl.getBufferParameter(ARRAY_BUFFER, BUFFER_SIZE);
-      gl.bindBuffer(ARRAY_BUFFER, null);
+      gl.bindBuffer(ARRAY_BUFFER$1, attrib.buffer);
+      const numBytes = gl.getBufferParameter(ARRAY_BUFFER$1, BUFFER_SIZE);
+      gl.bindBuffer(ARRAY_BUFFER$1, null);
 
       const bytesPerValue = getBytesPerValueForGLType(gl, attrib.type);
       const totalElements = numBytes / bytesPerValue;
@@ -3748,7 +3810,7 @@ kQIDAQAB
       const indices = arrays.indices;
       if (indices) {
         const newIndices = makeTypedArray(indices, "indices");
-        bufferInfo.indices = createBufferFromTypedArray(gl, newIndices, ELEMENT_ARRAY_BUFFER);
+        bufferInfo.indices = createBufferFromTypedArray(gl, newIndices, ELEMENT_ARRAY_BUFFER$2);
         bufferInfo.numElements = newIndices.length;
         bufferInfo.elementType = getGLTypeForTypedArray(newIndices);
       } else if (!bufferInfo.numElements) {
@@ -3819,11 +3881,11 @@ kQIDAQAB
     /* PixelFormat */
     const ALPHA                          = 0x1906;
     const RGB                            = 0x1907;
-    const RGBA                           = 0x1908;
+    const RGBA$1                           = 0x1908;
     const LUMINANCE                      = 0x1909;
     const LUMINANCE_ALPHA                = 0x190A;
-    const DEPTH_COMPONENT                = 0x1902;
-    const DEPTH_STENCIL                  = 0x84F9;
+    const DEPTH_COMPONENT$1                = 0x1902;
+    const DEPTH_STENCIL$1                  = 0x84F9;
 
     const RG                           = 0x8227;
     const RG_INTEGER                   = 0x8228;
@@ -3841,22 +3903,22 @@ kQIDAQAB
       f[LUMINANCE]       = { numColorComponents: 1, };
       f[LUMINANCE_ALPHA] = { numColorComponents: 2, };
       f[RGB]             = { numColorComponents: 3, };
-      f[RGBA]            = { numColorComponents: 4, };
+      f[RGBA$1]            = { numColorComponents: 4, };
       f[RED]             = { numColorComponents: 1, };
       f[RED_INTEGER]     = { numColorComponents: 1, };
       f[RG]              = { numColorComponents: 2, };
       f[RG_INTEGER]      = { numColorComponents: 2, };
       f[RGB]             = { numColorComponents: 3, };
       f[RGB_INTEGER]     = { numColorComponents: 3, };
-      f[RGBA]            = { numColorComponents: 4, };
+      f[RGBA$1]            = { numColorComponents: 4, };
       f[RGBA_INTEGER]    = { numColorComponents: 4, };
-      f[DEPTH_COMPONENT] = { numColorComponents: 1, };
-      f[DEPTH_STENCIL]   = { numColorComponents: 2, };
+      f[DEPTH_COMPONENT$1] = { numColorComponents: 1, };
+      f[DEPTH_STENCIL$1]   = { numColorComponents: 2, };
     }
 
     const TEXTURE0                       = 0x84c0;
 
-    const ARRAY_BUFFER$1                   = 0x8892;
+    const ARRAY_BUFFER                   = 0x8892;
     const ELEMENT_ARRAY_BUFFER$1           = 0x8893;
 
     const ACTIVE_UNIFORMS                = 0x8b86;
@@ -3868,11 +3930,11 @@ kQIDAQAB
     const UNIFORM_BLOCK_DATA_SIZE                     = 0x8a40;
     const UNIFORM_BLOCK_ACTIVE_UNIFORM_INDICES        = 0x8a43;
 
-    const FLOAT$3                         = 0x1406;
+    const FLOAT                         = 0x1406;
     const FLOAT_VEC2                    = 0x8B50;
     const FLOAT_VEC3                    = 0x8B51;
     const FLOAT_VEC4                    = 0x8B52;
-    const INT$3                           = 0x1404;
+    const INT                           = 0x1404;
     const INT_VEC2                      = 0x8B53;
     const INT_VEC3                      = 0x8B54;
     const INT_VEC4                      = 0x8B55;
@@ -3896,7 +3958,7 @@ kQIDAQAB
     const SAMPLER_2D_ARRAY              = 0x8DC1;
     const SAMPLER_2D_ARRAY_SHADOW       = 0x8DC4;
     const SAMPLER_CUBE_SHADOW           = 0x8DC5;
-    const UNSIGNED_INT$3                  = 0x1405;
+    const UNSIGNED_INT                  = 0x1405;
     const UNSIGNED_INT_VEC2             = 0x8DC6;
     const UNSIGNED_INT_VEC3             = 0x8DC7;
     const UNSIGNED_INT_VEC4             = 0x8DC8;
@@ -3910,9 +3972,9 @@ kQIDAQAB
     const UNSIGNED_INT_SAMPLER_2D_ARRAY = 0x8DD7;
 
     const TEXTURE_2D$1                    = 0x0DE1;
-    const TEXTURE_CUBE_MAP$1              = 0x8513;
-    const TEXTURE_3D$1                    = 0x806F;
-    const TEXTURE_2D_ARRAY$1              = 0x8C1A;
+    const TEXTURE_CUBE_MAP              = 0x8513;
+    const TEXTURE_3D                    = 0x806F;
+    const TEXTURE_2D_ARRAY              = 0x8C1A;
 
     const typeMap = {};
 
@@ -4076,7 +4138,7 @@ kQIDAQAB
       return isWebGL2(gl) ? function(textureOrPair) {
         let texture;
         let sampler;
-        if (isTexture(gl, textureOrPair)) {
+        if (!textureOrPair || isTexture(gl, textureOrPair)) {
           texture = textureOrPair;
           sampler = null;
         } else {
@@ -4107,7 +4169,7 @@ kQIDAQAB
           gl.activeTexture(TEXTURE0 + units[index]);
           let texture;
           let sampler;
-          if (isTexture(gl, textureOrPair)) {
+          if (!textureOrPair || isTexture(gl, textureOrPair)) {
             texture = textureOrPair;
             sampler = null;
           } else {
@@ -4126,15 +4188,15 @@ kQIDAQAB
       };
     }
 
-    typeMap[FLOAT$3]                         = { Type: Float32Array, size:  4, setter: floatSetter,      arraySetter: floatArraySetter, };
+    typeMap[FLOAT]                         = { Type: Float32Array, size:  4, setter: floatSetter,      arraySetter: floatArraySetter, };
     typeMap[FLOAT_VEC2]                    = { Type: Float32Array, size:  8, setter: floatVec2Setter,  cols: 2, };
     typeMap[FLOAT_VEC3]                    = { Type: Float32Array, size: 12, setter: floatVec3Setter,  cols: 3, };
     typeMap[FLOAT_VEC4]                    = { Type: Float32Array, size: 16, setter: floatVec4Setter,  cols: 4, };
-    typeMap[INT$3]                           = { Type: Int32Array,   size:  4, setter: intSetter,        arraySetter: intArraySetter, };
+    typeMap[INT]                           = { Type: Int32Array,   size:  4, setter: intSetter,        arraySetter: intArraySetter, };
     typeMap[INT_VEC2]                      = { Type: Int32Array,   size:  8, setter: intVec2Setter,    cols: 2, };
     typeMap[INT_VEC3]                      = { Type: Int32Array,   size: 12, setter: intVec3Setter,    cols: 3, };
     typeMap[INT_VEC4]                      = { Type: Int32Array,   size: 16, setter: intVec4Setter,    cols: 4, };
-    typeMap[UNSIGNED_INT$3]                  = { Type: Uint32Array,  size:  4, setter: uintSetter,       arraySetter: uintArraySetter, };
+    typeMap[UNSIGNED_INT]                  = { Type: Uint32Array,  size:  4, setter: uintSetter,       arraySetter: uintArraySetter, };
     typeMap[UNSIGNED_INT_VEC2]             = { Type: Uint32Array,  size:  8, setter: uintVec2Setter,   cols: 2, };
     typeMap[UNSIGNED_INT_VEC3]             = { Type: Uint32Array,  size: 12, setter: uintVec3Setter,   cols: 3, };
     typeMap[UNSIGNED_INT_VEC4]             = { Type: Uint32Array,  size: 16, setter: uintVec4Setter,   cols: 4, };
@@ -4152,20 +4214,20 @@ kQIDAQAB
     typeMap[FLOAT_MAT4x2]                  = { Type: Float32Array, size: 64, setter: floatMat42Setter, rows: 4, cols: 2, };
     typeMap[FLOAT_MAT4x3]                  = { Type: Float32Array, size: 64, setter: floatMat43Setter, rows: 4, cols: 3, };
     typeMap[SAMPLER_2D]                    = { Type: null,         size:  0, setter: samplerSetter,    arraySetter: samplerArraySetter, bindPoint: TEXTURE_2D$1,       };
-    typeMap[SAMPLER_CUBE]                  = { Type: null,         size:  0, setter: samplerSetter,    arraySetter: samplerArraySetter, bindPoint: TEXTURE_CUBE_MAP$1, };
-    typeMap[SAMPLER_3D]                    = { Type: null,         size:  0, setter: samplerSetter,    arraySetter: samplerArraySetter, bindPoint: TEXTURE_3D$1,       };
+    typeMap[SAMPLER_CUBE]                  = { Type: null,         size:  0, setter: samplerSetter,    arraySetter: samplerArraySetter, bindPoint: TEXTURE_CUBE_MAP, };
+    typeMap[SAMPLER_3D]                    = { Type: null,         size:  0, setter: samplerSetter,    arraySetter: samplerArraySetter, bindPoint: TEXTURE_3D,       };
     typeMap[SAMPLER_2D_SHADOW]             = { Type: null,         size:  0, setter: samplerSetter,    arraySetter: samplerArraySetter, bindPoint: TEXTURE_2D$1,       };
-    typeMap[SAMPLER_2D_ARRAY]              = { Type: null,         size:  0, setter: samplerSetter,    arraySetter: samplerArraySetter, bindPoint: TEXTURE_2D_ARRAY$1, };
-    typeMap[SAMPLER_2D_ARRAY_SHADOW]       = { Type: null,         size:  0, setter: samplerSetter,    arraySetter: samplerArraySetter, bindPoint: TEXTURE_2D_ARRAY$1, };
-    typeMap[SAMPLER_CUBE_SHADOW]           = { Type: null,         size:  0, setter: samplerSetter,    arraySetter: samplerArraySetter, bindPoint: TEXTURE_CUBE_MAP$1, };
+    typeMap[SAMPLER_2D_ARRAY]              = { Type: null,         size:  0, setter: samplerSetter,    arraySetter: samplerArraySetter, bindPoint: TEXTURE_2D_ARRAY, };
+    typeMap[SAMPLER_2D_ARRAY_SHADOW]       = { Type: null,         size:  0, setter: samplerSetter,    arraySetter: samplerArraySetter, bindPoint: TEXTURE_2D_ARRAY, };
+    typeMap[SAMPLER_CUBE_SHADOW]           = { Type: null,         size:  0, setter: samplerSetter,    arraySetter: samplerArraySetter, bindPoint: TEXTURE_CUBE_MAP, };
     typeMap[INT_SAMPLER_2D]                = { Type: null,         size:  0, setter: samplerSetter,    arraySetter: samplerArraySetter, bindPoint: TEXTURE_2D$1,       };
-    typeMap[INT_SAMPLER_3D]                = { Type: null,         size:  0, setter: samplerSetter,    arraySetter: samplerArraySetter, bindPoint: TEXTURE_3D$1,       };
-    typeMap[INT_SAMPLER_CUBE]              = { Type: null,         size:  0, setter: samplerSetter,    arraySetter: samplerArraySetter, bindPoint: TEXTURE_CUBE_MAP$1, };
-    typeMap[INT_SAMPLER_2D_ARRAY]          = { Type: null,         size:  0, setter: samplerSetter,    arraySetter: samplerArraySetter, bindPoint: TEXTURE_2D_ARRAY$1, };
+    typeMap[INT_SAMPLER_3D]                = { Type: null,         size:  0, setter: samplerSetter,    arraySetter: samplerArraySetter, bindPoint: TEXTURE_3D,       };
+    typeMap[INT_SAMPLER_CUBE]              = { Type: null,         size:  0, setter: samplerSetter,    arraySetter: samplerArraySetter, bindPoint: TEXTURE_CUBE_MAP, };
+    typeMap[INT_SAMPLER_2D_ARRAY]          = { Type: null,         size:  0, setter: samplerSetter,    arraySetter: samplerArraySetter, bindPoint: TEXTURE_2D_ARRAY, };
     typeMap[UNSIGNED_INT_SAMPLER_2D]       = { Type: null,         size:  0, setter: samplerSetter,    arraySetter: samplerArraySetter, bindPoint: TEXTURE_2D$1,       };
-    typeMap[UNSIGNED_INT_SAMPLER_3D]       = { Type: null,         size:  0, setter: samplerSetter,    arraySetter: samplerArraySetter, bindPoint: TEXTURE_3D$1,       };
-    typeMap[UNSIGNED_INT_SAMPLER_CUBE]     = { Type: null,         size:  0, setter: samplerSetter,    arraySetter: samplerArraySetter, bindPoint: TEXTURE_CUBE_MAP$1, };
-    typeMap[UNSIGNED_INT_SAMPLER_2D_ARRAY] = { Type: null,         size:  0, setter: samplerSetter,    arraySetter: samplerArraySetter, bindPoint: TEXTURE_2D_ARRAY$1, };
+    typeMap[UNSIGNED_INT_SAMPLER_3D]       = { Type: null,         size:  0, setter: samplerSetter,    arraySetter: samplerArraySetter, bindPoint: TEXTURE_3D,       };
+    typeMap[UNSIGNED_INT_SAMPLER_CUBE]     = { Type: null,         size:  0, setter: samplerSetter,    arraySetter: samplerArraySetter, bindPoint: TEXTURE_CUBE_MAP, };
+    typeMap[UNSIGNED_INT_SAMPLER_2D_ARRAY] = { Type: null,         size:  0, setter: samplerSetter,    arraySetter: samplerArraySetter, bindPoint: TEXTURE_2D_ARRAY, };
 
     function floatAttribSetter(gl, index) {
       return function(b) {
@@ -4188,12 +4250,12 @@ kQIDAQAB
               throw new Error('the length of a float constant value must be between 1 and 4!');
           }
         } else {
-          gl.bindBuffer(ARRAY_BUFFER$1, b.buffer);
+          gl.bindBuffer(ARRAY_BUFFER, b.buffer);
           gl.enableVertexAttribArray(index);
           gl.vertexAttribPointer(
-              index, b.numComponents || b.size, b.type || FLOAT$3, b.normalize || false, b.stride || 0, b.offset || 0);
-          if (b.divisor !== undefined) {
-            gl.vertexAttribDivisor(index, b.divisor);
+              index, b.numComponents || b.size, b.type || FLOAT, b.normalize || false, b.stride || 0, b.offset || 0);
+          if (gl.vertexAttribDivisor) {
+            gl.vertexAttribDivisor(index, b.divisor || 0);
           }
         }
       };
@@ -4209,12 +4271,12 @@ kQIDAQAB
             throw new Error('The length of an integer constant value must be 4!');
           }
         } else {
-          gl.bindBuffer(ARRAY_BUFFER$1, b.buffer);
+          gl.bindBuffer(ARRAY_BUFFER, b.buffer);
           gl.enableVertexAttribArray(index);
           gl.vertexAttribIPointer(
-              index, b.numComponents || b.size, b.type || INT$3, b.stride || 0, b.offset || 0);
-          if (b.divisor !== undefined) {
-            gl.vertexAttribDivisor(index, b.divisor);
+              index, b.numComponents || b.size, b.type || INT, b.stride || 0, b.offset || 0);
+          if (gl.vertexAttribDivisor) {
+            gl.vertexAttribDivisor(index, b.divisor || 0);
           }
         }
       };
@@ -4230,12 +4292,12 @@ kQIDAQAB
             throw new Error('The length of an unsigned integer constant value must be 4!');
           }
         } else {
-          gl.bindBuffer(ARRAY_BUFFER$1, b.buffer);
+          gl.bindBuffer(ARRAY_BUFFER, b.buffer);
           gl.enableVertexAttribArray(index);
           gl.vertexAttribIPointer(
-              index, b.numComponents || b.size, b.type || UNSIGNED_INT$3, b.stride || 0, b.offset || 0);
-          if (b.divisor !== undefined) {
-            gl.vertexAttribDivisor(index, b.divisor);
+              index, b.numComponents || b.size, b.type || UNSIGNED_INT, b.stride || 0, b.offset || 0);
+          if (gl.vertexAttribDivisor) {
+            gl.vertexAttribDivisor(index, b.divisor || 0);
           }
         }
       };
@@ -4246,10 +4308,10 @@ kQIDAQAB
       const count = typeInfo.count;
 
       return function(b) {
-        gl.bindBuffer(ARRAY_BUFFER$1, b.buffer);
+        gl.bindBuffer(ARRAY_BUFFER, b.buffer);
         const numComponents = b.size || b.numComponents || defaultSize;
         const size = numComponents / count;
-        const type = b.type || FLOAT$3;
+        const type = b.type || FLOAT;
         const typeInfo = typeMap[type];
         const stride = typeInfo.size * numComponents;
         const normalize = b.normalize || false;
@@ -4259,8 +4321,8 @@ kQIDAQAB
           gl.enableVertexAttribArray(index + i);
           gl.vertexAttribPointer(
               index + i, size, type, normalize, stride, offset + rowOffset * i);
-          if (b.divisor !== undefined) {
-            gl.vertexAttribDivisor(index + i, b.divisor);
+          if (gl.vertexAttribDivisor) {
+            gl.vertexAttribDivisor(index + i, b.divisor || 0);
           }
         }
       };
@@ -4269,15 +4331,15 @@ kQIDAQAB
 
 
     const attrTypeMap = {};
-    attrTypeMap[FLOAT$3]             = { size:  4, setter: floatAttribSetter, };
+    attrTypeMap[FLOAT]             = { size:  4, setter: floatAttribSetter, };
     attrTypeMap[FLOAT_VEC2]        = { size:  8, setter: floatAttribSetter, };
     attrTypeMap[FLOAT_VEC3]        = { size: 12, setter: floatAttribSetter, };
     attrTypeMap[FLOAT_VEC4]        = { size: 16, setter: floatAttribSetter, };
-    attrTypeMap[INT$3]               = { size:  4, setter: intAttribSetter,   };
+    attrTypeMap[INT]               = { size:  4, setter: intAttribSetter,   };
     attrTypeMap[INT_VEC2]          = { size:  8, setter: intAttribSetter,   };
     attrTypeMap[INT_VEC3]          = { size: 12, setter: intAttribSetter,   };
     attrTypeMap[INT_VEC4]          = { size: 16, setter: intAttribSetter,   };
-    attrTypeMap[UNSIGNED_INT$3]      = { size:  4, setter: uintAttribSetter,  };
+    attrTypeMap[UNSIGNED_INT]      = { size:  4, setter: uintAttribSetter,  };
     attrTypeMap[UNSIGNED_INT_VEC2] = { size:  8, setter: uintAttribSetter,  };
     attrTypeMap[UNSIGNED_INT_VEC3] = { size: 12, setter: uintAttribSetter,  };
     attrTypeMap[UNSIGNED_INT_VEC4] = { size: 16, setter: uintAttribSetter,  };
@@ -4581,7 +4643,7 @@ kQIDAQAB
      *       ],
      *     };
      *
-     *     gl.useProgram(program);
+     *     gl.useProgram(programInfo.program);
      *
      * This will automatically bind the textures AND set the
      * uniforms.
@@ -4590,7 +4652,7 @@ kQIDAQAB
      *
      * For the example above it is equivalent to
      *
-     *     var texUnit = 0;
+     *     let texUnit = 0;
      *     gl.activeTexture(gl.TEXTURE0 + texUnit);
      *     gl.bindTexture(gl.TEXTURE_2D, tex1);
      *     gl.uniform1i(u_someSamplerLocation, texUnit++);
@@ -7323,7 +7385,7 @@ kQIDAQAB
      * flipnote.js library version (exported as `flipnote.version`).
      * You can find the latest version on the project's [NPM](https://www.npmjs.com/package/flipnote.js) page.
      */
-    const version = "5.12.0"; // replaced by @rollup/plugin-replace;
+    const version = "6.0.0"; // replaced by @rollup/plugin-replace;
 
     /******************************************************************************
     Copyright (c) Microsoft Corporation.
@@ -7356,2877 +7418,83 @@ kQIDAQAB
 
     /**
      * @license
-     * Copyright (c) 2017 The Polymer Project Authors. All rights reserved.
-     * This code may only be used under the BSD style license found at
-     * http://polymer.github.io/LICENSE.txt
-     * The complete set of authors may be found at
-     * http://polymer.github.io/AUTHORS.txt
-     * The complete set of contributors may be found at
-     * http://polymer.github.io/CONTRIBUTORS.txt
-     * Code distributed by Google as part of the polymer project is also
-     * subject to an additional IP rights grant found at
-     * http://polymer.github.io/PATENTS.txt
+     * Copyright 2019 Google LLC
+     * SPDX-License-Identifier: BSD-3-Clause
      */
-    /**
-     * True if the custom elements polyfill is in use.
-     */
-    const isCEPolyfill = typeof window !== 'undefined' &&
-        window.customElements != null &&
-        window.customElements.polyfillWrapFlushCallback !==
-            undefined;
-    /**
-     * Reparents nodes, starting from `start` (inclusive) to `end` (exclusive),
-     * into another container (could be the same container), before `before`. If
-     * `before` is null, it appends the nodes to the container.
-     */
-    const reparentNodes = (container, start, end = null, before = null) => {
-        while (start !== end) {
-            const n = start.nextSibling;
-            container.insertBefore(start, before);
-            start = n;
-        }
-    };
-    /**
-     * Removes nodes, starting from `start` (inclusive) to `end` (exclusive), from
-     * `container`.
-     */
-    const removeNodes = (container, start, end = null) => {
-        while (start !== end) {
-            const n = start.nextSibling;
-            container.removeChild(start);
-            start = n;
-        }
-    };
+    const t$4=globalThis,e$7=t$4.ShadowRoot&&(void 0===t$4.ShadyCSS||t$4.ShadyCSS.nativeShadow)&&"adoptedStyleSheets"in Document.prototype&&"replace"in CSSStyleSheet.prototype,s$2=Symbol(),o$5=new WeakMap;let n$4 = class n{constructor(t,e,o){if(this._$cssResult$=!0,o!==s$2)throw Error("CSSResult is not constructable. Use `unsafeCSS` or `css` instead.");this.cssText=t,this.t=e;}get styleSheet(){let t=this.o;const s=this.t;if(e$7&&void 0===t){const e=void 0!==s&&1===s.length;e&&(t=o$5.get(s)),void 0===t&&((this.o=t=new CSSStyleSheet).replaceSync(this.cssText),e&&o$5.set(s,t));}return t}toString(){return this.cssText}};const r$5=t=>new n$4("string"==typeof t?t:t+"",void 0,s$2),i$4=(t,...e)=>{const o=1===t.length?t[0]:e.reduce(((e,s,o)=>e+(t=>{if(!0===t._$cssResult$)return t.cssText;if("number"==typeof t)return t;throw Error("Value passed to 'css' function must be a 'css' function result: "+t+". Use 'unsafeCSS' to pass non-literal values, but take care to ensure page security.")})(s)+t[o+1]),t[0]);return new n$4(o,t,s$2)},S$1=(s,o)=>{if(e$7)s.adoptedStyleSheets=o.map((t=>t instanceof CSSStyleSheet?t:t.styleSheet));else for(const e of o){const o=document.createElement("style"),n=t$4.litNonce;void 0!==n&&o.setAttribute("nonce",n),o.textContent=e.cssText,s.appendChild(o);}},c$2=e$7?t=>t:t=>t instanceof CSSStyleSheet?(t=>{let e="";for(const s of t.cssRules)e+=s.cssText;return r$5(e)})(t):t;
 
     /**
      * @license
-     * Copyright (c) 2017 The Polymer Project Authors. All rights reserved.
-     * This code may only be used under the BSD style license found at
-     * http://polymer.github.io/LICENSE.txt
-     * The complete set of authors may be found at
-     * http://polymer.github.io/AUTHORS.txt
-     * The complete set of contributors may be found at
-     * http://polymer.github.io/CONTRIBUTORS.txt
-     * Code distributed by Google as part of the polymer project is also
-     * subject to an additional IP rights grant found at
-     * http://polymer.github.io/PATENTS.txt
-     */
-    /**
-     * An expression marker with embedded unique key to avoid collision with
-     * possible text in templates.
-     */
-    const marker = `{{lit-${String(Math.random()).slice(2)}}}`;
-    /**
-     * An expression marker used text-positions, multi-binding attributes, and
-     * attributes with markup-like text values.
-     */
-    const nodeMarker = `<!--${marker}-->`;
-    const markerRegex = new RegExp(`${marker}|${nodeMarker}`);
-    /**
-     * Suffix appended to all bound attribute names.
-     */
-    const boundAttributeSuffix = '$lit$';
-    /**
-     * An updatable Template that tracks the location of dynamic parts.
-     */
-    class Template {
-        constructor(result, element) {
-            this.parts = [];
-            this.element = element;
-            const nodesToRemove = [];
-            const stack = [];
-            // Edge needs all 4 parameters present; IE11 needs 3rd parameter to be null
-            const walker = document.createTreeWalker(element.content, 133 /* NodeFilter.SHOW_{ELEMENT|COMMENT|TEXT} */, null, false);
-            // Keeps track of the last index associated with a part. We try to delete
-            // unnecessary nodes, but we never want to associate two different parts
-            // to the same index. They must have a constant node between.
-            let lastPartIndex = 0;
-            let index = -1;
-            let partIndex = 0;
-            const { strings, values: { length } } = result;
-            while (partIndex < length) {
-                const node = walker.nextNode();
-                if (node === null) {
-                    // We've exhausted the content inside a nested template element.
-                    // Because we still have parts (the outer for-loop), we know:
-                    // - There is a template in the stack
-                    // - The walker will find a nextNode outside the template
-                    walker.currentNode = stack.pop();
-                    continue;
-                }
-                index++;
-                if (node.nodeType === 1 /* Node.ELEMENT_NODE */) {
-                    if (node.hasAttributes()) {
-                        const attributes = node.attributes;
-                        const { length } = attributes;
-                        // Per
-                        // https://developer.mozilla.org/en-US/docs/Web/API/NamedNodeMap,
-                        // attributes are not guaranteed to be returned in document order.
-                        // In particular, Edge/IE can return them out of order, so we cannot
-                        // assume a correspondence between part index and attribute index.
-                        let count = 0;
-                        for (let i = 0; i < length; i++) {
-                            if (endsWith(attributes[i].name, boundAttributeSuffix)) {
-                                count++;
-                            }
-                        }
-                        while (count-- > 0) {
-                            // Get the template literal section leading up to the first
-                            // expression in this attribute
-                            const stringForPart = strings[partIndex];
-                            // Find the attribute name
-                            const name = lastAttributeNameRegex.exec(stringForPart)[2];
-                            // Find the corresponding attribute
-                            // All bound attributes have had a suffix added in
-                            // TemplateResult#getHTML to opt out of special attribute
-                            // handling. To look up the attribute value we also need to add
-                            // the suffix.
-                            const attributeLookupName = name.toLowerCase() + boundAttributeSuffix;
-                            const attributeValue = node.getAttribute(attributeLookupName);
-                            node.removeAttribute(attributeLookupName);
-                            const statics = attributeValue.split(markerRegex);
-                            this.parts.push({ type: 'attribute', index, name, strings: statics });
-                            partIndex += statics.length - 1;
-                        }
-                    }
-                    if (node.tagName === 'TEMPLATE') {
-                        stack.push(node);
-                        walker.currentNode = node.content;
-                    }
-                }
-                else if (node.nodeType === 3 /* Node.TEXT_NODE */) {
-                    const data = node.data;
-                    if (data.indexOf(marker) >= 0) {
-                        const parent = node.parentNode;
-                        const strings = data.split(markerRegex);
-                        const lastIndex = strings.length - 1;
-                        // Generate a new text node for each literal section
-                        // These nodes are also used as the markers for node parts
-                        for (let i = 0; i < lastIndex; i++) {
-                            let insert;
-                            let s = strings[i];
-                            if (s === '') {
-                                insert = createMarker();
-                            }
-                            else {
-                                const match = lastAttributeNameRegex.exec(s);
-                                if (match !== null && endsWith(match[2], boundAttributeSuffix)) {
-                                    s = s.slice(0, match.index) + match[1] +
-                                        match[2].slice(0, -boundAttributeSuffix.length) + match[3];
-                                }
-                                insert = document.createTextNode(s);
-                            }
-                            parent.insertBefore(insert, node);
-                            this.parts.push({ type: 'node', index: ++index });
-                        }
-                        // If there's no text, we must insert a comment to mark our place.
-                        // Else, we can trust it will stick around after cloning.
-                        if (strings[lastIndex] === '') {
-                            parent.insertBefore(createMarker(), node);
-                            nodesToRemove.push(node);
-                        }
-                        else {
-                            node.data = strings[lastIndex];
-                        }
-                        // We have a part for each match found
-                        partIndex += lastIndex;
-                    }
-                }
-                else if (node.nodeType === 8 /* Node.COMMENT_NODE */) {
-                    if (node.data === marker) {
-                        const parent = node.parentNode;
-                        // Add a new marker node to be the startNode of the Part if any of
-                        // the following are true:
-                        //  * We don't have a previousSibling
-                        //  * The previousSibling is already the start of a previous part
-                        if (node.previousSibling === null || index === lastPartIndex) {
-                            index++;
-                            parent.insertBefore(createMarker(), node);
-                        }
-                        lastPartIndex = index;
-                        this.parts.push({ type: 'node', index });
-                        // If we don't have a nextSibling, keep this node so we have an end.
-                        // Else, we can remove it to save future costs.
-                        if (node.nextSibling === null) {
-                            node.data = '';
-                        }
-                        else {
-                            nodesToRemove.push(node);
-                            index--;
-                        }
-                        partIndex++;
-                    }
-                    else {
-                        let i = -1;
-                        while ((i = node.data.indexOf(marker, i + 1)) !== -1) {
-                            // Comment node has a binding marker inside, make an inactive part
-                            // The binding won't work, but subsequent bindings will
-                            // TODO (justinfagnani): consider whether it's even worth it to
-                            // make bindings in comments work
-                            this.parts.push({ type: 'node', index: -1 });
-                            partIndex++;
-                        }
-                    }
-                }
-            }
-            // Remove text binding nodes after the walk to not disturb the TreeWalker
-            for (const n of nodesToRemove) {
-                n.parentNode.removeChild(n);
-            }
-        }
-    }
-    const endsWith = (str, suffix) => {
-        const index = str.length - suffix.length;
-        return index >= 0 && str.slice(index) === suffix;
-    };
-    const isTemplatePartActive = (part) => part.index !== -1;
-    // Allows `document.createComment('')` to be renamed for a
-    // small manual size-savings.
-    const createMarker = () => document.createComment('');
-    /**
-     * This regex extracts the attribute name preceding an attribute-position
-     * expression. It does this by matching the syntax allowed for attributes
-     * against the string literal directly preceding the expression, assuming that
-     * the expression is in an attribute-value position.
-     *
-     * See attributes in the HTML spec:
-     * https://www.w3.org/TR/html5/syntax.html#elements-attributes
-     *
-     * " \x09\x0a\x0c\x0d" are HTML space characters:
-     * https://www.w3.org/TR/html5/infrastructure.html#space-characters
-     *
-     * "\0-\x1F\x7F-\x9F" are Unicode control characters, which includes every
-     * space character except " ".
-     *
-     * So an attribute is:
-     *  * The name: any character except a control character, space character, ('),
-     *    ("), ">", "=", or "/"
-     *  * Followed by zero or more space characters
-     *  * Followed by "="
-     *  * Followed by zero or more space characters
-     *  * Followed by:
-     *    * Any character except space, ('), ("), "<", ">", "=", (`), or
-     *    * (") then any non-("), or
-     *    * (') then any non-(')
-     */
-    const lastAttributeNameRegex = 
-    // eslint-disable-next-line no-control-regex
-    /([ \x09\x0a\x0c\x0d])([^\0-\x1F\x7F-\x9F "'>=/]+)([ \x09\x0a\x0c\x0d]*=[ \x09\x0a\x0c\x0d]*(?:[^ \x09\x0a\x0c\x0d"'`<>=]*|"[^"]*|'[^']*))$/;
+     * Copyright 2017 Google LLC
+     * SPDX-License-Identifier: BSD-3-Clause
+     */const{is:i$3,defineProperty:e$6,getOwnPropertyDescriptor:r$4,getOwnPropertyNames:h$1,getOwnPropertySymbols:o$4,getPrototypeOf:n$3}=Object,a$1=globalThis,c$1=a$1.trustedTypes,l$1=c$1?c$1.emptyScript:"",p$1=a$1.reactiveElementPolyfillSupport,d$1=(t,s)=>t,u$1={toAttribute(t,s){switch(s){case Boolean:t=t?l$1:null;break;case Object:case Array:t=null==t?t:JSON.stringify(t);}return t},fromAttribute(t,s){let i=t;switch(s){case Boolean:i=null!==t;break;case Number:i=null===t?null:Number(t);break;case Object:case Array:try{i=JSON.parse(t);}catch(t){i=null;}}return i}},f$1=(t,s)=>!i$3(t,s),y$1={attribute:!0,type:String,converter:u$1,reflect:!1,hasChanged:f$1};Symbol.metadata??=Symbol("metadata"),a$1.litPropertyMetadata??=new WeakMap;class b extends HTMLElement{static addInitializer(t){this._$Ei(),(this.l??=[]).push(t);}static get observedAttributes(){return this.finalize(),this._$Eh&&[...this._$Eh.keys()]}static createProperty(t,s=y$1){if(s.state&&(s.attribute=!1),this._$Ei(),this.elementProperties.set(t,s),!s.noAccessor){const i=Symbol(),r=this.getPropertyDescriptor(t,i,s);void 0!==r&&e$6(this.prototype,t,r);}}static getPropertyDescriptor(t,s,i){const{get:e,set:h}=r$4(this.prototype,t)??{get(){return this[s]},set(t){this[s]=t;}};return {get(){return e?.call(this)},set(s){const r=e?.call(this);h.call(this,s),this.requestUpdate(t,r,i);},configurable:!0,enumerable:!0}}static getPropertyOptions(t){return this.elementProperties.get(t)??y$1}static _$Ei(){if(this.hasOwnProperty(d$1("elementProperties")))return;const t=n$3(this);t.finalize(),void 0!==t.l&&(this.l=[...t.l]),this.elementProperties=new Map(t.elementProperties);}static finalize(){if(this.hasOwnProperty(d$1("finalized")))return;if(this.finalized=!0,this._$Ei(),this.hasOwnProperty(d$1("properties"))){const t=this.properties,s=[...h$1(t),...o$4(t)];for(const i of s)this.createProperty(i,t[i]);}const t=this[Symbol.metadata];if(null!==t){const s=litPropertyMetadata.get(t);if(void 0!==s)for(const[t,i]of s)this.elementProperties.set(t,i);}this._$Eh=new Map;for(const[t,s]of this.elementProperties){const i=this._$Eu(t,s);void 0!==i&&this._$Eh.set(i,t);}this.elementStyles=this.finalizeStyles(this.styles);}static finalizeStyles(s){const i=[];if(Array.isArray(s)){const e=new Set(s.flat(1/0).reverse());for(const s of e)i.unshift(c$2(s));}else void 0!==s&&i.push(c$2(s));return i}static _$Eu(t,s){const i=s.attribute;return !1===i?void 0:"string"==typeof i?i:"string"==typeof t?t.toLowerCase():void 0}constructor(){super(),this._$Ep=void 0,this.isUpdatePending=!1,this.hasUpdated=!1,this._$Em=null,this._$Ev();}_$Ev(){this._$ES=new Promise((t=>this.enableUpdating=t)),this._$AL=new Map,this._$E_(),this.requestUpdate(),this.constructor.l?.forEach((t=>t(this)));}addController(t){(this._$EO??=new Set).add(t),void 0!==this.renderRoot&&this.isConnected&&t.hostConnected?.();}removeController(t){this._$EO?.delete(t);}_$E_(){const t=new Map,s=this.constructor.elementProperties;for(const i of s.keys())this.hasOwnProperty(i)&&(t.set(i,this[i]),delete this[i]);t.size>0&&(this._$Ep=t);}createRenderRoot(){const t=this.shadowRoot??this.attachShadow(this.constructor.shadowRootOptions);return S$1(t,this.constructor.elementStyles),t}connectedCallback(){this.renderRoot??=this.createRenderRoot(),this.enableUpdating(!0),this._$EO?.forEach((t=>t.hostConnected?.()));}enableUpdating(t){}disconnectedCallback(){this._$EO?.forEach((t=>t.hostDisconnected?.()));}attributeChangedCallback(t,s,i){this._$AK(t,i);}_$EC(t,s){const i=this.constructor.elementProperties.get(t),e=this.constructor._$Eu(t,i);if(void 0!==e&&!0===i.reflect){const r=(void 0!==i.converter?.toAttribute?i.converter:u$1).toAttribute(s,i.type);this._$Em=t,null==r?this.removeAttribute(e):this.setAttribute(e,r),this._$Em=null;}}_$AK(t,s){const i=this.constructor,e=i._$Eh.get(t);if(void 0!==e&&this._$Em!==e){const t=i.getPropertyOptions(e),r="function"==typeof t.converter?{fromAttribute:t.converter}:void 0!==t.converter?.fromAttribute?t.converter:u$1;this._$Em=e,this[e]=r.fromAttribute(s,t.type),this._$Em=null;}}requestUpdate(t,s,i){if(void 0!==t){if(i??=this.constructor.getPropertyOptions(t),!(i.hasChanged??f$1)(this[t],s))return;this.P(t,s,i);}!1===this.isUpdatePending&&(this._$ES=this._$ET());}P(t,s,i){this._$AL.has(t)||this._$AL.set(t,s),!0===i.reflect&&this._$Em!==t&&(this._$Ej??=new Set).add(t);}async _$ET(){this.isUpdatePending=!0;try{await this._$ES;}catch(t){Promise.reject(t);}const t=this.scheduleUpdate();return null!=t&&await t,!this.isUpdatePending}scheduleUpdate(){return this.performUpdate()}performUpdate(){if(!this.isUpdatePending)return;if(!this.hasUpdated){if(this.renderRoot??=this.createRenderRoot(),this._$Ep){for(const[t,s]of this._$Ep)this[t]=s;this._$Ep=void 0;}const t=this.constructor.elementProperties;if(t.size>0)for(const[s,i]of t)!0!==i.wrapped||this._$AL.has(s)||void 0===this[s]||this.P(s,this[s],i);}let t=!1;const s=this._$AL;try{t=this.shouldUpdate(s),t?(this.willUpdate(s),this._$EO?.forEach((t=>t.hostUpdate?.())),this.update(s)):this._$EU();}catch(s){throw t=!1,this._$EU(),s}t&&this._$AE(s);}willUpdate(t){}_$AE(t){this._$EO?.forEach((t=>t.hostUpdated?.())),this.hasUpdated||(this.hasUpdated=!0,this.firstUpdated(t)),this.updated(t);}_$EU(){this._$AL=new Map,this.isUpdatePending=!1;}get updateComplete(){return this.getUpdateComplete()}getUpdateComplete(){return this._$ES}shouldUpdate(t){return !0}update(t){this._$Ej&&=this._$Ej.forEach((t=>this._$EC(t,this[t]))),this._$EU();}updated(t){}firstUpdated(t){}}b.elementStyles=[],b.shadowRootOptions={mode:"open"},b[d$1("elementProperties")]=new Map,b[d$1("finalized")]=new Map,p$1?.({ReactiveElement:b}),(a$1.reactiveElementVersions??=[]).push("2.0.4");
 
     /**
      * @license
-     * Copyright (c) 2017 The Polymer Project Authors. All rights reserved.
-     * This code may only be used under the BSD style license found at
-     * http://polymer.github.io/LICENSE.txt
-     * The complete set of authors may be found at
-     * http://polymer.github.io/AUTHORS.txt
-     * The complete set of contributors may be found at
-     * http://polymer.github.io/CONTRIBUTORS.txt
-     * Code distributed by Google as part of the polymer project is also
-     * subject to an additional IP rights grant found at
-     * http://polymer.github.io/PATENTS.txt
+     * Copyright 2017 Google LLC
+     * SPDX-License-Identifier: BSD-3-Clause
      */
-    const walkerNodeFilter = 133 /* NodeFilter.SHOW_{ELEMENT|COMMENT|TEXT} */;
-    /**
-     * Removes the list of nodes from a Template safely. In addition to removing
-     * nodes from the Template, the Template part indices are updated to match
-     * the mutated Template DOM.
-     *
-     * As the template is walked the removal state is tracked and
-     * part indices are adjusted as needed.
-     *
-     * div
-     *   div#1 (remove) <-- start removing (removing node is div#1)
-     *     div
-     *       div#2 (remove)  <-- continue removing (removing node is still div#1)
-     *         div
-     * div <-- stop removing since previous sibling is the removing node (div#1,
-     * removed 4 nodes)
-     */
-    function removeNodesFromTemplate(template, nodesToRemove) {
-        const { element: { content }, parts } = template;
-        const walker = document.createTreeWalker(content, walkerNodeFilter, null, false);
-        let partIndex = nextActiveIndexInTemplateParts(parts);
-        let part = parts[partIndex];
-        let nodeIndex = -1;
-        let removeCount = 0;
-        const nodesToRemoveInTemplate = [];
-        let currentRemovingNode = null;
-        while (walker.nextNode()) {
-            nodeIndex++;
-            const node = walker.currentNode;
-            // End removal if stepped past the removing node
-            if (node.previousSibling === currentRemovingNode) {
-                currentRemovingNode = null;
-            }
-            // A node to remove was found in the template
-            if (nodesToRemove.has(node)) {
-                nodesToRemoveInTemplate.push(node);
-                // Track node we're removing
-                if (currentRemovingNode === null) {
-                    currentRemovingNode = node;
-                }
-            }
-            // When removing, increment count by which to adjust subsequent part indices
-            if (currentRemovingNode !== null) {
-                removeCount++;
-            }
-            while (part !== undefined && part.index === nodeIndex) {
-                // If part is in a removed node deactivate it by setting index to -1 or
-                // adjust the index as needed.
-                part.index = currentRemovingNode !== null ? -1 : part.index - removeCount;
-                // go to the next active part.
-                partIndex = nextActiveIndexInTemplateParts(parts, partIndex);
-                part = parts[partIndex];
-            }
-        }
-        nodesToRemoveInTemplate.forEach((n) => n.parentNode.removeChild(n));
-    }
-    const countNodes = (node) => {
-        let count = (node.nodeType === 11 /* Node.DOCUMENT_FRAGMENT_NODE */) ? 0 : 1;
-        const walker = document.createTreeWalker(node, walkerNodeFilter, null, false);
-        while (walker.nextNode()) {
-            count++;
-        }
-        return count;
-    };
-    const nextActiveIndexInTemplateParts = (parts, startIndex = -1) => {
-        for (let i = startIndex + 1; i < parts.length; i++) {
-            const part = parts[i];
-            if (isTemplatePartActive(part)) {
-                return i;
-            }
-        }
-        return -1;
-    };
-    /**
-     * Inserts the given node into the Template, optionally before the given
-     * refNode. In addition to inserting the node into the Template, the Template
-     * part indices are updated to match the mutated Template DOM.
-     */
-    function insertNodeIntoTemplate(template, node, refNode = null) {
-        const { element: { content }, parts } = template;
-        // If there's no refNode, then put node at end of template.
-        // No part indices need to be shifted in this case.
-        if (refNode === null || refNode === undefined) {
-            content.appendChild(node);
-            return;
-        }
-        const walker = document.createTreeWalker(content, walkerNodeFilter, null, false);
-        let partIndex = nextActiveIndexInTemplateParts(parts);
-        let insertCount = 0;
-        let walkerIndex = -1;
-        while (walker.nextNode()) {
-            walkerIndex++;
-            const walkerNode = walker.currentNode;
-            if (walkerNode === refNode) {
-                insertCount = countNodes(node);
-                refNode.parentNode.insertBefore(node, refNode);
-            }
-            while (partIndex !== -1 && parts[partIndex].index === walkerIndex) {
-                // If we've inserted the node, simply adjust all subsequent parts
-                if (insertCount > 0) {
-                    while (partIndex !== -1) {
-                        parts[partIndex].index += insertCount;
-                        partIndex = nextActiveIndexInTemplateParts(parts, partIndex);
-                    }
-                    return;
-                }
-                partIndex = nextActiveIndexInTemplateParts(parts, partIndex);
-            }
-        }
-    }
+    const t$3=globalThis,i$2=t$3.trustedTypes,s$1=i$2?i$2.createPolicy("lit-html",{createHTML:t=>t}):void 0,e$5="$lit$",h=`lit$${Math.random().toFixed(9).slice(2)}$`,o$3="?"+h,n$2=`<${o$3}>`,r$3=document,l=()=>r$3.createComment(""),c=t=>null===t||"object"!=typeof t&&"function"!=typeof t,a=Array.isArray,u=t=>a(t)||"function"==typeof t?.[Symbol.iterator],d="[ \t\n\f\r]",f=/<(?:(!--|\/[^a-zA-Z])|(\/?[a-zA-Z][^>\s]*)|(\/?$))/g,v=/-->/g,_=/>/g,m=RegExp(`>|${d}(?:([^\\s"'>=/]+)(${d}*=${d}*(?:[^ \t\n\f\r"'\`<>=]|("|')|))|$)`,"g"),p=/'/g,g=/"/g,$=/^(?:script|style|textarea|title)$/i,y=t=>(i,...s)=>({_$litType$:t,strings:i,values:s}),x=y(1),w=Symbol.for("lit-noChange"),T=Symbol.for("lit-nothing"),A=new WeakMap,E=r$3.createTreeWalker(r$3,129);function C(t,i){if(!Array.isArray(t)||!t.hasOwnProperty("raw"))throw Error("invalid template strings array");return void 0!==s$1?s$1.createHTML(i):i}const P=(t,i)=>{const s=t.length-1,o=[];let r,l=2===i?"<svg>":"",c=f;for(let i=0;i<s;i++){const s=t[i];let a,u,d=-1,y=0;for(;y<s.length&&(c.lastIndex=y,u=c.exec(s),null!==u);)y=c.lastIndex,c===f?"!--"===u[1]?c=v:void 0!==u[1]?c=_:void 0!==u[2]?($.test(u[2])&&(r=RegExp("</"+u[2],"g")),c=m):void 0!==u[3]&&(c=m):c===m?">"===u[0]?(c=r??f,d=-1):void 0===u[1]?d=-2:(d=c.lastIndex-u[2].length,a=u[1],c=void 0===u[3]?m:'"'===u[3]?g:p):c===g||c===p?c=m:c===v||c===_?c=f:(c=m,r=void 0);const x=c===m&&t[i+1].startsWith("/>")?" ":"";l+=c===f?s+n$2:d>=0?(o.push(a),s.slice(0,d)+e$5+s.slice(d)+h+x):s+h+(-2===d?i:x);}return [C(t,l+(t[s]||"<?>")+(2===i?"</svg>":"")),o]};class V{constructor({strings:t,_$litType$:s},n){let r;this.parts=[];let c=0,a=0;const u=t.length-1,d=this.parts,[f,v]=P(t,s);if(this.el=V.createElement(f,n),E.currentNode=this.el.content,2===s){const t=this.el.content.firstChild;t.replaceWith(...t.childNodes);}for(;null!==(r=E.nextNode())&&d.length<u;){if(1===r.nodeType){if(r.hasAttributes())for(const t of r.getAttributeNames())if(t.endsWith(e$5)){const i=v[a++],s=r.getAttribute(t).split(h),e=/([.?@])?(.*)/.exec(i);d.push({type:1,index:c,name:e[2],strings:s,ctor:"."===e[1]?k:"?"===e[1]?H:"@"===e[1]?I:R}),r.removeAttribute(t);}else t.startsWith(h)&&(d.push({type:6,index:c}),r.removeAttribute(t));if($.test(r.tagName)){const t=r.textContent.split(h),s=t.length-1;if(s>0){r.textContent=i$2?i$2.emptyScript:"";for(let i=0;i<s;i++)r.append(t[i],l()),E.nextNode(),d.push({type:2,index:++c});r.append(t[s],l());}}}else if(8===r.nodeType)if(r.data===o$3)d.push({type:2,index:c});else {let t=-1;for(;-1!==(t=r.data.indexOf(h,t+1));)d.push({type:7,index:c}),t+=h.length-1;}c++;}}static createElement(t,i){const s=r$3.createElement("template");return s.innerHTML=t,s}}function N(t,i,s=t,e){if(i===w)return i;let h=void 0!==e?s._$Co?.[e]:s._$Cl;const o=c(i)?void 0:i._$litDirective$;return h?.constructor!==o&&(h?._$AO?.(!1),void 0===o?h=void 0:(h=new o(t),h._$AT(t,s,e)),void 0!==e?(s._$Co??=[])[e]=h:s._$Cl=h),void 0!==h&&(i=N(t,h._$AS(t,i.values),h,e)),i}class S{constructor(t,i){this._$AV=[],this._$AN=void 0,this._$AD=t,this._$AM=i;}get parentNode(){return this._$AM.parentNode}get _$AU(){return this._$AM._$AU}u(t){const{el:{content:i},parts:s}=this._$AD,e=(t?.creationScope??r$3).importNode(i,!0);E.currentNode=e;let h=E.nextNode(),o=0,n=0,l=s[0];for(;void 0!==l;){if(o===l.index){let i;2===l.type?i=new M(h,h.nextSibling,this,t):1===l.type?i=new l.ctor(h,l.name,l.strings,this,t):6===l.type&&(i=new L(h,this,t)),this._$AV.push(i),l=s[++n];}o!==l?.index&&(h=E.nextNode(),o++);}return E.currentNode=r$3,e}p(t){let i=0;for(const s of this._$AV)void 0!==s&&(void 0!==s.strings?(s._$AI(t,s,i),i+=s.strings.length-2):s._$AI(t[i])),i++;}}class M{get _$AU(){return this._$AM?._$AU??this._$Cv}constructor(t,i,s,e){this.type=2,this._$AH=T,this._$AN=void 0,this._$AA=t,this._$AB=i,this._$AM=s,this.options=e,this._$Cv=e?.isConnected??!0;}get parentNode(){let t=this._$AA.parentNode;const i=this._$AM;return void 0!==i&&11===t?.nodeType&&(t=i.parentNode),t}get startNode(){return this._$AA}get endNode(){return this._$AB}_$AI(t,i=this){t=N(this,t,i),c(t)?t===T||null==t||""===t?(this._$AH!==T&&this._$AR(),this._$AH=T):t!==this._$AH&&t!==w&&this._(t):void 0!==t._$litType$?this.$(t):void 0!==t.nodeType?this.T(t):u(t)?this.k(t):this._(t);}S(t){return this._$AA.parentNode.insertBefore(t,this._$AB)}T(t){this._$AH!==t&&(this._$AR(),this._$AH=this.S(t));}_(t){this._$AH!==T&&c(this._$AH)?this._$AA.nextSibling.data=t:this.T(r$3.createTextNode(t)),this._$AH=t;}$(t){const{values:i,_$litType$:s}=t,e="number"==typeof s?this._$AC(t):(void 0===s.el&&(s.el=V.createElement(C(s.h,s.h[0]),this.options)),s);if(this._$AH?._$AD===e)this._$AH.p(i);else {const t=new S(e,this),s=t.u(this.options);t.p(i),this.T(s),this._$AH=t;}}_$AC(t){let i=A.get(t.strings);return void 0===i&&A.set(t.strings,i=new V(t)),i}k(t){a(this._$AH)||(this._$AH=[],this._$AR());const i=this._$AH;let s,e=0;for(const h of t)e===i.length?i.push(s=new M(this.S(l()),this.S(l()),this,this.options)):s=i[e],s._$AI(h),e++;e<i.length&&(this._$AR(s&&s._$AB.nextSibling,e),i.length=e);}_$AR(t=this._$AA.nextSibling,i){for(this._$AP?.(!1,!0,i);t&&t!==this._$AB;){const i=t.nextSibling;t.remove(),t=i;}}setConnected(t){void 0===this._$AM&&(this._$Cv=t,this._$AP?.(t));}}class R{get tagName(){return this.element.tagName}get _$AU(){return this._$AM._$AU}constructor(t,i,s,e,h){this.type=1,this._$AH=T,this._$AN=void 0,this.element=t,this.name=i,this._$AM=e,this.options=h,s.length>2||""!==s[0]||""!==s[1]?(this._$AH=Array(s.length-1).fill(new String),this.strings=s):this._$AH=T;}_$AI(t,i=this,s,e){const h=this.strings;let o=!1;if(void 0===h)t=N(this,t,i,0),o=!c(t)||t!==this._$AH&&t!==w,o&&(this._$AH=t);else {const e=t;let n,r;for(t=h[0],n=0;n<h.length-1;n++)r=N(this,e[s+n],i,n),r===w&&(r=this._$AH[n]),o||=!c(r)||r!==this._$AH[n],r===T?t=T:t!==T&&(t+=(r??"")+h[n+1]),this._$AH[n]=r;}o&&!e&&this.j(t);}j(t){t===T?this.element.removeAttribute(this.name):this.element.setAttribute(this.name,t??"");}}class k extends R{constructor(){super(...arguments),this.type=3;}j(t){this.element[this.name]=t===T?void 0:t;}}class H extends R{constructor(){super(...arguments),this.type=4;}j(t){this.element.toggleAttribute(this.name,!!t&&t!==T);}}class I extends R{constructor(t,i,s,e,h){super(t,i,s,e,h),this.type=5;}_$AI(t,i=this){if((t=N(this,t,i,0)??T)===w)return;const s=this._$AH,e=t===T&&s!==T||t.capture!==s.capture||t.once!==s.once||t.passive!==s.passive,h=t!==T&&(s===T||e);e&&this.element.removeEventListener(this.name,this,s),h&&this.element.addEventListener(this.name,this,t),this._$AH=t;}handleEvent(t){"function"==typeof this._$AH?this._$AH.call(this.options?.host??this.element,t):this._$AH.handleEvent(t);}}class L{constructor(t,i,s){this.element=t,this.type=6,this._$AN=void 0,this._$AM=i,this.options=s;}get _$AU(){return this._$AM._$AU}_$AI(t){N(this,t);}}const Z=t$3.litHtmlPolyfillSupport;Z?.(V,M),(t$3.litHtmlVersions??=[]).push("3.1.3");const j=(t,i,s)=>{const e=s?.renderBefore??i;let h=e._$litPart$;if(void 0===h){const t=s?.renderBefore??null;e._$litPart$=h=new M(i.insertBefore(l(),t),t,void 0,s??{});}return h._$AI(t),h};
 
     /**
      * @license
-     * Copyright (c) 2017 The Polymer Project Authors. All rights reserved.
-     * This code may only be used under the BSD style license found at
-     * http://polymer.github.io/LICENSE.txt
-     * The complete set of authors may be found at
-     * http://polymer.github.io/AUTHORS.txt
-     * The complete set of contributors may be found at
-     * http://polymer.github.io/CONTRIBUTORS.txt
-     * Code distributed by Google as part of the polymer project is also
-     * subject to an additional IP rights grant found at
-     * http://polymer.github.io/PATENTS.txt
-     */
-    const directives = new WeakMap();
-    /**
-     * Brands a function as a directive factory function so that lit-html will call
-     * the function during template rendering, rather than passing as a value.
-     *
-     * A _directive_ is a function that takes a Part as an argument. It has the
-     * signature: `(part: Part) => void`.
-     *
-     * A directive _factory_ is a function that takes arguments for data and
-     * configuration and returns a directive. Users of directive usually refer to
-     * the directive factory as the directive. For example, "The repeat directive".
-     *
-     * Usually a template author will invoke a directive factory in their template
-     * with relevant arguments, which will then return a directive function.
-     *
-     * Here's an example of using the `repeat()` directive factory that takes an
-     * array and a function to render an item:
-     *
-     * ```js
-     * html`<ul><${repeat(items, (item) => html`<li>${item}</li>`)}</ul>`
-     * ```
-     *
-     * When `repeat` is invoked, it returns a directive function that closes over
-     * `items` and the template function. When the outer template is rendered, the
-     * return directive function is called with the Part for the expression.
-     * `repeat` then performs it's custom logic to render multiple items.
-     *
-     * @param f The directive factory function. Must be a function that returns a
-     * function of the signature `(part: Part) => void`. The returned function will
-     * be called with the part object.
-     *
-     * @example
-     *
-     * import {directive, html} from 'lit-html';
-     *
-     * const immutable = directive((v) => (part) => {
-     *   if (part.value !== v) {
-     *     part.setValue(v)
-     *   }
-     * });
-     */
-    const directive = (f) => ((...args) => {
-        const d = f(...args);
-        directives.set(d, true);
-        return d;
-    });
-    const isDirective = (o) => {
-        return typeof o === 'function' && directives.has(o);
-    };
+     * Copyright 2017 Google LLC
+     * SPDX-License-Identifier: BSD-3-Clause
+     */class s extends b{constructor(){super(...arguments),this.renderOptions={host:this},this._$Do=void 0;}createRenderRoot(){const t=super.createRenderRoot();return this.renderOptions.renderBefore??=t.firstChild,t}update(t){const i=this.render();this.hasUpdated||(this.renderOptions.isConnected=this.isConnected),super.update(t),this._$Do=j(i,this.renderRoot,this.renderOptions);}connectedCallback(){super.connectedCallback(),this._$Do?.setConnected(!0);}disconnectedCallback(){super.disconnectedCallback(),this._$Do?.setConnected(!1);}render(){return w}}s._$litElement$=!0,s[("finalized")]=!0,globalThis.litElementHydrateSupport?.({LitElement:s});const r$2=globalThis.litElementPolyfillSupport;r$2?.({LitElement:s});(globalThis.litElementVersions??=[]).push("4.0.5");
 
     /**
      * @license
-     * Copyright (c) 2018 The Polymer Project Authors. All rights reserved.
-     * This code may only be used under the BSD style license found at
-     * http://polymer.github.io/LICENSE.txt
-     * The complete set of authors may be found at
-     * http://polymer.github.io/AUTHORS.txt
-     * The complete set of contributors may be found at
-     * http://polymer.github.io/CONTRIBUTORS.txt
-     * Code distributed by Google as part of the polymer project is also
-     * subject to an additional IP rights grant found at
-     * http://polymer.github.io/PATENTS.txt
+     * Copyright 2017 Google LLC
+     * SPDX-License-Identifier: BSD-3-Clause
      */
-    /**
-     * A sentinel value that signals that a value was handled by a directive and
-     * should not be written to the DOM.
-     */
-    const noChange = {};
-    /**
-     * A sentinel value that signals a NodePart to fully clear its content.
-     */
-    const nothing = {};
+    const t$2=t=>(e,o)=>{void 0!==o?o.addInitializer((()=>{customElements.define(t,e);})):customElements.define(t,e);};
 
     /**
      * @license
-     * Copyright (c) 2017 The Polymer Project Authors. All rights reserved.
-     * This code may only be used under the BSD style license found at
-     * http://polymer.github.io/LICENSE.txt
-     * The complete set of authors may be found at
-     * http://polymer.github.io/AUTHORS.txt
-     * The complete set of contributors may be found at
-     * http://polymer.github.io/CONTRIBUTORS.txt
-     * Code distributed by Google as part of the polymer project is also
-     * subject to an additional IP rights grant found at
-     * http://polymer.github.io/PATENTS.txt
-     */
-    /**
-     * An instance of a `Template` that can be attached to the DOM and updated
-     * with new values.
-     */
-    class TemplateInstance {
-        constructor(template, processor, options) {
-            this.__parts = [];
-            this.template = template;
-            this.processor = processor;
-            this.options = options;
-        }
-        update(values) {
-            let i = 0;
-            for (const part of this.__parts) {
-                if (part !== undefined) {
-                    part.setValue(values[i]);
-                }
-                i++;
-            }
-            for (const part of this.__parts) {
-                if (part !== undefined) {
-                    part.commit();
-                }
-            }
-        }
-        _clone() {
-            // There are a number of steps in the lifecycle of a template instance's
-            // DOM fragment:
-            //  1. Clone - create the instance fragment
-            //  2. Adopt - adopt into the main document
-            //  3. Process - find part markers and create parts
-            //  4. Upgrade - upgrade custom elements
-            //  5. Update - set node, attribute, property, etc., values
-            //  6. Connect - connect to the document. Optional and outside of this
-            //     method.
-            //
-            // We have a few constraints on the ordering of these steps:
-            //  * We need to upgrade before updating, so that property values will pass
-            //    through any property setters.
-            //  * We would like to process before upgrading so that we're sure that the
-            //    cloned fragment is inert and not disturbed by self-modifying DOM.
-            //  * We want custom elements to upgrade even in disconnected fragments.
-            //
-            // Given these constraints, with full custom elements support we would
-            // prefer the order: Clone, Process, Adopt, Upgrade, Update, Connect
-            //
-            // But Safari does not implement CustomElementRegistry#upgrade, so we
-            // can not implement that order and still have upgrade-before-update and
-            // upgrade disconnected fragments. So we instead sacrifice the
-            // process-before-upgrade constraint, since in Custom Elements v1 elements
-            // must not modify their light DOM in the constructor. We still have issues
-            // when co-existing with CEv0 elements like Polymer 1, and with polyfills
-            // that don't strictly adhere to the no-modification rule because shadow
-            // DOM, which may be created in the constructor, is emulated by being placed
-            // in the light DOM.
-            //
-            // The resulting order is on native is: Clone, Adopt, Upgrade, Process,
-            // Update, Connect. document.importNode() performs Clone, Adopt, and Upgrade
-            // in one step.
-            //
-            // The Custom Elements v1 polyfill supports upgrade(), so the order when
-            // polyfilled is the more ideal: Clone, Process, Adopt, Upgrade, Update,
-            // Connect.
-            const fragment = isCEPolyfill ?
-                this.template.element.content.cloneNode(true) :
-                document.importNode(this.template.element.content, true);
-            const stack = [];
-            const parts = this.template.parts;
-            // Edge needs all 4 parameters present; IE11 needs 3rd parameter to be null
-            const walker = document.createTreeWalker(fragment, 133 /* NodeFilter.SHOW_{ELEMENT|COMMENT|TEXT} */, null, false);
-            let partIndex = 0;
-            let nodeIndex = 0;
-            let part;
-            let node = walker.nextNode();
-            // Loop through all the nodes and parts of a template
-            while (partIndex < parts.length) {
-                part = parts[partIndex];
-                if (!isTemplatePartActive(part)) {
-                    this.__parts.push(undefined);
-                    partIndex++;
-                    continue;
-                }
-                // Progress the tree walker until we find our next part's node.
-                // Note that multiple parts may share the same node (attribute parts
-                // on a single element), so this loop may not run at all.
-                while (nodeIndex < part.index) {
-                    nodeIndex++;
-                    if (node.nodeName === 'TEMPLATE') {
-                        stack.push(node);
-                        walker.currentNode = node.content;
-                    }
-                    if ((node = walker.nextNode()) === null) {
-                        // We've exhausted the content inside a nested template element.
-                        // Because we still have parts (the outer for-loop), we know:
-                        // - There is a template in the stack
-                        // - The walker will find a nextNode outside the template
-                        walker.currentNode = stack.pop();
-                        node = walker.nextNode();
-                    }
-                }
-                // We've arrived at our part's node.
-                if (part.type === 'node') {
-                    const part = this.processor.handleTextExpression(this.options);
-                    part.insertAfterNode(node.previousSibling);
-                    this.__parts.push(part);
-                }
-                else {
-                    this.__parts.push(...this.processor.handleAttributeExpressions(node, part.name, part.strings, this.options));
-                }
-                partIndex++;
-            }
-            if (isCEPolyfill) {
-                document.adoptNode(fragment);
-                customElements.upgrade(fragment);
-            }
-            return fragment;
-        }
-    }
+     * Copyright 2017 Google LLC
+     * SPDX-License-Identifier: BSD-3-Clause
+     */const o$2={attribute:!0,type:String,converter:u$1,reflect:!1,hasChanged:f$1},r$1=(t=o$2,e,r)=>{const{kind:n,metadata:i}=r;let s=globalThis.litPropertyMetadata.get(i);if(void 0===s&&globalThis.litPropertyMetadata.set(i,s=new Map),s.set(r.name,t),"accessor"===n){const{name:o}=r;return {set(r){const n=e.get.call(this);e.set.call(this,r),this.requestUpdate(o,n,t);},init(e){return void 0!==e&&this.P(o,void 0,t),e}}}if("setter"===n){const{name:o}=r;return function(r){const n=this[o];e.call(this,r),this.requestUpdate(o,n,t);}}throw Error("Unsupported decorator location: "+n)};function n$1(t){return (e,o)=>"object"==typeof o?r$1(t,e,o):((t,e,o)=>{const r=e.hasOwnProperty(o);return e.constructor.createProperty(o,r?{...t,wrapped:!0}:t),r?Object.getOwnPropertyDescriptor(e,o):void 0})(t,e,o)}
 
     /**
      * @license
-     * Copyright (c) 2017 The Polymer Project Authors. All rights reserved.
-     * This code may only be used under the BSD style license found at
-     * http://polymer.github.io/LICENSE.txt
-     * The complete set of authors may be found at
-     * http://polymer.github.io/AUTHORS.txt
-     * The complete set of contributors may be found at
-     * http://polymer.github.io/CONTRIBUTORS.txt
-     * Code distributed by Google as part of the polymer project is also
-     * subject to an additional IP rights grant found at
-     * http://polymer.github.io/PATENTS.txt
-     */
-    /**
-     * @module lit-html
-     */
-    /**
-     * Our TrustedTypePolicy for HTML which is declared using the html template
-     * tag function.
-     *
-     * That HTML is a developer-authored constant, and is parsed with innerHTML
-     * before any untrusted expressions have been mixed in. Therefor it is
-     * considered safe by construction.
-     */
-    const policy = window.trustedTypes &&
-        trustedTypes.createPolicy('lit-html', { createHTML: (s) => s });
-    const commentMarker = ` ${marker} `;
-    /**
-     * The return type of `html`, which holds a Template and the values from
-     * interpolated expressions.
-     */
-    class TemplateResult {
-        constructor(strings, values, type, processor) {
-            this.strings = strings;
-            this.values = values;
-            this.type = type;
-            this.processor = processor;
-        }
-        /**
-         * Returns a string of HTML used to create a `<template>` element.
-         */
-        getHTML() {
-            const l = this.strings.length - 1;
-            let html = '';
-            let isCommentBinding = false;
-            for (let i = 0; i < l; i++) {
-                const s = this.strings[i];
-                // For each binding we want to determine the kind of marker to insert
-                // into the template source before it's parsed by the browser's HTML
-                // parser. The marker type is based on whether the expression is in an
-                // attribute, text, or comment position.
-                //   * For node-position bindings we insert a comment with the marker
-                //     sentinel as its text content, like <!--{{lit-guid}}-->.
-                //   * For attribute bindings we insert just the marker sentinel for the
-                //     first binding, so that we support unquoted attribute bindings.
-                //     Subsequent bindings can use a comment marker because multi-binding
-                //     attributes must be quoted.
-                //   * For comment bindings we insert just the marker sentinel so we don't
-                //     close the comment.
-                //
-                // The following code scans the template source, but is *not* an HTML
-                // parser. We don't need to track the tree structure of the HTML, only
-                // whether a binding is inside a comment, and if not, if it appears to be
-                // the first binding in an attribute.
-                const commentOpen = s.lastIndexOf('<!--');
-                // We're in comment position if we have a comment open with no following
-                // comment close. Because <-- can appear in an attribute value there can
-                // be false positives.
-                isCommentBinding = (commentOpen > -1 || isCommentBinding) &&
-                    s.indexOf('-->', commentOpen + 1) === -1;
-                // Check to see if we have an attribute-like sequence preceding the
-                // expression. This can match "name=value" like structures in text,
-                // comments, and attribute values, so there can be false-positives.
-                const attributeMatch = lastAttributeNameRegex.exec(s);
-                if (attributeMatch === null) {
-                    // We're only in this branch if we don't have a attribute-like
-                    // preceding sequence. For comments, this guards against unusual
-                    // attribute values like <div foo="<!--${'bar'}">. Cases like
-                    // <!-- foo=${'bar'}--> are handled correctly in the attribute branch
-                    // below.
-                    html += s + (isCommentBinding ? commentMarker : nodeMarker);
-                }
-                else {
-                    // For attributes we use just a marker sentinel, and also append a
-                    // $lit$ suffix to the name to opt-out of attribute-specific parsing
-                    // that IE and Edge do for style and certain SVG attributes.
-                    html += s.substr(0, attributeMatch.index) + attributeMatch[1] +
-                        attributeMatch[2] + boundAttributeSuffix + attributeMatch[3] +
-                        marker;
-                }
-            }
-            html += this.strings[l];
-            return html;
-        }
-        getTemplateElement() {
-            const template = document.createElement('template');
-            let value = this.getHTML();
-            if (policy !== undefined) {
-                // this is secure because `this.strings` is a TemplateStringsArray.
-                // TODO: validate this when
-                // https://github.com/tc39/proposal-array-is-template-object is
-                // implemented.
-                value = policy.createHTML(value);
-            }
-            template.innerHTML = value;
-            return template;
-        }
-    }
+     * Copyright 2017 Google LLC
+     * SPDX-License-Identifier: BSD-3-Clause
+     */function r(r){return n$1({...r,state:!0,attribute:!1})}
 
     /**
      * @license
-     * Copyright (c) 2017 The Polymer Project Authors. All rights reserved.
-     * This code may only be used under the BSD style license found at
-     * http://polymer.github.io/LICENSE.txt
-     * The complete set of authors may be found at
-     * http://polymer.github.io/AUTHORS.txt
-     * The complete set of contributors may be found at
-     * http://polymer.github.io/CONTRIBUTORS.txt
-     * Code distributed by Google as part of the polymer project is also
-     * subject to an additional IP rights grant found at
-     * http://polymer.github.io/PATENTS.txt
+     * Copyright 2017 Google LLC
+     * SPDX-License-Identifier: BSD-3-Clause
      */
-    const isPrimitive = (value) => {
-        return (value === null ||
-            !(typeof value === 'object' || typeof value === 'function'));
-    };
-    const isIterable = (value) => {
-        return Array.isArray(value) ||
-            // eslint-disable-next-line @typescript-eslint/no-explicit-any
-            !!(value && value[Symbol.iterator]);
-    };
-    /**
-     * Writes attribute values to the DOM for a group of AttributeParts bound to a
-     * single attribute. The value is only set once even if there are multiple parts
-     * for an attribute.
-     */
-    class AttributeCommitter {
-        constructor(element, name, strings) {
-            this.dirty = true;
-            this.element = element;
-            this.name = name;
-            this.strings = strings;
-            this.parts = [];
-            for (let i = 0; i < strings.length - 1; i++) {
-                this.parts[i] = this._createPart();
-            }
-        }
-        /**
-         * Creates a single part. Override this to create a differnt type of part.
-         */
-        _createPart() {
-            return new AttributePart(this);
-        }
-        _getValue() {
-            const strings = this.strings;
-            const l = strings.length - 1;
-            const parts = this.parts;
-            // If we're assigning an attribute via syntax like:
-            //    attr="${foo}"  or  attr=${foo}
-            // but not
-            //    attr="${foo} ${bar}" or attr="${foo} baz"
-            // then we don't want to coerce the attribute value into one long
-            // string. Instead we want to just return the value itself directly,
-            // so that sanitizeDOMValue can get the actual value rather than
-            // String(value)
-            // The exception is if v is an array, in which case we do want to smash
-            // it together into a string without calling String() on the array.
-            //
-            // This also allows trusted values (when using TrustedTypes) being
-            // assigned to DOM sinks without being stringified in the process.
-            if (l === 1 && strings[0] === '' && strings[1] === '') {
-                const v = parts[0].value;
-                if (typeof v === 'symbol') {
-                    return String(v);
-                }
-                if (typeof v === 'string' || !isIterable(v)) {
-                    return v;
-                }
-            }
-            let text = '';
-            for (let i = 0; i < l; i++) {
-                text += strings[i];
-                const part = parts[i];
-                if (part !== undefined) {
-                    const v = part.value;
-                    if (isPrimitive(v) || !isIterable(v)) {
-                        text += typeof v === 'string' ? v : String(v);
-                    }
-                    else {
-                        for (const t of v) {
-                            text += typeof t === 'string' ? t : String(t);
-                        }
-                    }
-                }
-            }
-            text += strings[l];
-            return text;
-        }
-        commit() {
-            if (this.dirty) {
-                this.dirty = false;
-                this.element.setAttribute(this.name, this._getValue());
-            }
-        }
-    }
-    /**
-     * A Part that controls all or part of an attribute value.
-     */
-    class AttributePart {
-        constructor(committer) {
-            this.value = undefined;
-            this.committer = committer;
-        }
-        setValue(value) {
-            if (value !== noChange && (!isPrimitive(value) || value !== this.value)) {
-                this.value = value;
-                // If the value is a not a directive, dirty the committer so that it'll
-                // call setAttribute. If the value is a directive, it'll dirty the
-                // committer if it calls setValue().
-                if (!isDirective(value)) {
-                    this.committer.dirty = true;
-                }
-            }
-        }
-        commit() {
-            while (isDirective(this.value)) {
-                const directive = this.value;
-                this.value = noChange;
-                directive(this);
-            }
-            if (this.value === noChange) {
-                return;
-            }
-            this.committer.commit();
-        }
-    }
-    /**
-     * A Part that controls a location within a Node tree. Like a Range, NodePart
-     * has start and end locations and can set and update the Nodes between those
-     * locations.
-     *
-     * NodeParts support several value types: primitives, Nodes, TemplateResults,
-     * as well as arrays and iterables of those types.
-     */
-    class NodePart {
-        constructor(options) {
-            this.value = undefined;
-            this.__pendingValue = undefined;
-            this.options = options;
-        }
-        /**
-         * Appends this part into a container.
-         *
-         * This part must be empty, as its contents are not automatically moved.
-         */
-        appendInto(container) {
-            this.startNode = container.appendChild(createMarker());
-            this.endNode = container.appendChild(createMarker());
-        }
-        /**
-         * Inserts this part after the `ref` node (between `ref` and `ref`'s next
-         * sibling). Both `ref` and its next sibling must be static, unchanging nodes
-         * such as those that appear in a literal section of a template.
-         *
-         * This part must be empty, as its contents are not automatically moved.
-         */
-        insertAfterNode(ref) {
-            this.startNode = ref;
-            this.endNode = ref.nextSibling;
-        }
-        /**
-         * Appends this part into a parent part.
-         *
-         * This part must be empty, as its contents are not automatically moved.
-         */
-        appendIntoPart(part) {
-            part.__insert(this.startNode = createMarker());
-            part.__insert(this.endNode = createMarker());
-        }
-        /**
-         * Inserts this part after the `ref` part.
-         *
-         * This part must be empty, as its contents are not automatically moved.
-         */
-        insertAfterPart(ref) {
-            ref.__insert(this.startNode = createMarker());
-            this.endNode = ref.endNode;
-            ref.endNode = this.startNode;
-        }
-        setValue(value) {
-            this.__pendingValue = value;
-        }
-        commit() {
-            if (this.startNode.parentNode === null) {
-                return;
-            }
-            while (isDirective(this.__pendingValue)) {
-                const directive = this.__pendingValue;
-                this.__pendingValue = noChange;
-                directive(this);
-            }
-            const value = this.__pendingValue;
-            if (value === noChange) {
-                return;
-            }
-            if (isPrimitive(value)) {
-                if (value !== this.value) {
-                    this.__commitText(value);
-                }
-            }
-            else if (value instanceof TemplateResult) {
-                this.__commitTemplateResult(value);
-            }
-            else if (value instanceof Node) {
-                this.__commitNode(value);
-            }
-            else if (isIterable(value)) {
-                this.__commitIterable(value);
-            }
-            else if (value === nothing) {
-                this.value = nothing;
-                this.clear();
-            }
-            else {
-                // Fallback, will render the string representation
-                this.__commitText(value);
-            }
-        }
-        __insert(node) {
-            this.endNode.parentNode.insertBefore(node, this.endNode);
-        }
-        __commitNode(value) {
-            if (this.value === value) {
-                return;
-            }
-            this.clear();
-            this.__insert(value);
-            this.value = value;
-        }
-        __commitText(value) {
-            const node = this.startNode.nextSibling;
-            value = value == null ? '' : value;
-            // If `value` isn't already a string, we explicitly convert it here in case
-            // it can't be implicitly converted - i.e. it's a symbol.
-            const valueAsString = typeof value === 'string' ? value : String(value);
-            if (node === this.endNode.previousSibling &&
-                node.nodeType === 3 /* Node.TEXT_NODE */) {
-                // If we only have a single text node between the markers, we can just
-                // set its value, rather than replacing it.
-                // TODO(justinfagnani): Can we just check if this.value is primitive?
-                node.data = valueAsString;
-            }
-            else {
-                this.__commitNode(document.createTextNode(valueAsString));
-            }
-            this.value = value;
-        }
-        __commitTemplateResult(value) {
-            const template = this.options.templateFactory(value);
-            if (this.value instanceof TemplateInstance &&
-                this.value.template === template) {
-                this.value.update(value.values);
-            }
-            else {
-                // Make sure we propagate the template processor from the TemplateResult
-                // so that we use its syntax extension, etc. The template factory comes
-                // from the render function options so that it can control template
-                // caching and preprocessing.
-                const instance = new TemplateInstance(template, value.processor, this.options);
-                const fragment = instance._clone();
-                instance.update(value.values);
-                this.__commitNode(fragment);
-                this.value = instance;
-            }
-        }
-        __commitIterable(value) {
-            // For an Iterable, we create a new InstancePart per item, then set its
-            // value to the item. This is a little bit of overhead for every item in
-            // an Iterable, but it lets us recurse easily and efficiently update Arrays
-            // of TemplateResults that will be commonly returned from expressions like:
-            // array.map((i) => html`${i}`), by reusing existing TemplateInstances.
-            // If _value is an array, then the previous render was of an
-            // iterable and _value will contain the NodeParts from the previous
-            // render. If _value is not an array, clear this part and make a new
-            // array for NodeParts.
-            if (!Array.isArray(this.value)) {
-                this.value = [];
-                this.clear();
-            }
-            // Lets us keep track of how many items we stamped so we can clear leftover
-            // items from a previous render
-            const itemParts = this.value;
-            let partIndex = 0;
-            let itemPart;
-            for (const item of value) {
-                // Try to reuse an existing part
-                itemPart = itemParts[partIndex];
-                // If no existing part, create a new one
-                if (itemPart === undefined) {
-                    itemPart = new NodePart(this.options);
-                    itemParts.push(itemPart);
-                    if (partIndex === 0) {
-                        itemPart.appendIntoPart(this);
-                    }
-                    else {
-                        itemPart.insertAfterPart(itemParts[partIndex - 1]);
-                    }
-                }
-                itemPart.setValue(item);
-                itemPart.commit();
-                partIndex++;
-            }
-            if (partIndex < itemParts.length) {
-                // Truncate the parts array so _value reflects the current state
-                itemParts.length = partIndex;
-                this.clear(itemPart && itemPart.endNode);
-            }
-        }
-        clear(startNode = this.startNode) {
-            removeNodes(this.startNode.parentNode, startNode.nextSibling, this.endNode);
-        }
-    }
-    /**
-     * Implements a boolean attribute, roughly as defined in the HTML
-     * specification.
-     *
-     * If the value is truthy, then the attribute is present with a value of
-     * ''. If the value is falsey, the attribute is removed.
-     */
-    class BooleanAttributePart {
-        constructor(element, name, strings) {
-            this.value = undefined;
-            this.__pendingValue = undefined;
-            if (strings.length !== 2 || strings[0] !== '' || strings[1] !== '') {
-                throw new Error('Boolean attributes can only contain a single expression');
-            }
-            this.element = element;
-            this.name = name;
-            this.strings = strings;
-        }
-        setValue(value) {
-            this.__pendingValue = value;
-        }
-        commit() {
-            while (isDirective(this.__pendingValue)) {
-                const directive = this.__pendingValue;
-                this.__pendingValue = noChange;
-                directive(this);
-            }
-            if (this.__pendingValue === noChange) {
-                return;
-            }
-            const value = !!this.__pendingValue;
-            if (this.value !== value) {
-                if (value) {
-                    this.element.setAttribute(this.name, '');
-                }
-                else {
-                    this.element.removeAttribute(this.name);
-                }
-                this.value = value;
-            }
-            this.__pendingValue = noChange;
-        }
-    }
-    /**
-     * Sets attribute values for PropertyParts, so that the value is only set once
-     * even if there are multiple parts for a property.
-     *
-     * If an expression controls the whole property value, then the value is simply
-     * assigned to the property under control. If there are string literals or
-     * multiple expressions, then the strings are expressions are interpolated into
-     * a string first.
-     */
-    class PropertyCommitter extends AttributeCommitter {
-        constructor(element, name, strings) {
-            super(element, name, strings);
-            this.single =
-                (strings.length === 2 && strings[0] === '' && strings[1] === '');
-        }
-        _createPart() {
-            return new PropertyPart(this);
-        }
-        _getValue() {
-            if (this.single) {
-                return this.parts[0].value;
-            }
-            return super._getValue();
-        }
-        commit() {
-            if (this.dirty) {
-                this.dirty = false;
-                // eslint-disable-next-line @typescript-eslint/no-explicit-any
-                this.element[this.name] = this._getValue();
-            }
-        }
-    }
-    class PropertyPart extends AttributePart {
-    }
-    // Detect event listener options support. If the `capture` property is read
-    // from the options object, then options are supported. If not, then the third
-    // argument to add/removeEventListener is interpreted as the boolean capture
-    // value so we should only pass the `capture` property.
-    let eventOptionsSupported = false;
-    // Wrap into an IIFE because MS Edge <= v41 does not support having try/catch
-    // blocks right into the body of a module
-    (() => {
-        try {
-            const options = {
-                get capture() {
-                    eventOptionsSupported = true;
-                    return false;
-                }
-            };
-            // eslint-disable-next-line @typescript-eslint/no-explicit-any
-            window.addEventListener('test', options, options);
-            // eslint-disable-next-line @typescript-eslint/no-explicit-any
-            window.removeEventListener('test', options, options);
-        }
-        catch (_e) {
-            // event options not supported
-        }
-    })();
-    class EventPart {
-        constructor(element, eventName, eventContext) {
-            this.value = undefined;
-            this.__pendingValue = undefined;
-            this.element = element;
-            this.eventName = eventName;
-            this.eventContext = eventContext;
-            this.__boundHandleEvent = (e) => this.handleEvent(e);
-        }
-        setValue(value) {
-            this.__pendingValue = value;
-        }
-        commit() {
-            while (isDirective(this.__pendingValue)) {
-                const directive = this.__pendingValue;
-                this.__pendingValue = noChange;
-                directive(this);
-            }
-            if (this.__pendingValue === noChange) {
-                return;
-            }
-            const newListener = this.__pendingValue;
-            const oldListener = this.value;
-            const shouldRemoveListener = newListener == null ||
-                oldListener != null &&
-                    (newListener.capture !== oldListener.capture ||
-                        newListener.once !== oldListener.once ||
-                        newListener.passive !== oldListener.passive);
-            const shouldAddListener = newListener != null && (oldListener == null || shouldRemoveListener);
-            if (shouldRemoveListener) {
-                this.element.removeEventListener(this.eventName, this.__boundHandleEvent, this.__options);
-            }
-            if (shouldAddListener) {
-                this.__options = getOptions(newListener);
-                this.element.addEventListener(this.eventName, this.__boundHandleEvent, this.__options);
-            }
-            this.value = newListener;
-            this.__pendingValue = noChange;
-        }
-        handleEvent(event) {
-            if (typeof this.value === 'function') {
-                this.value.call(this.eventContext || this.element, event);
-            }
-            else {
-                this.value.handleEvent(event);
-            }
-        }
-    }
-    // We copy options because of the inconsistent behavior of browsers when reading
-    // the third argument of add/removeEventListener. IE11 doesn't support options
-    // at all. Chrome 41 only reads `capture` if the argument is an object.
-    const getOptions = (o) => o &&
-        (eventOptionsSupported ?
-            { capture: o.capture, passive: o.passive, once: o.once } :
-            o.capture);
+    const e$4=(e,t,c)=>(c.configurable=!0,c.enumerable=!0,Reflect.decorate&&"object"!=typeof t&&Object.defineProperty(e,t,c),c);
 
     /**
      * @license
-     * Copyright (c) 2017 The Polymer Project Authors. All rights reserved.
-     * This code may only be used under the BSD style license found at
-     * http://polymer.github.io/LICENSE.txt
-     * The complete set of authors may be found at
-     * http://polymer.github.io/AUTHORS.txt
-     * The complete set of contributors may be found at
-     * http://polymer.github.io/CONTRIBUTORS.txt
-     * Code distributed by Google as part of the polymer project is also
-     * subject to an additional IP rights grant found at
-     * http://polymer.github.io/PATENTS.txt
-     */
-    /**
-     * The default TemplateFactory which caches Templates keyed on
-     * result.type and result.strings.
-     */
-    function templateFactory(result) {
-        let templateCache = templateCaches.get(result.type);
-        if (templateCache === undefined) {
-            templateCache = {
-                stringsArray: new WeakMap(),
-                keyString: new Map()
-            };
-            templateCaches.set(result.type, templateCache);
-        }
-        let template = templateCache.stringsArray.get(result.strings);
-        if (template !== undefined) {
-            return template;
-        }
-        // If the TemplateStringsArray is new, generate a key from the strings
-        // This key is shared between all templates with identical content
-        const key = result.strings.join(marker);
-        // Check if we already have a Template for this key
-        template = templateCache.keyString.get(key);
-        if (template === undefined) {
-            // If we have not seen this key before, create a new Template
-            template = new Template(result, result.getTemplateElement());
-            // Cache the Template for this key
-            templateCache.keyString.set(key, template);
-        }
-        // Cache all future queries for this TemplateStringsArray
-        templateCache.stringsArray.set(result.strings, template);
-        return template;
-    }
-    const templateCaches = new Map();
+     * Copyright 2017 Google LLC
+     * SPDX-License-Identifier: BSD-3-Clause
+     */function e$3(e,r){return (n,s,i)=>{const o=t=>t.renderRoot?.querySelector(e)??null;return e$4(n,s,{get(){return o(this)}})}}
 
-    /**
-     * @license
-     * Copyright (c) 2017 The Polymer Project Authors. All rights reserved.
-     * This code may only be used under the BSD style license found at
-     * http://polymer.github.io/LICENSE.txt
-     * The complete set of authors may be found at
-     * http://polymer.github.io/AUTHORS.txt
-     * The complete set of contributors may be found at
-     * http://polymer.github.io/CONTRIBUTORS.txt
-     * Code distributed by Google as part of the polymer project is also
-     * subject to an additional IP rights grant found at
-     * http://polymer.github.io/PATENTS.txt
-     */
-    const parts = new WeakMap();
-    /**
-     * Renders a template result or other value to a container.
-     *
-     * To update a container with new values, reevaluate the template literal and
-     * call `render` with the new result.
-     *
-     * @param result Any value renderable by NodePart - typically a TemplateResult
-     *     created by evaluating a template tag like `html` or `svg`.
-     * @param container A DOM parent to render to. The entire contents are either
-     *     replaced, or efficiently updated if the same result type was previous
-     *     rendered there.
-     * @param options RenderOptions for the entire render tree rendered to this
-     *     container. Render options must *not* change between renders to the same
-     *     container, as those changes will not effect previously rendered DOM.
-     */
-    const render$1 = (result, container, options) => {
-        let part = parts.get(container);
-        if (part === undefined) {
-            removeNodes(container, container.firstChild);
-            parts.set(container, part = new NodePart(Object.assign({ templateFactory }, options)));
-            part.appendInto(container);
-        }
-        part.setValue(result);
-        part.commit();
+    const KEY_MAP = {
+        ' ': 'Enter',
+        'Enter': 'Enter',
+        'a': 'ArrowLeft',
+        's': 'ArrowLeft',
+        'ArrowLeft': 'ArrowLeft',
+        'ArrowDown': 'ArrowLeft',
+        'd': 'ArrowRight',
+        'w': 'ArrowRight',
+        'ArrowRight': 'ArrowRight',
+        'ArrowUp': 'ArrowRight',
     };
-
-    /**
-     * @license
-     * Copyright (c) 2017 The Polymer Project Authors. All rights reserved.
-     * This code may only be used under the BSD style license found at
-     * http://polymer.github.io/LICENSE.txt
-     * The complete set of authors may be found at
-     * http://polymer.github.io/AUTHORS.txt
-     * The complete set of contributors may be found at
-     * http://polymer.github.io/CONTRIBUTORS.txt
-     * Code distributed by Google as part of the polymer project is also
-     * subject to an additional IP rights grant found at
-     * http://polymer.github.io/PATENTS.txt
-     */
-    /**
-     * Creates Parts when a template is instantiated.
-     */
-    class DefaultTemplateProcessor {
-        /**
-         * Create parts for an attribute-position binding, given the event, attribute
-         * name, and string literals.
-         *
-         * @param element The element containing the binding
-         * @param name  The attribute name
-         * @param strings The string literals. There are always at least two strings,
-         *   event for fully-controlled bindings with a single expression.
-         */
-        handleAttributeExpressions(element, name, strings, options) {
-            const prefix = name[0];
-            if (prefix === '.') {
-                const committer = new PropertyCommitter(element, name.slice(1), strings);
-                return committer.parts;
-            }
-            if (prefix === '@') {
-                return [new EventPart(element, name.slice(1), options.eventContext)];
-            }
-            if (prefix === '?') {
-                return [new BooleanAttributePart(element, name.slice(1), strings)];
-            }
-            const committer = new AttributeCommitter(element, name, strings);
-            return committer.parts;
-        }
-        /**
-         * Create parts for a text-position binding.
-         * @param templateFactory
-         */
-        handleTextExpression(options) {
-            return new NodePart(options);
-        }
-    }
-    const defaultTemplateProcessor = new DefaultTemplateProcessor();
-
-    /**
-     * @license
-     * Copyright (c) 2017 The Polymer Project Authors. All rights reserved.
-     * This code may only be used under the BSD style license found at
-     * http://polymer.github.io/LICENSE.txt
-     * The complete set of authors may be found at
-     * http://polymer.github.io/AUTHORS.txt
-     * The complete set of contributors may be found at
-     * http://polymer.github.io/CONTRIBUTORS.txt
-     * Code distributed by Google as part of the polymer project is also
-     * subject to an additional IP rights grant found at
-     * http://polymer.github.io/PATENTS.txt
-     */
-    /**
-     *
-     * Main lit-html module.
-     *
-     * Main exports:
-     *
-     * -  [[html]]
-     * -  [[svg]]
-     * -  [[render]]
-     *
-     * @packageDocumentation
-     */
-    /**
-     * Do not remove this comment; it keeps typedoc from misplacing the module
-     * docs.
-     */
-    // IMPORTANT: do not change the property name or the assignment expression.
-    // This line will be used in regexes to search for lit-html usage.
-    // TODO(justinfagnani): inject version number at build time
-    if (typeof window !== 'undefined') {
-        (window['litHtmlVersions'] || (window['litHtmlVersions'] = [])).push('1.4.1');
-    }
-    /**
-     * Interprets a template literal as an HTML template that can efficiently
-     * render to and update a container.
-     */
-    const html = (strings, ...values) => new TemplateResult(strings, values, 'html', defaultTemplateProcessor);
-
-    /**
-     * @license
-     * Copyright (c) 2017 The Polymer Project Authors. All rights reserved.
-     * This code may only be used under the BSD style license found at
-     * http://polymer.github.io/LICENSE.txt
-     * The complete set of authors may be found at
-     * http://polymer.github.io/AUTHORS.txt
-     * The complete set of contributors may be found at
-     * http://polymer.github.io/CONTRIBUTORS.txt
-     * Code distributed by Google as part of the polymer project is also
-     * subject to an additional IP rights grant found at
-     * http://polymer.github.io/PATENTS.txt
-     */
-    /**
-     * Module to add shady DOM/shady CSS polyfill support to lit-html template
-     * rendering. See the [[render]] method for details.
-     *
-     * @packageDocumentation
-     */
-    /**
-     * Do not remove this comment; it keeps typedoc from misplacing the module
-     * docs.
-     */
-    // Get a key to lookup in `templateCaches`.
-    const getTemplateCacheKey = (type, scopeName) => `${type}--${scopeName}`;
-    let compatibleShadyCSSVersion = true;
-    if (typeof window.ShadyCSS === 'undefined') {
-        compatibleShadyCSSVersion = false;
-    }
-    else if (typeof window.ShadyCSS.prepareTemplateDom === 'undefined') {
-        console.warn(`Incompatible ShadyCSS version detected. ` +
-            `Please update to at least @webcomponents/webcomponentsjs@2.0.2 and ` +
-            `@webcomponents/shadycss@1.3.1.`);
-        compatibleShadyCSSVersion = false;
-    }
-    /**
-     * Template factory which scopes template DOM using ShadyCSS.
-     * @param scopeName {string}
-     */
-    const shadyTemplateFactory = (scopeName) => (result) => {
-        const cacheKey = getTemplateCacheKey(result.type, scopeName);
-        let templateCache = templateCaches.get(cacheKey);
-        if (templateCache === undefined) {
-            templateCache = {
-                stringsArray: new WeakMap(),
-                keyString: new Map()
-            };
-            templateCaches.set(cacheKey, templateCache);
-        }
-        let template = templateCache.stringsArray.get(result.strings);
-        if (template !== undefined) {
-            return template;
-        }
-        const key = result.strings.join(marker);
-        template = templateCache.keyString.get(key);
-        if (template === undefined) {
-            const element = result.getTemplateElement();
-            if (compatibleShadyCSSVersion) {
-                window.ShadyCSS.prepareTemplateDom(element, scopeName);
-            }
-            template = new Template(result, element);
-            templateCache.keyString.set(key, template);
-        }
-        templateCache.stringsArray.set(result.strings, template);
-        return template;
-    };
-    const TEMPLATE_TYPES = ['html', 'svg'];
-    /**
-     * Removes all style elements from Templates for the given scopeName.
-     */
-    const removeStylesFromLitTemplates = (scopeName) => {
-        TEMPLATE_TYPES.forEach((type) => {
-            const templates = templateCaches.get(getTemplateCacheKey(type, scopeName));
-            if (templates !== undefined) {
-                templates.keyString.forEach((template) => {
-                    const { element: { content } } = template;
-                    // IE 11 doesn't support the iterable param Set constructor
-                    const styles = new Set();
-                    Array.from(content.querySelectorAll('style')).forEach((s) => {
-                        styles.add(s);
-                    });
-                    removeNodesFromTemplate(template, styles);
-                });
-            }
-        });
-    };
-    const shadyRenderSet = new Set();
-    /**
-     * For the given scope name, ensures that ShadyCSS style scoping is performed.
-     * This is done just once per scope name so the fragment and template cannot
-     * be modified.
-     * (1) extracts styles from the rendered fragment and hands them to ShadyCSS
-     * to be scoped and appended to the document
-     * (2) removes style elements from all lit-html Templates for this scope name.
-     *
-     * Note, <style> elements can only be placed into templates for the
-     * initial rendering of the scope. If <style> elements are included in templates
-     * dynamically rendered to the scope (after the first scope render), they will
-     * not be scoped and the <style> will be left in the template and rendered
-     * output.
-     */
-    const prepareTemplateStyles = (scopeName, renderedDOM, template) => {
-        shadyRenderSet.add(scopeName);
-        // If `renderedDOM` is stamped from a Template, then we need to edit that
-        // Template's underlying template element. Otherwise, we create one here
-        // to give to ShadyCSS, which still requires one while scoping.
-        const templateElement = !!template ? template.element : document.createElement('template');
-        // Move styles out of rendered DOM and store.
-        const styles = renderedDOM.querySelectorAll('style');
-        const { length } = styles;
-        // If there are no styles, skip unnecessary work
-        if (length === 0) {
-            // Ensure prepareTemplateStyles is called to support adding
-            // styles via `prepareAdoptedCssText` since that requires that
-            // `prepareTemplateStyles` is called.
-            //
-            // ShadyCSS will only update styles containing @apply in the template
-            // given to `prepareTemplateStyles`. If no lit Template was given,
-            // ShadyCSS will not be able to update uses of @apply in any relevant
-            // template. However, this is not a problem because we only create the
-            // template for the purpose of supporting `prepareAdoptedCssText`,
-            // which doesn't support @apply at all.
-            window.ShadyCSS.prepareTemplateStyles(templateElement, scopeName);
-            return;
-        }
-        const condensedStyle = document.createElement('style');
-        // Collect styles into a single style. This helps us make sure ShadyCSS
-        // manipulations will not prevent us from being able to fix up template
-        // part indices.
-        // NOTE: collecting styles is inefficient for browsers but ShadyCSS
-        // currently does this anyway. When it does not, this should be changed.
-        for (let i = 0; i < length; i++) {
-            const style = styles[i];
-            style.parentNode.removeChild(style);
-            condensedStyle.textContent += style.textContent;
-        }
-        // Remove styles from nested templates in this scope.
-        removeStylesFromLitTemplates(scopeName);
-        // And then put the condensed style into the "root" template passed in as
-        // `template`.
-        const content = templateElement.content;
-        if (!!template) {
-            insertNodeIntoTemplate(template, condensedStyle, content.firstChild);
-        }
-        else {
-            content.insertBefore(condensedStyle, content.firstChild);
-        }
-        // Note, it's important that ShadyCSS gets the template that `lit-html`
-        // will actually render so that it can update the style inside when
-        // needed (e.g. @apply native Shadow DOM case).
-        window.ShadyCSS.prepareTemplateStyles(templateElement, scopeName);
-        const style = content.querySelector('style');
-        if (window.ShadyCSS.nativeShadow && style !== null) {
-            // When in native Shadow DOM, ensure the style created by ShadyCSS is
-            // included in initially rendered output (`renderedDOM`).
-            renderedDOM.insertBefore(style.cloneNode(true), renderedDOM.firstChild);
-        }
-        else if (!!template) {
-            // When no style is left in the template, parts will be broken as a
-            // result. To fix this, we put back the style node ShadyCSS removed
-            // and then tell lit to remove that node from the template.
-            // There can be no style in the template in 2 cases (1) when Shady DOM
-            // is in use, ShadyCSS removes all styles, (2) when native Shadow DOM
-            // is in use ShadyCSS removes the style if it contains no content.
-            // NOTE, ShadyCSS creates its own style so we can safely add/remove
-            // `condensedStyle` here.
-            content.insertBefore(condensedStyle, content.firstChild);
-            const removes = new Set();
-            removes.add(condensedStyle);
-            removeNodesFromTemplate(template, removes);
-        }
-    };
-    /**
-     * Extension to the standard `render` method which supports rendering
-     * to ShadowRoots when the ShadyDOM (https://github.com/webcomponents/shadydom)
-     * and ShadyCSS (https://github.com/webcomponents/shadycss) polyfills are used
-     * or when the webcomponentsjs
-     * (https://github.com/webcomponents/webcomponentsjs) polyfill is used.
-     *
-     * Adds a `scopeName` option which is used to scope element DOM and stylesheets
-     * when native ShadowDOM is unavailable. The `scopeName` will be added to
-     * the class attribute of all rendered DOM. In addition, any style elements will
-     * be automatically re-written with this `scopeName` selector and moved out
-     * of the rendered DOM and into the document `<head>`.
-     *
-     * It is common to use this render method in conjunction with a custom element
-     * which renders a shadowRoot. When this is done, typically the element's
-     * `localName` should be used as the `scopeName`.
-     *
-     * In addition to DOM scoping, ShadyCSS also supports a basic shim for css
-     * custom properties (needed only on older browsers like IE11) and a shim for
-     * a deprecated feature called `@apply` that supports applying a set of css
-     * custom properties to a given location.
-     *
-     * Usage considerations:
-     *
-     * * Part values in `<style>` elements are only applied the first time a given
-     * `scopeName` renders. Subsequent changes to parts in style elements will have
-     * no effect. Because of this, parts in style elements should only be used for
-     * values that will never change, for example parts that set scope-wide theme
-     * values or parts which render shared style elements.
-     *
-     * * Note, due to a limitation of the ShadyDOM polyfill, rendering in a
-     * custom element's `constructor` is not supported. Instead rendering should
-     * either done asynchronously, for example at microtask timing (for example
-     * `Promise.resolve()`), or be deferred until the first time the element's
-     * `connectedCallback` runs.
-     *
-     * Usage considerations when using shimmed custom properties or `@apply`:
-     *
-     * * Whenever any dynamic changes are made which affect
-     * css custom properties, `ShadyCSS.styleElement(element)` must be called
-     * to update the element. There are two cases when this is needed:
-     * (1) the element is connected to a new parent, (2) a class is added to the
-     * element that causes it to match different custom properties.
-     * To address the first case when rendering a custom element, `styleElement`
-     * should be called in the element's `connectedCallback`.
-     *
-     * * Shimmed custom properties may only be defined either for an entire
-     * shadowRoot (for example, in a `:host` rule) or via a rule that directly
-     * matches an element with a shadowRoot. In other words, instead of flowing from
-     * parent to child as do native css custom properties, shimmed custom properties
-     * flow only from shadowRoots to nested shadowRoots.
-     *
-     * * When using `@apply` mixing css shorthand property names with
-     * non-shorthand names (for example `border` and `border-width`) is not
-     * supported.
-     */
-    const render = (result, container, options) => {
-        if (!options || typeof options !== 'object' || !options.scopeName) {
-            throw new Error('The `scopeName` option is required.');
-        }
-        const scopeName = options.scopeName;
-        const hasRendered = parts.has(container);
-        const needsScoping = compatibleShadyCSSVersion &&
-            container.nodeType === 11 /* Node.DOCUMENT_FRAGMENT_NODE */ &&
-            !!container.host;
-        // Handle first render to a scope specially...
-        const firstScopeRender = needsScoping && !shadyRenderSet.has(scopeName);
-        // On first scope render, render into a fragment; this cannot be a single
-        // fragment that is reused since nested renders can occur synchronously.
-        const renderContainer = firstScopeRender ? document.createDocumentFragment() : container;
-        render$1(result, renderContainer, Object.assign({ templateFactory: shadyTemplateFactory(scopeName) }, options));
-        // When performing first scope render,
-        // (1) We've rendered into a fragment so that there's a chance to
-        // `prepareTemplateStyles` before sub-elements hit the DOM
-        // (which might cause them to render based on a common pattern of
-        // rendering in a custom element's `connectedCallback`);
-        // (2) Scope the template with ShadyCSS one time only for this scope.
-        // (3) Render the fragment into the container and make sure the
-        // container knows its `part` is the one we just rendered. This ensures
-        // DOM will be re-used on subsequent renders.
-        if (firstScopeRender) {
-            const part = parts.get(renderContainer);
-            parts.delete(renderContainer);
-            // ShadyCSS might have style sheets (e.g. from `prepareAdoptedCssText`)
-            // that should apply to `renderContainer` even if the rendered value is
-            // not a TemplateInstance. However, it will only insert scoped styles
-            // into the document if `prepareTemplateStyles` has already been called
-            // for the given scope name.
-            const template = part.value instanceof TemplateInstance ?
-                part.value.template :
-                undefined;
-            prepareTemplateStyles(scopeName, renderContainer, template);
-            removeNodes(container, container.firstChild);
-            container.appendChild(renderContainer);
-            parts.set(container, part);
-        }
-        // After elements have hit the DOM, update styling if this is the
-        // initial render to this container.
-        // This is needed whenever dynamic changes are made so it would be
-        // safest to do every render; however, this would regress performance
-        // so we leave it up to the user to call `ShadyCSS.styleElement`
-        // for dynamic changes.
-        if (!hasRendered && needsScoping) {
-            window.ShadyCSS.styleElement(container.host);
-        }
-    };
-
-    /**
-     * @license
-     * Copyright (c) 2017 The Polymer Project Authors. All rights reserved.
-     * This code may only be used under the BSD style license found at
-     * http://polymer.github.io/LICENSE.txt
-     * The complete set of authors may be found at
-     * http://polymer.github.io/AUTHORS.txt
-     * The complete set of contributors may be found at
-     * http://polymer.github.io/CONTRIBUTORS.txt
-     * Code distributed by Google as part of the polymer project is also
-     * subject to an additional IP rights grant found at
-     * http://polymer.github.io/PATENTS.txt
-     */
-    var _a;
-    /**
-     * Use this module if you want to create your own base class extending
-     * [[UpdatingElement]].
-     * @packageDocumentation
-     */
-    /*
-     * When using Closure Compiler, JSCompiler_renameProperty(property, object) is
-     * replaced at compile time by the munged name for object[property]. We cannot
-     * alias this function, so we have to use a small shim that has the same
-     * behavior when not compiling.
-     */
-    window.JSCompiler_renameProperty =
-        (prop, _obj) => prop;
-    const defaultConverter = {
-        toAttribute(value, type) {
-            switch (type) {
-                case Boolean:
-                    return value ? '' : null;
-                case Object:
-                case Array:
-                    // if the value is `null` or `undefined` pass this through
-                    // to allow removing/no change behavior.
-                    return value == null ? value : JSON.stringify(value);
-            }
-            return value;
-        },
-        fromAttribute(value, type) {
-            switch (type) {
-                case Boolean:
-                    return value !== null;
-                case Number:
-                    return value === null ? null : Number(value);
-                case Object:
-                case Array:
-                    // Type assert to adhere to Bazel's "must type assert JSON parse" rule.
-                    return JSON.parse(value);
-            }
-            return value;
-        }
-    };
-    /**
-     * Change function that returns true if `value` is different from `oldValue`.
-     * This method is used as the default for a property's `hasChanged` function.
-     */
-    const notEqual = (value, old) => {
-        // This ensures (old==NaN, value==NaN) always returns false
-        return old !== value && (old === old || value === value);
-    };
-    const defaultPropertyDeclaration = {
-        attribute: true,
-        type: String,
-        converter: defaultConverter,
-        reflect: false,
-        hasChanged: notEqual
-    };
-    const STATE_HAS_UPDATED = 1;
-    const STATE_UPDATE_REQUESTED = 1 << 2;
-    const STATE_IS_REFLECTING_TO_ATTRIBUTE = 1 << 3;
-    const STATE_IS_REFLECTING_TO_PROPERTY = 1 << 4;
-    /**
-     * The Closure JS Compiler doesn't currently have good support for static
-     * property semantics where "this" is dynamic (e.g.
-     * https://github.com/google/closure-compiler/issues/3177 and others) so we use
-     * this hack to bypass any rewriting by the compiler.
-     */
-    const finalized = 'finalized';
-    /**
-     * Base element class which manages element properties and attributes. When
-     * properties change, the `update` method is asynchronously called. This method
-     * should be supplied by subclassers to render updates as desired.
-     * @noInheritDoc
-     */
-    class UpdatingElement extends HTMLElement {
-        constructor() {
-            super();
-            this.initialize();
-        }
-        /**
-         * Returns a list of attributes corresponding to the registered properties.
-         * @nocollapse
-         */
-        static get observedAttributes() {
-            // note: piggy backing on this to ensure we're finalized.
-            this.finalize();
-            const attributes = [];
-            // Use forEach so this works even if for/of loops are compiled to for loops
-            // expecting arrays
-            this._classProperties.forEach((v, p) => {
-                const attr = this._attributeNameForProperty(p, v);
-                if (attr !== undefined) {
-                    this._attributeToPropertyMap.set(attr, p);
-                    attributes.push(attr);
-                }
-            });
-            return attributes;
-        }
-        /**
-         * Ensures the private `_classProperties` property metadata is created.
-         * In addition to `finalize` this is also called in `createProperty` to
-         * ensure the `@property` decorator can add property metadata.
-         */
-        /** @nocollapse */
-        static _ensureClassProperties() {
-            // ensure private storage for property declarations.
-            if (!this.hasOwnProperty(JSCompiler_renameProperty('_classProperties', this))) {
-                this._classProperties = new Map();
-                // NOTE: Workaround IE11 not supporting Map constructor argument.
-                const superProperties = Object.getPrototypeOf(this)._classProperties;
-                if (superProperties !== undefined) {
-                    superProperties.forEach((v, k) => this._classProperties.set(k, v));
-                }
-            }
-        }
-        /**
-         * Creates a property accessor on the element prototype if one does not exist
-         * and stores a PropertyDeclaration for the property with the given options.
-         * The property setter calls the property's `hasChanged` property option
-         * or uses a strict identity check to determine whether or not to request
-         * an update.
-         *
-         * This method may be overridden to customize properties; however,
-         * when doing so, it's important to call `super.createProperty` to ensure
-         * the property is setup correctly. This method calls
-         * `getPropertyDescriptor` internally to get a descriptor to install.
-         * To customize what properties do when they are get or set, override
-         * `getPropertyDescriptor`. To customize the options for a property,
-         * implement `createProperty` like this:
-         *
-         * static createProperty(name, options) {
-         *   options = Object.assign(options, {myOption: true});
-         *   super.createProperty(name, options);
-         * }
-         *
-         * @nocollapse
-         */
-        static createProperty(name, options = defaultPropertyDeclaration) {
-            // Note, since this can be called by the `@property` decorator which
-            // is called before `finalize`, we ensure storage exists for property
-            // metadata.
-            this._ensureClassProperties();
-            this._classProperties.set(name, options);
-            // Do not generate an accessor if the prototype already has one, since
-            // it would be lost otherwise and that would never be the user's intention;
-            // Instead, we expect users to call `requestUpdate` themselves from
-            // user-defined accessors. Note that if the super has an accessor we will
-            // still overwrite it
-            if (options.noAccessor || this.prototype.hasOwnProperty(name)) {
-                return;
-            }
-            const key = typeof name === 'symbol' ? Symbol() : `__${name}`;
-            const descriptor = this.getPropertyDescriptor(name, key, options);
-            if (descriptor !== undefined) {
-                Object.defineProperty(this.prototype, name, descriptor);
-            }
-        }
-        /**
-         * Returns a property descriptor to be defined on the given named property.
-         * If no descriptor is returned, the property will not become an accessor.
-         * For example,
-         *
-         *   class MyElement extends LitElement {
-         *     static getPropertyDescriptor(name, key, options) {
-         *       const defaultDescriptor =
-         *           super.getPropertyDescriptor(name, key, options);
-         *       const setter = defaultDescriptor.set;
-         *       return {
-         *         get: defaultDescriptor.get,
-         *         set(value) {
-         *           setter.call(this, value);
-         *           // custom action.
-         *         },
-         *         configurable: true,
-         *         enumerable: true
-         *       }
-         *     }
-         *   }
-         *
-         * @nocollapse
-         */
-        static getPropertyDescriptor(name, key, options) {
-            return {
-                // tslint:disable-next-line:no-any no symbol in index
-                get() {
-                    return this[key];
-                },
-                set(value) {
-                    const oldValue = this[name];
-                    this[key] = value;
-                    this
-                        .requestUpdateInternal(name, oldValue, options);
-                },
-                configurable: true,
-                enumerable: true
-            };
-        }
-        /**
-         * Returns the property options associated with the given property.
-         * These options are defined with a PropertyDeclaration via the `properties`
-         * object or the `@property` decorator and are registered in
-         * `createProperty(...)`.
-         *
-         * Note, this method should be considered "final" and not overridden. To
-         * customize the options for a given property, override `createProperty`.
-         *
-         * @nocollapse
-         * @final
-         */
-        static getPropertyOptions(name) {
-            return this._classProperties && this._classProperties.get(name) ||
-                defaultPropertyDeclaration;
-        }
-        /**
-         * Creates property accessors for registered properties and ensures
-         * any superclasses are also finalized.
-         * @nocollapse
-         */
-        static finalize() {
-            // finalize any superclasses
-            const superCtor = Object.getPrototypeOf(this);
-            if (!superCtor.hasOwnProperty(finalized)) {
-                superCtor.finalize();
-            }
-            this[finalized] = true;
-            this._ensureClassProperties();
-            // initialize Map populated in observedAttributes
-            this._attributeToPropertyMap = new Map();
-            // make any properties
-            // Note, only process "own" properties since this element will inherit
-            // any properties defined on the superClass, and finalization ensures
-            // the entire prototype chain is finalized.
-            if (this.hasOwnProperty(JSCompiler_renameProperty('properties', this))) {
-                const props = this.properties;
-                // support symbols in properties (IE11 does not support this)
-                const propKeys = [
-                    ...Object.getOwnPropertyNames(props),
-                    ...(typeof Object.getOwnPropertySymbols === 'function') ?
-                        Object.getOwnPropertySymbols(props) :
-                        []
-                ];
-                // This for/of is ok because propKeys is an array
-                for (const p of propKeys) {
-                    // note, use of `any` is due to TypeSript lack of support for symbol in
-                    // index types
-                    // tslint:disable-next-line:no-any no symbol in index
-                    this.createProperty(p, props[p]);
-                }
-            }
-        }
-        /**
-         * Returns the property name for the given attribute `name`.
-         * @nocollapse
-         */
-        static _attributeNameForProperty(name, options) {
-            const attribute = options.attribute;
-            return attribute === false ?
-                undefined :
-                (typeof attribute === 'string' ?
-                    attribute :
-                    (typeof name === 'string' ? name.toLowerCase() : undefined));
-        }
-        /**
-         * Returns true if a property should request an update.
-         * Called when a property value is set and uses the `hasChanged`
-         * option for the property if present or a strict identity check.
-         * @nocollapse
-         */
-        static _valueHasChanged(value, old, hasChanged = notEqual) {
-            return hasChanged(value, old);
-        }
-        /**
-         * Returns the property value for the given attribute value.
-         * Called via the `attributeChangedCallback` and uses the property's
-         * `converter` or `converter.fromAttribute` property option.
-         * @nocollapse
-         */
-        static _propertyValueFromAttribute(value, options) {
-            const type = options.type;
-            const converter = options.converter || defaultConverter;
-            const fromAttribute = (typeof converter === 'function' ? converter : converter.fromAttribute);
-            return fromAttribute ? fromAttribute(value, type) : value;
-        }
-        /**
-         * Returns the attribute value for the given property value. If this
-         * returns undefined, the property will *not* be reflected to an attribute.
-         * If this returns null, the attribute will be removed, otherwise the
-         * attribute will be set to the value.
-         * This uses the property's `reflect` and `type.toAttribute` property options.
-         * @nocollapse
-         */
-        static _propertyValueToAttribute(value, options) {
-            if (options.reflect === undefined) {
-                return;
-            }
-            const type = options.type;
-            const converter = options.converter;
-            const toAttribute = converter && converter.toAttribute ||
-                defaultConverter.toAttribute;
-            return toAttribute(value, type);
-        }
-        /**
-         * Performs element initialization. By default captures any pre-set values for
-         * registered properties.
-         */
-        initialize() {
-            this._updateState = 0;
-            this._updatePromise =
-                new Promise((res) => this._enableUpdatingResolver = res);
-            this._changedProperties = new Map();
-            this._saveInstanceProperties();
-            // ensures first update will be caught by an early access of
-            // `updateComplete`
-            this.requestUpdateInternal();
-        }
-        /**
-         * Fixes any properties set on the instance before upgrade time.
-         * Otherwise these would shadow the accessor and break these properties.
-         * The properties are stored in a Map which is played back after the
-         * constructor runs. Note, on very old versions of Safari (<=9) or Chrome
-         * (<=41), properties created for native platform properties like (`id` or
-         * `name`) may not have default values set in the element constructor. On
-         * these browsers native properties appear on instances and therefore their
-         * default value will overwrite any element default (e.g. if the element sets
-         * this.id = 'id' in the constructor, the 'id' will become '' since this is
-         * the native platform default).
-         */
-        _saveInstanceProperties() {
-            // Use forEach so this works even if for/of loops are compiled to for loops
-            // expecting arrays
-            this.constructor
-                ._classProperties.forEach((_v, p) => {
-                if (this.hasOwnProperty(p)) {
-                    const value = this[p];
-                    delete this[p];
-                    if (!this._instanceProperties) {
-                        this._instanceProperties = new Map();
-                    }
-                    this._instanceProperties.set(p, value);
-                }
-            });
-        }
-        /**
-         * Applies previously saved instance properties.
-         */
-        _applyInstanceProperties() {
-            // Use forEach so this works even if for/of loops are compiled to for loops
-            // expecting arrays
-            // tslint:disable-next-line:no-any
-            this._instanceProperties.forEach((v, p) => this[p] = v);
-            this._instanceProperties = undefined;
-        }
-        connectedCallback() {
-            // Ensure first connection completes an update. Updates cannot complete
-            // before connection.
-            this.enableUpdating();
-        }
-        enableUpdating() {
-            if (this._enableUpdatingResolver !== undefined) {
-                this._enableUpdatingResolver();
-                this._enableUpdatingResolver = undefined;
-            }
-        }
-        /**
-         * Allows for `super.disconnectedCallback()` in extensions while
-         * reserving the possibility of making non-breaking feature additions
-         * when disconnecting at some point in the future.
-         */
-        disconnectedCallback() {
-        }
-        /**
-         * Synchronizes property values when attributes change.
-         */
-        attributeChangedCallback(name, old, value) {
-            if (old !== value) {
-                this._attributeToProperty(name, value);
-            }
-        }
-        _propertyToAttribute(name, value, options = defaultPropertyDeclaration) {
-            const ctor = this.constructor;
-            const attr = ctor._attributeNameForProperty(name, options);
-            if (attr !== undefined) {
-                const attrValue = ctor._propertyValueToAttribute(value, options);
-                // an undefined value does not change the attribute.
-                if (attrValue === undefined) {
-                    return;
-                }
-                // Track if the property is being reflected to avoid
-                // setting the property again via `attributeChangedCallback`. Note:
-                // 1. this takes advantage of the fact that the callback is synchronous.
-                // 2. will behave incorrectly if multiple attributes are in the reaction
-                // stack at time of calling. However, since we process attributes
-                // in `update` this should not be possible (or an extreme corner case
-                // that we'd like to discover).
-                // mark state reflecting
-                this._updateState = this._updateState | STATE_IS_REFLECTING_TO_ATTRIBUTE;
-                if (attrValue == null) {
-                    this.removeAttribute(attr);
-                }
-                else {
-                    this.setAttribute(attr, attrValue);
-                }
-                // mark state not reflecting
-                this._updateState = this._updateState & ~STATE_IS_REFLECTING_TO_ATTRIBUTE;
-            }
-        }
-        _attributeToProperty(name, value) {
-            // Use tracking info to avoid deserializing attribute value if it was
-            // just set from a property setter.
-            if (this._updateState & STATE_IS_REFLECTING_TO_ATTRIBUTE) {
-                return;
-            }
-            const ctor = this.constructor;
-            // Note, hint this as an `AttributeMap` so closure clearly understands
-            // the type; it has issues with tracking types through statics
-            // tslint:disable-next-line:no-unnecessary-type-assertion
-            const propName = ctor._attributeToPropertyMap.get(name);
-            if (propName !== undefined) {
-                const options = ctor.getPropertyOptions(propName);
-                // mark state reflecting
-                this._updateState = this._updateState | STATE_IS_REFLECTING_TO_PROPERTY;
-                this[propName] =
-                    // tslint:disable-next-line:no-any
-                    ctor._propertyValueFromAttribute(value, options);
-                // mark state not reflecting
-                this._updateState = this._updateState & ~STATE_IS_REFLECTING_TO_PROPERTY;
-            }
-        }
-        /**
-         * This protected version of `requestUpdate` does not access or return the
-         * `updateComplete` promise. This promise can be overridden and is therefore
-         * not free to access.
-         */
-        requestUpdateInternal(name, oldValue, options) {
-            let shouldRequestUpdate = true;
-            // If we have a property key, perform property update steps.
-            if (name !== undefined) {
-                const ctor = this.constructor;
-                options = options || ctor.getPropertyOptions(name);
-                if (ctor._valueHasChanged(this[name], oldValue, options.hasChanged)) {
-                    if (!this._changedProperties.has(name)) {
-                        this._changedProperties.set(name, oldValue);
-                    }
-                    // Add to reflecting properties set.
-                    // Note, it's important that every change has a chance to add the
-                    // property to `_reflectingProperties`. This ensures setting
-                    // attribute + property reflects correctly.
-                    if (options.reflect === true &&
-                        !(this._updateState & STATE_IS_REFLECTING_TO_PROPERTY)) {
-                        if (this._reflectingProperties === undefined) {
-                            this._reflectingProperties = new Map();
-                        }
-                        this._reflectingProperties.set(name, options);
-                    }
-                }
-                else {
-                    // Abort the request if the property should not be considered changed.
-                    shouldRequestUpdate = false;
-                }
-            }
-            if (!this._hasRequestedUpdate && shouldRequestUpdate) {
-                this._updatePromise = this._enqueueUpdate();
-            }
-        }
-        /**
-         * Requests an update which is processed asynchronously. This should
-         * be called when an element should update based on some state not triggered
-         * by setting a property. In this case, pass no arguments. It should also be
-         * called when manually implementing a property setter. In this case, pass the
-         * property `name` and `oldValue` to ensure that any configured property
-         * options are honored. Returns the `updateComplete` Promise which is resolved
-         * when the update completes.
-         *
-         * @param name {PropertyKey} (optional) name of requesting property
-         * @param oldValue {any} (optional) old value of requesting property
-         * @returns {Promise} A Promise that is resolved when the update completes.
-         */
-        requestUpdate(name, oldValue) {
-            this.requestUpdateInternal(name, oldValue);
-            return this.updateComplete;
-        }
-        /**
-         * Sets up the element to asynchronously update.
-         */
-        async _enqueueUpdate() {
-            this._updateState = this._updateState | STATE_UPDATE_REQUESTED;
-            try {
-                // Ensure any previous update has resolved before updating.
-                // This `await` also ensures that property changes are batched.
-                await this._updatePromise;
-            }
-            catch (e) {
-                // Ignore any previous errors. We only care that the previous cycle is
-                // done. Any error should have been handled in the previous update.
-            }
-            const result = this.performUpdate();
-            // If `performUpdate` returns a Promise, we await it. This is done to
-            // enable coordinating updates with a scheduler. Note, the result is
-            // checked to avoid delaying an additional microtask unless we need to.
-            if (result != null) {
-                await result;
-            }
-            return !this._hasRequestedUpdate;
-        }
-        get _hasRequestedUpdate() {
-            return (this._updateState & STATE_UPDATE_REQUESTED);
-        }
-        get hasUpdated() {
-            return (this._updateState & STATE_HAS_UPDATED);
-        }
-        /**
-         * Performs an element update. Note, if an exception is thrown during the
-         * update, `firstUpdated` and `updated` will not be called.
-         *
-         * You can override this method to change the timing of updates. If this
-         * method is overridden, `super.performUpdate()` must be called.
-         *
-         * For instance, to schedule updates to occur just before the next frame:
-         *
-         * ```
-         * protected async performUpdate(): Promise<unknown> {
-         *   await new Promise((resolve) => requestAnimationFrame(() => resolve()));
-         *   super.performUpdate();
-         * }
-         * ```
-         */
-        performUpdate() {
-            // Abort any update if one is not pending when this is called.
-            // This can happen if `performUpdate` is called early to "flush"
-            // the update.
-            if (!this._hasRequestedUpdate) {
-                return;
-            }
-            // Mixin instance properties once, if they exist.
-            if (this._instanceProperties) {
-                this._applyInstanceProperties();
-            }
-            let shouldUpdate = false;
-            const changedProperties = this._changedProperties;
-            try {
-                shouldUpdate = this.shouldUpdate(changedProperties);
-                if (shouldUpdate) {
-                    this.update(changedProperties);
-                }
-                else {
-                    this._markUpdated();
-                }
-            }
-            catch (e) {
-                // Prevent `firstUpdated` and `updated` from running when there's an
-                // update exception.
-                shouldUpdate = false;
-                // Ensure element can accept additional updates after an exception.
-                this._markUpdated();
-                throw e;
-            }
-            if (shouldUpdate) {
-                if (!(this._updateState & STATE_HAS_UPDATED)) {
-                    this._updateState = this._updateState | STATE_HAS_UPDATED;
-                    this.firstUpdated(changedProperties);
-                }
-                this.updated(changedProperties);
-            }
-        }
-        _markUpdated() {
-            this._changedProperties = new Map();
-            this._updateState = this._updateState & ~STATE_UPDATE_REQUESTED;
-        }
-        /**
-         * Returns a Promise that resolves when the element has completed updating.
-         * The Promise value is a boolean that is `true` if the element completed the
-         * update without triggering another update. The Promise result is `false` if
-         * a property was set inside `updated()`. If the Promise is rejected, an
-         * exception was thrown during the update.
-         *
-         * To await additional asynchronous work, override the `_getUpdateComplete`
-         * method. For example, it is sometimes useful to await a rendered element
-         * before fulfilling this Promise. To do this, first await
-         * `super._getUpdateComplete()`, then any subsequent state.
-         *
-         * @returns {Promise} The Promise returns a boolean that indicates if the
-         * update resolved without triggering another update.
-         */
-        get updateComplete() {
-            return this._getUpdateComplete();
-        }
-        /**
-         * Override point for the `updateComplete` promise.
-         *
-         * It is not safe to override the `updateComplete` getter directly due to a
-         * limitation in TypeScript which means it is not possible to call a
-         * superclass getter (e.g. `super.updateComplete.then(...)`) when the target
-         * language is ES5 (https://github.com/microsoft/TypeScript/issues/338).
-         * This method should be overridden instead. For example:
-         *
-         *   class MyElement extends LitElement {
-         *     async _getUpdateComplete() {
-         *       await super._getUpdateComplete();
-         *       await this._myChild.updateComplete;
-         *     }
-         *   }
-         * @deprecated Override `getUpdateComplete()` instead for forward
-         *     compatibility with `lit-element` 3.0 / `@lit/reactive-element`.
-         */
-        _getUpdateComplete() {
-            return this.getUpdateComplete();
-        }
-        /**
-         * Override point for the `updateComplete` promise.
-         *
-         * It is not safe to override the `updateComplete` getter directly due to a
-         * limitation in TypeScript which means it is not possible to call a
-         * superclass getter (e.g. `super.updateComplete.then(...)`) when the target
-         * language is ES5 (https://github.com/microsoft/TypeScript/issues/338).
-         * This method should be overridden instead. For example:
-         *
-         *   class MyElement extends LitElement {
-         *     async getUpdateComplete() {
-         *       await super.getUpdateComplete();
-         *       await this._myChild.updateComplete;
-         *     }
-         *   }
-         */
-        getUpdateComplete() {
-            return this._updatePromise;
-        }
-        /**
-         * Controls whether or not `update` should be called when the element requests
-         * an update. By default, this method always returns `true`, but this can be
-         * customized to control when to update.
-         *
-         * @param _changedProperties Map of changed properties with old values
-         */
-        shouldUpdate(_changedProperties) {
-            return true;
-        }
-        /**
-         * Updates the element. This method reflects property values to attributes.
-         * It can be overridden to render and keep updated element DOM.
-         * Setting properties inside this method will *not* trigger
-         * another update.
-         *
-         * @param _changedProperties Map of changed properties with old values
-         */
-        update(_changedProperties) {
-            if (this._reflectingProperties !== undefined &&
-                this._reflectingProperties.size > 0) {
-                // Use forEach so this works even if for/of loops are compiled to for
-                // loops expecting arrays
-                this._reflectingProperties.forEach((v, k) => this._propertyToAttribute(k, this[k], v));
-                this._reflectingProperties = undefined;
-            }
-            this._markUpdated();
-        }
-        /**
-         * Invoked whenever the element is updated. Implement to perform
-         * post-updating tasks via DOM APIs, for example, focusing an element.
-         *
-         * Setting properties inside this method will trigger the element to update
-         * again after this update cycle completes.
-         *
-         * @param _changedProperties Map of changed properties with old values
-         */
-        updated(_changedProperties) {
-        }
-        /**
-         * Invoked when the element is first updated. Implement to perform one time
-         * work on the element after update.
-         *
-         * Setting properties inside this method will trigger the element to update
-         * again after this update cycle completes.
-         *
-         * @param _changedProperties Map of changed properties with old values
-         */
-        firstUpdated(_changedProperties) {
-        }
-    }
-    _a = finalized;
-    /**
-     * Marks class as having finished creating properties.
-     */
-    UpdatingElement[_a] = true;
-
-    /**
-     * @license
-     * Copyright (c) 2017 The Polymer Project Authors. All rights reserved.
-     * This code may only be used under the BSD style license found at
-     * http://polymer.github.io/LICENSE.txt
-     * The complete set of authors may be found at
-     * http://polymer.github.io/AUTHORS.txt
-     * The complete set of contributors may be found at
-     * http://polymer.github.io/CONTRIBUTORS.txt
-     * Code distributed by Google as part of the polymer project is also
-     * subject to an additional IP rights grant found at
-     * http://polymer.github.io/PATENTS.txt
-     */
-    const legacyCustomElement = (tagName, clazz) => {
-        window.customElements.define(tagName, clazz);
-        // Cast as any because TS doesn't recognize the return type as being a
-        // subtype of the decorated class when clazz is typed as
-        // `Constructor<HTMLElement>` for some reason.
-        // `Constructor<HTMLElement>` is helpful to make sure the decorator is
-        // applied to elements however.
-        // tslint:disable-next-line:no-any
-        return clazz;
-    };
-    const standardCustomElement = (tagName, descriptor) => {
-        const { kind, elements } = descriptor;
-        return {
-            kind,
-            elements,
-            // This callback is called once the class is otherwise fully defined
-            finisher(clazz) {
-                window.customElements.define(tagName, clazz);
-            }
-        };
-    };
-    /**
-     * Class decorator factory that defines the decorated class as a custom element.
-     *
-     * ```
-     * @customElement('my-element')
-     * class MyElement {
-     *   render() {
-     *     return html``;
-     *   }
-     * }
-     * ```
-     * @category Decorator
-     * @param tagName The name of the custom element to define.
-     */
-    const customElement = (tagName) => (classOrDescriptor) => (typeof classOrDescriptor === 'function') ?
-        legacyCustomElement(tagName, classOrDescriptor) :
-        standardCustomElement(tagName, classOrDescriptor);
-    const standardProperty = (options, element) => {
-        // When decorating an accessor, pass it through and add property metadata.
-        // Note, the `hasOwnProperty` check in `createProperty` ensures we don't
-        // stomp over the user's accessor.
-        if (element.kind === 'method' && element.descriptor &&
-            !('value' in element.descriptor)) {
-            return Object.assign(Object.assign({}, element), { finisher(clazz) {
-                    clazz.createProperty(element.key, options);
-                } });
-        }
-        else {
-            // createProperty() takes care of defining the property, but we still
-            // must return some kind of descriptor, so return a descriptor for an
-            // unused prototype field. The finisher calls createProperty().
-            return {
-                kind: 'field',
-                key: Symbol(),
-                placement: 'own',
-                descriptor: {},
-                // When @babel/plugin-proposal-decorators implements initializers,
-                // do this instead of the initializer below. See:
-                // https://github.com/babel/babel/issues/9260 extras: [
-                //   {
-                //     kind: 'initializer',
-                //     placement: 'own',
-                //     initializer: descriptor.initializer,
-                //   }
-                // ],
-                initializer() {
-                    if (typeof element.initializer === 'function') {
-                        this[element.key] = element.initializer.call(this);
-                    }
-                },
-                finisher(clazz) {
-                    clazz.createProperty(element.key, options);
-                }
-            };
-        }
-    };
-    const legacyProperty = (options, proto, name) => {
-        proto.constructor
-            .createProperty(name, options);
-    };
-    /**
-     * A property decorator which creates a LitElement property which reflects a
-     * corresponding attribute value. A [[`PropertyDeclaration`]] may optionally be
-     * supplied to configure property features.
-     *
-     * This decorator should only be used for public fields. Private or protected
-     * fields should use the [[`internalProperty`]] decorator.
-     *
-     * @example
-     * ```ts
-     * class MyElement {
-     *   @property({ type: Boolean })
-     *   clicked = false;
-     * }
-     * ```
-     * @category Decorator
-     * @ExportDecoratedItems
-     */
-    function property(options) {
-        // tslint:disable-next-line:no-any decorator
-        return (protoOrDescriptor, name) => (name !== undefined) ?
-            legacyProperty(options, protoOrDescriptor, name) :
-            standardProperty(options, protoOrDescriptor);
-    }
-    /**
-     * Declares a private or protected property that still triggers updates to the
-     * element when it changes.
-     *
-     * Properties declared this way must not be used from HTML or HTML templating
-     * systems, they're solely for properties internal to the element. These
-     * properties may be renamed by optimization tools like the Closure Compiler.
-     * @category Decorator
-     * @deprecated `internalProperty` has been renamed to `state` in lit-element
-     *     3.0. Please update to `state` now to be compatible with 3.0.
-     */
-    function internalProperty(options) {
-        return property({ attribute: false, hasChanged: void 0  });
-    }
-    /**
-     * A property decorator that converts a class property into a getter that
-     * executes a querySelector on the element's renderRoot.
-     *
-     * @param selector A DOMString containing one or more selectors to match.
-     * @param cache An optional boolean which when true performs the DOM query only
-     * once and caches the result.
-     *
-     * See: https://developer.mozilla.org/en-US/docs/Web/API/Document/querySelector
-     *
-     * @example
-     *
-     * ```ts
-     * class MyElement {
-     *   @query('#first')
-     *   first;
-     *
-     *   render() {
-     *     return html`
-     *       <div id="first"></div>
-     *       <div id="second"></div>
-     *     `;
-     *   }
-     * }
-     * ```
-     * @category Decorator
-     */
-    function query(selector, cache) {
-        return (protoOrDescriptor, 
-        // tslint:disable-next-line:no-any decorator
-        name) => {
-            const descriptor = {
-                get() {
-                    return this.renderRoot.querySelector(selector);
-                },
-                enumerable: true,
-                configurable: true,
-            };
-            return (name !== undefined) ?
-                legacyQuery(descriptor, protoOrDescriptor, name) :
-                standardQuery(descriptor, protoOrDescriptor);
-        };
-    }
-    const legacyQuery = (descriptor, proto, name) => {
-        Object.defineProperty(proto, name, descriptor);
-    };
-    const standardQuery = (descriptor, element) => ({
-        kind: 'method',
-        placement: 'prototype',
-        key: element.key,
-        descriptor,
-    });
-
-    /**
-    @license
-    Copyright (c) 2019 The Polymer Project Authors. All rights reserved.
-    This code may only be used under the BSD style license found at
-    http://polymer.github.io/LICENSE.txt The complete set of authors may be found at
-    http://polymer.github.io/AUTHORS.txt The complete set of contributors may be
-    found at http://polymer.github.io/CONTRIBUTORS.txt Code distributed by Google as
-    part of the polymer project is also subject to an additional IP rights grant
-    found at http://polymer.github.io/PATENTS.txt
-    */
-    /**
-     * Whether the current browser supports `adoptedStyleSheets`.
-     */
-    const supportsAdoptingStyleSheets = (window.ShadowRoot) &&
-        (window.ShadyCSS === undefined || window.ShadyCSS.nativeShadow) &&
-        ('adoptedStyleSheets' in Document.prototype) &&
-        ('replace' in CSSStyleSheet.prototype);
-    const constructionToken = Symbol();
-    class CSSResult {
-        constructor(cssText, safeToken) {
-            if (safeToken !== constructionToken) {
-                throw new Error('CSSResult is not constructable. Use `unsafeCSS` or `css` instead.');
-            }
-            this.cssText = cssText;
-        }
-        // Note, this is a getter so that it's lazy. In practice, this means
-        // stylesheets are not created until the first element instance is made.
-        get styleSheet() {
-            if (this._styleSheet === undefined) {
-                // Note, if `supportsAdoptingStyleSheets` is true then we assume
-                // CSSStyleSheet is constructable.
-                if (supportsAdoptingStyleSheets) {
-                    this._styleSheet = new CSSStyleSheet();
-                    this._styleSheet.replaceSync(this.cssText);
-                }
-                else {
-                    this._styleSheet = null;
-                }
-            }
-            return this._styleSheet;
-        }
-        toString() {
-            return this.cssText;
-        }
-    }
-    /**
-     * Wrap a value for interpolation in a [[`css`]] tagged template literal.
-     *
-     * This is unsafe because untrusted CSS text can be used to phone home
-     * or exfiltrate data to an attacker controlled site. Take care to only use
-     * this with trusted input.
-     */
-    const unsafeCSS = (value) => {
-        return new CSSResult(String(value), constructionToken);
-    };
-    const textFromCSSResult = (value) => {
-        if (value instanceof CSSResult) {
-            return value.cssText;
-        }
-        else if (typeof value === 'number') {
-            return value;
-        }
-        else {
-            throw new Error(`Value passed to 'css' function must be a 'css' function result: ${value}. Use 'unsafeCSS' to pass non-literal values, but
-            take care to ensure page security.`);
-        }
-    };
-    /**
-     * Template tag which which can be used with LitElement's [[LitElement.styles |
-     * `styles`]] property to set element styles. For security reasons, only literal
-     * string values may be used. To incorporate non-literal values [[`unsafeCSS`]]
-     * may be used inside a template string part.
-     */
-    const css = (strings, ...values) => {
-        const cssText = values.reduce((acc, v, idx) => acc + textFromCSSResult(v) + strings[idx + 1], strings[0]);
-        return new CSSResult(cssText, constructionToken);
-    };
-
-    /**
-     * @license
-     * Copyright (c) 2017 The Polymer Project Authors. All rights reserved.
-     * This code may only be used under the BSD style license found at
-     * http://polymer.github.io/LICENSE.txt
-     * The complete set of authors may be found at
-     * http://polymer.github.io/AUTHORS.txt
-     * The complete set of contributors may be found at
-     * http://polymer.github.io/CONTRIBUTORS.txt
-     * Code distributed by Google as part of the polymer project is also
-     * subject to an additional IP rights grant found at
-     * http://polymer.github.io/PATENTS.txt
-     */
-    /**
-     * The main LitElement module, which defines the [[`LitElement`]] base class and
-     * related APIs.
-     *
-     *  LitElement components can define a template and a set of observed
-     * properties. Changing an observed property triggers a re-render of the
-     * element.
-     *
-     *  Import [[`LitElement`]] and [[`html`]] from this module to create a
-     * component:
-     *
-     *  ```js
-     * import {LitElement, html} from 'lit-element';
-     *
-     * class MyElement extends LitElement {
-     *
-     *   // Declare observed properties
-     *   static get properties() {
-     *     return {
-     *       adjective: {}
-     *     }
-     *   }
-     *
-     *   constructor() {
-     *     this.adjective = 'awesome';
-     *   }
-     *
-     *   // Define the element's template
-     *   render() {
-     *     return html`<p>your ${adjective} template here</p>`;
-     *   }
-     * }
-     *
-     * customElements.define('my-element', MyElement);
-     * ```
-     *
-     * `LitElement` extends [[`UpdatingElement`]] and adds lit-html templating.
-     * The `UpdatingElement` class is provided for users that want to build
-     * their own custom element base classes that don't use lit-html.
-     *
-     * @packageDocumentation
-     */
-    // IMPORTANT: do not change the property name or the assignment expression.
-    // This line will be used in regexes to search for LitElement usage.
-    // TODO(justinfagnani): inject version number at build time
-    (window['litElementVersions'] || (window['litElementVersions'] = []))
-        .push('2.5.1');
-    /**
-     * Sentinal value used to avoid calling lit-html's render function when
-     * subclasses do not implement `render`
-     */
-    const renderNotImplemented = {};
-    /**
-     * Base element class that manages element properties and attributes, and
-     * renders a lit-html template.
-     *
-     * To define a component, subclass `LitElement` and implement a
-     * `render` method to provide the component's template. Define properties
-     * using the [[`properties`]] property or the [[`property`]] decorator.
-     */
-    class LitElement extends UpdatingElement {
-        /**
-         * Return the array of styles to apply to the element.
-         * Override this method to integrate into a style management system.
-         *
-         * @nocollapse
-         */
-        static getStyles() {
-            return this.styles;
-        }
-        /** @nocollapse */
-        static _getUniqueStyles() {
-            // Only gather styles once per class
-            if (this.hasOwnProperty(JSCompiler_renameProperty('_styles', this))) {
-                return;
-            }
-            // Take care not to call `this.getStyles()` multiple times since this
-            // generates new CSSResults each time.
-            // TODO(sorvell): Since we do not cache CSSResults by input, any
-            // shared styles will generate new stylesheet objects, which is wasteful.
-            // This should be addressed when a browser ships constructable
-            // stylesheets.
-            const userStyles = this.getStyles();
-            if (Array.isArray(userStyles)) {
-                // De-duplicate styles preserving the _last_ instance in the set.
-                // This is a performance optimization to avoid duplicated styles that can
-                // occur especially when composing via subclassing.
-                // The last item is kept to try to preserve the cascade order with the
-                // assumption that it's most important that last added styles override
-                // previous styles.
-                const addStyles = (styles, set) => styles.reduceRight((set, s) => 
-                // Note: On IE set.add() does not return the set
-                Array.isArray(s) ? addStyles(s, set) : (set.add(s), set), set);
-                // Array.from does not work on Set in IE, otherwise return
-                // Array.from(addStyles(userStyles, new Set<CSSResult>())).reverse()
-                const set = addStyles(userStyles, new Set());
-                const styles = [];
-                set.forEach((v) => styles.unshift(v));
-                this._styles = styles;
-            }
-            else {
-                this._styles = userStyles === undefined ? [] : [userStyles];
-            }
-            // Ensure that there are no invalid CSSStyleSheet instances here. They are
-            // invalid in two conditions.
-            // (1) the sheet is non-constructible (`sheet` of a HTMLStyleElement), but
-            //     this is impossible to check except via .replaceSync or use
-            // (2) the ShadyCSS polyfill is enabled (:. supportsAdoptingStyleSheets is
-            //     false)
-            this._styles = this._styles.map((s) => {
-                if (s instanceof CSSStyleSheet && !supportsAdoptingStyleSheets) {
-                    // Flatten the cssText from the passed constructible stylesheet (or
-                    // undetectable non-constructible stylesheet). The user might have
-                    // expected to update their stylesheets over time, but the alternative
-                    // is a crash.
-                    const cssText = Array.prototype.slice.call(s.cssRules)
-                        .reduce((css, rule) => css + rule.cssText, '');
-                    return unsafeCSS(cssText);
-                }
-                return s;
-            });
-        }
-        /**
-         * Performs element initialization. By default this calls
-         * [[`createRenderRoot`]] to create the element [[`renderRoot`]] node and
-         * captures any pre-set values for registered properties.
-         */
-        initialize() {
-            super.initialize();
-            this.constructor._getUniqueStyles();
-            this.renderRoot = this.createRenderRoot();
-            // Note, if renderRoot is not a shadowRoot, styles would/could apply to the
-            // element's getRootNode(). While this could be done, we're choosing not to
-            // support this now since it would require different logic around de-duping.
-            if (window.ShadowRoot && this.renderRoot instanceof window.ShadowRoot) {
-                this.adoptStyles();
-            }
-        }
-        /**
-         * Returns the node into which the element should render and by default
-         * creates and returns an open shadowRoot. Implement to customize where the
-         * element's DOM is rendered. For example, to render into the element's
-         * childNodes, return `this`.
-         * @returns {Element|DocumentFragment} Returns a node into which to render.
-         */
-        createRenderRoot() {
-            return this.attachShadow(this.constructor.shadowRootOptions);
-        }
-        /**
-         * Applies styling to the element shadowRoot using the [[`styles`]]
-         * property. Styling will apply using `shadowRoot.adoptedStyleSheets` where
-         * available and will fallback otherwise. When Shadow DOM is polyfilled,
-         * ShadyCSS scopes styles and adds them to the document. When Shadow DOM
-         * is available but `adoptedStyleSheets` is not, styles are appended to the
-         * end of the `shadowRoot` to [mimic spec
-         * behavior](https://wicg.github.io/construct-stylesheets/#using-constructed-stylesheets).
-         */
-        adoptStyles() {
-            const styles = this.constructor._styles;
-            if (styles.length === 0) {
-                return;
-            }
-            // There are three separate cases here based on Shadow DOM support.
-            // (1) shadowRoot polyfilled: use ShadyCSS
-            // (2) shadowRoot.adoptedStyleSheets available: use it
-            // (3) shadowRoot.adoptedStyleSheets polyfilled: append styles after
-            // rendering
-            if (window.ShadyCSS !== undefined && !window.ShadyCSS.nativeShadow) {
-                window.ShadyCSS.ScopingShim.prepareAdoptedCssText(styles.map((s) => s.cssText), this.localName);
-            }
-            else if (supportsAdoptingStyleSheets) {
-                this.renderRoot.adoptedStyleSheets =
-                    styles.map((s) => s instanceof CSSStyleSheet ? s : s.styleSheet);
-            }
-            else {
-                // This must be done after rendering so the actual style insertion is done
-                // in `update`.
-                this._needsShimAdoptedStyleSheets = true;
-            }
-        }
-        connectedCallback() {
-            super.connectedCallback();
-            // Note, first update/render handles styleElement so we only call this if
-            // connected after first update.
-            if (this.hasUpdated && window.ShadyCSS !== undefined) {
-                window.ShadyCSS.styleElement(this);
-            }
-        }
-        /**
-         * Updates the element. This method reflects property values to attributes
-         * and calls `render` to render DOM via lit-html. Setting properties inside
-         * this method will *not* trigger another update.
-         * @param _changedProperties Map of changed properties with old values
-         */
-        update(changedProperties) {
-            // Setting properties in `render` should not trigger an update. Since
-            // updates are allowed after super.update, it's important to call `render`
-            // before that.
-            const templateResult = this.render();
-            super.update(changedProperties);
-            // If render is not implemented by the component, don't call lit-html render
-            if (templateResult !== renderNotImplemented) {
-                this.constructor
-                    .render(templateResult, this.renderRoot, { scopeName: this.localName, eventContext: this });
-            }
-            // When native Shadow DOM is used but adoptedStyles are not supported,
-            // insert styling after rendering to ensure adoptedStyles have highest
-            // priority.
-            if (this._needsShimAdoptedStyleSheets) {
-                this._needsShimAdoptedStyleSheets = false;
-                this.constructor._styles.forEach((s) => {
-                    const style = document.createElement('style');
-                    style.textContent = s.cssText;
-                    this.renderRoot.appendChild(style);
-                });
-            }
-        }
-        /**
-         * Invoked on each update to perform rendering tasks. This method may return
-         * any value renderable by lit-html's `NodePart` - typically a
-         * `TemplateResult`. Setting properties inside this method will *not* trigger
-         * the element to update.
-         */
-        render() {
-            return renderNotImplemented;
-        }
-    }
-    /**
-     * Ensure this class is marked as `finalized` as an optimization ensuring
-     * it will not needlessly try to `finalize`.
-     *
-     * Note this property name is a string to prevent breaking Closure JS Compiler
-     * optimizations. See updating-element.ts for more information.
-     */
-    LitElement['finalized'] = true;
-    /**
-     * Reference to the underlying library method used to render the element's
-     * DOM. By default, points to the `render` method from lit-html's shady-render
-     * module.
-     *
-     * **Most users will never need to touch this property.**
-     *
-     * This  property should not be confused with the `render` instance method,
-     * which should be overridden to define a template for the element.
-     *
-     * Advanced users creating a new base class based on LitElement can override
-     * this property to point to a custom render method with a signature that
-     * matches [shady-render's `render`
-     * method](https://lit-html.polymer-project.org/api/modules/shady_render.html#render).
-     *
-     * @nocollapse
-     */
-    LitElement.render = render;
-    /** @nocollapse */
-    LitElement.shadowRootOptions = { mode: 'open' };
 
     /// <reference types="resize-observer-browser" /> 
     /**
      * @category Web Component
      * @internal
      */
-    let PlayerComponent$1 = class PlayerComponent extends PlayerMixin(LitElement) {
+    let PlayerComponent$1 = class PlayerComponent extends PlayerMixin(s) {
         static get styles() {
-            return css `:host{display:inline-block}.Player{display:inline-block;position:relative;font-family:var(--flipnote-player-font-family,sans-serif)}.CanvasArea{position:relative}.PlayerCanvas{position:relative;display:block}.Overlay{position:absolute;top:0;left:0;background:#ebf0f3;color:#4b4c53;width:100%;height:100%;display:flex;justify-content:center;align-items:center}.Overlay--error{background:#ff8b8b;color:#ca2a32}@keyframes spin{from{transform:rotateZ(0)}to{transform:rotateZ(360deg)}}.LoaderIcon{animation:spin infinite 1.2s linear}.Controls{background:var(--flipnote-player-controls-background,none)}.MuteIcon{width:28px;height:28px}.Controls__groupLeft,.Controls__groupRight,.Controls__row{display:flex;align-items:center}.Controls__groupLeft{margin-right:auto}.Controls__groupRight{margin-left:auto}.Controls__playButton{height:32px;width:32px;padding:2px}.MuteIcon{width:28px;height:28px}.LoaderIcon{width:40px;height:40px}.Controls.Controls--compact{margin:6px 0}.Controls__frameCounter{min-width:90px;font-variant-numeric:tabular-nums}.Controls__progressBar{flex:1}.Controls--compact .Controls__playButton{margin-right:8px}.Controls--compact .Controls__progressBar{flex:1}.Controls--default .Controls__playButton{margin-right:8px}.Controls--default .Controls__volumeBar{width:70px;margin-left:8px}.Button{border:0;padding:0;outline:0;-webkit-appearance:none;display:block;font-family:inherit;font-size:inherit;text-align:center;cursor:pointer;background:var(--flipnote-player-button-background,#ffd3a6);color:var(--flipnote-player-button-color,#f36a2d);border-radius:4px}.Button flipnote-player-icon{display:block}`;
+            return i$4 `:host{display:inline-block}.Player{display:inline-block;position:relative;font-family:var(--flipnote-player-font-family,sans-serif)}.CanvasArea{position:relative}.CanvasArea:focus{outline:var(--flipnote-player-focus-outline,3px solid #ffd3a6);outline-offset:2px}.PlayerCanvas{position:relative;display:block}.PlayerCanvas canvas{display:block}.Overlay{position:absolute;top:0;left:0;background:#ebf0f3;color:#4b4c53;width:100%;height:100%;display:flex;justify-content:center;align-items:center}.Overlay--error{background:#ff8b8b;color:#ca2a32}@keyframes spin{from{transform:rotateZ(0)}to{transform:rotateZ(360deg)}}.LoaderIcon{animation:spin infinite 1.2s linear}.Controls{background:var(--flipnote-player-controls-background,none)}.MuteIcon{width:28px;height:28px}.Controls__groupLeft,.Controls__groupRight,.Controls__row{display:flex;align-items:center}.Controls__groupLeft{margin-right:auto}.Controls__groupRight{margin-left:auto}.Controls__playButton{height:32px;width:32px;padding:2px}.MuteIcon{width:28px;height:28px}.LoaderIcon{width:40px;height:40px}.Controls.Controls--compact{margin:6px 0}.Controls__frameCounter{min-width:90px;font-variant-numeric:tabular-nums}.Controls__progressBar{flex:1}.Controls--compact .Controls__playButton{margin-right:8px}.Controls--compact .Controls__progressBar{flex:1}.Controls--default .Controls__playButton{margin-right:8px}.Controls--default .Controls__progressBar{margin-top:2px;margin-bottom:2px;display:block}.Controls--default .Controls__volumeBar{width:70px;margin-left:8px}.Button{border:0;padding:0;outline:0;-webkit-appearance:none;display:block;font-family:inherit;font-size:inherit;text-align:center;cursor:pointer;background:var(--flipnote-player-button-background,#ffd3a6);color:var(--flipnote-player-button-color,#f36a2d);border-radius:4px}.Button:focus{outline:3px solid var(--flipnote-player-button-background,#ffd3a6);outline-offset:2px}.Button flipnote-player-icon{display:block}`;
         }
         get width() {
             return this._width;
@@ -10251,12 +7519,14 @@ kQIDAQAB
             this.requestUpdate('src', oldValue);
         }
         get autoplay() {
-            return this.player.autoplay;
+            return this.player?.autoplay;
         }
         set autoplay(value) {
-            const oldValue = this.player.autoplay;
-            this.player.autoplay = value;
-            this.requestUpdate('autoplay', oldValue);
+            if (this.player) {
+                const oldValue = this.player.autoplay;
+                this.player.autoplay = value;
+                this.requestUpdate('autoplay', oldValue);
+            }
         }
         constructor() {
             super();
@@ -10264,6 +7534,7 @@ kQIDAQAB
             this._cssWidth = 'auto';
             this._progress = 0;
             this._counter = '';
+            this._frameCount = 0;
             this._isLoading = false;
             this._isError = false;
             this._isPlaying = false;
@@ -10274,26 +7545,27 @@ kQIDAQAB
                 this.updateCanvasSize();
             };
             this.handleKeyInput = (e) => {
-                e.preventDefault();
-                switch (e.key.toLowerCase()) {
-                    case ' ':
+                const key = KEY_MAP[e.key];
+                if (!key)
+                    return;
+                switch (key) {
+                    case 'Enter':
                         this.togglePlay();
                         break;
-                    case 'a':
-                    case 'arrowleft':
+                    case 'ArrowLeft':
                         if (e.shiftKey)
                             this.firstFrame();
                         else
                             this.prevFrame();
                         break;
-                    case 'd':
-                    case 'arrowright':
+                    case 'ArrowRight':
                         if (e.shiftKey)
                             this.lastFrame();
                         else
                             this.nextFrame();
                         break;
                 }
+                e.preventDefault();
             };
             this.handlePlayToggle = (e) => {
                 this.focus();
@@ -10323,19 +7595,19 @@ kQIDAQAB
         }
         /** @internal */
         render() {
-            return html `<style>:host{width:${this._cssWidth}}</style><div class="Player" @keydown="${this.handleKeyInput}"><div class="CanvasArea" @click="${this.handlePlayToggle}"><div class="PlayerCanvas" id="canvasWrapper"></div>${this._isLoading ?
-            html `<div class="Overlay"><flipnote-player-icon icon="loader" class="LoaderIcon"></flipnote-player-icon></div>` :
+            return x `<style>:host{width:${this._cssWidth}}</style><div class="Player"><div class="CanvasArea" tabIndex="0" role="widget" aria-description="Flipnote animation player. Press the space key to play or pause the animation. Use the left and right arrow keys to navigate frames" @click="${this.handlePlayToggle}" @keydown="${this.handleKeyInput}"><div class="PlayerCanvas" id="canvasWrapper"></div>${this._isLoading ?
+            x `<div class="Overlay"><flipnote-player-icon icon="loader" class="LoaderIcon"></flipnote-player-icon></div>` :
             ''} ${this._isError ?
-            html `<div class="Overlay Overlay--error">Error</div>` :
+            x `<div class="Overlay Overlay--error">Error</div>` :
             ''}</div>${this.renderControls()}</div>`;
         }
         /** @internal */
         renderControls() {
             if (this.controls === 'compact') {
-                return html `<div class="Controls Controls--compact Controls__row"><button @click="${this.handlePlayToggle}" class="Button Controls__playButton"><flipnote-player-icon icon="${this._isPlaying ? 'pause' : 'play'}"></flipnote-player-icon></button><flipnote-player-slider class="Controls__progressBar" value="${this._progress}" @change="${this.handleProgressSliderChange}" @inputstart="${this.handleProgressSliderInputStart}" @inputend="${this.handleProgressSliderInputEnd}"></div>`;
+                return x `<div class="Controls Controls--compact Controls__row"><button @click="${this.handlePlayToggle}" class="Button Controls__playButton"><flipnote-player-icon icon="${this._isPlaying ? 'pause' : 'play'}"></flipnote-player-icon></button><flipnote-player-slider class="Controls__progressBar" value="${this._progress}" @change="${this.handleProgressSliderChange}" @inputstart="${this.handleProgressSliderInputStart}" @inputend="${this.handleProgressSliderInputEnd}"></div>`;
             }
             else {
-                return html `<div class="Controls Controls--default"><flipnote-player-slider class="Controls__progressBar" value="${this._progress}" @change="${this.handleProgressSliderChange}" @inputstart="${this.handleProgressSliderInputStart}" @inputend="${this.handleProgressSliderInputEnd}"></flipnote-player-slider><div class="Controls__row"><div class="Controls__groupLeft"><button @click="${this.handlePlayToggle}" class="Button Controls__playButton"><flipnote-player-icon icon="${this._isPlaying ? 'pause' : 'play'}"></flipnote-player-icon></button> <span class="Controls__frameCounter">${this._counter}</span></div><div class="Controls__groupRight"><flipnote-player-icon class="MuteIcon" @click="${this.handleMuteToggle}" icon="${this._isMuted ? 'volumeOff' : 'volumeOn'}"></flipnote-player-icon><flipnote-player-slider class="Controls__volumeBar" value="${this._volumeLevel}" @change="${this.handleVolumeBarChange}"></flipnote-player-slider></div></div></div>`;
+                return x `<div class="Controls Controls--default"><flipnote-player-slider class="Controls__progressBar" value="${this._progress}" label="Playback progress" step="${1 / (this._frameCount - 1)}" @change="${this.handleProgressSliderChange}" @inputstart="${this.handleProgressSliderInputStart}" @inputend="${this.handleProgressSliderInputEnd}"></flipnote-player-slider><div class="Controls__row"><div class="Controls__groupLeft"><button class="Button Controls__playButton" tabIndex="0" @click="${this.handlePlayToggle}"><flipnote-player-icon icon="${this._isPlaying ? 'pause' : 'play'}"></flipnote-player-icon></button> <span class="Controls__frameCounter">${this._counter}</span></div><div class="Controls__groupRight"><flipnote-player-icon class="MuteIcon" @click="${this.handleMuteToggle}" icon="${this._isMuted ? 'volumeOff' : 'volumeOn'}"></flipnote-player-icon><flipnote-player-slider class="Controls__volumeBar" value="${this._volumeLevel}" label="Volume" @change="${this.handleVolumeBarChange}"></flipnote-player-slider></div></div></div>`;
             }
         }
         /** @internal */
@@ -10359,6 +7631,7 @@ kQIDAQAB
                 this._isError = false;
                 this._progress = player.getProgress() / 100;
                 this._counter = player.getFrameCounter();
+                this._frameCount = player.frameCount;
             });
             player.on(exports.PlayerEvent.Play, () => {
                 this._isPlaying = true;
@@ -10432,254 +7705,101 @@ kQIDAQAB
         }
     };
     __decorate([
-        property({ type: String })
+        n$1({ type: String })
     ], PlayerComponent$1.prototype, "controls", void 0);
     __decorate([
-        property({ type: Boolean })
+        n$1({ type: Boolean })
     ], PlayerComponent$1.prototype, "dsiLibrary", void 0);
     __decorate([
-        property({ type: Boolean })
+        n$1({ type: Boolean })
     ], PlayerComponent$1.prototype, "cropBorder", void 0);
     __decorate([
-        property({ type: Number })
+        n$1({ type: Number })
     ], PlayerComponent$1.prototype, "bgmPredictor", void 0);
     __decorate([
-        property({ type: Number })
+        n$1({ type: Number })
     ], PlayerComponent$1.prototype, "bgmStepIndex", void 0);
     __decorate([
-        property({ type: String })
+        n$1({ type: String })
     ], PlayerComponent$1.prototype, "sePredictors", void 0);
     __decorate([
-        property({ type: String })
+        n$1({ type: String })
     ], PlayerComponent$1.prototype, "seStepIndices", void 0);
     __decorate([
-        property({ type: String })
+        n$1({ type: String })
     ], PlayerComponent$1.prototype, "width", null);
     __decorate([
-        property({ type: String })
+        n$1({ type: String })
     ], PlayerComponent$1.prototype, "src", null);
     __decorate([
-        property({ type: Boolean })
+        n$1({ type: Boolean })
     ], PlayerComponent$1.prototype, "autoplay", null);
     __decorate([
-        internalProperty()
+        r()
     ], PlayerComponent$1.prototype, "_width", void 0);
     __decorate([
-        internalProperty()
+        r()
     ], PlayerComponent$1.prototype, "_cssWidth", void 0);
     __decorate([
-        internalProperty()
+        r()
     ], PlayerComponent$1.prototype, "_progress", void 0);
     __decorate([
-        internalProperty()
+        r()
     ], PlayerComponent$1.prototype, "_counter", void 0);
     __decorate([
-        internalProperty()
+        r()
+    ], PlayerComponent$1.prototype, "_frameCount", void 0);
+    __decorate([
+        r()
     ], PlayerComponent$1.prototype, "_isLoading", void 0);
     __decorate([
-        internalProperty()
+        r()
     ], PlayerComponent$1.prototype, "_isError", void 0);
     __decorate([
-        internalProperty()
+        r()
     ], PlayerComponent$1.prototype, "_isPlaying", void 0);
     __decorate([
-        internalProperty()
+        r()
     ], PlayerComponent$1.prototype, "_isMuted", void 0);
     __decorate([
-        internalProperty()
+        r()
     ], PlayerComponent$1.prototype, "_volumeLevel", void 0);
     __decorate([
-        query('#canvasWrapper')
+        e$3('#canvasWrapper')
     ], PlayerComponent$1.prototype, "playerCanvasWrapper", void 0);
     PlayerComponent$1 = __decorate([
-        customElement('flipnote-player')
+        t$2('flipnote-player')
     ], PlayerComponent$1);
 
     /**
      * @license
-     * Copyright (c) 2018 The Polymer Project Authors. All rights reserved.
-     * This code may only be used under the BSD style license found at
-     * http://polymer.github.io/LICENSE.txt
-     * The complete set of authors may be found at
-     * http://polymer.github.io/AUTHORS.txt
-     * The complete set of contributors may be found at
-     * http://polymer.github.io/CONTRIBUTORS.txt
-     * Code distributed by Google as part of the polymer project is also
-     * subject to an additional IP rights grant found at
-     * http://polymer.github.io/PATENTS.txt
+     * Copyright 2017 Google LLC
+     * SPDX-License-Identifier: BSD-3-Clause
      */
-    // IE11 doesn't support classList on SVG elements, so we emulate it with a Set
-    class ClassList {
-        constructor(element) {
-            this.classes = new Set();
-            this.changed = false;
-            this.element = element;
-            const classList = (element.getAttribute('class') || '').split(/\s+/);
-            for (const cls of classList) {
-                this.classes.add(cls);
-            }
-        }
-        add(cls) {
-            this.classes.add(cls);
-            this.changed = true;
-        }
-        remove(cls) {
-            this.classes.delete(cls);
-            this.changed = true;
-        }
-        commit() {
-            if (this.changed) {
-                let classString = '';
-                this.classes.forEach((cls) => classString += cls + ' ');
-                this.element.setAttribute('class', classString);
-            }
-        }
-    }
-    /**
-     * Stores the ClassInfo object applied to a given AttributePart.
-     * Used to unset existing values when a new ClassInfo object is applied.
-     */
-    const previousClassesCache = new WeakMap();
-    /**
-     * A directive that applies CSS classes. This must be used in the `class`
-     * attribute and must be the only part used in the attribute. It takes each
-     * property in the `classInfo` argument and adds the property name to the
-     * element's `class` if the property value is truthy; if the property value is
-     * falsey, the property name is removed from the element's `class`. For example
-     * `{foo: bar}` applies the class `foo` if the value of `bar` is truthy.
-     * @param classInfo {ClassInfo}
-     */
-    const classMap = directive((classInfo) => (part) => {
-        if (!(part instanceof AttributePart) || (part instanceof PropertyPart) ||
-            part.committer.name !== 'class' || part.committer.parts.length > 1) {
-            throw new Error('The `classMap` directive must be used in the `class` attribute ' +
-                'and must be the only part in the attribute.');
-        }
-        const { committer } = part;
-        const { element } = committer;
-        let previousClasses = previousClassesCache.get(part);
-        if (previousClasses === undefined) {
-            // Write static classes once
-            // Use setAttribute() because className isn't a string on SVG elements
-            element.setAttribute('class', committer.strings.join(' '));
-            previousClassesCache.set(part, previousClasses = new Set());
-        }
-        const classList = (element.classList || new ClassList(element));
-        // Remove old classes that no longer apply
-        // We use forEach() instead of for-of so that re don't require down-level
-        // iteration.
-        previousClasses.forEach((name) => {
-            if (!(name in classInfo)) {
-                classList.remove(name);
-                previousClasses.delete(name);
-            }
-        });
-        // Add or remove classes based on their classMap value
-        for (const name in classInfo) {
-            const value = classInfo[name];
-            if (value != previousClasses.has(name)) {
-                // We explicitly want a loose truthy check of `value` because it seems
-                // more convenient that '' and 0 are skipped.
-                if (value) {
-                    classList.add(name);
-                    previousClasses.add(name);
-                }
-                else {
-                    classList.remove(name);
-                    previousClasses.delete(name);
-                }
-            }
-        }
-        if (typeof classList.commit === 'function') {
-            classList.commit();
-        }
-    });
+    const t$1={ATTRIBUTE:1,CHILD:2,PROPERTY:3,BOOLEAN_ATTRIBUTE:4,EVENT:5,ELEMENT:6},e$2=t=>(...e)=>({_$litDirective$:t,values:e});let i$1 = class i{constructor(t){}get _$AU(){return this._$AM._$AU}_$AT(t,e,i){this._$Ct=t,this._$AM=e,this._$Ci=i;}_$AS(t,e){return this.update(t,e)}update(t,e){return this.render(...e)}};
 
     /**
      * @license
-     * Copyright (c) 2018 The Polymer Project Authors. All rights reserved.
-     * This code may only be used under the BSD style license found at
-     * http://polymer.github.io/LICENSE.txt
-     * The complete set of authors may be found at
-     * http://polymer.github.io/AUTHORS.txt
-     * The complete set of contributors may be found at
-     * http://polymer.github.io/CONTRIBUTORS.txt
-     * Code distributed by Google as part of the polymer project is also
-     * subject to an additional IP rights grant found at
-     * http://polymer.github.io/PATENTS.txt
-     */
+     * Copyright 2018 Google LLC
+     * SPDX-License-Identifier: BSD-3-Clause
+     */const e$1=e$2(class extends i$1{constructor(t){if(super(t),t.type!==t$1.ATTRIBUTE||"class"!==t.name||t.strings?.length>2)throw Error("`classMap()` can only be used in the `class` attribute and must be the only part in the attribute.")}render(t){return " "+Object.keys(t).filter((s=>t[s])).join(" ")+" "}update(s,[i]){if(void 0===this.st){this.st=new Set,void 0!==s.strings&&(this.nt=new Set(s.strings.join(" ").split(/\s/).filter((t=>""!==t))));for(const t in i)i[t]&&!this.nt?.has(t)&&this.st.add(t);return this.render(i)}const r=s.element.classList;for(const t of this.st)t in i||(r.remove(t),this.st.delete(t));for(const t in i){const s=!!i[t];s===this.st.has(t)||this.nt?.has(t)||(s?(r.add(t),this.st.add(t)):(r.remove(t),this.st.delete(t)));}return w}});
+
     /**
-     * Stores the StyleInfo object applied to a given AttributePart.
-     * Used to unset existing values when a new StyleInfo object is applied.
-     */
-    const previousStylePropertyCache = new WeakMap();
-    /**
-     * A directive that applies CSS properties to an element.
-     *
-     * `styleMap` can only be used in the `style` attribute and must be the only
-     * expression in the attribute. It takes the property names in the `styleInfo`
-     * object and adds the property values as CSS properties. Property names with
-     * dashes (`-`) are assumed to be valid CSS property names and set on the
-     * element's style object using `setProperty()`. Names without dashes are
-     * assumed to be camelCased JavaScript property names and set on the element's
-     * style object using property assignment, allowing the style object to
-     * translate JavaScript-style names to CSS property names.
-     *
-     * For example `styleMap({backgroundColor: 'red', 'border-top': '5px', '--size':
-     * '0'})` sets the `background-color`, `border-top` and `--size` properties.
-     *
-     * @param styleInfo {StyleInfo}
-     */
-    const styleMap = directive((styleInfo) => (part) => {
-        if (!(part instanceof AttributePart) || (part instanceof PropertyPart) ||
-            part.committer.name !== 'style' || part.committer.parts.length > 1) {
-            throw new Error('The `styleMap` directive must be used in the style attribute ' +
-                'and must be the only part in the attribute.');
-        }
-        const { committer } = part;
-        const { style } = committer.element;
-        let previousStyleProperties = previousStylePropertyCache.get(part);
-        if (previousStyleProperties === undefined) {
-            // Write static styles once
-            style.cssText = committer.strings.join(' ');
-            previousStylePropertyCache.set(part, previousStyleProperties = new Set());
-        }
-        // Remove old properties that no longer exist in styleInfo
-        // We use forEach() instead of for-of so that re don't require down-level
-        // iteration.
-        previousStyleProperties.forEach((name) => {
-            if (!(name in styleInfo)) {
-                previousStyleProperties.delete(name);
-                if (name.indexOf('-') === -1) {
-                    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-                    style[name] = null;
-                }
-                else {
-                    style.removeProperty(name);
-                }
-            }
-        });
-        // Add or update properties
-        for (const name in styleInfo) {
-            previousStyleProperties.add(name);
-            if (name.indexOf('-') === -1) {
-                // eslint-disable-next-line @typescript-eslint/no-explicit-any
-                style[name] = styleInfo[name];
-            }
-            else {
-                style.setProperty(name, styleInfo[name]);
-            }
-        }
-    });
+     * @license
+     * Copyright 2018 Google LLC
+     * SPDX-License-Identifier: BSD-3-Clause
+     */const n="important",i=" !"+n,o$1=e$2(class extends i$1{constructor(t){if(super(t),t.type!==t$1.ATTRIBUTE||"style"!==t.name||t.strings?.length>2)throw Error("The `styleMap` directive must be used in the `style` attribute and must be the only part in the attribute.")}render(t){return Object.keys(t).reduce(((e,r)=>{const s=t[r];return null==s?e:e+`${r=r.includes("-")?r:r.replace(/(?:^(webkit|moz|ms|o)|)(?=[A-Z])/g,"-$&").toLowerCase()}:${s};`}),"")}update(e,[r]){const{style:s}=e.element;if(void 0===this.ft)return this.ft=new Set(Object.keys(r)),this.render(r);for(const t of this.ft)null==r[t]&&(this.ft.delete(t),t.includes("-")?s.removeProperty(t):s[t]=null);for(const t in r){const e=r[t];if(null!=e){this.ft.add(t);const r="string"==typeof e&&e.endsWith(i);t.includes("-")||r?s.setProperty(t,r?e.slice(0,-11):e,r?n:""):s[t]=e;}}return w}});
 
     /**
      * @category Web Component
      * @internal
      */
-    let SliderComponent = class SliderComponent extends LitElement {
+    let SliderComponent = class SliderComponent extends s {
         constructor() {
             super(...arguments);
             this.value = 0;
+            this.step = 0.1;
+            this.label = '';
             this.orientation = 'horizontal'; // switch to horizontal
             this.isActive = false;
             this.onSliderMouseStart = (event) => {
@@ -10742,12 +7862,40 @@ kQIDAQAB
                     const v = 1 - inputPosition / railLength; // y is inverted; top is the max point
                     value = Math.max(0, Math.min(v, 1));
                 }
-                if (this.value !== value)
+                this.updateValue(value);
+            };
+            this.onKeyInput = (e) => {
+                const key = KEY_MAP[e.key];
+                if (!key)
+                    return;
+                this.dispatch('inputstart');
+                switch (key) {
+                    case 'ArrowLeft':
+                        if (e.shiftKey)
+                            this.updateValue(0);
+                        else
+                            this.updateValue(this.value - this.step);
+                        break;
+                    case 'ArrowRight':
+                        if (e.shiftKey)
+                            this.updateValue(1);
+                        else
+                            this.updateValue(this.value + this.step);
+                        break;
+                }
+                this.dispatch('inputend');
+                e.preventDefault();
+            };
+            this.updateValue = (value) => {
+                value = clamp(value, 0, 1);
+                if (this.value !== value) {
+                    this.value = value;
                     this.dispatch('change', { value });
+                }
             };
         }
         static get styles() {
-            return css `.Slider{touch-action:none;padding:4px 0;cursor:pointer}.Slider--vertical{height:100px;width:14px}.Slider__track{position:relative;border-radius:3px;background:var(--flipnote-player-slider-track,#ffd3a6)}.Slider--horizontal .Slider__track{height:4px;margin:6px 0}.Slider--vertical .Slider__track{width:4px;height:100%;margin:0 6px}.Slider__levelWrapper{position:absolute;left:0;right:0;height:6px;margin:-1px}.Slider__level{position:absolute;width:100%;left:0;height:8px;border-radius:8px;background:var(--flipnote-player-slider-level,#f36a2d)}.Slider--horizontal .Slider__level{width:100%;height:6px}.Slider--vertical .Slider__level{width:6px;height:100%;bottom:0}.Slider__handle{display:none;position:absolute;height:10px;width:10px;border-radius:5px;box-sizing:border-box;border:3px solid var(--flipnote-player-slider-handle,#f36a2d);background:var(--flipnote-player-slider-handle-fill,#fff)}.Slider--isActive .Slider__handle,.Slider:hover .Slider__handle{display:block}.Slider--horizontal .Slider__handle{top:0;margin-top:-3px;margin-left:-6px}.Slider--vertical .Slider__handle{left:0;margin-bottom:-6px;margin-left:-3px}`;
+            return i$4 `.Slider{touch-action:none;padding:4px 0;cursor:pointer}.Slider:focus{position:relative;z-index:1;outline:var(--flipnote-player-focus-outline,3px solid #ffd3a6);outline-offset:2px}.Slider--vertical{height:100px;width:14px}.Slider__track{position:relative;border-radius:3px;background:var(--flipnote-player-slider-track,#ffd3a6)}.Slider--horizontal .Slider__track{height:4px;margin:6px 0}.Slider--vertical .Slider__track{width:4px;height:100%;margin:0 6px}.Slider__levelWrapper{position:absolute;left:0;right:0;height:6px;margin:-1px}.Slider__level{position:absolute;width:100%;left:0;height:8px;border-radius:8px;background:var(--flipnote-player-slider-level,#f36a2d)}.Slider--horizontal .Slider__level{width:100%;height:6px}.Slider--vertical .Slider__level{width:6px;height:100%;bottom:0}.Slider__handle{display:none;position:absolute;height:10px;width:10px;border-radius:5px;box-sizing:border-box;border:3px solid var(--flipnote-player-slider-handle,#f36a2d);background:var(--flipnote-player-slider-handle-fill,#fff)}.Slider--isActive .Slider__handle,.Slider:hover .Slider__handle{display:block}.Slider--horizontal .Slider__handle{top:0;margin-top:-3px;margin-left:-6px}.Slider--vertical .Slider__handle{left:0;margin-bottom:-6px;margin-left:-3px}`;
         }
         render() {
             const percent = `${this.value * 100}%`;
@@ -10759,7 +7907,7 @@ kQIDAQAB
                 'Slider--vertical': this.orientation === 'vertical',
                 'Slider--isActive': this.isActive,
             };
-            return html `<div class="${classMap(rootClasses)}" @touchstart="${this.onSliderTouchStart}" @mousedown="${this.onSliderMouseStart}"><div class="Slider__track"><div class="Slider__levelWrapper"><div class="Slider__level" style="${styleMap({ [mainAxis]: percent })}"></div></div><div class="Slider__handle" style="${styleMap({ [side]: percent })}"></div></div></div>`;
+            return x `<div class="${e$1(rootClasses)}" tabIndex="0" role="slider" aria-label="${this.label}" aria-valuemin="0" aria-valuemax="1" aria-valuenow="${this.value}" @touchstart="${this.onSliderTouchStart}" @mousedown="${this.onSliderMouseStart}" @keydown="${this.onKeyInput}"><div class="Slider__track"><div class="Slider__levelWrapper"><div class="Slider__level" style="${o$1({ [mainAxis]: percent })}"></div></div><div class="Slider__handle" style="${o$1({ [side]: percent })}"></div></div></div>`;
         }
         dispatch(eventName, detail) {
             const event = new CustomEvent(eventName, { detail });
@@ -10767,78 +7915,38 @@ kQIDAQAB
         }
     };
     __decorate([
-        property({ type: Number })
+        n$1({ type: Number })
     ], SliderComponent.prototype, "value", void 0);
     __decorate([
-        property({ type: String })
+        n$1({ type: Number })
+    ], SliderComponent.prototype, "step", void 0);
+    __decorate([
+        n$1({ type: String })
+    ], SliderComponent.prototype, "label", void 0);
+    __decorate([
+        n$1({ type: String })
     ], SliderComponent.prototype, "orientation", void 0);
     __decorate([
-        internalProperty()
+        r()
     ], SliderComponent.prototype, "isActive", void 0);
     __decorate([
-        query('.Slider__track')
+        e$3('.Slider__track')
     ], SliderComponent.prototype, "sliderElement", void 0);
     SliderComponent = __decorate([
-        customElement('flipnote-player-slider')
+        t$2('flipnote-player-slider')
     ], SliderComponent);
 
     /**
      * @license
-     * Copyright (c) 2017 The Polymer Project Authors. All rights reserved.
-     * This code may only be used under the BSD style license found at
-     * http://polymer.github.io/LICENSE.txt
-     * The complete set of authors may be found at
-     * http://polymer.github.io/AUTHORS.txt
-     * The complete set of contributors may be found at
-     * http://polymer.github.io/CONTRIBUTORS.txt
-     * Code distributed by Google as part of the polymer project is also
-     * subject to an additional IP rights grant found at
-     * http://polymer.github.io/PATENTS.txt
-     */
-    // For each part, remember the value that was last rendered to the part by the
-    // unsafeSVG directive, and the DocumentFragment that was last set as a value.
-    // The DocumentFragment is used as a unique key to check if the last value
-    // rendered to the part was with unsafeSVG. If not, we'll always re-render the
-    // value passed to unsafeSVG.
-    const previousValues = new WeakMap();
-    const isIe = window.navigator.userAgent.indexOf('Trident/') > 0;
+     * Copyright 2017 Google LLC
+     * SPDX-License-Identifier: BSD-3-Clause
+     */class e extends i$1{constructor(i){if(super(i),this.it=T,i.type!==t$1.CHILD)throw Error(this.constructor.directiveName+"() can only be used in child bindings")}render(r){if(r===T||null==r)return this._t=void 0,this.it=r;if(r===w)return r;if("string"!=typeof r)throw Error(this.constructor.directiveName+"() called with a non-string value");if(r===this.it)return this._t;this.it=r;const s=[r];return s.raw=s,this._t={_$litType$:this.constructor.resultType,strings:s,values:[]}}}e.directiveName="unsafeHTML",e.resultType=1;
+
     /**
-     * Renders the result as SVG, rather than text.
-     *
-     * Note, this is unsafe to use with any user-provided input that hasn't been
-     * sanitized or escaped, as it may lead to cross-site-scripting
-     * vulnerabilities.
-     */
-    const unsafeSVG = directive((value) => (part) => {
-        if (!(part instanceof NodePart)) {
-            throw new Error('unsafeSVG can only be used in text bindings');
-        }
-        const previousValue = previousValues.get(part);
-        if (previousValue !== undefined && isPrimitive(value) &&
-            value === previousValue.value && part.value === previousValue.fragment) {
-            return;
-        }
-        const template = document.createElement('template');
-        const content = template.content;
-        let svgElement;
-        if (isIe) {
-            // IE can't set innerHTML of an svg element. However, it also doesn't
-            // support Trusted Types, so it's ok for us to use a string when setting
-            // innerHTML.
-            template.innerHTML = `<svg>${value}</svg>`;
-            svgElement = content.firstChild;
-        }
-        else {
-            svgElement = document.createElementNS('http://www.w3.org/2000/svg', 'svg');
-            content.appendChild(svgElement);
-            svgElement.innerHTML = value;
-        }
-        content.removeChild(svgElement);
-        reparentNodes(content, svgElement.firstChild);
-        const fragment = document.importNode(content, true);
-        part.setValue(fragment);
-        previousValues.set(part, { value, fragment });
-    });
+     * @license
+     * Copyright 2017 Google LLC
+     * SPDX-License-Identifier: BSD-3-Clause
+     */class t extends e{}t.directiveName="unsafeSVG",t.resultType=2;const o=e$2(t);
 
     var IconPlay = "<svg xmlns=\"http://www.w3.org/2000/svg\" viewBox=\"0 0 240 240\"><path fill-rule=\"evenodd\" d=\"M74.1374132,48 L83.1218112,48 C83.8751514,48 84.6131784,48.2127391 85.2509322,48.6137272 L177.244774,106.454909 C184.725521,111.158433 186.976905,121.035737 182.273381,128.516484 C180.99563,130.548691 179.27698,132.26734 177.244774,133.545091 L85.2509322,191.386273 C84.6131784,191.787261 83.8751514,192 83.1218112,192 L74.1374132,192 C68.5386745,192 64,187.461326 64,181.862587 L64,58.1374132 C64,52.5386745 68.5386745,48 74.1374132,48 Z\"/></svg>";
 
@@ -10868,7 +7976,7 @@ kQIDAQAB
      * @category Web Component
      * @internal
      */
-    let IconComponent = class IconComponent extends LitElement {
+    let IconComponent = class IconComponent extends s {
         constructor() {
             super(...arguments);
             /**
@@ -10882,18 +7990,18 @@ kQIDAQAB
             this.icon = 'loader';
         }
         static get styles() {
-            return css `.Icon{width:100%;height:100%;color:var(--flipnote-player-icon-color,#f36a2d)}`;
+            return i$4 `.Icon{width:100%;height:100%;color:var(--flipnote-player-icon-color,#f36a2d)}`;
         }
         /** @internal */
         render() {
-            return html `${unsafeSVG(iconMap[this.icon])}`;
+            return x `${o(iconMap[this.icon])}`;
         }
     };
     __decorate([
-        property({ type: String })
+        n$1({ type: String })
     ], IconComponent.prototype, "icon", void 0);
     IconComponent = __decorate([
-        customElement('flipnote-player-icon')
+        t$2('flipnote-player-icon')
     ], IconComponent);
 
     /**
@@ -10902,7 +8010,7 @@ kQIDAQAB
      * @category Web Component
      * @internal
      */
-    let ImageComponent$1 = class ImageComponent extends LitElement {
+    let ImageComponent$1 = class ImageComponent extends s {
         constructor() {
             super(...arguments);
             this._src = '';
@@ -10912,7 +8020,7 @@ kQIDAQAB
             this.imgTitle = '';
         }
         static get styles() {
-            return css `.Image{width:inherit;height:inherit;image-rendering:-moz-crisp-edges;image-rendering:-webkit-crisp-edges;image-rendering:pixelated;image-rendering:crisp-edges;-ms-interpolation-mode:nearest-neighbor}`;
+            return i$4 `.Image{width:inherit;height:inherit;image-rendering:-moz-crisp-edges;image-rendering:-webkit-crisp-edges;image-rendering:pixelated;image-rendering:crisp-edges;-ms-interpolation-mode:nearest-neighbor}`;
         }
         set src(src) {
             this.load(src);
@@ -10930,7 +8038,7 @@ kQIDAQAB
         }
         /** @internal */
         render() {
-            return html `<img class="Image" src="${this.gifUrl}" alt="${this.imgTitle}" title="${this.imgTitle}">`;
+            return x `<img class="Image" src="${this.gifUrl}" alt="${this.imgTitle}" title="${this.imgTitle}">`;
         }
         revokeUrl() {
             // if there was already an image, clean up its data URL
@@ -10987,22 +8095,22 @@ kQIDAQAB
         }
     };
     __decorate([
-        property()
+        n$1()
     ], ImageComponent$1.prototype, "src", null);
     __decorate([
-        property()
+        n$1()
     ], ImageComponent$1.prototype, "frame", null);
     __decorate([
-        property({ type: Boolean })
+        n$1({ type: Boolean })
     ], ImageComponent$1.prototype, "cropped", void 0);
     __decorate([
-        internalProperty()
+        r()
     ], ImageComponent$1.prototype, "gifUrl", void 0);
     __decorate([
-        internalProperty()
+        r()
     ], ImageComponent$1.prototype, "imgTitle", void 0);
     ImageComponent$1 = __decorate([
-        customElement('flipnote-image')
+        t$2('flipnote-image')
     ], ImageComponent$1);
 
     // Entrypoint for webcomponent build
@@ -11029,5 +8137,7 @@ kQIDAQAB
     exports.utils = fsid;
     exports.version = version;
 
-}));
+    return exports;
+
+})({});
 //# sourceMappingURL=flipnote.webcomponent.js.map

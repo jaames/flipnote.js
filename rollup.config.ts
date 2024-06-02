@@ -7,15 +7,15 @@ import serve from 'rollup-plugin-serve';
 import livereload from 'rollup-plugin-livereload';
 
 import {
+  cleanDir,
   banner,
   replacements,
   svg,
   minify,
   size,
-  cleanDir
 } from './buildSupport';
 
-const isServer = process.env.SERVER || false;
+const isServer = (!!process.env.SERVER) || false;
 
 const doBuild = (input: string, outputBase: string, opts: {
   name?: string,
@@ -37,7 +37,8 @@ const doBuild = (input: string, outputBase: string, opts: {
         declaration: true,
         declarationDir: `dist/types/`,
       },
-      sourceMap: opts.name !== undefined
+      sourceMap: opts.name !== undefined,
+      inlineSources: isServer,
     }),
     // Replace version number and other strings
     replacements(),
@@ -52,7 +53,7 @@ const doBuild = (input: string, outputBase: string, opts: {
       contentBase: ['dist', 'test']
     }),
     isServer && livereload({
-      watch: 'dist'
+      watch: ['dist']
     }),
   ].filter(Boolean),
   output: [
@@ -75,7 +76,7 @@ const doBuild = (input: string, outputBase: string, opts: {
       banner,
       name: opts.name,
       file: `dist/${ outputBase }.js`,
-      format: 'umd',
+      format: 'iife',
       exports: 'named',
       sourcemap: true,
       sourcemapFile: `dist/${ outputBase }.js.map`,
@@ -86,7 +87,7 @@ const doBuild = (input: string, outputBase: string, opts: {
       banner,
       name: opts.name,
       file: `dist/${ outputBase }.min.js`,
-      format: 'umd',
+      format: 'iife',
       exports: 'named',
       sourcemap: true,
       sourcemapFile: `dist/${ outputBase }.min.js.map`,

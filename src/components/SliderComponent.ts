@@ -2,14 +2,25 @@ import {
   LitElement,
   html,
   css,
-  query,
-  property,
-  internalProperty,
-  customElement,
-} from 'lit-element';
+} from 'lit';
 
-import { classMap } from 'lit-html/directives/class-map.js';
-import { styleMap } from 'lit-html/directives/style-map.js';
+import {
+  state,
+  property,
+  query,
+  customElement,
+} from 'lit/decorators.js';
+
+import {
+  classMap
+} from 'lit/directives/class-map.js';
+
+import {
+  styleMap
+} from 'lit/directives/style-map.js';
+
+import { KEY_MAP } from './utils';
+import { clamp } from '../utils';
 
 /** @internal */
 type SliderOrientation = 'horizontal' | 'vertical';
@@ -27,6 +38,13 @@ export class SliderComponent extends LitElement {
         touch-action: none;
         padding: 4px 0;
         cursor: pointer;
+      }
+
+      .Slider:focus {
+        position: relative;
+        z-index: 1;
+        outline: var(--flipnote-player-focus-outline, 3px solid #FFD3A6);
+        outline-offset: 2px;
       }
 
       .Slider--vertical {
@@ -113,10 +131,16 @@ export class SliderComponent extends LitElement {
   @property({ type: Number })
   value: number = 0;
 
+  @property({ type: Number })
+  step: number = 0.1;
+
+  @property({ type: String })
+  label: string = '';
+
   @property({ type: String })
   orientation: SliderOrientation = 'horizontal'; // switch to horizontal
 
-  @internalProperty()
+  @state()
   private isActive: boolean = false;
 
   @query('.Slider__track')
@@ -133,7 +157,18 @@ export class SliderComponent extends LitElement {
       'Slider--isActive': this.isActive,
     };
     return html`
-      <div class=${ classMap(rootClasses) } @touchstart=${ this.onSliderTouchStart } @mousedown=${ this.onSliderMouseStart }>
+      <div
+        class=${ classMap(rootClasses) }
+        tabIndex="0"
+        role="slider"
+        aria-label=${ this.label }
+        aria-valuemin="0"
+        aria-valuemax="1"
+        aria-valuenow=${ this.value }
+        @touchstart=${ this.onSliderTouchStart }
+        @mousedown=${ this.onSliderMouseStart }
+        @keydown=${ this.onKeyInput }
+      >
         <div class="Slider__track">
           <div class="Slider__levelWrapper">  
             <div class="Slider__level" style=${ styleMap({ [mainAxis]: percent }) }></div>
@@ -144,7 +179,7 @@ export class SliderComponent extends LitElement {
     `;
   }
 
-  onSliderMouseStart = (event: MouseEvent) => {
+  private onSliderMouseStart = (event: MouseEvent) => {
     event.preventDefault();
     this.isActive = true;
     document.addEventListener('mousemove', this.onSliderMouseMove);
@@ -153,7 +188,7 @@ export class SliderComponent extends LitElement {
     this.onSliderInput(event.clientX, event.clientY);
   }
 
-  onSliderMouseEnd = (event: MouseEvent) => {
+  private onSliderMouseEnd = (event: MouseEvent) => {
     event.preventDefault();
     document.removeEventListener('mousemove', this.onSliderMouseMove);
     document.removeEventListener('mouseup', this.onSliderMouseEnd);
@@ -162,12 +197,12 @@ export class SliderComponent extends LitElement {
     this.isActive = false;
   }
 
-  onSliderMouseMove = (event: MouseEvent) => {
+  private onSliderMouseMove = (event: MouseEvent) => {
     event.preventDefault();
     this.onSliderInput(event.clientX, event.clientY);
   }
 
-  onSliderTouchStart = (event: TouchEvent) => {
+  private onSliderTouchStart = (event: TouchEvent) => {
     const point = event.changedTouches[0];
     event.preventDefault();
     this.isActive = true;
@@ -177,7 +212,7 @@ export class SliderComponent extends LitElement {
     this.onSliderInput(point.clientX, point.clientY);
   }
 
-  onSliderTouchEnd = (event: TouchEvent) => {
+  private onSliderTouchEnd = (event: TouchEvent) => {
     const point = event.changedTouches[0];
     event.preventDefault();
     document.removeEventListener('touchmove', this.onSliderTouchMove);
@@ -187,13 +222,13 @@ export class SliderComponent extends LitElement {
     this.isActive = false;
   }
 
-  onSliderTouchMove = (event: TouchEvent) => {
+  private onSliderTouchMove = (event: TouchEvent) => {
     const point = event.changedTouches[0];
     event.preventDefault();
     this.onSliderInput(point.clientX, point.clientY);
   }
 
-  onSliderInput = (x: number, y: number) => {
+  private onSliderInput = (x: number, y: number) => {
     const rect = this.sliderElement.getBoundingClientRect();
     let value;
     if (this.orientation === 'horizontal') {
@@ -210,8 +245,40 @@ export class SliderComponent extends LitElement {
       const v = 1 - inputPosition / railLength; // y is inverted; top is the max point
       value = Math.max(0, Math.min(v, 1));
     }
-    if (this.value !== value)
+    this.updateValue(value); 
+  }
+
+  private onKeyInput = (e: KeyboardEvent) => {
+    const key = KEY_MAP[e.key];
+
+    if (!key)
+      return;
+
+    this.dispatch('inputstart');
+    switch (key) {
+      case 'ArrowLeft':
+        if (e.shiftKey)
+          this.updateValue(0);
+        else
+          this.updateValue(this.value - this.step);
+        break;
+      case 'ArrowRight':
+        if (e.shiftKey)
+          this.updateValue(1);
+        else
+          this.updateValue(this.value + this.step);
+        break;
+    }
+    this.dispatch('inputend');
+    e.preventDefault();
+  }
+
+  private updateValue = (value: number) => {
+    value = clamp(value, 0, 1);
+    if (this.value !== value) {
+      this.value = value;
       this.dispatch('change', { value });
+    }
   }
 
   private dispatch(eventName: string, detail?: any) {

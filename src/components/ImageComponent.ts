@@ -1,7 +1,26 @@
-import { LitElement, html, css, customElement, property, internalProperty } from 'lit-element';
-import { Flipnote, FlipnoteFormat } from '../flipnote';
-import { parseSource } from '../parseSource';
-import { GifImage } from '../encoders';
+import {
+  LitElement,
+  html,
+  css,
+} from 'lit';
+
+import {
+  state,
+  property,
+  customElement,
+} from 'lit/decorators.js';
+
+import type {
+  Flipnote
+} from '../flipnote';
+
+import {
+  parseSource
+} from '../parseSource';
+
+import {
+  GifImage
+} from '../encoders';
 
 /** 
  * Flipnote player icon component
@@ -54,10 +73,10 @@ export class ImageComponent extends LitElement {
   @property({ type: Boolean })
   cropped: boolean = false;
 
-  @internalProperty()
+  @state()
   private gifUrl: string = '';
 
-  @internalProperty()
+  @state()
   private imgTitle: string = '';
 
   /** @internal */

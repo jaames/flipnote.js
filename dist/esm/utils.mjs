@@ -1,5 +1,5 @@
 /*!!
- * flipnote.js v5.12.0
+ * flipnote.js v6.0.0
  * https://flipnote.js.org
  * A JavaScript library for Flipnote Studio animation files
  * 2018 - 2024 James Daniel
