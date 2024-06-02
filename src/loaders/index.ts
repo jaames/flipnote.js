@@ -1,4 +1,4 @@
-import { LoaderDefinition } from './LoaderDefinition';
+import { LoaderDefinition } from './loaderDefinition';
 import webUrlLoader from './webUrlLoader';
 import nodeUrlLoader from './nodeUrlLoader';
 import fileLoader from './fileLoader';
@@ -6,7 +6,7 @@ import blobLoader from './blobLoader';
 import nodeBufferLoader from './nodeBufferLoader';
 import arrayBufferLoader from './arrayBufferLoader';
 
-export * from './LoaderDefinition';
+export * from './loaderDefinition';
 export * from './webUrlLoader';
 export * from './nodeUrlLoader';
 export * from './fileLoader';

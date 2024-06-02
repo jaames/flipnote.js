@@ -1,5 +1,5 @@
 import { isNode } from '../utils';
-import { LoaderDefinition } from './LoaderDefinition';
+import { LoaderDefinition } from './loaderDefinition';
 
 /** 
  * Loader for Buffer objects (Node only)

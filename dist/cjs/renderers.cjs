@@ -1,26 +1,49 @@
 /*!!
-flipnote.js v5.11.0
-https://flipnote.js.org
-A JavaScript library for parsing, converting, and in-browser playback of the proprietary animation formats used by Nintendo's Flipnote Studio and Flipnote Studio 3D apps.
-2018 - 2024 James Daniel
-Flipnote Studio is (c) Nintendo Co., Ltd. This project isn't affiliated with or endorsed by them in any way.
-Keep on Flipnoting!
+ * flipnote.js v6.0.0
+ * https://flipnote.js.org
+ * A JavaScript library for Flipnote Studio animation files
+ * 2018 - 2024 James Daniel
+ * Flipnote Studio is (c) Nintendo Co., Ltd. This project isn't affiliated with or endorsed by them in any way.
 */
-var CanvasStereoscopicMode;
+'use strict';
+
+exports.CanvasStereoscopicMode = void 0;
 (function (CanvasStereoscopicMode) {
     CanvasStereoscopicMode[CanvasStereoscopicMode["None"] = 0] = "None";
     CanvasStereoscopicMode[CanvasStereoscopicMode["Dual"] = 1] = "Dual";
     // not actually supported, sorry!
     CanvasStereoscopicMode[CanvasStereoscopicMode["Anaglyph"] = 2] = "Anaglyph";
-})(CanvasStereoscopicMode || (CanvasStereoscopicMode = {}));
+})(exports.CanvasStereoscopicMode || (exports.CanvasStereoscopicMode = {}));
 /** @internal */
 class CanvasInterface {
     constructor(parent, width, height, options) { }
 }
 
-/* @license twgl.js 4.24.0 Copyright (c) 2015, Gregg Tavares All Rights Reserved.
+/* @license twgl.js 5.5.4 Copyright (c) 2015, Gregg Tavares All Rights Reserved.
 Available via the MIT license.
 see: http://github.com/greggman/twgl.js for details */
+/*
+ * Copyright 2019 Gregg Tavares
+ *
+ * Permission is hereby granted, free of charge, to any person obtaining a
+ * copy of this software and associated documentation files (the "Software"),
+ * to deal in the Software without restriction, including without limitation
+ * the rights to use, copy, modify, merge, publish, distribute, sublicense,
+ * and/or sell copies of the Software, and to permit persons to whom the
+ * Software is furnished to do so, subject to the following conditions:
+ *
+ * The above copyright notice and this permission notice shall be included in
+ * all copies or substantial portions of the Software.
+ *
+ * THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
+ * IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
+ * FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT.  IN NO EVENT SHALL
+ * THE AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
+ * LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING
+ * FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER
+ * DEALINGS IN THE SOFTWARE.
+ */
+
 
 /*
  * Copyright 2019 Gregg Tavares
@@ -45,13 +68,43 @@ see: http://github.com/greggman/twgl.js for details */
  */
 
 /* DataType */
-const BYTE                           = 0x1400;
-const UNSIGNED_BYTE                  = 0x1401;
-const SHORT                          = 0x1402;
-const UNSIGNED_SHORT                 = 0x1403;
-const INT                            = 0x1404;
-const UNSIGNED_INT                   = 0x1405;
-const FLOAT                          = 0x1406;
+const BYTE$2                           = 0x1400;
+const UNSIGNED_BYTE$3                  = 0x1401;
+const SHORT$2                          = 0x1402;
+const UNSIGNED_SHORT$3                 = 0x1403;
+const INT$3                            = 0x1404;
+const UNSIGNED_INT$3                   = 0x1405;
+const FLOAT$3                          = 0x1406;
+const UNSIGNED_SHORT_4_4_4_4$1       = 0x8033;
+const UNSIGNED_SHORT_5_5_5_1$1       = 0x8034;
+const UNSIGNED_SHORT_5_6_5$1         = 0x8363;
+const HALF_FLOAT$1                   = 0x140B;
+const UNSIGNED_INT_2_10_10_10_REV$1  = 0x8368;
+const UNSIGNED_INT_10F_11F_11F_REV$1 = 0x8C3B;
+const UNSIGNED_INT_5_9_9_9_REV$1     = 0x8C3E;
+const FLOAT_32_UNSIGNED_INT_24_8_REV$1 = 0x8DAD;
+const UNSIGNED_INT_24_8$1            = 0x84FA;
+
+const glTypeToTypedArray = {};
+{
+  const tt = glTypeToTypedArray;
+  tt[BYTE$2]                           = Int8Array;
+  tt[UNSIGNED_BYTE$3]                  = Uint8Array;
+  tt[SHORT$2]                          = Int16Array;
+  tt[UNSIGNED_SHORT$3]                 = Uint16Array;
+  tt[INT$3]                            = Int32Array;
+  tt[UNSIGNED_INT$3]                   = Uint32Array;
+  tt[FLOAT$3]                          = Float32Array;
+  tt[UNSIGNED_SHORT_4_4_4_4$1]         = Uint16Array;
+  tt[UNSIGNED_SHORT_5_5_5_1$1]         = Uint16Array;
+  tt[UNSIGNED_SHORT_5_6_5$1]           = Uint16Array;
+  tt[HALF_FLOAT$1]                     = Uint16Array;
+  tt[UNSIGNED_INT_2_10_10_10_REV$1]    = Uint32Array;
+  tt[UNSIGNED_INT_10F_11F_11F_REV$1]   = Uint32Array;
+  tt[UNSIGNED_INT_5_9_9_9_REV$1]       = Uint32Array;
+  tt[FLOAT_32_UNSIGNED_INT_24_8_REV$1] = Uint32Array;
+  tt[UNSIGNED_INT_24_8$1]              = Uint32Array;
+}
 
 /**
  * Get the GL type for a typedArray
@@ -61,14 +114,14 @@ const FLOAT                          = 0x1406;
  * @memberOf module:twgl/typedArray
  */
 function getGLTypeForTypedArray(typedArray) {
-  if (typedArray instanceof Int8Array)         { return BYTE; }           // eslint-disable-line
-  if (typedArray instanceof Uint8Array)        { return UNSIGNED_BYTE; }  // eslint-disable-line
-  if (typedArray instanceof Uint8ClampedArray) { return UNSIGNED_BYTE; }  // eslint-disable-line
-  if (typedArray instanceof Int16Array)        { return SHORT; }          // eslint-disable-line
-  if (typedArray instanceof Uint16Array)       { return UNSIGNED_SHORT; } // eslint-disable-line
-  if (typedArray instanceof Int32Array)        { return INT; }            // eslint-disable-line
-  if (typedArray instanceof Uint32Array)       { return UNSIGNED_INT; }   // eslint-disable-line
-  if (typedArray instanceof Float32Array)      { return FLOAT; }          // eslint-disable-line
+  if (typedArray instanceof Int8Array)         { return BYTE$2; }           // eslint-disable-line
+  if (typedArray instanceof Uint8Array)        { return UNSIGNED_BYTE$3; }  // eslint-disable-line
+  if (typedArray instanceof Uint8ClampedArray) { return UNSIGNED_BYTE$3; }  // eslint-disable-line
+  if (typedArray instanceof Int16Array)        { return SHORT$2; }          // eslint-disable-line
+  if (typedArray instanceof Uint16Array)       { return UNSIGNED_SHORT$3; } // eslint-disable-line
+  if (typedArray instanceof Int32Array)        { return INT$3; }            // eslint-disable-line
+  if (typedArray instanceof Uint32Array)       { return UNSIGNED_INT$3; }   // eslint-disable-line
+  if (typedArray instanceof Float32Array)      { return FLOAT$3; }          // eslint-disable-line
   throw new Error('unsupported typed array type');
 }
 
@@ -80,18 +133,32 @@ function getGLTypeForTypedArray(typedArray) {
  * @memberOf module:twgl/typedArray
  */
 function getGLTypeForTypedArrayType(typedArrayType) {
-  if (typedArrayType === Int8Array)         { return BYTE; }           // eslint-disable-line
-  if (typedArrayType === Uint8Array)        { return UNSIGNED_BYTE; }  // eslint-disable-line
-  if (typedArrayType === Uint8ClampedArray) { return UNSIGNED_BYTE; }  // eslint-disable-line
-  if (typedArrayType === Int16Array)        { return SHORT; }          // eslint-disable-line
-  if (typedArrayType === Uint16Array)       { return UNSIGNED_SHORT; } // eslint-disable-line
-  if (typedArrayType === Int32Array)        { return INT; }            // eslint-disable-line
-  if (typedArrayType === Uint32Array)       { return UNSIGNED_INT; }   // eslint-disable-line
-  if (typedArrayType === Float32Array)      { return FLOAT; }          // eslint-disable-line
+  if (typedArrayType === Int8Array)         { return BYTE$2; }           // eslint-disable-line
+  if (typedArrayType === Uint8Array)        { return UNSIGNED_BYTE$3; }  // eslint-disable-line
+  if (typedArrayType === Uint8ClampedArray) { return UNSIGNED_BYTE$3; }  // eslint-disable-line
+  if (typedArrayType === Int16Array)        { return SHORT$2; }          // eslint-disable-line
+  if (typedArrayType === Uint16Array)       { return UNSIGNED_SHORT$3; } // eslint-disable-line
+  if (typedArrayType === Int32Array)        { return INT$3; }            // eslint-disable-line
+  if (typedArrayType === Uint32Array)       { return UNSIGNED_INT$3; }   // eslint-disable-line
+  if (typedArrayType === Float32Array)      { return FLOAT$3; }          // eslint-disable-line
   throw new Error('unsupported typed array type');
 }
 
-const isArrayBuffer = typeof SharedArrayBuffer !== 'undefined'
+/**
+ * Get the typed array constructor for a given GL type
+ * @param {number} type the GL type. (eg: `gl.UNSIGNED_INT`)
+ * @return {function} the constructor for a the corresponding typed array. (eg. `Uint32Array`).
+ * @memberOf module:twgl/typedArray
+ */
+function getTypedArrayTypeForGLType(type) {
+  const CTOR = glTypeToTypedArray[type];
+  if (!CTOR) {
+    throw new Error('unknown gl type');
+  }
+  return CTOR;
+}
+
+const isArrayBuffer$1 = typeof SharedArrayBuffer !== 'undefined'
   ? function isArrayBufferOrSharedArrayBuffer(a) {
     return a && a.buffer && (a.buffer instanceof ArrayBuffer || a.buffer instanceof SharedArrayBuffer);
   }
@@ -99,12 +166,32 @@ const isArrayBuffer = typeof SharedArrayBuffer !== 'undefined'
     return a && a.buffer && a.buffer instanceof ArrayBuffer;
   };
 
+const isTypeWeakMaps = new Map();
+
+function isType(object, type) {
+  if (!object || typeof object !== 'object') {
+    return false;
+  }
+  let weakMap = isTypeWeakMaps.get(type);
+  if (!weakMap) {
+    weakMap = new WeakMap();
+    isTypeWeakMaps.set(type, weakMap);
+  }
+  let isOfType = weakMap.get(object);
+  if (isOfType === undefined) {
+    const s = Object.prototype.toString.call(object);
+    isOfType = s.substring(8, s.length - 1) === type;
+    weakMap.set(object, isOfType);
+  }
+  return isOfType;
+}
+
 function isBuffer(gl, t) {
-  return typeof WebGLBuffer !== 'undefined' && t instanceof WebGLBuffer;
+  return typeof WebGLBuffer !== 'undefined' && isType(t, 'WebGLBuffer');
 }
 
 function isTexture(gl, t) {
-  return typeof WebGLTexture !== 'undefined' && t instanceof WebGLTexture;
+  return typeof WebGLTexture !== 'undefined' && isType(t, 'WebGLTexture');
 }
 
 /*
@@ -130,18 +217,18 @@ function isTexture(gl, t) {
  */
 
 const STATIC_DRAW                  = 0x88e4;
-const ARRAY_BUFFER                 = 0x8892;
-const ELEMENT_ARRAY_BUFFER         = 0x8893;
+const ARRAY_BUFFER$1                 = 0x8892;
+const ELEMENT_ARRAY_BUFFER$2         = 0x8893;
 const BUFFER_SIZE                  = 0x8764;
 
 const BYTE$1                         = 0x1400;
-const UNSIGNED_BYTE$1                = 0x1401;
+const UNSIGNED_BYTE$2                = 0x1401;
 const SHORT$1                        = 0x1402;
-const UNSIGNED_SHORT$1               = 0x1403;
-const INT$1                          = 0x1404;
-const UNSIGNED_INT$1                 = 0x1405;
-const FLOAT$1                        = 0x1406;
-const defaults = {
+const UNSIGNED_SHORT$2               = 0x1403;
+const INT$2                          = 0x1404;
+const UNSIGNED_INT$2                 = 0x1405;
+const FLOAT$2                        = 0x1406;
+const defaults$2 = {
   attribPrefix: "",
 };
 
@@ -165,7 +252,7 @@ function createBufferFromTypedArray(gl, typedArray, type, drawType) {
   if (isBuffer(gl, typedArray)) {
     return typedArray;
   }
-  type = type || ARRAY_BUFFER;
+  type = type || ARRAY_BUFFER$1;
   const buffer = gl.createBuffer();
   setBufferFromTypedArray(gl, type, buffer, typedArray, drawType);
   return buffer;
@@ -177,21 +264,13 @@ function isIndices(name) {
 
 // This is really just a guess. Though I can't really imagine using
 // anything else? Maybe for some compression?
-function getNormalizationForTypedArray(typedArray) {
-  if (typedArray instanceof Int8Array)    { return true; }  // eslint-disable-line
-  if (typedArray instanceof Uint8Array)   { return true; }  // eslint-disable-line
-  return false;
-}
-
-// This is really just a guess. Though I can't really imagine using
-// anything else? Maybe for some compression?
 function getNormalizationForTypedArrayType(typedArrayType) {
   if (typedArrayType === Int8Array)    { return true; }  // eslint-disable-line
   if (typedArrayType === Uint8Array)   { return true; }  // eslint-disable-line
   return false;
 }
 
-function getArray(array) {
+function getArray$1(array) {
   return array.length ? array : array.data;
 }
 
@@ -215,16 +294,16 @@ function guessNumComponentsFromName(name, length) {
   return numComponents;
 }
 
-function getNumComponents(array, arrayName) {
-  return array.numComponents || array.size || guessNumComponentsFromName(arrayName, getArray(array).length);
+function getNumComponents$1(array, arrayName, numValues) {
+  return array.numComponents || array.size || guessNumComponentsFromName(arrayName, numValues || getArray$1(array).length);
 }
 
 function makeTypedArray(array, name) {
-  if (isArrayBuffer(array)) {
+  if (isArrayBuffer$1(array)) {
     return array;
   }
 
-  if (isArrayBuffer(array.data)) {
+  if (isArrayBuffer$1(array.data)) {
     return array.data;
   }
 
@@ -234,7 +313,7 @@ function makeTypedArray(array, name) {
     };
   }
 
-  let Type = array.type;
+  let Type = array.type ? typedArrayTypeFromGLTypeOrTypedArrayCtor(array.type) : undefined;
   if (!Type) {
     if (isIndices(name)) {
       Type = Uint16Array;
@@ -243,6 +322,52 @@ function makeTypedArray(array, name) {
     }
   }
   return new Type(array.data);
+}
+
+function glTypeFromGLTypeOrTypedArrayType(glTypeOrTypedArrayCtor) {
+  return typeof glTypeOrTypedArrayCtor === 'number'
+      ? glTypeOrTypedArrayCtor
+      : glTypeOrTypedArrayCtor ? getGLTypeForTypedArrayType(glTypeOrTypedArrayCtor) : FLOAT$2;
+}
+
+function typedArrayTypeFromGLTypeOrTypedArrayCtor(glTypeOrTypedArrayCtor) {
+  return typeof glTypeOrTypedArrayCtor === 'number'
+      ? getTypedArrayTypeForGLType(glTypeOrTypedArrayCtor)
+      : glTypeOrTypedArrayCtor || Float32Array;
+}
+
+function attribBufferFromBuffer(gl, array/*, arrayName */) {
+  return {
+    buffer: array.buffer,
+    numValues: 2 * 3 * 4,  // safely divided by 2, 3, 4
+    type: glTypeFromGLTypeOrTypedArrayType(array.type),
+    arrayType: typedArrayTypeFromGLTypeOrTypedArrayCtor(array.type),
+  };
+}
+
+function attribBufferFromSize(gl, array/*, arrayName*/) {
+  const numValues = array.data || array;
+  const arrayType = typedArrayTypeFromGLTypeOrTypedArrayCtor(array.type);
+  const numBytes = numValues * arrayType.BYTES_PER_ELEMENT;
+  const buffer = gl.createBuffer();
+  gl.bindBuffer(ARRAY_BUFFER$1, buffer);
+  gl.bufferData(ARRAY_BUFFER$1, numBytes, array.drawType || STATIC_DRAW);
+  return {
+    buffer,
+    numValues,
+    type: getGLTypeForTypedArrayType(arrayType),
+    arrayType,
+  };
+}
+
+function attribBufferFromArrayLike(gl, array, arrayName) {
+  const typedArray = makeTypedArray(array, arrayName);
+  return {
+    arrayType: typedArray.constructor,
+    buffer: createBufferFromTypedArray(gl, typedArray, undefined, array.drawType),
+    type: getGLTypeForTypedArray(typedArray),
+    numValues: 0,
+  };
 }
 
 /**
@@ -258,11 +383,16 @@ function makeTypedArray(array, name) {
  * @property {boolean} [normalize] whether or not to normalize the data. Default = false
  * @property {number} [offset] offset into buffer in bytes. Default = 0
  * @property {number} [stride] the stride in bytes per element. Default = 0
- * @property {number} [divisor] the divisor in instances. Default = undefined. Note: undefined = don't call gl.vertexAttribDivisor
- *    where as anything else = do call it with this value
+ * @property {number} [divisor] the divisor in instances. Default = 0.
+ *    Requires WebGL2 or the ANGLE_instanced_arrays extension.
+ *    and, if you're using WebGL1 you must have called {@link module:twgl.addExtensionsToContext}
  * @property {WebGLBuffer} buffer the buffer that contains the data for this attribute
  * @property {number} [drawType] the draw type passed to gl.bufferData. Default = gl.STATIC_DRAW
  * @memberOf module:twgl
+ */
+
+/**
+ * @typedef {(Int8ArrayConstructor|Uint8ArrayConstructor|Int16ArrayConstructor|Uint16ArrayConstructor|Int32ArrayConstructor|Uint32ArrayConstructor|Float32ArrayConstructor)} TypedArrayConstructor
  */
 
 /**
@@ -270,19 +400,21 @@ function makeTypedArray(array, name) {
  * @typedef {Object} FullArraySpec
  * @property {number[]|ArrayBufferView} [value] a constant value for the attribute. Note: if this is set the attribute will be
  *    disabled and set to this constant value and all other values will be ignored.
- * @property {(number|number[]|ArrayBufferView)} data The data of the array. A number alone becomes the number of elements of type.
+ * @property {(number|number[]|ArrayBufferView)} [data] The data of the array. A number alone becomes the number of elements of type.
  * @property {number} [numComponents] number of components for `vertexAttribPointer`. Default is based on the name of the array.
  *    If `coord` is in the name assumes `numComponents = 2`.
  *    If `color` is in the name assumes `numComponents = 4`.
  *    otherwise assumes `numComponents = 3`
- * @property {constructor} [type] type. This is only used if `data` is a JavaScript array. It is the constructor for the typedarray. (eg. `Uint8Array`).
- * For example if you want colors in a `Uint8Array` you might have a `FullArraySpec` like `{ type: Uint8Array, data: [255,0,255,255, ...], }`.
+ * @property {number|TypedArrayConstructor} [type] type. This is used if `data` is a JavaScript array, or `buffer` is passed in, or `data` is a number.
+ *   It can either be the constructor for a typedarray. (eg. `Uint8Array`) OR a WebGL type, (eg `gl.UNSIGNED_BYTE`).
+ *   For example if you want colors in a `Uint8Array` you might have a `FullArraySpec` like `{ type: gl.UNSIGNED_BYTE, data: [255,0,255,255, ...], }`.
  * @property {number} [size] synonym for `numComponents`.
  * @property {boolean} [normalize] normalize for `vertexAttribPointer`. Default is true if type is `Int8Array` or `Uint8Array` otherwise false.
  * @property {number} [stride] stride for `vertexAttribPointer`. Default = 0
  * @property {number} [offset] offset for `vertexAttribPointer`. Default = 0
- * @property {number} [divisor] divisor for `vertexAttribDivisor`. Default = undefined. Note: undefined = don't call gl.vertexAttribDivisor
- *    where as anything else = do call it with this value
+ * @property {number} [divisor] divisor for `vertexAttribDivisor`. Default = 0.
+ *     Requires WebGL2 or the ANGLE_instanced_arrays extension.
+ *     and, if you using WebGL1 you must have called {@link module:twgl.addExtensionsToContext}
  * @property {string} [attrib] name of attribute this array maps to. Defaults to same name as array prefixed by the default attribPrefix.
  * @property {string} [name] synonym for `attrib`.
  * @property {string} [attribName] synonym for `attrib`.
@@ -297,6 +429,7 @@ function makeTypedArray(array, name) {
  *           position: bufferInfo1.attribs.position,  // use the same buffer from bufferInfo1
  *         });
  *
+ * @property {number} [drawType] the draw type passed to gl.bufferData. Default = gl.STATIC_DRAW
  * @memberOf module:twgl
  */
 
@@ -416,41 +549,26 @@ function createAttribsFromArrays(gl, arrays) {
   Object.keys(arrays).forEach(function(arrayName) {
     if (!isIndices(arrayName)) {
       const array = arrays[arrayName];
-      const attribName = array.attrib || array.name || array.attribName || (defaults.attribPrefix + arrayName);
+      const attribName = array.attrib || array.name || array.attribName || (defaults$2.attribPrefix + arrayName);
       if (array.value) {
-        if (!Array.isArray(array.value) && !isArrayBuffer(array.value)) {
+        if (!Array.isArray(array.value) && !isArrayBuffer$1(array.value)) {
           throw new Error('array.value is not array or typedarray');
         }
         attribs[attribName] = {
           value: array.value,
         };
       } else {
-        let buffer;
-        let type;
-        let normalization;
-        let numComponents;
+        let fn;
         if (array.buffer && array.buffer instanceof WebGLBuffer) {
-          buffer = array.buffer;
-          numComponents = array.numComponents || array.size;
-          type = array.type;
-          normalization = array.normalize;
+          fn = attribBufferFromBuffer;
         } else if (typeof array === "number" || typeof array.data === "number") {
-          const numValues = array.data || array;
-          const arrayType = array.type || Float32Array;
-          const numBytes = numValues * arrayType.BYTES_PER_ELEMENT;
-          type = getGLTypeForTypedArrayType(arrayType);
-          normalization = array.normalize !== undefined ? array.normalize : getNormalizationForTypedArrayType(arrayType);
-          numComponents = array.numComponents || array.size || guessNumComponentsFromName(arrayName, numValues);
-          buffer = gl.createBuffer();
-          gl.bindBuffer(ARRAY_BUFFER, buffer);
-          gl.bufferData(ARRAY_BUFFER, numBytes, array.drawType || STATIC_DRAW);
+          fn = attribBufferFromSize;
         } else {
-          const typedArray = makeTypedArray(array, arrayName);
-          buffer = createBufferFromTypedArray(gl, typedArray, undefined, array.drawType);
-          type = getGLTypeForTypedArray(typedArray);
-          normalization = array.normalize !== undefined ? array.normalize : getNormalizationForTypedArray(typedArray);
-          numComponents = getNumComponents(array, arrayName);
+          fn = attribBufferFromArrayLike;
         }
+        const {buffer, type, numValues, arrayType} = fn(gl, array, arrayName);
+        const normalization = array.normalize !== undefined ? array.normalize : getNormalizationForTypedArrayType(arrayType);
+        const numComponents = getNumComponents$1(array, arrayName, numValues);
         attribs[attribName] = {
           buffer:        buffer,
           numComponents: numComponents,
@@ -464,18 +582,18 @@ function createAttribsFromArrays(gl, arrays) {
       }
     }
   });
-  gl.bindBuffer(ARRAY_BUFFER, null);
+  gl.bindBuffer(ARRAY_BUFFER$1, null);
   return attribs;
 }
 
 function getBytesPerValueForGLType(gl, type) {
   if (type === BYTE$1)           return 1;  // eslint-disable-line
-  if (type === UNSIGNED_BYTE$1)  return 1;  // eslint-disable-line
+  if (type === UNSIGNED_BYTE$2)  return 1;  // eslint-disable-line
   if (type === SHORT$1)          return 2;  // eslint-disable-line
-  if (type === UNSIGNED_SHORT$1) return 2;  // eslint-disable-line
-  if (type === INT$1)            return 4;  // eslint-disable-line
-  if (type === UNSIGNED_INT$1)   return 4;  // eslint-disable-line
-  if (type === FLOAT$1)          return 4;  // eslint-disable-line
+  if (type === UNSIGNED_SHORT$2) return 2;  // eslint-disable-line
+  if (type === INT$2)            return 4;  // eslint-disable-line
+  if (type === UNSIGNED_INT$2)   return 4;  // eslint-disable-line
+  if (type === FLOAT$2)          return 4;  // eslint-disable-line
   return 0;
 }
 
@@ -490,7 +608,7 @@ function getNumElementsFromAttributes(gl, attribs) {
     if (key in attribs) {
       break;
     }
-    key = defaults.attribPrefix + key;
+    key = defaults$2.attribPrefix + key;
     if (key in attribs) {
       break;
     }
@@ -502,9 +620,9 @@ function getNumElementsFromAttributes(gl, attribs) {
   if (!attrib.buffer) {
     return 1; // There's no buffer
   }
-  gl.bindBuffer(ARRAY_BUFFER, attrib.buffer);
-  const numBytes = gl.getBufferParameter(ARRAY_BUFFER, BUFFER_SIZE);
-  gl.bindBuffer(ARRAY_BUFFER, null);
+  gl.bindBuffer(ARRAY_BUFFER$1, attrib.buffer);
+  const numBytes = gl.getBufferParameter(ARRAY_BUFFER$1, BUFFER_SIZE);
+  gl.bindBuffer(ARRAY_BUFFER$1, null);
 
   const bytesPerValue = getBytesPerValueForGLType(gl, attrib.type);
   const totalElements = numBytes / bytesPerValue;
@@ -629,7 +747,7 @@ function createBufferInfoFromArrays(gl, arrays, srcBufferInfo) {
   const indices = arrays.indices;
   if (indices) {
     const newIndices = makeTypedArray(indices, "indices");
-    bufferInfo.indices = createBufferFromTypedArray(gl, newIndices, ELEMENT_ARRAY_BUFFER);
+    bufferInfo.indices = createBufferFromTypedArray(gl, newIndices, ELEMENT_ARRAY_BUFFER$2);
     bufferInfo.numElements = newIndices.length;
     bufferInfo.elementType = getGLTypeForTypedArray(newIndices);
   } else if (!bufferInfo.numElements) {
@@ -685,9 +803,59 @@ function isWebGL2(gl) {
   return !!gl.texStorage2D;
 }
 
+// NOTE: Chrome supports 2D canvas in a Worker (behind flag as of v64 but
+//       not only does Firefox NOT support it but Firefox freezes immediately
+//       if you try to create one instead of just returning null and continuing.
+//  : (global.OffscreenCanvas && (new global.OffscreenCanvas(1, 1)).getContext("2d"));  // OffscreenCanvas may not support 2d
+
+// NOTE: We can maybe remove some of the need for the 2d canvas. In WebGL2
+// we can use the various unpack settings. Otherwise we could try using
+// the ability of an ImageBitmap to be cut. Unfortunately cutting an ImageBitmap
+// is async and the current TWGL code expects a non-Async result though that
+// might not be a problem. ImageBitmap though is not available in Edge or Safari
+// as of 2018-01-02
+
+/* PixelFormat */
+const ALPHA                          = 0x1906;
+const RGB                            = 0x1907;
+const RGBA$1                           = 0x1908;
+const LUMINANCE                      = 0x1909;
+const LUMINANCE_ALPHA                = 0x190A;
+const DEPTH_COMPONENT$1                = 0x1902;
+const DEPTH_STENCIL$1                  = 0x84F9;
+
+const RG                           = 0x8227;
+const RG_INTEGER                   = 0x8228;
+const RED                          = 0x1903;
+const RED_INTEGER                  = 0x8D94;
+const RGB_INTEGER                  = 0x8D98;
+const RGBA_INTEGER                 = 0x8D99;
+
+const formatInfo = {};
+{
+  // NOTE: this is named `numColorComponents` vs `numComponents` so we can let Uglify mangle
+  // the name.
+  const f = formatInfo;
+  f[ALPHA]           = { numColorComponents: 1, };
+  f[LUMINANCE]       = { numColorComponents: 1, };
+  f[LUMINANCE_ALPHA] = { numColorComponents: 2, };
+  f[RGB]             = { numColorComponents: 3, };
+  f[RGBA$1]            = { numColorComponents: 4, };
+  f[RED]             = { numColorComponents: 1, };
+  f[RED_INTEGER]     = { numColorComponents: 1, };
+  f[RG]              = { numColorComponents: 2, };
+  f[RG_INTEGER]      = { numColorComponents: 2, };
+  f[RGB]             = { numColorComponents: 3, };
+  f[RGB_INTEGER]     = { numColorComponents: 3, };
+  f[RGBA$1]            = { numColorComponents: 4, };
+  f[RGBA_INTEGER]    = { numColorComponents: 4, };
+  f[DEPTH_COMPONENT$1] = { numColorComponents: 1, };
+  f[DEPTH_STENCIL$1]   = { numColorComponents: 2, };
+}
+
 const TEXTURE0                       = 0x84c0;
 
-const ARRAY_BUFFER$1                   = 0x8892;
+const ARRAY_BUFFER                   = 0x8892;
 const ELEMENT_ARRAY_BUFFER$1           = 0x8893;
 
 const ACTIVE_UNIFORMS                = 0x8b86;
@@ -699,11 +867,11 @@ const UNIFORM_BLOCK_REFERENCED_BY_FRAGMENT_SHADER = 0x8a46;
 const UNIFORM_BLOCK_DATA_SIZE                     = 0x8a40;
 const UNIFORM_BLOCK_ACTIVE_UNIFORM_INDICES        = 0x8a43;
 
-const FLOAT$3                         = 0x1406;
+const FLOAT                         = 0x1406;
 const FLOAT_VEC2                    = 0x8B50;
 const FLOAT_VEC3                    = 0x8B51;
 const FLOAT_VEC4                    = 0x8B52;
-const INT$3                           = 0x1404;
+const INT                           = 0x1404;
 const INT_VEC2                      = 0x8B53;
 const INT_VEC3                      = 0x8B54;
 const INT_VEC4                      = 0x8B55;
@@ -727,7 +895,7 @@ const FLOAT_MAT4x3                  = 0x8B6A;
 const SAMPLER_2D_ARRAY              = 0x8DC1;
 const SAMPLER_2D_ARRAY_SHADOW       = 0x8DC4;
 const SAMPLER_CUBE_SHADOW           = 0x8DC5;
-const UNSIGNED_INT$3                  = 0x1405;
+const UNSIGNED_INT                  = 0x1405;
 const UNSIGNED_INT_VEC2             = 0x8DC6;
 const UNSIGNED_INT_VEC3             = 0x8DC7;
 const UNSIGNED_INT_VEC4             = 0x8DC8;
@@ -741,9 +909,9 @@ const UNSIGNED_INT_SAMPLER_CUBE     = 0x8DD4;
 const UNSIGNED_INT_SAMPLER_2D_ARRAY = 0x8DD7;
 
 const TEXTURE_2D$1                    = 0x0DE1;
-const TEXTURE_CUBE_MAP$1              = 0x8513;
-const TEXTURE_3D$1                    = 0x806F;
-const TEXTURE_2D_ARRAY$1              = 0x8C1A;
+const TEXTURE_CUBE_MAP              = 0x8513;
+const TEXTURE_3D                    = 0x806F;
+const TEXTURE_2D_ARRAY              = 0x8C1A;
 
 const typeMap = {};
 
@@ -907,7 +1075,7 @@ function samplerSetter(gl, type, unit, location) {
   return isWebGL2(gl) ? function(textureOrPair) {
     let texture;
     let sampler;
-    if (isTexture(gl, textureOrPair)) {
+    if (!textureOrPair || isTexture(gl, textureOrPair)) {
       texture = textureOrPair;
       sampler = null;
     } else {
@@ -938,7 +1106,7 @@ function samplerArraySetter(gl, type, unit, location, size) {
       gl.activeTexture(TEXTURE0 + units[index]);
       let texture;
       let sampler;
-      if (isTexture(gl, textureOrPair)) {
+      if (!textureOrPair || isTexture(gl, textureOrPair)) {
         texture = textureOrPair;
         sampler = null;
       } else {
@@ -957,15 +1125,15 @@ function samplerArraySetter(gl, type, unit, location, size) {
   };
 }
 
-typeMap[FLOAT$3]                         = { Type: Float32Array, size:  4, setter: floatSetter,      arraySetter: floatArraySetter, };
+typeMap[FLOAT]                         = { Type: Float32Array, size:  4, setter: floatSetter,      arraySetter: floatArraySetter, };
 typeMap[FLOAT_VEC2]                    = { Type: Float32Array, size:  8, setter: floatVec2Setter,  cols: 2, };
 typeMap[FLOAT_VEC3]                    = { Type: Float32Array, size: 12, setter: floatVec3Setter,  cols: 3, };
 typeMap[FLOAT_VEC4]                    = { Type: Float32Array, size: 16, setter: floatVec4Setter,  cols: 4, };
-typeMap[INT$3]                           = { Type: Int32Array,   size:  4, setter: intSetter,        arraySetter: intArraySetter, };
+typeMap[INT]                           = { Type: Int32Array,   size:  4, setter: intSetter,        arraySetter: intArraySetter, };
 typeMap[INT_VEC2]                      = { Type: Int32Array,   size:  8, setter: intVec2Setter,    cols: 2, };
 typeMap[INT_VEC3]                      = { Type: Int32Array,   size: 12, setter: intVec3Setter,    cols: 3, };
 typeMap[INT_VEC4]                      = { Type: Int32Array,   size: 16, setter: intVec4Setter,    cols: 4, };
-typeMap[UNSIGNED_INT$3]                  = { Type: Uint32Array,  size:  4, setter: uintSetter,       arraySetter: uintArraySetter, };
+typeMap[UNSIGNED_INT]                  = { Type: Uint32Array,  size:  4, setter: uintSetter,       arraySetter: uintArraySetter, };
 typeMap[UNSIGNED_INT_VEC2]             = { Type: Uint32Array,  size:  8, setter: uintVec2Setter,   cols: 2, };
 typeMap[UNSIGNED_INT_VEC3]             = { Type: Uint32Array,  size: 12, setter: uintVec3Setter,   cols: 3, };
 typeMap[UNSIGNED_INT_VEC4]             = { Type: Uint32Array,  size: 16, setter: uintVec4Setter,   cols: 4, };
@@ -983,20 +1151,20 @@ typeMap[FLOAT_MAT3x4]                  = { Type: Float32Array, size: 48, setter:
 typeMap[FLOAT_MAT4x2]                  = { Type: Float32Array, size: 64, setter: floatMat42Setter, rows: 4, cols: 2, };
 typeMap[FLOAT_MAT4x3]                  = { Type: Float32Array, size: 64, setter: floatMat43Setter, rows: 4, cols: 3, };
 typeMap[SAMPLER_2D]                    = { Type: null,         size:  0, setter: samplerSetter,    arraySetter: samplerArraySetter, bindPoint: TEXTURE_2D$1,       };
-typeMap[SAMPLER_CUBE]                  = { Type: null,         size:  0, setter: samplerSetter,    arraySetter: samplerArraySetter, bindPoint: TEXTURE_CUBE_MAP$1, };
-typeMap[SAMPLER_3D]                    = { Type: null,         size:  0, setter: samplerSetter,    arraySetter: samplerArraySetter, bindPoint: TEXTURE_3D$1,       };
+typeMap[SAMPLER_CUBE]                  = { Type: null,         size:  0, setter: samplerSetter,    arraySetter: samplerArraySetter, bindPoint: TEXTURE_CUBE_MAP, };
+typeMap[SAMPLER_3D]                    = { Type: null,         size:  0, setter: samplerSetter,    arraySetter: samplerArraySetter, bindPoint: TEXTURE_3D,       };
 typeMap[SAMPLER_2D_SHADOW]             = { Type: null,         size:  0, setter: samplerSetter,    arraySetter: samplerArraySetter, bindPoint: TEXTURE_2D$1,       };
-typeMap[SAMPLER_2D_ARRAY]              = { Type: null,         size:  0, setter: samplerSetter,    arraySetter: samplerArraySetter, bindPoint: TEXTURE_2D_ARRAY$1, };
-typeMap[SAMPLER_2D_ARRAY_SHADOW]       = { Type: null,         size:  0, setter: samplerSetter,    arraySetter: samplerArraySetter, bindPoint: TEXTURE_2D_ARRAY$1, };
-typeMap[SAMPLER_CUBE_SHADOW]           = { Type: null,         size:  0, setter: samplerSetter,    arraySetter: samplerArraySetter, bindPoint: TEXTURE_CUBE_MAP$1, };
+typeMap[SAMPLER_2D_ARRAY]              = { Type: null,         size:  0, setter: samplerSetter,    arraySetter: samplerArraySetter, bindPoint: TEXTURE_2D_ARRAY, };
+typeMap[SAMPLER_2D_ARRAY_SHADOW]       = { Type: null,         size:  0, setter: samplerSetter,    arraySetter: samplerArraySetter, bindPoint: TEXTURE_2D_ARRAY, };
+typeMap[SAMPLER_CUBE_SHADOW]           = { Type: null,         size:  0, setter: samplerSetter,    arraySetter: samplerArraySetter, bindPoint: TEXTURE_CUBE_MAP, };
 typeMap[INT_SAMPLER_2D]                = { Type: null,         size:  0, setter: samplerSetter,    arraySetter: samplerArraySetter, bindPoint: TEXTURE_2D$1,       };
-typeMap[INT_SAMPLER_3D]                = { Type: null,         size:  0, setter: samplerSetter,    arraySetter: samplerArraySetter, bindPoint: TEXTURE_3D$1,       };
-typeMap[INT_SAMPLER_CUBE]              = { Type: null,         size:  0, setter: samplerSetter,    arraySetter: samplerArraySetter, bindPoint: TEXTURE_CUBE_MAP$1, };
-typeMap[INT_SAMPLER_2D_ARRAY]          = { Type: null,         size:  0, setter: samplerSetter,    arraySetter: samplerArraySetter, bindPoint: TEXTURE_2D_ARRAY$1, };
+typeMap[INT_SAMPLER_3D]                = { Type: null,         size:  0, setter: samplerSetter,    arraySetter: samplerArraySetter, bindPoint: TEXTURE_3D,       };
+typeMap[INT_SAMPLER_CUBE]              = { Type: null,         size:  0, setter: samplerSetter,    arraySetter: samplerArraySetter, bindPoint: TEXTURE_CUBE_MAP, };
+typeMap[INT_SAMPLER_2D_ARRAY]          = { Type: null,         size:  0, setter: samplerSetter,    arraySetter: samplerArraySetter, bindPoint: TEXTURE_2D_ARRAY, };
 typeMap[UNSIGNED_INT_SAMPLER_2D]       = { Type: null,         size:  0, setter: samplerSetter,    arraySetter: samplerArraySetter, bindPoint: TEXTURE_2D$1,       };
-typeMap[UNSIGNED_INT_SAMPLER_3D]       = { Type: null,         size:  0, setter: samplerSetter,    arraySetter: samplerArraySetter, bindPoint: TEXTURE_3D$1,       };
-typeMap[UNSIGNED_INT_SAMPLER_CUBE]     = { Type: null,         size:  0, setter: samplerSetter,    arraySetter: samplerArraySetter, bindPoint: TEXTURE_CUBE_MAP$1, };
-typeMap[UNSIGNED_INT_SAMPLER_2D_ARRAY] = { Type: null,         size:  0, setter: samplerSetter,    arraySetter: samplerArraySetter, bindPoint: TEXTURE_2D_ARRAY$1, };
+typeMap[UNSIGNED_INT_SAMPLER_3D]       = { Type: null,         size:  0, setter: samplerSetter,    arraySetter: samplerArraySetter, bindPoint: TEXTURE_3D,       };
+typeMap[UNSIGNED_INT_SAMPLER_CUBE]     = { Type: null,         size:  0, setter: samplerSetter,    arraySetter: samplerArraySetter, bindPoint: TEXTURE_CUBE_MAP, };
+typeMap[UNSIGNED_INT_SAMPLER_2D_ARRAY] = { Type: null,         size:  0, setter: samplerSetter,    arraySetter: samplerArraySetter, bindPoint: TEXTURE_2D_ARRAY, };
 
 function floatAttribSetter(gl, index) {
   return function(b) {
@@ -1019,12 +1187,12 @@ function floatAttribSetter(gl, index) {
           throw new Error('the length of a float constant value must be between 1 and 4!');
       }
     } else {
-      gl.bindBuffer(ARRAY_BUFFER$1, b.buffer);
+      gl.bindBuffer(ARRAY_BUFFER, b.buffer);
       gl.enableVertexAttribArray(index);
       gl.vertexAttribPointer(
-          index, b.numComponents || b.size, b.type || FLOAT$3, b.normalize || false, b.stride || 0, b.offset || 0);
-      if (b.divisor !== undefined) {
-        gl.vertexAttribDivisor(index, b.divisor);
+          index, b.numComponents || b.size, b.type || FLOAT, b.normalize || false, b.stride || 0, b.offset || 0);
+      if (gl.vertexAttribDivisor) {
+        gl.vertexAttribDivisor(index, b.divisor || 0);
       }
     }
   };
@@ -1040,12 +1208,12 @@ function intAttribSetter(gl, index) {
         throw new Error('The length of an integer constant value must be 4!');
       }
     } else {
-      gl.bindBuffer(ARRAY_BUFFER$1, b.buffer);
+      gl.bindBuffer(ARRAY_BUFFER, b.buffer);
       gl.enableVertexAttribArray(index);
       gl.vertexAttribIPointer(
-          index, b.numComponents || b.size, b.type || INT$3, b.stride || 0, b.offset || 0);
-      if (b.divisor !== undefined) {
-        gl.vertexAttribDivisor(index, b.divisor);
+          index, b.numComponents || b.size, b.type || INT, b.stride || 0, b.offset || 0);
+      if (gl.vertexAttribDivisor) {
+        gl.vertexAttribDivisor(index, b.divisor || 0);
       }
     }
   };
@@ -1061,12 +1229,12 @@ function uintAttribSetter(gl, index) {
         throw new Error('The length of an unsigned integer constant value must be 4!');
       }
     } else {
-      gl.bindBuffer(ARRAY_BUFFER$1, b.buffer);
+      gl.bindBuffer(ARRAY_BUFFER, b.buffer);
       gl.enableVertexAttribArray(index);
       gl.vertexAttribIPointer(
-          index, b.numComponents || b.size, b.type || UNSIGNED_INT$3, b.stride || 0, b.offset || 0);
-      if (b.divisor !== undefined) {
-        gl.vertexAttribDivisor(index, b.divisor);
+          index, b.numComponents || b.size, b.type || UNSIGNED_INT, b.stride || 0, b.offset || 0);
+      if (gl.vertexAttribDivisor) {
+        gl.vertexAttribDivisor(index, b.divisor || 0);
       }
     }
   };
@@ -1077,10 +1245,10 @@ function matAttribSetter(gl, index, typeInfo) {
   const count = typeInfo.count;
 
   return function(b) {
-    gl.bindBuffer(ARRAY_BUFFER$1, b.buffer);
+    gl.bindBuffer(ARRAY_BUFFER, b.buffer);
     const numComponents = b.size || b.numComponents || defaultSize;
     const size = numComponents / count;
-    const type = b.type || FLOAT$3;
+    const type = b.type || FLOAT;
     const typeInfo = typeMap[type];
     const stride = typeInfo.size * numComponents;
     const normalize = b.normalize || false;
@@ -1090,8 +1258,8 @@ function matAttribSetter(gl, index, typeInfo) {
       gl.enableVertexAttribArray(index + i);
       gl.vertexAttribPointer(
           index + i, size, type, normalize, stride, offset + rowOffset * i);
-      if (b.divisor !== undefined) {
-        gl.vertexAttribDivisor(index + i, b.divisor);
+      if (gl.vertexAttribDivisor) {
+        gl.vertexAttribDivisor(index + i, b.divisor || 0);
       }
     }
   };
@@ -1100,15 +1268,15 @@ function matAttribSetter(gl, index, typeInfo) {
 
 
 const attrTypeMap = {};
-attrTypeMap[FLOAT$3]             = { size:  4, setter: floatAttribSetter, };
+attrTypeMap[FLOAT]             = { size:  4, setter: floatAttribSetter, };
 attrTypeMap[FLOAT_VEC2]        = { size:  8, setter: floatAttribSetter, };
 attrTypeMap[FLOAT_VEC3]        = { size: 12, setter: floatAttribSetter, };
 attrTypeMap[FLOAT_VEC4]        = { size: 16, setter: floatAttribSetter, };
-attrTypeMap[INT$3]               = { size:  4, setter: intAttribSetter,   };
+attrTypeMap[INT]               = { size:  4, setter: intAttribSetter,   };
 attrTypeMap[INT_VEC2]          = { size:  8, setter: intAttribSetter,   };
 attrTypeMap[INT_VEC3]          = { size: 12, setter: intAttribSetter,   };
 attrTypeMap[INT_VEC4]          = { size: 16, setter: intAttribSetter,   };
-attrTypeMap[UNSIGNED_INT$3]      = { size:  4, setter: uintAttribSetter,  };
+attrTypeMap[UNSIGNED_INT]      = { size:  4, setter: uintAttribSetter,  };
 attrTypeMap[UNSIGNED_INT_VEC2] = { size:  8, setter: uintAttribSetter,  };
 attrTypeMap[UNSIGNED_INT_VEC3] = { size: 12, setter: uintAttribSetter,  };
 attrTypeMap[UNSIGNED_INT_VEC4] = { size: 16, setter: uintAttribSetter,  };
@@ -1412,7 +1580,7 @@ function setUniformTree(tree, values) {
  *       ],
  *     };
  *
- *     gl.useProgram(program);
+ *     gl.useProgram(programInfo.program);
  *
  * This will automatically bind the textures AND set the
  * uniforms.
@@ -1421,7 +1589,7 @@ function setUniformTree(tree, values) {
  *
  * For the example above it is equivalent to
  *
- *     var texUnit = 0;
+ *     let texUnit = 0;
  *     gl.activeTexture(gl.TEXTURE0 + texUnit);
  *     gl.bindTexture(gl.TEXTURE_2D, tex1);
  *     gl.uniform1i(u_someSamplerLocation, texUnit++);
@@ -1756,10 +1924,8 @@ function createProgramInfoFromProgram(gl, program) {
  * @internal
  */
 function assert(condition, errMsg = 'Assert failed') {
-    if (!condition) {
-        console.trace(errMsg);
+    if (!condition)
         throw new Error(errMsg);
-    }
 }
 
 /**
@@ -1863,10 +2029,14 @@ const REGEX_PPM_FSID = /^[0159]{1}[0-9A-F]{6}0[0-9A-F]{8}$/;
  * This list was compiled from data provided by the Flipnote Archive, so it can be considered comprehensive enough to match any Flipnote you may encounter.
  */
 const PPM_FSID_SPECIAL_CASE = [
-    '01FACA7A4367FC5F', '03D6E959E2F9A42D',
-    '03F80445160587FA', '04068426E1008915',
-    '092A3EC8199FD5D5', '0B8D56BA1BD441B8',
-    '0E61C75C9B5AD90B', '14E494E35A443235'
+    '01FACA7A4367FC5F',
+    '03D6E959E2F9A42D',
+    '03F80445160587FA',
+    '04068426E1008915',
+    '092A3EC8199FD5D5',
+    '0B8D56BA1BD441B8',
+    '0E61C75C9B5AD90B',
+    '14E494E35A443235'
 ];
 /**
  * @internal
@@ -2066,12 +2236,12 @@ class WebglCanvas {
     constructor(parent, width = 640, height = 480, options = {}) {
         /** */
         this.supportedStereoscopeModes = [
-            CanvasStereoscopicMode.None,
-            CanvasStereoscopicMode.Dual,
+            exports.CanvasStereoscopicMode.None,
+            exports.CanvasStereoscopicMode.Dual,
             // CanvasStereoscopicMode.Anaglyph, // couldn't get this working, despite spending lots of time on it :/
         ];
         /** */
-        this.stereoscopeMode = CanvasStereoscopicMode.None;
+        this.stereoscopeMode = exports.CanvasStereoscopicMode.None;
         /** */
         this.stereoscopeStrength = 0;
         this.paletteBuffer = new Uint32Array(16);
@@ -2285,13 +2455,13 @@ class WebglCanvas {
                 viewX = -(viewWidth - srcWidth * sx);
                 viewY = -(viewHeight - srcHeight * sy);
             }
-            gl.viewport(viewX !== null && viewX !== void 0 ? viewX : 0, viewY !== null && viewY !== void 0 ? viewY : 0, viewWidth !== null && viewWidth !== void 0 ? viewWidth : gl.drawingBufferWidth, viewHeight !== null && viewHeight !== void 0 ? viewHeight : gl.drawingBufferHeight);
+            gl.viewport(viewX ?? 0, viewY ?? 0, viewWidth ?? gl.drawingBufferWidth, viewHeight ?? gl.drawingBufferHeight);
         }
         else {
             const tex = this.frameBufferTextures.get(fb);
             const { width, height } = this.textureSizes.get(tex);
             gl.bindFramebuffer(gl.FRAMEBUFFER, fb);
-            gl.viewport(viewX !== null && viewX !== void 0 ? viewX : 0, viewY !== null && viewY !== void 0 ? viewY : 0, viewWidth !== null && viewWidth !== void 0 ? viewWidth : width, viewHeight !== null && viewHeight !== void 0 ? viewHeight : height);
+            gl.viewport(viewX ?? 0, viewY ?? 0, viewWidth ?? width, viewHeight ?? height);
         }
     }
     resizeFramebuffer(fb, width, height) {
@@ -2348,7 +2518,7 @@ class WebglCanvas {
         if (this.checkContextLoss())
             return;
         const gl = this.gl;
-        const paperColor = color !== null && color !== void 0 ? color : this.note.getFramePalette(this.frameIndex)[0];
+        const paperColor = color ?? this.note.getFramePalette(this.frameIndex)[0];
         const [r, g, b, a] = paperColor;
         gl.clearColor(r / 255, g / 255, b / 255, a / 255);
         gl.clear(gl.COLOR_BUFFER_BIT);
@@ -2364,12 +2534,12 @@ class WebglCanvas {
         const mode = this.stereoscopeMode;
         const strength = this.stereoscopeStrength;
         this.frameIndex = frameIndex;
-        if (mode === CanvasStereoscopicMode.None) {
+        if (mode === exports.CanvasStereoscopicMode.None) {
             this.drawLayers(frameIndex);
             this.useFramebuffer(null);
             this.upscale(gl.drawingBufferWidth, gl.drawingBufferHeight);
         }
-        else if (mode === CanvasStereoscopicMode.Dual) {
+        else if (mode === exports.CanvasStereoscopicMode.Dual) {
             this.drawLayers(frameIndex, strength, FlipnoteStereoscopicEye.Left);
             this.useFramebuffer(null, 0, 0, gl.drawingBufferWidth / 2, gl.drawingBufferHeight);
             this.upscale(gl.drawingBufferWidth / 2, gl.drawingBufferHeight);
@@ -2395,7 +2565,7 @@ class WebglCanvas {
         if (this.supportedStereoscopeModes.includes(mode))
             this.stereoscopeMode = mode;
         else
-            this.stereoscopeMode = CanvasStereoscopicMode.None;
+            this.stereoscopeMode = exports.CanvasStereoscopicMode.None;
         this.forceUpdate();
     }
     forceUpdate() {
@@ -2523,10 +2693,10 @@ class Html5Canvas {
     constructor(parent, width, height, options = {}) {
         /** */
         this.supportedStereoscopeModes = [
-            CanvasStereoscopicMode.None
+            exports.CanvasStereoscopicMode.None
         ];
         /** */
-        this.stereoscopeMode = CanvasStereoscopicMode.None;
+        this.stereoscopeMode = exports.CanvasStereoscopicMode.None;
         /** */
         this.stereoscopeStrength = 0;
         this.paletteBuffer = new Uint32Array(16);
@@ -2618,7 +2788,7 @@ class Html5Canvas {
         if (this.supportedStereoscopeModes.includes(mode))
             this.stereoscopeMode = mode;
         else
-            this.stereoscopeMode = CanvasStereoscopicMode.None;
+            this.stereoscopeMode = exports.CanvasStereoscopicMode.None;
         this.forceUpdate();
     }
     forceUpdate() {
@@ -2658,7 +2828,7 @@ class UniversalCanvas {
         /** */
         this.supportedStereoscopeModes = [];
         /** */
-        this.stereoscopeMode = CanvasStereoscopicMode.None;
+        this.stereoscopeMode = exports.CanvasStereoscopicMode.None;
         /** */
         this.stereoscopeStrength = 1;
         this.rendererStack = [
@@ -2674,7 +2844,6 @@ class UniversalCanvas {
         this.setSubRenderer(this.rendererStack[0]);
     }
     setSubRenderer(Canvas) {
-        var _a;
         let immediateLoss = false;
         const renderer = new Canvas(this.parent, this.width, this.height, {
             ...this.options,
@@ -2688,7 +2857,7 @@ class UniversalCanvas {
             return;
         if (this.note) {
             renderer.setNote(this.note);
-            renderer.frameIndex = (_a = this.renderer) === null || _a === void 0 ? void 0 : _a.frameIndex;
+            renderer.frameIndex = this.renderer?.frameIndex;
             renderer.forceUpdate();
         }
         if (this.renderer)
@@ -2752,4 +2921,7 @@ class UniversalCanvas {
     }
 }
 
-export { CanvasInterface, CanvasStereoscopicMode, Html5Canvas, UniversalCanvas, WebglCanvas };
+exports.CanvasInterface = CanvasInterface;
+exports.Html5Canvas = Html5Canvas;
+exports.UniversalCanvas = UniversalCanvas;
+exports.WebglCanvas = WebglCanvas;

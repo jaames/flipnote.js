@@ -1,23 +1,27 @@
 /// <reference types="resize-observer-browser" /> 
 
-import { 
+import {
+  type PropertyValues,
   LitElement,
   html,
   css,
+} from 'lit';
+
+import {
+  state,
+  property,
   query,
   customElement,
-  PropertyValues,
-  property,
-  internalProperty,
-} from 'lit-element';
-
-import { Player, PlayerEvent } from '../player';
-import { parseSource } from '../parseSource';
-import { PlayerMixin } from './PlayerMixin';
-import { nextPaint } from '../utils';
+} from 'lit/decorators.js';
 
 import { SliderComponent } from './SliderComponent';
 import { IconComponent } from './IconComponent';
+import { PlayerMixin } from './PlayerMixin';
+import { KEY_MAP } from './utils';
+
+import { Player, PlayerEvent } from '../player';
+import { parseSource } from '../parseSource';
+import { nextPaint } from '../utils';
 
 /**
  * @category Web Component
@@ -37,16 +41,23 @@ export class PlayerComponent extends PlayerMixin(LitElement) {
         display: inline-block;
         position: relative;
         font-family: var(--flipnote-player-font-family, sans-serif);
-        /* width: 100%; */
-        /* user-select: none; */
       }
 
       .CanvasArea {
         position: relative;
       }
 
+      .CanvasArea:focus {
+        outline: var(--flipnote-player-focus-outline, 3px solid #FFD3A6);
+        outline-offset: 2px;
+      }
+
       .PlayerCanvas {
         position: relative;
+        display: block;
+      }
+
+      .PlayerCanvas canvas {
         display: block;
       }
 
@@ -146,6 +157,12 @@ export class PlayerComponent extends PlayerMixin(LitElement) {
         margin-right: 8px;
       }
 
+      .Controls--default .Controls__progressBar {
+        margin-top: 2px;
+        margin-bottom: 2px;
+        display: block;
+      }
+
       .Controls--default .Controls__volumeBar {
         width: 70px;
         margin-left: 8px;
@@ -164,6 +181,11 @@ export class PlayerComponent extends PlayerMixin(LitElement) {
         background: var(--flipnote-player-button-background, #FFD3A6);
         color: var(--flipnote-player-button-color, #F36A2D);
         border-radius: 4px;
+      }
+
+      .Button:focus {
+        outline: 3px solid var(--flipnote-player-button-background, #FFD3A6);
+        outline-offset: 2px;
       }
 
       .Button flipnote-player-icon {
@@ -223,40 +245,45 @@ export class PlayerComponent extends PlayerMixin(LitElement) {
 
   @property({ type: Boolean })
   get autoplay() {
-    return this.player.autoplay;
+    return this.player?.autoplay;
   }
 
   set autoplay(value: boolean) {
-    const oldValue = this.player.autoplay;
-    this.player.autoplay = value;
-    this.requestUpdate('autoplay', oldValue);
+    if (this.player) {
+      const oldValue = this.player.autoplay;
+      this.player.autoplay = value;
+      this.requestUpdate('autoplay', oldValue);
+    }
   }
 
-  @internalProperty()
+  @state()
   private _width: string | number = 'auto';
 
-  @internalProperty()
+  @state()
   private _cssWidth: string | number = 'auto';
 
-  @internalProperty()
+  @state()
   private _progress = 0;
 
-  @internalProperty()
+  @state()
   private _counter = '';
 
-  @internalProperty()
+  @state()
+  private _frameCount = 0;
+
+  @state()
   private _isLoading = false;
 
-  @internalProperty()
+  @state()
   private _isError = false;
 
-  @internalProperty()
+  @state()
   private _isPlaying = false;
 
-  @internalProperty()
+  @state()
   private _isMuted = false;
 
-  @internalProperty()
+  @state()
   private _volumeLevel = 0;
 
   @query('#canvasWrapper')
@@ -279,8 +306,15 @@ export class PlayerComponent extends PlayerMixin(LitElement) {
           width: ${ this._cssWidth }
         }
       </style>
-      <div class="Player" @keydown=${ this.handleKeyInput }>
-        <div class="CanvasArea" @click=${ this.handlePlayToggle }>
+      <div class="Player">
+        <div
+          class="CanvasArea"
+          tabIndex="0"
+          role="widget"
+          aria-description="Flipnote animation player. Press the space key to play or pause the animation. Use the left and right arrow keys to navigate frames"
+          @click=${ this.handlePlayToggle}
+          @keydown=${this.handleKeyInput }
+        >
           <div class="PlayerCanvas" id="canvasWrapper"></div>
           ${ this._isLoading ?
             html`<div class="Overlay">
@@ -325,6 +359,8 @@ export class PlayerComponent extends PlayerMixin(LitElement) {
           <flipnote-player-slider 
             class="Controls__progressBar"
             value=${ this._progress }
+            label="Playback progress"
+            step=${ 1 / (this._frameCount - 1) }
             @change=${ this.handleProgressSliderChange }
             @inputstart=${ this.handleProgressSliderInputStart }
             @inputend=${ this.handleProgressSliderInputEnd }
@@ -332,7 +368,11 @@ export class PlayerComponent extends PlayerMixin(LitElement) {
           </flipnote-player-slider>
           <div class="Controls__row">
             <div class="Controls__groupLeft">
-              <button @click=${ this.handlePlayToggle } class="Button Controls__playButton">
+              <button
+                class="Button Controls__playButton"
+                tabIndex="0"
+                @click=${ this.handlePlayToggle }
+              >
                 <flipnote-player-icon icon=${ this._isPlaying ? 'pause' : 'play' }></flipnote-player-icon>
               </button>
               <span class="Controls__frameCounter">
@@ -349,6 +389,7 @@ export class PlayerComponent extends PlayerMixin(LitElement) {
               <flipnote-player-slider
                 class="Controls__volumeBar"
                 value=${ this._volumeLevel }
+                label="Volume"
                 @change=${ this.handleVolumeBarChange }
               >
               </flipnote-player-slider>
@@ -380,6 +421,7 @@ export class PlayerComponent extends PlayerMixin(LitElement) {
       this._isError = false;
       this._progress = player.getProgress() / 100;
       this._counter = player.getFrameCounter();
+      this._frameCount = player.frameCount;
     });
     player.on(PlayerEvent.Play, () => {
       this._isPlaying = true;
@@ -462,26 +504,29 @@ export class PlayerComponent extends PlayerMixin(LitElement) {
   }
 
   private handleKeyInput = (e: KeyboardEvent) => {
-    e.preventDefault();
-    switch(e.key.toLowerCase()) {
-      case ' ':
+    const key = KEY_MAP[e.key];
+
+    if (!key)
+      return;
+
+    switch (key) {
+      case 'Enter':
         this.togglePlay();
         break;
-      case 'a':
-      case 'arrowleft':
-        if (e.shiftKey) 
+      case 'ArrowLeft':
+        if (e.shiftKey)
           this.firstFrame();
-        else 
+        else
           this.prevFrame();
         break;
-      case 'd':
-      case 'arrowright':
+      case 'ArrowRight':
         if (e.shiftKey)
           this.lastFrame();
         else
           this.nextFrame();
         break;
     }
+    e.preventDefault();
   }
 
   private handlePlayToggle = (e: InputEvent) => {

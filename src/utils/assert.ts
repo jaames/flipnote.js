@@ -3,10 +3,8 @@
  * @internal
  */
 export function assert(condition: boolean, errMsg: string = 'Assert failed'): asserts condition {
-  if (!condition) {
-    console.trace(errMsg);
+  if (!condition)
     throw new Error(errMsg);
-  }
 }
 
 /**
@@ -20,7 +18,7 @@ export function assertExists<T>(value: T | null | undefined, name=''): T {
 }
 
 /**
- * Assert that a numberical value is between upper and lower bounds
+ * Assert that a numerical value is between upper and lower bounds
  * @internal
  */
 export function assertRange(value: number, min: number, max: number, name=''): asserts value {

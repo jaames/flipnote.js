@@ -1,5 +1,5 @@
 import { isBrowser } from '../utils';
-import { LoaderDefinition } from './LoaderDefinition';
+import { LoaderDefinition } from './loaderDefinition';
 
 /** 
  * Loader for Blob objects (browser only)

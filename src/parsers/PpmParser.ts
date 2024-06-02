@@ -652,7 +652,8 @@ export class PpmParser extends FlipnoteParserBase {
     return this.decodeSoundFlags().map(frameFlags => ({
       [FlipnoteSoundEffectTrack.SE1]: frameFlags[0],
       [FlipnoteSoundEffectTrack.SE2]: frameFlags[1],
-      [FlipnoteSoundEffectTrack.SE3]: frameFlags[2]
+      [FlipnoteSoundEffectTrack.SE3]: frameFlags[2],
+      [FlipnoteSoundEffectTrack.SE4]: false
     }));
   }
 
@@ -667,8 +668,9 @@ export class PpmParser extends FlipnoteParserBase {
     return {
       [FlipnoteSoundEffectTrack.SE1]: (byte & 0x1) !== 0,
       [FlipnoteSoundEffectTrack.SE2]: (byte & 0x2) !== 0,
-      [FlipnoteSoundEffectTrack.SE3]: (byte & 0x4) !== 0
-    }
+      [FlipnoteSoundEffectTrack.SE3]: (byte & 0x4) !== 0,
+      [FlipnoteSoundEffectTrack.SE4]: false
+    };
   }
 
   /** 

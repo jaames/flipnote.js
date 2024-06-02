@@ -8,4 +8,3 @@ import { ImageComponent as _ImageComponent } from './components';
 export const PlayerComponent = _PlayerComponent;
 /** @internal */
 export const ImageComponent = _ImageComponent;
-

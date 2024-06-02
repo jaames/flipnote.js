@@ -1,4 +1,4 @@
-import { ByteArray } from '../utils/byteArray';
+import { ByteArray } from '../utils/ByteArray';
 
 /*
   LZWEncoder.js

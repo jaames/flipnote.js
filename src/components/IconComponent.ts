@@ -1,5 +1,17 @@
-import { LitElement, html, css, customElement, property } from 'lit-element';
-import { unsafeSVG } from 'lit-html/directives/unsafe-svg.js';
+import {
+  LitElement,
+  html,
+  css,
+} from 'lit';
+
+import {
+  property,
+  customElement,
+} from 'lit/decorators.js';
+
+import {
+  unsafeSVG
+} from 'lit/directives/unsafe-svg.js';
 
 import IconPlay from './icons/play.svg';
 import IconPause from './icons/pause.svg';

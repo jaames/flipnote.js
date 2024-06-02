@@ -39,10 +39,14 @@ const REGEX_KWZ_DSI_LIBRARY_FSID = /^(00|10|12|14)[0-9a-f]{2}-[0-9a-f]{4}-[0-9a-
  * This list was compiled from data provided by the Flipnote Archive, so it can be considered comprehensive enough to match any Flipnote you may encounter.
  */
 const PPM_FSID_SPECIAL_CASE = [
-  '01FACA7A4367FC5F', '03D6E959E2F9A42D', 
-  '03F80445160587FA', '04068426E1008915',
-  '092A3EC8199FD5D5', '0B8D56BA1BD441B8',
-  '0E61C75C9B5AD90B', '14E494E35A443235'
+  '01FACA7A4367FC5F',
+  '03D6E959E2F9A42D', 
+  '03F80445160587FA',
+  '04068426E1008915',
+  '092A3EC8199FD5D5',
+  '0B8D56BA1BD441B8',
+  '0E61C75C9B5AD90B',
+  '14E494E35A443235'
 ];
 
 /**
