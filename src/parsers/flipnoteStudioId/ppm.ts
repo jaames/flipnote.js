@@ -12,7 +12,7 @@ const REGEX_PPM_FSID = /^[0159]{1}[0-9A-F]{6}0[0-9A-F]{8}$/;
  * There are several known exceptions to the FSID format, all from Nintendo or Hatena developer and event accounts (mario, zelda 25th, etc).
  * This list was compiled from data provided by the Flipnote Archive, so it can be considered comprehensive enough to match any Flipnote you may encounter.
  */
-export const PPM_FSID_SPECIAL_CASE = [
+const PPM_FSID_SPECIAL_CASE = [
   '01FACA7A4367FC5F',
   '03D6E959E2F9A42D',
   '03F80445160587FA',

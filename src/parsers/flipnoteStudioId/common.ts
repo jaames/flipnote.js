@@ -1,7 +1,17 @@
-import { isPpmFsid, getPpmFsidRegion } from './ppm';
-import { isKwzFsid, isKwzDsiLibraryFsid, getKwzFsidRegion } from './kwz';
+import {
+  isPpmFsid,
+  getPpmFsidRegion
+} from './ppm';
 
-import { FlipnoteRegion } from '../types';
+import {
+  isKwzFsid,
+  getKwzFsidRegion,
+  isKwzDsiLibraryFsid,
+} from './kwz';
+
+import {
+  FlipnoteRegion
+} from '../types';
 
 /**
  * Indicates whether the input is a valid Flipnote Studio or Flipnote Studio 3D user ID

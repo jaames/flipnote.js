@@ -1,4 +1,3 @@
-import { PPM_FSID_SPECIAL_CASE } from './ppm';
 import { FlipnoteRegion } from '../types';
 
 /**
@@ -16,9 +15,19 @@ const REGEX_KWZ_FSID = /^[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{6}$/;
 const REGEX_KWZ_DSI_LIBRARY_FSID = /^(00|10|12|14)[0-9a-f]{2}-[0-9a-f]{4}-[0-9a-f]{3}0-[0-9a-f]{4}[0159]{1}[0-9a-f]{1}$/; 
 
 /**
+ * KWZ equivalents of PPM_FSID_SPECIAL_CASE
  * @internal
  */
-// export const KWZ_DSI_LIBRARY_FSID_SPECIAL_CASE_SUFFIX = PPM_FSID_SPECIAL_CASE.map(id => convertPpmFsidToKwzFsidSuffix(id));
+const KWZ_DSI_LIBRARY_FSID_SPECIAL_CASE_SUFFIX = [
+  '5f-fc67-437a-cafa01',
+  '2d-a4f9-e259-e9d603',
+  'fa-8705-1645-04f803',
+  '15-8900-e126-840604',
+  'd5-d59f-19c8-3e2a09',
+  'b8-41d4-1bba-568d0b',
+  '0b-d95a-9b5c-c7610e',
+  '35-3244-5ae3-94e414',
+];
 
 /**
  * Indicates whether the input is a valid Flipnote Studio 3D user ID
@@ -32,10 +41,10 @@ export const isKwzFsid = (fsid: string) =>
 export const isKwzDsiLibraryFsid = (fsid: string) => {
   if (REGEX_KWZ_DSI_LIBRARY_FSID.test(fsid))
     return true;
-  // for (let suffix of KWZ_DSI_LIBRARY_FSID_SPECIAL_CASE_SUFFIX) {
-  //   if (fsid.endsWith(suffix))
-  //     return true;
-  // }
+  for (let suffix of KWZ_DSI_LIBRARY_FSID_SPECIAL_CASE_SUFFIX) {
+    if (fsid.endsWith(suffix))
+      return true;
+  }
   return false;
 };
 
