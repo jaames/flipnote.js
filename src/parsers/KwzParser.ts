@@ -1,30 +1,41 @@
-import { 
+import {
+  FlipnoteMeta,
   FlipnoteFormat,
+  FlipnoteThumbImageFormat,
   FlipnotePaletteDefinition,
   FlipnoteAudioTrack,
   FlipnoteSoundEffectTrack,
   FlipnoteSoundEffectFlags,
-  FlipnoteMeta,
-  FlipnoteParserBase,
-  FlipnoteThumbImageFormat
-} from './FlipnoteParserBase';
+} from './types';
 
 import {
+  BaseParser,
+} from './BaseParser';
+
+import {
+  getKwzFsidRegion
+} from './flipnoteStudioId/kwz';
+
+import {
+  // audio
   ADPCM_STEP_TABLE,
   ADPCM_INDEX_TABLE_2BIT,
   ADPCM_INDEX_TABLE_4BIT,
-  clamp,
-  assert,
-  assertRange,
   pcmResampleLinear,
   pcmGetClippingRatio,
   pcmGetRms,
+  // datetime
   dateFromNintendoTimestamp,
   timeGetNoteDuration,
-  getKwzFsidRegion,
-  isKwzDsiLibraryFsid,
+  // rsa
   rsaLoadPublicKey,
   rsaVerify,
+} from './common';
+
+import {
+  assert,
+  assertRange,
+  clamp,
 } from '../utils';
 
 /** 
@@ -215,9 +226,9 @@ export type KwzParserSettings = {
  * Parser class for Flipnote Studio 3D's KWZ animation format
  * 
  * KWZ format docs: https://github.com/Flipnote-Collective/flipnote-studio-3d-docs/wiki/KWZ-Format
- * @category File Parser
+ * @group File Parser
  */
-export class KwzParser extends FlipnoteParserBase {
+export class KwzParser extends BaseParser {
 
   /** Default KWZ parser settings */
   static defaultSettings: KwzParserSettings = {
@@ -273,6 +284,14 @@ export class KwzParser extends FlipnoteParserBase {
   ];
   /** Public key used for Flipnote verification, in PEM format */
   static publicKey = KWZ_PUBLIC_KEY;
+
+  static matchBuffer(buffer: ArrayBuffer) {
+    // check the buffer's magic to identify which format it uses
+    const magicBytes = new Uint8Array(buffer.slice(0, 4));
+    const magic = (magicBytes[0] << 24) | (magicBytes[1] << 16) | (magicBytes[2] << 8);
+    // check if magic is KFH (kwz magic) or  KIC (fs3d folder icon)
+    return magic === 0x4B464800 || magic === 0x4B494300;
+  }
   
   /** File format type, reflects {@link KwzParser.format} */
   format = FlipnoteFormat.KWZ;
@@ -587,7 +606,7 @@ export class KwzParser extends FlipnoteParserBase {
    * Decodes the thumbnail image embedded in the Flipnote. Will return a {@link FlipnoteThumbImage} containing JPEG data.
    * 
    * Note: For most purposes, you should probably just decode the thumbnail fraa to get a higher resolution image.
-   * @category Meta
+   * @group Meta
    */
   getThumbnailImage() {
     assert(this.sectionMap.has('KTN'), 'KTN section missing - Note that folder icons and comments do not contain thumbnail data');
@@ -613,7 +632,7 @@ export class KwzParser extends FlipnoteParserBase {
    *  - index 4 is the layer B color 2 index
    *  - index 5 is the layer C color 1 index
    *  - index 6 is the layer C color 2 index
-   * @category Image
+   * @group Image
   */
   getFramePaletteIndices(frameIndex: number) {
     assertRange(frameIndex, 0, this.frameCount - 1, 'Frame index');
@@ -641,7 +660,7 @@ export class KwzParser extends FlipnoteParserBase {
    *  - index 4 is the layer B color 2
    *  - index 5 is the layer C color 1
    *  - index 6 is the layer C color 2
-   * @category Image
+   * @group Image
   */
   getFramePalette(frameIndex: number) {
     assertRange(frameIndex, 0, this.frameCount - 1, 'Frame index');
@@ -658,7 +677,7 @@ export class KwzParser extends FlipnoteParserBase {
   /**
    * Determines if a given frame is a video key frame or not. This returns an array of booleans for each layer, since keyframe encoding is done on a per-layer basis.
    * @param frameIndex
-   * @category Image
+   * @group Image
   */
   getIsKeyFrame(frameIndex: number) {
     const flag = this.getFrameDiffingFlag(frameIndex);
@@ -672,7 +691,7 @@ export class KwzParser extends FlipnoteParserBase {
   /**
    * Get the 3D depths for each layer in a given frame.
    * @param frameIndex
-   * @category Image
+   * @group Image
   */
   getFrameLayerDepths(frameIndex: number) {
     assertRange(frameIndex, 0, this.frameCount - 1, 'Frame index');
@@ -687,7 +706,7 @@ export class KwzParser extends FlipnoteParserBase {
   /**
    * Get the FSID for a given frame's original author.
    * @param frameIndex
-   * @category Meta
+   * @group Meta
   */
   getFrameAuthor(frameIndex: number) {
     assertRange(frameIndex, 0, this.frameCount - 1, 'Frame index');
@@ -697,7 +716,7 @@ export class KwzParser extends FlipnoteParserBase {
 
   /** 
    * Get the camera flags for a given frame
-   * @category Image
+   * @group Image
    * @returns Array of booleans, indicating whether each layer uses a photo or not
   */
   getFrameCameraFlags(frameIndex: number) {
@@ -712,7 +731,7 @@ export class KwzParser extends FlipnoteParserBase {
 
   /** 
    * Get the layer draw order for a given frame
-   * @category Image
+   * @group Image
   */
   getFrameLayerOrder(frameIndex: number) {
     assertRange(frameIndex, 0, this.frameCount - 1, 'Frame index');
@@ -722,7 +741,7 @@ export class KwzParser extends FlipnoteParserBase {
 
   /** 
    * Decode a frame, returning the raw pixel buffers for each layer
-   * @category Image
+   * @group Image
   */
   decodeFrame(frameIndex: number, diffingFlag = 0x7, isPrevFrame = false) {
     assertRange(frameIndex, 0, this.frameCount - 1, 'Frame index');
@@ -954,7 +973,7 @@ export class KwzParser extends FlipnoteParserBase {
 
   /** 
    * Get the sound effect flags for every frame in the Flipnote
-   * @category Audio
+   * @group Audio
   */
   decodeSoundFlags() {
     if (this.soundFlags !== undefined)
@@ -967,7 +986,7 @@ export class KwzParser extends FlipnoteParserBase {
 
   /**
    * Get the sound effect usage flags for every frame
-   * @category Audio
+   * @group Audio
    */
   getSoundEffectFlags(): FlipnoteSoundEffectFlags[] {
     return this.decodeSoundFlags().map((frameFlags) => ({
@@ -981,7 +1000,7 @@ export class KwzParser extends FlipnoteParserBase {
   /**
    * Get the sound effect usage for a given frame
    * @param frameIndex
-   * @category Audio
+   * @group Audio
    */
   getFrameSoundEffectFlags(frameIndex: number): FlipnoteSoundEffectFlags {
     const frameFlags = this.decodeFrameSoundFlags(frameIndex);
@@ -996,7 +1015,7 @@ export class KwzParser extends FlipnoteParserBase {
   /** 
    * Get the raw compressed audio data for a given track
    * @returns Byte array
-   * @category Audio
+   * @group Audio
   */
   getAudioTrackRaw(trackId: FlipnoteAudioTrack) {
     const trackMeta = this.soundMeta.get(trackId);
@@ -1060,7 +1079,7 @@ export class KwzParser extends FlipnoteParserBase {
   /** 
    * Get the decoded audio data for a given track, using the track's native samplerate
    * @returns Signed 16-bit PCM audio
-   * @category Audio
+   * @group Audio
   */
   decodeAudioTrack(trackId: FlipnoteAudioTrack) {
     const settings = this.settings;
@@ -1122,7 +1141,7 @@ export class KwzParser extends FlipnoteParserBase {
   /** 
    * Get the decoded audio data for a given track, using the specified samplerate
    * @returns Signed 16-bit PCM audio
-   * @category Audio
+   * @group Audio
   */
   getAudioTrackPcm(trackId: FlipnoteAudioTrack, dstFreq = this.sampleRate) {
     const srcPcm = this.decodeAudioTrack(trackId);
@@ -1152,7 +1171,7 @@ export class KwzParser extends FlipnoteParserBase {
   /** 
    * Get the full mixed audio for the Flipnote, using the specified samplerate
    * @returns Signed 16-bit PCM audio
-   * @category Audio
+   * @group Audio
   */
   getAudioMasterPcm(dstFreq = this.sampleRate) {
     const dstSize = Math.ceil(this.duration * dstFreq);
@@ -1194,7 +1213,7 @@ export class KwzParser extends FlipnoteParserBase {
 
   /**
    * Get the body of the Flipnote - the data that is digested for the signature
-   * @category Verification
+   * @group Verification
    */
   getBody() {
     const bodyEnd = this.bodyEndOffset;
@@ -1203,7 +1222,7 @@ export class KwzParser extends FlipnoteParserBase {
 
   /**
    * Get the Flipnote's signature data
-   * @category Verification
+   * @group Verification
    */
   getSignature() {
     const bodyEnd = this.bodyEndOffset;
@@ -1212,7 +1231,7 @@ export class KwzParser extends FlipnoteParserBase {
 
   /**
    * Verify whether this Flipnote's signature is valid
-   * @category Verification
+   * @group Verification
    */
   async verify() {
     const key = await rsaLoadPublicKey(KWZ_PUBLIC_KEY, 'SHA-256');

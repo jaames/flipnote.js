@@ -1,3 +1,5 @@
+import { lerp } from '../../utils';
+
 /** @internal */
 export const ADPCM_INDEX_TABLE_2BIT = new Int8Array([
   -1, 2, -1, 2
@@ -22,53 +24,34 @@ export const ADPCM_STEP_TABLE = new Int16Array([
   15289, 16818, 18500, 20350, 22385, 24623, 27086, 29794, 32767, 0
 ]);
 
-/** 
- * Clamp a number n between l and h
- * @internal 
- */
-export function clamp(n: number, l: number, h: number) {
-  if (n < l)
-    return l;
-  if (n > h)
-    return h;
-  return n;
-}
-
-/** 
- * Interpolate between a and b - returns a if fac = 0, b if fac = 1, and somewhere between if 0 < fac < 1
- * @internal
- */
-export const lerp = (a: number, b: number, fac: number) => a + fac * (b - a);
-
 /** @internal */
-export function pcmGetSample(src: Int16Array, srcSize: number, srcPtr: number) {
+export const pcmGetSample = (src: Int16Array, srcSize: number, srcPtr: number) => {
   if (srcPtr < 0 || srcPtr >= srcSize)
     return 0;
   return src[srcPtr];
-}
+};
 
 /** 
  * Zero-order hold (nearest neighbour) audio interpolation
  * Credit to SimonTime for the original C version
  * @internal
  */
-export function pcmResampleNearestNeighbour(src: Int16Array, srcFreq: number, dstFreq: number) {
+export const pcmResampleNearestNeighbour = (src: Int16Array, srcFreq: number, dstFreq: number) => {
   const srcLength = src.length;
   const srcDuration = srcLength / srcFreq;
   const dstLength = srcDuration * dstFreq;
   const dst = new Int16Array(dstLength);
   const adjFreq = srcFreq / dstFreq;
-  for (let dstPtr = 0; dstPtr < dstLength; dstPtr++) {
+  for (let dstPtr = 0; dstPtr < dstLength; dstPtr++)
     dst[dstPtr] = pcmGetSample(src, srcLength, Math.floor(dstPtr * adjFreq));
-  }
   return dst;
-}
+};
 
 /** 
  * Simple linear audio interpolation
  * @internal
  */
-export function pcmResampleLinear(src: Int16Array, srcFreq: number, dstFreq: number) {
+export const pcmResampleLinear = (src: Int16Array, srcFreq: number, dstFreq: number) => {
   const srcLength = src.length;
   const srcDuration = srcLength / srcFreq;
   const dstLength = srcDuration * dstFreq;
@@ -85,14 +68,14 @@ export function pcmResampleLinear(src: Int16Array, srcFreq: number, dstFreq: num
     );
   }
   return dst;
-}
+};
 
 /** 
  * Get a ratio of how many audio samples hit the pcm_s16_le clipping bounds
  * This can be used to detect corrupted audio
  * @internal
  */
-export function pcmGetClippingRatio(src: Int16Array) {
+export const pcmGetClippingRatio = (src: Int16Array) => {
   const numSamples = src.length;
   let numClippedSamples = 0;
   for (let i = 0; i < numSamples; i++) {
@@ -101,17 +84,17 @@ export function pcmGetClippingRatio(src: Int16Array) {
       numClippedSamples += 1;
   }
   return numClippedSamples / numSamples;
-}
+};
 
 /**
  * Get the root mean square of a PCM track
  * @internal
  */
-export function pcmGetRms(src: Int16Array) {
+export const pcmGetRms = (src: Int16Array) => {
   const numSamples = src.length;
   let rms = 0;
   for (let i = 0; i < numSamples; i++) {
     rms += Math.pow(src[i], 2);
   }
   return Math.sqrt(rms / numSamples);
-}
+};

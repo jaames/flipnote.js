@@ -5,509 +5,9 @@
  * 2018 - 2024 James Daniel
  * Flipnote Studio is (c) Nintendo Co., Ltd. This project isn't affiliated with or endorsed by them in any way.
 */
+(function(l, r) { if (!l || l.getElementById('livereloadscript')) return; r = l.createElement('script'); r.async = 1; r.src = '//' + (self.location.host || 'localhost').split(':')[0] + ':35729/livereload.js?snipver=1'; r.id = 'livereloadscript'; l.getElementsByTagName('head')[0].appendChild(r) })(self.document);
 var flipnote = (function (exports) {
     'use strict';
-
-    /** @internal */
-    class ByteArray {
-        constructor() {
-            // sizes
-            this.pageSize = 2048 * 2;
-            this.allocSize = 0; // allocated size counting all pages
-            this.realSize = 0; // number of bytes actually used
-            // pages
-            this.pages = [];
-            this.numPages = 0;
-            // pointers
-            this.pageIdx = 0; // page to write to
-            this.pagePtr = 0; // position in page to write to
-            this.realPtr = 0; // position in file
-            this.newPage();
-        }
-        set pointer(ptr) {
-            this.setPointer(ptr);
-        }
-        get pointer() {
-            return this.realPtr;
-        }
-        newPage() {
-            this.pages[this.numPages] = new Uint8Array(this.pageSize);
-            this.numPages = this.pages.length;
-            this.allocSize = this.numPages * this.pageSize;
-        }
-        setPointer(ptr) {
-            // allocate enough pages to include pointer
-            while (ptr >= this.allocSize) {
-                this.newPage();
-            }
-            // increase real file size if the end is reached
-            if (ptr > this.realSize)
-                this.realSize = ptr;
-            // update ptrs
-            this.pageIdx = Math.floor(ptr / this.pageSize);
-            this.pagePtr = ptr % this.pageSize;
-            this.realPtr = ptr;
-        }
-        writeByte(value) {
-            this.pages[this.pageIdx][this.pagePtr] = value;
-            this.setPointer(this.realPtr + 1);
-        }
-        writeBytes(bytes, srcPtr, length) {
-            for (let l = length || bytes.length, i = srcPtr || 0; i < l; i++)
-                this.writeByte(bytes[i]);
-        }
-        writeChars(str) {
-            for (let i = 0; i < str.length; i++) {
-                this.writeByte(str.charCodeAt(i));
-            }
-        }
-        writeU8(value) {
-            this.writeByte(value & 0xFF);
-        }
-        writeU16(value) {
-            this.writeByte((value >>> 0) & 0xFF);
-            this.writeByte((value >>> 8) & 0xFF);
-        }
-        writeU32(value) {
-            this.writeByte((value >>> 0) & 0xFF);
-            this.writeByte((value >>> 8) & 0xFF);
-            this.writeByte((value >>> 16) & 0xFF);
-            this.writeByte((value >>> 24) & 0xFF);
-        }
-        getBytes() {
-            const bytes = new Uint8Array(this.realSize);
-            const numPages = this.numPages;
-            for (let i = 0; i < numPages; i++) {
-                const page = this.pages[i];
-                if (i === numPages - 1) // last page
-                    bytes.set(page.slice(0, this.realSize % this.pageSize), i * this.pageSize);
-                else
-                    bytes.set(page, i * this.pageSize);
-            }
-            return bytes;
-        }
-        getBuffer() {
-            const bytes = this.getBytes();
-            return bytes.buffer;
-        }
-    }
-
-    /**
-     * Wrapper around the DataView API to keep track of the offset into the data
-     * also provides some utils for reading ascii strings etc
-     * @internal
-     */
-    class DataStream {
-        constructor(arrayBuffer) {
-            this.buffer = arrayBuffer;
-            this.data = new DataView(arrayBuffer);
-            this.pointer = 0;
-        }
-        get bytes() {
-            return new Uint8Array(this.buffer);
-        }
-        get byteLength() {
-            return this.data.byteLength;
-        }
-        seek(offset, whence) {
-            switch (whence) {
-                case 2 /* SeekOrigin.End */:
-                    this.pointer = this.data.byteLength + offset;
-                    break;
-                case 1 /* SeekOrigin.Current */:
-                    this.pointer += offset;
-                    break;
-                case 0 /* SeekOrigin.Begin */:
-                default:
-                    this.pointer = offset;
-                    break;
-            }
-        }
-        readUint8() {
-            const val = this.data.getUint8(this.pointer);
-            this.pointer += 1;
-            return val;
-        }
-        writeUint8(value) {
-            this.data.setUint8(this.pointer, value);
-            this.pointer += 1;
-        }
-        readInt8() {
-            const val = this.data.getInt8(this.pointer);
-            this.pointer += 1;
-            return val;
-        }
-        writeInt8(value) {
-            this.data.setInt8(this.pointer, value);
-            this.pointer += 1;
-        }
-        readUint16(littleEndian = true) {
-            const val = this.data.getUint16(this.pointer, littleEndian);
-            this.pointer += 2;
-            return val;
-        }
-        writeUint16(value, littleEndian = true) {
-            this.data.setUint16(this.pointer, value, littleEndian);
-            this.pointer += 2;
-        }
-        readInt16(littleEndian = true) {
-            const val = this.data.getInt16(this.pointer, littleEndian);
-            this.pointer += 2;
-            return val;
-        }
-        writeInt16(value, littleEndian = true) {
-            this.data.setInt16(this.pointer, value, littleEndian);
-            this.pointer += 2;
-        }
-        readUint32(littleEndian = true) {
-            const val = this.data.getUint32(this.pointer, littleEndian);
-            this.pointer += 4;
-            return val;
-        }
-        writeUint32(value, littleEndian = true) {
-            this.data.setUint32(this.pointer, value, littleEndian);
-            this.pointer += 4;
-        }
-        readInt32(littleEndian = true) {
-            const val = this.data.getInt32(this.pointer, littleEndian);
-            this.pointer += 4;
-            return val;
-        }
-        writeInt32(value, littleEndian = true) {
-            this.data.setInt32(this.pointer, value, littleEndian);
-            this.pointer += 4;
-        }
-        readBytes(count) {
-            const bytes = new Uint8Array(this.data.buffer, this.pointer, count);
-            this.pointer += bytes.byteLength;
-            return bytes;
-        }
-        writeBytes(bytes) {
-            bytes.forEach((byte) => this.writeUint8(byte));
-        }
-        readHex(count, reverse = false) {
-            const bytes = this.readBytes(count);
-            let hex = [];
-            for (let i = 0; i < bytes.length; i++) {
-                hex.push(bytes[i].toString(16).padStart(2, '0'));
-            }
-            if (reverse)
-                hex.reverse();
-            return hex.join('').toUpperCase();
-        }
-        readChars(count) {
-            const chars = this.readBytes(count);
-            let str = '';
-            for (let i = 0; i < chars.length; i++) {
-                const char = chars[i];
-                if (char === 0)
-                    break;
-                str += String.fromCharCode(char);
-            }
-            return str;
-        }
-        writeChars(string) {
-            for (let i = 0; i < string.length; i++) {
-                const char = string.charCodeAt(i);
-                this.writeUint8(char);
-            }
-        }
-        readWideChars(count) {
-            const chars = new Uint16Array(this.data.buffer, this.pointer, count);
-            let str = '';
-            for (let i = 0; i < chars.length; i++) {
-                const char = chars[i];
-                if (char == 0)
-                    break;
-                str += String.fromCharCode(char);
-            }
-            this.pointer += chars.byteLength;
-            return str;
-        }
-    }
-
-    /** @internal */
-    const ADPCM_INDEX_TABLE_2BIT = new Int8Array([
-        -1, 2, -1, 2
-    ]);
-    /** @internal */
-    const ADPCM_INDEX_TABLE_4BIT = new Int8Array([
-        -1, -1, -1, -1, 2, 4, 6, 8,
-        -1, -1, -1, -1, 2, 4, 6, 8
-    ]);
-    /** @internal */
-    const ADPCM_STEP_TABLE = new Int16Array([
-        7, 8, 9, 10, 11, 12, 13, 14, 16, 17,
-        19, 21, 23, 25, 28, 31, 34, 37, 41, 45,
-        50, 55, 60, 66, 73, 80, 88, 97, 107, 118,
-        130, 143, 157, 173, 190, 209, 230, 253, 279, 307,
-        337, 371, 408, 449, 494, 544, 598, 658, 724, 796,
-        876, 963, 1060, 1166, 1282, 1411, 1552, 1707, 1878, 2066,
-        2272, 2499, 2749, 3024, 3327, 3660, 4026, 4428, 4871, 5358,
-        5894, 6484, 7132, 7845, 8630, 9493, 10442, 11487, 12635, 13899,
-        15289, 16818, 18500, 20350, 22385, 24623, 27086, 29794, 32767, 0
-    ]);
-    /**
-     * Clamp a number n between l and h
-     * @internal
-     */
-    function clamp(n, l, h) {
-        if (n < l)
-            return l;
-        if (n > h)
-            return h;
-        return n;
-    }
-    /**
-     * Interpolate between a and b - returns a if fac = 0, b if fac = 1, and somewhere between if 0 < fac < 1
-     * @internal
-     */
-    const lerp = (a, b, fac) => a + fac * (b - a);
-    /** @internal */
-    function pcmGetSample(src, srcSize, srcPtr) {
-        if (srcPtr < 0 || srcPtr >= srcSize)
-            return 0;
-        return src[srcPtr];
-    }
-    /**
-     * Zero-order hold (nearest neighbour) audio interpolation
-     * Credit to SimonTime for the original C version
-     * @internal
-     */
-    function pcmResampleNearestNeighbour(src, srcFreq, dstFreq) {
-        const srcLength = src.length;
-        const srcDuration = srcLength / srcFreq;
-        const dstLength = srcDuration * dstFreq;
-        const dst = new Int16Array(dstLength);
-        const adjFreq = srcFreq / dstFreq;
-        for (let dstPtr = 0; dstPtr < dstLength; dstPtr++) {
-            dst[dstPtr] = pcmGetSample(src, srcLength, Math.floor(dstPtr * adjFreq));
-        }
-        return dst;
-    }
-    /**
-     * Simple linear audio interpolation
-     * @internal
-     */
-    function pcmResampleLinear(src, srcFreq, dstFreq) {
-        const srcLength = src.length;
-        const srcDuration = srcLength / srcFreq;
-        const dstLength = srcDuration * dstFreq;
-        const dst = new Int16Array(dstLength);
-        const adjFreq = srcFreq / dstFreq;
-        for (let dstPtr = 0, adj = 0, srcPtr = 0, weight = 0; dstPtr < dstLength; dstPtr++) {
-            adj = dstPtr * adjFreq;
-            srcPtr = Math.floor(adj);
-            weight = adj % 1;
-            dst[dstPtr] = lerp(pcmGetSample(src, srcLength, srcPtr), pcmGetSample(src, srcLength, srcPtr + 1), weight);
-        }
-        return dst;
-    }
-    /**
-     * Get a ratio of how many audio samples hit the pcm_s16_le clipping bounds
-     * This can be used to detect corrupted audio
-     * @internal
-     */
-    function pcmGetClippingRatio(src) {
-        const numSamples = src.length;
-        let numClippedSamples = 0;
-        for (let i = 0; i < numSamples; i++) {
-            const sample = src[i];
-            if (sample <= -32768 || sample >= 32767)
-                numClippedSamples += 1;
-        }
-        return numClippedSamples / numSamples;
-    }
-    /**
-     * Get the root mean square of a PCM track
-     * @internal
-     */
-    function pcmGetRms(src) {
-        const numSamples = src.length;
-        let rms = 0;
-        for (let i = 0; i < numSamples; i++) {
-            rms += Math.pow(src[i], 2);
-        }
-        return Math.sqrt(rms / numSamples);
-    }
-
-    /**
-     * Assert condition is true
-     * @internal
-     */
-    function assert(condition, errMsg = 'Assert failed') {
-        if (!condition)
-            throw new Error(errMsg);
-    }
-    /**
-     * Assert that a numerical value is between upper and lower bounds
-     * @internal
-     */
-    function assertRange(value, min, max, name = '') {
-        assert(value >= min && value <= max, `${name || 'value'} ${value} should be between ${min} and ${max}`);
-    }
-
-    /**
-     * Webpack tries to replace inline calles to require() with polyfills,
-     * but we don't want that, since we only use require to add extra features in NodeJs environments
-     *
-     * Modified from:
-     * https://github.com/getsentry/sentry-javascript/blob/bd35d7364191ebed994fb132ff31031117c1823f/packages/utils/src/misc.ts#L9-L11
-     * https://github.com/getsentry/sentry-javascript/blob/89bca28994a0eaab9bc784841872b12a1f4a875c/packages/hub/src/hub.ts#L340
-     * @internal
-     */
-    function dynamicRequire(nodeModule, p) {
-        try {
-            return nodeModule.require(p);
-        }
-        catch {
-            throw new Error(`Could not require(${p})`);
-        }
-    }
-    /**
-     * Safely get global scope object
-     * @internal
-     */
-    function getGlobalObject() {
-        return isNode
-            ? global
-            : typeof window !== 'undefined'
-                ? window
-                : typeof self !== 'undefined'
-                    ? self
-                    : {};
-    }
-    /**
-     * Utils to find out information about the current code execution environment
-     */
-    /**
-     * Is the code running in a browser environment?
-     * @internal
-     */
-    const isBrowser = typeof window !== 'undefined'
-        && typeof window.document !== 'undefined';
-    /**
-     * Assert that the current environment should support browser APIs
-     * @internal
-     */
-    function assertBrowserEnv() {
-        return assert(isBrowser, 'This feature is only available in browser environments');
-    }
-    /**
-     * Is the code running in a Node environment?
-     * @internal
-     */
-    const isNode = typeof process !== 'undefined'
-        && process.versions != null
-        && process.versions.node != null;
-    /**
-     * Assert that the current environment should support NodeJS APIs
-     * @internal
-     */
-    function assertNodeEnv() {
-        return assert(isNode, 'This feature is only available in NodeJS environments');
-    }
-    // TODO: Deno support?
-    /**
-     * Is the code running in a Web Worker enviornment?
-     * @internal
-     */
-    const isWebWorker = typeof self === 'object'
-        && self.constructor
-        && self.constructor.name === 'DedicatedWorkerGlobalScope';
-
-    /** @internal */
-    const raf = isBrowser && (window.requestAnimationFrame || window.webkitRequestAnimationFrame);
-    /** @internal */
-    function nextPaint(callback) {
-        if (isBrowser)
-            raf(() => raf(() => callback()));
-        else
-            callback();
-    }
-
-    /**
-     * same SubtleCrypto API is available in browser and node, but in node it isn't global
-     * @internal
-     */
-    const SUBTLE_CRYPTO = (() => {
-        if (isBrowser || isWebWorker) {
-            const global = getGlobalObject();
-            return (global.crypto || global.msCrypto).subtle;
-        }
-        else if (isNode)
-            return dynamicRequire(module, 'crypto').webcrypto.subtle;
-    })();
-    /**
-     * crypto algo used
-     * @internal
-     */
-    const ALGORITHM = 'RSASSA-PKCS1-v1_5';
-    /**
-     * @internal
-     */
-    async function rsaLoadPublicKey(pemKey, hashType) {
-        // remove PEM header and footer
-        const lines = pemKey
-            .split('\n')
-            .filter(line => !line.startsWith('-----') && !line.endsWith('-----'))
-            .join('');
-        // base64 decode
-        const keyPlaintext = atob(lines);
-        // convert to byte array
-        const keyBytes = new Uint8Array(keyPlaintext.length)
-            .map((_, i) => keyPlaintext.charCodeAt(i));
-        // create crypto api key
-        return await SUBTLE_CRYPTO.importKey('spki', keyBytes.buffer, {
-            name: ALGORITHM,
-            hash: hashType,
-        }, false, ['verify']);
-    }
-    /**
-     * @internal
-     */
-    async function rsaVerify(key, signature, data) {
-        return await SUBTLE_CRYPTO.verify(ALGORITHM, key, signature, data);
-    }
-
-    /**
-     * Gracefully handles a given Promise factory.
-     * @internal
-     * @example
-     * const [ error, data ] = await until(() => asyncAction())
-     */
-    const until = async (promise) => {
-        try {
-            const data = await promise().catch((error) => {
-                throw error;
-            });
-            return [null, data];
-        }
-        catch (error) {
-            return [error, null];
-        }
-    };
-
-    /**
-     * Number of seconds between the UNIX timestamp epoch (jan 1 1970) and the Nintendo timestamp epoch (jan 1 2000)
-     * @internal
-     */
-    const UNIX_EPOCH_2000 = 946684800;
-    /**
-     * Convert a Nintendo DS or 3DS timestamp int to a JS Date object
-     * @internal
-     */
-    function dateFromNintendoTimestamp(timestamp) {
-        return new Date((timestamp + UNIX_EPOCH_2000) * 1000);
-    }
-    /**
-     * Get the duration (in seconds) of a number of framres running at a specified framerate
-     * @internal
-     */
-    function timeGetNoteDuration(frameCount, framerate) {
-        // multiply and divide by 100 to get around floating precision issues
-        return ((frameCount * 100) * (1 / framerate)) / 100;
-    }
 
     /**
      * Flipnote region
@@ -523,205 +23,6 @@ var flipnote = (function (exports) {
         /** Unidentified (possibly never used) */
         FlipnoteRegion["UNKNOWN"] = "UNKNOWN";
     })(exports.FlipnoteRegion || (exports.FlipnoteRegion = {}));
-    /**
-     * Match an FSID from Flipnote Studio
-     * e.g. 1440D700CEF78DA8
-     * @internal
-     */
-    const REGEX_PPM_FSID = /^[0159]{1}[0-9A-F]{6}0[0-9A-F]{8}$/;
-    /**
-     * Match an FSID from Flipnote Studio 3D
-     * e.g. 003f-0b7e-82a6-fe0bda
-     * @internal
-     */
-    const REGEX_KWZ_FSID = /^[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{6}$/;
-    /**
-     * Match an FSID from a DSi Library note (PPM to KWZ conversion)
-     * e.g. 10b8-b909-5180-9b2013
-     * @internal
-     */
-    const REGEX_KWZ_DSI_LIBRARY_FSID = /^(00|10|12|14)[0-9a-f]{2}-[0-9a-f]{4}-[0-9a-f]{3}0-[0-9a-f]{4}[0159]{1}[0-9a-f]{1}$/;
-    /**
-     * @internal
-     * There are several known exceptions to the FSID format, all from Nintendo or Hatena developer and event accounts (mario, zelda 25th, etc).
-     * This list was compiled from data provided by the Flipnote Archive, so it can be considered comprehensive enough to match any Flipnote you may encounter.
-     */
-    const PPM_FSID_SPECIAL_CASE = [
-        '01FACA7A4367FC5F',
-        '03D6E959E2F9A42D',
-        '03F80445160587FA',
-        '04068426E1008915',
-        '092A3EC8199FD5D5',
-        '0B8D56BA1BD441B8',
-        '0E61C75C9B5AD90B',
-        '14E494E35A443235'
-    ];
-    /**
-     * @internal
-     */
-    const KWZ_DSI_LIBRARY_FSID_SPECIAL_CASE_SUFFIX = PPM_FSID_SPECIAL_CASE.map(id => convertPpmFsidToKwzFsidSuffix(id));
-    /**
-     * Indicates whether the input is a valid Flipnote Studio user ID
-     */
-    function isPpmFsid(fsid) {
-        return REGEX_PPM_FSID.test(fsid) || PPM_FSID_SPECIAL_CASE.includes(fsid);
-    }
-    /**
-     * Indicates whether the input is a valid Flipnote Studio 3D user ID
-     */
-    function isKwzFsid(fsid) {
-        return REGEX_KWZ_FSID.test(fsid);
-    }
-    /**
-     * Indicates whether the input is a valid DSi Library user ID
-     */
-    function isKwzDsiLibraryFsid(fsid) {
-        if (REGEX_KWZ_DSI_LIBRARY_FSID.test(fsid))
-            return true;
-        for (let suffix of KWZ_DSI_LIBRARY_FSID_SPECIAL_CASE_SUFFIX) {
-            if (fsid.endsWith(suffix))
-                return true;
-        }
-        return false;
-    }
-    /**
-     * Indicates whether the input is a valid Flipnote Studio or Flipnote Studio 3D user ID
-     */
-    function isFsid(fsid) {
-        return isPpmFsid(fsid) || isKwzFsid(fsid);
-    }
-    /**
-     * Get the region for any valid Flipnote Studio user ID
-     */
-    function getPpmFsidRegion(fsid) {
-        switch (fsid.charAt(0)) {
-            case '0':
-            case '1':
-                return exports.FlipnoteRegion.JPN;
-            case '5':
-                return exports.FlipnoteRegion.USA;
-            case '9':
-                return exports.FlipnoteRegion.EUR;
-            default:
-                return exports.FlipnoteRegion.UNKNOWN;
-        }
-    }
-    /**
-     * Get the region for any valid Flipnote Studio 3D user ID.
-     * NOTE: This may be incorrect for IDs that are not from the DSi Library.
-     */
-    function getKwzFsidRegion(fsid) {
-        if (isKwzDsiLibraryFsid(fsid)) {
-            switch (fsid.charAt(19)) {
-                case '0':
-                case '1':
-                    return exports.FlipnoteRegion.JPN;
-                case '5':
-                    return exports.FlipnoteRegion.USA;
-                case '9':
-                    return exports.FlipnoteRegion.EUR;
-                default:
-                    return exports.FlipnoteRegion.UNKNOWN;
-            }
-        }
-        switch (fsid.slice(0, 2)) {
-            // note: might be incorrect
-            case '00':
-                return exports.FlipnoteRegion.JPN;
-            case '02':
-                return exports.FlipnoteRegion.USA;
-            case '04':
-                return exports.FlipnoteRegion.EUR;
-            default:
-                return exports.FlipnoteRegion.UNKNOWN;
-        }
-    }
-    /**
-     * Convert a KWZ Flipnote Studio ID (from a Nintendo DSi Library Flipnote) to the format used by PPM Flipnote Studio IDs.
-     * Will return `null` if the conversion could not be made.
-     */
-    function convertKwzFsidToPpmFsid(fsid) {
-        if (REGEX_KWZ_DSI_LIBRARY_FSID.test(fsid))
-            return (fsid.slice(19, 21) + fsid.slice(17, 19) + fsid.slice(15, 17) + fsid.slice(12, 14) + fsid.slice(10, 12) + fsid.slice(7, 9) + fsid.slice(5, 7) + fsid.slice(2, 4)).toUpperCase();
-        return null;
-    }
-    /**
-     * Convert a PPM Flipnote Studio ID to the format used by KWZ Flipnote Studio IDs (as seen in Nintendo DSi Library Flipnotes).
-     * Will return `null` if the conversion could not be made.
-     *
-     * NOTE: KWZ Flipnote Studio IDs contain an extra two characters at the beginning. It is not possible to resolve these from a PPM Flipnote Studio ID.
-     */
-    function convertPpmFsidToKwzFsidSuffix(fsid) {
-        if (REGEX_PPM_FSID.test(fsid))
-            return (fsid.slice(14, 16) + fsid.slice(12, 14) + '-' + fsid.slice(10, 12) + fsid.slice(8, 10) + '-' + fsid.slice(6, 8) + fsid.slice(4, 6) + '-' + fsid.slice(2, 4) + fsid.slice(0, 2)).toLowerCase();
-        return null;
-    }
-    /**
-     * Convert a PPM Flipnote Studio ID to an array of all possible matching KWZ Flipnote Studio IDs (as seen in Nintendo DSi Library Flipnotes).
-     * Will return `null` if the conversion could not be made.
-     */
-    function convertPpmFsidToPossibleKwzFsids(fsid) {
-        const kwzIdSuffix = convertPpmFsidToKwzFsidSuffix(fsid);
-        if (kwzIdSuffix) {
-            return [
-                '00' + kwzIdSuffix,
-                '10' + kwzIdSuffix,
-                '12' + kwzIdSuffix,
-                '14' + kwzIdSuffix,
-            ];
-        }
-        return null;
-    }
-    /**
-     * Tests if a KWZ Flipnote Studio ID (from a Nintendo DSi Library Flipnote) matches a given PPM-formatted Flipnote Studio ID.
-     */
-    function testKwzFsidMatchesPpmFsid(kwzFsid, ppmFsid) {
-        const ppmFromKwz = convertKwzFsidToPpmFsid(kwzFsid);
-        return ppmFromKwz == ppmFsid;
-    }
-    /**
-     * Get the region for any valid Flipnote Studio or Flipnote Studio 3D user ID
-     */
-    function getFsidRegion(fsid) {
-        if (isPpmFsid(fsid))
-            return getPpmFsidRegion(fsid);
-        else if (isKwzFsid(fsid))
-            return getKwzFsidRegion(fsid);
-        return exports.FlipnoteRegion.UNKNOWN;
-    }
-
-    var fsid = /*#__PURE__*/Object.freeze({
-        __proto__: null,
-        get FlipnoteRegion () { return exports.FlipnoteRegion; },
-        convertKwzFsidToPpmFsid: convertKwzFsidToPpmFsid,
-        convertPpmFsidToKwzFsidSuffix: convertPpmFsidToKwzFsidSuffix,
-        convertPpmFsidToPossibleKwzFsids: convertPpmFsidToPossibleKwzFsids,
-        getFsidRegion: getFsidRegion,
-        getKwzFsidRegion: getKwzFsidRegion,
-        getPpmFsidRegion: getPpmFsidRegion,
-        isFsid: isFsid,
-        isKwzDsiLibraryFsid: isKwzDsiLibraryFsid,
-        isKwzFsid: isKwzFsid,
-        isPpmFsid: isPpmFsid,
-        testKwzFsidMatchesPpmFsid: testKwzFsidMatchesPpmFsid
-    });
-
-    /** @internal */
-    ((function () {
-        if (!isBrowser) {
-            return function () { };
-        }
-        const a = document.createElement('a');
-        return function (blob, filename) {
-            const url = window.URL.createObjectURL(blob);
-            a.href = url;
-            a.download = filename;
-            a.click();
-            window.URL.revokeObjectURL(url);
-        };
-    }))();
-
-    var _a$2;
     /** Identifies which animation format a Flipnote uses */
     exports.FlipnoteFormat = void 0;
     (function (FlipnoteFormat) {
@@ -764,21 +65,471 @@ var flipnote = (function (exports) {
         FlipnoteSoundEffectTrack[FlipnoteSoundEffectTrack["SE3"] = 3] = "SE3";
         FlipnoteSoundEffectTrack[FlipnoteSoundEffectTrack["SE4"] = 4] = "SE4";
     })(exports.FlipnoteSoundEffectTrack || (exports.FlipnoteSoundEffectTrack = {}));
+
+    /** @internal */
+    class ByteArray {
+        constructor() {
+            // sizes
+            this.pageSize = 2048 * 2;
+            this.allocSize = 0; // allocated size counting all pages
+            this.realSize = 0; // number of bytes actually used
+            // pages
+            this.pages = [];
+            this.numPages = 0;
+            // pointers
+            this.pageIdx = 0; // page to write to
+            this.pagePtr = 0; // position in page to write to
+            this.realPtr = 0; // position in file
+            this.newPage();
+        }
+        set pointer(ptr) {
+            this.setPointer(ptr);
+        }
+        get pointer() {
+            return this.realPtr;
+        }
+        /**
+         * @internal
+         */
+        newPage() {
+            this.pages[this.numPages] = new Uint8Array(this.pageSize);
+            this.numPages = this.pages.length;
+            this.allocSize = this.numPages * this.pageSize;
+        }
+        /**
+         * @internal
+         */
+        setPointer(ptr) {
+            // allocate enough pages to include pointer
+            while (ptr >= this.allocSize) {
+                this.newPage();
+            }
+            // increase real file size if the end is reached
+            if (ptr > this.realSize)
+                this.realSize = ptr;
+            // update ptrs
+            this.pageIdx = Math.floor(ptr / this.pageSize);
+            this.pagePtr = ptr % this.pageSize;
+            this.realPtr = ptr;
+        }
+        /**
+         * @internal
+         */
+        writeByte(value) {
+            this.pages[this.pageIdx][this.pagePtr] = value;
+            this.setPointer(this.realPtr + 1);
+        }
+        /**
+         * @internal
+         */
+        writeBytes(bytes, srcPtr, length) {
+            for (let l = length || bytes.length, i = srcPtr || 0; i < l; i++)
+                this.writeByte(bytes[i]);
+        }
+        /**
+         * @internal
+         */
+        writeChars(str) {
+            for (let i = 0; i < str.length; i++) {
+                this.writeByte(str.charCodeAt(i));
+            }
+        }
+        /**
+         * @internal
+         */
+        writeU8(value) {
+            this.writeByte(value & 0xFF);
+        }
+        /**
+         * @internal
+         */
+        writeU16(value) {
+            this.writeByte((value >>> 0) & 0xFF);
+            this.writeByte((value >>> 8) & 0xFF);
+        }
+        /**
+         * @internal
+         */
+        writeU32(value) {
+            this.writeByte((value >>> 0) & 0xFF);
+            this.writeByte((value >>> 8) & 0xFF);
+            this.writeByte((value >>> 16) & 0xFF);
+            this.writeByte((value >>> 24) & 0xFF);
+        }
+        /**
+         * @internal
+         */
+        getBytes() {
+            const bytes = new Uint8Array(this.realSize);
+            const numPages = this.numPages;
+            for (let i = 0; i < numPages; i++) {
+                const page = this.pages[i];
+                if (i === numPages - 1) // last page
+                    bytes.set(page.slice(0, this.realSize % this.pageSize), i * this.pageSize);
+                else
+                    bytes.set(page, i * this.pageSize);
+            }
+            return bytes;
+        }
+        getBuffer() {
+            const bytes = this.getBytes();
+            return bytes.buffer;
+        }
+    }
+
+    /**
+     * Wrapper around the DataView API to keep track of the offset into the data
+     * also provides some utils for reading ascii strings etc
+     * @internal
+     */
+    class DataStream {
+        constructor(arrayBuffer) {
+            this.buffer = arrayBuffer;
+            this.data = new DataView(arrayBuffer);
+            this.pointer = 0;
+        }
+        get bytes() {
+            return new Uint8Array(this.buffer);
+        }
+        get byteLength() {
+            return this.data.byteLength;
+        }
+        /**
+         * @internal
+         */
+        seek(offset, whence) {
+            switch (whence) {
+                case 2 /* SeekOrigin.End */:
+                    this.pointer = this.data.byteLength + offset;
+                    break;
+                case 1 /* SeekOrigin.Current */:
+                    this.pointer += offset;
+                    break;
+                case 0 /* SeekOrigin.Begin */:
+                default:
+                    this.pointer = offset;
+                    break;
+            }
+        }
+        /**
+         * @internal
+         */
+        readUint8() {
+            const val = this.data.getUint8(this.pointer);
+            this.pointer += 1;
+            return val;
+        }
+        /**
+         * @internal
+         */
+        writeUint8(value) {
+            this.data.setUint8(this.pointer, value);
+            this.pointer += 1;
+        }
+        /**
+         * @internal
+         */
+        readInt8() {
+            const val = this.data.getInt8(this.pointer);
+            this.pointer += 1;
+            return val;
+        }
+        /**
+         * @internal
+         */
+        writeInt8(value) {
+            this.data.setInt8(this.pointer, value);
+            this.pointer += 1;
+        }
+        /**
+         * @internal
+         */
+        readUint16(littleEndian = true) {
+            const val = this.data.getUint16(this.pointer, littleEndian);
+            this.pointer += 2;
+            return val;
+        }
+        /**
+         * @internal
+         */
+        writeUint16(value, littleEndian = true) {
+            this.data.setUint16(this.pointer, value, littleEndian);
+            this.pointer += 2;
+        }
+        /**
+         * @internal
+         */
+        readInt16(littleEndian = true) {
+            const val = this.data.getInt16(this.pointer, littleEndian);
+            this.pointer += 2;
+            return val;
+        }
+        /**
+         * @internal
+         */
+        writeInt16(value, littleEndian = true) {
+            this.data.setInt16(this.pointer, value, littleEndian);
+            this.pointer += 2;
+        }
+        /**
+         * @internal
+         */
+        readUint32(littleEndian = true) {
+            const val = this.data.getUint32(this.pointer, littleEndian);
+            this.pointer += 4;
+            return val;
+        }
+        /**
+         * @internal
+         */
+        writeUint32(value, littleEndian = true) {
+            this.data.setUint32(this.pointer, value, littleEndian);
+            this.pointer += 4;
+        }
+        /**
+         * @internal
+         */
+        readInt32(littleEndian = true) {
+            const val = this.data.getInt32(this.pointer, littleEndian);
+            this.pointer += 4;
+            return val;
+        }
+        /**
+         * @internal
+         */
+        writeInt32(value, littleEndian = true) {
+            this.data.setInt32(this.pointer, value, littleEndian);
+            this.pointer += 4;
+        }
+        /**
+         * @internal
+         */
+        readBytes(count) {
+            const bytes = new Uint8Array(this.data.buffer, this.pointer, count);
+            this.pointer += bytes.byteLength;
+            return bytes;
+        }
+        /**
+         * @internal
+         */
+        writeBytes(bytes) {
+            bytes.forEach((byte) => this.writeUint8(byte));
+        }
+        /**
+         * @internal
+         */
+        readHex(count, reverse = false) {
+            const bytes = this.readBytes(count);
+            let hex = [];
+            for (let i = 0; i < bytes.length; i++) {
+                hex.push(bytes[i].toString(16).padStart(2, '0'));
+            }
+            if (reverse)
+                hex.reverse();
+            return hex.join('').toUpperCase();
+        }
+        /**
+         * @internal
+         */
+        readChars(count) {
+            const chars = this.readBytes(count);
+            let str = '';
+            for (let i = 0; i < chars.length; i++) {
+                const char = chars[i];
+                if (char === 0)
+                    break;
+                str += String.fromCharCode(char);
+            }
+            return str;
+        }
+        /**
+         * @internal
+         */
+        writeChars(string) {
+            for (let i = 0; i < string.length; i++) {
+                const char = string.charCodeAt(i);
+                this.writeUint8(char);
+            }
+        }
+        /**
+         * @internal
+         */
+        readWideChars(count) {
+            const chars = new Uint16Array(this.data.buffer, this.pointer, count);
+            let str = '';
+            for (let i = 0; i < chars.length; i++) {
+                const char = chars[i];
+                if (char == 0)
+                    break;
+                str += String.fromCharCode(char);
+            }
+            this.pointer += chars.byteLength;
+            return str;
+        }
+    }
+
+    /**
+     * Clamp a number n between l and h
+     * @internal
+     */
+    const clamp = (n, l, h) => {
+        if (n < l)
+            return l;
+        if (n > h)
+            return h;
+        return n;
+    };
+    /**
+     * Interpolate between a and b - returns a if fac = 0, b if fac = 1, and somewhere between if 0 < fac < 1
+     * @internal
+     */
+    const lerp = (a, b, fac) => a + fac * (b - a);
+
+    /**
+     * Assert condition is true
+     * @internal
+     */
+    function assert(condition, errMsg = 'Assert failed') {
+        if (!condition)
+            err(errMsg);
+    }
+    /**
+     * Assert that a numerical value is between upper and lower bounds
+     * @internal
+     */
+    const assertRange = (value, min, max, name = '') => assert(value >= min && value <= max, `flipnote.js error: ${name || 'value'} ${value} should be between ${min} and ${max}`);
+    /**
+     * Assert condition is true
+     * @internal
+     */
+    const err = (errMsg = 'Assert failed') => {
+        throw new Error('flipnote.js error: ' + errMsg);
+    };
+
+    /**
+     * Webpack tries to replace inline calles to require() with polyfills,
+     * but we don't want that, since we only use require to add extra features in NodeJs environments
+     *
+     * Modified from:
+     * https://github.com/getsentry/sentry-javascript/blob/bd35d7364191ebed994fb132ff31031117c1823f/packages/utils/src/misc.ts#L9-L11
+     * https://github.com/getsentry/sentry-javascript/blob/89bca28994a0eaab9bc784841872b12a1f4a875c/packages/hub/src/hub.ts#L340
+     * @internal
+     */
+    const dynamicRequire = (nodeModule, p) => {
+        try {
+            return nodeModule.require(p);
+        }
+        catch {
+            throw new Error(`Could not require(${p})`);
+        }
+    };
+    /**
+     * Safely get global scope object
+     * @internal
+     */
+    const getGlobalObject = () => {
+        return isNode
+            ? global
+            : typeof window !== 'undefined'
+                ? window
+                : typeof self !== 'undefined'
+                    ? self
+                    : {};
+    };
+    /**
+     * Utils to find out information about the current code execution environment
+     */
+    /**
+     * Is the code running in a browser environment?
+     * @internal
+     */
+    const isBrowser = typeof window !== 'undefined'
+        && typeof window.document !== 'undefined';
+    /**
+     * Assert that the current environment should support browser APIs
+     * @internal
+     */
+    const assertBrowserEnv = () => assert(isBrowser, 'This feature is only available in browser environments');
+    /**
+     * Is the code running in a Node environment?
+     * @internal
+     */
+    const isNode = typeof process !== 'undefined'
+        && process.versions != null
+        && process.versions.node != null;
+    /**
+     * Assert that the current environment should support NodeJS APIs
+     * @internal
+     */
+    const assertNodeEnv = () => assert(isNode, 'This feature is only available in NodeJS environments');
+    // TODO: Deno support?
+    /**
+     * Is the code running in a Web Worker enviornment?
+     * @internal
+     */
+    const isWebWorker = typeof self === 'object'
+        && self.constructor
+        && self.constructor.name === 'DedicatedWorkerGlobalScope';
+
+    /** @internal */
+    const raf = isBrowser && (window.requestAnimationFrame || window.webkitRequestAnimationFrame);
+    /** @internal */
+    const nextPaint = (callback) => {
+        if (isBrowser)
+            raf(() => raf(() => callback()));
+        else
+            callback();
+    };
+
+    /**
+     * Gracefully handles a given Promise factory.
+     * @internal
+     * @example
+     * const [ error, data ] = await until(() => asyncAction())
+     */
+    const until = async (promise) => {
+        try {
+            const data = await promise().catch((error) => {
+                throw error;
+            });
+            return [null, data];
+        }
+        catch (error) {
+            return [error, null];
+        }
+    };
+
+    /** @internal */
+    ((function () {
+        if (!isBrowser) {
+            return function () { };
+        }
+        const a = document.createElement('a');
+        return function (blob, filename) {
+            const url = window.URL.createObjectURL(blob);
+            a.href = url;
+            a.download = filename;
+            a.click();
+            window.URL.revokeObjectURL(url);
+        };
+    }))();
+
+    var _a$2;
     /**
      * Base Flipnote parser class
      *
      * This doesn't implement any parsing functionality itself,
      * it just provides a consistent API for every format parser to implement.
-     * @category File Parser
+     * @group File Parser
     */
-    class FlipnoteParserBase extends DataStream {
+    class BaseParser extends DataStream {
         constructor() {
             /** Static file format info */
             super(...arguments);
             /** Instance file format info */
             /** Custom object tag */
             this[_a$2] = 'Flipnote';
-            /** Default formats used for {@link getTitle()} */
+            /** Default formats used for {@link getTitle} */
             this.titleFormats = {
                 COMMENT: 'Comment by $USERNAME',
                 FLIPNOTE: 'Flipnote by $USERNAME',
@@ -805,7 +556,7 @@ var flipnote = (function (exports) {
          *  ICON: 'Folder icon'
          * }
          * ```
-         * @category Utility
+         * @group Utility
          */
         getTitle(formats = this.titleFormats) {
             if (this.isFolderIcon)
@@ -820,7 +571,7 @@ var flipnote = (function (exports) {
          * const str = 'Title: ' + note;
          * // str === 'Title: Flipnote by username'
          * ```
-         * @category Utility
+         * @group Utility
          */
         toString() {
             return this.getTitle();
@@ -833,7 +584,7 @@ var flipnote = (function (exports) {
          *   // do something with frameIndex...
          * }
          * ```
-         * @category Utility
+         * @group Utility
          */
         *[(_a$2 = Symbol.toStringTag, Symbol.iterator)]() {
             for (let i = 0; i < this.frameCount; i++)
@@ -843,7 +594,7 @@ var flipnote = (function (exports) {
          * Get the pixels for a given frame layer, as palette indices
          * NOTE: layerIndex are not guaranteed to be sorted by 3D depth in KWZs, use {@link getFrameLayerOrder} to get the correct sort order first
          * NOTE: if the visibility flag for this layer is turned off, the result will be empty
-         * @category Image
+         * @group Image
         */
         getLayerPixels(frameIndex, layerIndex, imageBuffer = new Uint8Array(this.imageWidth * this.imageHeight), depthStrength = 0, depthEye = FlipnoteStereoscopicEye.Left) {
             assertRange(frameIndex, 0, this.frameCount - 1, 'Frame index');
@@ -884,7 +635,7 @@ var flipnote = (function (exports) {
          * Get the pixels for a given frame layer, as RGBA pixels
          * NOTE: layerIndex are not guaranteed to be sorted by 3D depth in KWZs, use {@link getFrameLayerOrder} to get the correct sort order first
          * NOTE: if the visibility flag for this layer is turned off, the result will be empty
-         * @category Image
+         * @group Image
         */
         getLayerPixelsRgba(frameIndex, layerIndex, imageBuffer = new Uint32Array(this.imageWidth * this.imageHeight), paletteBuffer = new Uint32Array(16), depthStrength = 0, depthEye = FlipnoteStereoscopicEye.Left) {
             assertRange(frameIndex, 0, this.frameCount - 1, 'Frame index');
@@ -924,7 +675,7 @@ var flipnote = (function (exports) {
         }
         /**
          * Get the image for a given frame, as palette indices
-         * @category Image
+         * @group Image
         */
         getFramePixels(frameIndex, imageBuffer = new Uint8Array(this.imageWidth * this.imageHeight), depthStrength = 0, depthEye = FlipnoteStereoscopicEye.Left) {
             // image dimensions and crop
@@ -967,7 +718,7 @@ var flipnote = (function (exports) {
         }
         /**
          * Get the image for a given frame as an uint32 array of RGBA pixels
-         * @category Image
+         * @group Image
          */
         getFramePixelsRgba(frameIndex, imageBuffer = new Uint32Array(this.imageWidth * this.imageHeight), paletteBuffer = new Uint32Array(16), depthStrength = 0, depthEye = FlipnoteStereoscopicEye.Left) {
             assertRange(frameIndex, 0, this.frameCount - 1, 'Frame index');
@@ -1010,7 +761,7 @@ var flipnote = (function (exports) {
         }
         /**
          * Get the color palette for a given frame, as an uint32 array
-         * @category Image
+         * @group Image
         */
         getFramePaletteUint32(frameIndex, paletteBuffer = new Uint32Array(16)) {
             assertRange(frameIndex, 0, this.frameCount - 1, 'Frame index');
@@ -1022,7 +773,7 @@ var flipnote = (function (exports) {
         /**
          * Get the usage flags for a given track across every frame
          * @returns an array of booleans for every frame, indicating whether the track is used on that frame
-         * @category Audio
+         * @group Audio
          */
         getSoundEffectFlagsForTrack(trackId) {
             return this.getSoundEffectFlags().map(flags => flags[trackId]);
@@ -1030,7 +781,7 @@ var flipnote = (function (exports) {
         ;
         /**
          * Is a given track used on a given frame
-         * @category Audio
+         * @group Audio
          */
         isSoundEffectUsedOnFrame(trackId, frameIndex) {
             assertRange(frameIndex, 0, this.frameCount - 1, 'Frame index');
@@ -1041,12 +792,202 @@ var flipnote = (function (exports) {
         /**
          * Does an audio track exist in the Flipnote?
          * @returns boolean
-         * @category Audio
+         * @group Audio
         */
         hasAudioTrack(trackId) {
             return this.soundMeta.has(trackId) && this.soundMeta.get(trackId).length > 0;
         }
     }
+
+    /**
+     * Match an FSID from Flipnote Studio
+     * e.g. 1440D700CEF78DA8
+     * @internal
+     */
+    const REGEX_PPM_FSID = /^[0159]{1}[0-9A-F]{6}0[0-9A-F]{8}$/;
+    /**
+     * @internal
+     * There are several known exceptions to the FSID format, all from Nintendo or Hatena developer and event accounts (mario, zelda 25th, etc).
+     * This list was compiled from data provided by the Flipnote Archive, so it can be considered comprehensive enough to match any Flipnote you may encounter.
+     */
+    const PPM_FSID_SPECIAL_CASE = [
+        '01FACA7A4367FC5F',
+        '03D6E959E2F9A42D',
+        '03F80445160587FA',
+        '04068426E1008915',
+        '092A3EC8199FD5D5',
+        '0B8D56BA1BD441B8',
+        '0E61C75C9B5AD90B',
+        '14E494E35A443235'
+    ];
+    /**
+     * Indicates whether the input is a valid Flipnote Studio user ID
+     */
+    const isPpmFsid = (fsid) => REGEX_PPM_FSID.test(fsid) || PPM_FSID_SPECIAL_CASE.includes(fsid);
+    /**
+     * Get the region for any valid Flipnote Studio user ID
+     */
+    const getPpmFsidRegion = (fsid) => {
+        switch (fsid.charAt(0)) {
+            case '0':
+            case '1':
+                return exports.FlipnoteRegion.JPN;
+            case '5':
+                return exports.FlipnoteRegion.USA;
+            case '9':
+                return exports.FlipnoteRegion.EUR;
+            default:
+                return exports.FlipnoteRegion.UNKNOWN;
+        }
+    };
+
+    /** @internal */
+    const ADPCM_INDEX_TABLE_2BIT = new Int8Array([
+        -1, 2, -1, 2
+    ]);
+    /** @internal */
+    const ADPCM_INDEX_TABLE_4BIT = new Int8Array([
+        -1, -1, -1, -1, 2, 4, 6, 8,
+        -1, -1, -1, -1, 2, 4, 6, 8
+    ]);
+    /** @internal */
+    const ADPCM_STEP_TABLE = new Int16Array([
+        7, 8, 9, 10, 11, 12, 13, 14, 16, 17,
+        19, 21, 23, 25, 28, 31, 34, 37, 41, 45,
+        50, 55, 60, 66, 73, 80, 88, 97, 107, 118,
+        130, 143, 157, 173, 190, 209, 230, 253, 279, 307,
+        337, 371, 408, 449, 494, 544, 598, 658, 724, 796,
+        876, 963, 1060, 1166, 1282, 1411, 1552, 1707, 1878, 2066,
+        2272, 2499, 2749, 3024, 3327, 3660, 4026, 4428, 4871, 5358,
+        5894, 6484, 7132, 7845, 8630, 9493, 10442, 11487, 12635, 13899,
+        15289, 16818, 18500, 20350, 22385, 24623, 27086, 29794, 32767, 0
+    ]);
+    /** @internal */
+    const pcmGetSample = (src, srcSize, srcPtr) => {
+        if (srcPtr < 0 || srcPtr >= srcSize)
+            return 0;
+        return src[srcPtr];
+    };
+    /**
+     * Zero-order hold (nearest neighbour) audio interpolation
+     * Credit to SimonTime for the original C version
+     * @internal
+     */
+    const pcmResampleNearestNeighbour = (src, srcFreq, dstFreq) => {
+        const srcLength = src.length;
+        const srcDuration = srcLength / srcFreq;
+        const dstLength = srcDuration * dstFreq;
+        const dst = new Int16Array(dstLength);
+        const adjFreq = srcFreq / dstFreq;
+        for (let dstPtr = 0; dstPtr < dstLength; dstPtr++)
+            dst[dstPtr] = pcmGetSample(src, srcLength, Math.floor(dstPtr * adjFreq));
+        return dst;
+    };
+    /**
+     * Simple linear audio interpolation
+     * @internal
+     */
+    const pcmResampleLinear = (src, srcFreq, dstFreq) => {
+        const srcLength = src.length;
+        const srcDuration = srcLength / srcFreq;
+        const dstLength = srcDuration * dstFreq;
+        const dst = new Int16Array(dstLength);
+        const adjFreq = srcFreq / dstFreq;
+        for (let dstPtr = 0, adj = 0, srcPtr = 0, weight = 0; dstPtr < dstLength; dstPtr++) {
+            adj = dstPtr * adjFreq;
+            srcPtr = Math.floor(adj);
+            weight = adj % 1;
+            dst[dstPtr] = lerp(pcmGetSample(src, srcLength, srcPtr), pcmGetSample(src, srcLength, srcPtr + 1), weight);
+        }
+        return dst;
+    };
+    /**
+     * Get a ratio of how many audio samples hit the pcm_s16_le clipping bounds
+     * This can be used to detect corrupted audio
+     * @internal
+     */
+    const pcmGetClippingRatio = (src) => {
+        const numSamples = src.length;
+        let numClippedSamples = 0;
+        for (let i = 0; i < numSamples; i++) {
+            const sample = src[i];
+            if (sample <= -32768 || sample >= 32767)
+                numClippedSamples += 1;
+        }
+        return numClippedSamples / numSamples;
+    };
+    /**
+     * Get the root mean square of a PCM track
+     * @internal
+     */
+    const pcmGetRms = (src) => {
+        const numSamples = src.length;
+        let rms = 0;
+        for (let i = 0; i < numSamples; i++) {
+            rms += Math.pow(src[i], 2);
+        }
+        return Math.sqrt(rms / numSamples);
+    };
+
+    /**
+     * Number of seconds between the UNIX timestamp epoch (jan 1 1970) and the Nintendo timestamp epoch (jan 1 2000)
+     * @internal
+     */
+    const NINTENDO_UNIX_EPOCH = 946684800;
+    /**
+     * Convert a Nintendo DS or 3DS timestamp int to a JS Date object
+     * @internal
+     */
+    const dateFromNintendoTimestamp = (timestamp) => new Date((timestamp + NINTENDO_UNIX_EPOCH) * 1000);
+    /**
+     * Get the duration (in seconds) of a number of framres running at a specified framerate
+     * @internal
+     */
+    const timeGetNoteDuration = (frameCount, framerate) => 
+    // multiply and divide by 100 to get around floating precision issues
+    ((frameCount * 100) * (1 / framerate)) / 100;
+
+    /**
+     * Same SubtleCrypto API is available in browser and node, but in node it isn't global
+     * @internal
+     */
+    const SUBTLE_CRYPTO = (() => {
+        if (isBrowser || isWebWorker) {
+            const global = getGlobalObject();
+            return (global.crypto || global.msCrypto).subtle;
+        }
+        else if (isNode)
+            return dynamicRequire(module, 'crypto').webcrypto.subtle;
+    })();
+    /**
+     * Crypto algo used
+     * @internal
+     */
+    const ALGORITHM = 'RSASSA-PKCS1-v1_5';
+    /**
+     * @internal
+     */
+    const rsaLoadPublicKey = async (pemKey, hashType) => {
+        // remove PEM header and footer
+        const lines = pemKey
+            .split('\n')
+            .filter(line => !line.startsWith('-----') && !line.endsWith('-----'))
+            .join('');
+        // base64 decode
+        const keyPlaintext = atob(lines);
+        // convert to byte array
+        const keyBytes = new Uint8Array(keyPlaintext.length)
+            .map((_, i) => keyPlaintext.charCodeAt(i));
+        // create crypto api key
+        return await SUBTLE_CRYPTO.importKey('spki', keyBytes.buffer, {
+            name: ALGORITHM,
+            hash: hashType,
+        }, false, ['verify']);
+    };
+    /**
+     * @internal
+     */
+    const rsaVerify = async (key, signature, data) => await SUBTLE_CRYPTO.verify(ALGORITHM, key, signature, data);
 
     var _a$1;
     /**
@@ -1100,9 +1041,16 @@ MIGfMA0GCSqGSIb3DQEBAQUAA4GNADCBiQKBgQDCPLwTL6oSflv+gjywi/sM0TUB
      * Parser class for (DSiWare) Flipnote Studio's PPM animation format.
      *
      * Format docs: https://github.com/Flipnote-Collective/flipnote-studio-docs/wiki/PPM-format
-     * @category File Parser
+     * @group File Parser
      */
-    class PpmParser extends FlipnoteParserBase {
+    class PpmParser extends BaseParser {
+        static matchBuffer(buffer) {
+            // check the buffer's magic to identify which format it uses
+            const magicBytes = new Uint8Array(buffer.slice(0, 4));
+            const magic = (magicBytes[0] << 24) | (magicBytes[1] << 16) | (magicBytes[2] << 8) | magicBytes[3];
+            // check if magic is PARA (ppm magic)
+            return magic === 0x50415241;
+        }
         /**
          * Create a new PPM file parser instance
          * @param arrayBuffer an ArrayBuffer containing file data
@@ -1293,7 +1241,7 @@ MIGfMA0GCSqGSIb3DQEBAQUAA4GNADCBiQKBgQDCPLwTL6oSflv+gjywi/sM0TUB
          * Decodes the thumbnail image embedded in the Flipnote. Will return a {@link FlipnoteThumbImage} containing raw RGBA data.
          *
          * Note: For most purposes, you should probably just decode the thumbnail frame to get a higher resolution image.
-         * @category Meta
+         * @group Meta
          */
         getThumbnailImage() {
             this.seek(0xA0);
@@ -1321,7 +1269,7 @@ MIGfMA0GCSqGSIb3DQEBAQUAA4GNADCBiQKBgQDCPLwTL6oSflv+gjywi/sM0TUB
         }
         /**
          * Decode a frame, returning the raw pixel buffers for each layer
-         * @category Image
+         * @group Image
         */
         decodeFrame(frameIndex) {
             assertRange(frameIndex, 0, this.frameCount - 1, 'Frame index');
@@ -1479,7 +1427,7 @@ MIGfMA0GCSqGSIb3DQEBAQUAA4GNADCBiQKBgQDCPLwTL6oSflv+gjywi/sM0TUB
          *  - index 0 is the paper color index
          *  - index 1 is the layer 1 color index
          *  - index 2 is the layer 2 color index
-         * @category Image
+         * @group Image
         */
         getFramePaletteIndices(frameIndex) {
             assertRange(frameIndex, 0, this.frameCount - 1, 'Frame index');
@@ -1505,7 +1453,7 @@ MIGfMA0GCSqGSIb3DQEBAQUAA4GNADCBiQKBgQDCPLwTL6oSflv+gjywi/sM0TUB
          *  - index 0 is the paper color
          *  - index 1 is the layer 1 color
          *  - index 2 is the layer 2 color
-         * @category Image
+         * @group Image
          */
         getFramePalette(frameIndex) {
             assertRange(frameIndex, 0, this.frameCount - 1, 'Frame index');
@@ -1515,7 +1463,7 @@ MIGfMA0GCSqGSIb3DQEBAQUAA4GNADCBiQKBgQDCPLwTL6oSflv+gjywi/sM0TUB
         /**
          * Determines if a given frame is a video key frame or not. This returns an array of booleans for each layer, since in the KWZ format, keyframe encoding is done on a per-layer basis.
          * @param frameIndex
-         * @category Image
+         * @group Image
         */
         getIsKeyFrame(frameIndex) {
             const flag = this.isKeyFrame(frameIndex) === 1;
@@ -1524,7 +1472,7 @@ MIGfMA0GCSqGSIb3DQEBAQUAA4GNADCBiQKBgQDCPLwTL6oSflv+gjywi/sM0TUB
         /**
          * Get the 3D depths for each layer in a given frame. The PPM format doesn't actually store this information, so `0` is returned for both layers. This method is only here for consistency with KWZ.
          * @param frameIndex
-         * @category Image
+         * @group Image
         */
         getFrameLayerDepths(frameIndex) {
             return [0, 0];
@@ -1532,14 +1480,14 @@ MIGfMA0GCSqGSIb3DQEBAQUAA4GNADCBiQKBgQDCPLwTL6oSflv+gjywi/sM0TUB
         /**
          * Get the FSID for a given frame's original author. The PPM format doesn't actually store this information, so the current author FSID is returned. This method is only here for consistency with KWZ.
          * @param frameIndex
-         * @category Meta
+         * @group Meta
         */
         getFrameAuthor(frameIndex) {
             return this.meta.current.fsid;
         }
         /**
          * Get the camera flags for a given frame. The PPM format doesn't actually store this information so `false` will be returned for both layers. This method is only here for consistency with KWZ.
-         * @category Image
+         * @group Image
          * @returns Array of booleans, indicating whether each layer uses a photo or not
         */
         getFrameCameraFlags(frameIndex) {
@@ -1547,7 +1495,7 @@ MIGfMA0GCSqGSIb3DQEBAQUAA4GNADCBiQKBgQDCPLwTL6oSflv+gjywi/sM0TUB
         }
         /**
          * Get the layer draw order for a given frame
-         * @category Image
+         * @group Image
          * @returns Array of layer indices, in the order they should be drawn
         */
         getFrameLayerOrder(frameIndex) {
@@ -1555,7 +1503,7 @@ MIGfMA0GCSqGSIb3DQEBAQUAA4GNADCBiQKBgQDCPLwTL6oSflv+gjywi/sM0TUB
         }
         /**
          * Get the sound effect flags for every frame in the Flipnote
-         * @category Audio
+         * @group Audio
         */
         decodeSoundFlags() {
             if (this.soundFlags !== undefined)
@@ -1578,7 +1526,7 @@ MIGfMA0GCSqGSIb3DQEBAQUAA4GNADCBiQKBgQDCPLwTL6oSflv+gjywi/sM0TUB
         }
         /**
          * Get the sound effect usage flags for every frame
-         * @category Audio
+         * @group Audio
          */
         getSoundEffectFlags() {
             return this.decodeSoundFlags().map(frameFlags => ({
@@ -1590,7 +1538,7 @@ MIGfMA0GCSqGSIb3DQEBAQUAA4GNADCBiQKBgQDCPLwTL6oSflv+gjywi/sM0TUB
         }
         /**
          * Get the sound effect usage flags for a given frame
-         * @category Audio
+         * @group Audio
          */
         getFrameSoundEffectFlags(frameIndex) {
             assertRange(frameIndex, 0, this.frameCount - 1, 'Frame index');
@@ -1606,7 +1554,7 @@ MIGfMA0GCSqGSIb3DQEBAQUAA4GNADCBiQKBgQDCPLwTL6oSflv+gjywi/sM0TUB
         /**
          * Get the raw compressed audio data for a given track
          * @returns byte array
-         * @category Audio
+         * @group Audio
         */
         getAudioTrackRaw(trackId) {
             const trackMeta = this.soundMeta.get(trackId);
@@ -1617,7 +1565,7 @@ MIGfMA0GCSqGSIb3DQEBAQUAA4GNADCBiQKBgQDCPLwTL6oSflv+gjywi/sM0TUB
         /**
          * Get the decoded audio data for a given track, using the track's native samplerate
          * @returns Signed 16-bit PCM audio
-         * @category Audio
+         * @group Audio
         */
         decodeAudioTrack(trackId) {
             // note this doesn't resample
@@ -1661,7 +1609,7 @@ MIGfMA0GCSqGSIb3DQEBAQUAA4GNADCBiQKBgQDCPLwTL6oSflv+gjywi/sM0TUB
         /**
          * Get the decoded audio data for a given track, using the specified samplerate
          * @returns Signed 16-bit PCM audio
-         * @category Audio
+         * @group Audio
         */
         getAudioTrackPcm(trackId, dstFreq = this.sampleRate) {
             const srcPcm = this.decodeAudioTrack(trackId);
@@ -1688,7 +1636,7 @@ MIGfMA0GCSqGSIb3DQEBAQUAA4GNADCBiQKBgQDCPLwTL6oSflv+gjywi/sM0TUB
         /**
          * Get the full mixed audio for the Flipnote, using the specified samplerate
          * @returns Signed 16-bit PCM audio
-         * @category Audio
+         * @group Audio
         */
         getAudioMasterPcm(dstFreq = this.sampleRate) {
             const dstSize = Math.ceil(this.duration * dstFreq);
@@ -1724,8 +1672,12 @@ MIGfMA0GCSqGSIb3DQEBAQUAA4GNADCBiQKBgQDCPLwTL6oSflv+gjywi/sM0TUB
             return master;
         }
         /**
+         * @groupDescription Verification
+         * ahsjkhaskjdhaslkhalsdhasldj
+         */
+        /**
          * Get the body of the Flipnote - the data that is digested for the signature
-         * @category Verification
+         * @group Verification
          */
         getBody() {
             const bodyEnd = this.soundDataOffset + this.soundDataLength + 32;
@@ -1733,7 +1685,7 @@ MIGfMA0GCSqGSIb3DQEBAQUAA4GNADCBiQKBgQDCPLwTL6oSflv+gjywi/sM0TUB
         }
         /**
         * Get the Flipnote's signature data
-        * @category Verification
+        * @group Verification
         */
         getSignature() {
             const bodyEnd = this.soundDataOffset + this.soundDataLength + 32;
@@ -1741,7 +1693,7 @@ MIGfMA0GCSqGSIb3DQEBAQUAA4GNADCBiQKBgQDCPLwTL6oSflv+gjywi/sM0TUB
         }
         /**
          * Verify whether this Flipnote's signature is valid
-         * @category Verification
+         * @group Verification
          */
         async verify() {
             const key = await rsaLoadPublicKey(PPM_PUBLIC_KEY, 'SHA-1');
@@ -1789,6 +1741,59 @@ MIGfMA0GCSqGSIb3DQEBAQUAA4GNADCBiQKBgQDCPLwTL6oSflv+gjywi/sM0TUB
     ];
     /** Public key used for Flipnote verification, in PEM format */
     PpmParser.publicKey = PPM_PUBLIC_KEY;
+
+    /**
+     * Match an FSID from Flipnote Studio 3D
+     * e.g. 003f-0b7e-82a6-fe0bda
+     * @internal
+     */
+    const REGEX_KWZ_FSID = /^[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{6}$/;
+    /**
+     * Match an FSID from a DSi Library note (PPM to KWZ conversion)
+     * e.g. 10b8-b909-5180-9b2013
+     * @internal
+     */
+    const REGEX_KWZ_DSI_LIBRARY_FSID = /^(00|10|12|14)[0-9a-f]{2}-[0-9a-f]{4}-[0-9a-f]{3}0-[0-9a-f]{4}[0159]{1}[0-9a-f]{1}$/;
+    /**
+     * @internal
+     */
+    // export const KWZ_DSI_LIBRARY_FSID_SPECIAL_CASE_SUFFIX = PPM_FSID_SPECIAL_CASE.map(id => convertPpmFsidToKwzFsidSuffix(id));
+    /**
+     * Indicates whether the input is a valid Flipnote Studio 3D user ID
+     */
+    const isKwzFsid = (fsid) => REGEX_KWZ_FSID.test(fsid);
+    /**
+     * Indicates whether the input is a valid DSi Library user ID
+     */
+    const isKwzDsiLibraryFsid = (fsid) => {
+        if (REGEX_KWZ_DSI_LIBRARY_FSID.test(fsid))
+            return true;
+        // for (let suffix of KWZ_DSI_LIBRARY_FSID_SPECIAL_CASE_SUFFIX) {
+        //   if (fsid.endsWith(suffix))
+        //     return true;
+        // }
+        return false;
+    };
+    /**
+     * Get the region for any valid Flipnote Studio 3D user ID.
+     * NOTE: This may be incorrect for IDs that are not from the DSi Library.
+     */
+    const getKwzFsidRegion = (fsid) => {
+        if (isKwzDsiLibraryFsid(fsid)) {
+            switch (fsid.charAt(19)) {
+                case '0':
+                case '1':
+                    return exports.FlipnoteRegion.JPN;
+                case '5':
+                    return exports.FlipnoteRegion.USA;
+                case '9':
+                    return exports.FlipnoteRegion.EUR;
+                default:
+                    return exports.FlipnoteRegion.UNKNOWN;
+            }
+        }
+        return exports.FlipnoteRegion.UNKNOWN;
+    };
 
     var _a;
     /**
@@ -1880,9 +1885,16 @@ kQIDAQAB
      * Parser class for Flipnote Studio 3D's KWZ animation format
      *
      * KWZ format docs: https://github.com/Flipnote-Collective/flipnote-studio-3d-docs/wiki/KWZ-Format
-     * @category File Parser
+     * @group File Parser
      */
-    class KwzParser extends FlipnoteParserBase {
+    class KwzParser extends BaseParser {
+        static matchBuffer(buffer) {
+            // check the buffer's magic to identify which format it uses
+            const magicBytes = new Uint8Array(buffer.slice(0, 4));
+            const magic = (magicBytes[0] << 24) | (magicBytes[1] << 16) | (magicBytes[2] << 8);
+            // check if magic is KFH (kwz magic) or  KIC (fs3d folder icon)
+            return magic === 0x4B464800 || magic === 0x4B494300;
+        }
         /**
          * Create a new KWZ file parser instance
          * @param arrayBuffer an ArrayBuffer containing file data
@@ -2172,7 +2184,7 @@ kQIDAQAB
          * Decodes the thumbnail image embedded in the Flipnote. Will return a {@link FlipnoteThumbImage} containing JPEG data.
          *
          * Note: For most purposes, you should probably just decode the thumbnail fraa to get a higher resolution image.
-         * @category Meta
+         * @group Meta
          */
         getThumbnailImage() {
             assert(this.sectionMap.has('KTN'), 'KTN section missing - Note that folder icons and comments do not contain thumbnail data');
@@ -2197,7 +2209,7 @@ kQIDAQAB
          *  - index 4 is the layer B color 2 index
          *  - index 5 is the layer C color 1 index
          *  - index 6 is the layer C color 2 index
-         * @category Image
+         * @group Image
         */
         getFramePaletteIndices(frameIndex) {
             assertRange(frameIndex, 0, this.frameCount - 1, 'Frame index');
@@ -2224,7 +2236,7 @@ kQIDAQAB
          *  - index 4 is the layer B color 2
          *  - index 5 is the layer C color 1
          *  - index 6 is the layer C color 2
-         * @category Image
+         * @group Image
         */
         getFramePalette(frameIndex) {
             assertRange(frameIndex, 0, this.frameCount - 1, 'Frame index');
@@ -2239,7 +2251,7 @@ kQIDAQAB
         /**
          * Determines if a given frame is a video key frame or not. This returns an array of booleans for each layer, since keyframe encoding is done on a per-layer basis.
          * @param frameIndex
-         * @category Image
+         * @group Image
         */
         getIsKeyFrame(frameIndex) {
             const flag = this.getFrameDiffingFlag(frameIndex);
@@ -2252,7 +2264,7 @@ kQIDAQAB
         /**
          * Get the 3D depths for each layer in a given frame.
          * @param frameIndex
-         * @category Image
+         * @group Image
         */
         getFrameLayerDepths(frameIndex) {
             assertRange(frameIndex, 0, this.frameCount - 1, 'Frame index');
@@ -2266,7 +2278,7 @@ kQIDAQAB
         /**
          * Get the FSID for a given frame's original author.
          * @param frameIndex
-         * @category Meta
+         * @group Meta
         */
         getFrameAuthor(frameIndex) {
             assertRange(frameIndex, 0, this.frameCount - 1, 'Frame index');
@@ -2275,7 +2287,7 @@ kQIDAQAB
         }
         /**
          * Get the camera flags for a given frame
-         * @category Image
+         * @group Image
          * @returns Array of booleans, indicating whether each layer uses a photo or not
         */
         getFrameCameraFlags(frameIndex) {
@@ -2289,7 +2301,7 @@ kQIDAQAB
         }
         /**
          * Get the layer draw order for a given frame
-         * @category Image
+         * @group Image
         */
         getFrameLayerOrder(frameIndex) {
             assertRange(frameIndex, 0, this.frameCount - 1, 'Frame index');
@@ -2298,7 +2310,7 @@ kQIDAQAB
         }
         /**
          * Decode a frame, returning the raw pixel buffers for each layer
-         * @category Image
+         * @group Image
         */
         decodeFrame(frameIndex, diffingFlag = 0x7, isPrevFrame = false) {
             assertRange(frameIndex, 0, this.frameCount - 1, 'Frame index');
@@ -2507,7 +2519,7 @@ kQIDAQAB
         }
         /**
          * Get the sound effect flags for every frame in the Flipnote
-         * @category Audio
+         * @group Audio
         */
         decodeSoundFlags() {
             if (this.soundFlags !== undefined)
@@ -2519,7 +2531,7 @@ kQIDAQAB
         }
         /**
          * Get the sound effect usage flags for every frame
-         * @category Audio
+         * @group Audio
          */
         getSoundEffectFlags() {
             return this.decodeSoundFlags().map((frameFlags) => ({
@@ -2532,7 +2544,7 @@ kQIDAQAB
         /**
          * Get the sound effect usage for a given frame
          * @param frameIndex
-         * @category Audio
+         * @group Audio
          */
         getFrameSoundEffectFlags(frameIndex) {
             const frameFlags = this.decodeFrameSoundFlags(frameIndex);
@@ -2546,7 +2558,7 @@ kQIDAQAB
         /**
          * Get the raw compressed audio data for a given track
          * @returns Byte array
-         * @category Audio
+         * @group Audio
         */
         getAudioTrackRaw(trackId) {
             const trackMeta = this.soundMeta.get(trackId);
@@ -2608,7 +2620,7 @@ kQIDAQAB
         /**
          * Get the decoded audio data for a given track, using the track's native samplerate
          * @returns Signed 16-bit PCM audio
-         * @category Audio
+         * @group Audio
         */
         decodeAudioTrack(trackId) {
             const settings = this.settings;
@@ -2667,7 +2679,7 @@ kQIDAQAB
         /**
          * Get the decoded audio data for a given track, using the specified samplerate
          * @returns Signed 16-bit PCM audio
-         * @category Audio
+         * @group Audio
         */
         getAudioTrackPcm(trackId, dstFreq = this.sampleRate) {
             const srcPcm = this.decodeAudioTrack(trackId);
@@ -2694,7 +2706,7 @@ kQIDAQAB
         /**
          * Get the full mixed audio for the Flipnote, using the specified samplerate
          * @returns Signed 16-bit PCM audio
-         * @category Audio
+         * @group Audio
         */
         getAudioMasterPcm(dstFreq = this.sampleRate) {
             const dstSize = Math.ceil(this.duration * dstFreq);
@@ -2735,7 +2747,7 @@ kQIDAQAB
         }
         /**
          * Get the body of the Flipnote - the data that is digested for the signature
-         * @category Verification
+         * @group Verification
          */
         getBody() {
             const bodyEnd = this.bodyEndOffset;
@@ -2743,7 +2755,7 @@ kQIDAQAB
         }
         /**
          * Get the Flipnote's signature data
-         * @category Verification
+         * @group Verification
          */
         getSignature() {
             const bodyEnd = this.bodyEndOffset;
@@ -2751,7 +2763,7 @@ kQIDAQAB
         }
         /**
          * Verify whether this Flipnote's signature is valid
-         * @category Verification
+         * @group Verification
          */
         async verify() {
             const key = await rsaLoadPublicKey(KWZ_PUBLIC_KEY, 'SHA-256');
@@ -2816,178 +2828,139 @@ kQIDAQAB
 
     /**
      * Loader for web url strings (Browser only)
-     * @category Loader
+     * @group Loader
      */
-    const webUrlLoader = {
-        matches: function (source) {
-            return isBrowser && typeof source === 'string';
+    const urlLoader = {
+        name: 'url',
+        matches(source) {
+            return typeof source === 'string';
         },
-        load: function (source, resolve, reject) {
-            const xhr = new XMLHttpRequest();
-            xhr.open('GET', source, true);
-            xhr.responseType = 'arraybuffer';
-            xhr.onreadystatechange = function (e) {
-                if (xhr.readyState === 4) {
-                    if (xhr.status >= 200 && xhr.status < 300)
-                        resolve(xhr.response);
-                    else
-                        reject({
-                            type: 'httpError',
-                            status: xhr.status,
-                            statusText: xhr.statusText
-                        });
-                }
-            };
-            xhr.send(null);
-        }
-    };
-
-    /**
-     * Loader for web url strings (Node only)
-     * @category Loader
-     */
-    const nodeUrlLoader = {
-        matches: function (source) {
-            return isNode && typeof source === 'string';
-        },
-        load: function (source, resolve, reject) {
-            assertNodeEnv();
-            const http = dynamicRequire(module, 'https');
-            http.get(source, (res) => {
-                const chunks = [];
-                res.on('data', chunk => chunks.push(chunk));
-                res.on('end', () => {
-                    const buffer = Buffer.concat(chunks);
-                    resolve(buffer.buffer);
-                });
-                res.on('error', (err) => reject(err));
-            });
+        async load(source) {
+            const response = await fetch(source);
+            assert(response.status >= 200 && response.status < 300, `Failed to load Flipnote from URL, response failed with status ${response.status}`);
+            return await response.arrayBuffer();
         }
     };
 
     /**
      * Loader for File objects (browser only)
-     * @category Loader
+     * @group Loader
      */
     const fileLoader = {
-        matches: function (source) {
+        name: 'file',
+        matches(source) {
             return isBrowser
                 && typeof File !== 'undefined'
                 && typeof FileReader !== 'undefined'
                 && source instanceof File;
         },
-        load: function (source, resolve, reject) {
-            const reader = new FileReader();
-            reader.onload = (event) => {
-                resolve(reader.result);
-            };
-            reader.onerror = (event) => {
-                reject({ type: 'fileReadError' });
-            };
-            reader.readAsArrayBuffer(source);
+        async load(source) {
+            return source.arrayBuffer();
         }
     };
 
     /**
      * Loader for Blob objects (browser only)
-     * @category Loader
+     * @group Loader
      */
     const blobLoader = {
-        matches: function (source) {
+        name: 'blob',
+        matches(source) {
             return isBrowser
                 && typeof Blob !== 'undefined'
                 && typeof Response !== 'undefined'
                 && source instanceof Blob;
         },
-        load: function (source, resolve, reject) {
-            // https://stackoverflow.com/questions/15341912/how-to-go-from-blob-to-arraybuffer
-            new Response(source).arrayBuffer()
-                .then(resolve)
-                .catch(reject);
+        async load(source) {
+            return source.arrayBuffer();
         }
     };
 
     /**
      * Loader for Buffer objects (Node only)
-     * @category Loader
+     * @group Loader
      */
     const nodeBufferLoader = {
-        matches: function (source) {
+        name: 'node-buffer',
+        matches(source) {
             return isNode && (source instanceof Buffer);
         },
-        load: function (source, resolve, reject) {
-            resolve(source.buffer);
+        async load(source) {
+            return source.buffer;
         }
     };
 
     /**
      * Loader for ArrayBuffer objects
-     * @category Loader
+     * @group Loader
      */
     const arrayBufferLoader = {
-        matches: function (source) {
-            return (source instanceof ArrayBuffer);
+        name: 'array-buffer',
+        matches(source) {
+            return source instanceof ArrayBuffer;
         },
-        load: function (source, resolve, reject) {
-            resolve(source);
+        async load(source) {
+            return source;
         }
     };
 
-    /** @category Loader */
-    const DEFAULT_LOADERS = [
-        webUrlLoader,
-        nodeUrlLoader,
-        fileLoader,
-        blobLoader,
-        nodeBufferLoader,
-        arrayBufferLoader
-    ];
+    const LOADER_REGISTRY = new Map();
     /** @internal */
-    function loadSource(source, loaders = DEFAULT_LOADERS) {
-        return new Promise((resolve, reject) => {
-            for (let i = 0; i < loaders.length; i++) {
-                const loader = loaders[i];
-                if (loader.matches(source))
-                    return loader.load(source, resolve, reject);
+    const loadSource = (source) => {
+        for (let [name, loader] of LOADER_REGISTRY) {
+            if (!loader.matches(source))
+                continue;
+            try {
+                return loader.load(source);
             }
-            reject('No loader available for source type');
-        });
-    }
+            catch (e) {
+                err(`Failed to load Flipnote from source, loader "${name}" failed with error ${err}`);
+            }
+        }
+        err('No loader available for source type');
+    };
+    const registerLoader = (loader) => {
+        LOADER_REGISTRY.set(loader.name, loader);
+    };
+    registerLoader(urlLoader);
+    registerLoader(fileLoader);
+    registerLoader(blobLoader);
+    registerLoader(nodeBufferLoader);
+    registerLoader(arrayBufferLoader);
+
+    var index$1 = /*#__PURE__*/Object.freeze({
+        __proto__: null,
+        loadSource: loadSource,
+        registerLoader: registerLoader
+    });
 
     /**
      * Load a Flipnote from a given source, returning a promise with a parser object.
      * It will auto-detect the Flipnote format and return either a {@link PpmParser} or {@link KwzParser} accordingly.
      *
      * @param source - Source to load a Flipnote from. Depending on the operating environment, this can be:
-     * - A string representing a web URL
-     * - An {@link https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/ArrayBuffer | ArrayBuffer}
-     * - A {@link https://developer.mozilla.org/en-US/docs/Web/API/File | File} object (Browser only)
-     * - A {@link https://nodejs.org/api/buffer.html | Buffer} object (NodeJS only)
+     * - A string representing a web URL.
+     * - An {@link https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/ArrayBuffer | ArrayBuffer}.
+     * - A {@link https://developer.mozilla.org/en-US/docs/Web/API/File | File} object (Browser only).
+     * - A {@link https://nodejs.org/api/buffer.html | Buffer} object (NodeJS only).
+     *
      * You can also pass your own list of loaders to support your own source types.
+     *
      * @param parserConfig - Config settings to pass to the parser, see {@link FlipnoteParserSettings}
      * @param loaders - Optional list of file loaders ({@link LoaderDefinition}) when attempting to load a Flipnote. Loaders are tried in sequence until a matching one is found for the requested input.
      */
-    const parseSource = (source, parserConfig, loaders) => {
-        return loadSource(source, loaders)
-            .then((arrayBuffer) => {
-            return new Promise((resolve, reject) => {
-                // check the buffer's magic to identify which format it uses
-                const magicBytes = new Uint8Array(arrayBuffer.slice(0, 4));
-                const magic = (magicBytes[0] << 24) | (magicBytes[1] << 16) | (magicBytes[2] << 8) | magicBytes[3];
-                // check if magic is PARA (ppm magic)
-                if (magic === 0x50415241)
-                    resolve(new PpmParser(arrayBuffer, parserConfig));
-                // check if magic is KFH (kwz magic)
-                else if ((magic & 0xFFFFFF00) === 0x4B464800)
-                    resolve(new KwzParser(arrayBuffer, parserConfig));
-                // check if magic is KIC (fs3d folder icon)
-                else if ((magic & 0xFFFFFF00) === 0x4B494300)
-                    resolve(new KwzParser(arrayBuffer, parserConfig));
-                else
-                    reject('Could not identify source as a valid Flipnote file');
-            });
-        });
+    const parse = async (source, parserConfig) => {
+        const buffer = await loadSource(source);
+        if (PpmParser.matchBuffer(buffer))
+            return new PpmParser(buffer, parserConfig);
+        if (KwzParser.matchBuffer(buffer))
+            return new KwzParser(buffer, parserConfig);
+        err('Could not identify source as a valid Flipnote file');
     };
+    /**
+     * @deprecated Use {@link parse} instead.
+     */
+    const parseSource = parse;
 
     /**
      * Player event types
@@ -3052,23 +3025,19 @@ kQIDAQAB
     ];
 
     /** @internal */
-    function createTimeRanges(ranges) {
-        return {
-            length: ranges.length,
-            start: (i) => ranges[i][0],
-            end: (i) => ranges[i][1],
-        };
-    }
+    const createTimeRanges = (ranges) => ({
+        length: ranges.length,
+        start: (i) => ranges[i][0],
+        end: (i) => ranges[i][1],
+    });
     /** @internal */
-    function padNumber(num, strLength) {
-        return num.toString().padStart(strLength, '0');
-    }
+    const padNumber = (num, strLength) => num.toString().padStart(strLength, '0');
     /** @internal */
-    function formatTime(seconds) {
+    const formatTime = (seconds) => {
         const m = Math.floor((seconds % 3600) / 60);
         const s = Math.floor(seconds % 60);
         return `${m}:${padNumber(s, 2)}`;
-    }
+    };
 
     var CanvasStereoscopicMode;
     (function (CanvasStereoscopicMode) {
@@ -5971,14 +5940,10 @@ kQIDAQAB
             this.wasPlaying = false;
             /** @internal */
             this.isSeeking = false;
-            /** @internal */
-            this.lastParser = undefined;
-            /** @internal */
-            this.lastLoaders = undefined;
             /**
              * Playback animation loop
              * @internal
-             * @category Playback Control
+             * @group Playback Control
              */
             this.playbackLoop = (timestamp) => {
                 if (!this.isPlaying)
@@ -6091,44 +6056,44 @@ kQIDAQAB
         }
         /**
          * Implementation of the `HTMLMediaElement` {@link https://developer.mozilla.org/en-US/docs/Web/API/HTMLMediaElement/buffered | buffered } property
-         * @category HTMLVideoElement compatibility
+         * @group HTMLVideoElement compatibility
          */
         get buffered() {
             return createTimeRanges([[0, this.duration]]);
         }
         /**
          * Implementation of the `HTMLMediaElement` {@link https://developer.mozilla.org/en-US/docs/Web/API/HTMLMediaElement/seekable | seekable} property
-         * @category HTMLVideoElement compatibility
+         * @group HTMLVideoElement compatibility
          */
         get seekable() {
             return createTimeRanges([[0, this.duration]]);
         }
         /**
          * Implementation of the `HTMLMediaElement` {@link https://developer.mozilla.org/en-US/docs/Web/API/HTMLMediaElement/currentSrc | currentSrc} property
-         * @category HTMLVideoElement compatibility
+         * @group HTMLVideoElement compatibility
          */
         get currentSrc() {
             return this._src;
         }
         /**
          * Implementation of the `HTMLVideoElement` {@link https://developer.mozilla.org/en-US/docs/Web/API/HTMLVideoElement/videoWidth | videoWidth} property
-         * @category HTMLVideoElement compatibility
+         * @group HTMLVideoElement compatibility
          */
         get videoWidth() {
             return this.isNoteLoaded ? this.note.imageWidth : 0;
         }
         /**
          * Implementation of the `HTMLVideoElement` {@link https://developer.mozilla.org/en-US/docs/Web/API/HTMLVideoElement/videoHeight | videoHeight} property
-         * @category HTMLVideoElement compatibility
+         * @group HTMLVideoElement compatibility
          */
         get videoHeight() {
             return this.isNoteLoaded ? this.note.imageHeight : 0;
         }
         /**
          * Open a Flipnote from a source
-         * @category Lifecycle
+         * @group Lifecycle
          */
-        async load(source, getParser, loaders) {
+        async load(source) {
             // close currently open note first
             if (this.isNoteLoaded)
                 this.closeNote();
@@ -6139,21 +6104,19 @@ kQIDAQAB
                 return this.openNote(this.note);
             // otherwise do a normal load
             this.emit(exports.PlayerEvent.LoadStart);
-            const [err, note] = await until(() => getParser(source, this.parserSettings, loaders));
+            const [err, note] = await until(() => parseSource(source, this.parserSettings));
             if (err) {
                 this.emit(exports.PlayerEvent.Error, err);
                 throw new Error(`Error loading Flipnote: ${err.message}`);
             }
-            this.lastParser = getParser;
-            this.lastLoaders = loaders;
             this.openNote(note);
         }
         /**
          * Reload the current Flipnote
          */
         async reload() {
-            if (this.note && this.lastParser)
-                return await this.load(this.note.buffer, this.lastParser, this.lastLoaders);
+            if (this.note)
+                return await this.load(this.note.buffer);
         }
         /**
          * Reload the current Flipnote
@@ -6164,7 +6127,7 @@ kQIDAQAB
         }
         /**
          * Close the currently loaded Flipnote
-         * @category Lifecycle
+         * @group Lifecycle
          */
         closeNote() {
             this.pause();
@@ -6185,7 +6148,7 @@ kQIDAQAB
         }
         /**
          * Open a Flipnote into the player
-         * @category Lifecycle
+         * @group Lifecycle
          */
         openNote(note) {
             if (this.isNoteLoaded)
@@ -6217,7 +6180,7 @@ kQIDAQAB
         }
         /**
          * Set the current playback time
-         * @category Playback Control
+         * @group Playback Control
          */
         setCurrentTime(value) {
             this.assertNoteLoaded();
@@ -6228,14 +6191,14 @@ kQIDAQAB
         }
         /**
          * Get the current playback time
-         * @category Playback Control
+         * @group Playback Control
          */
         getCurrentTime() {
             return this.currentTime;
         }
         /**
          * Get the current time as a counter string, like `"0:00 / 1:00"`
-         * @category Playback Control
+         * @group Playback Control
          */
         getTimeCounter() {
             const currentTime = formatTime(Math.max(this.currentTime, 0));
@@ -6244,7 +6207,7 @@ kQIDAQAB
         }
         /**
          * Get the current frame index as a counter string, like `"001 / 999"`
-         * @category Playback Control
+         * @group Playback Control
          */
         getFrameCounter() {
             const frame = padNumber(this.currentFrame + 1, 3);
@@ -6253,7 +6216,7 @@ kQIDAQAB
         }
         /**
          * Set the current playback progress as a percentage (`0` to `100`)
-         * @category Playback Control
+         * @group Playback Control
          */
         setProgress(value) {
             this.assertNoteLoaded();
@@ -6262,14 +6225,14 @@ kQIDAQAB
         }
         /**
          * Get the current playback progress as a percentage (0 to 100)
-         * @category Playback Control
+         * @group Playback Control
          */
         getProgress() {
             return this.progress;
         }
         /**
          * Begin animation playback starting at the current position
-         * @category Playback Control
+         * @group Playback Control
          */
         async play() {
             this.assertNoteLoaded();
@@ -6290,7 +6253,7 @@ kQIDAQAB
         }
         /**
          * Pause animation playback at the current position
-         * @category Playback Control
+         * @group Playback Control
          */
         pause() {
             if (!this.isPlaying)
@@ -6303,7 +6266,7 @@ kQIDAQAB
         }
         /**
          * Resumes animation playback if paused, otherwise pauses
-         * @category Playback Control
+         * @group Playback Control
          */
         togglePlay() {
             if (!this.isPlaying)
@@ -6313,28 +6276,28 @@ kQIDAQAB
         }
         /**
          * Determines if playback is currently paused
-         * @category Playback Control
+         * @group Playback Control
          */
         getPaused() {
             return !this.isPlaying;
         }
         /**
          * Get the duration of the Flipnote in seconds
-         * @category Playback Control
+         * @group Playback Control
          */
         getDuration() {
             return this.duration;
         }
         /**
          * Determines if playback is looped
-         * @category Playback Control
+         * @group Playback Control
          */
         getLoop() {
             return this._loop;
         }
         /**
          * Set the playback loop
-         * @category Playback Control
+         * @group Playback Control
          */
         setLoop(loop) {
             this._loop = loop;
@@ -6342,14 +6305,14 @@ kQIDAQAB
         }
         /**
          * Switch the playback loop between on and off
-         * @category Playback Control
+         * @group Playback Control
          */
         toggleLoop() {
             this.setLoop(!this._loop);
         }
         /**
          * Jump to a given animation frame
-         * @category Frame Control
+         * @group Frame Control
          */
         setCurrentFrame(newFrameValue) {
             this.assertNoteLoaded();
@@ -6370,7 +6333,7 @@ kQIDAQAB
         /**
          * Jump to the next animation frame
          * If the animation loops, and is currently on its last frame, it will wrap to the first frame
-         * @category Frame Control
+         * @group Frame Control
          */
         nextFrame() {
             if ((this.loop) && (this.currentFrame === this.frameCount - 1))
@@ -6382,7 +6345,7 @@ kQIDAQAB
         /**
          * Jump to the next animation frame
          * If the animation loops, and is currently on its first frame, it will wrap to the last frame
-         * @category Frame Control
+         * @group Frame Control
          */
         prevFrame() {
             if ((this.loop) && (this.currentFrame === 0))
@@ -6393,7 +6356,7 @@ kQIDAQAB
         }
         /**
          * Jump to the last animation frame
-         * @category Frame Control
+         * @group Frame Control
          */
         lastFrame() {
             this.currentFrame = this.frameCount - 1;
@@ -6401,7 +6364,7 @@ kQIDAQAB
         }
         /**
          * Jump to the first animation frame
-         * @category Frame Control
+         * @group Frame Control
          */
         firstFrame() {
             this.currentFrame = 0;
@@ -6409,14 +6372,14 @@ kQIDAQAB
         }
         /**
          * Jump to the thumbnail frame
-         * @category Frame Control
+         * @group Frame Control
          */
         thumbnailFrame() {
             this.currentFrame = this.note.thumbFrameIndex;
         }
         /**
          * Begins a seek operation
-         * @category Playback Control
+         * @group Playback Control
          */
         startSeek() {
             if (!this.isSeeking) {
@@ -6429,7 +6392,7 @@ kQIDAQAB
         /**
          * Seek the playback progress to a different position
          * @param position - animation playback position, range `0` to `1`
-         * @category Playback Control
+         * @group Playback Control
          */
         seek(position) {
             if (this.isSeeking)
@@ -6437,7 +6400,7 @@ kQIDAQAB
         }
         /**
          * Ends a seek operation
-         * @category Playback Control
+         * @group Playback Control
          */
         endSeek() {
             if (this.isSeeking && this.wasPlaying === true)
@@ -6448,14 +6411,14 @@ kQIDAQAB
         /**
          * Draws the specified animation frame to the canvas. Note that this doesn't update the playback time or anything, it simply decodes a given frame and displays it.
          * @param frameIndex
-         * @category Display Control
+         * @group Display Control
          */
         drawFrame(frameIndex) {
             this.renderer.drawFrame(frameIndex);
         }
         /**
          * Forces the current animation frame to be redrawn
-         * @category Display Control
+         * @group Display Control
          */
         forceUpdate() {
             this.renderer.forceUpdate();
@@ -6467,7 +6430,7 @@ kQIDAQAB
          *
          * The ratio between `width` and `height` should be 3:4 for best results
          *
-         * @category Display Control
+         * @group Display Control
          */
         resize(width, height) {
             if (height !== width * .75)
@@ -6480,7 +6443,7 @@ kQIDAQAB
          * @param layer - layer index, starting at 1
          * @param value - `true` for visible, `false` for invisible
          *
-         * @category Display Control
+         * @group Display Control
          */
         setLayerVisibility(layer, value) {
             this.note.layerVisibility[layer] = value;
@@ -6491,7 +6454,7 @@ kQIDAQAB
          * Returns the visibility state for a given layer
          * @param layer - layer index, starting at 1
          *
-         * @category Display Control
+         * @group Display Control
          */
         getLayerVisibility(layer) {
             return this.layerVisibility[layer];
@@ -6499,7 +6462,7 @@ kQIDAQAB
         /**
          * Toggles whether an animation layer should be visible throughout the entire animation
          *
-         * @category Display Control
+         * @group Display Control
          */
         toggleLayerVisibility(layerIndex) {
             this.setLayerVisibility(layerIndex, !this.layerVisibility[layerIndex]);
@@ -6512,14 +6475,14 @@ kQIDAQAB
         }
         /**
          * Toggle audio Sudomemo equalizer filter
-         * @category Audio Control
+         * @group Audio Control
          */
         toggleAudioEq() {
             this.setAudioEq(!this.audio.useEq);
         }
         /**
          * Turn audio Sudomemo equalizer filter on or off
-         * @category Audio Control
+         * @group Audio Control
          */
         setAudioEq(state) {
             if (this.isPlaying) {
@@ -6534,21 +6497,21 @@ kQIDAQAB
         }
         /**
          * Turn the audio off
-         * @category Audio Control
+         * @group Audio Control
          */
         mute() {
             this.setMuted(true);
         }
         /**
          * Turn the audio on
-         * @category Audio Control
+         * @group Audio Control
          */
         unmute() {
             this.setMuted(false);
         }
         /**
          * Turn the audio on or off
-         * @category Audio Control
+         * @group Audio Control
          */
         setMuted(isMute) {
             if (isMute)
@@ -6560,21 +6523,21 @@ kQIDAQAB
         }
         /**
          * Get the audio mute state
-         * @category Audio Control
+         * @group Audio Control
          */
         getMuted() {
             return this.volume === 0 ? true : this._muted;
         }
         /**
          * Switch the audio between muted and unmuted
-         * @category Audio Control
+         * @group Audio Control
          */
         toggleMuted() {
             this.setMuted(!this._muted);
         }
         /**
          * Set the audio volume
-         * @category Audio Control
+         * @group Audio Control
          */
         setVolume(volume) {
             assertRange(volume, 0, 1, 'volume');
@@ -6584,28 +6547,28 @@ kQIDAQAB
         }
         /**
          * Get the current audio volume
-         * @category Audio Control
+         * @group Audio Control
          */
         getVolume() {
             return this._muted ? 0 : this._volume;
         }
         /**
          * Implementation of the `HTMLVideoElement` {@link https://developer.mozilla.org/en-US/docs/Web/API/HTMLVideoElement/seekToNextFrame | seekToNextFrame} method
-         * @category HTMLVideoElement compatibility
+         * @group HTMLVideoElement compatibility
          */
         seekToNextFrame() {
             this.nextFrame();
         }
         /**
          * Implementation of the `HTMLMediaElement` {@link https://developer.mozilla.org/en-US/docs/Web/API/HTMLMediaElement/fastSeek | fastSeek} method
-         * @category HTMLVideoElement compatibility
+         * @group HTMLVideoElement compatibility
          */
         fastSeek(time) {
             this.currentTime = time;
         }
         /**
          * Implementation of the `HTMLVideoElement` {@link https://developer.mozilla.org/en-US/docs/Web/API/HTMLVideoElement/getVideoPlaybackQuality | getVideoPlaybackQuality } method
-         * @category HTMLVideoElement compatibility
+         * @group HTMLVideoElement compatibility
          */
         canPlayType(mediaType) {
             switch (mediaType) {
@@ -6627,7 +6590,7 @@ kQIDAQAB
         }
         /**
          * Implementation of the `HTMLVideoElement` [https://developer.mozilla.org/en-US/docs/Web/API/HTMLVideoElement/getVideoPlaybackQuality](getVideoPlaybackQuality) method
-         * @category HTMLVideoElement compatibility
+         * @group HTMLVideoElement compatibility
          */
         getVideoPlaybackQuality() {
             const quality = {
@@ -6641,21 +6604,21 @@ kQIDAQAB
         }
         /**
          * Implementation of the `HTMLVideoElement` [https://developer.mozilla.org/en-US/docs/Web/API/HTMLVideoElement/requestPictureInPicture](requestPictureInPicture) method. Not currently working, only a stub.
-         * @category HTMLVideoElement compatibility
+         * @group HTMLVideoElement compatibility
          */
         requestPictureInPicture() {
             throw new Error('Not implemented');
         }
         /**
          * Implementation of the `HTMLVideoElement` [https://developer.mozilla.org/en-US/docs/Web/API/HTMLVideoElement/captureStream](captureStream) method. Not currently working, only a stub.
-         * @category HTMLVideoElement compatibility
+         * @group HTMLVideoElement compatibility
          */
         captureStream() {
             throw new Error('Not implemented');
         }
         /**
          * Add an event callback
-         * @category Event API
+         * @group Event API
          */
         on(eventType, listener) {
             const events = this.events;
@@ -6669,7 +6632,7 @@ kQIDAQAB
         }
         /**
          * Remove an event callback
-         * @category Event API
+         * @group Event API
          */
         off(eventType, callback) {
             const events = this.events;
@@ -6683,7 +6646,7 @@ kQIDAQAB
         }
         /**
          * Emit an event - mostly used internally
-         * @category Event API
+         * @group Event API
          */
         emit(eventType, ...args) {
             const events = this.events;
@@ -6704,14 +6667,14 @@ kQIDAQAB
         }
         /**
          * Remove all registered event callbacks
-         * @category Event API
+         * @group Event API
          */
         clearEvents() {
             this.events.clear();
         }
         /**
          * Destroy a Player instance
-         * @category Lifecycle
+         * @group Lifecycle
          */
         async destroy() {
             this.clearEvents();
@@ -7097,7 +7060,7 @@ kQIDAQAB
      * GIF image encoder
      *
      * Supports static single-frame GIF export as well as animated GIF
-     * @category File Encoder
+     * @group File Encoder
      */
     class GifImage extends EncoderBase {
         /**
@@ -7282,7 +7245,7 @@ kQIDAQAB
      *
      * Currently only supports PCM s16_le audio encoding.
      *
-     * @category File Encoder
+     * @group File Encoder
      */
     class WavAudio extends EncoderBase {
         /**
@@ -7379,6 +7342,95 @@ kQIDAQAB
             return resultBytes.buffer;
         }
     }
+
+    /**
+     * Indicates whether the input is a valid Flipnote Studio or Flipnote Studio 3D user ID
+     */
+    const isFsid = (fsid) => isPpmFsid(fsid) || isKwzFsid(fsid);
+    /**
+     * Get the region for any valid Flipnote Studio or Flipnote Studio 3D user ID
+     */
+    const getFsidRegion = (fsid) => {
+        if (isPpmFsid(fsid))
+            return getPpmFsidRegion(fsid);
+        else if (isKwzFsid(fsid))
+            return getKwzFsidRegion(fsid);
+        return exports.FlipnoteRegion.UNKNOWN;
+    };
+    /**
+     * Convert a PPM Flipnote Studio ID to the format used by KWZ Flipnote Studio IDs (as seen in Nintendo DSi Library Flipnotes).
+     * Will return `null` if the conversion could not be made.
+     *
+     * NOTE: KWZ Flipnote Studio IDs contain an extra two characters at the beginning. It is not possible to resolve these from a PPM Flipnote Studio ID.
+     */
+    const ppmFsidToKwzFsidSuffix = (fsid) => {
+        if (isPpmFsid(fsid)) {
+            const a = fsid.slice(14, 16);
+            const b = fsid.slice(12, 14);
+            const c = fsid.slice(10, 12);
+            const d = fsid.slice(8, 10);
+            const e = fsid.slice(6, 8);
+            const f = fsid.slice(4, 6);
+            const g = fsid.slice(2, 4);
+            const h = fsid.slice(0, 2);
+            return `${a}-${b}${c}-${d}${e}-${f}${g}${h}`.toLocaleLowerCase();
+        }
+        return null;
+    };
+    /**
+     * Convert a PPM Flipnote Studio ID to an array of all possible matching KWZ Flipnote Studio IDs (as seen in Nintendo DSi Library Flipnotes).
+     * Will return `null` if the conversion could not be made.
+     */
+    const ppmFsidToPossibleKwzFsids = (fsid) => {
+        const kwzIdSuffix = ppmFsidToKwzFsidSuffix(fsid);
+        if (kwzIdSuffix) {
+            return [
+                '00' + kwzIdSuffix,
+                '10' + kwzIdSuffix,
+                '12' + kwzIdSuffix,
+                '14' + kwzIdSuffix,
+            ];
+        }
+        return null;
+    };
+    /**
+     * Convert a KWZ Flipnote Studio ID (from a Nintendo DSi Library Flipnote) to the format used by PPM Flipnote Studio IDs.
+     * Will return `null` if the conversion could not be made.
+     */
+    const kwzFsidToPpmFsid = (fsid) => {
+        if (isKwzDsiLibraryFsid(fsid)) {
+            const a = fsid.slice(19, 21);
+            const b = fsid.slice(17, 19);
+            const c = fsid.slice(15, 17);
+            const d = fsid.slice(12, 14);
+            const e = fsid.slice(10, 12);
+            const f = fsid.slice(7, 9);
+            const g = fsid.slice(5, 7);
+            const h = fsid.slice(2, 4);
+            return `${a}${b}${c}${d}${e}${f}${g}${h}`.toUpperCase();
+        }
+        return null;
+    };
+    /**
+     * Tests if a KWZ Flipnote Studio ID (from a Nintendo DSi Library Flipnote) matches a given PPM-formatted Flipnote Studio ID.
+     */
+    const kwzFsidMatchesPpmFsid = (kwzFsid, ppmFsid) => kwzFsidToPpmFsid(kwzFsid) === ppmFsid;
+
+    var index = /*#__PURE__*/Object.freeze({
+        __proto__: null,
+        PPM_FSID_SPECIAL_CASE: PPM_FSID_SPECIAL_CASE,
+        getFsidRegion: getFsidRegion,
+        getKwzFsidRegion: getKwzFsidRegion,
+        getPpmFsidRegion: getPpmFsidRegion,
+        isFsid: isFsid,
+        isKwzDsiLibraryFsid: isKwzDsiLibraryFsid,
+        isKwzFsid: isKwzFsid,
+        isPpmFsid: isPpmFsid,
+        kwzFsidMatchesPpmFsid: kwzFsidMatchesPpmFsid,
+        kwzFsidToPpmFsid: kwzFsidToPpmFsid,
+        ppmFsidToKwzFsidSuffix: ppmFsidToKwzFsidSuffix,
+        ppmFsidToPossibleKwzFsids: ppmFsidToPossibleKwzFsids
+    });
 
     // Entrypoint for web and node
     /**
@@ -7489,12 +7541,172 @@ kQIDAQAB
 
     /// <reference types="resize-observer-browser" /> 
     /**
-     * @category Web Component
+     * @group Web Component
      * @internal
      */
-    let PlayerComponent$1 = class PlayerComponent extends PlayerMixin(s) {
+    exports.PlayerComponent = class PlayerComponent extends PlayerMixin(s) {
         static get styles() {
-            return i$4 `:host{display:inline-block}.Player{display:inline-block;position:relative;font-family:var(--flipnote-player-font-family,sans-serif)}.CanvasArea{position:relative}.CanvasArea:focus{outline:var(--flipnote-player-focus-outline,3px solid #ffd3a6);outline-offset:2px}.PlayerCanvas{position:relative;display:block}.PlayerCanvas canvas{display:block}.Overlay{position:absolute;top:0;left:0;background:#ebf0f3;color:#4b4c53;width:100%;height:100%;display:flex;justify-content:center;align-items:center}.Overlay--error{background:#ff8b8b;color:#ca2a32}@keyframes spin{from{transform:rotateZ(0)}to{transform:rotateZ(360deg)}}.LoaderIcon{animation:spin infinite 1.2s linear}.Controls{background:var(--flipnote-player-controls-background,none)}.MuteIcon{width:28px;height:28px}.Controls__groupLeft,.Controls__groupRight,.Controls__row{display:flex;align-items:center}.Controls__groupLeft{margin-right:auto}.Controls__groupRight{margin-left:auto}.Controls__playButton{height:32px;width:32px;padding:2px}.MuteIcon{width:28px;height:28px}.LoaderIcon{width:40px;height:40px}.Controls.Controls--compact{margin:6px 0}.Controls__frameCounter{min-width:90px;font-variant-numeric:tabular-nums}.Controls__progressBar{flex:1}.Controls--compact .Controls__playButton{margin-right:8px}.Controls--compact .Controls__progressBar{flex:1}.Controls--default .Controls__playButton{margin-right:8px}.Controls--default .Controls__progressBar{margin-top:2px;margin-bottom:2px;display:block}.Controls--default .Controls__volumeBar{width:70px;margin-left:8px}.Button{border:0;padding:0;outline:0;-webkit-appearance:none;display:block;font-family:inherit;font-size:inherit;text-align:center;cursor:pointer;background:var(--flipnote-player-button-background,#ffd3a6);color:var(--flipnote-player-button-color,#f36a2d);border-radius:4px}.Button:focus{outline:3px solid var(--flipnote-player-button-background,#ffd3a6);outline-offset:2px}.Button flipnote-player-icon{display:block}`;
+            return i$4 `
+
+      :host { 
+        display: inline-block; 
+      }
+
+      .Player {
+        display: inline-block;
+        position: relative;
+        font-family: var(--flipnote-player-font-family, sans-serif);
+      }
+
+      .CanvasArea {
+        position: relative;
+      }
+
+      .CanvasArea:focus {
+        outline: var(--flipnote-player-focus-outline, 3px solid #FFD3A6);
+        outline-offset: 2px;
+      }
+
+      .PlayerCanvas {
+        position: relative;
+        display: block;
+      }
+
+      .PlayerCanvas canvas {
+        display: block;
+      }
+
+      .Overlay {
+        position: absolute;
+        top: 0;
+        left: 0;
+        background: #ebf0f3;
+        color: #4b4c53;
+        width: 100%;
+        height: 100%;
+        display: flex;
+        justify-content: center;
+        align-items: center;
+      }
+
+      .Overlay--error {
+        background: #ff8b8b;
+        color: #ca2a32;
+      }
+
+      @keyframes spin {
+        from {
+          transform: rotateZ(0);
+        }
+        to {
+          transform: rotateZ(360deg);
+        }
+      }
+
+      .LoaderIcon {
+        animation: spin infinite 1.2s linear;
+      }
+
+      .Controls {
+        background: var(--flipnote-player-controls-background, none);
+      }
+
+      .MuteIcon {
+        width: 28px;
+        height: 28px;
+      }
+
+      .Controls__row,
+      .Controls__groupLeft,
+      .Controls__groupRight {
+        display: flex;
+        align-items: center;
+      }
+
+      .Controls__groupLeft {
+        margin-right: auto;
+      }
+
+      .Controls__groupRight {
+        margin-left: auto;
+      }
+
+      .Controls__playButton {
+        height: 32px;
+        width: 32px;
+        padding: 2px;
+      }
+
+      .MuteIcon {
+        width: 28px;
+        height: 28px;
+      }
+
+      .LoaderIcon {
+        width: 40px;
+        height: 40px;
+      }
+
+      .Controls.Controls--compact {
+        margin: 6px 0;
+      }
+
+      .Controls__frameCounter {
+        min-width: 90px;
+        font-variant-numeric: tabular-nums;
+      }
+
+      .Controls__progressBar {
+        flex: 1;
+      }
+
+      .Controls--compact .Controls__playButton {
+        margin-right: 8px;
+      }
+
+      .Controls--compact .Controls__progressBar {
+        flex: 1;
+      }
+
+      .Controls--default .Controls__playButton {
+        margin-right: 8px;
+      }
+
+      .Controls--default .Controls__progressBar {
+        margin-top: 2px;
+        margin-bottom: 2px;
+        display: block;
+      }
+
+      .Controls--default .Controls__volumeBar {
+        width: 70px;
+        margin-left: 8px;
+      }
+
+      .Button {
+        border: 0;
+        padding: 0;
+        outline: 0;
+        -webkit-appearance: none;
+        display: block;
+        font-family: inherit;
+        font-size: inherit;
+        text-align: center;
+        cursor: pointer;
+        background: var(--flipnote-player-button-background, #FFD3A6);
+        color: var(--flipnote-player-button-color, #F36A2D);
+        border-radius: 4px;
+      }
+
+      .Button:focus {
+        outline: 3px solid var(--flipnote-player-button-background, #FFD3A6);
+        outline-offset: 2px;
+      }
+
+      .Button flipnote-player-icon {
+        display: block;
+      }
+    `;
         }
         get width() {
             return this._width;
@@ -7514,7 +7726,7 @@ kQIDAQAB
         set src(src) {
             const oldValue = this._playerSrc;
             if (this._isPlayerAvailable)
-                this.player.load(src, parseSource);
+                this.player.load(src);
             this._playerSrc = src;
             this.requestUpdate('src', oldValue);
         }
@@ -7595,19 +7807,100 @@ kQIDAQAB
         }
         /** @internal */
         render() {
-            return x `<style>:host{width:${this._cssWidth}}</style><div class="Player"><div class="CanvasArea" tabIndex="0" role="widget" aria-description="Flipnote animation player. Press the space key to play or pause the animation. Use the left and right arrow keys to navigate frames" @click="${this.handlePlayToggle}" @keydown="${this.handleKeyInput}"><div class="PlayerCanvas" id="canvasWrapper"></div>${this._isLoading ?
-            x `<div class="Overlay"><flipnote-player-icon icon="loader" class="LoaderIcon"></flipnote-player-icon></div>` :
-            ''} ${this._isError ?
-            x `<div class="Overlay Overlay--error">Error</div>` :
-            ''}</div>${this.renderControls()}</div>`;
+            return x `
+      <style>
+        :host {
+          width: ${this._cssWidth}
+        }
+      </style>
+      <div class="Player">
+        <div
+          class="CanvasArea"
+          tabIndex="0"
+          role="widget"
+          aria-description="Flipnote animation player. Press the space key to play or pause the animation. Use the left and right arrow keys to navigate frames"
+          @click=${this.handlePlayToggle}
+          @keydown=${this.handleKeyInput}
+        >
+          <div class="PlayerCanvas" id="canvasWrapper"></div>
+          ${this._isLoading ?
+            x `<div class="Overlay">
+              <flipnote-player-icon icon="loader" class="LoaderIcon"></flipnote-player-icon>
+            </div>` :
+            ''}
+          ${this._isError ?
+            x `<div class="Overlay Overlay--error">
+              Error
+            </div>` :
+            ''}
+        </div>
+        ${this.renderControls()}
+      </div>
+    `;
         }
         /** @internal */
         renderControls() {
             if (this.controls === 'compact') {
-                return x `<div class="Controls Controls--compact Controls__row"><button @click="${this.handlePlayToggle}" class="Button Controls__playButton"><flipnote-player-icon icon="${this._isPlaying ? 'pause' : 'play'}"></flipnote-player-icon></button><flipnote-player-slider class="Controls__progressBar" value="${this._progress}" @change="${this.handleProgressSliderChange}" @inputstart="${this.handleProgressSliderInputStart}" @inputend="${this.handleProgressSliderInputEnd}"></div>`;
+                return x `
+        <div class="Controls Controls--compact Controls__row">
+          <button @click=${this.handlePlayToggle} class="Button Controls__playButton">
+            <flipnote-player-icon icon=${this._isPlaying ? 'pause' : 'play'}></flipnote-player-icon>
+          </button>
+          <flipnote-player-slider 
+            class="Controls__progressBar"
+            value=${this._progress}
+            @change=${this.handleProgressSliderChange}
+            @inputstart=${this.handleProgressSliderInputStart}
+            @inputend=${this.handleProgressSliderInputEnd}
+          />
+          </flipnote-player-slider>
+        </div>
+      `;
             }
             else {
-                return x `<div class="Controls Controls--default"><flipnote-player-slider class="Controls__progressBar" value="${this._progress}" label="Playback progress" step="${1 / (this._frameCount - 1)}" @change="${this.handleProgressSliderChange}" @inputstart="${this.handleProgressSliderInputStart}" @inputend="${this.handleProgressSliderInputEnd}"></flipnote-player-slider><div class="Controls__row"><div class="Controls__groupLeft"><button class="Button Controls__playButton" tabIndex="0" @click="${this.handlePlayToggle}"><flipnote-player-icon icon="${this._isPlaying ? 'pause' : 'play'}"></flipnote-player-icon></button> <span class="Controls__frameCounter">${this._counter}</span></div><div class="Controls__groupRight"><flipnote-player-icon class="MuteIcon" @click="${this.handleMuteToggle}" icon="${this._isMuted ? 'volumeOff' : 'volumeOn'}"></flipnote-player-icon><flipnote-player-slider class="Controls__volumeBar" value="${this._volumeLevel}" label="Volume" @change="${this.handleVolumeBarChange}"></flipnote-player-slider></div></div></div>`;
+                return x `
+        <div class="Controls Controls--default">
+          <flipnote-player-slider 
+            class="Controls__progressBar"
+            value=${this._progress}
+            label="Playback progress"
+            step=${1 / (this._frameCount - 1)}
+            @change=${this.handleProgressSliderChange}
+            @inputstart=${this.handleProgressSliderInputStart}
+            @inputend=${this.handleProgressSliderInputEnd}
+          >
+          </flipnote-player-slider>
+          <div class="Controls__row">
+            <div class="Controls__groupLeft">
+              <button
+                class="Button Controls__playButton"
+                tabIndex="0"
+                @click=${this.handlePlayToggle}
+              >
+                <flipnote-player-icon icon=${this._isPlaying ? 'pause' : 'play'}></flipnote-player-icon>
+              </button>
+              <span class="Controls__frameCounter">
+                ${this._counter}
+              </span>
+            </div>
+            <div class="Controls__groupRight">
+              <flipnote-player-icon 
+                class="MuteIcon"
+                @click=${this.handleMuteToggle}
+                icon=${this._isMuted ? 'volumeOff' : 'volumeOn'}
+              >
+              </flipnote-player-icon>
+              <flipnote-player-slider
+                class="Controls__volumeBar"
+                value=${this._volumeLevel}
+                label="Volume"
+                @change=${this.handleVolumeBarChange}
+              >
+              </flipnote-player-slider>
+            </div>
+          </div>
+        </div>
+      `;
             }
         }
         /** @internal */
@@ -7648,7 +7941,7 @@ kQIDAQAB
                 this.dispatchEvent(new Event(eventName));
             });
             if (this._playerSrc)
-                player.load(this._playerSrc, parseSource);
+                player.load(this._playerSrc);
             this._isPlayerAvailable = true;
         }
         // TODO: get this to actually work so that prop updates update parser settings
@@ -7706,70 +7999,70 @@ kQIDAQAB
     };
     __decorate([
         n$1({ type: String })
-    ], PlayerComponent$1.prototype, "controls", void 0);
+    ], exports.PlayerComponent.prototype, "controls", void 0);
     __decorate([
         n$1({ type: Boolean })
-    ], PlayerComponent$1.prototype, "dsiLibrary", void 0);
+    ], exports.PlayerComponent.prototype, "dsiLibrary", void 0);
     __decorate([
         n$1({ type: Boolean })
-    ], PlayerComponent$1.prototype, "cropBorder", void 0);
+    ], exports.PlayerComponent.prototype, "cropBorder", void 0);
     __decorate([
         n$1({ type: Number })
-    ], PlayerComponent$1.prototype, "bgmPredictor", void 0);
+    ], exports.PlayerComponent.prototype, "bgmPredictor", void 0);
     __decorate([
         n$1({ type: Number })
-    ], PlayerComponent$1.prototype, "bgmStepIndex", void 0);
+    ], exports.PlayerComponent.prototype, "bgmStepIndex", void 0);
     __decorate([
         n$1({ type: String })
-    ], PlayerComponent$1.prototype, "sePredictors", void 0);
+    ], exports.PlayerComponent.prototype, "sePredictors", void 0);
     __decorate([
         n$1({ type: String })
-    ], PlayerComponent$1.prototype, "seStepIndices", void 0);
+    ], exports.PlayerComponent.prototype, "seStepIndices", void 0);
     __decorate([
         n$1({ type: String })
-    ], PlayerComponent$1.prototype, "width", null);
+    ], exports.PlayerComponent.prototype, "width", null);
     __decorate([
         n$1({ type: String })
-    ], PlayerComponent$1.prototype, "src", null);
+    ], exports.PlayerComponent.prototype, "src", null);
     __decorate([
         n$1({ type: Boolean })
-    ], PlayerComponent$1.prototype, "autoplay", null);
+    ], exports.PlayerComponent.prototype, "autoplay", null);
     __decorate([
         r()
-    ], PlayerComponent$1.prototype, "_width", void 0);
+    ], exports.PlayerComponent.prototype, "_width", void 0);
     __decorate([
         r()
-    ], PlayerComponent$1.prototype, "_cssWidth", void 0);
+    ], exports.PlayerComponent.prototype, "_cssWidth", void 0);
     __decorate([
         r()
-    ], PlayerComponent$1.prototype, "_progress", void 0);
+    ], exports.PlayerComponent.prototype, "_progress", void 0);
     __decorate([
         r()
-    ], PlayerComponent$1.prototype, "_counter", void 0);
+    ], exports.PlayerComponent.prototype, "_counter", void 0);
     __decorate([
         r()
-    ], PlayerComponent$1.prototype, "_frameCount", void 0);
+    ], exports.PlayerComponent.prototype, "_frameCount", void 0);
     __decorate([
         r()
-    ], PlayerComponent$1.prototype, "_isLoading", void 0);
+    ], exports.PlayerComponent.prototype, "_isLoading", void 0);
     __decorate([
         r()
-    ], PlayerComponent$1.prototype, "_isError", void 0);
+    ], exports.PlayerComponent.prototype, "_isError", void 0);
     __decorate([
         r()
-    ], PlayerComponent$1.prototype, "_isPlaying", void 0);
+    ], exports.PlayerComponent.prototype, "_isPlaying", void 0);
     __decorate([
         r()
-    ], PlayerComponent$1.prototype, "_isMuted", void 0);
+    ], exports.PlayerComponent.prototype, "_isMuted", void 0);
     __decorate([
         r()
-    ], PlayerComponent$1.prototype, "_volumeLevel", void 0);
+    ], exports.PlayerComponent.prototype, "_volumeLevel", void 0);
     __decorate([
         e$3('#canvasWrapper')
-    ], PlayerComponent$1.prototype, "playerCanvasWrapper", void 0);
-    PlayerComponent$1 = __decorate([
+    ], exports.PlayerComponent.prototype, "playerCanvasWrapper", void 0);
+    exports.PlayerComponent = __decorate([
         t$2('flipnote-player')
-    ], PlayerComponent$1);
+    ], exports.PlayerComponent);
 
     /**
      * @license
@@ -7791,7 +8084,7 @@ kQIDAQAB
      */const n="important",i=" !"+n,o$1=e$2(class extends i$1{constructor(t){if(super(t),t.type!==t$1.ATTRIBUTE||"style"!==t.name||t.strings?.length>2)throw Error("The `styleMap` directive must be used in the `style` attribute and must be the only part in the attribute.")}render(t){return Object.keys(t).reduce(((e,r)=>{const s=t[r];return null==s?e:e+`${r=r.includes("-")?r:r.replace(/(?:^(webkit|moz|ms|o)|)(?=[A-Z])/g,"-$&").toLowerCase()}:${s};`}),"")}update(e,[r]){const{style:s}=e.element;if(void 0===this.ft)return this.ft=new Set(Object.keys(r)),this.render(r);for(const t of this.ft)null==r[t]&&(this.ft.delete(t),t.includes("-")?s.removeProperty(t):s[t]=null);for(const t in r){const e=r[t];if(null!=e){this.ft.add(t);const r="string"==typeof e&&e.endsWith(i);t.includes("-")||r?s.setProperty(t,r?e.slice(0,-11):e,r?n:""):s[t]=e;}}return w}});
 
     /**
-     * @category Web Component
+     * @group Web Component
      * @internal
      */
     let SliderComponent = class SliderComponent extends s {
@@ -7895,7 +8188,99 @@ kQIDAQAB
             };
         }
         static get styles() {
-            return i$4 `.Slider{touch-action:none;padding:4px 0;cursor:pointer}.Slider:focus{position:relative;z-index:1;outline:var(--flipnote-player-focus-outline,3px solid #ffd3a6);outline-offset:2px}.Slider--vertical{height:100px;width:14px}.Slider__track{position:relative;border-radius:3px;background:var(--flipnote-player-slider-track,#ffd3a6)}.Slider--horizontal .Slider__track{height:4px;margin:6px 0}.Slider--vertical .Slider__track{width:4px;height:100%;margin:0 6px}.Slider__levelWrapper{position:absolute;left:0;right:0;height:6px;margin:-1px}.Slider__level{position:absolute;width:100%;left:0;height:8px;border-radius:8px;background:var(--flipnote-player-slider-level,#f36a2d)}.Slider--horizontal .Slider__level{width:100%;height:6px}.Slider--vertical .Slider__level{width:6px;height:100%;bottom:0}.Slider__handle{display:none;position:absolute;height:10px;width:10px;border-radius:5px;box-sizing:border-box;border:3px solid var(--flipnote-player-slider-handle,#f36a2d);background:var(--flipnote-player-slider-handle-fill,#fff)}.Slider--isActive .Slider__handle,.Slider:hover .Slider__handle{display:block}.Slider--horizontal .Slider__handle{top:0;margin-top:-3px;margin-left:-6px}.Slider--vertical .Slider__handle{left:0;margin-bottom:-6px;margin-left:-3px}`;
+            return i$4 `
+      .Slider {
+        touch-action: none;
+        padding: 4px 0;
+        cursor: pointer;
+      }
+
+      .Slider:focus {
+        position: relative;
+        z-index: 1;
+        outline: var(--flipnote-player-focus-outline, 3px solid #FFD3A6);
+        outline-offset: 2px;
+      }
+
+      .Slider--vertical {
+        height: 100px;
+        width: 14px;
+      }
+
+      .Slider__track {
+        position: relative;
+        border-radius: 3px;
+        background: var(--flipnote-player-slider-track, #FFD3A6);
+      }
+
+      .Slider--horizontal .Slider__track {
+        height: 4px;
+        margin: 6px 0;
+      }
+
+      .Slider--vertical .Slider__track {
+        width: 4px;
+        height: 100%;
+        margin: 0 6px;
+      }
+
+      .Slider__levelWrapper {
+        position: absolute;
+        left: 0px;
+        right: 0px;
+        height: 6px;
+        margin: -1px;
+      }
+
+      .Slider__level {
+        position: absolute;
+        width: 100%;
+        left: 0;
+        height: 8px;
+        /* margin: -1px; */
+        border-radius: 8px;
+        background: var(--flipnote-player-slider-level, #F36A2D);
+      }
+
+      .Slider--horizontal .Slider__level {
+        width: 100%;
+        height: 6px;
+      }
+
+      .Slider--vertical .Slider__level {
+        width: 6px;
+        height: 100%;
+        bottom: 0;
+      }
+
+      .Slider__handle {
+        display: none;
+        position: absolute;
+        height: 10px;
+        width: 10px;
+        border-radius: 5px;
+        box-sizing: border-box;
+        border: 3px solid var(--flipnote-player-slider-handle, #F36A2D);
+        background: var(--flipnote-player-slider-handle-fill, white);
+      }
+
+      .Slider:hover .Slider__handle,
+      .Slider--isActive .Slider__handle {
+        display: block;
+      }
+
+      .Slider--horizontal .Slider__handle { 
+        top: 0;
+        margin-top: -3px;
+        margin-left: -6px;
+      }
+
+      .Slider--vertical .Slider__handle { 
+        left: 0;
+        margin-bottom: -6px;
+        margin-left: -3px;
+      }
+    `;
         }
         render() {
             const percent = `${this.value * 100}%`;
@@ -7907,7 +8292,27 @@ kQIDAQAB
                 'Slider--vertical': this.orientation === 'vertical',
                 'Slider--isActive': this.isActive,
             };
-            return x `<div class="${e$1(rootClasses)}" tabIndex="0" role="slider" aria-label="${this.label}" aria-valuemin="0" aria-valuemax="1" aria-valuenow="${this.value}" @touchstart="${this.onSliderTouchStart}" @mousedown="${this.onSliderMouseStart}" @keydown="${this.onKeyInput}"><div class="Slider__track"><div class="Slider__levelWrapper"><div class="Slider__level" style="${o$1({ [mainAxis]: percent })}"></div></div><div class="Slider__handle" style="${o$1({ [side]: percent })}"></div></div></div>`;
+            return x `
+      <div
+        class=${e$1(rootClasses)}
+        tabIndex="0"
+        role="slider"
+        aria-label=${this.label}
+        aria-valuemin="0"
+        aria-valuemax="1"
+        aria-valuenow=${this.value}
+        @touchstart=${this.onSliderTouchStart}
+        @mousedown=${this.onSliderMouseStart}
+        @keydown=${this.onKeyInput}
+      >
+        <div class="Slider__track">
+          <div class="Slider__levelWrapper">  
+            <div class="Slider__level" style=${o$1({ [mainAxis]: percent })}></div>
+          </div>
+          <div class="Slider__handle" style=${o$1({ [side]: percent })}></div>
+        </div>
+      </div>
+    `;
         }
         dispatch(eventName, detail) {
             const event = new CustomEvent(eventName, { detail });
@@ -7959,9 +8364,7 @@ kQIDAQAB
     var IconVolumeOff = "<svg xmlns=\"http://www.w3.org/2000/svg\" viewBox=\"0 0 240 240\"><path d=\"M123.3,40.8221751 C119.99384,39.3918256 116.173884,39.8502203 113.3,42.0221751 L65.5,79.8221751 L29,79.8221751 C23.4771525,79.8221751 19,84.2993276 19,89.8221751 L19,149.822175 C19,155.345023 23.4771525,159.822175 29,159.822175 L65.5,159.822175 L112.8,197.622175 C114.559393,199.033781 116.744358,199.809091 119,199.823416 C120.493687,199.846847 121.970477,199.503408 123.3,198.822175 C126.772838,197.168148 128.989111,193.66877 129,189.822175 L129,49.8221751 C128.989111,45.9755807 126.772838,42.476202 123.3,40.8221751 Z M193.751433,91.2843093 C198.453467,86.8297289 205.877095,86.906532 210.485281,91.5147186 C215.093468,96.1229053 215.170271,103.546533 210.715691,108.248567 L210.485281,108.485281 L198.971,120 L210.485281,131.514719 C215.171573,136.20101 215.171573,143.79899 210.485281,148.485281 C205.877095,153.093468 198.453467,153.170271 193.751433,148.715691 L193.514719,148.485281 L182,136.971 L170.485281,148.485281 L170.248567,148.715691 C165.546533,153.170271 158.122905,153.093468 153.514719,148.485281 C148.906532,143.877095 148.829729,136.453467 153.284309,131.751433 L153.514719,131.514719 L165.029,120 L153.514719,108.485281 C148.828427,103.79899 148.828427,96.2010101 153.514719,91.5147186 C158.122905,86.906532 165.546533,86.8297289 170.248567,91.2843093 L170.485281,91.5147186 L182,103.029 L193.514719,91.5147186 L193.751433,91.2843093 Z\"/></svg>";
 
     /** @internal */
-    function patchSvg(svgString) {
-        return svgString.replace(/<svg ([^>]*)>/, (match, svgAttrs) => `<svg ${svgAttrs} class="Icon" style="fill:currentColor">`);
-    }
+    const patchSvg = (svgString) => svgString.replace(/<svg ([^>]*)>/, (match, svgAttrs) => `<svg ${svgAttrs} class="Icon" style="fill:currentColor">`);
     /** @internal */
     const iconMap = {
         play: patchSvg(IconPlay),
@@ -7973,7 +8376,7 @@ kQIDAQAB
     /**
      * Flipnote player icon component
      *
-     * @category Web Component
+     * @group Web Component
      * @internal
      */
     let IconComponent = class IconComponent extends s {
@@ -7990,7 +8393,13 @@ kQIDAQAB
             this.icon = 'loader';
         }
         static get styles() {
-            return i$4 `.Icon{width:100%;height:100%;color:var(--flipnote-player-icon-color,#f36a2d)}`;
+            return i$4 `
+      .Icon {
+        width: 100%;
+        height: 100%;
+        color: var(--flipnote-player-icon-color, #F36A2D);
+      }
+    `;
         }
         /** @internal */
         render() {
@@ -8007,10 +8416,10 @@ kQIDAQAB
     /**
      * Flipnote player icon component
      *
-     * @category Web Component
+     * @group Web Component
      * @internal
      */
-    let ImageComponent$1 = class ImageComponent extends s {
+    exports.ImageComponent = class ImageComponent extends s {
         constructor() {
             super(...arguments);
             this._src = '';
@@ -8020,7 +8429,17 @@ kQIDAQAB
             this.imgTitle = '';
         }
         static get styles() {
-            return i$4 `.Image{width:inherit;height:inherit;image-rendering:-moz-crisp-edges;image-rendering:-webkit-crisp-edges;image-rendering:pixelated;image-rendering:crisp-edges;-ms-interpolation-mode:nearest-neighbor}`;
+            return i$4 `
+      .Image {
+        width: inherit;
+        height: inherit;
+        image-rendering: -moz-crisp-edges;
+        image-rendering: -webkit-crisp-edges;
+        image-rendering: pixelated;
+        image-rendering: crisp-edges;
+        -ms-interpolation-mode: nearest-neighbor;
+      }
+    `;
         }
         set src(src) {
             this.load(src);
@@ -8038,7 +8457,7 @@ kQIDAQAB
         }
         /** @internal */
         render() {
-            return x `<img class="Image" src="${this.gifUrl}" alt="${this.imgTitle}" title="${this.imgTitle}">`;
+            return x `<img class="Image" src=${this.gifUrl} alt=${this.imgTitle} title=${this.imgTitle} />`;
         }
         revokeUrl() {
             // if there was already an image, clean up its data URL
@@ -8096,45 +8515,38 @@ kQIDAQAB
     };
     __decorate([
         n$1()
-    ], ImageComponent$1.prototype, "src", null);
+    ], exports.ImageComponent.prototype, "src", null);
     __decorate([
         n$1()
-    ], ImageComponent$1.prototype, "frame", null);
+    ], exports.ImageComponent.prototype, "frame", null);
     __decorate([
         n$1({ type: Boolean })
-    ], ImageComponent$1.prototype, "cropped", void 0);
+    ], exports.ImageComponent.prototype, "cropped", void 0);
     __decorate([
         r()
-    ], ImageComponent$1.prototype, "gifUrl", void 0);
+    ], exports.ImageComponent.prototype, "gifUrl", void 0);
     __decorate([
         r()
-    ], ImageComponent$1.prototype, "imgTitle", void 0);
-    ImageComponent$1 = __decorate([
+    ], exports.ImageComponent.prototype, "imgTitle", void 0);
+    exports.ImageComponent = __decorate([
         t$2('flipnote-image')
-    ], ImageComponent$1);
-
-    // Entrypoint for webcomponent build
-    /** @internal */
-    const PlayerComponent = PlayerComponent$1;
-    /** @internal */
-    const ImageComponent = ImageComponent$1;
+    ], exports.ImageComponent);
 
     exports.CanvasInterface = CanvasInterface;
     exports.GifImage = GifImage;
     exports.Html5Canvas = Html5Canvas;
-    exports.ImageComponent = ImageComponent;
     exports.KwzParser = KwzParser;
     exports.Player = Player;
-    exports.PlayerComponent = PlayerComponent;
     exports.PlayerMixin = PlayerMixin;
     exports.PpmParser = PpmParser;
     exports.UniversalCanvas = UniversalCanvas;
     exports.WavAudio = WavAudio;
     exports.WebAudioPlayer = WebAudioPlayer;
     exports.WebglCanvas = WebglCanvas;
-    exports.loadSource = loadSource;
+    exports.id = index;
+    exports.loaders = index$1;
+    exports.parse = parse;
     exports.parseSource = parseSource;
-    exports.utils = fsid;
     exports.version = version;
 
     return exports;

@@ -64,7 +64,7 @@ export function PlayerMixin<TargetBase extends Constructor>(Target: TargetBase) 
   };
 
   // make sure mixin class gets the player types
-  interface PlayerMixinClass extends Player {}
+  interface PlayerMixinClass extends Player {};
 
   // add all Player API methods and getter/setter props to target
   for (let key of Reflect.ownKeys(Player.prototype)) {

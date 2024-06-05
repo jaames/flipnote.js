@@ -1,4 +1,10 @@
-import { isBrowser, isWebWorker, isNode, dynamicRequire, getGlobalObject } from './env';
+import {
+  isBrowser,
+  isWebWorker,
+  isNode,
+  getGlobalObject,
+  dynamicRequire,
+} from '../../utils';
 
 /**
  * Extended Window interface that allows for Crypto API usage in IE browsers
@@ -9,7 +15,7 @@ interface MsCryptoWindow extends Window {
 };
 
 /**
- * same SubtleCrypto API is available in browser and node, but in node it isn't global
+ * Same SubtleCrypto API is available in browser and node, but in node it isn't global
  * @internal
  */
 const SUBTLE_CRYPTO = ((): SubtleCrypto => {
@@ -22,7 +28,7 @@ const SUBTLE_CRYPTO = ((): SubtleCrypto => {
 })();
 
 /**
- * crypto algo used
+ * Crypto algo used
  * @internal
  */
 const ALGORITHM = 'RSASSA-PKCS1-v1_5';
@@ -35,7 +41,7 @@ type HashType = 'SHA-1' | 'SHA-256'; // also available are 'SHA-384' and 'SHA-51
 /**
  * @internal
  */
-export async function rsaLoadPublicKey(pemKey: string, hashType: HashType) {
+export const rsaLoadPublicKey = async (pemKey: string, hashType: HashType) => {
   // remove PEM header and footer
   const lines = pemKey
     .split('\n')
@@ -51,11 +57,10 @@ export async function rsaLoadPublicKey(pemKey: string, hashType: HashType) {
     name: ALGORITHM,
     hash: hashType,
   }, false, ['verify']);
-}
+};
  
 /**
  * @internal
  */
-export async function rsaVerify(key: CryptoKey, signature: Uint8Array, data: Uint8Array) {
-  return await SUBTLE_CRYPTO.verify(ALGORITHM, key, signature, data);
-}
+export const rsaVerify = async (key: CryptoKey, signature: Uint8Array, data: Uint8Array) =>
+  await SUBTLE_CRYPTO.verify(ALGORITHM, key, signature, data);

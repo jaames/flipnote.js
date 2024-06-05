@@ -1,6 +1,17 @@
-import type { FlipnoteParserBase } from '../parsers';
-import { assert, assertBrowserEnv, isBrowser } from '../utils';
-import { CanvasInterface, CanvasStereoscopicMode } from './CanvasInterface';
+import {
+  CanvasInterface,
+  CanvasStereoscopicMode
+} from './CanvasInterface';
+
+import type {
+  Flipnote
+} from '../parsers';
+
+import {
+  assert,
+  assertBrowserEnv,
+  isBrowser
+} from '../utils';
 
 /**
  * Setup options for {@link Html5Canvas}
@@ -33,7 +44,7 @@ export class Html5Canvas implements CanvasInterface {
   }
 
   /** */
-  note: FlipnoteParserBase;
+  note: Flipnote;
   /** Canvas HTML element being used as a rendering surface */
   canvas: HTMLCanvasElement;
   /** Rendering context */
@@ -114,7 +125,7 @@ export class Html5Canvas implements CanvasInterface {
   
   /**
    */
-  setNote(note: FlipnoteParserBase) {
+  setNote(note: Flipnote) {
     const width = note.imageWidth;
     const height = note.imageHeight;
     this.note = note;

@@ -1,30 +1,23 @@
 import { assert, isBrowser } from '../utils';
-import { LoaderDefinition } from './loaderDefinition';
+import { LoaderDefinition } from './types';
 
 /** 
  * Loader for File objects (browser only)
- * @category Loader
+ * @group Loader
  */
-const fileLoader: LoaderDefinition<File> = {
+export const fileLoader: LoaderDefinition<File> = {
 
-  matches: function(source) {
+  name: 'file',
+
+  matches(source) {
     return isBrowser 
       && typeof File !== 'undefined' 
       && typeof FileReader !== 'undefined' 
       && source instanceof File;
   },
 
-  load: function(source, resolve, reject) {
-    const reader = new FileReader();
-    reader.onload = (event) => {
-      resolve(reader.result as ArrayBuffer);
-    };
-    reader.onerror = (event) => {
-      reject({type: 'fileReadError'});
-    };
-    reader.readAsArrayBuffer(source);
+  async load(source) {
+    return source.arrayBuffer();
   }
 
 };
-
-export default fileLoader;

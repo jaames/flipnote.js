@@ -24,12 +24,18 @@ export class ByteArray {
     return this.realPtr;
   }
 
+  /**
+   * @internal
+   */
   newPage() {
     this.pages[this.numPages] = new Uint8Array(this.pageSize);
     this.numPages = this.pages.length;
     this.allocSize = this.numPages * this.pageSize;
   }
 
+  /**
+   * @internal
+   */
   setPointer(ptr: number) {
     // allocate enough pages to include pointer
     while (ptr >= this.allocSize) {
@@ -44,31 +50,49 @@ export class ByteArray {
     this.realPtr = ptr;
   }
 
+  /**
+   * @internal
+   */
   writeByte(value: number) {
     this.pages[this.pageIdx][this.pagePtr] = value;
     this.setPointer(this.realPtr + 1);
   }
 
+  /**
+   * @internal
+   */
   writeBytes(bytes: Uint8Array | number[], srcPtr?: number, length?: number) {
     for (let l = length || bytes.length, i = srcPtr || 0; i < l; i++)
       this.writeByte(bytes[i]);
   }
 
+  /**
+   * @internal
+   */
   writeChars(str: string) {
     for (let i = 0; i < str.length; i++) {
       this.writeByte(str.charCodeAt(i));
     }
   }
 
+  /**
+   * @internal
+   */
   writeU8(value: number) {
     this.writeByte(value & 0xFF);
   }
 
+  /**
+   * @internal
+   */
   writeU16(value: number) {
     this.writeByte((value >>> 0) & 0xFF);
     this.writeByte((value >>> 8) & 0xFF);
   }
 
+  /**
+   * @internal
+   */
   writeU32(value: number) {
     this.writeByte((value >>> 0) & 0xFF);
     this.writeByte((value >>> 8) & 0xFF);
@@ -76,6 +100,9 @@ export class ByteArray {
     this.writeByte((value >>> 24) & 0xFF);
   }
 
+  /**
+   * @internal
+   */
   getBytes() {
     const bytes = new Uint8Array(this.realSize);
     const numPages = this.numPages;

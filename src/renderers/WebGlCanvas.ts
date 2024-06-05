@@ -7,15 +7,26 @@ import {
   setUniforms,
 } from 'twgl.js';
 
-import { FlipnoteParserBase, FlipnoteStereoscopicEye } from '../parsers';
-import { assertBrowserEnv, isBrowser } from '../utils';
-import { CanvasInterface, CanvasStereoscopicMode } from './CanvasInterface';
-
 import vertShaderLayer from './shaders/layer.vert';
 import fragShaderLayer from './shaders/layer.frag'
 
 import vertShaderUpscale from './shaders/upscale.vert';
 import fragShaderUpscale from './shaders/upscale.frag';
+
+import {
+  type CanvasInterface,
+  CanvasStereoscopicMode
+} from './CanvasInterface';
+
+import {
+  type Flipnote,
+  FlipnoteStereoscopicEye
+} from '../parsers';
+
+import {
+  assertBrowserEnv,
+  isBrowser
+} from '../utils';
 
 /** 
  * Keeps track of WebGl resources so they can be destroyed properly later
@@ -65,7 +76,7 @@ export class WebglCanvas implements CanvasInterface {
   }
 
   /**  */
-  note: FlipnoteParserBase;
+  note: Flipnote;
   /** Canvas HTML element being used as a rendering surface */
   canvas: HTMLCanvasElement;
   /** Rendering context - see {@link https://developer.mozilla.org/en-US/docs/Web/API/WebGLRenderingContext} */
@@ -365,7 +376,7 @@ export class WebglCanvas implements CanvasInterface {
   /**
    * Sets the note to use for this player
    */
-  setNote(note: FlipnoteParserBase) {
+  setNote(note: Flipnote) {
     if (this.checkContextLoss()) return;
     const width = note.imageWidth;
     const height = note.imageHeight;

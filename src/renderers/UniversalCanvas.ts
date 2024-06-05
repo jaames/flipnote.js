@@ -1,7 +1,22 @@
-import { CanvasInterface, CanvasConstructor, CanvasStereoscopicMode } from './CanvasInterface';
-import { WebglCanvas, WebglCanvasOptions } from './WebGlCanvas';
-import { Html5Canvas, Html5CanvasOptions } from './Html5Canvas';
-import { FlipnoteParserBase } from '../parsers';
+import {
+  type CanvasInterface,
+  type CanvasConstructor,
+  CanvasStereoscopicMode
+} from './CanvasInterface';
+
+import {
+  WebglCanvas,
+  type WebglCanvasOptions
+} from './WebGlCanvas';
+
+import {
+  Html5Canvas,
+  type Html5CanvasOptions
+} from './Html5Canvas';
+
+import type {
+  Flipnote
+} from '../parsers';
 
 export type UniversalCanvasOptions = WebglCanvasOptions & Html5CanvasOptions;
 
@@ -10,7 +25,7 @@ export class UniversalCanvas implements CanvasInterface {
   /** */
   renderer: CanvasInterface;
   /** */
-  note: FlipnoteParserBase;
+  note: Flipnote;
   /** View width (CSS pixels) */
   width: number;
   /** View height (CSS pixels) */
@@ -113,7 +128,7 @@ export class UniversalCanvas implements CanvasInterface {
     this.dstHeight = renderer.dstHeight;
   }
 
-  setNote(note: FlipnoteParserBase) {
+  setNote(note: Flipnote) {
     this.note = note;
     this.renderer.setNote(note);
     this.frameIndex = undefined;

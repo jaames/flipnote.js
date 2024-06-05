@@ -21,4 +21,4 @@ export const until = async <ErrorType extends any = Error, DataType extends any 
   catch (error) {
     return [ error, null ];
   }
-}
+};

@@ -1,19 +1,19 @@
-import { LoaderDefinition } from './loaderDefinition';
+import { LoaderDefinition } from './types';
 
 /** 
  * Loader for ArrayBuffer objects
- * @category Loader
+ * @group Loader
  */
-const arrayBufferLoader: LoaderDefinition<ArrayBuffer> = {
+export const arrayBufferLoader: LoaderDefinition<ArrayBuffer> = {
 
-  matches: function(source) {
-    return (source instanceof ArrayBuffer);
+  name: 'array-buffer',
+
+  matches(source) {
+    return source instanceof ArrayBuffer;
   },
 
-  load: function(source, resolve, reject) {
-    resolve(source);
+  async load(source) {
+    return source;
   }
 
 };
-
-export default arrayBufferLoader;

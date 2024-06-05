@@ -25,7 +25,7 @@ import {
 /** 
  * Flipnote player icon component
  * 
- * @category Web Component
+ * @group Web Component
  * @internal
  */
 @customElement('flipnote-image')

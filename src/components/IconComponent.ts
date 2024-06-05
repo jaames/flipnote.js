@@ -20,9 +20,8 @@ import IconVolumeOn from './icons/volumeOn.svg';
 import IconVolumeOff from './icons/volumeOff.svg';
 
 /** @internal */
-function patchSvg(svgString: string) {
-  return svgString.replace(/<svg ([^>]*)>/, (match, svgAttrs) => `<svg ${ svgAttrs } class="Icon" style="fill:currentColor">`);
-}
+const patchSvg = (svgString: string) =>
+  svgString.replace(/<svg ([^>]*)>/, (match, svgAttrs) => `<svg ${ svgAttrs } class="Icon" style="fill:currentColor">`);
 
 /** @internal */
 const iconMap: Record<string, string> = {
@@ -36,7 +35,7 @@ const iconMap: Record<string, string> = {
 /** 
  * Flipnote player icon component
  * 
- * @category Web Component
+ * @group Web Component
  * @internal
  */
 @customElement('flipnote-player-icon')

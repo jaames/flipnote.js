@@ -1,8 +1,7 @@
-import { Flipnote } from '../parsers';
-import { ByteArray } from '../utils/index';
-import { assertBrowserEnv } from '../utils';
+import type { Flipnote } from '../parsers';
 import { EncoderBase } from './EncoderBase';
 import { LzwCompressor } from './LwzCompressor';
+import { ByteArray, assertBrowserEnv } from '../utils';
 
 /**
  * GIF RGBA palette color definition
@@ -35,7 +34,7 @@ export interface GifImageSettings {
  * GIF image encoder
  * 
  * Supports static single-frame GIF export as well as animated GIF
- * @category File Encoder
+ * @group File Encoder
  */
 export class GifImage extends EncoderBase {
 

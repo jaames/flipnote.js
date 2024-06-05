@@ -26,7 +26,7 @@ import { clamp } from '../utils';
 type SliderOrientation = 'horizontal' | 'vertical';
 
 /**
- * @category Web Component
+ * @group Web Component
  * @internal
  */
 @customElement('flipnote-player-slider')

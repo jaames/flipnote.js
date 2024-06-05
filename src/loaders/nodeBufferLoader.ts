@@ -1,20 +1,20 @@
 import { isNode } from '../utils';
-import { LoaderDefinition } from './loaderDefinition';
+import { LoaderDefinition } from './types';
 
 /** 
  * Loader for Buffer objects (Node only)
- * @category Loader
+ * @group Loader
  */
-const nodeBufferLoader: LoaderDefinition<Buffer> = {
+export const nodeBufferLoader: LoaderDefinition<Buffer> = {
 
-  matches: function(source) {
+  name: 'node-buffer',
+
+  matches(source) {
     return isNode && (source instanceof Buffer);
   },
 
-  load: function(source, resolve, reject) {
-    resolve(source.buffer);
+  async load(source) {
+    return source.buffer;
   }
 
 };
-
-export default nodeBufferLoader;

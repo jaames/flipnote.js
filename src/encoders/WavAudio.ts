@@ -9,7 +9,7 @@ export type WavSampleBuffer = Int16Array | Float32Array;
  * 
  * Currently only supports PCM s16_le audio encoding.
  * 
- * @category File Encoder
+ * @group File Encoder
  */
 export class WavAudio extends EncoderBase {
 

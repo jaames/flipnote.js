@@ -17,14 +17,8 @@ export {
   KwzParserSettings,
   PpmParserSettings,
   KwzParser,
-  PpmParser
+  PpmParser,
 } from './parsers';
-
-export * as utils from './utils/fsid';
-
-export * from './loaders';
-
-export * from './parseSource';
 
 export {
   Player,
@@ -50,6 +44,12 @@ export {
 export {
   WebAudioPlayer
 } from './webaudio';
+
+export * as id from './parsers/flipnoteStudioId';
+
+export * as loaders from './loaders';
+
+export * from './parseSource';
 
 /** 
  * flipnote.js library version (exported as `flipnote.version`).
