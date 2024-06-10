@@ -297,7 +297,9 @@ export class PlayerComponent extends PlayerMixin(LitElement) {
     this._resizeObserver = new ResizeObserver(this.handleResize);
   }
 
-  /** @internal */
+  /**
+   * @internal
+   */
   render() {
     return html`
       <style>
@@ -333,7 +335,9 @@ export class PlayerComponent extends PlayerMixin(LitElement) {
     `;
   }
 
-  /** @internal */
+  /**
+   * @internal
+   */
   renderControls() {
     if (this.controls === 'compact') {
       return html`
@@ -399,7 +403,9 @@ export class PlayerComponent extends PlayerMixin(LitElement) {
     }
   }
 
-  /** @internal */
+  /**
+   * @internal
+   */
   firstUpdated(changedProperties: PropertyValues) {
     this.updateSettingsFromProps();
     const player = new Player(this.playerCanvasWrapper, 256, 192, this.parserSettings);
@@ -456,7 +462,9 @@ export class PlayerComponent extends PlayerMixin(LitElement) {
   //   }
   // }
 
-  /** @internal */
+  /**
+   * @internal
+   */
   disconnectedCallback() {
     // disable resize observer
     this._resizeObserver.disconnect();

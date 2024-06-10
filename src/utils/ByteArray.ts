@@ -1,25 +1,59 @@
-/** @internal */
+/**
+ * @internal
+ */
 export class ByteArray {
-  // sizes
+  /**
+   * @internal
+   */
   pageSize = 2048 * 2;
-  allocSize = 0; // allocated size counting all pages
-  realSize = 0; // number of bytes actually used
-  // pages
+  /**
+   * Allocated size counting all pages.
+   * @internal
+   */
+  allocSize = 0;
+  /**
+   * Number of bytes actually used.
+   * @internal
+   */
+  realSize = 0;
+  /**
+   * @internal
+   */
   pages: Uint8Array[] = [];
+  /**
+   * @internal
+   */
   numPages = 0;
-  // pointers
-  pageIdx = 0; // page to write to
-  pagePtr = 0; // position in page to write to
-  realPtr = 0; // position in file
+  /**
+   * Page to write to.
+   * @internal
+   */
+  pageIdx = 0;
+  /**
+   * Position in page to write to.
+   * @internal
+   */
+  pagePtr = 0; // 
+  /**
+   * Position in file.
+   * @internal
+   */
+  realPtr = 0;
 
   constructor() {
     this.newPage();
   }
 
+  /**
+   * @internal
+   */
   set pointer(ptr: number) {
     this.setPointer(ptr);
   }
 
+  /**
+   * @internal
+   */
   get pointer() {
     return this.realPtr;
   }
@@ -100,9 +134,6 @@ export class ByteArray {
     this.writeByte((value >>> 24) & 0xFF);
   }
 
-  /**
-   * @internal
-   */
   getBytes() {
     const bytes = new Uint8Array(this.realSize);
     const numPages = this.numPages;

@@ -1,5 +1,6 @@
 export * from './ByteArray';
 export * from './DataStream';
+export * from './hex';
 export * from './math';
 export * from './nextPaint';
 export * from './env';

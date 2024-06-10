@@ -1,5 +1,5 @@
 import type { Flipnote, FlipnoteFormat, FlipnoteMeta, FlipnoteParserSettings } from '../parsers';
-import { parseSource, type FlipnoteSource } from '../parseSource';
+import { parse } from '../parseSource';
 import { PlayerEvent, PlayerEventMap, supportedEvents } from './PlayerEvent';
 import { createTimeRanges, padNumber, formatTime } from './playerUtils';
 import { UniversalCanvas } from '../renderers';
@@ -10,7 +10,7 @@ type PlayerLayerVisibility = Record<number, boolean>;
 
 /**
  * Flipnote Player API (exported as `flipnote.Player`) - provides a {@link https://developer.mozilla.org/en-US/docs/Web/API/HTMLMediaElement | MediaElement}-like interface for loading Flipnotes and playing them. 
- * This is intended for cases where you want to implement your own player UI, if you just want a pre-built player with some nice UI controls, check out the {@page Web Components} page instead!
+ * This is intended for cases where you want to implement your own player UI, if you just want a pre-built player with some nice UI controls, check out the [Web Components](/web-components/) page instead!
  * 
  * ### Create a new player
  * 
@@ -46,62 +46,117 @@ type PlayerLayerVisibility = Record<number, boolean>;
  */
 export class Player {
 
-  /** Frame renderer */
+  /**
+   * Flipnote renderer.
+   * @group Display Control
+   */
   renderer: UniversalCanvas;
-  /** Audio player */
-  audio: WebAudioPlayer;
-  /** Root element */
+  /**
+   * Root element
+   */
   el: Element;
-  /** Canvas HTML element */
-  canvasEl: HTMLCanvasElement;
-  /** Currently loaded Flipnote */
+  /**
+   * Currently loaded Flipnote
+   */
   note: Flipnote;
-  /** Flipnote parser settings */
+  /**
+   * Flipnote parser settings
+   */
   parserSettings: FlipnoteParserSettings;
-  /** Format of the currently loaded Flipnote */
+  /**
+   * Format of the currently loaded Flipnote
+   */
   noteFormat: FlipnoteFormat;
-  /** Metadata for the currently loaded Flipnote */
+  /**
+   * Metadata for the currently loaded Flipnote
+   */
   meta: FlipnoteMeta;
-  /** Animation duration, in seconds */
+  /**
+   * Animation duration, in seconds
+   */
   duration: number = 0;
-  /** Animation layer visibility */
+  /**
+   * Animation layer visibility
+   */
   layerVisibility: PlayerLayerVisibility;
-  /** Automatically begin playback after a Flipnote is loaded */
+  /**
+   * Automatically begin playback after a Flipnote is loaded
+   */
   autoplay: boolean = false;
-  /** Array of events supported by this player */
+  /**
+   * Array of events supported by this player
+   */
   supportedEvents = supportedEvents;
 
-  /** @internal */
-  _src: FlipnoteSource = null;
-  /** @internal */
+  /**
+   * Audio player
+   * @internal
+   */
+  audio: WebAudioPlayer;
+
+  /**
+   * @internal
+   */
+  _src: any = null;
+  /**
+   * @internal
+   */
   _loop: boolean = false;
-  /** @internal */
+  /**
+   * @internal
+   */
   _volume: number = 1;
-  /** @internal */
+  /**
+   * @internal
+   */
   _muted: boolean = false;
-  /** @internal */
+  /**
+   * @internal
+   */
   _frame: number = null;
-  /** @internal */
+  /**
+   * @internal
+   */
   _hasEnded: boolean = false;
-  /** @internal */
+  /**
+   * @internal
+   */
   isNoteLoaded: boolean = false;
-  /** @internal */
+  /**
+   * @internal
+   */
   events: PlayerEventMap = new Map();
-  /** @internal */
+  /**
+   * @internal
+   */
   playbackStartTime: number = 0;
-  /** @internal */
+  /**
+   * @internal
+   */
   playbackTime: number = 0;
-  /** @internal */
+  /**
+   * @internal
+   */
   playbackLoopId: number = null;
-  /** @internal */
+  /**
+   * @internal
+   */
   showThumbnail: boolean = true;
-  /** @internal */
+  /**
+   * @internal
+   */
   hasPlaybackStarted: boolean = false;
-  /** @internal */
+  /**
+   * @internal
+   */
   isPlaying: boolean = false;
-  /** @internal */
+  /**
+   * @internal
+   */
   wasPlaying: boolean = false;
-  /** @internal */
+  /**
+   * @internal
+   */
   isSeeking: boolean = false;
 
   /**
@@ -124,18 +179,24 @@ export class Player {
     });
     this.audio = new WebAudioPlayer();
     this.el = mountPoint;
-    // this.canvasEl = this.renderer.el;
   }
 
-  /** The currently loaded Flipnote source, if there is one */
+  /**
+   * The currently loaded Flipnote source, if there is one
+   * @group Lifecycle
+   * @deprecated
+   */
   get src() {
     return this._src;
   }
-  set src(source: FlipnoteSource) {
+  set src(source: any) {
     throw new Error('Setting a Player source has been deprecated, please use the load() method instead');
   }
 
-  /** Indicates whether playback is currently paused */
+  /**
+   * Indicates whether playback is currently paused
+   * @group Playback Control
+   */
   get paused() {
     return !this.isPlaying;
   }
@@ -146,7 +207,10 @@ export class Player {
       this.play();
   }
 
-  /** Current animation frame index */
+  /**
+   * Current animation frame index.
+   * @group Playback Control
+   */
   get currentFrame() {
     return this._frame;
   }
@@ -154,7 +218,10 @@ export class Player {
     this.setCurrentFrame(frameIndex);
   }
 
-  /** Current animation playback position, in seconds */
+  /**
+   * Current animation playback position, in seconds.
+   * @group Playback Control
+   */
   get currentTime() {
     return this.isNoteLoaded ? this.playbackTime : null;
   }
@@ -162,7 +229,10 @@ export class Player {
     this.setCurrentTime(value);
   }
 
-  /** Current animation playback progress, as a percentage out of 100 */
+  /**
+   * Current animation playback progress, as a percentage out of 100.
+   * @group Playback Control
+   */
   get progress() {
     return this.isNoteLoaded ? (this.playbackTime / this.duration) * 100 : null;
   }
@@ -170,7 +240,10 @@ export class Player {
     this.setProgress(value);
   }
 
-  /** Audio volume, range `0` to `1` */
+  /**
+   * Audio volume, range `0` to `1`.
+   * @group Audio Control
+   */
   get volume() {
     return this.getVolume();
   }
@@ -179,7 +252,10 @@ export class Player {
     this.setVolume(value);
   }
 
-  /** Audio mute state */
+  /**
+   * Audio mute state.
+   * @group Audio Control
+   */
   get muted() {
     return this.getMuted();
   }
@@ -188,7 +264,10 @@ export class Player {
     this.setMuted(value);
   }
 
-  /** Indicates whether playback should loop once the end is reached */
+  /**
+   * Indicates whether playback should loop once the end is reached
+   * @group Playback Control
+   */
   get loop() {
     return this.getLoop();
   }
@@ -197,23 +276,32 @@ export class Player {
     this.setLoop(value);
   }
 
-  /** Animation frame rate, measured in frames per second */
+  /**
+   * Animation frame rate, measured in frames per second.
+   * @group Playback Control
+   */
   get framerate() {
     return this.note.framerate;
   }
 
-  /** Animation frame count */
+  /**
+   * Animation frame count.
+   * @group Frame Control
+   */
   get frameCount() {
     return this.note.frameCount;
   }
 
-  /** Animation frame speed */
+  /**
+   * Animation frame speed.
+   * @group Frame Control
+   */
   get frameSpeed() {
     return this.note.frameSpeed;
   }
 
   /**
-   * Implementation of the `HTMLMediaElement` {@link https://developer.mozilla.org/en-US/docs/Web/API/HTMLMediaElement/buffered | buffered } property
+   * Implementation of the `HTMLMediaElement` {@link https://developer.mozilla.org/en-US/docs/Web/API/HTMLMediaElement/buffered | buffered } property.
    * @group HTMLVideoElement compatibility
    */
   get buffered() {
@@ -268,7 +356,7 @@ export class Player {
     // otherwise do a normal load
     this.emit(PlayerEvent.LoadStart);
 
-    const [err, note] = await until(() => parseSource(source, this.parserSettings));
+    const [err, note] = await until(() => parse(source, this.parserSettings));
 
     if (err) {
       this.emit(PlayerEvent.Error, err);
@@ -279,7 +367,8 @@ export class Player {
   }
 
   /**
-   * Reload the current Flipnote
+   * Reload the current Flipnote.
+   * @group Lifecycle
    */
   async reload() {
     if (this.note) 
@@ -287,7 +376,8 @@ export class Player {
   }
 
   /**
-   * Reload the current Flipnote
+   * Reload the current Flipnote, applying new parser settings.
+   * @group Lifecycle
    */
   async updateSettings(settings: FlipnoteParserSettings) {
     this.parserSettings = settings;
@@ -456,7 +546,7 @@ export class Player {
     this.playbackStartTime = (now / 1000) - this.playbackTime;
     this.isPlaying = true;
     this.hasPlaybackStarted = true;
-    this.playAudio();
+    this.#playAudio();
     this.playbackLoop(now);
     this.emit(PlayerEvent.Play);
   }
@@ -471,7 +561,7 @@ export class Player {
     this.isPlaying = false;
     if (this.playbackLoopId !== null) 
       cancelAnimationFrame(this.playbackLoopId);
-    this.stopAudio();
+    this.#stopAudio();
     this.emit(PlayerEvent.Pause);
   }
 
@@ -699,16 +789,16 @@ export class Player {
     this.setLayerVisibility(layerIndex, !this.layerVisibility[layerIndex]);
   }
 
-  playAudio() {
+  #playAudio() {
     this.audio.playFrom(this.currentTime);
   }
 
-  stopAudio() {
+  #stopAudio() {
     this.audio.stop();
   }
 
   /** 
-   * Toggle audio Sudomemo equalizer filter
+   * Toggle audio Sudomemo equalizer filter.
    * @group Audio Control
    */
   toggleAudioEq() {
@@ -716,18 +806,18 @@ export class Player {
   }
 
   /** 
-   * Turn audio Sudomemo equalizer filter on or off
+   * Turn audio Sudomemo equalizer filter on or off.
    * @group Audio Control
    */
   setAudioEq(state: boolean) {
     if (this.isPlaying) {
       this.wasPlaying = true;
-      this.stopAudio();
+      this.#stopAudio();
     }
     this.audio.useEq = state;
     if (this.wasPlaying) {
       this.wasPlaying = false;
-      this.playAudio();
+      this.#playAudio();
     }
   }
 
@@ -868,13 +958,13 @@ export class Player {
 
   /**
    * Fired when animation playback begins or is resumed
-   * @event play
+   * @event
    */
   onplay: () => void;
 
   /**
    * Fired when animation playback is paused
-   * @event pause 
+   * @event
    */
   onpause: () => void;
 
@@ -892,13 +982,13 @@ export class Player {
 
   /**
    * Fired when a seek operation begins
-   * @event seeking
+   * @event
    */
   onseeking: () => void;
 
   /**
    * Fired when a seek operation completes
-   * @event seeked
+   * @event
    */
   onseeked: () => void;
 
@@ -910,79 +1000,79 @@ export class Player {
 
   /**
    * Fired when playback has looped after reaching the end
-   * @event loop
+   * @event
    */
   onloop: () => void;
 
   /**
    * Fired when playback has ended
-   * @event ended
+   * @event
    */
   onended: () => void;
 
   /**
    * Fired when the player audio volume or muted state has changed
-   * @event volumechange
+   * @event
    */
   onvolumechange: (volume: number) => void;
 
   /**
    * Fired when playback progress has changed
-   * @event progress
+   * @event
    */
   onprogress: (progress: number) => void;
 
   /**
    * Fired when the playback time has changed
-   * @event timeupdate
+   * @event
    */
   ontimeupdate: (time: number) => void;
 
   /**
    * Fired when the current frame index has changed
-   * @event frameupdate
+   * @event
    */
   onframeupdate: (frameIndex: number) => void;
 
   /**
    * Fired when {@link nextFrame} has been called
-   * @event framenext
+   * @event
    */
   onframenext: () => void;
 
   /**
    * Fired when {@link prevFrame} has been called
-   * @event frameprev
+   * @event
    */
   onframeprev: () => void;
 
   /**
    * Fired when {@link firstFrame} has been called
-   * @event framefirst
+   * @event
    */
   onframefirst: () => void;
 
   /**
    * Fired when {@link lastFrame} has been called
-   * @event framelast
+   * @event
    */
   onframelast: () => void;
 
   /**
    * Fired when a Flipnote is ready for playback
-   * @event ready
+   * @event
    */
   onready: () => void;
 
   /**
    * Fired when a Flipnote has finished loading
-   * @event load
+   * @event
    */
   onload: () => void;
 
   /**
    * Fired when a Flipnote has begun loading
-   * @event loadstart
+   * @event
    */
   onloadstart: () => void;
 
@@ -1006,19 +1096,19 @@ export class Player {
 
   /**
    * Fired after the Flipnote has been closed with {@link close}
-   * @event close
+   * @event
    */
   onclose: () => void;
 
   /**
    * Fired after a loading, parsing or playback error occurs
-   * @event error
+   * @event
    */
   onerror: (err?: Error) => void;
 
   /**
    * Fired just before the player has been destroyed, after calling {@link destroy}
-   * @event destroy
+   * @event
    */
   ondestroy: () => void;
 
@@ -1094,16 +1184,9 @@ export class Player {
     await this.audio.destroy();
   }
 
-  /** 
-   * Returns true if the player supports a given event or method name
+  /**
+   * @internal
    */
-  supports(name: string) {
-    const isEvent = this.supportedEvents.includes(name as PlayerEvent);
-    const isMethod = typeof (this as any)[name] === 'function';
-    return isEvent || isMethod;
-  }
-
-  /** @internal */
   assertNoteLoaded() {
     assert(this.isNoteLoaded, 'No Flipnote is currently loaded in this player');
   }

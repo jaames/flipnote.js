@@ -22,7 +22,9 @@ import {
 import { KEY_MAP } from './utils';
 import { clamp } from '../utils';
 
-/** @internal */
+/**
+ * @internal
+ */
 type SliderOrientation = 'horizontal' | 'vertical';
 
 /**

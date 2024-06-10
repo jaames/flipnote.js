@@ -7,55 +7,122 @@
 */
 'use strict';
 
+/******************************************************************************
+Copyright (c) Microsoft Corporation.
+
+Permission to use, copy, modify, and/or distribute this software for any
+purpose with or without fee is hereby granted.
+
+THE SOFTWARE IS PROVIDED "AS IS" AND THE AUTHOR DISCLAIMS ALL WARRANTIES WITH
+REGARD TO THIS SOFTWARE INCLUDING ALL IMPLIED WARRANTIES OF MERCHANTABILITY
+AND FITNESS. IN NO EVENT SHALL THE AUTHOR BE LIABLE FOR ANY SPECIAL, DIRECT,
+INDIRECT, OR CONSEQUENTIAL DAMAGES OR ANY DAMAGES WHATSOEVER RESULTING FROM
+LOSS OF USE, DATA OR PROFITS, WHETHER IN AN ACTION OF CONTRACT, NEGLIGENCE OR
+OTHER TORTIOUS ACTION, ARISING OUT OF OR IN CONNECTION WITH THE USE OR
+PERFORMANCE OF THIS SOFTWARE.
+***************************************************************************** */
+/* global Reflect, Promise, SuppressedError, Symbol */
+
+
+function __classPrivateFieldGet(receiver, state, kind, f) {
+    if (kind === "a" && !f) throw new TypeError("Private accessor was defined without a getter");
+    if (typeof state === "function" ? receiver !== state || !f : !state.has(receiver)) throw new TypeError("Cannot read private member from an object whose class did not declare it");
+    return kind === "m" ? f : kind === "a" ? f.call(receiver) : f ? f.value : state.get(receiver);
+}
+
+function __classPrivateFieldSet(receiver, state, value, kind, f) {
+    if (kind === "m") throw new TypeError("Private method is not writable");
+    if (kind === "a" && !f) throw new TypeError("Private accessor was defined without a setter");
+    if (typeof state === "function" ? receiver !== state || !f : !state.has(receiver)) throw new TypeError("Cannot write private member to an object whose class did not declare it");
+    return (kind === "a" ? f.call(receiver, value) : f ? f.value = value : state.set(receiver, value)), value;
+}
+
+typeof SuppressedError === "function" ? SuppressedError : function (error, suppressed, message) {
+    var e = new Error(message);
+    return e.name = "SuppressedError", e.error = error, e.suppressed = suppressed, e;
+};
+
 /**
  * Flipnote region
  */
 var FlipnoteRegion;
 (function (FlipnoteRegion) {
-    /** Europe and Oceania */
+    /**
+     * Europe and Oceania
+     */
     FlipnoteRegion["EUR"] = "EUR";
-    /** Americas */
+    /**
+     * Americas
+     */
     FlipnoteRegion["USA"] = "USA";
-    /** Japan */
+    /**
+     * Japan
+     */
     FlipnoteRegion["JPN"] = "JPN";
-    /** Unidentified (possibly never used) */
+    /**
+     * Unidentified (possibly never used)
+     */
     FlipnoteRegion["UNKNOWN"] = "UNKNOWN";
 })(FlipnoteRegion || (FlipnoteRegion = {}));
-/** Identifies which animation format a Flipnote uses */
+/**
+ * Identifies which animation format a Flipnote uses
+ */
 var FlipnoteFormat;
 (function (FlipnoteFormat) {
-    /** Animation format used by Flipnote Studio (Nintendo DSiWare) */
+    /**
+     * Animation format used by Flipnote Studio (Nintendo DSiWare)
+     */
     FlipnoteFormat["PPM"] = "PPM";
-    /** Animation format used by Flipnote Studio 3D (Nintendo 3DS) */
+    /**
+     * Animation format used by Flipnote Studio 3D (Nintendo 3DS)
+     */
     FlipnoteFormat["KWZ"] = "KWZ";
 })(FlipnoteFormat || (FlipnoteFormat = {}));
-/** Buffer format for a FlipnoteThumbImage  */
+/**
+ * Buffer format for a FlipnoteThumbImage
+ */
 var FlipnoteThumbImageFormat;
 (function (FlipnoteThumbImageFormat) {
     FlipnoteThumbImageFormat[FlipnoteThumbImageFormat["Jpeg"] = 0] = "Jpeg";
     FlipnoteThumbImageFormat[FlipnoteThumbImageFormat["Rgba"] = 1] = "Rgba";
 })(FlipnoteThumbImageFormat || (FlipnoteThumbImageFormat = {}));
-/** stereoscopic eye view (left/right) for 3D effects */
+/**
+ * stereoscopic eye view (left/right) for 3D effects
+ */
 var FlipnoteStereoscopicEye;
 (function (FlipnoteStereoscopicEye) {
     FlipnoteStereoscopicEye[FlipnoteStereoscopicEye["Left"] = 0] = "Left";
     FlipnoteStereoscopicEye[FlipnoteStereoscopicEye["Right"] = 1] = "Right";
 })(FlipnoteStereoscopicEye || (FlipnoteStereoscopicEye = {}));
-/** Identifies a Flipnote audio track type */
+/**
+ * Identifies a Flipnote audio track type
+ */
 var FlipnoteAudioTrack;
 (function (FlipnoteAudioTrack) {
-    /** Background music track */
+    /**
+     * Background music track
+     */
     FlipnoteAudioTrack[FlipnoteAudioTrack["BGM"] = 0] = "BGM";
-    /** Sound effect 1 track */
+    /**
+     * Sound effect 1 track
+     */
     FlipnoteAudioTrack[FlipnoteAudioTrack["SE1"] = 1] = "SE1";
-    /** Sound effect 2 track */
+    /**
+     * Sound effect 2 track
+     */
     FlipnoteAudioTrack[FlipnoteAudioTrack["SE2"] = 2] = "SE2";
-    /** Sound effect 3 track */
+    /**
+     * Sound effect 3 track
+     */
     FlipnoteAudioTrack[FlipnoteAudioTrack["SE3"] = 3] = "SE3";
-    /** Sound effect 4 track (only used by KWZ files) */
+    /**
+     * Sound effect 4 track (only used by KWZ files)
+     */
     FlipnoteAudioTrack[FlipnoteAudioTrack["SE4"] = 4] = "SE4";
 })(FlipnoteAudioTrack || (FlipnoteAudioTrack = {}));
-/** {@link FlipnoteAudioTrack}, but just sound effect tracks */
+/**
+ * {@link FlipnoteAudioTrack}, but just sound effect tracks
+ */
 var FlipnoteSoundEffectTrack;
 (function (FlipnoteSoundEffectTrack) {
     FlipnoteSoundEffectTrack[FlipnoteSoundEffectTrack["SE1"] = 1] = "SE1";
@@ -65,20 +132,38 @@ var FlipnoteSoundEffectTrack;
 })(FlipnoteSoundEffectTrack || (FlipnoteSoundEffectTrack = {}));
 
 /**
- * Wrapper around the DataView API to keep track of the offset into the data
- * also provides some utils for reading ascii strings etc
+ * @internal
+ */
+const hexFromBytes = (bytes, reverse = false) => {
+    let hex = [];
+    for (let i = 0; i < bytes.length; i++)
+        hex.push(bytes[i].toString(16).padStart(2, '0'));
+    if (reverse)
+        hex.reverse();
+    return hex.join('');
+};
+
+/**
+ * Wrapper around the DataView API to keep track of the offset into the data,
+ * also provides some utils for reading ascii strings etc.
  * @internal
  */
 class DataStream {
-    constructor(arrayBuffer) {
-        this.buffer = arrayBuffer;
-        this.data = new DataView(arrayBuffer);
+    constructor(buffer) {
+        this.buffer = buffer;
+        this.data = new DataView(buffer);
         this.pointer = 0;
     }
+    /**
+     * Returns the data as an Uint8Array of bytes.
+     */
     get bytes() {
         return new Uint8Array(this.buffer);
     }
-    get byteLength() {
+    /**
+     * Returns the total number of bytes in the data.
+     */
+    get numBytes() {
         return this.data.byteLength;
     }
     /**
@@ -207,13 +292,21 @@ class DataStream {
      */
     readHex(count, reverse = false) {
         const bytes = this.readBytes(count);
-        let hex = [];
-        for (let i = 0; i < bytes.length; i++) {
-            hex.push(bytes[i].toString(16).padStart(2, '0'));
-        }
-        if (reverse)
-            hex.reverse();
-        return hex.join('').toUpperCase();
+        return hexFromBytes(bytes, reverse);
+    }
+    /**
+     * @internal
+     */
+    readChar() {
+        const char = this.readUint8();
+        return String.fromCharCode(char);
+    }
+    /**
+     * @internal
+     */
+    readWideChar() {
+        const char = this.readUint16();
+        return String.fromCharCode(char);
     }
     /**
      * @internal
@@ -253,10 +346,13 @@ class DataStream {
         this.pointer += chars.byteLength;
         return str;
     }
+    end() {
+        return this.pointer >= this.data.byteLength;
+    }
 }
 
 /**
- * Clamp a number n between l and h
+ * Clamp a number n between l and h.
  * @internal
  */
 const clamp = (n, l, h) => {
@@ -267,13 +363,13 @@ const clamp = (n, l, h) => {
     return n;
 };
 /**
- * Interpolate between a and b - returns a if fac = 0, b if fac = 1, and somewhere between if 0 < fac < 1
+ * Interpolate between a and b - returns a if fac = 0, b if fac = 1, and somewhere between if 0 < fac < 1.
  * @internal
  */
 const lerp = (a, b, fac) => a + fac * (b - a);
 
 /**
- * Assert condition is true
+ * Assert condition is true.
  * @internal
  */
 function assert(condition, errMsg = 'Assert failed') {
@@ -281,12 +377,12 @@ function assert(condition, errMsg = 'Assert failed') {
         err(errMsg);
 }
 /**
- * Assert that a numerical value is between upper and lower bounds
+ * Assert that a numerical value is between upper and lower bounds.
  * @internal
  */
 const assertRange = (value, min, max, name = '') => assert(value >= min && value <= max, `flipnote.js error: ${name || 'value'} ${value} should be between ${min} and ${max}`);
 /**
- * Assert condition is true
+ * Assert condition is true.
  * @internal
  */
 const err = (errMsg = 'Assert failed') => {
@@ -294,8 +390,8 @@ const err = (errMsg = 'Assert failed') => {
 };
 
 /**
- * Webpack tries to replace inline calles to require() with polyfills,
- * but we don't want that, since we only use require to add extra features in NodeJs environments
+ * Webpack tries to replace inline calls to require() with polyfills,
+ * but we don't want that, since we only use require to add extra features in NodeJs environments.
  *
  * Modified from:
  * https://github.com/getsentry/sentry-javascript/blob/bd35d7364191ebed994fb132ff31031117c1823f/packages/utils/src/misc.ts#L9-L11
@@ -311,7 +407,7 @@ const dynamicRequire = (nodeModule, p) => {
     }
 };
 /**
- * Safely get global scope object
+ * Safely get global scope object.
  * @internal
  */
 const getGlobalObject = () => {
@@ -324,7 +420,7 @@ const getGlobalObject = () => {
                 : {};
 };
 /**
- * Utils to find out information about the current code execution environment
+ * Utils to find out information about the current code execution environment.
  */
 /**
  * Is the code running in a browser environment?
@@ -333,7 +429,7 @@ const getGlobalObject = () => {
 const isBrowser = typeof window !== 'undefined'
     && typeof window.document !== 'undefined';
 /**
- * Assert that the current environment should support browser APIs
+ * Assert that the current environment should support browser APIs.
  * @internal
  */
 const assertBrowserEnv = () => assert(isBrowser, 'This feature is only available in browser environments');
@@ -346,7 +442,7 @@ const isNode = typeof process !== 'undefined'
     && process.versions.node != null;
 // TODO: Deno support?
 /**
- * Is the code running in a Web Worker enviornment?
+ * Is the code running in a Web Worker environment?
  * @internal
  */
 const isWebWorker = typeof self === 'object'
@@ -355,9 +451,11 @@ const isWebWorker = typeof self === 'object'
 
 /**
  * Gracefully handles a given Promise factory.
+ *
+ * Example:
+ * `const [ error, data ] = await until(() => asyncAction())`
+ *
  * @internal
- * @example
- * const [ error, data ] = await until(() => asyncAction())
  */
 const until = async (promise) => {
     try {
@@ -371,7 +469,9 @@ const until = async (promise) => {
     }
 };
 
-/** @internal */
+/**
+ * @internal
+ */
 ((function () {
     if (!isBrowser) {
         return function () { };
@@ -396,26 +496,50 @@ var _a$2;
 */
 class BaseParser extends DataStream {
     constructor() {
-        /** Static file format info */
+        /**
+         * Static file format info
+         */
         super(...arguments);
-        /** Instance file format info */
-        /** Custom object tag */
+        /**
+         * Instance file format info
+         */
+        /**
+         * Custom object tag
+         */
         this[_a$2] = 'Flipnote';
-        /** Default formats used for {@link getTitle} */
+        /**
+         * Default formats used for {@link getTitle}.
+         * @group Meta
+         */
         this.titleFormats = {
             COMMENT: 'Comment by $USERNAME',
             FLIPNOTE: 'Flipnote by $USERNAME',
             ICON: 'Folder icon'
         };
-        /** File audio track info, see {@link FlipnoteAudioTrackInfo} */
+        /**
+         * File audio track info, see {@link FlipnoteAudioTrackInfo}.
+         * @group Meta
+         */
         this.soundMeta = new Map();
-        /** Animation frame global layer visibility */
+        /**
+         * Animation frame global layer visibility.
+         * @group Image
+         */
         this.layerVisibility = { 1: true, 2: true, 3: true };
-        /** (KWZ only) Indicates whether or not this file is a Flipnote Studio 3D folder icon */
+        /**
+         * (KWZ only) Indicates whether or not this file is a Flipnote Studio 3D folder icon.
+         * @group Meta
+         */
         this.isFolderIcon = false;
-        /** (KWZ only) Indicates whether or not this file is a handwritten comment from Flipnote Gallery World */
+        /**
+         * (KWZ only) Indicates whether or not this file is a handwritten comment from Flipnote Gallery World.
+         * @group Meta
+         */
         this.isComment = false;
-        /** (KWZ only) Indicates whether or not this Flipnote is a PPM to KWZ conversion from Flipnote Studio 3D's DSi Library service */
+        /**
+         * (KWZ only) Indicates whether or not this Flipnote is a PPM to KWZ conversion from Flipnote Studio 3D's DSi Library service.
+         * @group Meta
+         */
         this.isDsiLibraryNote = false;
     }
     /**
@@ -428,7 +552,7 @@ class BaseParser extends DataStream {
      *  ICON: 'Folder icon'
      * }
      * ```
-     * @group Utility
+     * @group Meta
      */
     getTitle(formats = this.titleFormats) {
         if (this.isFolderIcon)
@@ -437,7 +561,7 @@ class BaseParser extends DataStream {
         return title.replace('$USERNAME', this.meta.current.username);
     }
     /**
-     * Returns the Flipnote title when casting a parser instance to a string
+     * Returns the Flipnote title when casting a parser instance to a string.
      *
      * ```js
      * const str = 'Title: ' + note;
@@ -449,7 +573,7 @@ class BaseParser extends DataStream {
         return this.getTitle();
     }
     /**
-     * Allows for frame index iteration when using the parser instance as a for..of iterator
+     * Allows for frame index iteration when using the parser instance as a for..of iterator.
      *
      * ```js
      * for (const frameIndex of note) {
@@ -688,16 +812,22 @@ const getPpmFsidRegion = (fsid) => {
     }
 };
 
-/** @internal */
+/**
+ * @internal
+ */
 const ADPCM_INDEX_TABLE_2BIT = new Int8Array([
     -1, 2, -1, 2
 ]);
-/** @internal */
+/**
+ * @internal
+ */
 const ADPCM_INDEX_TABLE_4BIT = new Int8Array([
     -1, -1, -1, -1, 2, 4, 6, 8,
     -1, -1, -1, -1, 2, 4, 6, 8
 ]);
-/** @internal */
+/**
+ * @internal
+ */
 const ADPCM_STEP_TABLE = new Int16Array([
     7, 8, 9, 10, 11, 12, 13, 14, 16, 17,
     19, 21, 23, 25, 28, 31, 34, 37, 41, 45,
@@ -709,7 +839,9 @@ const ADPCM_STEP_TABLE = new Int16Array([
     5894, 6484, 7132, 7845, 8630, 9493, 10442, 11487, 12635, 13899,
     15289, 16818, 18500, 20350, 22385, 24623, 27086, 29794, 32767, 0
 ]);
-/** @internal */
+/**
+ * @internal
+ */
 const pcmGetSample = (src, srcSize, srcPtr) => {
     if (srcPtr < 0 || srcPtr >= srcSize)
         return 0;
@@ -777,17 +909,17 @@ const pcmGetRms = (src) => {
 };
 
 /**
- * Number of seconds between the UNIX timestamp epoch (jan 1 1970) and the Nintendo timestamp epoch (jan 1 2000)
+ * Number of seconds between the UNIX timestamp epoch (jan 1 1970) and the Nintendo timestamp epoch (jan 1 2000).
  * @internal
  */
 const NINTENDO_UNIX_EPOCH = 946684800;
 /**
- * Convert a Nintendo DS or 3DS timestamp int to a JS Date object
+ * Convert a Nintendo DS or 3DS timestamp integer to a JS Date object.
  * @internal
  */
 const dateFromNintendoTimestamp = (timestamp) => new Date((timestamp + NINTENDO_UNIX_EPOCH) * 1000);
 /**
- * Get the duration (in seconds) of a number of framres running at a specified framerate
+ * Get the duration (in seconds) of a number of framres running at a specified framerate.
  * @internal
  */
 const timeGetNoteDuration = (frameCount, framerate) => 
@@ -836,7 +968,7 @@ const rsaLoadPublicKey = async (pemKey, hashType) => {
  */
 const rsaVerify = async (key, signature, data) => await SUBTLE_CRYPTO.verify(ALGORITHM, key, signature, data);
 
-var _a$1;
+var _PpmParser_instances, _PpmParser_layerBuffers, _PpmParser_soundFlags, _PpmParser_prevLayerBuffers, _PpmParser_lineEncodingBuffers, _PpmParser_prevDecodedFrame, _PpmParser_frameDataLength, _PpmParser_soundDataLength, _PpmParser_soundDataOffset, _PpmParser_frameOffsets, _PpmParser_decodeHeader, _PpmParser_readFilename, _PpmParser_decodeMeta, _PpmParser_decodeAnimationHeader, _PpmParser_decodeSoundHeader, _PpmParser_isKeyFrame, _PpmParser_pcmAudioMix, _a$1;
 /**
  * PPM framerates in frames per second, indexed by the in-app frame speed.
  * Frame speed 0 is never normally used
@@ -905,184 +1037,118 @@ class PpmParser extends BaseParser {
      */
     constructor(arrayBuffer, settings = {}) {
         super(arrayBuffer);
-        /** File format type, reflects {@link PpmParser.format} */
+        _PpmParser_instances.add(this);
+        /**
+         * File format type, reflects {@link PpmParser.format}.
+         * @group Meta
+         */
         this.format = FlipnoteFormat.PPM;
-        /** Custom object tag */
+        /**
+         * Custom object tag.
+         * @group Utility
+         */
         this[_a$1] = 'Flipnote Studio PPM animation file';
-        /** Animation frame width, reflects {@link PpmParser.width} */
+        /**
+         * Animation frame width, reflects {@link PpmParser.width}.
+         * @group Image
+         */
         this.imageWidth = PpmParser.width;
-        /** Animation frame height, reflects {@link PpmParser.height} */
+        /**
+         * Animation frame height, reflects {@link PpmParser.height}.
+         * @group Image
+         */
         this.imageHeight = PpmParser.height;
-        /** Animation frame aspect ratio, reflects {@link PpmParser.aspect} */
+        /**
+         * Animation frame aspect ratio, reflects {@link PpmParser.aspect}.
+         * @group Image
+         */
         this.aspect = PpmParser.aspect;
-        /** X offset for the top-left corner of the animation frame */
+        /**
+         * X offset for the top-left corner of the animation frame.
+         * @group Image
+         */
         this.imageOffsetX = 0;
-        /** Y offset for the top-left corner of the animation frame */
+        /**
+         * Y offset for the top-left corner of the animation frame.
+         * @group Image
+         */
         this.imageOffsetY = 0;
-        /** Number of animation frame layers, reflects {@link PpmParser.numLayers} */
+        /**
+         * Number of animation frame layers, reflects {@link PpmParser.numLayers}.
+         * @group Image
+         */
         this.numLayers = PpmParser.numLayers;
-        /** Number of colors per layer (aside from transparent), reflects {@link PpmParser.numLayerColors} */
+        /**
+         * Number of colors per layer (aside from transparent), reflects {@link PpmParser.numLayerColors}.
+         * @group Image
+         */
         this.numLayerColors = PpmParser.numLayerColors;
-        /** key used for Flipnote verification, in PEM format */
+        /**
+         * Key used for Flipnote verification, in PEM format.
+         * @group Verification
+         */
         this.publicKey = PpmParser.publicKey;
-        /** @internal */
+        /**
+         * @internal
+         * @group Image
+         */
         this.srcWidth = PpmParser.width;
-        /** Which audio tracks are available in this format, reflects {@link PpmParser.audioTracks} */
+        /**
+         * Which audio tracks are available in this format, reflects {@link PpmParser.audioTracks}.
+         * @group Audio
+         */
         this.audioTracks = PpmParser.audioTracks;
-        /** Which sound effect tracks are available in this format, reflects {@link PpmParser.soundEffectTracks} */
+        /**
+         * Which sound effect tracks are available in this format, reflects {@link PpmParser.soundEffectTracks}.
+         * @group Audio
+         */
         this.soundEffectTracks = PpmParser.soundEffectTracks;
-        /** Audio track base sample rate, reflects {@link PpmParser.rawSampleRate} */
+        /**
+         * Audio track base sample rate, reflects {@link PpmParser.rawSampleRate}.
+         * @group Audio
+         */
         this.rawSampleRate = PpmParser.rawSampleRate;
-        /** Audio output sample rate, reflects {@link PpmParser.sampleRate} */
+        /**
+         * Audio output sample rate, reflects {@link PpmParser.sampleRate}.
+         * @group Audio
+         */
         this.sampleRate = PpmParser.sampleRate;
-        /** Global animation frame color palette, reflects {@link PpmParser.globalPalette} */
+        /**
+         * Global animation frame color palette, reflects {@link PpmParser.globalPalette}.
+         * @group Image
+         */
         this.globalPalette = PpmParser.globalPalette;
-        this.prevDecodedFrame = null;
-        this.decodeHeader();
-        this.decodeAnimationHeader();
-        this.decodeSoundHeader();
+        _PpmParser_layerBuffers.set(this, void 0);
+        _PpmParser_soundFlags.set(this, void 0);
+        _PpmParser_prevLayerBuffers.set(this, void 0);
+        _PpmParser_lineEncodingBuffers.set(this, void 0);
+        _PpmParser_prevDecodedFrame.set(this, null);
+        _PpmParser_frameDataLength.set(this, void 0);
+        _PpmParser_soundDataLength.set(this, void 0);
+        _PpmParser_soundDataOffset.set(this, void 0);
+        _PpmParser_frameOffsets.set(this, void 0);
+        __classPrivateFieldGet(this, _PpmParser_instances, "m", _PpmParser_decodeHeader).call(this);
+        __classPrivateFieldGet(this, _PpmParser_instances, "m", _PpmParser_decodeAnimationHeader).call(this);
+        __classPrivateFieldGet(this, _PpmParser_instances, "m", _PpmParser_decodeSoundHeader).call(this);
         // this is always true afaik, it's likely just a remnant from development
         // doesn't hurt to be accurate though...
         if (((this.version >> 4) & 0xf) !== 0) {
-            this.decodeMeta();
+            __classPrivateFieldGet(this, _PpmParser_instances, "m", _PpmParser_decodeMeta).call(this);
         }
         // create image buffers
-        this.layerBuffers = [
+        __classPrivateFieldSet(this, _PpmParser_layerBuffers, [
             new Uint8Array(PpmParser.width * PpmParser.height),
             new Uint8Array(PpmParser.width * PpmParser.height)
-        ];
-        this.prevLayerBuffers = [
+        ], "f");
+        __classPrivateFieldSet(this, _PpmParser_prevLayerBuffers, [
             new Uint8Array(PpmParser.width * PpmParser.height),
             new Uint8Array(PpmParser.width * PpmParser.height)
-        ];
-        this.lineEncodingBuffers = [
+        ], "f");
+        __classPrivateFieldSet(this, _PpmParser_lineEncodingBuffers, [
             new Uint8Array(PpmParser.height),
             new Uint8Array(PpmParser.height)
-        ];
-        this.prevDecodedFrame = null;
-    }
-    decodeHeader() {
-        assert(16 < this.byteLength);
-        this.seek(4);
-        // decode header
-        // https://github.com/Flipnote-Collective/flipnote-studio-docs/wiki/PPM-format#header
-        this.frameDataLength = this.readUint32();
-        this.soundDataLength = this.readUint32();
-        this.frameCount = this.readUint16() + 1;
-        this.version = this.readUint16();
-        // sound data offset = frame data offset + frame data length + sound effect flags
-        let soundDataOffset = 0x06A0 + this.frameDataLength + this.frameCount;
-        if (soundDataOffset % 4 !== 0)
-            soundDataOffset += 4 - (soundDataOffset % 4);
-        assert(soundDataOffset < this.byteLength);
-        this.soundDataOffset = soundDataOffset;
-    }
-    readFilename() {
-        const mac = this.readHex(3);
-        const random = this.readChars(13);
-        const edits = this.readUint16().toString().padStart(3, '0');
-        return `${mac}_${random}_${edits}`;
-    }
-    decodeMeta() {
-        // https://github.com/Flipnote-Collective/flipnote-studio-docs/wiki/PPM-format#metadata
-        assert(0x06A8 < this.byteLength);
-        this.seek(0x10);
-        const lock = this.readUint16();
-        const thumbIndex = this.readInt16();
-        const rootAuthorName = this.readWideChars(11);
-        const parentAuthorName = this.readWideChars(11);
-        const currentAuthorName = this.readWideChars(11);
-        const parentAuthorId = this.readHex(8, true);
-        const currentAuthorId = this.readHex(8, true);
-        const parentFilename = this.readFilename();
-        const currentFilename = this.readFilename();
-        const rootAuthorId = this.readHex(8, true);
-        this.seek(0x9A);
-        const timestamp = dateFromNintendoTimestamp(this.readInt32());
-        this.seek(0x06A6);
-        const flags = this.readUint16();
-        this.thumbFrameIndex = thumbIndex;
-        this.layerVisibility = {
-            1: (flags & 0x10) === 0,
-            2: (flags & 0x20) === 0,
-            3: false
-        };
-        this.isSpinoff = (currentAuthorId !== parentAuthorId) || (currentAuthorId !== rootAuthorId);
-        this.meta = {
-            lock: lock === 1,
-            loop: (flags >> 1 & 0x1) === 1,
-            isSpinoff: this.isSpinoff,
-            frameCount: this.frameCount,
-            frameSpeed: this.frameSpeed,
-            bgmSpeed: this.bgmSpeed,
-            duration: this.duration,
-            thumbIndex: thumbIndex,
-            timestamp: timestamp,
-            root: {
-                username: rootAuthorName,
-                fsid: rootAuthorId,
-                region: getPpmFsidRegion(rootAuthorId),
-                filename: null
-            },
-            parent: {
-                username: parentAuthorName,
-                fsid: parentAuthorId,
-                region: getPpmFsidRegion(parentAuthorId),
-                filename: parentFilename
-            },
-            current: {
-                username: currentAuthorName,
-                fsid: currentAuthorId,
-                region: getPpmFsidRegion(currentAuthorId),
-                filename: currentFilename
-            },
-        };
-    }
-    decodeAnimationHeader() {
-        // jump to the start of the animation data section
-        // https://github.com/Flipnote-Collective/flipnote-studio-docs/wiki/PPM-format#animation-header
-        this.seek(0x06A0);
-        const offsetTableLength = this.readUint16();
-        const numOffsets = offsetTableLength / 4;
-        assert(numOffsets <= this.frameCount);
-        // skip padding + flags
-        this.seek(0x06A8);
-        // read frame offsets and build them into a table
-        const frameOffsets = new Uint32Array(numOffsets);
-        for (let n = 0; n < numOffsets; n++) {
-            const ptr = 0x06A8 + offsetTableLength + this.readUint32();
-            assert(ptr < this.byteLength, `Frame ${n} pointer is out of bounds`);
-            frameOffsets[n] = ptr;
-        }
-        this.frameOffsets = frameOffsets;
-    }
-    decodeSoundHeader() {
-        // https://github.com/Flipnote-Collective/flipnote-studio-docs/wiki/PPM-format#sound-header
-        let ptr = this.soundDataOffset;
-        this.seek(ptr);
-        const bgmLen = this.readUint32();
-        const se1Len = this.readUint32();
-        const se2Len = this.readUint32();
-        const se3Len = this.readUint32();
-        this.frameSpeed = 8 - this.readUint8();
-        this.bgmSpeed = 8 - this.readUint8();
-        assert(this.frameSpeed <= 8 && this.bgmSpeed <= 8);
-        ptr += 32;
-        this.framerate = PPM_FRAMERATES[this.frameSpeed];
-        this.duration = timeGetNoteDuration(this.frameCount, this.framerate);
-        this.bgmrate = PPM_FRAMERATES[this.bgmSpeed];
-        const soundMeta = new Map();
-        soundMeta.set(FlipnoteAudioTrack.BGM, { ptr: ptr, length: bgmLen });
-        soundMeta.set(FlipnoteAudioTrack.SE1, { ptr: ptr += bgmLen, length: se1Len });
-        soundMeta.set(FlipnoteAudioTrack.SE2, { ptr: ptr += se1Len, length: se2Len });
-        soundMeta.set(FlipnoteAudioTrack.SE3, { ptr: ptr += se2Len, length: se3Len });
-        this.soundMeta = soundMeta;
-    }
-    isKeyFrame(frameIndex) {
-        assertRange(frameIndex, 0, this.frameCount - 1, 'Frame index');
-        this.seek(this.frameOffsets[frameIndex]);
-        const header = this.readUint8();
-        return (header >> 7) & 0x1;
+        ], "f");
+        __classPrivateFieldSet(this, _PpmParser_prevDecodedFrame, null, "f");
     }
     /**
      * Decodes the thumbnail image embedded in the Flipnote. Will return a {@link FlipnoteThumbImage} containing raw RGBA data.
@@ -1121,20 +1187,20 @@ class PpmParser extends BaseParser {
     decodeFrame(frameIndex) {
         assertRange(frameIndex, 0, this.frameCount - 1, 'Frame index');
         // return existing layer buffers if no new frame has been decoded since the last call
-        if (this.prevDecodedFrame === frameIndex)
-            return this.layerBuffers;
+        if (__classPrivateFieldGet(this, _PpmParser_prevDecodedFrame, "f") === frameIndex)
+            return __classPrivateFieldGet(this, _PpmParser_layerBuffers, "f");
         // if necessary, decode previous frames until a keyframe is reached
-        if (this.prevDecodedFrame !== frameIndex - 1 && (!this.isKeyFrame(frameIndex)) && frameIndex !== 0)
+        if (__classPrivateFieldGet(this, _PpmParser_prevDecodedFrame, "f") !== frameIndex - 1 && (!__classPrivateFieldGet(this, _PpmParser_instances, "m", _PpmParser_isKeyFrame).call(this, frameIndex)) && frameIndex !== 0)
             this.decodeFrame(frameIndex - 1);
-        this.prevDecodedFrame = frameIndex;
+        __classPrivateFieldSet(this, _PpmParser_prevDecodedFrame, frameIndex, "f");
         // https://github.com/Flipnote-Collective/flipnote-studio-docs/wiki/PPM-format#animation-data
-        this.seek(this.frameOffsets[frameIndex]);
+        this.seek(__classPrivateFieldGet(this, _PpmParser_frameOffsets, "f")[frameIndex]);
         const header = this.readUint8();
         const isKeyFrame = (header >> 7) & 0x1;
         const isTranslated = (header >> 5) & 0x3;
         // reset current layer buffers
-        this.layerBuffers[0].fill(0);
-        this.layerBuffers[1].fill(0);
+        __classPrivateFieldGet(this, _PpmParser_layerBuffers, "f")[0].fill(0);
+        __classPrivateFieldGet(this, _PpmParser_layerBuffers, "f")[1].fill(0);
         let translateX = 0;
         let translateY = 0;
         if (isTranslated) {
@@ -1143,7 +1209,7 @@ class PpmParser extends BaseParser {
         }
         // unpack line encodings for each layer
         for (let layerIndex = 0; layerIndex < 2; layerIndex++) {
-            const lineEncodingBuffer = this.lineEncodingBuffers[layerIndex];
+            const lineEncodingBuffer = __classPrivateFieldGet(this, _PpmParser_lineEncodingBuffers, "f")[layerIndex];
             lineEncodingBuffer.fill(0);
             for (let ptr = 0; ptr < lineEncodingBuffer.length;) {
                 let byte = this.readUint8();
@@ -1161,8 +1227,8 @@ class PpmParser extends BaseParser {
         }
         // unpack layer bitmaps
         for (let layerIndex = 0; layerIndex < 2; layerIndex++) {
-            const pixelBuffer = this.layerBuffers[layerIndex];
-            const lineEncodingBuffer = this.lineEncodingBuffers[layerIndex];
+            const pixelBuffer = __classPrivateFieldGet(this, _PpmParser_layerBuffers, "f")[layerIndex];
+            const lineEncodingBuffer = __classPrivateFieldGet(this, _PpmParser_lineEncodingBuffers, "f")[layerIndex];
             for (let y = 0; y < PpmParser.height; y++) {
                 let pixelBufferPtr = y * PpmParser.width;
                 const lineType = lineEncodingBuffer[y];
@@ -1228,10 +1294,10 @@ class PpmParser extends BaseParser {
             }
         }
         // if the current frame is based on changes from the previous one, merge them by XORing their values
-        const layer1 = this.layerBuffers[0];
-        const layer2 = this.layerBuffers[1];
-        const layer1Prev = this.prevLayerBuffers[0];
-        const layer2Prev = this.prevLayerBuffers[1];
+        const layer1 = __classPrivateFieldGet(this, _PpmParser_layerBuffers, "f")[0];
+        const layer2 = __classPrivateFieldGet(this, _PpmParser_layerBuffers, "f")[1];
+        const layer1Prev = __classPrivateFieldGet(this, _PpmParser_prevLayerBuffers, "f")[0];
+        const layer2Prev = __classPrivateFieldGet(this, _PpmParser_prevLayerBuffers, "f")[1];
         // fast diffing if the frame isn't translated
         if (!isKeyFrame && translateX === 0 && translateY === 0) {
             const size = PpmParser.height * PpmParser.width;
@@ -1263,13 +1329,13 @@ class PpmParser extends BaseParser {
             }
         }
         // copy the current layer buffers to the previous ones
-        this.prevLayerBuffers[0].set(this.layerBuffers[0]);
-        this.prevLayerBuffers[1].set(this.layerBuffers[1]);
-        return this.layerBuffers;
+        __classPrivateFieldGet(this, _PpmParser_prevLayerBuffers, "f")[0].set(__classPrivateFieldGet(this, _PpmParser_layerBuffers, "f")[0]);
+        __classPrivateFieldGet(this, _PpmParser_prevLayerBuffers, "f")[1].set(__classPrivateFieldGet(this, _PpmParser_layerBuffers, "f")[1]);
+        return __classPrivateFieldGet(this, _PpmParser_layerBuffers, "f");
     }
     /**
      * Get the color palette indices for a given frame. RGBA colors for these values can be indexed from {@link PpmParser.globalPalette}
-     *
+    
      * Returns an array where:
      *  - index 0 is the paper color index
      *  - index 1 is the layer 1 color index
@@ -1278,7 +1344,7 @@ class PpmParser extends BaseParser {
     */
     getFramePaletteIndices(frameIndex) {
         assertRange(frameIndex, 0, this.frameCount - 1, 'Frame index');
-        this.seek(this.frameOffsets[frameIndex]);
+        this.seek(__classPrivateFieldGet(this, _PpmParser_frameOffsets, "f")[frameIndex]);
         const header = this.readUint8();
         const isInverted = (header & 0x1) !== 1;
         const penMap = [
@@ -1313,7 +1379,7 @@ class PpmParser extends BaseParser {
      * @group Image
     */
     getIsKeyFrame(frameIndex) {
-        const flag = this.isKeyFrame(frameIndex) === 1;
+        const flag = __classPrivateFieldGet(this, _PpmParser_instances, "m", _PpmParser_isKeyFrame).call(this, frameIndex) === 1;
         return [flag, flag];
     }
     /**
@@ -1353,23 +1419,23 @@ class PpmParser extends BaseParser {
      * @group Audio
     */
     decodeSoundFlags() {
-        if (this.soundFlags !== undefined)
-            return this.soundFlags;
-        assert(0x06A0 + this.frameDataLength < this.byteLength);
+        if (__classPrivateFieldGet(this, _PpmParser_soundFlags, "f") !== undefined)
+            return __classPrivateFieldGet(this, _PpmParser_soundFlags, "f");
+        assert(0x06A0 + __classPrivateFieldGet(this, _PpmParser_frameDataLength, "f") < this.numBytes);
         // https://github.com/Flipnote-Collective/flipnote-studio-docs/wiki/PPM-format#sound-effect-flags
-        this.seek(0x06A0 + this.frameDataLength);
+        this.seek(0x06A0 + __classPrivateFieldGet(this, _PpmParser_frameDataLength, "f"));
         const numFlags = this.frameCount;
         const flags = this.readBytes(numFlags);
-        this.soundFlags = new Array(numFlags);
+        __classPrivateFieldSet(this, _PpmParser_soundFlags, new Array(numFlags), "f");
         for (let i = 0; i < numFlags; i++) {
             const byte = flags[i];
-            this.soundFlags[i] = [
+            __classPrivateFieldGet(this, _PpmParser_soundFlags, "f")[i] = [
                 (byte & 0x1) !== 0, // SE1 bitflag
                 (byte & 0x2) !== 0, // SE2 bitflag
                 (byte & 0x4) !== 0, // SE3 bitflag
             ];
         }
-        return this.soundFlags;
+        return __classPrivateFieldGet(this, _PpmParser_soundFlags, "f");
     }
     /**
      * Get the sound effect usage flags for every frame
@@ -1389,7 +1455,7 @@ class PpmParser extends BaseParser {
      */
     getFrameSoundEffectFlags(frameIndex) {
         assertRange(frameIndex, 0, this.frameCount - 1, 'Frame index');
-        this.seek(0x06A0 + this.frameDataLength + frameIndex);
+        this.seek(0x06A0 + __classPrivateFieldGet(this, _PpmParser_frameDataLength, "f") + frameIndex);
         const byte = this.readUint8();
         return {
             [FlipnoteSoundEffectTrack.SE1]: (byte & 0x1) !== 0,
@@ -1405,7 +1471,7 @@ class PpmParser extends BaseParser {
     */
     getAudioTrackRaw(trackId) {
         const trackMeta = this.soundMeta.get(trackId);
-        assert(trackMeta.ptr + trackMeta.length < this.byteLength);
+        assert(trackMeta.ptr + trackMeta.length < this.numBytes);
         this.seek(trackMeta.ptr);
         return this.readBytes(trackMeta.length);
     }
@@ -1469,17 +1535,6 @@ class PpmParser extends BaseParser {
             return pcmResampleNearestNeighbour(srcPcm, srcFreq, dstFreq);
         return srcPcm;
     }
-    pcmAudioMix(src, dst, dstOffset = 0) {
-        const srcSize = src.length;
-        const dstSize = dst.length;
-        for (let n = 0; n < srcSize; n++) {
-            if (dstOffset + n > dstSize)
-                break;
-            // half src volume
-            const samp = dst[dstOffset + n] + (src[n] / 2);
-            dst[dstOffset + n] = clamp(samp, -32768, 32767);
-        }
-    }
     /**
      * Get the full mixed audio for the Flipnote, using the specified samplerate
      * @returns Signed 16-bit PCM audio
@@ -1495,7 +1550,7 @@ class PpmParser extends BaseParser {
         // Mix background music
         if (hasBgm) {
             const bgmPcm = this.getAudioTrackPcm(FlipnoteAudioTrack.BGM, dstFreq);
-            this.pcmAudioMix(bgmPcm, master, 0);
+            __classPrivateFieldGet(this, _PpmParser_instances, "m", _PpmParser_pcmAudioMix).call(this, bgmPcm, master, 0);
         }
         // Mix sound effects
         if (hasSe1 || hasSe2 || hasSe3) {
@@ -1508,26 +1563,22 @@ class PpmParser extends BaseParser {
                 const seOffset = Math.ceil(frame * samplesPerFrame);
                 const flag = seFlags[frame];
                 if (hasSe1 && flag[0])
-                    this.pcmAudioMix(se1Pcm, master, seOffset);
+                    __classPrivateFieldGet(this, _PpmParser_instances, "m", _PpmParser_pcmAudioMix).call(this, se1Pcm, master, seOffset);
                 if (hasSe2 && flag[1])
-                    this.pcmAudioMix(se2Pcm, master, seOffset);
+                    __classPrivateFieldGet(this, _PpmParser_instances, "m", _PpmParser_pcmAudioMix).call(this, se2Pcm, master, seOffset);
                 if (hasSe3 && flag[2])
-                    this.pcmAudioMix(se3Pcm, master, seOffset);
+                    __classPrivateFieldGet(this, _PpmParser_instances, "m", _PpmParser_pcmAudioMix).call(this, se3Pcm, master, seOffset);
             }
         }
         this.audioClipRatio = pcmGetClippingRatio(master);
         return master;
     }
     /**
-     * @groupDescription Verification
-     * ahsjkhaskjdhaslkhalsdhasldj
-     */
-    /**
      * Get the body of the Flipnote - the data that is digested for the signature
      * @group Verification
      */
     getBody() {
-        const bodyEnd = this.soundDataOffset + this.soundDataLength + 32;
+        const bodyEnd = __classPrivateFieldGet(this, _PpmParser_soundDataOffset, "f") + __classPrivateFieldGet(this, _PpmParser_soundDataLength, "f") + 32;
         return this.bytes.subarray(0, bodyEnd);
     }
     /**
@@ -1535,7 +1586,7 @@ class PpmParser extends BaseParser {
     * @group Verification
     */
     getSignature() {
-        const bodyEnd = this.soundDataOffset + this.soundDataLength + 32;
+        const bodyEnd = __classPrivateFieldGet(this, _PpmParser_soundDataOffset, "f") + __classPrivateFieldGet(this, _PpmParser_soundDataLength, "f") + 32;
         return this.bytes.subarray(bodyEnd, bodyEnd + 128);
     }
     /**
@@ -1547,46 +1598,199 @@ class PpmParser extends BaseParser {
         return await rsaVerify(key, this.getSignature(), this.getBody());
     }
 }
-_a$1 = Symbol.toStringTag;
-/** Default PPM parser settings */
+_PpmParser_layerBuffers = new WeakMap(), _PpmParser_soundFlags = new WeakMap(), _PpmParser_prevLayerBuffers = new WeakMap(), _PpmParser_lineEncodingBuffers = new WeakMap(), _PpmParser_prevDecodedFrame = new WeakMap(), _PpmParser_frameDataLength = new WeakMap(), _PpmParser_soundDataLength = new WeakMap(), _PpmParser_soundDataOffset = new WeakMap(), _PpmParser_frameOffsets = new WeakMap(), _PpmParser_instances = new WeakSet(), _a$1 = Symbol.toStringTag, _PpmParser_decodeHeader = function _PpmParser_decodeHeader() {
+    assert(16 < this.numBytes);
+    this.seek(4);
+    // decode header
+    // https://github.com/Flipnote-Collective/flipnote-studio-docs/wiki/PPM-format#header
+    __classPrivateFieldSet(this, _PpmParser_frameDataLength, this.readUint32(), "f");
+    __classPrivateFieldSet(this, _PpmParser_soundDataLength, this.readUint32(), "f");
+    this.frameCount = this.readUint16() + 1;
+    this.version = this.readUint16();
+    // sound data offset = frame data offset + frame data length + sound effect flags
+    let soundDataOffset = 0x06A0 + __classPrivateFieldGet(this, _PpmParser_frameDataLength, "f") + this.frameCount;
+    if (soundDataOffset % 4 !== 0)
+        soundDataOffset += 4 - (soundDataOffset % 4);
+    assert(soundDataOffset < this.numBytes);
+    __classPrivateFieldSet(this, _PpmParser_soundDataOffset, soundDataOffset, "f");
+}, _PpmParser_readFilename = function _PpmParser_readFilename() {
+    const mac = this.readHex(3);
+    const random = this.readChars(13);
+    const edits = this.readUint16().toString().padStart(3, '0');
+    return `${mac}_${random}_${edits}`;
+}, _PpmParser_decodeMeta = function _PpmParser_decodeMeta() {
+    // https://github.com/Flipnote-Collective/flipnote-studio-docs/wiki/PPM-format#metadata
+    assert(0x06A8 < this.numBytes);
+    this.seek(0x10);
+    const lock = this.readUint16();
+    const thumbIndex = this.readInt16();
+    const rootAuthorName = this.readWideChars(11);
+    const parentAuthorName = this.readWideChars(11);
+    const currentAuthorName = this.readWideChars(11);
+    const parentAuthorId = this.readHex(8, true);
+    const currentAuthorId = this.readHex(8, true);
+    const parentFilename = __classPrivateFieldGet(this, _PpmParser_instances, "m", _PpmParser_readFilename).call(this);
+    const currentFilename = __classPrivateFieldGet(this, _PpmParser_instances, "m", _PpmParser_readFilename).call(this);
+    const rootAuthorId = this.readHex(8, true);
+    this.seek(0x9A);
+    const timestamp = dateFromNintendoTimestamp(this.readInt32());
+    this.seek(0x06A6);
+    const flags = this.readUint16();
+    this.thumbFrameIndex = thumbIndex;
+    this.layerVisibility = {
+        1: (flags & 0x10) === 0,
+        2: (flags & 0x20) === 0,
+        3: false
+    };
+    this.isSpinoff = (currentAuthorId !== parentAuthorId) || (currentAuthorId !== rootAuthorId);
+    this.meta = {
+        lock: lock === 1,
+        loop: (flags >> 1 & 0x1) === 1,
+        isSpinoff: this.isSpinoff,
+        frameCount: this.frameCount,
+        frameSpeed: this.frameSpeed,
+        bgmSpeed: this.bgmSpeed,
+        duration: this.duration,
+        thumbIndex: thumbIndex,
+        timestamp: timestamp,
+        root: {
+            username: rootAuthorName,
+            fsid: rootAuthorId,
+            region: getPpmFsidRegion(rootAuthorId),
+            filename: null
+        },
+        parent: {
+            username: parentAuthorName,
+            fsid: parentAuthorId,
+            region: getPpmFsidRegion(parentAuthorId),
+            filename: parentFilename
+        },
+        current: {
+            username: currentAuthorName,
+            fsid: currentAuthorId,
+            region: getPpmFsidRegion(currentAuthorId),
+            filename: currentFilename
+        },
+    };
+}, _PpmParser_decodeAnimationHeader = function _PpmParser_decodeAnimationHeader() {
+    // jump to the start of the animation data section
+    // https://github.com/Flipnote-Collective/flipnote-studio-docs/wiki/PPM-format#animation-header
+    this.seek(0x06A0);
+    const offsetTableLength = this.readUint16();
+    const numOffsets = offsetTableLength / 4;
+    assert(numOffsets <= this.frameCount);
+    // skip padding + flags
+    this.seek(0x06A8);
+    // read frame offsets and build them into a table
+    const frameOffsets = new Uint32Array(numOffsets);
+    for (let n = 0; n < numOffsets; n++) {
+        const ptr = 0x06A8 + offsetTableLength + this.readUint32();
+        assert(ptr < this.numBytes, `Frame ${n} pointer is out of bounds`);
+        frameOffsets[n] = ptr;
+    }
+    __classPrivateFieldSet(this, _PpmParser_frameOffsets, frameOffsets, "f");
+}, _PpmParser_decodeSoundHeader = function _PpmParser_decodeSoundHeader() {
+    // https://github.com/Flipnote-Collective/flipnote-studio-docs/wiki/PPM-format#sound-header
+    let ptr = __classPrivateFieldGet(this, _PpmParser_soundDataOffset, "f");
+    this.seek(ptr);
+    const bgmLen = this.readUint32();
+    const se1Len = this.readUint32();
+    const se2Len = this.readUint32();
+    const se3Len = this.readUint32();
+    this.frameSpeed = 8 - this.readUint8();
+    this.bgmSpeed = 8 - this.readUint8();
+    assert(this.frameSpeed <= 8 && this.bgmSpeed <= 8);
+    ptr += 32;
+    this.framerate = PPM_FRAMERATES[this.frameSpeed];
+    this.duration = timeGetNoteDuration(this.frameCount, this.framerate);
+    this.bgmrate = PPM_FRAMERATES[this.bgmSpeed];
+    const soundMeta = new Map();
+    soundMeta.set(FlipnoteAudioTrack.BGM, { ptr: ptr, length: bgmLen });
+    soundMeta.set(FlipnoteAudioTrack.SE1, { ptr: ptr += bgmLen, length: se1Len });
+    soundMeta.set(FlipnoteAudioTrack.SE2, { ptr: ptr += se1Len, length: se2Len });
+    soundMeta.set(FlipnoteAudioTrack.SE3, { ptr: ptr += se2Len, length: se3Len });
+    this.soundMeta = soundMeta;
+}, _PpmParser_isKeyFrame = function _PpmParser_isKeyFrame(frameIndex) {
+    assertRange(frameIndex, 0, this.frameCount - 1, 'Frame index');
+    this.seek(__classPrivateFieldGet(this, _PpmParser_frameOffsets, "f")[frameIndex]);
+    const header = this.readUint8();
+    return (header >> 7) & 0x1;
+}, _PpmParser_pcmAudioMix = function _PpmParser_pcmAudioMix(src, dst, dstOffset = 0) {
+    const srcSize = src.length;
+    const dstSize = dst.length;
+    for (let n = 0; n < srcSize; n++) {
+        if (dstOffset + n > dstSize)
+            break;
+        // half src volume
+        const samp = dst[dstOffset + n] + (src[n] / 2);
+        dst[dstOffset + n] = clamp(samp, -32768, 32767);
+    }
+};
+/**
+ * Default PPM parser settings.
+ */
 PpmParser.defaultSettings = {};
-/** File format type */
+/**
+ * File format type.
+ */
 PpmParser.format = FlipnoteFormat.PPM;
-/** Animation frame width */
+/**
+ * Animation frame width.
+ */
 PpmParser.width = 256;
-/** Animation frame height */
+/**
+ * Animation frame height.
+ */
 PpmParser.height = 192;
-/** Animation frame aspect ratio */
+/**
+ * Animation frame aspect ratio.
+ */
 PpmParser.aspect = 3 / 4;
-/** Number of animation frame layers */
+/**
+ * Number of animation frame layers.
+ */
 PpmParser.numLayers = 2;
-/** Number of colors per layer (aside from transparent) */
+/**
+ * Number of colors per layer (aside from transparent).
+ */
 PpmParser.numLayerColors = 1;
-/** Audio track base sample rate */
+/**
+ * Audio track base sample rate.
+ */
 PpmParser.rawSampleRate = 8192;
-/** Nintendo DSi audio output rate */
+/**
+ * Nintendo DSi audio output rate.
+ */
 PpmParser.sampleRate = 32768;
-/** Which audio tracks are available in this format */
+/**
+ * Which audio tracks are available in this format.
+ */
 PpmParser.audioTracks = [
     FlipnoteAudioTrack.BGM,
     FlipnoteAudioTrack.SE1,
     FlipnoteAudioTrack.SE2,
     FlipnoteAudioTrack.SE3
 ];
-/** Which sound effect tracks are available in this format */
+/**
+ * Which sound effect tracks are available in this format.
+ */
 PpmParser.soundEffectTracks = [
     FlipnoteSoundEffectTrack.SE1,
     FlipnoteSoundEffectTrack.SE2,
     FlipnoteSoundEffectTrack.SE3,
 ];
-/** Global animation frame color palette */
+/**
+ * Global animation frame color palette.
+ */
 PpmParser.globalPalette = [
     PPM_PALETTE.WHITE,
     PPM_PALETTE.BLACK,
     PPM_PALETTE.RED,
     PPM_PALETTE.BLUE
 ];
-/** Public key used for Flipnote verification, in PEM format */
+/**
+ * Public key used for Flipnote verification, in PEM format.
+ */
 PpmParser.publicKey = PPM_PUBLIC_KEY;
 
 /**
@@ -1641,8 +1845,12 @@ const getKwzFsidRegion = (fsid) => {
     }
     return FlipnoteRegion.UNKNOWN;
 };
+/**
+ * Format a hex string with dashes, to match the format used to display Flipnote Studio IDs in the app.
+ */
+const kwzFsidFormat = (hex) => `${hex.slice(0, 4)}-${hex.slice(4, 8)}-${hex.slice(8, 12)}-${hex.slice(12, 18)}`.toLowerCase();
 
-var _a;
+var _KwzParser_instances, _KwzParser_settings, _KwzParser_sectionMap, _KwzParser_bodyEndOffset, _KwzParser_layerBuffers, _KwzParser_soundFlags, _KwzParser_prevDecodedFrame, _KwzParser_frameMetaOffsets, _KwzParser_frameDataOffsets, _KwzParser_frameLayerSizes, _KwzParser_bitIndex, _KwzParser_bitValue, _KwzParser_buildSectionMap, _KwzParser_readBits, _KwzParser_readFsid, _KwzParser_readFilename, _KwzParser_decodeMeta, _KwzParser_decodeMetaQuick, _KwzParser_getFrameOffsets, _KwzParser_decodeSoundHeader, _a;
 /**
  * KWZ framerates in frames per second, indexed by the in-app frame speed
  */
@@ -1691,7 +1899,9 @@ const KWZ_LINE_TABLE = new Uint8Array(6561 * 8);
  * @internal
  */
 const KWZ_LINE_TABLE_SHIFT = new Uint8Array(6561 * 8);
-/** @internal */
+/**
+ * @internal
+ */
 var offset = 0;
 for (let a = 0; a < 3; a++)
     for (let b = 0; b < 3; b++)
@@ -1749,53 +1959,95 @@ class KwzParser extends BaseParser {
      */
     constructor(arrayBuffer, settings = {}) {
         super(arrayBuffer);
-        /** File format type, reflects {@link KwzParser.format} */
+        _KwzParser_instances.add(this);
+        /**
+         * File format type, reflects {@link KwzParser.format}
+         */
         this.format = FlipnoteFormat.KWZ;
-        /** Custom object tag */
+        /**
+         * Custom object tag
+         */
         this[_a] = 'Flipnote Studio 3D KWZ animation file';
-        /** Animation frame width, reflects {@link KwzParser.width} */
+        /**
+         * Animation frame width, reflects {@link KwzParser.width}
+         */
         this.imageWidth = KwzParser.width;
-        /** Animation frame height, reflects {@link KwzParser.height} */
+        /**
+         * Animation frame height, reflects {@link KwzParser.height}
+         */
         this.imageHeight = KwzParser.height;
-        /** Animation frame aspect ratio, reflects {@link KwzParser.aspect} */
+        /**
+         * Animation frame aspect ratio, reflects {@link KwzParser.aspect}
+         */
         this.aspect = KwzParser.aspect;
-        /** X offset for the top-left corner of the animation frame */
+        /**
+         * X offset for the top-left corner of the animation frame
+         */
         this.imageOffsetX = 0;
-        /** Y offset for the top-left corner of the animation frame */
+        /**
+         * Y offset for the top-left corner of the animation frame
+         */
         this.imageOffsetY = 0;
-        /** Number of animation frame layers, reflects {@link KwzParser.numLayers} */
+        /**
+         * Number of animation frame layers, reflects {@link KwzParser.numLayers}
+         */
         this.numLayers = KwzParser.numLayers;
-        /** Number of colors per layer (aside from transparent), reflects {@link KwzParser.numLayerColors} */
+        /**
+         * Number of colors per layer (aside from transparent), reflects {@link KwzParser.numLayerColors}
+         */
         this.numLayerColors = KwzParser.numLayerColors;
-        /** key used for Flipnote verification, in PEM format */
+        /**
+         * key used for Flipnote verification, in PEM format
+         */
         this.publicKey = KwzParser.publicKey;
-        /** @internal */
+        /**
+         * @internal
+         */
         this.srcWidth = KwzParser.width;
-        /** Which audio tracks are available in this format, reflects {@link KwzParser.audioTracks} */
+        /**
+         * Which audio tracks are available in this format, reflects {@link KwzParser.audioTracks}
+         */
         this.audioTracks = KwzParser.audioTracks;
-        /** Which sound effect tracks are available in this format, reflects {@link KwzParser.soundEffectTracks} */
+        /**
+         * Which sound effect tracks are available in this format, reflects {@link KwzParser.soundEffectTracks}
+         */
         this.soundEffectTracks = KwzParser.soundEffectTracks;
-        /** Audio track base sample rate, reflects {@link KwzParser.rawSampleRate} */
+        /**
+         * Audio track base sample rate, reflects {@link KwzParser.rawSampleRate}
+         */
         this.rawSampleRate = KwzParser.rawSampleRate;
-        /** Audio output sample rate, reflects {@link KwzParser.sampleRate} */
+        /**
+         * Audio output sample rate, reflects {@link KwzParser.sampleRate}
+         */
         this.sampleRate = KwzParser.sampleRate;
-        /** Global animation frame color palette, reflects {@link KwzParser.globalPalette} */
+        /**
+         * Global animation frame color palette, reflects {@link KwzParser.globalPalette}
+         */
         this.globalPalette = KwzParser.globalPalette;
-        this.prevDecodedFrame = null;
-        this.bitIndex = 0;
-        this.bitValue = 0;
-        this.settings = { ...KwzParser.defaultSettings, ...settings };
-        this.layerBuffers = [
+        _KwzParser_settings.set(this, void 0);
+        _KwzParser_sectionMap.set(this, void 0);
+        _KwzParser_bodyEndOffset.set(this, void 0);
+        _KwzParser_layerBuffers.set(this, void 0);
+        _KwzParser_soundFlags.set(this, void 0); // sound effect flag cache
+        _KwzParser_prevDecodedFrame.set(this, null);
+        // frameMeta: Map<number, KwzFrameMeta>;
+        _KwzParser_frameMetaOffsets.set(this, void 0);
+        _KwzParser_frameDataOffsets.set(this, void 0);
+        _KwzParser_frameLayerSizes.set(this, void 0);
+        _KwzParser_bitIndex.set(this, 0);
+        _KwzParser_bitValue.set(this, 0);
+        __classPrivateFieldSet(this, _KwzParser_settings, { ...KwzParser.defaultSettings, ...settings }, "f");
+        __classPrivateFieldSet(this, _KwzParser_layerBuffers, [
             new Uint8Array(KwzParser.width * KwzParser.height),
             new Uint8Array(KwzParser.width * KwzParser.height),
             new Uint8Array(KwzParser.width * KwzParser.height),
-        ];
+        ], "f");
         // skip through the file and read all of the section headers so we can locate them
-        this.buildSectionMap();
+        __classPrivateFieldGet(this, _KwzParser_instances, "m", _KwzParser_buildSectionMap).call(this);
         // if the KIC section is present, we're dealing with a folder icon
         // these are single-frame KWZs without a KFH section for metadata, or a KSN section for sound
         // while the data for a full frame (320*240) is present, only the top-left 24*24 pixels are used
-        if (this.sectionMap.has('KIC')) {
+        if (__classPrivateFieldGet(this, _KwzParser_sectionMap, "f").has('KIC')) {
             this.isFolderIcon = true;
             // icons still use the full 320 * 240 frame size, so we just set up our image crop to deal with that
             this.imageWidth = 24;
@@ -1804,27 +2056,27 @@ class KwzParser extends BaseParser {
             this.frameSpeed = 0;
             this.framerate = KWZ_FRAMERATES[0];
             this.thumbFrameIndex = 0;
-            this.getFrameOffsets();
+            __classPrivateFieldGet(this, _KwzParser_instances, "m", _KwzParser_getFrameOffsets).call(this);
         }
         // if the KSN section is not present, then this is a handwritten comment from the Flipnote Gallery World online service
         // these are single-frame KWZs, just with no sound
-        else if (!this.sectionMap.has('KSN')) {
+        else if (!__classPrivateFieldGet(this, _KwzParser_sectionMap, "f").has('KSN')) {
             this.isComment = true;
-            this.decodeMeta();
-            this.getFrameOffsets();
+            __classPrivateFieldGet(this, _KwzParser_instances, "m", _KwzParser_decodeMeta).call(this);
+            __classPrivateFieldGet(this, _KwzParser_instances, "m", _KwzParser_getFrameOffsets).call(this);
         }
         // else let's assume this is a regular note
         else {
-            this.decodeMeta();
-            this.getFrameOffsets();
-            this.decodeSoundHeader();
+            __classPrivateFieldGet(this, _KwzParser_instances, "m", _KwzParser_decodeMeta).call(this);
+            __classPrivateFieldGet(this, _KwzParser_instances, "m", _KwzParser_getFrameOffsets).call(this);
+            __classPrivateFieldGet(this, _KwzParser_instances, "m", _KwzParser_decodeSoundHeader).call(this);
         }
         // apply special optimizations for converted DSi library notes
-        if (this.settings.dsiLibraryNote) {
+        if (__classPrivateFieldGet(this, _KwzParser_settings, "f").dsiLibraryNote) {
             this.isDsiLibraryNote = true;
         }
         // automatically crop out the border around every frame
-        if (this.settings.borderCrop) {
+        if (__classPrivateFieldGet(this, _KwzParser_settings, "f").borderCrop) {
             // dsi library notes can be cropped to their original resolution
             if (this.isDsiLibraryNote) {
                 this.imageOffsetX = 32;
@@ -1841,192 +2093,6 @@ class KwzParser extends BaseParser {
             }
         }
     }
-    buildSectionMap() {
-        const fileSize = this.byteLength - 256;
-        const sectionMap = new Map();
-        let sectionCount = 0;
-        let ptr = 0;
-        // counting sections should mitigate against one of mrnbayoh's notehax exploits
-        while (ptr < fileSize && sectionCount < 6) {
-            this.seek(ptr);
-            const magic = this.readChars(4).substring(0, 3);
-            const length = this.readUint32();
-            sectionMap.set(magic, { ptr, length });
-            ptr += length + 8;
-            sectionCount += 1;
-        }
-        this.bodyEndOffset = ptr;
-        this.sectionMap = sectionMap;
-        assert(sectionMap.has('KMC') && sectionMap.has('KMI'));
-    }
-    readBits(num) {
-        // assert(num < 16);
-        if (this.bitIndex + num > 16) {
-            const nextBits = this.readUint16();
-            this.bitValue |= nextBits << (16 - this.bitIndex);
-            this.bitIndex -= 16;
-        }
-        const result = this.bitValue & BITMASKS[num];
-        this.bitValue >>= num;
-        this.bitIndex += num;
-        return result;
-    }
-    readFsid() {
-        if (this.settings.dsiLibraryNote) { // format as DSi PPM FSID
-            const hex = this.readHex(10, true);
-            return hex.slice(2, 18);
-        }
-        const hex = this.readHex(10);
-        return `${hex.slice(0, 4)}-${hex.slice(4, 8)}-${hex.slice(8, 12)}-${hex.slice(12, 18)}`.toLowerCase();
-    }
-    readFilename() {
-        const ptr = this.pointer;
-        const chars = this.readChars(28);
-        if (chars.length === 28)
-            return chars;
-        // Otherwise, this is likely a DSi Library note, 
-        // where sometimes Nintendo's buggy PPM converter includes the original packed PPM filename
-        this.seek(ptr);
-        const mac = this.readHex(3);
-        const random = this.readChars(13);
-        const edits = this.readUint16().toString().padStart(3, '0');
-        this.seek(ptr + 28);
-        return `${mac}_${random}_${edits}`;
-    }
-    decodeMeta() {
-        if (this.settings.quickMeta)
-            return this.decodeMetaQuick();
-        assert(this.sectionMap.has('KFH'));
-        this.seek(this.sectionMap.get('KFH').ptr + 12);
-        const creationTime = dateFromNintendoTimestamp(this.readUint32());
-        const modifiedTime = dateFromNintendoTimestamp(this.readUint32());
-        // const simonTime = 
-        this.readUint32();
-        const rootAuthorId = this.readFsid();
-        const parentAuthorId = this.readFsid();
-        const currentAuthorId = this.readFsid();
-        const rootAuthorName = this.readWideChars(11);
-        const parentAuthorName = this.readWideChars(11);
-        const currentAuthorName = this.readWideChars(11);
-        const rootFilename = this.readFilename();
-        const parentFilename = this.readFilename();
-        const currentFilename = this.readFilename();
-        const frameCount = this.readUint16();
-        const thumbIndex = this.readUint16();
-        const flags = this.readUint16();
-        const frameSpeed = this.readUint8();
-        const layerFlags = this.readUint8();
-        this.isSpinoff = (currentAuthorId !== parentAuthorId) || (currentAuthorId !== rootAuthorId);
-        this.frameCount = frameCount;
-        this.frameSpeed = frameSpeed;
-        this.framerate = KWZ_FRAMERATES[frameSpeed];
-        this.duration = timeGetNoteDuration(this.frameCount, this.framerate);
-        this.thumbFrameIndex = thumbIndex;
-        this.layerVisibility = {
-            1: (layerFlags & 0x1) === 0,
-            2: (layerFlags & 0x2) === 0,
-            3: (layerFlags & 0x3) === 0,
-        };
-        // Try to auto-detect whether the current author ID matches a converted PPM ID
-        // if (isKwzDsiLibraryFsid(currentAuthorId)) {
-        //   this.isDsiLibraryNote = true;
-        // }
-        this.meta = {
-            lock: (flags & 0x1) !== 0,
-            loop: (flags & 0x2) !== 0,
-            isSpinoff: this.isSpinoff,
-            frameCount: frameCount,
-            frameSpeed: frameSpeed,
-            duration: this.duration,
-            thumbIndex: thumbIndex,
-            timestamp: modifiedTime,
-            creationTimestamp: creationTime,
-            root: {
-                username: rootAuthorName,
-                fsid: rootAuthorId,
-                region: getKwzFsidRegion(rootAuthorId),
-                filename: rootFilename,
-                isDsiFilename: rootFilename.length !== 28
-            },
-            parent: {
-                username: parentAuthorName,
-                fsid: parentAuthorId,
-                region: getKwzFsidRegion(parentAuthorId),
-                filename: parentFilename,
-                isDsiFilename: parentFilename.length !== 28
-            },
-            current: {
-                username: currentAuthorName,
-                fsid: currentAuthorId,
-                region: getKwzFsidRegion(currentAuthorId),
-                filename: currentFilename,
-                isDsiFilename: currentFilename.length !== 28
-            },
-        };
-    }
-    decodeMetaQuick() {
-        assert(this.sectionMap.has('KFH'));
-        this.seek(this.sectionMap.get('KFH').ptr + 0x8 + 0xC4);
-        const frameCount = this.readUint16();
-        const thumbFrameIndex = this.readUint16();
-        this.readUint16();
-        const frameSpeed = this.readUint8();
-        const layerFlags = this.readUint8();
-        this.frameCount = frameCount;
-        this.thumbFrameIndex = thumbFrameIndex;
-        this.frameSpeed = frameSpeed;
-        this.framerate = KWZ_FRAMERATES[frameSpeed];
-        this.duration = timeGetNoteDuration(this.frameCount, this.framerate);
-        this.layerVisibility = {
-            1: (layerFlags & 0x1) === 0,
-            2: (layerFlags & 0x2) === 0,
-            3: (layerFlags & 0x3) === 0,
-        };
-    }
-    getFrameOffsets() {
-        assert(this.sectionMap.has('KMI') && this.sectionMap.has('KMC'));
-        const numFrames = this.frameCount;
-        const kmiSection = this.sectionMap.get('KMI');
-        const kmcSection = this.sectionMap.get('KMC');
-        assert(kmiSection.length / 28 >= numFrames);
-        const frameMetaOffsets = new Uint32Array(numFrames);
-        const frameDataOffsets = new Uint32Array(numFrames);
-        const frameLayerSizes = [];
-        let frameMetaPtr = kmiSection.ptr + 8;
-        let frameDataPtr = kmcSection.ptr + 12;
-        for (let frameIndex = 0; frameIndex < numFrames; frameIndex++) {
-            this.seek(frameMetaPtr + 4);
-            const layerASize = this.readUint16();
-            const layerBSize = this.readUint16();
-            const layerCSize = this.readUint16();
-            frameMetaOffsets[frameIndex] = frameMetaPtr;
-            frameDataOffsets[frameIndex] = frameDataPtr;
-            frameMetaPtr += 28;
-            frameDataPtr += layerASize + layerBSize + layerCSize;
-            assert(frameMetaPtr < this.byteLength, `frame${frameIndex} meta pointer out of bounds`);
-            assert(frameDataPtr < this.byteLength, `frame${frameIndex} data pointer out of bounds`);
-            frameLayerSizes.push([layerASize, layerBSize, layerCSize]);
-        }
-        this.frameMetaOffsets = frameMetaOffsets;
-        this.frameDataOffsets = frameDataOffsets;
-        this.frameLayerSizes = frameLayerSizes;
-    }
-    decodeSoundHeader() {
-        assert(this.sectionMap.has('KSN'));
-        let ptr = this.sectionMap.get('KSN').ptr + 8;
-        this.seek(ptr);
-        this.bgmSpeed = this.readUint32();
-        assert(this.bgmSpeed <= 10);
-        this.bgmrate = KWZ_FRAMERATES[this.bgmSpeed];
-        const trackSizes = new Uint32Array(this.buffer, ptr + 4, 20);
-        const soundMeta = new Map();
-        soundMeta.set(FlipnoteAudioTrack.BGM, { ptr: ptr += 28, length: trackSizes[0] });
-        soundMeta.set(FlipnoteAudioTrack.SE1, { ptr: ptr += trackSizes[0], length: trackSizes[1] });
-        soundMeta.set(FlipnoteAudioTrack.SE2, { ptr: ptr += trackSizes[1], length: trackSizes[2] });
-        soundMeta.set(FlipnoteAudioTrack.SE3, { ptr: ptr += trackSizes[2], length: trackSizes[3] });
-        soundMeta.set(FlipnoteAudioTrack.SE4, { ptr: ptr += trackSizes[3], length: trackSizes[4] });
-        this.soundMeta = soundMeta;
-    }
     /**
      * Decodes the thumbnail image embedded in the Flipnote. Will return a {@link FlipnoteThumbImage} containing JPEG data.
      *
@@ -2034,8 +2100,8 @@ class KwzParser extends BaseParser {
      * @group Meta
      */
     getThumbnailImage() {
-        assert(this.sectionMap.has('KTN'), 'KTN section missing - Note that folder icons and comments do not contain thumbnail data');
-        const ktn = this.sectionMap.get('KTN');
+        assert(__classPrivateFieldGet(this, _KwzParser_sectionMap, "f").has('KTN'), 'KTN section missing - Note that folder icons and comments do not contain thumbnail data');
+        const ktn = __classPrivateFieldGet(this, _KwzParser_sectionMap, "f").get('KTN');
         this.seek(ktn.ptr + 12);
         const bytes = this.readBytes(ktn.length - 12);
         return {
@@ -2060,7 +2126,7 @@ class KwzParser extends BaseParser {
     */
     getFramePaletteIndices(frameIndex) {
         assertRange(frameIndex, 0, this.frameCount - 1, 'Frame index');
-        this.seek(this.frameMetaOffsets[frameIndex]);
+        this.seek(__classPrivateFieldGet(this, _KwzParser_frameMetaOffsets, "f")[frameIndex]);
         const flags = this.readUint32();
         return [
             flags & 0xF,
@@ -2092,7 +2158,7 @@ class KwzParser extends BaseParser {
     }
     getFrameDiffingFlag(frameIndex) {
         assertRange(frameIndex, 0, this.frameCount - 1, 'Frame index');
-        this.seek(this.frameMetaOffsets[frameIndex]);
+        this.seek(__classPrivateFieldGet(this, _KwzParser_frameMetaOffsets, "f")[frameIndex]);
         return (this.readUint32() >> 4) & 0x07;
     }
     /**
@@ -2115,7 +2181,7 @@ class KwzParser extends BaseParser {
     */
     getFrameLayerDepths(frameIndex) {
         assertRange(frameIndex, 0, this.frameCount - 1, 'Frame index');
-        this.seek(this.frameMetaOffsets[frameIndex] + 0x14);
+        this.seek(__classPrivateFieldGet(this, _KwzParser_frameMetaOffsets, "f")[frameIndex] + 0x14);
         return [
             this.readUint8(),
             this.readUint8(),
@@ -2129,8 +2195,8 @@ class KwzParser extends BaseParser {
     */
     getFrameAuthor(frameIndex) {
         assertRange(frameIndex, 0, this.frameCount - 1, 'Frame index');
-        this.seek(this.frameMetaOffsets[frameIndex] + 0xA);
-        return this.readFsid();
+        this.seek(__classPrivateFieldGet(this, _KwzParser_frameMetaOffsets, "f")[frameIndex] + 0xA);
+        return __classPrivateFieldGet(this, _KwzParser_instances, "m", _KwzParser_readFsid).call(this);
     }
     /**
      * Get the camera flags for a given frame
@@ -2138,7 +2204,7 @@ class KwzParser extends BaseParser {
      * @returns Array of booleans, indicating whether each layer uses a photo or not
     */
     getFrameCameraFlags(frameIndex) {
-        this.seek(this.frameMetaOffsets[frameIndex] + 0x1A);
+        this.seek(__classPrivateFieldGet(this, _KwzParser_frameMetaOffsets, "f")[frameIndex] + 0x1A);
         const cameraFlags = this.readUint8();
         return [
             (cameraFlags & 0x1) !== 0,
@@ -2162,10 +2228,10 @@ class KwzParser extends BaseParser {
     decodeFrame(frameIndex, diffingFlag = 0x7, isPrevFrame = false) {
         assertRange(frameIndex, 0, this.frameCount - 1, 'Frame index');
         // return existing layer buffers if no new frame has been decoded since the last call
-        if (this.prevDecodedFrame === frameIndex)
-            return this.layerBuffers;
+        if (__classPrivateFieldGet(this, _KwzParser_prevDecodedFrame, "f") === frameIndex)
+            return __classPrivateFieldGet(this, _KwzParser_layerBuffers, "f");
         // the prevDecodedFrame check is an optimization for decoding frames in full sequence
-        if (this.prevDecodedFrame !== frameIndex - 1 && frameIndex !== 0) {
+        if (__classPrivateFieldGet(this, _KwzParser_prevDecodedFrame, "f") !== frameIndex - 1 && frameIndex !== 0) {
             // if this frame is being decoded as a prev frame, then we only want to decode the layers necessary
             // diffingFlag is negated with ~ so if no layers are diff-based, diffingFlag is 0
             if (isPrevFrame)
@@ -2174,16 +2240,16 @@ class KwzParser extends BaseParser {
             if (diffingFlag !== 0)
                 this.decodeFrame(frameIndex - 1, diffingFlag, true);
         }
-        let framePtr = this.frameDataOffsets[frameIndex];
-        const layerSizes = this.frameLayerSizes[frameIndex];
+        let framePtr = __classPrivateFieldGet(this, _KwzParser_frameDataOffsets, "f")[frameIndex];
+        const layerSizes = __classPrivateFieldGet(this, _KwzParser_frameLayerSizes, "f")[frameIndex];
         for (let layerIndex = 0; layerIndex < 3; layerIndex++) {
             // dsi gallery conversions don't use the third layer, so it can be skipped if this is set
-            if (this.settings.dsiLibraryNote && layerIndex === 3)
+            if (__classPrivateFieldGet(this, _KwzParser_settings, "f").dsiLibraryNote && layerIndex === 3)
                 break;
             this.seek(framePtr);
             let layerSize = layerSizes[layerIndex];
             framePtr += layerSize;
-            const pixelBuffer = this.layerBuffers[layerIndex];
+            const pixelBuffer = __classPrivateFieldGet(this, _KwzParser_layerBuffers, "f")[layerIndex];
             // if the layer is 38 bytes then it hasn't changed at all since the previous frame, so we can skip it
             if (layerSize === 38)
                 continue;
@@ -2191,8 +2257,8 @@ class KwzParser extends BaseParser {
             if (((diffingFlag >> layerIndex) & 0x1) === 0)
                 continue;
             // reset readbits state
-            this.bitIndex = 16;
-            this.bitValue = 0;
+            __classPrivateFieldSet(this, _KwzParser_bitIndex, 16, "f");
+            __classPrivateFieldSet(this, _KwzParser_bitValue, 0, "f");
             // tile skip counter
             let skipTileCounter = 0;
             for (let tileOffsetY = 0; tileOffsetY < 240; tileOffsetY += 128) {
@@ -2212,9 +2278,9 @@ class KwzParser extends BaseParser {
                                 continue;
                             }
                             let pixelBufferPtr = y * KwzParser.width + x;
-                            const tileType = this.readBits(3);
+                            const tileType = __classPrivateFieldGet(this, _KwzParser_instances, "m", _KwzParser_readBits).call(this, 3);
                             if (tileType === 0) {
-                                const linePtr = this.readBits(5) * 8;
+                                const linePtr = __classPrivateFieldGet(this, _KwzParser_instances, "m", _KwzParser_readBits).call(this, 5) * 8;
                                 const pixels = KWZ_LINE_TABLE_COMMON.subarray(linePtr, linePtr + 8);
                                 pixelBuffer.set(pixels, pixelBufferPtr);
                                 pixelBuffer.set(pixels, pixelBufferPtr += 320);
@@ -2226,7 +2292,7 @@ class KwzParser extends BaseParser {
                                 pixelBuffer.set(pixels, pixelBufferPtr += 320);
                             }
                             else if (tileType === 1) {
-                                const linePtr = this.readBits(13) * 8;
+                                const linePtr = __classPrivateFieldGet(this, _KwzParser_instances, "m", _KwzParser_readBits).call(this, 13) * 8;
                                 const pixels = KWZ_LINE_TABLE.subarray(linePtr, linePtr + 8);
                                 pixelBuffer.set(pixels, pixelBufferPtr);
                                 pixelBuffer.set(pixels, pixelBufferPtr += 320);
@@ -2238,7 +2304,7 @@ class KwzParser extends BaseParser {
                                 pixelBuffer.set(pixels, pixelBufferPtr += 320);
                             }
                             else if (tileType === 2) {
-                                const linePtr = this.readBits(5) * 8;
+                                const linePtr = __classPrivateFieldGet(this, _KwzParser_instances, "m", _KwzParser_readBits).call(this, 5) * 8;
                                 const a = KWZ_LINE_TABLE_COMMON.subarray(linePtr, linePtr + 8);
                                 const b = KWZ_LINE_TABLE_COMMON_SHIFT.subarray(linePtr, linePtr + 8);
                                 pixelBuffer.set(a, pixelBufferPtr);
@@ -2251,7 +2317,7 @@ class KwzParser extends BaseParser {
                                 pixelBuffer.set(b, pixelBufferPtr += 320);
                             }
                             else if (tileType === 3) {
-                                const linePtr = this.readBits(13) * 8;
+                                const linePtr = __classPrivateFieldGet(this, _KwzParser_instances, "m", _KwzParser_readBits).call(this, 13) * 8;
                                 const a = KWZ_LINE_TABLE.subarray(linePtr, linePtr + 8);
                                 const b = KWZ_LINE_TABLE_SHIFT.subarray(linePtr, linePtr + 8);
                                 pixelBuffer.set(a, pixelBufferPtr);
@@ -2265,15 +2331,15 @@ class KwzParser extends BaseParser {
                             }
                             // most common tile type
                             else if (tileType === 4) {
-                                const flags = this.readBits(8);
+                                const flags = __classPrivateFieldGet(this, _KwzParser_instances, "m", _KwzParser_readBits).call(this, 8);
                                 for (let mask = 1; mask < 0xFF; mask <<= 1) {
                                     if (flags & mask) {
-                                        const linePtr = this.readBits(5) * 8;
+                                        const linePtr = __classPrivateFieldGet(this, _KwzParser_instances, "m", _KwzParser_readBits).call(this, 5) * 8;
                                         const pixels = KWZ_LINE_TABLE_COMMON.subarray(linePtr, linePtr + 8);
                                         pixelBuffer.set(pixels, pixelBufferPtr);
                                     }
                                     else {
-                                        const linePtr = this.readBits(13) * 8;
+                                        const linePtr = __classPrivateFieldGet(this, _KwzParser_instances, "m", _KwzParser_readBits).call(this, 13) * 8;
                                         const pixels = KWZ_LINE_TABLE.subarray(linePtr, linePtr + 8);
                                         pixelBuffer.set(pixels, pixelBufferPtr);
                                     }
@@ -2281,24 +2347,24 @@ class KwzParser extends BaseParser {
                                 }
                             }
                             else if (tileType === 5) {
-                                skipTileCounter = this.readBits(5);
+                                skipTileCounter = __classPrivateFieldGet(this, _KwzParser_instances, "m", _KwzParser_readBits).call(this, 5);
                                 continue;
                             }
                             // type 6 doesnt exist
                             else if (tileType === 7) {
-                                let pattern = this.readBits(2);
-                                let useCommonLines = this.readBits(1);
+                                let pattern = __classPrivateFieldGet(this, _KwzParser_instances, "m", _KwzParser_readBits).call(this, 2);
+                                let useCommonLines = __classPrivateFieldGet(this, _KwzParser_instances, "m", _KwzParser_readBits).call(this, 1);
                                 let a, b;
                                 if (useCommonLines !== 0) {
-                                    const linePtrA = this.readBits(5) * 8;
-                                    const linePtrB = this.readBits(5) * 8;
+                                    const linePtrA = __classPrivateFieldGet(this, _KwzParser_instances, "m", _KwzParser_readBits).call(this, 5) * 8;
+                                    const linePtrB = __classPrivateFieldGet(this, _KwzParser_instances, "m", _KwzParser_readBits).call(this, 5) * 8;
                                     a = KWZ_LINE_TABLE_COMMON.subarray(linePtrA, linePtrA + 8);
                                     b = KWZ_LINE_TABLE_COMMON.subarray(linePtrB, linePtrB + 8);
                                     pattern += 1;
                                 }
                                 else {
-                                    const linePtrA = this.readBits(13) * 8;
-                                    const linePtrB = this.readBits(13) * 8;
+                                    const linePtrA = __classPrivateFieldGet(this, _KwzParser_instances, "m", _KwzParser_readBits).call(this, 13) * 8;
+                                    const linePtrB = __classPrivateFieldGet(this, _KwzParser_instances, "m", _KwzParser_readBits).call(this, 13) * 8;
                                     a = KWZ_LINE_TABLE.subarray(linePtrA, linePtrA + 8);
                                     b = KWZ_LINE_TABLE.subarray(linePtrB, linePtrB + 8);
                                 }
@@ -2350,12 +2416,12 @@ class KwzParser extends BaseParser {
                 }
             }
         }
-        this.prevDecodedFrame = frameIndex;
-        return this.layerBuffers;
+        __classPrivateFieldSet(this, _KwzParser_prevDecodedFrame, frameIndex, "f");
+        return __classPrivateFieldGet(this, _KwzParser_layerBuffers, "f");
     }
     decodeFrameSoundFlags(frameIndex) {
         assertRange(frameIndex, 0, this.frameCount - 1, 'Frame index');
-        this.seek(this.frameMetaOffsets[frameIndex] + 0x17);
+        this.seek(__classPrivateFieldGet(this, _KwzParser_frameMetaOffsets, "f")[frameIndex] + 0x17);
         const soundFlags = this.readUint8();
         return [
             (soundFlags & 0x1) !== 0,
@@ -2369,12 +2435,12 @@ class KwzParser extends BaseParser {
      * @group Audio
     */
     decodeSoundFlags() {
-        if (this.soundFlags !== undefined)
-            return this.soundFlags;
-        this.soundFlags = new Array(this.frameCount)
+        if (__classPrivateFieldGet(this, _KwzParser_soundFlags, "f") !== undefined)
+            return __classPrivateFieldGet(this, _KwzParser_soundFlags, "f");
+        __classPrivateFieldSet(this, _KwzParser_soundFlags, new Array(this.frameCount)
             .fill(false)
-            .map((_, i) => this.decodeFrameSoundFlags(i));
-        return this.soundFlags;
+            .map((_, i) => this.decodeFrameSoundFlags(i)), "f");
+        return __classPrivateFieldGet(this, _KwzParser_soundFlags, "f");
     }
     /**
      * Get the sound effect usage flags for every frame
@@ -2409,7 +2475,7 @@ class KwzParser extends BaseParser {
     */
     getAudioTrackRaw(trackId) {
         const trackMeta = this.soundMeta.get(trackId);
-        assert(trackMeta.ptr + trackMeta.length < this.byteLength);
+        assert(trackMeta.ptr + trackMeta.length < this.numBytes);
         return new Uint8Array(this.buffer, trackMeta.ptr, trackMeta.length);
     }
     decodeAdpcm(src, dst, predictor = 0, stepIndex = 0) {
@@ -2470,7 +2536,7 @@ class KwzParser extends BaseParser {
      * @group Audio
     */
     decodeAudioTrack(trackId) {
-        const settings = this.settings;
+        const settings = __classPrivateFieldGet(this, _KwzParser_settings, "f");
         const src = this.getAudioTrackRaw(trackId);
         const dstSize = this.rawSampleRate * 60; // enough for 60 seconds, the max bgm size
         const dst = new Int16Array(dstSize);
@@ -2597,7 +2663,7 @@ class KwzParser extends BaseParser {
      * @group Verification
      */
     getBody() {
-        const bodyEnd = this.bodyEndOffset;
+        const bodyEnd = __classPrivateFieldGet(this, _KwzParser_bodyEndOffset, "f");
         return this.bytes.subarray(0, bodyEnd);
     }
     /**
@@ -2605,7 +2671,7 @@ class KwzParser extends BaseParser {
      * @group Verification
      */
     getSignature() {
-        const bodyEnd = this.bodyEndOffset;
+        const bodyEnd = __classPrivateFieldGet(this, _KwzParser_bodyEndOffset, "f");
         return this.bytes.subarray(bodyEnd, bodyEnd + 256);
     }
     /**
@@ -2617,8 +2683,187 @@ class KwzParser extends BaseParser {
         return await rsaVerify(key, this.getSignature(), this.getBody());
     }
 }
-_a = Symbol.toStringTag;
-/** Default KWZ parser settings */
+_KwzParser_settings = new WeakMap(), _KwzParser_sectionMap = new WeakMap(), _KwzParser_bodyEndOffset = new WeakMap(), _KwzParser_layerBuffers = new WeakMap(), _KwzParser_soundFlags = new WeakMap(), _KwzParser_prevDecodedFrame = new WeakMap(), _KwzParser_frameMetaOffsets = new WeakMap(), _KwzParser_frameDataOffsets = new WeakMap(), _KwzParser_frameLayerSizes = new WeakMap(), _KwzParser_bitIndex = new WeakMap(), _KwzParser_bitValue = new WeakMap(), _KwzParser_instances = new WeakSet(), _a = Symbol.toStringTag, _KwzParser_buildSectionMap = function _KwzParser_buildSectionMap() {
+    const fileSize = this.numBytes - 256;
+    const sectionMap = new Map();
+    let sectionCount = 0;
+    let ptr = 0;
+    // counting sections should mitigate against one of mrnbayoh's notehax exploits
+    while (ptr < fileSize && sectionCount < 6) {
+        this.seek(ptr);
+        const magic = this.readChars(4).substring(0, 3);
+        const length = this.readUint32();
+        sectionMap.set(magic, { ptr, length });
+        ptr += length + 8;
+        sectionCount += 1;
+    }
+    __classPrivateFieldSet(this, _KwzParser_bodyEndOffset, ptr, "f");
+    __classPrivateFieldSet(this, _KwzParser_sectionMap, sectionMap, "f");
+    assert(sectionMap.has('KMC') && sectionMap.has('KMI'));
+}, _KwzParser_readBits = function _KwzParser_readBits(num) {
+    // assert(num < 16);
+    if (__classPrivateFieldGet(this, _KwzParser_bitIndex, "f") + num > 16) {
+        const nextBits = this.readUint16();
+        __classPrivateFieldSet(this, _KwzParser_bitValue, __classPrivateFieldGet(this, _KwzParser_bitValue, "f") | nextBits << (16 - __classPrivateFieldGet(this, _KwzParser_bitIndex, "f")), "f");
+        __classPrivateFieldSet(this, _KwzParser_bitIndex, __classPrivateFieldGet(this, _KwzParser_bitIndex, "f") - 16, "f");
+    }
+    const result = __classPrivateFieldGet(this, _KwzParser_bitValue, "f") & BITMASKS[num];
+    __classPrivateFieldSet(this, _KwzParser_bitValue, __classPrivateFieldGet(this, _KwzParser_bitValue, "f") >> num, "f");
+    __classPrivateFieldSet(this, _KwzParser_bitIndex, __classPrivateFieldGet(this, _KwzParser_bitIndex, "f") + num, "f");
+    return result;
+}, _KwzParser_readFsid = function _KwzParser_readFsid() {
+    if (__classPrivateFieldGet(this, _KwzParser_settings, "f").dsiLibraryNote) { // format as DSi PPM FSID
+        const hex = this.readHex(10, true);
+        return hex.slice(2, 18);
+    }
+    return kwzFsidFormat(this.readHex(10));
+}, _KwzParser_readFilename = function _KwzParser_readFilename() {
+    const ptr = this.pointer;
+    const chars = this.readChars(28);
+    if (chars.length === 28)
+        return chars;
+    // Otherwise, this is likely a DSi Library note, 
+    // where sometimes Nintendo's buggy PPM converter includes the original packed PPM filename
+    this.seek(ptr);
+    const mac = this.readHex(3);
+    const random = this.readChars(13);
+    const edits = this.readUint16().toString().padStart(3, '0');
+    this.seek(ptr + 28);
+    return `${mac}_${random}_${edits}`;
+}, _KwzParser_decodeMeta = function _KwzParser_decodeMeta() {
+    if (__classPrivateFieldGet(this, _KwzParser_settings, "f").quickMeta)
+        return __classPrivateFieldGet(this, _KwzParser_instances, "m", _KwzParser_decodeMetaQuick).call(this);
+    assert(__classPrivateFieldGet(this, _KwzParser_sectionMap, "f").has('KFH'));
+    this.seek(__classPrivateFieldGet(this, _KwzParser_sectionMap, "f").get('KFH').ptr + 12);
+    const creationTime = dateFromNintendoTimestamp(this.readUint32());
+    const modifiedTime = dateFromNintendoTimestamp(this.readUint32());
+    // const simonTime = 
+    this.readUint32();
+    const rootAuthorId = __classPrivateFieldGet(this, _KwzParser_instances, "m", _KwzParser_readFsid).call(this);
+    const parentAuthorId = __classPrivateFieldGet(this, _KwzParser_instances, "m", _KwzParser_readFsid).call(this);
+    const currentAuthorId = __classPrivateFieldGet(this, _KwzParser_instances, "m", _KwzParser_readFsid).call(this);
+    const rootAuthorName = this.readWideChars(11);
+    const parentAuthorName = this.readWideChars(11);
+    const currentAuthorName = this.readWideChars(11);
+    const rootFilename = __classPrivateFieldGet(this, _KwzParser_instances, "m", _KwzParser_readFilename).call(this);
+    const parentFilename = __classPrivateFieldGet(this, _KwzParser_instances, "m", _KwzParser_readFilename).call(this);
+    const currentFilename = __classPrivateFieldGet(this, _KwzParser_instances, "m", _KwzParser_readFilename).call(this);
+    const frameCount = this.readUint16();
+    const thumbIndex = this.readUint16();
+    const flags = this.readUint16();
+    const frameSpeed = this.readUint8();
+    const layerFlags = this.readUint8();
+    this.isSpinoff = (currentAuthorId !== parentAuthorId) || (currentAuthorId !== rootAuthorId);
+    this.frameCount = frameCount;
+    this.frameSpeed = frameSpeed;
+    this.framerate = KWZ_FRAMERATES[frameSpeed];
+    this.duration = timeGetNoteDuration(this.frameCount, this.framerate);
+    this.thumbFrameIndex = thumbIndex;
+    this.layerVisibility = {
+        1: (layerFlags & 0x1) === 0,
+        2: (layerFlags & 0x2) === 0,
+        3: (layerFlags & 0x3) === 0,
+    };
+    // Try to auto-detect whether the current author ID matches a converted PPM ID
+    // if (isKwzDsiLibraryFsid(currentAuthorId)) {
+    //   this.isDsiLibraryNote = true;
+    // }
+    this.meta = {
+        lock: (flags & 0x1) !== 0,
+        loop: (flags & 0x2) !== 0,
+        isSpinoff: this.isSpinoff,
+        frameCount: frameCount,
+        frameSpeed: frameSpeed,
+        duration: this.duration,
+        thumbIndex: thumbIndex,
+        timestamp: modifiedTime,
+        creationTimestamp: creationTime,
+        root: {
+            username: rootAuthorName,
+            fsid: rootAuthorId,
+            region: getKwzFsidRegion(rootAuthorId),
+            filename: rootFilename,
+            isDsiFilename: rootFilename.length !== 28
+        },
+        parent: {
+            username: parentAuthorName,
+            fsid: parentAuthorId,
+            region: getKwzFsidRegion(parentAuthorId),
+            filename: parentFilename,
+            isDsiFilename: parentFilename.length !== 28
+        },
+        current: {
+            username: currentAuthorName,
+            fsid: currentAuthorId,
+            region: getKwzFsidRegion(currentAuthorId),
+            filename: currentFilename,
+            isDsiFilename: currentFilename.length !== 28
+        },
+    };
+}, _KwzParser_decodeMetaQuick = function _KwzParser_decodeMetaQuick() {
+    assert(__classPrivateFieldGet(this, _KwzParser_sectionMap, "f").has('KFH'));
+    this.seek(__classPrivateFieldGet(this, _KwzParser_sectionMap, "f").get('KFH').ptr + 0x8 + 0xC4);
+    const frameCount = this.readUint16();
+    const thumbFrameIndex = this.readUint16();
+    this.readUint16();
+    const frameSpeed = this.readUint8();
+    const layerFlags = this.readUint8();
+    this.frameCount = frameCount;
+    this.thumbFrameIndex = thumbFrameIndex;
+    this.frameSpeed = frameSpeed;
+    this.framerate = KWZ_FRAMERATES[frameSpeed];
+    this.duration = timeGetNoteDuration(this.frameCount, this.framerate);
+    this.layerVisibility = {
+        1: (layerFlags & 0x1) === 0,
+        2: (layerFlags & 0x2) === 0,
+        3: (layerFlags & 0x3) === 0,
+    };
+}, _KwzParser_getFrameOffsets = function _KwzParser_getFrameOffsets() {
+    assert(__classPrivateFieldGet(this, _KwzParser_sectionMap, "f").has('KMI') && __classPrivateFieldGet(this, _KwzParser_sectionMap, "f").has('KMC'));
+    const numFrames = this.frameCount;
+    const kmiSection = __classPrivateFieldGet(this, _KwzParser_sectionMap, "f").get('KMI');
+    const kmcSection = __classPrivateFieldGet(this, _KwzParser_sectionMap, "f").get('KMC');
+    assert(kmiSection.length / 28 >= numFrames);
+    const frameMetaOffsets = new Uint32Array(numFrames);
+    const frameDataOffsets = new Uint32Array(numFrames);
+    const frameLayerSizes = [];
+    let frameMetaPtr = kmiSection.ptr + 8;
+    let frameDataPtr = kmcSection.ptr + 12;
+    for (let frameIndex = 0; frameIndex < numFrames; frameIndex++) {
+        this.seek(frameMetaPtr + 4);
+        const layerASize = this.readUint16();
+        const layerBSize = this.readUint16();
+        const layerCSize = this.readUint16();
+        frameMetaOffsets[frameIndex] = frameMetaPtr;
+        frameDataOffsets[frameIndex] = frameDataPtr;
+        frameMetaPtr += 28;
+        frameDataPtr += layerASize + layerBSize + layerCSize;
+        assert(frameMetaPtr < this.numBytes, `frame${frameIndex} meta pointer out of bounds`);
+        assert(frameDataPtr < this.numBytes, `frame${frameIndex} data pointer out of bounds`);
+        frameLayerSizes.push([layerASize, layerBSize, layerCSize]);
+    }
+    __classPrivateFieldSet(this, _KwzParser_frameMetaOffsets, frameMetaOffsets, "f");
+    __classPrivateFieldSet(this, _KwzParser_frameDataOffsets, frameDataOffsets, "f");
+    __classPrivateFieldSet(this, _KwzParser_frameLayerSizes, frameLayerSizes, "f");
+}, _KwzParser_decodeSoundHeader = function _KwzParser_decodeSoundHeader() {
+    assert(__classPrivateFieldGet(this, _KwzParser_sectionMap, "f").has('KSN'));
+    let ptr = __classPrivateFieldGet(this, _KwzParser_sectionMap, "f").get('KSN').ptr + 8;
+    this.seek(ptr);
+    this.bgmSpeed = this.readUint32();
+    assert(this.bgmSpeed <= 10);
+    this.bgmrate = KWZ_FRAMERATES[this.bgmSpeed];
+    const trackSizes = new Uint32Array(this.buffer, ptr + 4, 20);
+    const soundMeta = new Map();
+    soundMeta.set(FlipnoteAudioTrack.BGM, { ptr: ptr += 28, length: trackSizes[0] });
+    soundMeta.set(FlipnoteAudioTrack.SE1, { ptr: ptr += trackSizes[0], length: trackSizes[1] });
+    soundMeta.set(FlipnoteAudioTrack.SE2, { ptr: ptr += trackSizes[1], length: trackSizes[2] });
+    soundMeta.set(FlipnoteAudioTrack.SE3, { ptr: ptr += trackSizes[2], length: trackSizes[3] });
+    soundMeta.set(FlipnoteAudioTrack.SE4, { ptr: ptr += trackSizes[3], length: trackSizes[4] });
+    this.soundMeta = soundMeta;
+};
+/**
+ * Default KWZ parser settings
+ */
 KwzParser.defaultSettings = {
     quickMeta: false,
     dsiLibraryNote: false,
@@ -2629,23 +2874,41 @@ KwzParser.defaultSettings = {
     initialSePredictors: null,
     initialSeStepIndices: null,
 };
-/** File format type */
+/**
+ * File format type
+ */
 KwzParser.format = FlipnoteFormat.KWZ;
-/** Animation frame width */
+/**
+ * Animation frame width
+ */
 KwzParser.width = 320;
-/** Animation frame height */
+/**
+ * Animation frame height
+ */
 KwzParser.height = 240;
-/** Animation frame aspect ratio */
+/**
+ * Animation frame aspect ratio
+ */
 KwzParser.aspect = 3 / 4;
-/** Number of animation frame layers */
+/**
+ * Number of animation frame layers
+ */
 KwzParser.numLayers = 3;
-/** Number of colors per layer (aside from transparent) */
+/**
+ * Number of colors per layer (aside from transparent)
+ */
 KwzParser.numLayerColors = 2;
-/** Audio track base sample rate */
+/**
+ * Audio track base sample rate
+ */
 KwzParser.rawSampleRate = 16364;
-/** Audio output sample rate  */
+/**
+ * Audio output sample rate
+ */
 KwzParser.sampleRate = 32768;
-/** Which audio tracks are available in this format */
+/**
+ * Which audio tracks are available in this format
+ */
 KwzParser.audioTracks = [
     FlipnoteAudioTrack.BGM,
     FlipnoteAudioTrack.SE1,
@@ -2653,14 +2916,18 @@ KwzParser.audioTracks = [
     FlipnoteAudioTrack.SE3,
     FlipnoteAudioTrack.SE4,
 ];
-/** Which sound effect tracks are available in this format */
+/**
+ * Which sound effect tracks are available in this format
+ */
 KwzParser.soundEffectTracks = [
     FlipnoteSoundEffectTrack.SE1,
     FlipnoteSoundEffectTrack.SE2,
     FlipnoteSoundEffectTrack.SE3,
     FlipnoteSoundEffectTrack.SE4,
 ];
-/** Global animation frame color palette */
+/**
+ * Global animation frame color palette
+ */
 KwzParser.globalPalette = [
     KWZ_PALETTE.WHITE,
     KWZ_PALETTE.BLACK,
@@ -2670,7 +2937,9 @@ KwzParser.globalPalette = [
     KWZ_PALETTE.BLUE,
     KWZ_PALETTE.NONE,
 ];
-/** Public key used for Flipnote verification, in PEM format */
+/**
+ * Public key used for Flipnote verification, in PEM format
+ */
 KwzParser.publicKey = KWZ_PUBLIC_KEY;
 
 /**
@@ -2738,7 +3007,7 @@ const nodeBufferLoader = {
 };
 
 /**
- * Loader for ArrayBuffer objects
+ * Loader for ArrayBuffer objects.
  * @group Loader
  */
 const arrayBufferLoader = {
@@ -2752,8 +3021,11 @@ const arrayBufferLoader = {
 };
 
 const LOADER_REGISTRY = new Map();
-/** @internal */
-const loadSource = (source) => {
+/**
+ * Resolve a source, using the current loaders list.
+ * Returns an ArrayBuffer containing the data loaded from the source.
+ */
+const load = (source) => {
     for (let [name, loader] of LOADER_REGISTRY) {
         if (!loader.matches(source))
             continue;
@@ -2766,42 +3038,40 @@ const loadSource = (source) => {
     }
     err('No loader available for source type');
 };
-const registerLoader = (loader) => {
+/**
+ * Register a resource loader to use when loading Flipnotes.
+ * A loader should take a source and return an ArrayBuffer.
+ */
+const register = (loader) => {
     LOADER_REGISTRY.set(loader.name, loader);
 };
-registerLoader(urlLoader);
-registerLoader(fileLoader);
-registerLoader(blobLoader);
-registerLoader(nodeBufferLoader);
-registerLoader(arrayBufferLoader);
+register(arrayBufferLoader);
+register(nodeBufferLoader);
+register(blobLoader);
+register(fileLoader);
+register(urlLoader);
 
 /**
  * Load a Flipnote from a given source, returning a promise with a parser object.
  * It will auto-detect the Flipnote format and return either a {@link PpmParser} or {@link KwzParser} accordingly.
  *
- * @param source - Source to load a Flipnote from. Depending on the operating environment, this can be:
+ * @param source - Source to load a Flipnote from. This will attempt to use one of the registered {@link loaders} to load the Flipnote.
+ * Depending on the operating environment, the default loader set supports the following sources:
  * - A string representing a web URL.
  * - An {@link https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/ArrayBuffer | ArrayBuffer}.
  * - A {@link https://developer.mozilla.org/en-US/docs/Web/API/File | File} object (Browser only).
  * - A {@link https://nodejs.org/api/buffer.html | Buffer} object (NodeJS only).
  *
- * You can also pass your own list of loaders to support your own source types.
- *
- * @param parserConfig - Config settings to pass to the parser, see {@link FlipnoteParserSettings}
- * @param loaders - Optional list of file loaders ({@link LoaderDefinition}) when attempting to load a Flipnote. Loaders are tried in sequence until a matching one is found for the requested input.
+ * @param parserConfig - Config settings to pass to the parser, see {@link FlipnoteParserSettings}.
  */
 const parse = async (source, parserConfig) => {
-    const buffer = await loadSource(source);
+    const buffer = await load(source);
     if (PpmParser.matchBuffer(buffer))
         return new PpmParser(buffer, parserConfig);
     if (KwzParser.matchBuffer(buffer))
         return new KwzParser(buffer, parserConfig);
     err('Could not identify source as a valid Flipnote file');
 };
-/**
- * @deprecated Use {@link parse} instead.
- */
-const parseSource = parse;
 
 /**
  * Player event types
@@ -2836,7 +3106,9 @@ exports.PlayerEvent = void 0;
     PlayerEvent["Error"] = "error";
     PlayerEvent["Destroy"] = "destroy";
 })(exports.PlayerEvent || (exports.PlayerEvent = {}));
-/** @internal */
+/**
+ * @internal
+ */
 const supportedEvents = [
     exports.PlayerEvent.Play,
     exports.PlayerEvent.Pause,
@@ -2865,15 +3137,21 @@ const supportedEvents = [
     exports.PlayerEvent.Error,
 ];
 
-/** @internal */
+/**
+ * @internal
+ */
 const createTimeRanges = (ranges) => ({
     length: ranges.length,
     start: (i) => ranges[i][0],
     end: (i) => ranges[i][1],
 });
-/** @internal */
+/**
+ * @internal
+ */
 const padNumber = (num, strLength) => num.toString().padStart(strLength, '0');
-/** @internal */
+/**
+ * @internal
+ */
 const formatTime = (seconds) => {
     const m = Math.floor((seconds % 3600) / 60);
     const s = Math.floor(seconds % 60);
@@ -4796,10 +5074,11 @@ var vertShaderUpscale = "#define GLSLIFY 1\nattribute vec4 position;attribute ve
 
 var fragShaderUpscale = "precision highp float;\n#define GLSLIFY 1\nvarying vec2 v_uv;uniform sampler2D u_tex;varying float v_scale;uniform vec2 u_textureSize;uniform vec2 u_screenSize;void main(){vec2 v_texel=v_uv*u_textureSize;vec2 texel_floored=floor(v_texel);vec2 s=fract(v_texel);float region_range=0.5-0.5/v_scale;vec2 center_dist=s-0.5;vec2 f=(center_dist-clamp(center_dist,-region_range,region_range))*v_scale+0.5;vec2 mod_texel=texel_floored+f;vec2 coord=mod_texel.xy/u_textureSize.xy;gl_FragColor=texture2D(u_tex,coord);}"; // eslint-disable-line
 
+var _WebglCanvas_instances, _WebglCanvas_options, _WebglCanvas_layerProgram, _WebglCanvas_upscaleProgram, _WebglCanvas_quadBuffer, _WebglCanvas_paletteBuffer, _WebglCanvas_layerTexture, _WebglCanvas_layerTexturePixelBuffer, _WebglCanvas_layerTexturePixels, _WebglCanvas_frameTexture, _WebglCanvas_frameBuffer, _WebglCanvas_textureTypes, _WebglCanvas_textureSizes, _WebglCanvas_frameBufferTextures, _WebglCanvas_applyFirefoxFix, _WebglCanvas_refs, _WebglCanvas_isCtxLost, _WebglCanvas_init, _WebglCanvas_drawLayers, _WebglCanvas_upscale, _WebglCanvas_createProgram, _WebglCanvas_createShader, _WebglCanvas_createScreenQuad, _WebglCanvas_setBuffersAndAttribs, _WebglCanvas_createTexture, _WebglCanvas_resizeTexture, _WebglCanvas_createFramebuffer, _WebglCanvas_useFramebuffer, _WebglCanvas_resizeFramebuffer, _WebglCanvas_checkContextLoss, _WebglCanvas_handleContextLoss, _WebglCanvas_handleContextRestored;
 /**
- * Flipnote renderer for the {@link https://developer.mozilla.org/en-US/docs/Web/API/WebGL_API WebGL} API
+ * Flipnote renderer for the {@link https://developer.mozilla.org/en-US/docs/Web/API/WebGL_API WebGL} API.
  *
- * Only available in browser contexts
+ * Only available in browser contexts.
  */
 class WebglCanvas {
     static isSupported() {
@@ -4821,49 +5100,65 @@ class WebglCanvas {
      * The ratio between `width` and `height` should be 3:4 for best results
      */
     constructor(parent, width = 640, height = 480, options = {}) {
-        /** */
+        _WebglCanvas_instances.add(this);
+        /**
+         *
+         */
         this.supportedStereoscopeModes = [
             CanvasStereoscopicMode.None,
             CanvasStereoscopicMode.Dual,
             // CanvasStereoscopicMode.Anaglyph, // couldn't get this working, despite spending lots of time on it :/
         ];
-        /** */
+        /**
+         *
+         */
         this.stereoscopeMode = CanvasStereoscopicMode.None;
-        /** */
+        /**
+         *
+         */
         this.stereoscopeStrength = 0;
-        this.paletteBuffer = new Uint32Array(16);
-        this.textureTypes = new Map();
-        this.textureSizes = new Map();
-        this.frameBufferTextures = new Map();
-        this.applyFirefoxFix = false;
-        this.refs = {
+        _WebglCanvas_options.set(this, void 0);
+        _WebglCanvas_layerProgram.set(this, void 0); // for drawing renderbuffer w/ filtering
+        _WebglCanvas_upscaleProgram.set(this, void 0); // for drawing renderbuffer w/ filtering
+        _WebglCanvas_quadBuffer.set(this, void 0);
+        _WebglCanvas_paletteBuffer.set(this, new Uint32Array(16));
+        _WebglCanvas_layerTexture.set(this, void 0);
+        _WebglCanvas_layerTexturePixelBuffer.set(this, void 0);
+        _WebglCanvas_layerTexturePixels.set(this, void 0); // will be same memory as layerTexturePixelBuffer, just uint8 for webgl texture
+        _WebglCanvas_frameTexture.set(this, void 0);
+        _WebglCanvas_frameBuffer.set(this, void 0);
+        _WebglCanvas_textureTypes.set(this, new Map());
+        _WebglCanvas_textureSizes.set(this, new Map());
+        _WebglCanvas_frameBufferTextures.set(this, new Map());
+        _WebglCanvas_applyFirefoxFix.set(this, false);
+        _WebglCanvas_refs.set(this, {
             programs: [],
             shaders: [],
             textures: [],
             buffers: [],
             frameBuffers: []
-        };
-        this.isCtxLost = false;
-        this.handleContextLoss = (e) => {
+        });
+        _WebglCanvas_isCtxLost.set(this, false);
+        _WebglCanvas_handleContextLoss.set(this, (e) => {
             this.destroy();
             if (e)
                 e.preventDefault();
-            if (!this.isCtxLost)
-                this.options.onlost();
-            this.isCtxLost = true;
-        };
-        this.handleContextRestored = (e) => {
-            this.isCtxLost = false;
-            this.init();
-            this.options.onrestored();
-        };
+            if (!__classPrivateFieldGet(this, _WebglCanvas_isCtxLost, "f"))
+                __classPrivateFieldGet(this, _WebglCanvas_options, "f").onlost();
+            __classPrivateFieldSet(this, _WebglCanvas_isCtxLost, true, "f");
+        });
+        _WebglCanvas_handleContextRestored.set(this, (e) => {
+            __classPrivateFieldSet(this, _WebglCanvas_isCtxLost, false, "f");
+            __classPrivateFieldGet(this, _WebglCanvas_instances, "m", _WebglCanvas_init).call(this);
+            __classPrivateFieldGet(this, _WebglCanvas_options, "f").onrestored();
+        });
         assertBrowserEnv();
-        this.options = { ...WebglCanvas.defaultOptions, ...options };
+        __classPrivateFieldSet(this, _WebglCanvas_options, { ...WebglCanvas.defaultOptions, ...options }, "f");
         this.width = width;
         this.height = height;
         this.canvas = document.createElement('canvas');
-        this.canvas.addEventListener('webglcontextlost', this.handleContextLoss, false);
-        this.canvas.addEventListener('webglcontextrestored', this.handleContextRestored, false);
+        this.canvas.addEventListener('webglcontextlost', __classPrivateFieldGet(this, _WebglCanvas_handleContextLoss, "f"), false);
+        this.canvas.addEventListener('webglcontextrestored', __classPrivateFieldGet(this, _WebglCanvas_handleContextRestored, "f"), false);
         this.canvas.className = 'FlipnoteCanvas FlipnoteCanvas--webgl';
         this.gl = this.canvas.getContext('webgl', {
             antialias: false,
@@ -4871,191 +5166,7 @@ class WebglCanvas {
         });
         if (parent)
             parent.appendChild(this.canvas);
-        this.init();
-    }
-    init() {
-        this.setCanvasSize(this.width, this.height);
-        const gl = this.gl;
-        if (this.checkContextLoss())
-            return;
-        this.layerProgram = this.createProgram(vertShaderLayer, fragShaderLayer);
-        this.upscaleProgram = this.createProgram(vertShaderUpscale, fragShaderUpscale);
-        this.quadBuffer = this.createScreenQuad(-1, -1, 2, 2, 1, 1);
-        this.setBuffersAndAttribs(this.layerProgram, this.quadBuffer);
-        this.layerTexture = this.createTexture(gl.RGBA, gl.LINEAR, gl.CLAMP_TO_EDGE);
-        this.frameTexture = this.createTexture(gl.RGBA, gl.LINEAR, gl.CLAMP_TO_EDGE);
-        this.frameBuffer = this.createFramebuffer(this.frameTexture);
-        const debugInfo = gl.getExtension('WEBGL_debug_renderer_info');
-        const renderer = gl.getParameter(debugInfo.UNMASKED_RENDERER_WEBGL);
-        const userAgent = navigator.userAgent;
-        const isMacFirefox = userAgent.includes('Firefox') && userAgent.includes('Mac');
-        this.applyFirefoxFix = isMacFirefox && renderer.includes('Apple M');
-    }
-    createProgram(vertexShaderSource, fragmentShaderSource) {
-        if (this.checkContextLoss())
-            return;
-        const gl = this.gl;
-        const vert = this.createShader(gl.VERTEX_SHADER, vertexShaderSource);
-        const frag = this.createShader(gl.FRAGMENT_SHADER, fragmentShaderSource);
-        const program = gl.createProgram();
-        // set up shaders
-        gl.attachShader(program, vert);
-        gl.attachShader(program, frag);
-        // link program
-        gl.linkProgram(program);
-        if (!gl.getProgramParameter(program, gl.LINK_STATUS)) {
-            const log = gl.getProgramInfoLog(program);
-            gl.deleteProgram(program);
-            throw new Error(log);
-        }
-        const programInfo = createProgramInfoFromProgram(gl, program);
-        this.refs.programs.push(program);
-        return programInfo;
-    }
-    createShader(type, source) {
-        if (this.checkContextLoss())
-            return;
-        const gl = this.gl;
-        const shader = gl.createShader(type);
-        gl.shaderSource(shader, source);
-        gl.compileShader(shader);
-        // test if shader compilation was successful
-        if (!gl.getShaderParameter(shader, gl.COMPILE_STATUS)) {
-            const log = gl.getShaderInfoLog(shader);
-            gl.deleteShader(shader);
-            throw new Error(log);
-        }
-        this.refs.shaders.push(shader);
-        return shader;
-    }
-    // creating a subdivided quad seems to produce slightly nicer texture filtering
-    createScreenQuad(x0, y0, width, height, xSubdivs, ySubdivs) {
-        if (this.checkContextLoss())
-            return;
-        const numVerts = (xSubdivs + 1) * (ySubdivs + 1);
-        const numVertsAcross = xSubdivs + 1;
-        const positions = new Float32Array(numVerts * 2);
-        const texCoords = new Float32Array(numVerts * 2);
-        let positionPtr = 0;
-        let texCoordPtr = 0;
-        for (let y = 0; y <= ySubdivs; y++) {
-            for (let x = 0; x <= xSubdivs; x++) {
-                const u = x / xSubdivs;
-                const v = y / ySubdivs;
-                positions[positionPtr++] = x0 + width * u;
-                positions[positionPtr++] = y0 + height * v;
-                texCoords[texCoordPtr++] = u;
-                texCoords[texCoordPtr++] = v;
-            }
-        }
-        const indices = new Uint16Array(xSubdivs * ySubdivs * 2 * 3);
-        let indicesPtr = 0;
-        for (let y = 0; y < ySubdivs; y++) {
-            for (let x = 0; x < xSubdivs; x++) {
-                // triangle 1
-                indices[indicesPtr++] = (y + 0) * numVertsAcross + x;
-                indices[indicesPtr++] = (y + 1) * numVertsAcross + x;
-                indices[indicesPtr++] = (y + 0) * numVertsAcross + x + 1;
-                // triangle 2
-                indices[indicesPtr++] = (y + 0) * numVertsAcross + x + 1;
-                indices[indicesPtr++] = (y + 1) * numVertsAcross + x;
-                indices[indicesPtr++] = (y + 1) * numVertsAcross + x + 1;
-            }
-        }
-        const bufferInfo = createBufferInfoFromArrays(this.gl, {
-            position: {
-                numComponents: 2,
-                data: positions
-            },
-            texcoord: {
-                numComponents: 2,
-                data: texCoords
-            },
-            indices: indices
-        });
-        // collect references to buffer objects
-        for (let name in bufferInfo.attribs)
-            this.refs.buffers.push(bufferInfo.attribs[name].buffer);
-        return bufferInfo;
-    }
-    setBuffersAndAttribs(program, buffer) {
-        if (this.checkContextLoss())
-            return;
-        setBuffersAndAttributes(this.gl, program.attribSetters, buffer);
-    }
-    createTexture(type, minMag, wrap, width = 1, height = 1) {
-        if (this.checkContextLoss())
-            return;
-        const gl = this.gl;
-        const tex = gl.createTexture();
-        gl.bindTexture(gl.TEXTURE_2D, tex);
-        gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_S, wrap);
-        gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_T, wrap);
-        gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MIN_FILTER, minMag);
-        gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MAG_FILTER, minMag);
-        gl.texImage2D(gl.TEXTURE_2D, 0, type, width, height, 0, type, gl.UNSIGNED_BYTE, null);
-        this.refs.textures.push(tex);
-        this.textureTypes.set(tex, type);
-        this.textureSizes.set(tex, { width, height });
-        return tex;
-    }
-    resizeTexture(texture, width, height) {
-        if (this.checkContextLoss())
-            return;
-        const gl = this.gl;
-        const textureType = this.textureTypes.get(texture);
-        gl.bindTexture(gl.TEXTURE_2D, texture);
-        gl.texImage2D(gl.TEXTURE_2D, 0, textureType, width, height, 0, textureType, gl.UNSIGNED_BYTE, null);
-        this.textureSizes.set(texture, { width, height });
-    }
-    createFramebuffer(texture) {
-        if (this.checkContextLoss())
-            return;
-        const gl = this.gl;
-        const fb = gl.createFramebuffer();
-        gl.bindFramebuffer(gl.FRAMEBUFFER, fb);
-        gl.framebufferTexture2D(gl.FRAMEBUFFER, gl.COLOR_ATTACHMENT0, gl.TEXTURE_2D, texture, 0);
-        this.refs.frameBuffers.push(fb);
-        this.frameBufferTextures.set(fb, texture);
-        return fb;
-    }
-    useFramebuffer(fb, viewX, viewY, viewWidth, viewHeight) {
-        if (this.checkContextLoss())
-            return;
-        const gl = this.gl;
-        if (fb === null) {
-            gl.bindFramebuffer(gl.FRAMEBUFFER, null);
-            /**
-             * Firefox on Apple Silicon Macs seems to have some kind of viewport sizing bug that I can't track down.
-             * Details here: https://github.com/jaames/flipnote.js/issues/30#issuecomment-2134602056
-             * Not sure what's causing it, but this hack fixes it for now.
-             * Need to test whether only specific versions of Firefox are affected, if it's only an Apple Silicon thing, etc, etc...
-             */
-            if (this.applyFirefoxFix) {
-                const srcWidth = this.srcWidth;
-                const srcHeight = this.srcHeight;
-                const sx = gl.drawingBufferWidth / srcWidth;
-                const sy = gl.drawingBufferHeight / srcHeight;
-                const adj = srcWidth === 256 ? 1 : 0; // ??????? why
-                viewWidth = gl.drawingBufferWidth * (sx - adj);
-                viewHeight = gl.drawingBufferHeight * (sy - adj);
-                viewX = -(viewWidth - srcWidth * sx);
-                viewY = -(viewHeight - srcHeight * sy);
-            }
-            gl.viewport(viewX ?? 0, viewY ?? 0, viewWidth ?? gl.drawingBufferWidth, viewHeight ?? gl.drawingBufferHeight);
-        }
-        else {
-            const tex = this.frameBufferTextures.get(fb);
-            const { width, height } = this.textureSizes.get(tex);
-            gl.bindFramebuffer(gl.FRAMEBUFFER, fb);
-            gl.viewport(viewX ?? 0, viewY ?? 0, viewWidth ?? width, viewHeight ?? height);
-        }
-    }
-    resizeFramebuffer(fb, width, height) {
-        if (this.checkContextLoss())
-            return;
-        const texture = this.frameBufferTextures.get(fb);
-        this.resizeTexture(texture, width, height);
+        __classPrivateFieldGet(this, _WebglCanvas_instances, "m", _WebglCanvas_init).call(this);
     }
     /**
      * Resize the canvas surface
@@ -5065,7 +5176,7 @@ class WebglCanvas {
      * The ratio between `width` and `height` should be 3:4 for best results
      */
     setCanvasSize(width, height) {
-        const dpi = this.options.useDpi ? (window.devicePixelRatio || 1) : 1;
+        const dpi = __classPrivateFieldGet(this, _WebglCanvas_options, "f").useDpi ? (window.devicePixelRatio || 1) : 1;
         const internalWidth = width * dpi;
         const internalHeight = height * dpi;
         this.width = width;
@@ -5076,23 +5187,23 @@ class WebglCanvas {
         this.dstHeight = internalHeight;
         this.canvas.style.width = `${width}px`;
         this.canvas.style.height = `${height}px`;
-        this.checkContextLoss();
+        __classPrivateFieldGet(this, _WebglCanvas_instances, "m", _WebglCanvas_checkContextLoss).call(this);
     }
     /**
      * Sets the note to use for this player
      */
     setNote(note) {
-        if (this.checkContextLoss())
+        if (__classPrivateFieldGet(this, _WebglCanvas_instances, "m", _WebglCanvas_checkContextLoss).call(this))
             return;
         const width = note.imageWidth;
         const height = note.imageHeight;
         this.note = note;
         this.srcWidth = width;
         this.srcHeight = height;
-        this.resizeFramebuffer(this.frameBuffer, width, height);
-        this.resizeTexture(this.layerTexture, width, height);
-        this.layerTexturePixelBuffer = new Uint32Array(width * height);
-        this.layerTexturePixels = new Uint8Array(this.layerTexturePixelBuffer.buffer); // same memory buffer as rgbaData
+        __classPrivateFieldGet(this, _WebglCanvas_instances, "m", _WebglCanvas_resizeFramebuffer).call(this, __classPrivateFieldGet(this, _WebglCanvas_frameBuffer, "f"), width, height);
+        __classPrivateFieldGet(this, _WebglCanvas_instances, "m", _WebglCanvas_resizeTexture).call(this, __classPrivateFieldGet(this, _WebglCanvas_layerTexture, "f"), width, height);
+        __classPrivateFieldSet(this, _WebglCanvas_layerTexturePixelBuffer, new Uint32Array(width * height), "f");
+        __classPrivateFieldSet(this, _WebglCanvas_layerTexturePixels, new Uint8Array(__classPrivateFieldGet(this, _WebglCanvas_layerTexturePixelBuffer, "f").buffer), "f"); // same memory buffer as rgbaData
         this.frameIndex = undefined;
         // set canvas alt text
         this.canvas.title = note.getTitle();
@@ -5102,7 +5213,7 @@ class WebglCanvas {
      * @param color optional RGBA color to use as a background color
      */
     clear(color) {
-        if (this.checkContextLoss())
+        if (__classPrivateFieldGet(this, _WebglCanvas_instances, "m", _WebglCanvas_checkContextLoss).call(this))
             return;
         const gl = this.gl;
         const paperColor = color ?? this.note.getFramePalette(this.frameIndex)[0];
@@ -5115,38 +5226,25 @@ class WebglCanvas {
      * @param frameIndex
      */
     drawFrame(frameIndex) {
-        if (this.checkContextLoss())
+        if (__classPrivateFieldGet(this, _WebglCanvas_instances, "m", _WebglCanvas_checkContextLoss).call(this))
             return;
         const gl = this.gl;
         const mode = this.stereoscopeMode;
         const strength = this.stereoscopeStrength;
         this.frameIndex = frameIndex;
         if (mode === CanvasStereoscopicMode.None) {
-            this.drawLayers(frameIndex);
-            this.useFramebuffer(null);
-            this.upscale(gl.drawingBufferWidth, gl.drawingBufferHeight);
+            __classPrivateFieldGet(this, _WebglCanvas_instances, "m", _WebglCanvas_drawLayers).call(this, frameIndex);
+            __classPrivateFieldGet(this, _WebglCanvas_instances, "m", _WebglCanvas_useFramebuffer).call(this, null);
+            __classPrivateFieldGet(this, _WebglCanvas_instances, "m", _WebglCanvas_upscale).call(this, gl.drawingBufferWidth, gl.drawingBufferHeight);
         }
         else if (mode === CanvasStereoscopicMode.Dual) {
-            this.drawLayers(frameIndex, strength, FlipnoteStereoscopicEye.Left);
-            this.useFramebuffer(null, 0, 0, gl.drawingBufferWidth / 2, gl.drawingBufferHeight);
-            this.upscale(gl.drawingBufferWidth / 2, gl.drawingBufferHeight);
-            this.drawLayers(frameIndex, strength, FlipnoteStereoscopicEye.Right);
-            this.useFramebuffer(null, gl.drawingBufferWidth / 2, 0, gl.drawingBufferWidth / 2, gl.drawingBufferHeight);
-            this.upscale(gl.drawingBufferWidth / 2, gl.drawingBufferHeight);
+            __classPrivateFieldGet(this, _WebglCanvas_instances, "m", _WebglCanvas_drawLayers).call(this, frameIndex, strength, FlipnoteStereoscopicEye.Left);
+            __classPrivateFieldGet(this, _WebglCanvas_instances, "m", _WebglCanvas_useFramebuffer).call(this, null, 0, 0, gl.drawingBufferWidth / 2, gl.drawingBufferHeight);
+            __classPrivateFieldGet(this, _WebglCanvas_instances, "m", _WebglCanvas_upscale).call(this, gl.drawingBufferWidth / 2, gl.drawingBufferHeight);
+            __classPrivateFieldGet(this, _WebglCanvas_instances, "m", _WebglCanvas_drawLayers).call(this, frameIndex, strength, FlipnoteStereoscopicEye.Right);
+            __classPrivateFieldGet(this, _WebglCanvas_instances, "m", _WebglCanvas_useFramebuffer).call(this, null, gl.drawingBufferWidth / 2, 0, gl.drawingBufferWidth / 2, gl.drawingBufferHeight);
+            __classPrivateFieldGet(this, _WebglCanvas_instances, "m", _WebglCanvas_upscale).call(this, gl.drawingBufferWidth / 2, gl.drawingBufferHeight);
         }
-    }
-    upscale(width, height) {
-        if (this.checkContextLoss())
-            return;
-        const gl = this.gl;
-        gl.useProgram(this.upscaleProgram.program);
-        setUniforms(this.upscaleProgram, {
-            // u_flipY: true,
-            u_tex: this.frameTexture,
-            u_textureSize: [this.srcWidth, this.srcHeight],
-            u_screenSize: [width, height],
-        });
-        gl.drawElements(gl.TRIANGLES, this.quadBuffer.numElements, this.quadBuffer.elementType, 0);
     }
     requestStereoScopeMode(mode) {
         if (this.supportedStereoscopeModes.includes(mode))
@@ -5166,45 +5264,8 @@ class WebglCanvas {
         const gl = this.gl;
         return gl === null || gl.getError() !== gl.NO_ERROR;
     }
-    drawLayers(frameIndex, depthStrength = 0, depthEye = FlipnoteStereoscopicEye.Left, shouldClear = true) {
-        const gl = this.gl;
-        const note = this.note;
-        const srcWidth = this.srcWidth;
-        const srcHeight = this.srcHeight;
-        const numLayers = note.numLayers;
-        const layerOrder = note.getFrameLayerOrder(frameIndex);
-        const layerDepths = note.getFrameLayerDepths(frameIndex);
-        this.useFramebuffer(this.frameBuffer);
-        if (shouldClear)
-            this.clear();
-        gl.useProgram(this.layerProgram.program);
-        for (let i = 0; i < numLayers; i++) {
-            const layerIndex = layerOrder[i];
-            note.getLayerPixelsRgba(frameIndex, layerIndex, this.layerTexturePixelBuffer, this.paletteBuffer);
-            setUniforms(this.layerProgram, {
-                u_flipY: true,
-                u_tex: this.layerTexture,
-                u_textureSize: [srcWidth, srcHeight],
-                u_3d_mode: this.stereoscopeMode,
-                u_3d_eye: depthEye,
-                u_3d_depth: layerDepths[layerIndex],
-                u_3d_strength: depthStrength,
-            });
-            gl.texImage2D(gl.TEXTURE_2D, 0, gl.RGBA, srcWidth, srcHeight, 0, gl.RGBA, gl.UNSIGNED_BYTE, this.layerTexturePixels);
-            gl.drawElements(gl.TRIANGLES, this.quadBuffer.numElements, this.quadBuffer.elementType, 0);
-        }
-    }
     /**
-     * Only a certain number of WebGL contexts can be added to a single page before the browser will start culling old contexts.
-     * This method returns true if it has been culled, false if not
-     */
-    checkContextLoss() {
-        const isLost = this.isCtxLost || this.isErrorState();
-        if (isLost)
-            this.handleContextLoss();
-        return isLost;
-    }
-    /**
+     * Get the contents of the canvas as a data URL.
      *
      * @param type image mime type (`image/jpeg`, `image/png`, etc)
      * @param quality image quality where supported, between 0 and 1
@@ -5212,6 +5273,12 @@ class WebglCanvas {
     getDataUrl(type, quality) {
         return this.canvas.toDataURL(type, quality);
     }
+    /**
+     * Get the contents of the canvas as a blob.
+     *
+     * @param type image mime type (`image/jpeg`, `image/png`, etc)
+     * @param quality image quality where supported, between 0 and 1
+     */
     async getBlob(type, quality) {
         return new Promise((resolve, reject) => this.canvas.toBlob(resolve, type, quality));
     }
@@ -5219,7 +5286,7 @@ class WebglCanvas {
      * Frees any resources used by this canvas instance
      */
     destroy() {
-        const refs = this.refs;
+        const refs = __classPrivateFieldGet(this, _WebglCanvas_refs, "f");
         const gl = this.gl;
         const canvas = this.canvas;
         refs.shaders.forEach((shader) => {
@@ -5242,12 +5309,12 @@ class WebglCanvas {
             gl.deleteProgram(program);
         });
         refs.programs = [];
-        this.paletteBuffer = null;
-        this.layerTexturePixelBuffer = null;
-        this.layerTexturePixels = null;
-        this.textureTypes.clear();
-        this.textureSizes.clear();
-        this.frameBufferTextures.clear();
+        __classPrivateFieldSet(this, _WebglCanvas_paletteBuffer, null, "f");
+        __classPrivateFieldSet(this, _WebglCanvas_layerTexturePixelBuffer, null, "f");
+        __classPrivateFieldSet(this, _WebglCanvas_layerTexturePixels, null, "f");
+        __classPrivateFieldGet(this, _WebglCanvas_textureTypes, "f").clear();
+        __classPrivateFieldGet(this, _WebglCanvas_textureSizes, "f").clear();
+        __classPrivateFieldGet(this, _WebglCanvas_frameBufferTextures, "f").clear();
         if (canvas && canvas.parentElement) {
             // shrink the canvas to reduce memory usage until it is garbage collected
             canvas.width = 1;
@@ -5257,12 +5324,231 @@ class WebglCanvas {
         }
     }
 }
+_WebglCanvas_options = new WeakMap(), _WebglCanvas_layerProgram = new WeakMap(), _WebglCanvas_upscaleProgram = new WeakMap(), _WebglCanvas_quadBuffer = new WeakMap(), _WebglCanvas_paletteBuffer = new WeakMap(), _WebglCanvas_layerTexture = new WeakMap(), _WebglCanvas_layerTexturePixelBuffer = new WeakMap(), _WebglCanvas_layerTexturePixels = new WeakMap(), _WebglCanvas_frameTexture = new WeakMap(), _WebglCanvas_frameBuffer = new WeakMap(), _WebglCanvas_textureTypes = new WeakMap(), _WebglCanvas_textureSizes = new WeakMap(), _WebglCanvas_frameBufferTextures = new WeakMap(), _WebglCanvas_applyFirefoxFix = new WeakMap(), _WebglCanvas_refs = new WeakMap(), _WebglCanvas_isCtxLost = new WeakMap(), _WebglCanvas_handleContextLoss = new WeakMap(), _WebglCanvas_handleContextRestored = new WeakMap(), _WebglCanvas_instances = new WeakSet(), _WebglCanvas_init = function _WebglCanvas_init() {
+    this.setCanvasSize(this.width, this.height);
+    const gl = this.gl;
+    if (__classPrivateFieldGet(this, _WebglCanvas_instances, "m", _WebglCanvas_checkContextLoss).call(this))
+        return;
+    __classPrivateFieldSet(this, _WebglCanvas_layerProgram, __classPrivateFieldGet(this, _WebglCanvas_instances, "m", _WebglCanvas_createProgram).call(this, vertShaderLayer, fragShaderLayer), "f");
+    __classPrivateFieldSet(this, _WebglCanvas_upscaleProgram, __classPrivateFieldGet(this, _WebglCanvas_instances, "m", _WebglCanvas_createProgram).call(this, vertShaderUpscale, fragShaderUpscale), "f");
+    __classPrivateFieldSet(this, _WebglCanvas_quadBuffer, __classPrivateFieldGet(this, _WebglCanvas_instances, "m", _WebglCanvas_createScreenQuad).call(this, -1, -1, 2, 2, 1, 1), "f");
+    __classPrivateFieldGet(this, _WebglCanvas_instances, "m", _WebglCanvas_setBuffersAndAttribs).call(this, __classPrivateFieldGet(this, _WebglCanvas_layerProgram, "f"), __classPrivateFieldGet(this, _WebglCanvas_quadBuffer, "f"));
+    __classPrivateFieldSet(this, _WebglCanvas_layerTexture, __classPrivateFieldGet(this, _WebglCanvas_instances, "m", _WebglCanvas_createTexture).call(this, gl.RGBA, gl.LINEAR, gl.CLAMP_TO_EDGE), "f");
+    __classPrivateFieldSet(this, _WebglCanvas_frameTexture, __classPrivateFieldGet(this, _WebglCanvas_instances, "m", _WebglCanvas_createTexture).call(this, gl.RGBA, gl.LINEAR, gl.CLAMP_TO_EDGE), "f");
+    __classPrivateFieldSet(this, _WebglCanvas_frameBuffer, __classPrivateFieldGet(this, _WebglCanvas_instances, "m", _WebglCanvas_createFramebuffer).call(this, __classPrivateFieldGet(this, _WebglCanvas_frameTexture, "f")), "f");
+    const debugInfo = gl.getExtension('WEBGL_debug_renderer_info');
+    const renderer = gl.getParameter(debugInfo.UNMASKED_RENDERER_WEBGL);
+    const userAgent = navigator.userAgent;
+    const isMacFirefox = userAgent.includes('Firefox') && userAgent.includes('Mac');
+    __classPrivateFieldSet(this, _WebglCanvas_applyFirefoxFix, isMacFirefox && renderer.includes('Apple M'), "f");
+}, _WebglCanvas_drawLayers = function _WebglCanvas_drawLayers(frameIndex, depthStrength = 0, depthEye = FlipnoteStereoscopicEye.Left, shouldClear = true) {
+    const gl = this.gl;
+    const note = this.note;
+    const srcWidth = this.srcWidth;
+    const srcHeight = this.srcHeight;
+    const numLayers = note.numLayers;
+    const layerOrder = note.getFrameLayerOrder(frameIndex);
+    const layerDepths = note.getFrameLayerDepths(frameIndex);
+    __classPrivateFieldGet(this, _WebglCanvas_instances, "m", _WebglCanvas_useFramebuffer).call(this, __classPrivateFieldGet(this, _WebglCanvas_frameBuffer, "f"));
+    if (shouldClear)
+        this.clear();
+    gl.useProgram(__classPrivateFieldGet(this, _WebglCanvas_layerProgram, "f").program);
+    for (let i = 0; i < numLayers; i++) {
+        const layerIndex = layerOrder[i];
+        note.getLayerPixelsRgba(frameIndex, layerIndex, __classPrivateFieldGet(this, _WebglCanvas_layerTexturePixelBuffer, "f"), __classPrivateFieldGet(this, _WebglCanvas_paletteBuffer, "f"));
+        setUniforms(__classPrivateFieldGet(this, _WebglCanvas_layerProgram, "f"), {
+            u_flipY: true,
+            u_tex: __classPrivateFieldGet(this, _WebglCanvas_layerTexture, "f"),
+            u_textureSize: [srcWidth, srcHeight],
+            u_3d_mode: this.stereoscopeMode,
+            u_3d_eye: depthEye,
+            u_3d_depth: layerDepths[layerIndex],
+            u_3d_strength: depthStrength,
+        });
+        gl.texImage2D(gl.TEXTURE_2D, 0, gl.RGBA, srcWidth, srcHeight, 0, gl.RGBA, gl.UNSIGNED_BYTE, __classPrivateFieldGet(this, _WebglCanvas_layerTexturePixels, "f"));
+        gl.drawElements(gl.TRIANGLES, __classPrivateFieldGet(this, _WebglCanvas_quadBuffer, "f").numElements, __classPrivateFieldGet(this, _WebglCanvas_quadBuffer, "f").elementType, 0);
+    }
+}, _WebglCanvas_upscale = function _WebglCanvas_upscale(width, height) {
+    if (__classPrivateFieldGet(this, _WebglCanvas_instances, "m", _WebglCanvas_checkContextLoss).call(this))
+        return;
+    const gl = this.gl;
+    gl.useProgram(__classPrivateFieldGet(this, _WebglCanvas_upscaleProgram, "f").program);
+    setUniforms(__classPrivateFieldGet(this, _WebglCanvas_upscaleProgram, "f"), {
+        // u_flipY: true,
+        u_tex: __classPrivateFieldGet(this, _WebglCanvas_frameTexture, "f"),
+        u_textureSize: [this.srcWidth, this.srcHeight],
+        u_screenSize: [width, height],
+    });
+    gl.drawElements(gl.TRIANGLES, __classPrivateFieldGet(this, _WebglCanvas_quadBuffer, "f").numElements, __classPrivateFieldGet(this, _WebglCanvas_quadBuffer, "f").elementType, 0);
+}, _WebglCanvas_createProgram = function _WebglCanvas_createProgram(vertexShaderSource, fragmentShaderSource) {
+    if (__classPrivateFieldGet(this, _WebglCanvas_instances, "m", _WebglCanvas_checkContextLoss).call(this))
+        return;
+    const gl = this.gl;
+    const vert = __classPrivateFieldGet(this, _WebglCanvas_instances, "m", _WebglCanvas_createShader).call(this, gl.VERTEX_SHADER, vertexShaderSource);
+    const frag = __classPrivateFieldGet(this, _WebglCanvas_instances, "m", _WebglCanvas_createShader).call(this, gl.FRAGMENT_SHADER, fragmentShaderSource);
+    const program = gl.createProgram();
+    // set up shaders
+    gl.attachShader(program, vert);
+    gl.attachShader(program, frag);
+    // link program
+    gl.linkProgram(program);
+    if (!gl.getProgramParameter(program, gl.LINK_STATUS)) {
+        const log = gl.getProgramInfoLog(program);
+        gl.deleteProgram(program);
+        throw new Error(log);
+    }
+    const programInfo = createProgramInfoFromProgram(gl, program);
+    __classPrivateFieldGet(this, _WebglCanvas_refs, "f").programs.push(program);
+    return programInfo;
+}, _WebglCanvas_createShader = function _WebglCanvas_createShader(type, source) {
+    if (__classPrivateFieldGet(this, _WebglCanvas_instances, "m", _WebglCanvas_checkContextLoss).call(this))
+        return;
+    const gl = this.gl;
+    const shader = gl.createShader(type);
+    gl.shaderSource(shader, source);
+    gl.compileShader(shader);
+    // test if shader compilation was successful
+    if (!gl.getShaderParameter(shader, gl.COMPILE_STATUS)) {
+        const log = gl.getShaderInfoLog(shader);
+        gl.deleteShader(shader);
+        throw new Error(log);
+    }
+    __classPrivateFieldGet(this, _WebglCanvas_refs, "f").shaders.push(shader);
+    return shader;
+}, _WebglCanvas_createScreenQuad = function _WebglCanvas_createScreenQuad(x0, y0, width, height, xSubdivs, ySubdivs) {
+    if (__classPrivateFieldGet(this, _WebglCanvas_instances, "m", _WebglCanvas_checkContextLoss).call(this))
+        return;
+    const numVerts = (xSubdivs + 1) * (ySubdivs + 1);
+    const numVertsAcross = xSubdivs + 1;
+    const positions = new Float32Array(numVerts * 2);
+    const texCoords = new Float32Array(numVerts * 2);
+    let positionPtr = 0;
+    let texCoordPtr = 0;
+    for (let y = 0; y <= ySubdivs; y++) {
+        for (let x = 0; x <= xSubdivs; x++) {
+            const u = x / xSubdivs;
+            const v = y / ySubdivs;
+            positions[positionPtr++] = x0 + width * u;
+            positions[positionPtr++] = y0 + height * v;
+            texCoords[texCoordPtr++] = u;
+            texCoords[texCoordPtr++] = v;
+        }
+    }
+    const indices = new Uint16Array(xSubdivs * ySubdivs * 2 * 3);
+    let indicesPtr = 0;
+    for (let y = 0; y < ySubdivs; y++) {
+        for (let x = 0; x < xSubdivs; x++) {
+            // triangle 1
+            indices[indicesPtr++] = (y + 0) * numVertsAcross + x;
+            indices[indicesPtr++] = (y + 1) * numVertsAcross + x;
+            indices[indicesPtr++] = (y + 0) * numVertsAcross + x + 1;
+            // triangle 2
+            indices[indicesPtr++] = (y + 0) * numVertsAcross + x + 1;
+            indices[indicesPtr++] = (y + 1) * numVertsAcross + x;
+            indices[indicesPtr++] = (y + 1) * numVertsAcross + x + 1;
+        }
+    }
+    const bufferInfo = createBufferInfoFromArrays(this.gl, {
+        position: {
+            numComponents: 2,
+            data: positions
+        },
+        texcoord: {
+            numComponents: 2,
+            data: texCoords
+        },
+        indices: indices
+    });
+    // collect references to buffer objects
+    for (let name in bufferInfo.attribs)
+        __classPrivateFieldGet(this, _WebglCanvas_refs, "f").buffers.push(bufferInfo.attribs[name].buffer);
+    return bufferInfo;
+}, _WebglCanvas_setBuffersAndAttribs = function _WebglCanvas_setBuffersAndAttribs(program, buffer) {
+    if (__classPrivateFieldGet(this, _WebglCanvas_instances, "m", _WebglCanvas_checkContextLoss).call(this))
+        return;
+    setBuffersAndAttributes(this.gl, program.attribSetters, buffer);
+}, _WebglCanvas_createTexture = function _WebglCanvas_createTexture(type, minMag, wrap, width = 1, height = 1) {
+    if (__classPrivateFieldGet(this, _WebglCanvas_instances, "m", _WebglCanvas_checkContextLoss).call(this))
+        return;
+    const gl = this.gl;
+    const tex = gl.createTexture();
+    gl.bindTexture(gl.TEXTURE_2D, tex);
+    gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_S, wrap);
+    gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_T, wrap);
+    gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MIN_FILTER, minMag);
+    gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MAG_FILTER, minMag);
+    gl.texImage2D(gl.TEXTURE_2D, 0, type, width, height, 0, type, gl.UNSIGNED_BYTE, null);
+    __classPrivateFieldGet(this, _WebglCanvas_refs, "f").textures.push(tex);
+    __classPrivateFieldGet(this, _WebglCanvas_textureTypes, "f").set(tex, type);
+    __classPrivateFieldGet(this, _WebglCanvas_textureSizes, "f").set(tex, { width, height });
+    return tex;
+}, _WebglCanvas_resizeTexture = function _WebglCanvas_resizeTexture(texture, width, height) {
+    if (__classPrivateFieldGet(this, _WebglCanvas_instances, "m", _WebglCanvas_checkContextLoss).call(this))
+        return;
+    const gl = this.gl;
+    const textureType = __classPrivateFieldGet(this, _WebglCanvas_textureTypes, "f").get(texture);
+    gl.bindTexture(gl.TEXTURE_2D, texture);
+    gl.texImage2D(gl.TEXTURE_2D, 0, textureType, width, height, 0, textureType, gl.UNSIGNED_BYTE, null);
+    __classPrivateFieldGet(this, _WebglCanvas_textureSizes, "f").set(texture, { width, height });
+}, _WebglCanvas_createFramebuffer = function _WebglCanvas_createFramebuffer(texture) {
+    if (__classPrivateFieldGet(this, _WebglCanvas_instances, "m", _WebglCanvas_checkContextLoss).call(this))
+        return;
+    const gl = this.gl;
+    const fb = gl.createFramebuffer();
+    gl.bindFramebuffer(gl.FRAMEBUFFER, fb);
+    gl.framebufferTexture2D(gl.FRAMEBUFFER, gl.COLOR_ATTACHMENT0, gl.TEXTURE_2D, texture, 0);
+    __classPrivateFieldGet(this, _WebglCanvas_refs, "f").frameBuffers.push(fb);
+    __classPrivateFieldGet(this, _WebglCanvas_frameBufferTextures, "f").set(fb, texture);
+    return fb;
+}, _WebglCanvas_useFramebuffer = function _WebglCanvas_useFramebuffer(fb, viewX, viewY, viewWidth, viewHeight) {
+    if (__classPrivateFieldGet(this, _WebglCanvas_instances, "m", _WebglCanvas_checkContextLoss).call(this))
+        return;
+    const gl = this.gl;
+    if (fb === null) {
+        gl.bindFramebuffer(gl.FRAMEBUFFER, null);
+        /**
+         * Firefox on Apple Silicon Macs seems to have some kind of viewport sizing bug that I can't track down.
+         * Details here: https://github.com/jaames/flipnote.js/issues/30#issuecomment-2134602056
+         * Not sure what's causing it, but this hack fixes it for now.
+         * Need to test whether only specific versions of Firefox are affected, if it's only an Apple Silicon thing, etc, etc...
+         */
+        if (__classPrivateFieldGet(this, _WebglCanvas_applyFirefoxFix, "f")) {
+            const srcWidth = this.srcWidth;
+            const srcHeight = this.srcHeight;
+            const sx = gl.drawingBufferWidth / srcWidth;
+            const sy = gl.drawingBufferHeight / srcHeight;
+            const adj = srcWidth === 256 ? 1 : 0; // ??????? why
+            viewWidth = gl.drawingBufferWidth * (sx - adj);
+            viewHeight = gl.drawingBufferHeight * (sy - adj);
+            viewX = -(viewWidth - srcWidth * sx);
+            viewY = -(viewHeight - srcHeight * sy);
+        }
+        gl.viewport(viewX ?? 0, viewY ?? 0, viewWidth ?? gl.drawingBufferWidth, viewHeight ?? gl.drawingBufferHeight);
+    }
+    else {
+        const tex = __classPrivateFieldGet(this, _WebglCanvas_frameBufferTextures, "f").get(fb);
+        const { width, height } = __classPrivateFieldGet(this, _WebglCanvas_textureSizes, "f").get(tex);
+        gl.bindFramebuffer(gl.FRAMEBUFFER, fb);
+        gl.viewport(viewX ?? 0, viewY ?? 0, viewWidth ?? width, viewHeight ?? height);
+    }
+}, _WebglCanvas_resizeFramebuffer = function _WebglCanvas_resizeFramebuffer(fb, width, height) {
+    if (__classPrivateFieldGet(this, _WebglCanvas_instances, "m", _WebglCanvas_checkContextLoss).call(this))
+        return;
+    const texture = __classPrivateFieldGet(this, _WebglCanvas_frameBufferTextures, "f").get(fb);
+    __classPrivateFieldGet(this, _WebglCanvas_instances, "m", _WebglCanvas_resizeTexture).call(this, texture, width, height);
+}, _WebglCanvas_checkContextLoss = function _WebglCanvas_checkContextLoss() {
+    const isLost = __classPrivateFieldGet(this, _WebglCanvas_isCtxLost, "f") || this.isErrorState();
+    if (isLost)
+        __classPrivateFieldGet(this, _WebglCanvas_handleContextLoss, "f").call(this);
+    return isLost;
+};
 WebglCanvas.defaultOptions = {
     onlost: () => { },
     onrestored: () => { },
     useDpi: true
 };
 
+var _Html5Canvas_options, _Html5Canvas_srcCanvas, _Html5Canvas_srcCtx, _Html5Canvas_frameImage, _Html5Canvas_paletteBuffer, _Html5Canvas_frameBuffer;
 /**
  * Flipnote renderer for the [HTML5 2D canvas API](https://developer.mozilla.org/en-US/docs/Web/API/CanvasRenderingContext2D)
  */
@@ -5278,25 +5564,36 @@ class Html5Canvas {
         return supported;
     }
     constructor(parent, width, height, options = {}) {
-        /** */
+        /**
+         *
+         */
         this.supportedStereoscopeModes = [
             CanvasStereoscopicMode.None
         ];
-        /** */
+        /**
+         *
+         */
         this.stereoscopeMode = CanvasStereoscopicMode.None;
-        /** */
+        /**
+         *
+         */
         this.stereoscopeStrength = 0;
-        this.paletteBuffer = new Uint32Array(16);
+        _Html5Canvas_options.set(this, void 0);
+        _Html5Canvas_srcCanvas.set(this, void 0);
+        _Html5Canvas_srcCtx.set(this, void 0);
+        _Html5Canvas_frameImage.set(this, void 0);
+        _Html5Canvas_paletteBuffer.set(this, new Uint32Array(16));
+        _Html5Canvas_frameBuffer.set(this, void 0);
         assertBrowserEnv();
-        this.options = { ...Html5Canvas.defaultOptions, ...options };
+        __classPrivateFieldSet(this, _Html5Canvas_options, { ...Html5Canvas.defaultOptions, ...options }, "f");
         this.width = width;
         this.height = height;
         this.canvas = document.createElement('canvas');
         this.canvas.className = 'FlipnoteCanvas FlipnoteCanvas--html5';
         this.ctx = this.canvas.getContext('2d');
-        this.srcCanvas = document.createElement('canvas');
-        this.srcCtx = this.srcCanvas.getContext('2d');
-        assert(this.ctx !== null && this.srcCtx !== null, 'Could not create HTML5 canvas');
+        __classPrivateFieldSet(this, _Html5Canvas_srcCanvas, document.createElement('canvas'), "f");
+        __classPrivateFieldSet(this, _Html5Canvas_srcCtx, __classPrivateFieldGet(this, _Html5Canvas_srcCanvas, "f").getContext('2d'), "f");
+        assert(this.ctx !== null && __classPrivateFieldGet(this, _Html5Canvas_srcCtx, "f") !== null, 'Could not create HTML5 canvas');
         if (parent)
             parent.appendChild(this.canvas);
         this.setCanvasSize(width, height);
@@ -5310,7 +5607,7 @@ class Html5Canvas {
      */
     setCanvasSize(width, height) {
         const canvas = this.canvas;
-        const useDpi = this.options.useDpi;
+        const useDpi = __classPrivateFieldGet(this, _Html5Canvas_options, "f").useDpi;
         const dpi = useDpi ? (window.devicePixelRatio || 1) : 1;
         const internalWidth = width * dpi;
         const internalHeight = height * dpi;
@@ -5331,12 +5628,12 @@ class Html5Canvas {
         this.note = note;
         this.srcWidth = width;
         this.srcHeight = height;
-        this.srcCanvas.width = width;
-        this.srcCanvas.height = height;
+        __classPrivateFieldGet(this, _Html5Canvas_srcCanvas, "f").width = width;
+        __classPrivateFieldGet(this, _Html5Canvas_srcCanvas, "f").height = height;
         // create image data to fit note size
-        this.frameImage = this.srcCtx.createImageData(width, height);
+        __classPrivateFieldSet(this, _Html5Canvas_frameImage, __classPrivateFieldGet(this, _Html5Canvas_srcCtx, "f").createImageData(width, height), "f");
         // uint32 view of the img buffer memory
-        this.frameBuffer = new Uint32Array(this.frameImage.data.buffer);
+        __classPrivateFieldSet(this, _Html5Canvas_frameBuffer, new Uint32Array(__classPrivateFieldGet(this, _Html5Canvas_frameImage, "f").data.buffer), "f");
         this.frameIndex = undefined;
         // set canvas alt text
         this.canvas.title = note.getTitle();
@@ -5347,7 +5644,7 @@ class Html5Canvas {
      */
     clear(color) {
         // clear framebuffer
-        this.frameBuffer.fill(0);
+        __classPrivateFieldGet(this, _Html5Canvas_frameBuffer, "f").fill(0);
         // clear canvas
         this.ctx.clearRect(0, 0, this.dstWidth, this.dstHeight);
         // fill canvas with paper color
@@ -5361,14 +5658,14 @@ class Html5Canvas {
         // clear whatever's already been drawn
         this.clear();
         // optionally enable image smoothing
-        if (!this.options.useSmoothing)
+        if (!__classPrivateFieldGet(this, _Html5Canvas_options, "f").useSmoothing)
             this.ctx.imageSmoothingEnabled = false;
         // get frame pixels as RGBA buffer
-        this.note.getFramePixelsRgba(frameIndex, this.frameBuffer, this.paletteBuffer);
+        this.note.getFramePixelsRgba(frameIndex, __classPrivateFieldGet(this, _Html5Canvas_frameBuffer, "f"), __classPrivateFieldGet(this, _Html5Canvas_paletteBuffer, "f"));
         // put framebuffer pixels into the src canvas
-        this.srcCtx.putImageData(this.frameImage, 0, 0);
+        __classPrivateFieldGet(this, _Html5Canvas_srcCtx, "f").putImageData(__classPrivateFieldGet(this, _Html5Canvas_frameImage, "f"), 0, 0);
         // composite src canvas to dst (so image scaling can be handled)
-        this.ctx.drawImage(this.srcCanvas, 0, 0, this.srcWidth, this.srcHeight, 0, 0, this.dstWidth, this.dstHeight);
+        this.ctx.drawImage(__classPrivateFieldGet(this, _Html5Canvas_srcCanvas, "f"), 0, 0, this.srcWidth, this.srcHeight, 0, 0, this.dstWidth, this.dstHeight);
         this.frameIndex = frameIndex;
     }
     requestStereoScopeMode(mode) {
@@ -5389,83 +5686,70 @@ class Html5Canvas {
         return new Promise((resolve, reject) => this.canvas.toBlob(resolve, type, quality));
     }
     destroy() {
-        this.frameImage = null;
-        this.paletteBuffer = null;
-        this.frameBuffer = null;
+        __classPrivateFieldSet(this, _Html5Canvas_frameImage, null, "f");
+        __classPrivateFieldSet(this, _Html5Canvas_paletteBuffer, null, "f");
+        __classPrivateFieldSet(this, _Html5Canvas_frameBuffer, null, "f");
         this.canvas.parentNode.removeChild(this.canvas);
         this.canvas.width = 1;
         this.canvas.height = 1;
         this.canvas = null;
-        this.srcCanvas.width = 1;
-        this.srcCanvas.height = 1;
-        this.srcCanvas = null;
+        __classPrivateFieldGet(this, _Html5Canvas_srcCanvas, "f").width = 1;
+        __classPrivateFieldGet(this, _Html5Canvas_srcCanvas, "f").height = 1;
+        __classPrivateFieldSet(this, _Html5Canvas_srcCanvas, null, "f");
     }
 }
+_Html5Canvas_options = new WeakMap(), _Html5Canvas_srcCanvas = new WeakMap(), _Html5Canvas_srcCtx = new WeakMap(), _Html5Canvas_frameImage = new WeakMap(), _Html5Canvas_paletteBuffer = new WeakMap(), _Html5Canvas_frameBuffer = new WeakMap();
 Html5Canvas.defaultOptions = {
     useDpi: true,
     useSmoothing: true,
 };
 
+var _UniversalCanvas_instances, _UniversalCanvas_rendererStack, _UniversalCanvas_rendererStackIdx, _UniversalCanvas_parent, _UniversalCanvas_options, _UniversalCanvas_setSubRenderer;
 class UniversalCanvas {
     constructor(parent, width = 640, height = 480, options = {}) {
-        /** */
+        _UniversalCanvas_instances.add(this);
+        /**
+         *
+         */
         this.isReady = false;
-        /** */
+        /**
+         *
+         */
         this.isHtml5 = false;
-        /** */
+        /**
+         *
+         */
         this.supportedStereoscopeModes = [];
-        /** */
+        /**
+         *
+         */
         this.stereoscopeMode = CanvasStereoscopicMode.None;
-        /** */
+        /**
+         *
+         */
         this.stereoscopeStrength = 1;
-        this.rendererStack = [
+        _UniversalCanvas_rendererStack.set(this, [
             WebglCanvas,
             Html5Canvas
-        ];
-        this.rendererStackIdx = 0;
-        this.options = {};
+        ]);
+        _UniversalCanvas_rendererStackIdx.set(this, 0);
+        _UniversalCanvas_parent.set(this, void 0);
+        _UniversalCanvas_options.set(this, {});
         this.width = width;
         this.height = height;
-        this.parent = parent;
-        this.options = options;
-        this.setSubRenderer(this.rendererStack[0]);
-    }
-    setSubRenderer(Canvas) {
-        let immediateLoss = false;
-        const renderer = new Canvas(this.parent, this.width, this.height, {
-            ...this.options,
-            onlost: () => {
-                immediateLoss = true;
-                this.fallbackIfPossible();
-            }
-        });
-        // if onlost was called immediately, we succeed to the fallback
-        if (immediateLoss)
-            return;
-        if (this.note) {
-            renderer.setNote(this.note);
-            renderer.frameIndex = this.renderer?.frameIndex;
-            renderer.forceUpdate();
-        }
-        if (this.renderer)
-            this.renderer.destroy();
-        this.isHtml5 = renderer instanceof Html5Canvas;
-        this.isReady = true;
-        this.renderer = renderer;
-        this.rendererStackIdx = this.rendererStack.indexOf(Canvas);
-        this.supportedStereoscopeModes = renderer.supportedStereoscopeModes;
-        renderer.stereoscopeStrength = this.stereoscopeStrength;
-        this.requestStereoScopeMode(this.stereoscopeMode);
+        __classPrivateFieldSet(this, _UniversalCanvas_parent, parent, "f");
+        __classPrivateFieldSet(this, _UniversalCanvas_options, options, "f");
+        __classPrivateFieldGet(this, _UniversalCanvas_instances, "m", _UniversalCanvas_setSubRenderer).call(this, __classPrivateFieldGet(this, _UniversalCanvas_rendererStack, "f")[0]);
     }
     fallbackIfPossible() {
-        if (this.rendererStackIdx >= this.rendererStack.length)
+        if (__classPrivateFieldGet(this, _UniversalCanvas_rendererStackIdx, "f") >= __classPrivateFieldGet(this, _UniversalCanvas_rendererStack, "f").length)
             throw new Error('No renderer to fall back to');
-        this.rendererStackIdx += 1;
-        this.setSubRenderer(this.rendererStack[this.rendererStackIdx]);
+        __classPrivateFieldSet(this, _UniversalCanvas_rendererStackIdx, __classPrivateFieldGet(this, _UniversalCanvas_rendererStackIdx, "f") + 1, "f");
+        __classPrivateFieldGet(this, _UniversalCanvas_instances, "m", _UniversalCanvas_setSubRenderer).call(this, __classPrivateFieldGet(this, _UniversalCanvas_rendererStack, "f")[__classPrivateFieldGet(this, _UniversalCanvas_rendererStackIdx, "f")]);
     }
     // for backwards compat
     switchToHtml5() {
-        this.setSubRenderer(Html5Canvas);
+        __classPrivateFieldGet(this, _UniversalCanvas_instances, "m", _UniversalCanvas_setSubRenderer).call(this, Html5Canvas);
     }
     setCanvasSize(width, height) {
         const renderer = this.renderer;
@@ -5507,25 +5791,62 @@ class UniversalCanvas {
         this.note = null;
     }
 }
+_UniversalCanvas_rendererStack = new WeakMap(), _UniversalCanvas_rendererStackIdx = new WeakMap(), _UniversalCanvas_parent = new WeakMap(), _UniversalCanvas_options = new WeakMap(), _UniversalCanvas_instances = new WeakSet(), _UniversalCanvas_setSubRenderer = function _UniversalCanvas_setSubRenderer(Canvas) {
+    let immediateLoss = false;
+    const renderer = new Canvas(__classPrivateFieldGet(this, _UniversalCanvas_parent, "f"), this.width, this.height, {
+        ...__classPrivateFieldGet(this, _UniversalCanvas_options, "f"),
+        onlost: () => {
+            immediateLoss = true;
+            this.fallbackIfPossible();
+        }
+    });
+    // if onlost was called immediately, we succeed to the fallback
+    if (immediateLoss)
+        return;
+    if (this.note) {
+        renderer.setNote(this.note);
+        renderer.frameIndex = this.renderer?.frameIndex;
+        renderer.forceUpdate();
+    }
+    if (this.renderer)
+        this.renderer.destroy();
+    this.isHtml5 = renderer instanceof Html5Canvas;
+    this.isReady = true;
+    this.renderer = renderer;
+    __classPrivateFieldSet(this, _UniversalCanvas_rendererStackIdx, __classPrivateFieldGet(this, _UniversalCanvas_rendererStack, "f").indexOf(Canvas), "f");
+    this.supportedStereoscopeModes = renderer.supportedStereoscopeModes;
+    renderer.stereoscopeStrength = this.stereoscopeStrength;
+    this.requestStereoScopeMode(this.stereoscopeMode);
+};
 
-/** @internal */
+var _WebAudioPlayer_instances, _WebAudioPlayer_volume, _WebAudioPlayer_loop, _WebAudioPlayer_startTime, _WebAudioPlayer_ctxStartTime, _WebAudioPlayer_nodeRefs, _WebAudioPlayer_buffer, _WebAudioPlayer_gainNode, _WebAudioPlayer_source, _WebAudioPlayer_getCtx, _WebAudioPlayer_connectEqNodesTo, _WebAudioPlayer_initNodes;
+/**
+ * @internal
+ */
 const _AudioContext = (() => {
     if (isBrowser)
         return (window.AudioContext || window.webkitAudioContext);
     return null;
 })();
 /**
- * Audio player built around the {@link https://developer.mozilla.org/en-US/docs/Web/API/Web_Audio_API | Web Audio API}
+ * Audio player built around the {@link https://developer.mozilla.org/en-US/docs/Web/API/Web_Audio_API | Web Audio API}.
  *
- * Capable of playing PCM streams, with volume adjustment and an optional equalizer. Only available in browser contexts
+ * Capable of playing PCM streams, with volume adjustment and an optional equalizer. Only available in browser contexts.
  */
 class WebAudioPlayer {
     constructor() {
-        /** Whether the audio is being run through an equalizer or not */
+        _WebAudioPlayer_instances.add(this);
+        /**
+         * Whether the audio is being run through an equalizer or not.
+         */
         this.useEq = false;
-        /** Whether to connect the output to an audio analyser (see {@link analyser}) */
+        /**
+         * Whether to connect the output to an audio analyser (see {@link analyser}).
+         */
         this.useAnalyser = false;
-        /** Default equalizer settings. Credit to {@link https://www.sudomemo.net/ | Sudomemo} for these */
+        /**
+         * Default equalizer settings. Credit to {@link https://www.sudomemo.net/ | Sudomemo} for these.
+         */
         this.eqSettings = [
             [31.25, 4.1],
             [62.5, 1.2],
@@ -5537,33 +5858,35 @@ class WebAudioPlayer {
             [8000, 5.1],
             [16000, 5.1]
         ];
-        this._volume = 1;
-        this._loop = false;
-        this._startTime = 0;
-        this._ctxStartTime = 0;
-        this.nodeRefs = [];
+        _WebAudioPlayer_volume.set(this, 1);
+        _WebAudioPlayer_loop.set(this, false);
+        _WebAudioPlayer_startTime.set(this, 0);
+        _WebAudioPlayer_ctxStartTime.set(this, 0);
+        _WebAudioPlayer_nodeRefs.set(this, []);
+        _WebAudioPlayer_buffer.set(this, void 0);
+        _WebAudioPlayer_gainNode.set(this, void 0);
+        _WebAudioPlayer_source.set(this, void 0);
         assertBrowserEnv();
     }
-    /** The audio output volume. Range is 0 to 1 */
+    /**
+     * The audio output volume. Range is 0 to 1.
+     */
     set volume(value) {
         this.setVolume(value);
     }
     get volume() {
-        return this._volume;
+        return __classPrivateFieldGet(this, _WebAudioPlayer_volume, "f");
     }
-    /** Whether the audio should loop after it has ended */
+    /**
+     * Whether the audio should loop after it has ended
+     */
     set loop(value) {
-        this._loop = value;
-        if (this.source)
-            this.source.loop = value;
+        __classPrivateFieldSet(this, _WebAudioPlayer_loop, value, "f");
+        if (__classPrivateFieldGet(this, _WebAudioPlayer_source, "f"))
+            __classPrivateFieldGet(this, _WebAudioPlayer_source, "f").loop = value;
     }
     get loop() {
-        return this._loop;
-    }
-    getCtx() {
-        if (!this.ctx)
-            this.ctx = new _AudioContext();
-        return this.ctx;
+        return __classPrivateFieldGet(this, _WebAudioPlayer_loop, "f");
     }
     /**
      * Set the audio buffer to play
@@ -5571,7 +5894,7 @@ class WebAudioPlayer {
      * @param sampleRate - For best results, this should be a multiple of 16364
      */
     setBuffer(inputBuffer, sampleRate) {
-        const ctx = this.getCtx();
+        const ctx = __classPrivateFieldGet(this, _WebAudioPlayer_instances, "m", _WebAudioPlayer_getCtx).call(this);
         const numSamples = inputBuffer.length;
         const audioBuffer = ctx.createBuffer(1, numSamples, sampleRate);
         const channelData = audioBuffer.getChannelData(0);
@@ -5582,73 +5905,23 @@ class WebAudioPlayer {
                 channelData[i] = inputBuffer[i] / 32768;
             }
         }
-        this.buffer = audioBuffer;
+        __classPrivateFieldSet(this, _WebAudioPlayer_buffer, audioBuffer, "f");
         this.sampleRate = sampleRate;
-    }
-    connectEqNodesTo(inNode) {
-        const ctx = this.getCtx();
-        const eqSettings = this.eqSettings;
-        let lastNode = inNode;
-        eqSettings.forEach(([frequency, gain], index) => {
-            const node = ctx.createBiquadFilter();
-            this.nodeRefs.push(node);
-            node.frequency.value = frequency;
-            node.gain.value = gain;
-            if (index === 0)
-                node.type = 'lowshelf';
-            else if (index === eqSettings.length - 1)
-                node.type = 'highshelf';
-            else
-                node.type = 'peaking';
-            lastNode.connect(node);
-            lastNode = node;
-        });
-        return lastNode;
-    }
-    initNodes() {
-        const ctx = this.getCtx();
-        this.nodeRefs = [];
-        const source = ctx.createBufferSource();
-        this.nodeRefs.push(source);
-        source.buffer = this.buffer;
-        const gainNode = ctx.createGain();
-        this.nodeRefs.push(gainNode);
-        if (this.useEq) {
-            const eq = this.connectEqNodesTo(source);
-            eq.connect(gainNode);
-        }
-        else {
-            source.connect(gainNode);
-        }
-        if (this.useAnalyser) {
-            const analyserNode = ctx.createAnalyser();
-            this.nodeRefs.push(analyserNode);
-            this.analyser = analyserNode;
-            gainNode.connect(analyserNode);
-            analyserNode.connect(ctx.destination);
-        }
-        else {
-            this.analyser = undefined;
-            gainNode.connect(ctx.destination);
-        }
-        this.source = source;
-        this.gainNode = gainNode;
-        this.setVolume(this._volume);
     }
     setAnalyserEnabled(on) {
         this.useAnalyser = on;
-        this.initNodes();
+        __classPrivateFieldGet(this, _WebAudioPlayer_instances, "m", _WebAudioPlayer_initNodes).call(this);
     }
     /**
      * Sets the audio volume level
      * @param value - range is 0 to 1
      */
     setVolume(value) {
-        this._volume = value;
-        if (this.gainNode) {
+        __classPrivateFieldSet(this, _WebAudioPlayer_volume, value, "f");
+        if (__classPrivateFieldGet(this, _WebAudioPlayer_gainNode, "f")) {
             // human perception of loudness is logarithmic, rather than linear
             // https://www.dr-lex.be/info-stuff/volumecontrols.html
-            this.gainNode.gain.value = Math.pow(value, 2);
+            __classPrivateFieldGet(this, _WebAudioPlayer_gainNode, "f").gain.value = Math.pow(value, 2);
         }
     }
     /**
@@ -5658,43 +5931,97 @@ class WebAudioPlayer {
      * @param currentTime initial playback position, in seconds
      */
     playFrom(currentTime) {
-        this.initNodes();
-        this._startTime = currentTime;
-        this._ctxStartTime = this.ctx.currentTime;
-        this.source.loop = this._loop;
-        this.source.start(0, currentTime);
+        __classPrivateFieldGet(this, _WebAudioPlayer_instances, "m", _WebAudioPlayer_initNodes).call(this);
+        __classPrivateFieldSet(this, _WebAudioPlayer_startTime, currentTime, "f");
+        __classPrivateFieldSet(this, _WebAudioPlayer_ctxStartTime, this.ctx.currentTime, "f");
+        __classPrivateFieldGet(this, _WebAudioPlayer_source, "f").loop = __classPrivateFieldGet(this, _WebAudioPlayer_loop, "f");
+        __classPrivateFieldGet(this, _WebAudioPlayer_source, "f").start(0, currentTime);
     }
     /**
      * Stops the audio playback
      */
     stop() {
-        if (this.source)
-            this.source.stop(0);
+        if (__classPrivateFieldGet(this, _WebAudioPlayer_source, "f"))
+            __classPrivateFieldGet(this, _WebAudioPlayer_source, "f").stop(0);
     }
     /**
      * Get the current playback time, in seconds
      */
     getCurrentTime() {
-        return this._startTime + (this.ctx.currentTime - this._ctxStartTime);
+        return __classPrivateFieldGet(this, _WebAudioPlayer_startTime, "f") + (this.ctx.currentTime - __classPrivateFieldGet(this, _WebAudioPlayer_ctxStartTime, "f"));
     }
     /**
      * Frees any resources used by this canvas instance
      */
     async destroy() {
         this.stop();
-        const ctx = this.getCtx();
-        this.nodeRefs.forEach(node => node.disconnect());
-        this.nodeRefs = [];
+        const ctx = __classPrivateFieldGet(this, _WebAudioPlayer_instances, "m", _WebAudioPlayer_getCtx).call(this);
+        __classPrivateFieldGet(this, _WebAudioPlayer_nodeRefs, "f").forEach(node => node.disconnect());
+        __classPrivateFieldSet(this, _WebAudioPlayer_nodeRefs, [], "f");
         this.analyser = undefined;
         if (ctx.state !== 'closed' && typeof ctx.close === 'function')
             await ctx.close();
-        this.buffer = null;
+        __classPrivateFieldSet(this, _WebAudioPlayer_buffer, null, "f");
     }
 }
+_WebAudioPlayer_volume = new WeakMap(), _WebAudioPlayer_loop = new WeakMap(), _WebAudioPlayer_startTime = new WeakMap(), _WebAudioPlayer_ctxStartTime = new WeakMap(), _WebAudioPlayer_nodeRefs = new WeakMap(), _WebAudioPlayer_buffer = new WeakMap(), _WebAudioPlayer_gainNode = new WeakMap(), _WebAudioPlayer_source = new WeakMap(), _WebAudioPlayer_instances = new WeakSet(), _WebAudioPlayer_getCtx = function _WebAudioPlayer_getCtx() {
+    if (!this.ctx)
+        this.ctx = new _AudioContext();
+    return this.ctx;
+}, _WebAudioPlayer_connectEqNodesTo = function _WebAudioPlayer_connectEqNodesTo(inNode) {
+    const ctx = __classPrivateFieldGet(this, _WebAudioPlayer_instances, "m", _WebAudioPlayer_getCtx).call(this);
+    const eqSettings = this.eqSettings;
+    let lastNode = inNode;
+    eqSettings.forEach(([frequency, gain], index) => {
+        const node = ctx.createBiquadFilter();
+        __classPrivateFieldGet(this, _WebAudioPlayer_nodeRefs, "f").push(node);
+        node.frequency.value = frequency;
+        node.gain.value = gain;
+        if (index === 0)
+            node.type = 'lowshelf';
+        else if (index === eqSettings.length - 1)
+            node.type = 'highshelf';
+        else
+            node.type = 'peaking';
+        lastNode.connect(node);
+        lastNode = node;
+    });
+    return lastNode;
+}, _WebAudioPlayer_initNodes = function _WebAudioPlayer_initNodes() {
+    const ctx = __classPrivateFieldGet(this, _WebAudioPlayer_instances, "m", _WebAudioPlayer_getCtx).call(this);
+    __classPrivateFieldSet(this, _WebAudioPlayer_nodeRefs, [], "f");
+    const source = ctx.createBufferSource();
+    __classPrivateFieldGet(this, _WebAudioPlayer_nodeRefs, "f").push(source);
+    source.buffer = __classPrivateFieldGet(this, _WebAudioPlayer_buffer, "f");
+    const gainNode = ctx.createGain();
+    __classPrivateFieldGet(this, _WebAudioPlayer_nodeRefs, "f").push(gainNode);
+    if (this.useEq) {
+        const eq = __classPrivateFieldGet(this, _WebAudioPlayer_instances, "m", _WebAudioPlayer_connectEqNodesTo).call(this, source);
+        eq.connect(gainNode);
+    }
+    else {
+        source.connect(gainNode);
+    }
+    if (this.useAnalyser) {
+        const analyserNode = ctx.createAnalyser();
+        __classPrivateFieldGet(this, _WebAudioPlayer_nodeRefs, "f").push(analyserNode);
+        this.analyser = analyserNode;
+        gainNode.connect(analyserNode);
+        analyserNode.connect(ctx.destination);
+    }
+    else {
+        this.analyser = undefined;
+        gainNode.connect(ctx.destination);
+    }
+    __classPrivateFieldSet(this, _WebAudioPlayer_source, source, "f");
+    __classPrivateFieldSet(this, _WebAudioPlayer_gainNode, gainNode, "f");
+    this.setVolume(__classPrivateFieldGet(this, _WebAudioPlayer_volume, "f"));
+};
 
+var _Player_instances, _Player_playAudio, _Player_stopAudio;
 /**
  * Flipnote Player API (exported as `flipnote.Player`) - provides a {@link https://developer.mozilla.org/en-US/docs/Web/API/HTMLMediaElement | MediaElement}-like interface for loading Flipnotes and playing them.
- * This is intended for cases where you want to implement your own player UI, if you just want a pre-built player with some nice UI controls, check out the {@page Web Components} page instead!
+ * This is intended for cases where you want to implement your own player UI, if you just want a pre-built player with some nice UI controls, check out the [Web Components](/web-components/) page instead!
  *
  * ### Create a new player
  *
@@ -5739,43 +6066,82 @@ class Player {
      * The ratio between `width` and `height` should be 3:4 for best results
      */
     constructor(parent, width, height, parserSettings = {}) {
-        /** Animation duration, in seconds */
+        _Player_instances.add(this);
+        /**
+         * Animation duration, in seconds
+         */
         this.duration = 0;
-        /** Automatically begin playback after a Flipnote is loaded */
+        /**
+         * Automatically begin playback after a Flipnote is loaded
+         */
         this.autoplay = false;
-        /** Array of events supported by this player */
+        /**
+         * Array of events supported by this player
+         */
         this.supportedEvents = supportedEvents;
-        /** @internal */
+        /**
+         * @internal
+         */
         this._src = null;
-        /** @internal */
+        /**
+         * @internal
+         */
         this._loop = false;
-        /** @internal */
+        /**
+         * @internal
+         */
         this._volume = 1;
-        /** @internal */
+        /**
+         * @internal
+         */
         this._muted = false;
-        /** @internal */
+        /**
+         * @internal
+         */
         this._frame = null;
-        /** @internal */
+        /**
+         * @internal
+         */
         this._hasEnded = false;
-        /** @internal */
+        /**
+         * @internal
+         */
         this.isNoteLoaded = false;
-        /** @internal */
+        /**
+         * @internal
+         */
         this.events = new Map();
-        /** @internal */
+        /**
+         * @internal
+         */
         this.playbackStartTime = 0;
-        /** @internal */
+        /**
+         * @internal
+         */
         this.playbackTime = 0;
-        /** @internal */
+        /**
+         * @internal
+         */
         this.playbackLoopId = null;
-        /** @internal */
+        /**
+         * @internal
+         */
         this.showThumbnail = true;
-        /** @internal */
+        /**
+         * @internal
+         */
         this.hasPlaybackStarted = false;
-        /** @internal */
+        /**
+         * @internal
+         */
         this.isPlaying = false;
-        /** @internal */
+        /**
+         * @internal
+         */
         this.wasPlaying = false;
-        /** @internal */
+        /**
+         * @internal
+         */
         this.isSeeking = false;
         /**
          * Playback animation loop
@@ -5818,16 +6184,22 @@ class Player {
         });
         this.audio = new WebAudioPlayer();
         this.el = mountPoint;
-        // this.canvasEl = this.renderer.el;
     }
-    /** The currently loaded Flipnote source, if there is one */
+    /**
+     * The currently loaded Flipnote source, if there is one
+     * @group Lifecycle
+     * @deprecated
+     */
     get src() {
         return this._src;
     }
     set src(source) {
         throw new Error('Setting a Player source has been deprecated, please use the load() method instead');
     }
-    /** Indicates whether playback is currently paused */
+    /**
+     * Indicates whether playback is currently paused
+     * @group Playback Control
+     */
     get paused() {
         return !this.isPlaying;
     }
@@ -5837,62 +6209,89 @@ class Player {
         else
             this.play();
     }
-    /** Current animation frame index */
+    /**
+     * Current animation frame index.
+     * @group Playback Control
+     */
     get currentFrame() {
         return this._frame;
     }
     set currentFrame(frameIndex) {
         this.setCurrentFrame(frameIndex);
     }
-    /** Current animation playback position, in seconds */
+    /**
+     * Current animation playback position, in seconds.
+     * @group Playback Control
+     */
     get currentTime() {
         return this.isNoteLoaded ? this.playbackTime : null;
     }
     set currentTime(value) {
         this.setCurrentTime(value);
     }
-    /** Current animation playback progress, as a percentage out of 100 */
+    /**
+     * Current animation playback progress, as a percentage out of 100.
+     * @group Playback Control
+     */
     get progress() {
         return this.isNoteLoaded ? (this.playbackTime / this.duration) * 100 : null;
     }
     set progress(value) {
         this.setProgress(value);
     }
-    /** Audio volume, range `0` to `1` */
+    /**
+     * Audio volume, range `0` to `1`.
+     * @group Audio Control
+     */
     get volume() {
         return this.getVolume();
     }
     set volume(value) {
         this.setVolume(value);
     }
-    /** Audio mute state */
+    /**
+     * Audio mute state.
+     * @group Audio Control
+     */
     get muted() {
         return this.getMuted();
     }
     set muted(value) {
         this.setMuted(value);
     }
-    /** Indicates whether playback should loop once the end is reached */
+    /**
+     * Indicates whether playback should loop once the end is reached
+     * @group Playback Control
+     */
     get loop() {
         return this.getLoop();
     }
     set loop(value) {
         this.setLoop(value);
     }
-    /** Animation frame rate, measured in frames per second */
+    /**
+     * Animation frame rate, measured in frames per second.
+     * @group Playback Control
+     */
     get framerate() {
         return this.note.framerate;
     }
-    /** Animation frame count */
+    /**
+     * Animation frame count.
+     * @group Frame Control
+     */
     get frameCount() {
         return this.note.frameCount;
     }
-    /** Animation frame speed */
+    /**
+     * Animation frame speed.
+     * @group Frame Control
+     */
     get frameSpeed() {
         return this.note.frameSpeed;
     }
     /**
-     * Implementation of the `HTMLMediaElement` {@link https://developer.mozilla.org/en-US/docs/Web/API/HTMLMediaElement/buffered | buffered } property
+     * Implementation of the `HTMLMediaElement` {@link https://developer.mozilla.org/en-US/docs/Web/API/HTMLMediaElement/buffered | buffered } property.
      * @group HTMLVideoElement compatibility
      */
     get buffered() {
@@ -5941,7 +6340,7 @@ class Player {
             return this.openNote(this.note);
         // otherwise do a normal load
         this.emit(exports.PlayerEvent.LoadStart);
-        const [err, note] = await until(() => parseSource(source, this.parserSettings));
+        const [err, note] = await until(() => parse(source, this.parserSettings));
         if (err) {
             this.emit(exports.PlayerEvent.Error, err);
             throw new Error(`Error loading Flipnote: ${err.message}`);
@@ -5949,14 +6348,16 @@ class Player {
         this.openNote(note);
     }
     /**
-     * Reload the current Flipnote
+     * Reload the current Flipnote.
+     * @group Lifecycle
      */
     async reload() {
         if (this.note)
             return await this.load(this.note.buffer);
     }
     /**
-     * Reload the current Flipnote
+     * Reload the current Flipnote, applying new parser settings.
+     * @group Lifecycle
      */
     async updateSettings(settings) {
         this.parserSettings = settings;
@@ -6084,7 +6485,7 @@ class Player {
         this.playbackStartTime = (now / 1000) - this.playbackTime;
         this.isPlaying = true;
         this.hasPlaybackStarted = true;
-        this.playAudio();
+        __classPrivateFieldGet(this, _Player_instances, "m", _Player_playAudio).call(this);
         this.playbackLoop(now);
         this.emit(exports.PlayerEvent.Play);
     }
@@ -6098,7 +6499,7 @@ class Player {
         this.isPlaying = false;
         if (this.playbackLoopId !== null)
             cancelAnimationFrame(this.playbackLoopId);
-        this.stopAudio();
+        __classPrivateFieldGet(this, _Player_instances, "m", _Player_stopAudio).call(this);
         this.emit(exports.PlayerEvent.Pause);
     }
     /**
@@ -6304,32 +6705,26 @@ class Player {
     toggleLayerVisibility(layerIndex) {
         this.setLayerVisibility(layerIndex, !this.layerVisibility[layerIndex]);
     }
-    playAudio() {
-        this.audio.playFrom(this.currentTime);
-    }
-    stopAudio() {
-        this.audio.stop();
-    }
     /**
-     * Toggle audio Sudomemo equalizer filter
+     * Toggle audio Sudomemo equalizer filter.
      * @group Audio Control
      */
     toggleAudioEq() {
         this.setAudioEq(!this.audio.useEq);
     }
     /**
-     * Turn audio Sudomemo equalizer filter on or off
+     * Turn audio Sudomemo equalizer filter on or off.
      * @group Audio Control
      */
     setAudioEq(state) {
         if (this.isPlaying) {
             this.wasPlaying = true;
-            this.stopAudio();
+            __classPrivateFieldGet(this, _Player_instances, "m", _Player_stopAudio).call(this);
         }
         this.audio.useEq = state;
         if (this.wasPlaying) {
             this.wasPlaying = false;
-            this.playAudio();
+            __classPrivateFieldGet(this, _Player_instances, "m", _Player_playAudio).call(this);
         }
     }
     /**
@@ -6521,18 +6916,17 @@ class Player {
         await this.audio.destroy();
     }
     /**
-     * Returns true if the player supports a given event or method name
+     * @internal
      */
-    supports(name) {
-        const isEvent = this.supportedEvents.includes(name);
-        const isMethod = typeof this[name] === 'function';
-        return isEvent || isMethod;
-    }
-    /** @internal */
     assertNoteLoaded() {
         assert(this.isNoteLoaded, 'No Flipnote is currently loaded in this player');
     }
 }
+_Player_instances = new WeakSet(), _Player_playAudio = function _Player_playAudio() {
+    this.audio.playFrom(this.currentTime);
+}, _Player_stopAudio = function _Player_stopAudio() {
+    this.audio.stop();
+};
 
 exports.Player = Player;
 exports.supportedEvents = supportedEvents;

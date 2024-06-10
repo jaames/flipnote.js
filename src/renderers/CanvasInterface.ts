@@ -2,7 +2,9 @@ import type {
   Flipnote
 } from '../parsers';
 
-/** @internal */
+/**
+ * @internal
+ */
 export type CanvasConstructor = {
   new(parent: Element, width: number, height: number, options?: {}): CanvasInterface
 }
@@ -14,7 +16,9 @@ export enum CanvasStereoscopicMode {
   Anaglyph,
 };
 
-/** @internal */
+/**
+ * @internal
+ */
 export abstract class CanvasInterface {
 
   note: Flipnote;

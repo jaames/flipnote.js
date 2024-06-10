@@ -23,41 +23,51 @@ import { ByteArray } from '../utils/ByteArray';
   Joe Orost (decvax!vax135!petsd!joe)
 */
 
-/** @internal */
+/**
+ * @internal
+ */
 const EOF = -1;
-/** @internal */
+/**
+ * @internal
+ */
 const BITS = 12;
-/** @internal */
+/**
+ * @internal
+ */
 const HSIZE = 5003; // 80% occupancy
-/** @internal */
+/**
+ * @internal
+ */
 const masks = [
   0x0000, 0x0001, 0x0003, 0x0007, 0x000F, 0x001F,
   0x003F, 0x007F, 0x00FF, 0x01FF, 0x03FF, 0x07FF,
   0x0FFF, 0x1FFF, 0x3FFF, 0x7FFF, 0xFFFF
 ];
 
-/** @internal */
+/**
+ * @internal
+ */
 export class LzwCompressor {
   width: number;
   height: number;
   pixels: Uint8Array;
   colorDepth: number;
 
-  private initCodeSize: number;
-  private accum = new Uint8Array(256);
-  private htab = new Int32Array(HSIZE);
-  private codetab = new Int32Array(HSIZE);
-  private cur_accum = 0;
-  private cur_bits = 0;
-  private n_bits: number;
-  private a_count: number;
-  private remaining: number;
-  private curPixel = 0;
-  private free_ent = 0; // first unused entry
-  private maxcode: number;
+  initCodeSize: number;
+  accum = new Uint8Array(256);
+  htab = new Int32Array(HSIZE);
+  codetab = new Int32Array(HSIZE);
+  cur_accum = 0;
+  cur_bits = 0;
+  n_bits: number;
+  a_count: number;
+  remaining: number;
+  curPixel = 0;
+  free_ent = 0; // first unused entry
+  maxcode: number;
   // block compression parameters -- after all codes are used up,
   // and compression rate changes, start over.
-  private clear_flg: boolean = false;
+  clear_flg: boolean = false;
   // Algorithm: use open addressing double hashing (no chaining) on the
   // prefix code / next character combination. We do a variant of Knuth's
   // algorithm D (vol. 3, sec. 6.4) along with G. Knott's relatively-prime
@@ -69,9 +79,9 @@ export class LzwCompressor {
   // for the decompressor. Late addition: construct the table according to
   // file size for noticeable speed improvement on small files. Please direct
   // questions about this implementation to ames!jaw.
-  private g_init_bits: number = undefined;
-  private ClearCode: number = undefined;
-  private EOFCode: number = undefined;
+  g_init_bits: number = undefined;
+  ClearCode: number = undefined;
+  EOFCode: number = undefined;
 
   constructor(width: number, height: number, colorDepth: number) {
     this.width = width;

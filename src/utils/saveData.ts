@@ -1,6 +1,8 @@
 import { isBrowser } from './env';
 
-/** @internal */
+/**
+ * @internal
+ */
 export const saveData = (function () {
   if (!isBrowser) {
     return function(){}

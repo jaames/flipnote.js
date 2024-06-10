@@ -6,14 +6,14 @@ export abstract class EncoderBase {
   dataUrl: string = null;
 
   /**
-   * Returns the file data as an {@link https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/ArrayBuffer | ArrayBuffer}
+   * Returns the file data as an {@link https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/ArrayBuffer | ArrayBuffer}.
    */
   abstract getArrayBuffer(): ArrayBuffer;
   
   /**
-   * Returns the file data as a NodeJS {@link https://nodejs.org/api/buffer.html | Buffer}
+   * Returns the file data as a NodeJS {@link https://nodejs.org/api/buffer.html | Buffer}.
    * 
-   * Note: This method does not work outside of NodeJS environments
+   * > Note: This method does not work outside of NodeJS environments.
    */
   getBuffer(): Buffer {
     assertNodeEnv();
@@ -21,7 +21,7 @@ export abstract class EncoderBase {
   }
 
   /**
-   * Returns the file data as a {@link https://developer.mozilla.org/en-US/docs/Web/API/Blob | Blob}
+   * Returns the file data as a {@link https://developer.mozilla.org/en-US/docs/Web/API/Blob | Blob}.
    */
   getBlob(): Blob {
     assertBrowserEnv();;
@@ -31,9 +31,9 @@ export abstract class EncoderBase {
   }
 
   /**
-   * Returns the file data as an {@link https://developer.mozilla.org/en-US/docs/Web/API/URL/createObjectURL | Object URL}
+   * Returns the file data as an {@link https://developer.mozilla.org/en-US/docs/Web/API/URL/createObjectURL | Object URL}.
    * 
-   * Note: This method does not work outside of browser environments
+   * > Note: This method does not work outside of browser environments.
    */
   getUrl(): string {
     assertBrowserEnv();
@@ -45,7 +45,7 @@ export abstract class EncoderBase {
   /**
    * Revokes this file's {@link https://developer.mozilla.org/en-US/docs/Web/API/URL/createObjectURL | Object URL} if one has been created, use this when the url created with {@link getUrl} is no longer needed, to preserve memory.
    * 
-   * Note: This method does not work outside of browser environments
+   * > Note: This method does not work outside of browser environments.
    */
   revokeUrl(): void {
     assertBrowserEnv();

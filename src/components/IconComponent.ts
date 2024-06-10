@@ -19,11 +19,15 @@ import IconLoader from './icons/loader.svg';
 import IconVolumeOn from './icons/volumeOn.svg';
 import IconVolumeOff from './icons/volumeOff.svg';
 
-/** @internal */
+/**
+ * @internal
+ */
 const patchSvg = (svgString: string) =>
   svgString.replace(/<svg ([^>]*)>/, (match, svgAttrs) => `<svg ${ svgAttrs } class="Icon" style="fill:currentColor">`);
 
-/** @internal */
+/**
+ * @internal
+ */
 const iconMap: Record<string, string> = {
   play: patchSvg(IconPlay),
   pause: patchSvg(IconPause),
@@ -62,7 +66,9 @@ export class IconComponent extends LitElement {
   @property({ type: String })
   icon: string = 'loader';
 
-  /** @internal */
+  /**
+   * @internal
+   */
   render() {
     return html`${ unsafeSVG(iconMap[this.icon]) }`;
   }

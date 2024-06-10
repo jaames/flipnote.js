@@ -5,55 +5,122 @@
  * 2018 - 2024 James Daniel
  * Flipnote Studio is (c) Nintendo Co., Ltd. This project isn't affiliated with or endorsed by them in any way.
 */
+/******************************************************************************
+Copyright (c) Microsoft Corporation.
+
+Permission to use, copy, modify, and/or distribute this software for any
+purpose with or without fee is hereby granted.
+
+THE SOFTWARE IS PROVIDED "AS IS" AND THE AUTHOR DISCLAIMS ALL WARRANTIES WITH
+REGARD TO THIS SOFTWARE INCLUDING ALL IMPLIED WARRANTIES OF MERCHANTABILITY
+AND FITNESS. IN NO EVENT SHALL THE AUTHOR BE LIABLE FOR ANY SPECIAL, DIRECT,
+INDIRECT, OR CONSEQUENTIAL DAMAGES OR ANY DAMAGES WHATSOEVER RESULTING FROM
+LOSS OF USE, DATA OR PROFITS, WHETHER IN AN ACTION OF CONTRACT, NEGLIGENCE OR
+OTHER TORTIOUS ACTION, ARISING OUT OF OR IN CONNECTION WITH THE USE OR
+PERFORMANCE OF THIS SOFTWARE.
+***************************************************************************** */
+/* global Reflect, Promise, SuppressedError, Symbol */
+
+
+function __classPrivateFieldGet(receiver, state, kind, f) {
+    if (kind === "a" && !f) throw new TypeError("Private accessor was defined without a getter");
+    if (typeof state === "function" ? receiver !== state || !f : !state.has(receiver)) throw new TypeError("Cannot read private member from an object whose class did not declare it");
+    return kind === "m" ? f : kind === "a" ? f.call(receiver) : f ? f.value : state.get(receiver);
+}
+
+function __classPrivateFieldSet(receiver, state, value, kind, f) {
+    if (kind === "m") throw new TypeError("Private method is not writable");
+    if (kind === "a" && !f) throw new TypeError("Private accessor was defined without a setter");
+    if (typeof state === "function" ? receiver !== state || !f : !state.has(receiver)) throw new TypeError("Cannot write private member to an object whose class did not declare it");
+    return (kind === "a" ? f.call(receiver, value) : f ? f.value = value : state.set(receiver, value)), value;
+}
+
+typeof SuppressedError === "function" ? SuppressedError : function (error, suppressed, message) {
+    var e = new Error(message);
+    return e.name = "SuppressedError", e.error = error, e.suppressed = suppressed, e;
+};
+
 /**
  * Flipnote region
  */
 var FlipnoteRegion;
 (function (FlipnoteRegion) {
-    /** Europe and Oceania */
+    /**
+     * Europe and Oceania
+     */
     FlipnoteRegion["EUR"] = "EUR";
-    /** Americas */
+    /**
+     * Americas
+     */
     FlipnoteRegion["USA"] = "USA";
-    /** Japan */
+    /**
+     * Japan
+     */
     FlipnoteRegion["JPN"] = "JPN";
-    /** Unidentified (possibly never used) */
+    /**
+     * Unidentified (possibly never used)
+     */
     FlipnoteRegion["UNKNOWN"] = "UNKNOWN";
 })(FlipnoteRegion || (FlipnoteRegion = {}));
-/** Identifies which animation format a Flipnote uses */
+/**
+ * Identifies which animation format a Flipnote uses
+ */
 var FlipnoteFormat;
 (function (FlipnoteFormat) {
-    /** Animation format used by Flipnote Studio (Nintendo DSiWare) */
+    /**
+     * Animation format used by Flipnote Studio (Nintendo DSiWare)
+     */
     FlipnoteFormat["PPM"] = "PPM";
-    /** Animation format used by Flipnote Studio 3D (Nintendo 3DS) */
+    /**
+     * Animation format used by Flipnote Studio 3D (Nintendo 3DS)
+     */
     FlipnoteFormat["KWZ"] = "KWZ";
 })(FlipnoteFormat || (FlipnoteFormat = {}));
-/** Buffer format for a FlipnoteThumbImage  */
+/**
+ * Buffer format for a FlipnoteThumbImage
+ */
 var FlipnoteThumbImageFormat;
 (function (FlipnoteThumbImageFormat) {
     FlipnoteThumbImageFormat[FlipnoteThumbImageFormat["Jpeg"] = 0] = "Jpeg";
     FlipnoteThumbImageFormat[FlipnoteThumbImageFormat["Rgba"] = 1] = "Rgba";
 })(FlipnoteThumbImageFormat || (FlipnoteThumbImageFormat = {}));
-/** stereoscopic eye view (left/right) for 3D effects */
+/**
+ * stereoscopic eye view (left/right) for 3D effects
+ */
 var FlipnoteStereoscopicEye;
 (function (FlipnoteStereoscopicEye) {
     FlipnoteStereoscopicEye[FlipnoteStereoscopicEye["Left"] = 0] = "Left";
     FlipnoteStereoscopicEye[FlipnoteStereoscopicEye["Right"] = 1] = "Right";
 })(FlipnoteStereoscopicEye || (FlipnoteStereoscopicEye = {}));
-/** Identifies a Flipnote audio track type */
+/**
+ * Identifies a Flipnote audio track type
+ */
 var FlipnoteAudioTrack;
 (function (FlipnoteAudioTrack) {
-    /** Background music track */
+    /**
+     * Background music track
+     */
     FlipnoteAudioTrack[FlipnoteAudioTrack["BGM"] = 0] = "BGM";
-    /** Sound effect 1 track */
+    /**
+     * Sound effect 1 track
+     */
     FlipnoteAudioTrack[FlipnoteAudioTrack["SE1"] = 1] = "SE1";
-    /** Sound effect 2 track */
+    /**
+     * Sound effect 2 track
+     */
     FlipnoteAudioTrack[FlipnoteAudioTrack["SE2"] = 2] = "SE2";
-    /** Sound effect 3 track */
+    /**
+     * Sound effect 3 track
+     */
     FlipnoteAudioTrack[FlipnoteAudioTrack["SE3"] = 3] = "SE3";
-    /** Sound effect 4 track (only used by KWZ files) */
+    /**
+     * Sound effect 4 track (only used by KWZ files)
+     */
     FlipnoteAudioTrack[FlipnoteAudioTrack["SE4"] = 4] = "SE4";
 })(FlipnoteAudioTrack || (FlipnoteAudioTrack = {}));
-/** {@link FlipnoteAudioTrack}, but just sound effect tracks */
+/**
+ * {@link FlipnoteAudioTrack}, but just sound effect tracks
+ */
 var FlipnoteSoundEffectTrack;
 (function (FlipnoteSoundEffectTrack) {
     FlipnoteSoundEffectTrack[FlipnoteSoundEffectTrack["SE1"] = 1] = "SE1";
@@ -63,20 +130,38 @@ var FlipnoteSoundEffectTrack;
 })(FlipnoteSoundEffectTrack || (FlipnoteSoundEffectTrack = {}));
 
 /**
- * Wrapper around the DataView API to keep track of the offset into the data
- * also provides some utils for reading ascii strings etc
+ * @internal
+ */
+const hexFromBytes = (bytes, reverse = false) => {
+    let hex = [];
+    for (let i = 0; i < bytes.length; i++)
+        hex.push(bytes[i].toString(16).padStart(2, '0'));
+    if (reverse)
+        hex.reverse();
+    return hex.join('');
+};
+
+/**
+ * Wrapper around the DataView API to keep track of the offset into the data,
+ * also provides some utils for reading ascii strings etc.
  * @internal
  */
 class DataStream {
-    constructor(arrayBuffer) {
-        this.buffer = arrayBuffer;
-        this.data = new DataView(arrayBuffer);
+    constructor(buffer) {
+        this.buffer = buffer;
+        this.data = new DataView(buffer);
         this.pointer = 0;
     }
+    /**
+     * Returns the data as an Uint8Array of bytes.
+     */
     get bytes() {
         return new Uint8Array(this.buffer);
     }
-    get byteLength() {
+    /**
+     * Returns the total number of bytes in the data.
+     */
+    get numBytes() {
         return this.data.byteLength;
     }
     /**
@@ -205,13 +290,21 @@ class DataStream {
      */
     readHex(count, reverse = false) {
         const bytes = this.readBytes(count);
-        let hex = [];
-        for (let i = 0; i < bytes.length; i++) {
-            hex.push(bytes[i].toString(16).padStart(2, '0'));
-        }
-        if (reverse)
-            hex.reverse();
-        return hex.join('').toUpperCase();
+        return hexFromBytes(bytes, reverse);
+    }
+    /**
+     * @internal
+     */
+    readChar() {
+        const char = this.readUint8();
+        return String.fromCharCode(char);
+    }
+    /**
+     * @internal
+     */
+    readWideChar() {
+        const char = this.readUint16();
+        return String.fromCharCode(char);
     }
     /**
      * @internal
@@ -251,10 +344,13 @@ class DataStream {
         this.pointer += chars.byteLength;
         return str;
     }
+    end() {
+        return this.pointer >= this.data.byteLength;
+    }
 }
 
 /**
- * Clamp a number n between l and h
+ * Clamp a number n between l and h.
  * @internal
  */
 const clamp = (n, l, h) => {
@@ -266,7 +362,7 @@ const clamp = (n, l, h) => {
 };
 
 /**
- * Assert condition is true
+ * Assert condition is true.
  * @internal
  */
 function assert(condition, errMsg = 'Assert failed') {
@@ -274,12 +370,12 @@ function assert(condition, errMsg = 'Assert failed') {
         err(errMsg);
 }
 /**
- * Assert that a numerical value is between upper and lower bounds
+ * Assert that a numerical value is between upper and lower bounds.
  * @internal
  */
 const assertRange = (value, min, max, name = '') => assert(value >= min && value <= max, `flipnote.js error: ${name || 'value'} ${value} should be between ${min} and ${max}`);
 /**
- * Assert condition is true
+ * Assert condition is true.
  * @internal
  */
 const err = (errMsg = 'Assert failed') => {
@@ -287,8 +383,8 @@ const err = (errMsg = 'Assert failed') => {
 };
 
 /**
- * Webpack tries to replace inline calles to require() with polyfills,
- * but we don't want that, since we only use require to add extra features in NodeJs environments
+ * Webpack tries to replace inline calls to require() with polyfills,
+ * but we don't want that, since we only use require to add extra features in NodeJs environments.
  *
  * Modified from:
  * https://github.com/getsentry/sentry-javascript/blob/bd35d7364191ebed994fb132ff31031117c1823f/packages/utils/src/misc.ts#L9-L11
@@ -304,7 +400,7 @@ const dynamicRequire = (nodeModule, p) => {
     }
 };
 /**
- * Safely get global scope object
+ * Safely get global scope object.
  * @internal
  */
 const getGlobalObject = () => {
@@ -317,7 +413,7 @@ const getGlobalObject = () => {
                 : {};
 };
 /**
- * Utils to find out information about the current code execution environment
+ * Utils to find out information about the current code execution environment.
  */
 /**
  * Is the code running in a browser environment?
@@ -334,14 +430,16 @@ const isNode = typeof process !== 'undefined'
     && process.versions.node != null;
 // TODO: Deno support?
 /**
- * Is the code running in a Web Worker enviornment?
+ * Is the code running in a Web Worker environment?
  * @internal
  */
 const isWebWorker = typeof self === 'object'
     && self.constructor
     && self.constructor.name === 'DedicatedWorkerGlobalScope';
 
-/** @internal */
+/**
+ * @internal
+ */
 ((function () {
     if (!isBrowser) {
         return function () { };
@@ -366,26 +464,50 @@ var _a$1;
 */
 class BaseParser extends DataStream {
     constructor() {
-        /** Static file format info */
+        /**
+         * Static file format info
+         */
         super(...arguments);
-        /** Instance file format info */
-        /** Custom object tag */
+        /**
+         * Instance file format info
+         */
+        /**
+         * Custom object tag
+         */
         this[_a$1] = 'Flipnote';
-        /** Default formats used for {@link getTitle} */
+        /**
+         * Default formats used for {@link getTitle}.
+         * @group Meta
+         */
         this.titleFormats = {
             COMMENT: 'Comment by $USERNAME',
             FLIPNOTE: 'Flipnote by $USERNAME',
             ICON: 'Folder icon'
         };
-        /** File audio track info, see {@link FlipnoteAudioTrackInfo} */
+        /**
+         * File audio track info, see {@link FlipnoteAudioTrackInfo}.
+         * @group Meta
+         */
         this.soundMeta = new Map();
-        /** Animation frame global layer visibility */
+        /**
+         * Animation frame global layer visibility.
+         * @group Image
+         */
         this.layerVisibility = { 1: true, 2: true, 3: true };
-        /** (KWZ only) Indicates whether or not this file is a Flipnote Studio 3D folder icon */
+        /**
+         * (KWZ only) Indicates whether or not this file is a Flipnote Studio 3D folder icon.
+         * @group Meta
+         */
         this.isFolderIcon = false;
-        /** (KWZ only) Indicates whether or not this file is a handwritten comment from Flipnote Gallery World */
+        /**
+         * (KWZ only) Indicates whether or not this file is a handwritten comment from Flipnote Gallery World.
+         * @group Meta
+         */
         this.isComment = false;
-        /** (KWZ only) Indicates whether or not this Flipnote is a PPM to KWZ conversion from Flipnote Studio 3D's DSi Library service */
+        /**
+         * (KWZ only) Indicates whether or not this Flipnote is a PPM to KWZ conversion from Flipnote Studio 3D's DSi Library service.
+         * @group Meta
+         */
         this.isDsiLibraryNote = false;
     }
     /**
@@ -398,7 +520,7 @@ class BaseParser extends DataStream {
      *  ICON: 'Folder icon'
      * }
      * ```
-     * @group Utility
+     * @group Meta
      */
     getTitle(formats = this.titleFormats) {
         if (this.isFolderIcon)
@@ -407,7 +529,7 @@ class BaseParser extends DataStream {
         return title.replace('$USERNAME', this.meta.current.username);
     }
     /**
-     * Returns the Flipnote title when casting a parser instance to a string
+     * Returns the Flipnote title when casting a parser instance to a string.
      *
      * ```js
      * const str = 'Title: ' + note;
@@ -419,7 +541,7 @@ class BaseParser extends DataStream {
         return this.getTitle();
     }
     /**
-     * Allows for frame index iteration when using the parser instance as a for..of iterator
+     * Allows for frame index iteration when using the parser instance as a for..of iterator.
      *
      * ```js
      * for (const frameIndex of note) {
@@ -658,12 +780,16 @@ const getPpmFsidRegion = (fsid) => {
     }
 };
 
-/** @internal */
+/**
+ * @internal
+ */
 const ADPCM_INDEX_TABLE_4BIT = new Int8Array([
     -1, -1, -1, -1, 2, 4, 6, 8,
     -1, -1, -1, -1, 2, 4, 6, 8
 ]);
-/** @internal */
+/**
+ * @internal
+ */
 const ADPCM_STEP_TABLE = new Int16Array([
     7, 8, 9, 10, 11, 12, 13, 14, 16, 17,
     19, 21, 23, 25, 28, 31, 34, 37, 41, 45,
@@ -675,7 +801,9 @@ const ADPCM_STEP_TABLE = new Int16Array([
     5894, 6484, 7132, 7845, 8630, 9493, 10442, 11487, 12635, 13899,
     15289, 16818, 18500, 20350, 22385, 24623, 27086, 29794, 32767, 0
 ]);
-/** @internal */
+/**
+ * @internal
+ */
 const pcmGetSample = (src, srcSize, srcPtr) => {
     if (srcPtr < 0 || srcPtr >= srcSize)
         return 0;
@@ -713,17 +841,17 @@ const pcmGetClippingRatio = (src) => {
 };
 
 /**
- * Number of seconds between the UNIX timestamp epoch (jan 1 1970) and the Nintendo timestamp epoch (jan 1 2000)
+ * Number of seconds between the UNIX timestamp epoch (jan 1 1970) and the Nintendo timestamp epoch (jan 1 2000).
  * @internal
  */
 const NINTENDO_UNIX_EPOCH = 946684800;
 /**
- * Convert a Nintendo DS or 3DS timestamp int to a JS Date object
+ * Convert a Nintendo DS or 3DS timestamp integer to a JS Date object.
  * @internal
  */
 const dateFromNintendoTimestamp = (timestamp) => new Date((timestamp + NINTENDO_UNIX_EPOCH) * 1000);
 /**
- * Get the duration (in seconds) of a number of framres running at a specified framerate
+ * Get the duration (in seconds) of a number of framres running at a specified framerate.
  * @internal
  */
 const timeGetNoteDuration = (frameCount, framerate) => 
@@ -772,7 +900,7 @@ const rsaLoadPublicKey = async (pemKey, hashType) => {
  */
 const rsaVerify = async (key, signature, data) => await SUBTLE_CRYPTO.verify(ALGORITHM, key, signature, data);
 
-var _a;
+var _PpmParser_instances, _PpmParser_layerBuffers, _PpmParser_soundFlags, _PpmParser_prevLayerBuffers, _PpmParser_lineEncodingBuffers, _PpmParser_prevDecodedFrame, _PpmParser_frameDataLength, _PpmParser_soundDataLength, _PpmParser_soundDataOffset, _PpmParser_frameOffsets, _PpmParser_decodeHeader, _PpmParser_readFilename, _PpmParser_decodeMeta, _PpmParser_decodeAnimationHeader, _PpmParser_decodeSoundHeader, _PpmParser_isKeyFrame, _PpmParser_pcmAudioMix, _a;
 /**
  * PPM framerates in frames per second, indexed by the in-app frame speed.
  * Frame speed 0 is never normally used
@@ -841,184 +969,118 @@ class PpmParser extends BaseParser {
      */
     constructor(arrayBuffer, settings = {}) {
         super(arrayBuffer);
-        /** File format type, reflects {@link PpmParser.format} */
+        _PpmParser_instances.add(this);
+        /**
+         * File format type, reflects {@link PpmParser.format}.
+         * @group Meta
+         */
         this.format = FlipnoteFormat.PPM;
-        /** Custom object tag */
+        /**
+         * Custom object tag.
+         * @group Utility
+         */
         this[_a] = 'Flipnote Studio PPM animation file';
-        /** Animation frame width, reflects {@link PpmParser.width} */
+        /**
+         * Animation frame width, reflects {@link PpmParser.width}.
+         * @group Image
+         */
         this.imageWidth = PpmParser.width;
-        /** Animation frame height, reflects {@link PpmParser.height} */
+        /**
+         * Animation frame height, reflects {@link PpmParser.height}.
+         * @group Image
+         */
         this.imageHeight = PpmParser.height;
-        /** Animation frame aspect ratio, reflects {@link PpmParser.aspect} */
+        /**
+         * Animation frame aspect ratio, reflects {@link PpmParser.aspect}.
+         * @group Image
+         */
         this.aspect = PpmParser.aspect;
-        /** X offset for the top-left corner of the animation frame */
+        /**
+         * X offset for the top-left corner of the animation frame.
+         * @group Image
+         */
         this.imageOffsetX = 0;
-        /** Y offset for the top-left corner of the animation frame */
+        /**
+         * Y offset for the top-left corner of the animation frame.
+         * @group Image
+         */
         this.imageOffsetY = 0;
-        /** Number of animation frame layers, reflects {@link PpmParser.numLayers} */
+        /**
+         * Number of animation frame layers, reflects {@link PpmParser.numLayers}.
+         * @group Image
+         */
         this.numLayers = PpmParser.numLayers;
-        /** Number of colors per layer (aside from transparent), reflects {@link PpmParser.numLayerColors} */
+        /**
+         * Number of colors per layer (aside from transparent), reflects {@link PpmParser.numLayerColors}.
+         * @group Image
+         */
         this.numLayerColors = PpmParser.numLayerColors;
-        /** key used for Flipnote verification, in PEM format */
+        /**
+         * Key used for Flipnote verification, in PEM format.
+         * @group Verification
+         */
         this.publicKey = PpmParser.publicKey;
-        /** @internal */
+        /**
+         * @internal
+         * @group Image
+         */
         this.srcWidth = PpmParser.width;
-        /** Which audio tracks are available in this format, reflects {@link PpmParser.audioTracks} */
+        /**
+         * Which audio tracks are available in this format, reflects {@link PpmParser.audioTracks}.
+         * @group Audio
+         */
         this.audioTracks = PpmParser.audioTracks;
-        /** Which sound effect tracks are available in this format, reflects {@link PpmParser.soundEffectTracks} */
+        /**
+         * Which sound effect tracks are available in this format, reflects {@link PpmParser.soundEffectTracks}.
+         * @group Audio
+         */
         this.soundEffectTracks = PpmParser.soundEffectTracks;
-        /** Audio track base sample rate, reflects {@link PpmParser.rawSampleRate} */
+        /**
+         * Audio track base sample rate, reflects {@link PpmParser.rawSampleRate}.
+         * @group Audio
+         */
         this.rawSampleRate = PpmParser.rawSampleRate;
-        /** Audio output sample rate, reflects {@link PpmParser.sampleRate} */
+        /**
+         * Audio output sample rate, reflects {@link PpmParser.sampleRate}.
+         * @group Audio
+         */
         this.sampleRate = PpmParser.sampleRate;
-        /** Global animation frame color palette, reflects {@link PpmParser.globalPalette} */
+        /**
+         * Global animation frame color palette, reflects {@link PpmParser.globalPalette}.
+         * @group Image
+         */
         this.globalPalette = PpmParser.globalPalette;
-        this.prevDecodedFrame = null;
-        this.decodeHeader();
-        this.decodeAnimationHeader();
-        this.decodeSoundHeader();
+        _PpmParser_layerBuffers.set(this, void 0);
+        _PpmParser_soundFlags.set(this, void 0);
+        _PpmParser_prevLayerBuffers.set(this, void 0);
+        _PpmParser_lineEncodingBuffers.set(this, void 0);
+        _PpmParser_prevDecodedFrame.set(this, null);
+        _PpmParser_frameDataLength.set(this, void 0);
+        _PpmParser_soundDataLength.set(this, void 0);
+        _PpmParser_soundDataOffset.set(this, void 0);
+        _PpmParser_frameOffsets.set(this, void 0);
+        __classPrivateFieldGet(this, _PpmParser_instances, "m", _PpmParser_decodeHeader).call(this);
+        __classPrivateFieldGet(this, _PpmParser_instances, "m", _PpmParser_decodeAnimationHeader).call(this);
+        __classPrivateFieldGet(this, _PpmParser_instances, "m", _PpmParser_decodeSoundHeader).call(this);
         // this is always true afaik, it's likely just a remnant from development
         // doesn't hurt to be accurate though...
         if (((this.version >> 4) & 0xf) !== 0) {
-            this.decodeMeta();
+            __classPrivateFieldGet(this, _PpmParser_instances, "m", _PpmParser_decodeMeta).call(this);
         }
         // create image buffers
-        this.layerBuffers = [
+        __classPrivateFieldSet(this, _PpmParser_layerBuffers, [
             new Uint8Array(PpmParser.width * PpmParser.height),
             new Uint8Array(PpmParser.width * PpmParser.height)
-        ];
-        this.prevLayerBuffers = [
+        ], "f");
+        __classPrivateFieldSet(this, _PpmParser_prevLayerBuffers, [
             new Uint8Array(PpmParser.width * PpmParser.height),
             new Uint8Array(PpmParser.width * PpmParser.height)
-        ];
-        this.lineEncodingBuffers = [
+        ], "f");
+        __classPrivateFieldSet(this, _PpmParser_lineEncodingBuffers, [
             new Uint8Array(PpmParser.height),
             new Uint8Array(PpmParser.height)
-        ];
-        this.prevDecodedFrame = null;
-    }
-    decodeHeader() {
-        assert(16 < this.byteLength);
-        this.seek(4);
-        // decode header
-        // https://github.com/Flipnote-Collective/flipnote-studio-docs/wiki/PPM-format#header
-        this.frameDataLength = this.readUint32();
-        this.soundDataLength = this.readUint32();
-        this.frameCount = this.readUint16() + 1;
-        this.version = this.readUint16();
-        // sound data offset = frame data offset + frame data length + sound effect flags
-        let soundDataOffset = 0x06A0 + this.frameDataLength + this.frameCount;
-        if (soundDataOffset % 4 !== 0)
-            soundDataOffset += 4 - (soundDataOffset % 4);
-        assert(soundDataOffset < this.byteLength);
-        this.soundDataOffset = soundDataOffset;
-    }
-    readFilename() {
-        const mac = this.readHex(3);
-        const random = this.readChars(13);
-        const edits = this.readUint16().toString().padStart(3, '0');
-        return `${mac}_${random}_${edits}`;
-    }
-    decodeMeta() {
-        // https://github.com/Flipnote-Collective/flipnote-studio-docs/wiki/PPM-format#metadata
-        assert(0x06A8 < this.byteLength);
-        this.seek(0x10);
-        const lock = this.readUint16();
-        const thumbIndex = this.readInt16();
-        const rootAuthorName = this.readWideChars(11);
-        const parentAuthorName = this.readWideChars(11);
-        const currentAuthorName = this.readWideChars(11);
-        const parentAuthorId = this.readHex(8, true);
-        const currentAuthorId = this.readHex(8, true);
-        const parentFilename = this.readFilename();
-        const currentFilename = this.readFilename();
-        const rootAuthorId = this.readHex(8, true);
-        this.seek(0x9A);
-        const timestamp = dateFromNintendoTimestamp(this.readInt32());
-        this.seek(0x06A6);
-        const flags = this.readUint16();
-        this.thumbFrameIndex = thumbIndex;
-        this.layerVisibility = {
-            1: (flags & 0x10) === 0,
-            2: (flags & 0x20) === 0,
-            3: false
-        };
-        this.isSpinoff = (currentAuthorId !== parentAuthorId) || (currentAuthorId !== rootAuthorId);
-        this.meta = {
-            lock: lock === 1,
-            loop: (flags >> 1 & 0x1) === 1,
-            isSpinoff: this.isSpinoff,
-            frameCount: this.frameCount,
-            frameSpeed: this.frameSpeed,
-            bgmSpeed: this.bgmSpeed,
-            duration: this.duration,
-            thumbIndex: thumbIndex,
-            timestamp: timestamp,
-            root: {
-                username: rootAuthorName,
-                fsid: rootAuthorId,
-                region: getPpmFsidRegion(rootAuthorId),
-                filename: null
-            },
-            parent: {
-                username: parentAuthorName,
-                fsid: parentAuthorId,
-                region: getPpmFsidRegion(parentAuthorId),
-                filename: parentFilename
-            },
-            current: {
-                username: currentAuthorName,
-                fsid: currentAuthorId,
-                region: getPpmFsidRegion(currentAuthorId),
-                filename: currentFilename
-            },
-        };
-    }
-    decodeAnimationHeader() {
-        // jump to the start of the animation data section
-        // https://github.com/Flipnote-Collective/flipnote-studio-docs/wiki/PPM-format#animation-header
-        this.seek(0x06A0);
-        const offsetTableLength = this.readUint16();
-        const numOffsets = offsetTableLength / 4;
-        assert(numOffsets <= this.frameCount);
-        // skip padding + flags
-        this.seek(0x06A8);
-        // read frame offsets and build them into a table
-        const frameOffsets = new Uint32Array(numOffsets);
-        for (let n = 0; n < numOffsets; n++) {
-            const ptr = 0x06A8 + offsetTableLength + this.readUint32();
-            assert(ptr < this.byteLength, `Frame ${n} pointer is out of bounds`);
-            frameOffsets[n] = ptr;
-        }
-        this.frameOffsets = frameOffsets;
-    }
-    decodeSoundHeader() {
-        // https://github.com/Flipnote-Collective/flipnote-studio-docs/wiki/PPM-format#sound-header
-        let ptr = this.soundDataOffset;
-        this.seek(ptr);
-        const bgmLen = this.readUint32();
-        const se1Len = this.readUint32();
-        const se2Len = this.readUint32();
-        const se3Len = this.readUint32();
-        this.frameSpeed = 8 - this.readUint8();
-        this.bgmSpeed = 8 - this.readUint8();
-        assert(this.frameSpeed <= 8 && this.bgmSpeed <= 8);
-        ptr += 32;
-        this.framerate = PPM_FRAMERATES[this.frameSpeed];
-        this.duration = timeGetNoteDuration(this.frameCount, this.framerate);
-        this.bgmrate = PPM_FRAMERATES[this.bgmSpeed];
-        const soundMeta = new Map();
-        soundMeta.set(FlipnoteAudioTrack.BGM, { ptr: ptr, length: bgmLen });
-        soundMeta.set(FlipnoteAudioTrack.SE1, { ptr: ptr += bgmLen, length: se1Len });
-        soundMeta.set(FlipnoteAudioTrack.SE2, { ptr: ptr += se1Len, length: se2Len });
-        soundMeta.set(FlipnoteAudioTrack.SE3, { ptr: ptr += se2Len, length: se3Len });
-        this.soundMeta = soundMeta;
-    }
-    isKeyFrame(frameIndex) {
-        assertRange(frameIndex, 0, this.frameCount - 1, 'Frame index');
-        this.seek(this.frameOffsets[frameIndex]);
-        const header = this.readUint8();
-        return (header >> 7) & 0x1;
+        ], "f");
+        __classPrivateFieldSet(this, _PpmParser_prevDecodedFrame, null, "f");
     }
     /**
      * Decodes the thumbnail image embedded in the Flipnote. Will return a {@link FlipnoteThumbImage} containing raw RGBA data.
@@ -1057,20 +1119,20 @@ class PpmParser extends BaseParser {
     decodeFrame(frameIndex) {
         assertRange(frameIndex, 0, this.frameCount - 1, 'Frame index');
         // return existing layer buffers if no new frame has been decoded since the last call
-        if (this.prevDecodedFrame === frameIndex)
-            return this.layerBuffers;
+        if (__classPrivateFieldGet(this, _PpmParser_prevDecodedFrame, "f") === frameIndex)
+            return __classPrivateFieldGet(this, _PpmParser_layerBuffers, "f");
         // if necessary, decode previous frames until a keyframe is reached
-        if (this.prevDecodedFrame !== frameIndex - 1 && (!this.isKeyFrame(frameIndex)) && frameIndex !== 0)
+        if (__classPrivateFieldGet(this, _PpmParser_prevDecodedFrame, "f") !== frameIndex - 1 && (!__classPrivateFieldGet(this, _PpmParser_instances, "m", _PpmParser_isKeyFrame).call(this, frameIndex)) && frameIndex !== 0)
             this.decodeFrame(frameIndex - 1);
-        this.prevDecodedFrame = frameIndex;
+        __classPrivateFieldSet(this, _PpmParser_prevDecodedFrame, frameIndex, "f");
         // https://github.com/Flipnote-Collective/flipnote-studio-docs/wiki/PPM-format#animation-data
-        this.seek(this.frameOffsets[frameIndex]);
+        this.seek(__classPrivateFieldGet(this, _PpmParser_frameOffsets, "f")[frameIndex]);
         const header = this.readUint8();
         const isKeyFrame = (header >> 7) & 0x1;
         const isTranslated = (header >> 5) & 0x3;
         // reset current layer buffers
-        this.layerBuffers[0].fill(0);
-        this.layerBuffers[1].fill(0);
+        __classPrivateFieldGet(this, _PpmParser_layerBuffers, "f")[0].fill(0);
+        __classPrivateFieldGet(this, _PpmParser_layerBuffers, "f")[1].fill(0);
         let translateX = 0;
         let translateY = 0;
         if (isTranslated) {
@@ -1079,7 +1141,7 @@ class PpmParser extends BaseParser {
         }
         // unpack line encodings for each layer
         for (let layerIndex = 0; layerIndex < 2; layerIndex++) {
-            const lineEncodingBuffer = this.lineEncodingBuffers[layerIndex];
+            const lineEncodingBuffer = __classPrivateFieldGet(this, _PpmParser_lineEncodingBuffers, "f")[layerIndex];
             lineEncodingBuffer.fill(0);
             for (let ptr = 0; ptr < lineEncodingBuffer.length;) {
                 let byte = this.readUint8();
@@ -1097,8 +1159,8 @@ class PpmParser extends BaseParser {
         }
         // unpack layer bitmaps
         for (let layerIndex = 0; layerIndex < 2; layerIndex++) {
-            const pixelBuffer = this.layerBuffers[layerIndex];
-            const lineEncodingBuffer = this.lineEncodingBuffers[layerIndex];
+            const pixelBuffer = __classPrivateFieldGet(this, _PpmParser_layerBuffers, "f")[layerIndex];
+            const lineEncodingBuffer = __classPrivateFieldGet(this, _PpmParser_lineEncodingBuffers, "f")[layerIndex];
             for (let y = 0; y < PpmParser.height; y++) {
                 let pixelBufferPtr = y * PpmParser.width;
                 const lineType = lineEncodingBuffer[y];
@@ -1164,10 +1226,10 @@ class PpmParser extends BaseParser {
             }
         }
         // if the current frame is based on changes from the previous one, merge them by XORing their values
-        const layer1 = this.layerBuffers[0];
-        const layer2 = this.layerBuffers[1];
-        const layer1Prev = this.prevLayerBuffers[0];
-        const layer2Prev = this.prevLayerBuffers[1];
+        const layer1 = __classPrivateFieldGet(this, _PpmParser_layerBuffers, "f")[0];
+        const layer2 = __classPrivateFieldGet(this, _PpmParser_layerBuffers, "f")[1];
+        const layer1Prev = __classPrivateFieldGet(this, _PpmParser_prevLayerBuffers, "f")[0];
+        const layer2Prev = __classPrivateFieldGet(this, _PpmParser_prevLayerBuffers, "f")[1];
         // fast diffing if the frame isn't translated
         if (!isKeyFrame && translateX === 0 && translateY === 0) {
             const size = PpmParser.height * PpmParser.width;
@@ -1199,13 +1261,13 @@ class PpmParser extends BaseParser {
             }
         }
         // copy the current layer buffers to the previous ones
-        this.prevLayerBuffers[0].set(this.layerBuffers[0]);
-        this.prevLayerBuffers[1].set(this.layerBuffers[1]);
-        return this.layerBuffers;
+        __classPrivateFieldGet(this, _PpmParser_prevLayerBuffers, "f")[0].set(__classPrivateFieldGet(this, _PpmParser_layerBuffers, "f")[0]);
+        __classPrivateFieldGet(this, _PpmParser_prevLayerBuffers, "f")[1].set(__classPrivateFieldGet(this, _PpmParser_layerBuffers, "f")[1]);
+        return __classPrivateFieldGet(this, _PpmParser_layerBuffers, "f");
     }
     /**
      * Get the color palette indices for a given frame. RGBA colors for these values can be indexed from {@link PpmParser.globalPalette}
-     *
+    
      * Returns an array where:
      *  - index 0 is the paper color index
      *  - index 1 is the layer 1 color index
@@ -1214,7 +1276,7 @@ class PpmParser extends BaseParser {
     */
     getFramePaletteIndices(frameIndex) {
         assertRange(frameIndex, 0, this.frameCount - 1, 'Frame index');
-        this.seek(this.frameOffsets[frameIndex]);
+        this.seek(__classPrivateFieldGet(this, _PpmParser_frameOffsets, "f")[frameIndex]);
         const header = this.readUint8();
         const isInverted = (header & 0x1) !== 1;
         const penMap = [
@@ -1249,7 +1311,7 @@ class PpmParser extends BaseParser {
      * @group Image
     */
     getIsKeyFrame(frameIndex) {
-        const flag = this.isKeyFrame(frameIndex) === 1;
+        const flag = __classPrivateFieldGet(this, _PpmParser_instances, "m", _PpmParser_isKeyFrame).call(this, frameIndex) === 1;
         return [flag, flag];
     }
     /**
@@ -1289,23 +1351,23 @@ class PpmParser extends BaseParser {
      * @group Audio
     */
     decodeSoundFlags() {
-        if (this.soundFlags !== undefined)
-            return this.soundFlags;
-        assert(0x06A0 + this.frameDataLength < this.byteLength);
+        if (__classPrivateFieldGet(this, _PpmParser_soundFlags, "f") !== undefined)
+            return __classPrivateFieldGet(this, _PpmParser_soundFlags, "f");
+        assert(0x06A0 + __classPrivateFieldGet(this, _PpmParser_frameDataLength, "f") < this.numBytes);
         // https://github.com/Flipnote-Collective/flipnote-studio-docs/wiki/PPM-format#sound-effect-flags
-        this.seek(0x06A0 + this.frameDataLength);
+        this.seek(0x06A0 + __classPrivateFieldGet(this, _PpmParser_frameDataLength, "f"));
         const numFlags = this.frameCount;
         const flags = this.readBytes(numFlags);
-        this.soundFlags = new Array(numFlags);
+        __classPrivateFieldSet(this, _PpmParser_soundFlags, new Array(numFlags), "f");
         for (let i = 0; i < numFlags; i++) {
             const byte = flags[i];
-            this.soundFlags[i] = [
+            __classPrivateFieldGet(this, _PpmParser_soundFlags, "f")[i] = [
                 (byte & 0x1) !== 0, // SE1 bitflag
                 (byte & 0x2) !== 0, // SE2 bitflag
                 (byte & 0x4) !== 0, // SE3 bitflag
             ];
         }
-        return this.soundFlags;
+        return __classPrivateFieldGet(this, _PpmParser_soundFlags, "f");
     }
     /**
      * Get the sound effect usage flags for every frame
@@ -1325,7 +1387,7 @@ class PpmParser extends BaseParser {
      */
     getFrameSoundEffectFlags(frameIndex) {
         assertRange(frameIndex, 0, this.frameCount - 1, 'Frame index');
-        this.seek(0x06A0 + this.frameDataLength + frameIndex);
+        this.seek(0x06A0 + __classPrivateFieldGet(this, _PpmParser_frameDataLength, "f") + frameIndex);
         const byte = this.readUint8();
         return {
             [FlipnoteSoundEffectTrack.SE1]: (byte & 0x1) !== 0,
@@ -1341,7 +1403,7 @@ class PpmParser extends BaseParser {
     */
     getAudioTrackRaw(trackId) {
         const trackMeta = this.soundMeta.get(trackId);
-        assert(trackMeta.ptr + trackMeta.length < this.byteLength);
+        assert(trackMeta.ptr + trackMeta.length < this.numBytes);
         this.seek(trackMeta.ptr);
         return this.readBytes(trackMeta.length);
     }
@@ -1405,17 +1467,6 @@ class PpmParser extends BaseParser {
             return pcmResampleNearestNeighbour(srcPcm, srcFreq, dstFreq);
         return srcPcm;
     }
-    pcmAudioMix(src, dst, dstOffset = 0) {
-        const srcSize = src.length;
-        const dstSize = dst.length;
-        for (let n = 0; n < srcSize; n++) {
-            if (dstOffset + n > dstSize)
-                break;
-            // half src volume
-            const samp = dst[dstOffset + n] + (src[n] / 2);
-            dst[dstOffset + n] = clamp(samp, -32768, 32767);
-        }
-    }
     /**
      * Get the full mixed audio for the Flipnote, using the specified samplerate
      * @returns Signed 16-bit PCM audio
@@ -1431,7 +1482,7 @@ class PpmParser extends BaseParser {
         // Mix background music
         if (hasBgm) {
             const bgmPcm = this.getAudioTrackPcm(FlipnoteAudioTrack.BGM, dstFreq);
-            this.pcmAudioMix(bgmPcm, master, 0);
+            __classPrivateFieldGet(this, _PpmParser_instances, "m", _PpmParser_pcmAudioMix).call(this, bgmPcm, master, 0);
         }
         // Mix sound effects
         if (hasSe1 || hasSe2 || hasSe3) {
@@ -1444,26 +1495,22 @@ class PpmParser extends BaseParser {
                 const seOffset = Math.ceil(frame * samplesPerFrame);
                 const flag = seFlags[frame];
                 if (hasSe1 && flag[0])
-                    this.pcmAudioMix(se1Pcm, master, seOffset);
+                    __classPrivateFieldGet(this, _PpmParser_instances, "m", _PpmParser_pcmAudioMix).call(this, se1Pcm, master, seOffset);
                 if (hasSe2 && flag[1])
-                    this.pcmAudioMix(se2Pcm, master, seOffset);
+                    __classPrivateFieldGet(this, _PpmParser_instances, "m", _PpmParser_pcmAudioMix).call(this, se2Pcm, master, seOffset);
                 if (hasSe3 && flag[2])
-                    this.pcmAudioMix(se3Pcm, master, seOffset);
+                    __classPrivateFieldGet(this, _PpmParser_instances, "m", _PpmParser_pcmAudioMix).call(this, se3Pcm, master, seOffset);
             }
         }
         this.audioClipRatio = pcmGetClippingRatio(master);
         return master;
     }
     /**
-     * @groupDescription Verification
-     * ahsjkhaskjdhaslkhalsdhasldj
-     */
-    /**
      * Get the body of the Flipnote - the data that is digested for the signature
      * @group Verification
      */
     getBody() {
-        const bodyEnd = this.soundDataOffset + this.soundDataLength + 32;
+        const bodyEnd = __classPrivateFieldGet(this, _PpmParser_soundDataOffset, "f") + __classPrivateFieldGet(this, _PpmParser_soundDataLength, "f") + 32;
         return this.bytes.subarray(0, bodyEnd);
     }
     /**
@@ -1471,7 +1518,7 @@ class PpmParser extends BaseParser {
     * @group Verification
     */
     getSignature() {
-        const bodyEnd = this.soundDataOffset + this.soundDataLength + 32;
+        const bodyEnd = __classPrivateFieldGet(this, _PpmParser_soundDataOffset, "f") + __classPrivateFieldGet(this, _PpmParser_soundDataLength, "f") + 32;
         return this.bytes.subarray(bodyEnd, bodyEnd + 128);
     }
     /**
@@ -1483,46 +1530,199 @@ class PpmParser extends BaseParser {
         return await rsaVerify(key, this.getSignature(), this.getBody());
     }
 }
-_a = Symbol.toStringTag;
-/** Default PPM parser settings */
+_PpmParser_layerBuffers = new WeakMap(), _PpmParser_soundFlags = new WeakMap(), _PpmParser_prevLayerBuffers = new WeakMap(), _PpmParser_lineEncodingBuffers = new WeakMap(), _PpmParser_prevDecodedFrame = new WeakMap(), _PpmParser_frameDataLength = new WeakMap(), _PpmParser_soundDataLength = new WeakMap(), _PpmParser_soundDataOffset = new WeakMap(), _PpmParser_frameOffsets = new WeakMap(), _PpmParser_instances = new WeakSet(), _a = Symbol.toStringTag, _PpmParser_decodeHeader = function _PpmParser_decodeHeader() {
+    assert(16 < this.numBytes);
+    this.seek(4);
+    // decode header
+    // https://github.com/Flipnote-Collective/flipnote-studio-docs/wiki/PPM-format#header
+    __classPrivateFieldSet(this, _PpmParser_frameDataLength, this.readUint32(), "f");
+    __classPrivateFieldSet(this, _PpmParser_soundDataLength, this.readUint32(), "f");
+    this.frameCount = this.readUint16() + 1;
+    this.version = this.readUint16();
+    // sound data offset = frame data offset + frame data length + sound effect flags
+    let soundDataOffset = 0x06A0 + __classPrivateFieldGet(this, _PpmParser_frameDataLength, "f") + this.frameCount;
+    if (soundDataOffset % 4 !== 0)
+        soundDataOffset += 4 - (soundDataOffset % 4);
+    assert(soundDataOffset < this.numBytes);
+    __classPrivateFieldSet(this, _PpmParser_soundDataOffset, soundDataOffset, "f");
+}, _PpmParser_readFilename = function _PpmParser_readFilename() {
+    const mac = this.readHex(3);
+    const random = this.readChars(13);
+    const edits = this.readUint16().toString().padStart(3, '0');
+    return `${mac}_${random}_${edits}`;
+}, _PpmParser_decodeMeta = function _PpmParser_decodeMeta() {
+    // https://github.com/Flipnote-Collective/flipnote-studio-docs/wiki/PPM-format#metadata
+    assert(0x06A8 < this.numBytes);
+    this.seek(0x10);
+    const lock = this.readUint16();
+    const thumbIndex = this.readInt16();
+    const rootAuthorName = this.readWideChars(11);
+    const parentAuthorName = this.readWideChars(11);
+    const currentAuthorName = this.readWideChars(11);
+    const parentAuthorId = this.readHex(8, true);
+    const currentAuthorId = this.readHex(8, true);
+    const parentFilename = __classPrivateFieldGet(this, _PpmParser_instances, "m", _PpmParser_readFilename).call(this);
+    const currentFilename = __classPrivateFieldGet(this, _PpmParser_instances, "m", _PpmParser_readFilename).call(this);
+    const rootAuthorId = this.readHex(8, true);
+    this.seek(0x9A);
+    const timestamp = dateFromNintendoTimestamp(this.readInt32());
+    this.seek(0x06A6);
+    const flags = this.readUint16();
+    this.thumbFrameIndex = thumbIndex;
+    this.layerVisibility = {
+        1: (flags & 0x10) === 0,
+        2: (flags & 0x20) === 0,
+        3: false
+    };
+    this.isSpinoff = (currentAuthorId !== parentAuthorId) || (currentAuthorId !== rootAuthorId);
+    this.meta = {
+        lock: lock === 1,
+        loop: (flags >> 1 & 0x1) === 1,
+        isSpinoff: this.isSpinoff,
+        frameCount: this.frameCount,
+        frameSpeed: this.frameSpeed,
+        bgmSpeed: this.bgmSpeed,
+        duration: this.duration,
+        thumbIndex: thumbIndex,
+        timestamp: timestamp,
+        root: {
+            username: rootAuthorName,
+            fsid: rootAuthorId,
+            region: getPpmFsidRegion(rootAuthorId),
+            filename: null
+        },
+        parent: {
+            username: parentAuthorName,
+            fsid: parentAuthorId,
+            region: getPpmFsidRegion(parentAuthorId),
+            filename: parentFilename
+        },
+        current: {
+            username: currentAuthorName,
+            fsid: currentAuthorId,
+            region: getPpmFsidRegion(currentAuthorId),
+            filename: currentFilename
+        },
+    };
+}, _PpmParser_decodeAnimationHeader = function _PpmParser_decodeAnimationHeader() {
+    // jump to the start of the animation data section
+    // https://github.com/Flipnote-Collective/flipnote-studio-docs/wiki/PPM-format#animation-header
+    this.seek(0x06A0);
+    const offsetTableLength = this.readUint16();
+    const numOffsets = offsetTableLength / 4;
+    assert(numOffsets <= this.frameCount);
+    // skip padding + flags
+    this.seek(0x06A8);
+    // read frame offsets and build them into a table
+    const frameOffsets = new Uint32Array(numOffsets);
+    for (let n = 0; n < numOffsets; n++) {
+        const ptr = 0x06A8 + offsetTableLength + this.readUint32();
+        assert(ptr < this.numBytes, `Frame ${n} pointer is out of bounds`);
+        frameOffsets[n] = ptr;
+    }
+    __classPrivateFieldSet(this, _PpmParser_frameOffsets, frameOffsets, "f");
+}, _PpmParser_decodeSoundHeader = function _PpmParser_decodeSoundHeader() {
+    // https://github.com/Flipnote-Collective/flipnote-studio-docs/wiki/PPM-format#sound-header
+    let ptr = __classPrivateFieldGet(this, _PpmParser_soundDataOffset, "f");
+    this.seek(ptr);
+    const bgmLen = this.readUint32();
+    const se1Len = this.readUint32();
+    const se2Len = this.readUint32();
+    const se3Len = this.readUint32();
+    this.frameSpeed = 8 - this.readUint8();
+    this.bgmSpeed = 8 - this.readUint8();
+    assert(this.frameSpeed <= 8 && this.bgmSpeed <= 8);
+    ptr += 32;
+    this.framerate = PPM_FRAMERATES[this.frameSpeed];
+    this.duration = timeGetNoteDuration(this.frameCount, this.framerate);
+    this.bgmrate = PPM_FRAMERATES[this.bgmSpeed];
+    const soundMeta = new Map();
+    soundMeta.set(FlipnoteAudioTrack.BGM, { ptr: ptr, length: bgmLen });
+    soundMeta.set(FlipnoteAudioTrack.SE1, { ptr: ptr += bgmLen, length: se1Len });
+    soundMeta.set(FlipnoteAudioTrack.SE2, { ptr: ptr += se1Len, length: se2Len });
+    soundMeta.set(FlipnoteAudioTrack.SE3, { ptr: ptr += se2Len, length: se3Len });
+    this.soundMeta = soundMeta;
+}, _PpmParser_isKeyFrame = function _PpmParser_isKeyFrame(frameIndex) {
+    assertRange(frameIndex, 0, this.frameCount - 1, 'Frame index');
+    this.seek(__classPrivateFieldGet(this, _PpmParser_frameOffsets, "f")[frameIndex]);
+    const header = this.readUint8();
+    return (header >> 7) & 0x1;
+}, _PpmParser_pcmAudioMix = function _PpmParser_pcmAudioMix(src, dst, dstOffset = 0) {
+    const srcSize = src.length;
+    const dstSize = dst.length;
+    for (let n = 0; n < srcSize; n++) {
+        if (dstOffset + n > dstSize)
+            break;
+        // half src volume
+        const samp = dst[dstOffset + n] + (src[n] / 2);
+        dst[dstOffset + n] = clamp(samp, -32768, 32767);
+    }
+};
+/**
+ * Default PPM parser settings.
+ */
 PpmParser.defaultSettings = {};
-/** File format type */
+/**
+ * File format type.
+ */
 PpmParser.format = FlipnoteFormat.PPM;
-/** Animation frame width */
+/**
+ * Animation frame width.
+ */
 PpmParser.width = 256;
-/** Animation frame height */
+/**
+ * Animation frame height.
+ */
 PpmParser.height = 192;
-/** Animation frame aspect ratio */
+/**
+ * Animation frame aspect ratio.
+ */
 PpmParser.aspect = 3 / 4;
-/** Number of animation frame layers */
+/**
+ * Number of animation frame layers.
+ */
 PpmParser.numLayers = 2;
-/** Number of colors per layer (aside from transparent) */
+/**
+ * Number of colors per layer (aside from transparent).
+ */
 PpmParser.numLayerColors = 1;
-/** Audio track base sample rate */
+/**
+ * Audio track base sample rate.
+ */
 PpmParser.rawSampleRate = 8192;
-/** Nintendo DSi audio output rate */
+/**
+ * Nintendo DSi audio output rate.
+ */
 PpmParser.sampleRate = 32768;
-/** Which audio tracks are available in this format */
+/**
+ * Which audio tracks are available in this format.
+ */
 PpmParser.audioTracks = [
     FlipnoteAudioTrack.BGM,
     FlipnoteAudioTrack.SE1,
     FlipnoteAudioTrack.SE2,
     FlipnoteAudioTrack.SE3
 ];
-/** Which sound effect tracks are available in this format */
+/**
+ * Which sound effect tracks are available in this format.
+ */
 PpmParser.soundEffectTracks = [
     FlipnoteSoundEffectTrack.SE1,
     FlipnoteSoundEffectTrack.SE2,
     FlipnoteSoundEffectTrack.SE3,
 ];
-/** Global animation frame color palette */
+/**
+ * Global animation frame color palette.
+ */
 PpmParser.globalPalette = [
     PPM_PALETTE.WHITE,
     PPM_PALETTE.BLACK,
     PPM_PALETTE.RED,
     PPM_PALETTE.BLUE
 ];
-/** Public key used for Flipnote verification, in PEM format */
+/**
+ * Public key used for Flipnote verification, in PEM format.
+ */
 PpmParser.publicKey = PPM_PUBLIC_KEY;
 
 export { PpmParser };

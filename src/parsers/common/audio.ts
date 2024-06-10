@@ -1,17 +1,23 @@
 import { lerp } from '../../utils';
 
-/** @internal */
+/**
+ * @internal
+ */
 export const ADPCM_INDEX_TABLE_2BIT = new Int8Array([
   -1, 2, -1, 2
 ]);
 
-/** @internal */
+/**
+ * @internal
+ */
 export const ADPCM_INDEX_TABLE_4BIT = new Int8Array([
   -1, -1, -1, -1, 2, 4, 6, 8,
   -1, -1, -1, -1, 2, 4, 6, 8
 ]);
 
-/** @internal */
+/**
+ * @internal
+ */
 export const ADPCM_STEP_TABLE = new Int16Array([
   7, 8, 9, 10, 11, 12, 13, 14, 16, 17,
   19, 21, 23, 25, 28, 31, 34, 37, 41, 45,
@@ -24,7 +30,9 @@ export const ADPCM_STEP_TABLE = new Int16Array([
   15289, 16818, 18500, 20350, 22385, 24623, 27086, 29794, 32767, 0
 ]);
 
-/** @internal */
+/**
+ * @internal
+ */
 export const pcmGetSample = (src: Int16Array, srcSize: number, srcPtr: number) => {
   if (srcPtr < 0 || srcPtr >= srcSize)
     return 0;

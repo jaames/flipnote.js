@@ -31,10 +31,14 @@ export enum PlayerEvent {
   Destroy = 'destroy',
 }
 
-/** @internal */
+/**
+ * @internal
+ */
 export type PlayerEventMap = Map<PlayerEvent, Function[]>;
 
-/** @internal */
+/**
+ * @internal
+ */
 export const supportedEvents: PlayerEvent[] = [
   PlayerEvent.Play,
   PlayerEvent.Pause,

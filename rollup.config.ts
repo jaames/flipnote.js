@@ -92,6 +92,16 @@ const doBuild = (input: string, outputBase: string, opts: {
       sourcemap: true,
       sourcemapFile: `dist/${ outputBase }.min.js.map`,
       plugins: [minify(), size()]
+    },
+    // Demo site browser build
+    opts.name && !isServer && {
+      name: opts.name,
+      file: `www/public/${outputBase}.min.js`,
+      format: 'iife',
+      exports: 'named',
+      sourcemap: true,
+      sourcemapFile: `www/public/${outputBase}.min.js.map`,
+      plugins: [minify()]
     }
   ].filter(Boolean),
 });

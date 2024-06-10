@@ -26,107 +26,242 @@ import {
 */
 export abstract class BaseParser extends DataStream {
 
-  /** Static file format info */
+  /**
+   * Static file format info
+   */
 
-  /** File format type */
+  /**
+   * File format type.
+   * @group Meta
+   */
   static format: FlipnoteFormat;
-  /** Animation frame width */
+  /**
+   * Animation frame width.
+   * @group Image
+   */
   static width: number;
-  /** Animation frame height */
+  /**
+   * Animation frame height.
+   * @group Image
+   */
   static height: number;
-  /** Animation frame aspect ratio (height / width) */
+  /**
+   * Animation frame aspect ratio (height / width).
+   * @group Image
+   */
   static aspect: number;
-  /** Number of animation frame layers */
+  /**
+   * Number of animation frame layers.
+   * @group Image
+   */
   static numLayers: number;
-  /** Number of colors per layer (aside from transparent) */
+  /**
+   * Number of colors per layer (aside from transparent).
+   * @group Image
+   */
   static numLayerColors: number;
-  /** Which audio tracks are available in this format */
+  /**
+   * Which audio tracks are available in this format.
+   * @group Audio
+   */
   static audioTracks: FlipnoteAudioTrack[];
-  /** Which sound effect tracks are available in this format */
+  /**
+   * Which sound effect tracks are available in this format.
+   * @group Audio
+   */
   static soundEffectTracks: FlipnoteSoundEffectTrack[];
-  /** Audio track base sample rate */
+  /**
+   * Audio track base sample rate.
+   * @group Audio
+   */
   static rawSampleRate: number;
-  /** Audio output sample rate */
+  /**
+   * Audio output sample rate.
+   * @group Audio
+   */
   static sampleRate: number;
-  /** Global animation frame color palette */
+  /**
+   * Global animation frame color palette.
+   * @group Image
+   */
   static globalPalette: FlipnotePaletteColor[];
-  /** key used for Flipnote verification, in PEM format */
+  /**
+   * Key used for Flipnote verification, in PEM format.
+   * @group Verification
+   */
   static publicKey: string;
 
-  /** Instance file format info */
+  /**
+   * Instance file format info
+   */
 
-  /** Custom object tag */
+  /**
+   * Custom object tag
+   */
   [Symbol.toStringTag] = 'Flipnote';
-  /** File format type, reflects {@link BaseParser.format} */
+  /**
+   * File format type, reflects {@link BaseParser.format}.
+   * @group Meta
+   */
   format: FlipnoteFormat;
-  /** Default formats used for {@link getTitle} */
+  /**
+   * Default formats used for {@link getTitle}.
+   * @group Meta
+   */
   titleFormats = {
     COMMENT: 'Comment by $USERNAME',
     FLIPNOTE: 'Flipnote by $USERNAME',
     ICON: 'Folder icon'
   };
-  /** Animation frame width, reflects {@link BaseParser.width} @group Image */
+  /**
+   * Animation frame width, reflects {@link BaseParser.width}.
+   * @group Image
+   */
   imageWidth: number;
-  /** Animation frame height, reflects {@link BaseParser.height} */
+  /**
+   * Animation frame height, reflects {@link BaseParser.height}
+   * @group Image
+   */
   imageHeight: number;
-  /** Animation frame aspect ratio (height / width), reflects {@link BaseParser.aspect} */
+  /**
+   * Animation frame aspect ratio (height / width), reflects {@link BaseParser.aspect}.
+   * @group Image
+   */
   aspect: number;
-  /** X offset for the top-left corner of the animation frame */
+  /**
+   * X offset for the top-left corner of the animation frame.
+   * @group Image
+   */
   imageOffsetX: number;
-  /** Y offset for the top-left corner of the animation frame */
+  /**
+   * Y offset for the top-left corner of the animation frame.
+   * @group Image
+   */
   imageOffsetY: number;
-  /** Number of animation frame layers, reflects {@link BaseParser.numLayers} */
+  /**
+   * Number of animation frame layers, reflects {@link BaseParser.numLayers}.
+   * @group Image
+   */
   numLayers: number;
-  /** Number of colors per layer (aside from transparent), reflects {@link BaseParser.numLayerColors} */
+  /**
+   * Number of colors per layer (aside from transparent), reflects {@link BaseParser.numLayerColors}.
+   * @group Image
+   */
   numLayerColors: number;
-  /** @internal */
+  /**
+   * @internal
+   */
   srcWidth: number;
-  /** Which audio tracks are available in this format, reflects {@link BaseParser.audioTracks} */
+  /**
+   * Which audio tracks are available in this format, reflects {@link BaseParser.audioTracks}.
+   * @group Audio
+   */
   audioTracks: FlipnoteAudioTrack[];
-  /** Which sound effect tracks are available in this format, reflects {@link BaseParser.soundEffectTracks} */
+  /**
+   * Which sound effect tracks are available in this format, reflects {@link BaseParser.soundEffectTracks}.
+   * @group Audio
+   */
   soundEffectTracks: FlipnoteSoundEffectTrack[];
-  /** Audio track base sample rate, reflects {@link BaseParser.rawSampleRate} */
+  /**
+   * Audio track base sample rate, reflects {@link BaseParser.rawSampleRate}.
+   * @group Audio
+   */
   rawSampleRate: number;
-  /** Audio output sample rate, reflects {@link BaseParser.sampleRate} */
+  /**
+   * Audio output sample rate, reflects {@link BaseParser.sampleRate}.
+   * @group Audio
+   */
   sampleRate: number;
-  /** Global animation frame color palette, reflects {@link BaseParser.globalPalette} */
+  /**
+   * Global animation frame color palette, reflects {@link BaseParser.globalPalette}.
+   * @group Image
+   */
   globalPalette: FlipnotePaletteColor[];
-  /** Flipnote palette */
+  /**
+   * Flipnote palette.
+   * @group Image
+   */
   palette: FlipnotePaletteDefinition;
-  /** File metadata, see {@link FlipnoteMeta} for structure */
+  /**
+   * File metadata, see {@link FlipnoteMeta} for structure.
+   * @group Meta
+   */
   meta: FlipnoteMeta;
-  /** File audio track info, see {@link FlipnoteAudioTrackInfo} */
+  /**
+   * File audio track info, see {@link FlipnoteAudioTrackInfo}.
+   * @group Meta
+   */
   soundMeta: Map<FlipnoteAudioTrack, FlipnoteAudioTrackInfo> = new Map();
-  /** Animation frame global layer visibility */
+  /**
+   * Animation frame global layer visibility.
+   * @group Image
+   */
   layerVisibility: FlipnoteLayerVisibility = {1: true, 2: true, 3: true};
-  /** key used for Flipnote verification, in PEM format */
+  /**
+   * key used for Flipnote verification, in PEM format.
+   * @group Verification
+   */
   publicKey: string;
 
-  /** Instance-unique info */
-
-  /** Spinoffs are remixes of another user's Flipnote */
+  /**
+   * Spinoffs are remixes of another user's Flipnote.
+   * @group Meta
+   */
   isSpinoff: boolean;
-  /** (KWZ only) Indicates whether or not this file is a Flipnote Studio 3D folder icon */
+  /**
+   * (KWZ only) Indicates whether or not this file is a Flipnote Studio 3D folder icon.
+   * @group Meta
+   */
   isFolderIcon: boolean = false;
-  /** (KWZ only) Indicates whether or not this file is a handwritten comment from Flipnote Gallery World */
+  /**
+   * (KWZ only) Indicates whether or not this file is a handwritten comment from Flipnote Gallery World.
+   * @group Meta
+   */
   isComment: boolean = false;
-  /** (KWZ only) Indicates whether or not this Flipnote is a PPM to KWZ conversion from Flipnote Studio 3D's DSi Library service */
+  /**
+   * (KWZ only) Indicates whether or not this Flipnote is a PPM to KWZ conversion from Flipnote Studio 3D's DSi Library service.
+   * @group Meta
+   */
   isDsiLibraryNote: boolean = false;
-  /** Animation frame count */
+  /**
+   * Animation frame count.
+   * @group Image
+   */
   frameCount: number;
-  /** In-app animation playback speed */
+  /**
+   * In-app animation playback speed.
+   * @group Image
+   */
   frameSpeed: number;
-  /** Animation duration, in seconds */
+  /**
+   * Animation duration, in seconds.
+   * @group Image
+   */
   duration: number;
-  /** In-app animation playback speed when the BGM track was recorded */
+  /**
+   * In-app animation playback speed when the BGM track was recorded.
+   * @group Image
+   */
   bgmSpeed: number;
-  /** Animation framerate, measured as frames per second */
+  /**
+   * Animation framerate, measured as frames per second.
+   * @group Image
+   */
   framerate: number;
-  /** Animation framerate when the BGM track was recorded, measured as frames per second */
+  /**
+   * Animation framerate when the BGM track was recorded, measured as frames per second.
+   * @group Audio
+   */
   bgmrate: number;
-  /** Index of the animation frame used as the Flipnote's thumbnail image */
+  /**
+   * Index of the animation frame used as the Flipnote's thumbnail image.
+   * @group Image
+   */
   thumbFrameIndex: number;
-  /** Get the amount of clipping in the master audio track, useful for determining if a Flipnote's audio is corrupted. Closer to 1.0 = more clipping. Only available after {@link getAudioMasterPcm} has been called */
+  /**
+   * Get the amount of clipping in the master audio track, useful for determining if a Flipnote's audio is corrupted. Closer to 1.0 = more clipping. Only available after {@link getAudioMasterPcm} has been called.
+   * @group Audio
+   */
   audioClipRatio: number;
 
   /**
@@ -139,7 +274,7 @@ export abstract class BaseParser extends DataStream {
    *  ICON: 'Folder icon'
    * }
    * ```
-   * @group Utility
+   * @group Meta
    */
   getTitle(formats = this.titleFormats) {
     if (this.isFolderIcon)
@@ -149,7 +284,7 @@ export abstract class BaseParser extends DataStream {
   }
 
   /**
-   * Returns the Flipnote title when casting a parser instance to a string
+   * Returns the Flipnote title when casting a parser instance to a string.
    * 
    * ```js
    * const str = 'Title: ' + note;
@@ -162,7 +297,7 @@ export abstract class BaseParser extends DataStream {
   }
 
   /**
-   * Allows for frame index iteration when using the parser instance as a for..of iterator
+   * Allows for frame index iteration when using the parser instance as a for..of iterator.
    * 
    * ```js
    * for (const frameIndex of note) {
@@ -185,7 +320,7 @@ export abstract class BaseParser extends DataStream {
   abstract getThumbnailImage(): FlipnoteThumbImage;
 
   /** 
-   * Decode a frame, returning the raw pixel buffers for each layer
+   * Decode a frame, returning the raw pixel buffers for each layer.
    * @group Image
   */
   abstract decodeFrame(frameIndex: number): Uint8Array[];

@@ -1,7 +1,7 @@
 import { LoaderDefinition } from './types';
 
 /** 
- * Loader for ArrayBuffer objects
+ * Loader for ArrayBuffer objects.
  * @group Loader
  */
 export const arrayBufferLoader: LoaderDefinition<ArrayBuffer> = {

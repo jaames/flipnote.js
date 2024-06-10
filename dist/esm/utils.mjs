@@ -5,25 +5,59 @@
  * 2018 - 2024 James Daniel
  * Flipnote Studio is (c) Nintendo Co., Ltd. This project isn't affiliated with or endorsed by them in any way.
 */
-/** @internal */
+/**
+ * @internal
+ */
 class ByteArray {
     constructor() {
-        // sizes
+        /**
+         * @internal
+         */
         this.pageSize = 2048 * 2;
-        this.allocSize = 0; // allocated size counting all pages
-        this.realSize = 0; // number of bytes actually used
-        // pages
+        /**
+         * Allocated size counting all pages.
+         * @internal
+         */
+        this.allocSize = 0;
+        /**
+         * Number of bytes actually used.
+         * @internal
+         */
+        this.realSize = 0;
+        /**
+         * @internal
+         */
         this.pages = [];
+        /**
+         * @internal
+         */
         this.numPages = 0;
-        // pointers
-        this.pageIdx = 0; // page to write to
-        this.pagePtr = 0; // position in page to write to
-        this.realPtr = 0; // position in file
+        /**
+         * Page to write to.
+         * @internal
+         */
+        this.pageIdx = 0;
+        /**
+         * Position in page to write to.
+         * @internal
+         */
+        this.pagePtr = 0; // 
+        /**
+         * Position in file.
+         * @internal
+         */
+        this.realPtr = 0;
         this.newPage();
     }
+    /**
+     * @internal
+     */
     set pointer(ptr) {
         this.setPointer(ptr);
     }
+    /**
+     * @internal
+     */
     get pointer() {
         return this.realPtr;
     }
@@ -95,9 +129,6 @@ class ByteArray {
         this.writeByte((value >>> 16) & 0xFF);
         this.writeByte((value >>> 24) & 0xFF);
     }
-    /**
-     * @internal
-     */
     getBytes() {
         const bytes = new Uint8Array(this.realSize);
         const numPages = this.numPages;
@@ -117,20 +148,50 @@ class ByteArray {
 }
 
 /**
- * Wrapper around the DataView API to keep track of the offset into the data
- * also provides some utils for reading ascii strings etc
+ * @internal
+ */
+const hexFromBytes = (bytes, reverse = false) => {
+    let hex = [];
+    for (let i = 0; i < bytes.length; i++)
+        hex.push(bytes[i].toString(16).padStart(2, '0'));
+    if (reverse)
+        hex.reverse();
+    return hex.join('');
+};
+/**
+ * @internal
+ */
+const hexToBytes = (hex, reverse = false) => {
+    const hexSize = hex.length;
+    const bytes = new Uint8Array(hexSize / 2);
+    for (let i = 0, j = 0; i < hexSize; i += 2)
+        bytes[j++] = parseInt(hex.slice(i, i + 2), 16);
+    if (reverse)
+        bytes.reverse();
+    return bytes;
+};
+
+/**
+ * Wrapper around the DataView API to keep track of the offset into the data,
+ * also provides some utils for reading ascii strings etc.
  * @internal
  */
 class DataStream {
-    constructor(arrayBuffer) {
-        this.buffer = arrayBuffer;
-        this.data = new DataView(arrayBuffer);
+    constructor(buffer) {
+        this.buffer = buffer;
+        this.data = new DataView(buffer);
         this.pointer = 0;
     }
+    /**
+     * Returns the data as an Uint8Array of bytes.
+     */
     get bytes() {
         return new Uint8Array(this.buffer);
     }
-    get byteLength() {
+    /**
+     * Returns the total number of bytes in the data.
+     */
+    get numBytes() {
         return this.data.byteLength;
     }
     /**
@@ -259,13 +320,21 @@ class DataStream {
      */
     readHex(count, reverse = false) {
         const bytes = this.readBytes(count);
-        let hex = [];
-        for (let i = 0; i < bytes.length; i++) {
-            hex.push(bytes[i].toString(16).padStart(2, '0'));
-        }
-        if (reverse)
-            hex.reverse();
-        return hex.join('').toUpperCase();
+        return hexFromBytes(bytes, reverse);
+    }
+    /**
+     * @internal
+     */
+    readChar() {
+        const char = this.readUint8();
+        return String.fromCharCode(char);
+    }
+    /**
+     * @internal
+     */
+    readWideChar() {
+        const char = this.readUint16();
+        return String.fromCharCode(char);
     }
     /**
      * @internal
@@ -305,10 +374,13 @@ class DataStream {
         this.pointer += chars.byteLength;
         return str;
     }
+    end() {
+        return this.pointer >= this.data.byteLength;
+    }
 }
 
 /**
- * Clamp a number n between l and h
+ * Clamp a number n between l and h.
  * @internal
  */
 const clamp = (n, l, h) => {
@@ -319,13 +391,13 @@ const clamp = (n, l, h) => {
     return n;
 };
 /**
- * Interpolate between a and b - returns a if fac = 0, b if fac = 1, and somewhere between if 0 < fac < 1
+ * Interpolate between a and b - returns a if fac = 0, b if fac = 1, and somewhere between if 0 < fac < 1.
  * @internal
  */
 const lerp = (a, b, fac) => a + fac * (b - a);
 
 /**
- * Assert condition is true
+ * Assert condition is true.
  * @internal
  */
 function assert(condition, errMsg = 'Assert failed') {
@@ -333,7 +405,7 @@ function assert(condition, errMsg = 'Assert failed') {
         err(errMsg);
 }
 /**
- * Assert that a value exists
+ * Assert that a value exists.
  * @internal
  */
 const assertExists = (value, name = '') => {
@@ -342,12 +414,12 @@ const assertExists = (value, name = '') => {
     return value;
 };
 /**
- * Assert that a numerical value is between upper and lower bounds
+ * Assert that a numerical value is between upper and lower bounds.
  * @internal
  */
 const assertRange = (value, min, max, name = '') => assert(value >= min && value <= max, `flipnote.js error: ${name || 'value'} ${value} should be between ${min} and ${max}`);
 /**
- * Assert condition is true
+ * Assert condition is true.
  * @internal
  */
 const err = (errMsg = 'Assert failed') => {
@@ -355,8 +427,8 @@ const err = (errMsg = 'Assert failed') => {
 };
 
 /**
- * Webpack tries to replace inline calles to require() with polyfills,
- * but we don't want that, since we only use require to add extra features in NodeJs environments
+ * Webpack tries to replace inline calls to require() with polyfills,
+ * but we don't want that, since we only use require to add extra features in NodeJs environments.
  *
  * Modified from:
  * https://github.com/getsentry/sentry-javascript/blob/bd35d7364191ebed994fb132ff31031117c1823f/packages/utils/src/misc.ts#L9-L11
@@ -372,7 +444,7 @@ const dynamicRequire = (nodeModule, p) => {
     }
 };
 /**
- * Safely get global scope object
+ * Safely get global scope object.
  * @internal
  */
 const getGlobalObject = () => {
@@ -385,7 +457,7 @@ const getGlobalObject = () => {
                 : {};
 };
 /**
- * Utils to find out information about the current code execution environment
+ * Utils to find out information about the current code execution environment.
  */
 /**
  * Is the code running in a browser environment?
@@ -394,7 +466,7 @@ const getGlobalObject = () => {
 const isBrowser = typeof window !== 'undefined'
     && typeof window.document !== 'undefined';
 /**
- * Assert that the current environment should support browser APIs
+ * Assert that the current environment should support browser APIs.
  * @internal
  */
 const assertBrowserEnv = () => assert(isBrowser, 'This feature is only available in browser environments');
@@ -406,13 +478,13 @@ const isNode = typeof process !== 'undefined'
     && process.versions != null
     && process.versions.node != null;
 /**
- * Assert that the current environment should support NodeJS APIs
+ * Assert that the current environment should support NodeJS APIs.
  * @internal
  */
 const assertNodeEnv = () => assert(isNode, 'This feature is only available in NodeJS environments');
 // TODO: Deno support?
 /**
- * Is the code running in a Web Worker enviornment?
+ * Is the code running in a Web Worker environment?
  * @internal
  */
 const isWebWorker = typeof self === 'object'
@@ -424,9 +496,13 @@ const isWebWorker = typeof self === 'object'
  */
 const assertWebWorkerEnv = () => assert(isWebWorker, 'This feature is only available in WebWorker environments');
 
-/** @internal */
+/**
+ * @internal
+ */
 const raf = isBrowser && (window.requestAnimationFrame || window.webkitRequestAnimationFrame);
-/** @internal */
+/**
+ * @internal
+ */
 const nextPaint = (callback) => {
     if (isBrowser)
         raf(() => raf(() => callback()));
@@ -436,9 +512,11 @@ const nextPaint = (callback) => {
 
 /**
  * Gracefully handles a given Promise factory.
+ *
+ * Example:
+ * `const [ error, data ] = await until(() => asyncAction())`
+ *
  * @internal
- * @example
- * const [ error, data ] = await until(() => asyncAction())
  */
 const until = async (promise) => {
     try {
@@ -452,7 +530,9 @@ const until = async (promise) => {
     }
 };
 
-/** @internal */
+/**
+ * @internal
+ */
 const saveData = (function () {
     if (!isBrowser) {
         return function () { };
@@ -467,4 +547,4 @@ const saveData = (function () {
     };
 })();
 
-export { ByteArray, DataStream, assert, assertBrowserEnv, assertExists, assertNodeEnv, assertRange, assertWebWorkerEnv, clamp, dynamicRequire, err, getGlobalObject, isBrowser, isNode, isWebWorker, lerp, nextPaint, saveData, until };
+export { ByteArray, DataStream, assert, assertBrowserEnv, assertExists, assertNodeEnv, assertRange, assertWebWorkerEnv, clamp, dynamicRequire, err, getGlobalObject, hexFromBytes, hexToBytes, isBrowser, isNode, isWebWorker, lerp, nextPaint, saveData, until };

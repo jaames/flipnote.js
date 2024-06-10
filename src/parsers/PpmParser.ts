@@ -91,7 +91,9 @@ MIGfMA0GCSqGSIb3DQEBAQUAA4GNADCBiQKBgQDCPLwTL6oSflv+gjywi/sM0TUB
  * PPM file metadata, stores information about its playback, author details, etc
  */
 export interface PpmMeta extends FlipnoteMeta {
-  /** In-app frame playback speed when the BGM audio track was recorded */
+  /**
+   * In-app frame playback speed when the BGM audio track was recorded
+   */
   bgmSpeed: number;
 };
 
@@ -109,45 +111,71 @@ export type PpmParserSettings = {};
  */
 export class PpmParser extends BaseParser {
 
-  /** Default PPM parser settings */
+  /**
+   * Default PPM parser settings.
+   */
   static defaultSettings: PpmParserSettings = {};
-  /** File format type */
+  /**
+   * File format type.
+   */
   static format = FlipnoteFormat.PPM;
-  /** Animation frame width */
+  /**
+   * Animation frame width.
+   */
   static width = 256;
-  /** Animation frame height */
+  /**
+   * Animation frame height.
+   */
   static height = 192;
-  /** Animation frame aspect ratio */
+  /**
+   * Animation frame aspect ratio.
+   */
   static aspect = 3 / 4;
-  /** Number of animation frame layers */
+  /**
+   * Number of animation frame layers.
+   */
   static numLayers = 2;
-  /** Number of colors per layer (aside from transparent) */
+  /**
+   * Number of colors per layer (aside from transparent).
+   */
   static numLayerColors = 1;
-  /** Audio track base sample rate */
+  /**
+   * Audio track base sample rate.
+   */
   static rawSampleRate = 8192;
-  /** Nintendo DSi audio output rate */
+  /**
+   * Nintendo DSi audio output rate.
+   */
   static sampleRate = 32768;
-  /** Which audio tracks are available in this format */
+  /**
+   * Which audio tracks are available in this format.
+   */
   static audioTracks = [
     FlipnoteAudioTrack.BGM,
     FlipnoteAudioTrack.SE1,
     FlipnoteAudioTrack.SE2,
     FlipnoteAudioTrack.SE3
   ];
-  /** Which sound effect tracks are available in this format */
+  /**
+   * Which sound effect tracks are available in this format.
+   */
   static soundEffectTracks = [
     FlipnoteSoundEffectTrack.SE1,
     FlipnoteSoundEffectTrack.SE2,
     FlipnoteSoundEffectTrack.SE3,
   ];
-  /** Global animation frame color palette */
+  /**
+   * Global animation frame color palette.
+   */
   static globalPalette = [
     PPM_PALETTE.WHITE,
     PPM_PALETTE.BLACK,
     PPM_PALETTE.RED,
     PPM_PALETTE.BLUE
   ];
-  /** Public key used for Flipnote verification, in PEM format */
+  /**
+   * Public key used for Flipnote verification, in PEM format.
+   */
   static publicKey = PPM_PUBLIC_KEY;
 
   static matchBuffer(buffer: ArrayBuffer) {
@@ -158,52 +186,106 @@ export class PpmParser extends BaseParser {
     return magic === 0x50415241;
   }
 
-  /** File format type, reflects {@link PpmParser.format} */
+  /**
+   * File format type, reflects {@link PpmParser.format}.
+   * @group Meta
+   */
   format = FlipnoteFormat.PPM;
-  /** Custom object tag */
+  /**
+   * Custom object tag.
+   * @group Utility
+   */
   [Symbol.toStringTag] = 'Flipnote Studio PPM animation file';
-  /** Animation frame width, reflects {@link PpmParser.width} */
+  /**
+   * Animation frame width, reflects {@link PpmParser.width}.
+   * @group Image
+   */
   imageWidth = PpmParser.width;
-  /** Animation frame height, reflects {@link PpmParser.height} */
+  /**
+   * Animation frame height, reflects {@link PpmParser.height}.
+   * @group Image
+   */
   imageHeight = PpmParser.height;
-  /** Animation frame aspect ratio, reflects {@link PpmParser.aspect} */
+  /**
+   * Animation frame aspect ratio, reflects {@link PpmParser.aspect}.
+   * @group Image
+   */
   aspect = PpmParser.aspect;
-  /** X offset for the top-left corner of the animation frame */
+  /**
+   * X offset for the top-left corner of the animation frame.
+   * @group Image
+   */
   imageOffsetX = 0;
-  /** Y offset for the top-left corner of the animation frame */
+  /**
+   * Y offset for the top-left corner of the animation frame.
+   * @group Image
+   */
   imageOffsetY = 0;
-  /** Number of animation frame layers, reflects {@link PpmParser.numLayers} */
+  /**
+   * Number of animation frame layers, reflects {@link PpmParser.numLayers}.
+   * @group Image
+   */
   numLayers = PpmParser.numLayers;
-  /** Number of colors per layer (aside from transparent), reflects {@link PpmParser.numLayerColors} */
+  /**
+   * Number of colors per layer (aside from transparent), reflects {@link PpmParser.numLayerColors}.
+   * @group Image
+   */
   numLayerColors = PpmParser.numLayerColors;
-  /** key used for Flipnote verification, in PEM format */
+  /**
+   * Key used for Flipnote verification, in PEM format.
+   * @group Verification
+   */
   publicKey = PpmParser.publicKey;
-  /** @internal */
+  /**
+   * @internal
+   * @group Image
+   */
   srcWidth = PpmParser.width;
-  /** Which audio tracks are available in this format, reflects {@link PpmParser.audioTracks} */
+  /**
+   * Which audio tracks are available in this format, reflects {@link PpmParser.audioTracks}.
+   * @group Audio
+   */
   audioTracks = PpmParser.audioTracks;
-  /** Which sound effect tracks are available in this format, reflects {@link PpmParser.soundEffectTracks} */
+  /**
+   * Which sound effect tracks are available in this format, reflects {@link PpmParser.soundEffectTracks}.
+   * @group Audio
+   */
   soundEffectTracks = PpmParser.soundEffectTracks;
-  /** Audio track base sample rate, reflects {@link PpmParser.rawSampleRate} */
+  /**
+   * Audio track base sample rate, reflects {@link PpmParser.rawSampleRate}.
+   * @group Audio
+   */
   rawSampleRate = PpmParser.rawSampleRate;
-  /** Audio output sample rate, reflects {@link PpmParser.sampleRate} */
+  /**
+   * Audio output sample rate, reflects {@link PpmParser.sampleRate}.
+   * @group Audio
+   */
   sampleRate = PpmParser.sampleRate;
-  /** Global animation frame color palette, reflects {@link PpmParser.globalPalette} */
+  /**
+   * Global animation frame color palette, reflects {@link PpmParser.globalPalette}.
+   * @group Image
+   */
   globalPalette = PpmParser.globalPalette;
-  /** File metadata, see {@link PpmMeta} for structure */
+  /**
+   * File metadata, see {@link PpmMeta} for structure.
+   * @group Meta
+   */
   meta: PpmMeta;
-  /** File format version; always the same as far as we know */
+  /**
+   * File format version; always the same as far as we know.
+   * @group Meta
+   */
   version: number;
 
-  private layerBuffers: [Uint8Array, Uint8Array];
-  private soundFlags: boolean[][];
-  private prevLayerBuffers: [Uint8Array, Uint8Array];
-  private lineEncodingBuffers: [Uint8Array, Uint8Array];
-  private prevDecodedFrame: number = null;
-  private frameDataLength: number;
-  private soundDataLength: number;
-  private soundDataOffset: number;
-  private frameOffsets: Uint32Array;
+  #layerBuffers: [Uint8Array, Uint8Array];
+  #soundFlags: boolean[][];
+  #prevLayerBuffers: [Uint8Array, Uint8Array];
+  #lineEncodingBuffers: [Uint8Array, Uint8Array];
+  #prevDecodedFrame: number = null;
+  #frameDataLength: number;
+  #soundDataLength: number;
+  #soundDataOffset: number;
+  #frameOffsets: Uint32Array;
 
   /**
    * Create a new PPM file parser instance
@@ -212,56 +294,56 @@ export class PpmParser extends BaseParser {
    */
   constructor(arrayBuffer: ArrayBuffer, settings: Partial<PpmParserSettings> = {}) {
     super(arrayBuffer);
-    this.decodeHeader();
-    this.decodeAnimationHeader();
-    this.decodeSoundHeader();
+    this.#decodeHeader();
+    this.#decodeAnimationHeader();
+    this.#decodeSoundHeader();
     // this is always true afaik, it's likely just a remnant from development
     // doesn't hurt to be accurate though...
     if (((this.version >> 4) & 0xf) !== 0) {
-      this.decodeMeta();
+      this.#decodeMeta();
     }
     // create image buffers
-    this.layerBuffers = [
+    this.#layerBuffers = [
       new Uint8Array(PpmParser.width * PpmParser.height),
       new Uint8Array(PpmParser.width * PpmParser.height)
     ];
-    this.prevLayerBuffers = [
+    this.#prevLayerBuffers = [
       new Uint8Array(PpmParser.width * PpmParser.height),
       new Uint8Array(PpmParser.width * PpmParser.height)
     ];
-    this.lineEncodingBuffers = [
+    this.#lineEncodingBuffers = [
       new Uint8Array(PpmParser.height),
       new Uint8Array(PpmParser.height)
     ];
-    this.prevDecodedFrame = null;
+    this.#prevDecodedFrame = null;
   }
 
-  private decodeHeader() {
-    assert(16 < this.byteLength);
+  #decodeHeader() {
+    assert(16 < this.numBytes);
     this.seek(4);
     // decode header
     // https://github.com/Flipnote-Collective/flipnote-studio-docs/wiki/PPM-format#header
-    this.frameDataLength = this.readUint32();
-    this.soundDataLength = this.readUint32();
+    this.#frameDataLength = this.readUint32();
+    this.#soundDataLength = this.readUint32();
     this.frameCount = this.readUint16() + 1;
     this.version = this.readUint16();
     // sound data offset = frame data offset + frame data length + sound effect flags
-    let soundDataOffset = 0x06A0 + this.frameDataLength + this.frameCount;
+    let soundDataOffset = 0x06A0 + this.#frameDataLength + this.frameCount;
     if (soundDataOffset % 4 !== 0) soundDataOffset += 4 - (soundDataOffset % 4);
-    assert(soundDataOffset < this.byteLength);
-    this.soundDataOffset = soundDataOffset;
+    assert(soundDataOffset < this.numBytes);
+    this.#soundDataOffset = soundDataOffset;
   }
 
-  private readFilename() {
+  #readFilename() {
     const mac = this.readHex(3);
     const random = this.readChars(13);
     const edits = this.readUint16().toString().padStart(3, '0');
     return `${ mac }_${ random }_${ edits }`;
   }
 
-  private decodeMeta() {
+  #decodeMeta() {
     // https://github.com/Flipnote-Collective/flipnote-studio-docs/wiki/PPM-format#metadata
-    assert(0x06A8 < this.byteLength);
+    assert(0x06A8 < this.numBytes);
     this.seek(0x10);
     const lock = this.readUint16();
     const thumbIndex = this.readInt16();
@@ -270,8 +352,8 @@ export class PpmParser extends BaseParser {
     const currentAuthorName = this.readWideChars(11);
     const parentAuthorId = this.readHex(8, true);
     const currentAuthorId = this.readHex(8, true);
-    const parentFilename = this.readFilename();
-    const currentFilename = this.readFilename();
+    const parentFilename = this.#readFilename();
+    const currentFilename = this.#readFilename();
     const rootAuthorId = this.readHex(8, true);
     this.seek(0x9A);
     const timestamp = dateFromNintendoTimestamp(this.readInt32());
@@ -315,7 +397,7 @@ export class PpmParser extends BaseParser {
     };
   }
 
-  private decodeAnimationHeader() {
+  #decodeAnimationHeader() {
     // jump to the start of the animation data section
     // https://github.com/Flipnote-Collective/flipnote-studio-docs/wiki/PPM-format#animation-header
     this.seek(0x06A0);
@@ -328,15 +410,15 @@ export class PpmParser extends BaseParser {
     const frameOffsets = new Uint32Array(numOffsets);
     for (let n = 0; n < numOffsets; n++) {
       const ptr = 0x06A8 + offsetTableLength + this.readUint32();
-      assert(ptr < this.byteLength, `Frame ${ n } pointer is out of bounds`);
+      assert(ptr < this.numBytes, `Frame ${ n } pointer is out of bounds`);
       frameOffsets[n] = ptr;
     }
-    this.frameOffsets = frameOffsets;
+    this.#frameOffsets = frameOffsets;
   }
 
-  private decodeSoundHeader() {
+  #decodeSoundHeader() {
     // https://github.com/Flipnote-Collective/flipnote-studio-docs/wiki/PPM-format#sound-header
-    let ptr = this.soundDataOffset;
+    let ptr = this.#soundDataOffset;
     this.seek(ptr);
     const bgmLen = this.readUint32();
     const se1Len = this.readUint32();
@@ -357,9 +439,9 @@ export class PpmParser extends BaseParser {
     this.soundMeta = soundMeta;
   }
 
-  private isKeyFrame(frameIndex: number) {
+  #isKeyFrame(frameIndex: number) {
     assertRange(frameIndex, 0, this.frameCount - 1, 'Frame index');
-    this.seek(this.frameOffsets[frameIndex]);
+    this.seek(this.#frameOffsets[frameIndex]);
     const header = this.readUint8();
     return (header >> 7) & 0x1;
   }
@@ -402,20 +484,20 @@ export class PpmParser extends BaseParser {
   decodeFrame(frameIndex: number) {
     assertRange(frameIndex, 0, this.frameCount - 1, 'Frame index');
     // return existing layer buffers if no new frame has been decoded since the last call
-    if (this.prevDecodedFrame === frameIndex)
-      return this.layerBuffers;
+    if (this.#prevDecodedFrame === frameIndex)
+      return this.#layerBuffers;
     // if necessary, decode previous frames until a keyframe is reached
-    if (this.prevDecodedFrame !== frameIndex - 1 && (!this.isKeyFrame(frameIndex)) && frameIndex !== 0)
+    if (this.#prevDecodedFrame !== frameIndex - 1 && (!this.#isKeyFrame(frameIndex)) && frameIndex !== 0)
       this.decodeFrame(frameIndex - 1);
-    this.prevDecodedFrame = frameIndex;
+    this.#prevDecodedFrame = frameIndex;
     // https://github.com/Flipnote-Collective/flipnote-studio-docs/wiki/PPM-format#animation-data
-    this.seek(this.frameOffsets[frameIndex]);
+    this.seek(this.#frameOffsets[frameIndex]);
     const header = this.readUint8();
     const isKeyFrame = (header >> 7) & 0x1;
     const isTranslated = (header >> 5) & 0x3;
     // reset current layer buffers
-    this.layerBuffers[0].fill(0);
-    this.layerBuffers[1].fill(0);
+    this.#layerBuffers[0].fill(0);
+    this.#layerBuffers[1].fill(0);
 
     let translateX = 0;
     let translateY = 0;
@@ -426,7 +508,7 @@ export class PpmParser extends BaseParser {
 
     // unpack line encodings for each layer
     for (let layerIndex = 0; layerIndex < 2; layerIndex++) {
-      const lineEncodingBuffer = this.lineEncodingBuffers[layerIndex];
+      const lineEncodingBuffer = this.#lineEncodingBuffers[layerIndex];
       lineEncodingBuffer.fill(0);
       for (let ptr = 0; ptr < lineEncodingBuffer.length;) {
         let byte = this.readUint8();
@@ -445,8 +527,8 @@ export class PpmParser extends BaseParser {
 
     // unpack layer bitmaps
     for (let layerIndex = 0; layerIndex < 2; layerIndex++) {
-      const pixelBuffer = this.layerBuffers[layerIndex];
-      const lineEncodingBuffer = this.lineEncodingBuffers[layerIndex];
+      const pixelBuffer = this.#layerBuffers[layerIndex];
+      const lineEncodingBuffer = this.#lineEncodingBuffers[layerIndex];
       for (let y = 0; y < PpmParser.height; y++) {
         let pixelBufferPtr = y * PpmParser.width;
         const lineType = lineEncodingBuffer[y];
@@ -512,10 +594,10 @@ export class PpmParser extends BaseParser {
       }
     }
     // if the current frame is based on changes from the previous one, merge them by XORing their values
-    const layer1 = this.layerBuffers[0];
-    const layer2 = this.layerBuffers[1];
-    const layer1Prev = this.prevLayerBuffers[0];
-    const layer2Prev = this.prevLayerBuffers[1];
+    const layer1 = this.#layerBuffers[0];
+    const layer2 = this.#layerBuffers[1];
+    const layer1Prev = this.#prevLayerBuffers[0];
+    const layer2Prev = this.#prevLayerBuffers[1];
     // fast diffing if the frame isn't translated
     if (!isKeyFrame && translateX === 0 && translateY === 0) {
       const size =  PpmParser.height * PpmParser.width;
@@ -547,14 +629,14 @@ export class PpmParser extends BaseParser {
       }
     }
     // copy the current layer buffers to the previous ones
-    this.prevLayerBuffers[0].set(this.layerBuffers[0]);
-    this.prevLayerBuffers[1].set(this.layerBuffers[1]);
-    return this.layerBuffers;
+    this.#prevLayerBuffers[0].set(this.#layerBuffers[0]);
+    this.#prevLayerBuffers[1].set(this.#layerBuffers[1]);
+    return this.#layerBuffers;
   }
 
   /** 
    * Get the color palette indices for a given frame. RGBA colors for these values can be indexed from {@link PpmParser.globalPalette}
-   *
+  
    * Returns an array where:
    *  - index 0 is the paper color index
    *  - index 1 is the layer 1 color index
@@ -563,7 +645,7 @@ export class PpmParser extends BaseParser {
   */
   getFramePaletteIndices(frameIndex: number) {
     assertRange(frameIndex, 0, this.frameCount - 1, 'Frame index');
-    this.seek(this.frameOffsets[frameIndex]);
+    this.seek(this.#frameOffsets[frameIndex]);
     const header = this.readUint8();
     const isInverted = (header & 0x1) !== 1;
     const penMap = [
@@ -600,7 +682,7 @@ export class PpmParser extends BaseParser {
    * @group Image
   */
   getIsKeyFrame(frameIndex: number) {
-    const flag = this.isKeyFrame(frameIndex) === 1;
+    const flag = this.#isKeyFrame(frameIndex) === 1;
     return [flag, flag];
   }
 
@@ -645,23 +727,23 @@ export class PpmParser extends BaseParser {
    * @group Audio
   */
   decodeSoundFlags() {
-    if (this.soundFlags !== undefined)
-      return this.soundFlags;
-    assert(0x06A0 + this.frameDataLength < this.byteLength);
+    if (this.#soundFlags !== undefined)
+      return this.#soundFlags;
+    assert(0x06A0 + this.#frameDataLength < this.numBytes);
     // https://github.com/Flipnote-Collective/flipnote-studio-docs/wiki/PPM-format#sound-effect-flags
-    this.seek(0x06A0 + this.frameDataLength);
+    this.seek(0x06A0 + this.#frameDataLength);
     const numFlags = this.frameCount;
     const flags = this.readBytes(numFlags);
-    this.soundFlags = new Array(numFlags);
+    this.#soundFlags = new Array(numFlags);
     for (let i = 0; i < numFlags; i++) {
       const byte = flags[i];
-      this.soundFlags[i] = [
+      this.#soundFlags[i] = [
         (byte & 0x1) !== 0, // SE1 bitflag
         (byte & 0x2) !== 0, // SE2 bitflag
         (byte & 0x4) !== 0, // SE3 bitflag
       ];
     }
-    return this.soundFlags;
+    return this.#soundFlags;
   }
 
   /**
@@ -683,7 +765,7 @@ export class PpmParser extends BaseParser {
    */
   getFrameSoundEffectFlags(frameIndex: number): FlipnoteSoundEffectFlags {
     assertRange(frameIndex, 0, this.frameCount - 1, 'Frame index');
-    this.seek(0x06A0 + this.frameDataLength + frameIndex);
+    this.seek(0x06A0 + this.#frameDataLength + frameIndex);
     const byte = this.readUint8();
     return {
       [FlipnoteSoundEffectTrack.SE1]: (byte & 0x1) !== 0,
@@ -700,7 +782,7 @@ export class PpmParser extends BaseParser {
   */
   getAudioTrackRaw(trackId: FlipnoteAudioTrack) {
     const trackMeta = this.soundMeta.get(trackId);
-    assert(trackMeta.ptr + trackMeta.length < this.byteLength);
+    assert(trackMeta.ptr + trackMeta.length < this.numBytes);
     this.seek(trackMeta.ptr);
     return this.readBytes(trackMeta.length);
   }
@@ -767,7 +849,7 @@ export class PpmParser extends BaseParser {
     return srcPcm;
   }
 
-  private pcmAudioMix(src: Int16Array, dst: Int16Array, dstOffset: number = 0) {
+  #pcmAudioMix(src: Int16Array, dst: Int16Array, dstOffset: number = 0) {
     const srcSize = src.length;
     const dstSize = dst.length;
     for (let n = 0; n < srcSize; n++) {
@@ -794,7 +876,7 @@ export class PpmParser extends BaseParser {
     // Mix background music
     if (hasBgm) {
       const bgmPcm = this.getAudioTrackPcm(FlipnoteAudioTrack.BGM, dstFreq);
-      this.pcmAudioMix(bgmPcm, master, 0);
+      this.#pcmAudioMix(bgmPcm, master, 0);
     }
     // Mix sound effects
     if (hasSe1 || hasSe2 || hasSe3) {
@@ -807,11 +889,11 @@ export class PpmParser extends BaseParser {
         const seOffset = Math.ceil(frame * samplesPerFrame);
         const flag = seFlags[frame];
         if (hasSe1 && flag[0])
-          this.pcmAudioMix(se1Pcm, master, seOffset);
+          this.#pcmAudioMix(se1Pcm, master, seOffset);
         if (hasSe2 && flag[1])
-          this.pcmAudioMix(se2Pcm, master, seOffset);
+          this.#pcmAudioMix(se2Pcm, master, seOffset);
         if (hasSe3 && flag[2])
-          this.pcmAudioMix(se3Pcm, master, seOffset);
+          this.#pcmAudioMix(se3Pcm, master, seOffset);
       }
     }
     this.audioClipRatio = pcmGetClippingRatio(master);
@@ -819,16 +901,11 @@ export class PpmParser extends BaseParser {
   }
 
   /**
-   * @groupDescription Verification
-   * ahsjkhaskjdhaslkhalsdhasldj
-   */
-
-  /**
    * Get the body of the Flipnote - the data that is digested for the signature
    * @group Verification
    */
   getBody() {
-    const bodyEnd = this.soundDataOffset + this.soundDataLength + 32;
+    const bodyEnd = this.#soundDataOffset + this.#soundDataLength + 32;
     return this.bytes.subarray(0, bodyEnd);
   }
 
@@ -837,7 +914,7 @@ export class PpmParser extends BaseParser {
   * @group Verification
   */
   getSignature() {
-    const bodyEnd = this.soundDataOffset + this.soundDataLength + 32;
+    const bodyEnd = this.#soundDataOffset + this.#soundDataLength + 32;
     return this.bytes.subarray(bodyEnd, bodyEnd + 128);
   }
   

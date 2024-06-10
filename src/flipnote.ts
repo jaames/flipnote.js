@@ -1,52 +1,20 @@
 // Entrypoint for web and node
 
-export {
-  Flipnote,
-  FlipnoteFormat,
-  FlipnoteVersion,
-  FlipnoteRegion,
-  FlipnoteMeta,
-  FlipnotePaletteColor,
-  FlipnotePaletteDefinition,
-  FlipnoteLayerVisibility,
-  FlipnoteAudioTrack,
-  FlipnoteAudioTrackInfo,
-  FlipnoteSoundEffectTrack,
-  FlipnoteSoundEffectFlags,
-  FlipnoteParserSettings,
-  KwzParserSettings,
-  PpmParserSettings,
-  KwzParser,
-  PpmParser,
-} from './parsers';
+export * from './parsers';
 
-export {
-  Player,
-  PlayerEvent,
-} from './player';
+export * from './player';
 
-export {
-  PlayerMixin
-} from './components/PlayerMixin';
+export * from './components/PlayerMixin';
 
-export {
-  GifImage,
-  WavAudio,
-} from './encoders';
+export * from './encoders';
 
-export {
-  CanvasInterface,
-  WebglCanvas,
-  Html5Canvas,
-  UniversalCanvas
-} from './renderers';
+export * from './renderers';
 
-export {
-  WebAudioPlayer
-} from './webaudio';
+export * from './webaudio';
 
-export * as id from './parsers/flipnoteStudioId';
-
+/**
+ * @namespace loaders
+ */
 export * as loaders from './loaders';
 
 export * from './parseSource';

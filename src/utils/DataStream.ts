@@ -1,4 +1,8 @@
-/** @internal */
+import { hexFromBytes } from './hex';
+
+/**
+ * @internal
+ */
 export const enum SeekOrigin {
   Begin,
   Current,
@@ -6,27 +10,42 @@ export const enum SeekOrigin {
 };
 
 /** 
- * Wrapper around the DataView API to keep track of the offset into the data
- * also provides some utils for reading ascii strings etc
+ * Wrapper around the DataView API to keep track of the offset into the data,
+ * also provides some utils for reading ascii strings etc.
  * @internal
  */
 export class DataStream {
 
+  /**
+  * @internal
+  */
   buffer: ArrayBuffer;
+  /**
+  * @internal
+  */
   pointer: number;
+  /**
+  * @internal
+  */
   data: DataView;
 
-  constructor(arrayBuffer: ArrayBuffer) {
-    this.buffer = arrayBuffer;
-    this.data = new DataView(arrayBuffer);
+  constructor(buffer: ArrayBuffer) {
+    this.buffer = buffer;
+    this.data = new DataView(buffer);
     this.pointer = 0;
   }
 
+  /**
+   * Returns the data as an Uint8Array of bytes.
+   */
   get bytes() {
     return new Uint8Array(this.buffer);
   }
 
-  get byteLength() {
+  /**
+   * Returns the total number of bytes in the data.
+   */
+  get numBytes() {
     return this.data.byteLength;
   }
 
@@ -171,12 +190,23 @@ export class DataStream {
    */
   readHex(count: number, reverse=false) {
     const bytes = this.readBytes(count);
-    let hex = [];
-    for (let i = 0; i < bytes.length; i++) {
-      hex.push(bytes[i].toString(16).padStart(2, '0'));
-    }
-    if (reverse) hex.reverse();
-    return hex.join('').toUpperCase();
+    return hexFromBytes(bytes, reverse);
+  }
+
+  /**
+   * @internal
+   */
+  readChar() {
+    const char = this.readUint8();
+    return String.fromCharCode(char);
+  }
+
+  /**
+   * @internal
+   */
+  readWideChar() {
+    const char = this.readUint16();
+    return String.fromCharCode(char);
   }
 
   /**
@@ -218,5 +248,9 @@ export class DataStream {
     }
     this.pointer += chars.byteLength;
     return str;
+  }
+
+  end() {
+    return this.pointer >= this.data.byteLength;
   }
 }

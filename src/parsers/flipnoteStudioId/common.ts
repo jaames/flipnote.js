@@ -14,7 +14,7 @@ import {
 } from '../types';
 
 /**
- * Indicates whether the input is a valid Flipnote Studio or Flipnote Studio 3D user ID
+ * Indicates whether the input is a valid Flipnote Studio or Flipnote Studio 3D user ID.
  */
 export const isFsid = (fsid: string) => isPpmFsid(fsid) || isKwzFsid(fsid);
 
@@ -85,9 +85,3 @@ export const kwzFsidToPpmFsid = (fsid: string): string => {
   }
   return null;
 };
-
-/**
- * Tests if a KWZ Flipnote Studio ID (from a Nintendo DSi Library Flipnote) matches a given PPM-formatted Flipnote Studio ID.
- */
-export const kwzFsidMatchesPpmFsid = (kwzFsid: string, ppmFsid: string): boolean =>
-  kwzFsidToPpmFsid(kwzFsid) === ppmFsid;

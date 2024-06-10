@@ -68,3 +68,15 @@ export const getKwzFsidRegion = (fsid: string): FlipnoteRegion => {
   }
   return FlipnoteRegion.UNKNOWN;
 };
+
+/**
+ * Format a hex string with dashes, to match the format used to display Flipnote Studio IDs in the app.
+ */
+export const kwzFsidFormat = (hex: string) =>
+  `${ hex.slice(0, 4) }-${ hex.slice(4, 8) }-${ hex.slice(8, 12) }-${hex.slice(12, 18)}`.toLowerCase();
+
+/**
+ * Unformat a Flipnote Studio ID string back into regular hex.
+ */
+export const kwzFsidUnformat = (fsid: string) =>
+  fsid.replace(/-/g, '').toUpperCase();

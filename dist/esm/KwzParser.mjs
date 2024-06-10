@@ -5,55 +5,122 @@
  * 2018 - 2024 James Daniel
  * Flipnote Studio is (c) Nintendo Co., Ltd. This project isn't affiliated with or endorsed by them in any way.
 */
+/******************************************************************************
+Copyright (c) Microsoft Corporation.
+
+Permission to use, copy, modify, and/or distribute this software for any
+purpose with or without fee is hereby granted.
+
+THE SOFTWARE IS PROVIDED "AS IS" AND THE AUTHOR DISCLAIMS ALL WARRANTIES WITH
+REGARD TO THIS SOFTWARE INCLUDING ALL IMPLIED WARRANTIES OF MERCHANTABILITY
+AND FITNESS. IN NO EVENT SHALL THE AUTHOR BE LIABLE FOR ANY SPECIAL, DIRECT,
+INDIRECT, OR CONSEQUENTIAL DAMAGES OR ANY DAMAGES WHATSOEVER RESULTING FROM
+LOSS OF USE, DATA OR PROFITS, WHETHER IN AN ACTION OF CONTRACT, NEGLIGENCE OR
+OTHER TORTIOUS ACTION, ARISING OUT OF OR IN CONNECTION WITH THE USE OR
+PERFORMANCE OF THIS SOFTWARE.
+***************************************************************************** */
+/* global Reflect, Promise, SuppressedError, Symbol */
+
+
+function __classPrivateFieldGet(receiver, state, kind, f) {
+    if (kind === "a" && !f) throw new TypeError("Private accessor was defined without a getter");
+    if (typeof state === "function" ? receiver !== state || !f : !state.has(receiver)) throw new TypeError("Cannot read private member from an object whose class did not declare it");
+    return kind === "m" ? f : kind === "a" ? f.call(receiver) : f ? f.value : state.get(receiver);
+}
+
+function __classPrivateFieldSet(receiver, state, value, kind, f) {
+    if (kind === "m") throw new TypeError("Private method is not writable");
+    if (kind === "a" && !f) throw new TypeError("Private accessor was defined without a setter");
+    if (typeof state === "function" ? receiver !== state || !f : !state.has(receiver)) throw new TypeError("Cannot write private member to an object whose class did not declare it");
+    return (kind === "a" ? f.call(receiver, value) : f ? f.value = value : state.set(receiver, value)), value;
+}
+
+typeof SuppressedError === "function" ? SuppressedError : function (error, suppressed, message) {
+    var e = new Error(message);
+    return e.name = "SuppressedError", e.error = error, e.suppressed = suppressed, e;
+};
+
 /**
  * Flipnote region
  */
 var FlipnoteRegion;
 (function (FlipnoteRegion) {
-    /** Europe and Oceania */
+    /**
+     * Europe and Oceania
+     */
     FlipnoteRegion["EUR"] = "EUR";
-    /** Americas */
+    /**
+     * Americas
+     */
     FlipnoteRegion["USA"] = "USA";
-    /** Japan */
+    /**
+     * Japan
+     */
     FlipnoteRegion["JPN"] = "JPN";
-    /** Unidentified (possibly never used) */
+    /**
+     * Unidentified (possibly never used)
+     */
     FlipnoteRegion["UNKNOWN"] = "UNKNOWN";
 })(FlipnoteRegion || (FlipnoteRegion = {}));
-/** Identifies which animation format a Flipnote uses */
+/**
+ * Identifies which animation format a Flipnote uses
+ */
 var FlipnoteFormat;
 (function (FlipnoteFormat) {
-    /** Animation format used by Flipnote Studio (Nintendo DSiWare) */
+    /**
+     * Animation format used by Flipnote Studio (Nintendo DSiWare)
+     */
     FlipnoteFormat["PPM"] = "PPM";
-    /** Animation format used by Flipnote Studio 3D (Nintendo 3DS) */
+    /**
+     * Animation format used by Flipnote Studio 3D (Nintendo 3DS)
+     */
     FlipnoteFormat["KWZ"] = "KWZ";
 })(FlipnoteFormat || (FlipnoteFormat = {}));
-/** Buffer format for a FlipnoteThumbImage  */
+/**
+ * Buffer format for a FlipnoteThumbImage
+ */
 var FlipnoteThumbImageFormat;
 (function (FlipnoteThumbImageFormat) {
     FlipnoteThumbImageFormat[FlipnoteThumbImageFormat["Jpeg"] = 0] = "Jpeg";
     FlipnoteThumbImageFormat[FlipnoteThumbImageFormat["Rgba"] = 1] = "Rgba";
 })(FlipnoteThumbImageFormat || (FlipnoteThumbImageFormat = {}));
-/** stereoscopic eye view (left/right) for 3D effects */
+/**
+ * stereoscopic eye view (left/right) for 3D effects
+ */
 var FlipnoteStereoscopicEye;
 (function (FlipnoteStereoscopicEye) {
     FlipnoteStereoscopicEye[FlipnoteStereoscopicEye["Left"] = 0] = "Left";
     FlipnoteStereoscopicEye[FlipnoteStereoscopicEye["Right"] = 1] = "Right";
 })(FlipnoteStereoscopicEye || (FlipnoteStereoscopicEye = {}));
-/** Identifies a Flipnote audio track type */
+/**
+ * Identifies a Flipnote audio track type
+ */
 var FlipnoteAudioTrack;
 (function (FlipnoteAudioTrack) {
-    /** Background music track */
+    /**
+     * Background music track
+     */
     FlipnoteAudioTrack[FlipnoteAudioTrack["BGM"] = 0] = "BGM";
-    /** Sound effect 1 track */
+    /**
+     * Sound effect 1 track
+     */
     FlipnoteAudioTrack[FlipnoteAudioTrack["SE1"] = 1] = "SE1";
-    /** Sound effect 2 track */
+    /**
+     * Sound effect 2 track
+     */
     FlipnoteAudioTrack[FlipnoteAudioTrack["SE2"] = 2] = "SE2";
-    /** Sound effect 3 track */
+    /**
+     * Sound effect 3 track
+     */
     FlipnoteAudioTrack[FlipnoteAudioTrack["SE3"] = 3] = "SE3";
-    /** Sound effect 4 track (only used by KWZ files) */
+    /**
+     * Sound effect 4 track (only used by KWZ files)
+     */
     FlipnoteAudioTrack[FlipnoteAudioTrack["SE4"] = 4] = "SE4";
 })(FlipnoteAudioTrack || (FlipnoteAudioTrack = {}));
-/** {@link FlipnoteAudioTrack}, but just sound effect tracks */
+/**
+ * {@link FlipnoteAudioTrack}, but just sound effect tracks
+ */
 var FlipnoteSoundEffectTrack;
 (function (FlipnoteSoundEffectTrack) {
     FlipnoteSoundEffectTrack[FlipnoteSoundEffectTrack["SE1"] = 1] = "SE1";
@@ -63,20 +130,38 @@ var FlipnoteSoundEffectTrack;
 })(FlipnoteSoundEffectTrack || (FlipnoteSoundEffectTrack = {}));
 
 /**
- * Wrapper around the DataView API to keep track of the offset into the data
- * also provides some utils for reading ascii strings etc
+ * @internal
+ */
+const hexFromBytes = (bytes, reverse = false) => {
+    let hex = [];
+    for (let i = 0; i < bytes.length; i++)
+        hex.push(bytes[i].toString(16).padStart(2, '0'));
+    if (reverse)
+        hex.reverse();
+    return hex.join('');
+};
+
+/**
+ * Wrapper around the DataView API to keep track of the offset into the data,
+ * also provides some utils for reading ascii strings etc.
  * @internal
  */
 class DataStream {
-    constructor(arrayBuffer) {
-        this.buffer = arrayBuffer;
-        this.data = new DataView(arrayBuffer);
+    constructor(buffer) {
+        this.buffer = buffer;
+        this.data = new DataView(buffer);
         this.pointer = 0;
     }
+    /**
+     * Returns the data as an Uint8Array of bytes.
+     */
     get bytes() {
         return new Uint8Array(this.buffer);
     }
-    get byteLength() {
+    /**
+     * Returns the total number of bytes in the data.
+     */
+    get numBytes() {
         return this.data.byteLength;
     }
     /**
@@ -205,13 +290,21 @@ class DataStream {
      */
     readHex(count, reverse = false) {
         const bytes = this.readBytes(count);
-        let hex = [];
-        for (let i = 0; i < bytes.length; i++) {
-            hex.push(bytes[i].toString(16).padStart(2, '0'));
-        }
-        if (reverse)
-            hex.reverse();
-        return hex.join('').toUpperCase();
+        return hexFromBytes(bytes, reverse);
+    }
+    /**
+     * @internal
+     */
+    readChar() {
+        const char = this.readUint8();
+        return String.fromCharCode(char);
+    }
+    /**
+     * @internal
+     */
+    readWideChar() {
+        const char = this.readUint16();
+        return String.fromCharCode(char);
     }
     /**
      * @internal
@@ -251,10 +344,13 @@ class DataStream {
         this.pointer += chars.byteLength;
         return str;
     }
+    end() {
+        return this.pointer >= this.data.byteLength;
+    }
 }
 
 /**
- * Clamp a number n between l and h
+ * Clamp a number n between l and h.
  * @internal
  */
 const clamp = (n, l, h) => {
@@ -265,13 +361,13 @@ const clamp = (n, l, h) => {
     return n;
 };
 /**
- * Interpolate between a and b - returns a if fac = 0, b if fac = 1, and somewhere between if 0 < fac < 1
+ * Interpolate between a and b - returns a if fac = 0, b if fac = 1, and somewhere between if 0 < fac < 1.
  * @internal
  */
 const lerp = (a, b, fac) => a + fac * (b - a);
 
 /**
- * Assert condition is true
+ * Assert condition is true.
  * @internal
  */
 function assert(condition, errMsg = 'Assert failed') {
@@ -279,12 +375,12 @@ function assert(condition, errMsg = 'Assert failed') {
         err(errMsg);
 }
 /**
- * Assert that a numerical value is between upper and lower bounds
+ * Assert that a numerical value is between upper and lower bounds.
  * @internal
  */
 const assertRange = (value, min, max, name = '') => assert(value >= min && value <= max, `flipnote.js error: ${name || 'value'} ${value} should be between ${min} and ${max}`);
 /**
- * Assert condition is true
+ * Assert condition is true.
  * @internal
  */
 const err = (errMsg = 'Assert failed') => {
@@ -292,8 +388,8 @@ const err = (errMsg = 'Assert failed') => {
 };
 
 /**
- * Webpack tries to replace inline calles to require() with polyfills,
- * but we don't want that, since we only use require to add extra features in NodeJs environments
+ * Webpack tries to replace inline calls to require() with polyfills,
+ * but we don't want that, since we only use require to add extra features in NodeJs environments.
  *
  * Modified from:
  * https://github.com/getsentry/sentry-javascript/blob/bd35d7364191ebed994fb132ff31031117c1823f/packages/utils/src/misc.ts#L9-L11
@@ -309,7 +405,7 @@ const dynamicRequire = (nodeModule, p) => {
     }
 };
 /**
- * Safely get global scope object
+ * Safely get global scope object.
  * @internal
  */
 const getGlobalObject = () => {
@@ -322,7 +418,7 @@ const getGlobalObject = () => {
                 : {};
 };
 /**
- * Utils to find out information about the current code execution environment
+ * Utils to find out information about the current code execution environment.
  */
 /**
  * Is the code running in a browser environment?
@@ -339,14 +435,16 @@ const isNode = typeof process !== 'undefined'
     && process.versions.node != null;
 // TODO: Deno support?
 /**
- * Is the code running in a Web Worker enviornment?
+ * Is the code running in a Web Worker environment?
  * @internal
  */
 const isWebWorker = typeof self === 'object'
     && self.constructor
     && self.constructor.name === 'DedicatedWorkerGlobalScope';
 
-/** @internal */
+/**
+ * @internal
+ */
 ((function () {
     if (!isBrowser) {
         return function () { };
@@ -371,26 +469,50 @@ var _a$1;
 */
 class BaseParser extends DataStream {
     constructor() {
-        /** Static file format info */
+        /**
+         * Static file format info
+         */
         super(...arguments);
-        /** Instance file format info */
-        /** Custom object tag */
+        /**
+         * Instance file format info
+         */
+        /**
+         * Custom object tag
+         */
         this[_a$1] = 'Flipnote';
-        /** Default formats used for {@link getTitle} */
+        /**
+         * Default formats used for {@link getTitle}.
+         * @group Meta
+         */
         this.titleFormats = {
             COMMENT: 'Comment by $USERNAME',
             FLIPNOTE: 'Flipnote by $USERNAME',
             ICON: 'Folder icon'
         };
-        /** File audio track info, see {@link FlipnoteAudioTrackInfo} */
+        /**
+         * File audio track info, see {@link FlipnoteAudioTrackInfo}.
+         * @group Meta
+         */
         this.soundMeta = new Map();
-        /** Animation frame global layer visibility */
+        /**
+         * Animation frame global layer visibility.
+         * @group Image
+         */
         this.layerVisibility = { 1: true, 2: true, 3: true };
-        /** (KWZ only) Indicates whether or not this file is a Flipnote Studio 3D folder icon */
+        /**
+         * (KWZ only) Indicates whether or not this file is a Flipnote Studio 3D folder icon.
+         * @group Meta
+         */
         this.isFolderIcon = false;
-        /** (KWZ only) Indicates whether or not this file is a handwritten comment from Flipnote Gallery World */
+        /**
+         * (KWZ only) Indicates whether or not this file is a handwritten comment from Flipnote Gallery World.
+         * @group Meta
+         */
         this.isComment = false;
-        /** (KWZ only) Indicates whether or not this Flipnote is a PPM to KWZ conversion from Flipnote Studio 3D's DSi Library service */
+        /**
+         * (KWZ only) Indicates whether or not this Flipnote is a PPM to KWZ conversion from Flipnote Studio 3D's DSi Library service.
+         * @group Meta
+         */
         this.isDsiLibraryNote = false;
     }
     /**
@@ -403,7 +525,7 @@ class BaseParser extends DataStream {
      *  ICON: 'Folder icon'
      * }
      * ```
-     * @group Utility
+     * @group Meta
      */
     getTitle(formats = this.titleFormats) {
         if (this.isFolderIcon)
@@ -412,7 +534,7 @@ class BaseParser extends DataStream {
         return title.replace('$USERNAME', this.meta.current.username);
     }
     /**
-     * Returns the Flipnote title when casting a parser instance to a string
+     * Returns the Flipnote title when casting a parser instance to a string.
      *
      * ```js
      * const str = 'Title: ' + note;
@@ -424,7 +546,7 @@ class BaseParser extends DataStream {
         return this.getTitle();
     }
     /**
-     * Allows for frame index iteration when using the parser instance as a for..of iterator
+     * Allows for frame index iteration when using the parser instance as a for..of iterator.
      *
      * ```js
      * for (const frameIndex of note) {
@@ -698,17 +820,27 @@ const getKwzFsidRegion = (fsid) => {
     }
     return FlipnoteRegion.UNKNOWN;
 };
+/**
+ * Format a hex string with dashes, to match the format used to display Flipnote Studio IDs in the app.
+ */
+const kwzFsidFormat = (hex) => `${hex.slice(0, 4)}-${hex.slice(4, 8)}-${hex.slice(8, 12)}-${hex.slice(12, 18)}`.toLowerCase();
 
-/** @internal */
+/**
+ * @internal
+ */
 const ADPCM_INDEX_TABLE_2BIT = new Int8Array([
     -1, 2, -1, 2
 ]);
-/** @internal */
+/**
+ * @internal
+ */
 const ADPCM_INDEX_TABLE_4BIT = new Int8Array([
     -1, -1, -1, -1, 2, 4, 6, 8,
     -1, -1, -1, -1, 2, 4, 6, 8
 ]);
-/** @internal */
+/**
+ * @internal
+ */
 const ADPCM_STEP_TABLE = new Int16Array([
     7, 8, 9, 10, 11, 12, 13, 14, 16, 17,
     19, 21, 23, 25, 28, 31, 34, 37, 41, 45,
@@ -720,7 +852,9 @@ const ADPCM_STEP_TABLE = new Int16Array([
     5894, 6484, 7132, 7845, 8630, 9493, 10442, 11487, 12635, 13899,
     15289, 16818, 18500, 20350, 22385, 24623, 27086, 29794, 32767, 0
 ]);
-/** @internal */
+/**
+ * @internal
+ */
 const pcmGetSample = (src, srcSize, srcPtr) => {
     if (srcPtr < 0 || srcPtr >= srcSize)
         return 0;
@@ -773,17 +907,17 @@ const pcmGetRms = (src) => {
 };
 
 /**
- * Number of seconds between the UNIX timestamp epoch (jan 1 1970) and the Nintendo timestamp epoch (jan 1 2000)
+ * Number of seconds between the UNIX timestamp epoch (jan 1 1970) and the Nintendo timestamp epoch (jan 1 2000).
  * @internal
  */
 const NINTENDO_UNIX_EPOCH = 946684800;
 /**
- * Convert a Nintendo DS or 3DS timestamp int to a JS Date object
+ * Convert a Nintendo DS or 3DS timestamp integer to a JS Date object.
  * @internal
  */
 const dateFromNintendoTimestamp = (timestamp) => new Date((timestamp + NINTENDO_UNIX_EPOCH) * 1000);
 /**
- * Get the duration (in seconds) of a number of framres running at a specified framerate
+ * Get the duration (in seconds) of a number of framres running at a specified framerate.
  * @internal
  */
 const timeGetNoteDuration = (frameCount, framerate) => 
@@ -832,7 +966,7 @@ const rsaLoadPublicKey = async (pemKey, hashType) => {
  */
 const rsaVerify = async (key, signature, data) => await SUBTLE_CRYPTO.verify(ALGORITHM, key, signature, data);
 
-var _a;
+var _KwzParser_instances, _KwzParser_settings, _KwzParser_sectionMap, _KwzParser_bodyEndOffset, _KwzParser_layerBuffers, _KwzParser_soundFlags, _KwzParser_prevDecodedFrame, _KwzParser_frameMetaOffsets, _KwzParser_frameDataOffsets, _KwzParser_frameLayerSizes, _KwzParser_bitIndex, _KwzParser_bitValue, _KwzParser_buildSectionMap, _KwzParser_readBits, _KwzParser_readFsid, _KwzParser_readFilename, _KwzParser_decodeMeta, _KwzParser_decodeMetaQuick, _KwzParser_getFrameOffsets, _KwzParser_decodeSoundHeader, _a;
 /**
  * KWZ framerates in frames per second, indexed by the in-app frame speed
  */
@@ -881,7 +1015,9 @@ const KWZ_LINE_TABLE = new Uint8Array(6561 * 8);
  * @internal
  */
 const KWZ_LINE_TABLE_SHIFT = new Uint8Array(6561 * 8);
-/** @internal */
+/**
+ * @internal
+ */
 var offset = 0;
 for (let a = 0; a < 3; a++)
     for (let b = 0; b < 3; b++)
@@ -939,53 +1075,95 @@ class KwzParser extends BaseParser {
      */
     constructor(arrayBuffer, settings = {}) {
         super(arrayBuffer);
-        /** File format type, reflects {@link KwzParser.format} */
+        _KwzParser_instances.add(this);
+        /**
+         * File format type, reflects {@link KwzParser.format}
+         */
         this.format = FlipnoteFormat.KWZ;
-        /** Custom object tag */
+        /**
+         * Custom object tag
+         */
         this[_a] = 'Flipnote Studio 3D KWZ animation file';
-        /** Animation frame width, reflects {@link KwzParser.width} */
+        /**
+         * Animation frame width, reflects {@link KwzParser.width}
+         */
         this.imageWidth = KwzParser.width;
-        /** Animation frame height, reflects {@link KwzParser.height} */
+        /**
+         * Animation frame height, reflects {@link KwzParser.height}
+         */
         this.imageHeight = KwzParser.height;
-        /** Animation frame aspect ratio, reflects {@link KwzParser.aspect} */
+        /**
+         * Animation frame aspect ratio, reflects {@link KwzParser.aspect}
+         */
         this.aspect = KwzParser.aspect;
-        /** X offset for the top-left corner of the animation frame */
+        /**
+         * X offset for the top-left corner of the animation frame
+         */
         this.imageOffsetX = 0;
-        /** Y offset for the top-left corner of the animation frame */
+        /**
+         * Y offset for the top-left corner of the animation frame
+         */
         this.imageOffsetY = 0;
-        /** Number of animation frame layers, reflects {@link KwzParser.numLayers} */
+        /**
+         * Number of animation frame layers, reflects {@link KwzParser.numLayers}
+         */
         this.numLayers = KwzParser.numLayers;
-        /** Number of colors per layer (aside from transparent), reflects {@link KwzParser.numLayerColors} */
+        /**
+         * Number of colors per layer (aside from transparent), reflects {@link KwzParser.numLayerColors}
+         */
         this.numLayerColors = KwzParser.numLayerColors;
-        /** key used for Flipnote verification, in PEM format */
+        /**
+         * key used for Flipnote verification, in PEM format
+         */
         this.publicKey = KwzParser.publicKey;
-        /** @internal */
+        /**
+         * @internal
+         */
         this.srcWidth = KwzParser.width;
-        /** Which audio tracks are available in this format, reflects {@link KwzParser.audioTracks} */
+        /**
+         * Which audio tracks are available in this format, reflects {@link KwzParser.audioTracks}
+         */
         this.audioTracks = KwzParser.audioTracks;
-        /** Which sound effect tracks are available in this format, reflects {@link KwzParser.soundEffectTracks} */
+        /**
+         * Which sound effect tracks are available in this format, reflects {@link KwzParser.soundEffectTracks}
+         */
         this.soundEffectTracks = KwzParser.soundEffectTracks;
-        /** Audio track base sample rate, reflects {@link KwzParser.rawSampleRate} */
+        /**
+         * Audio track base sample rate, reflects {@link KwzParser.rawSampleRate}
+         */
         this.rawSampleRate = KwzParser.rawSampleRate;
-        /** Audio output sample rate, reflects {@link KwzParser.sampleRate} */
+        /**
+         * Audio output sample rate, reflects {@link KwzParser.sampleRate}
+         */
         this.sampleRate = KwzParser.sampleRate;
-        /** Global animation frame color palette, reflects {@link KwzParser.globalPalette} */
+        /**
+         * Global animation frame color palette, reflects {@link KwzParser.globalPalette}
+         */
         this.globalPalette = KwzParser.globalPalette;
-        this.prevDecodedFrame = null;
-        this.bitIndex = 0;
-        this.bitValue = 0;
-        this.settings = { ...KwzParser.defaultSettings, ...settings };
-        this.layerBuffers = [
+        _KwzParser_settings.set(this, void 0);
+        _KwzParser_sectionMap.set(this, void 0);
+        _KwzParser_bodyEndOffset.set(this, void 0);
+        _KwzParser_layerBuffers.set(this, void 0);
+        _KwzParser_soundFlags.set(this, void 0); // sound effect flag cache
+        _KwzParser_prevDecodedFrame.set(this, null);
+        // frameMeta: Map<number, KwzFrameMeta>;
+        _KwzParser_frameMetaOffsets.set(this, void 0);
+        _KwzParser_frameDataOffsets.set(this, void 0);
+        _KwzParser_frameLayerSizes.set(this, void 0);
+        _KwzParser_bitIndex.set(this, 0);
+        _KwzParser_bitValue.set(this, 0);
+        __classPrivateFieldSet(this, _KwzParser_settings, { ...KwzParser.defaultSettings, ...settings }, "f");
+        __classPrivateFieldSet(this, _KwzParser_layerBuffers, [
             new Uint8Array(KwzParser.width * KwzParser.height),
             new Uint8Array(KwzParser.width * KwzParser.height),
             new Uint8Array(KwzParser.width * KwzParser.height),
-        ];
+        ], "f");
         // skip through the file and read all of the section headers so we can locate them
-        this.buildSectionMap();
+        __classPrivateFieldGet(this, _KwzParser_instances, "m", _KwzParser_buildSectionMap).call(this);
         // if the KIC section is present, we're dealing with a folder icon
         // these are single-frame KWZs without a KFH section for metadata, or a KSN section for sound
         // while the data for a full frame (320*240) is present, only the top-left 24*24 pixels are used
-        if (this.sectionMap.has('KIC')) {
+        if (__classPrivateFieldGet(this, _KwzParser_sectionMap, "f").has('KIC')) {
             this.isFolderIcon = true;
             // icons still use the full 320 * 240 frame size, so we just set up our image crop to deal with that
             this.imageWidth = 24;
@@ -994,27 +1172,27 @@ class KwzParser extends BaseParser {
             this.frameSpeed = 0;
             this.framerate = KWZ_FRAMERATES[0];
             this.thumbFrameIndex = 0;
-            this.getFrameOffsets();
+            __classPrivateFieldGet(this, _KwzParser_instances, "m", _KwzParser_getFrameOffsets).call(this);
         }
         // if the KSN section is not present, then this is a handwritten comment from the Flipnote Gallery World online service
         // these are single-frame KWZs, just with no sound
-        else if (!this.sectionMap.has('KSN')) {
+        else if (!__classPrivateFieldGet(this, _KwzParser_sectionMap, "f").has('KSN')) {
             this.isComment = true;
-            this.decodeMeta();
-            this.getFrameOffsets();
+            __classPrivateFieldGet(this, _KwzParser_instances, "m", _KwzParser_decodeMeta).call(this);
+            __classPrivateFieldGet(this, _KwzParser_instances, "m", _KwzParser_getFrameOffsets).call(this);
         }
         // else let's assume this is a regular note
         else {
-            this.decodeMeta();
-            this.getFrameOffsets();
-            this.decodeSoundHeader();
+            __classPrivateFieldGet(this, _KwzParser_instances, "m", _KwzParser_decodeMeta).call(this);
+            __classPrivateFieldGet(this, _KwzParser_instances, "m", _KwzParser_getFrameOffsets).call(this);
+            __classPrivateFieldGet(this, _KwzParser_instances, "m", _KwzParser_decodeSoundHeader).call(this);
         }
         // apply special optimizations for converted DSi library notes
-        if (this.settings.dsiLibraryNote) {
+        if (__classPrivateFieldGet(this, _KwzParser_settings, "f").dsiLibraryNote) {
             this.isDsiLibraryNote = true;
         }
         // automatically crop out the border around every frame
-        if (this.settings.borderCrop) {
+        if (__classPrivateFieldGet(this, _KwzParser_settings, "f").borderCrop) {
             // dsi library notes can be cropped to their original resolution
             if (this.isDsiLibraryNote) {
                 this.imageOffsetX = 32;
@@ -1031,192 +1209,6 @@ class KwzParser extends BaseParser {
             }
         }
     }
-    buildSectionMap() {
-        const fileSize = this.byteLength - 256;
-        const sectionMap = new Map();
-        let sectionCount = 0;
-        let ptr = 0;
-        // counting sections should mitigate against one of mrnbayoh's notehax exploits
-        while (ptr < fileSize && sectionCount < 6) {
-            this.seek(ptr);
-            const magic = this.readChars(4).substring(0, 3);
-            const length = this.readUint32();
-            sectionMap.set(magic, { ptr, length });
-            ptr += length + 8;
-            sectionCount += 1;
-        }
-        this.bodyEndOffset = ptr;
-        this.sectionMap = sectionMap;
-        assert(sectionMap.has('KMC') && sectionMap.has('KMI'));
-    }
-    readBits(num) {
-        // assert(num < 16);
-        if (this.bitIndex + num > 16) {
-            const nextBits = this.readUint16();
-            this.bitValue |= nextBits << (16 - this.bitIndex);
-            this.bitIndex -= 16;
-        }
-        const result = this.bitValue & BITMASKS[num];
-        this.bitValue >>= num;
-        this.bitIndex += num;
-        return result;
-    }
-    readFsid() {
-        if (this.settings.dsiLibraryNote) { // format as DSi PPM FSID
-            const hex = this.readHex(10, true);
-            return hex.slice(2, 18);
-        }
-        const hex = this.readHex(10);
-        return `${hex.slice(0, 4)}-${hex.slice(4, 8)}-${hex.slice(8, 12)}-${hex.slice(12, 18)}`.toLowerCase();
-    }
-    readFilename() {
-        const ptr = this.pointer;
-        const chars = this.readChars(28);
-        if (chars.length === 28)
-            return chars;
-        // Otherwise, this is likely a DSi Library note, 
-        // where sometimes Nintendo's buggy PPM converter includes the original packed PPM filename
-        this.seek(ptr);
-        const mac = this.readHex(3);
-        const random = this.readChars(13);
-        const edits = this.readUint16().toString().padStart(3, '0');
-        this.seek(ptr + 28);
-        return `${mac}_${random}_${edits}`;
-    }
-    decodeMeta() {
-        if (this.settings.quickMeta)
-            return this.decodeMetaQuick();
-        assert(this.sectionMap.has('KFH'));
-        this.seek(this.sectionMap.get('KFH').ptr + 12);
-        const creationTime = dateFromNintendoTimestamp(this.readUint32());
-        const modifiedTime = dateFromNintendoTimestamp(this.readUint32());
-        // const simonTime = 
-        this.readUint32();
-        const rootAuthorId = this.readFsid();
-        const parentAuthorId = this.readFsid();
-        const currentAuthorId = this.readFsid();
-        const rootAuthorName = this.readWideChars(11);
-        const parentAuthorName = this.readWideChars(11);
-        const currentAuthorName = this.readWideChars(11);
-        const rootFilename = this.readFilename();
-        const parentFilename = this.readFilename();
-        const currentFilename = this.readFilename();
-        const frameCount = this.readUint16();
-        const thumbIndex = this.readUint16();
-        const flags = this.readUint16();
-        const frameSpeed = this.readUint8();
-        const layerFlags = this.readUint8();
-        this.isSpinoff = (currentAuthorId !== parentAuthorId) || (currentAuthorId !== rootAuthorId);
-        this.frameCount = frameCount;
-        this.frameSpeed = frameSpeed;
-        this.framerate = KWZ_FRAMERATES[frameSpeed];
-        this.duration = timeGetNoteDuration(this.frameCount, this.framerate);
-        this.thumbFrameIndex = thumbIndex;
-        this.layerVisibility = {
-            1: (layerFlags & 0x1) === 0,
-            2: (layerFlags & 0x2) === 0,
-            3: (layerFlags & 0x3) === 0,
-        };
-        // Try to auto-detect whether the current author ID matches a converted PPM ID
-        // if (isKwzDsiLibraryFsid(currentAuthorId)) {
-        //   this.isDsiLibraryNote = true;
-        // }
-        this.meta = {
-            lock: (flags & 0x1) !== 0,
-            loop: (flags & 0x2) !== 0,
-            isSpinoff: this.isSpinoff,
-            frameCount: frameCount,
-            frameSpeed: frameSpeed,
-            duration: this.duration,
-            thumbIndex: thumbIndex,
-            timestamp: modifiedTime,
-            creationTimestamp: creationTime,
-            root: {
-                username: rootAuthorName,
-                fsid: rootAuthorId,
-                region: getKwzFsidRegion(rootAuthorId),
-                filename: rootFilename,
-                isDsiFilename: rootFilename.length !== 28
-            },
-            parent: {
-                username: parentAuthorName,
-                fsid: parentAuthorId,
-                region: getKwzFsidRegion(parentAuthorId),
-                filename: parentFilename,
-                isDsiFilename: parentFilename.length !== 28
-            },
-            current: {
-                username: currentAuthorName,
-                fsid: currentAuthorId,
-                region: getKwzFsidRegion(currentAuthorId),
-                filename: currentFilename,
-                isDsiFilename: currentFilename.length !== 28
-            },
-        };
-    }
-    decodeMetaQuick() {
-        assert(this.sectionMap.has('KFH'));
-        this.seek(this.sectionMap.get('KFH').ptr + 0x8 + 0xC4);
-        const frameCount = this.readUint16();
-        const thumbFrameIndex = this.readUint16();
-        this.readUint16();
-        const frameSpeed = this.readUint8();
-        const layerFlags = this.readUint8();
-        this.frameCount = frameCount;
-        this.thumbFrameIndex = thumbFrameIndex;
-        this.frameSpeed = frameSpeed;
-        this.framerate = KWZ_FRAMERATES[frameSpeed];
-        this.duration = timeGetNoteDuration(this.frameCount, this.framerate);
-        this.layerVisibility = {
-            1: (layerFlags & 0x1) === 0,
-            2: (layerFlags & 0x2) === 0,
-            3: (layerFlags & 0x3) === 0,
-        };
-    }
-    getFrameOffsets() {
-        assert(this.sectionMap.has('KMI') && this.sectionMap.has('KMC'));
-        const numFrames = this.frameCount;
-        const kmiSection = this.sectionMap.get('KMI');
-        const kmcSection = this.sectionMap.get('KMC');
-        assert(kmiSection.length / 28 >= numFrames);
-        const frameMetaOffsets = new Uint32Array(numFrames);
-        const frameDataOffsets = new Uint32Array(numFrames);
-        const frameLayerSizes = [];
-        let frameMetaPtr = kmiSection.ptr + 8;
-        let frameDataPtr = kmcSection.ptr + 12;
-        for (let frameIndex = 0; frameIndex < numFrames; frameIndex++) {
-            this.seek(frameMetaPtr + 4);
-            const layerASize = this.readUint16();
-            const layerBSize = this.readUint16();
-            const layerCSize = this.readUint16();
-            frameMetaOffsets[frameIndex] = frameMetaPtr;
-            frameDataOffsets[frameIndex] = frameDataPtr;
-            frameMetaPtr += 28;
-            frameDataPtr += layerASize + layerBSize + layerCSize;
-            assert(frameMetaPtr < this.byteLength, `frame${frameIndex} meta pointer out of bounds`);
-            assert(frameDataPtr < this.byteLength, `frame${frameIndex} data pointer out of bounds`);
-            frameLayerSizes.push([layerASize, layerBSize, layerCSize]);
-        }
-        this.frameMetaOffsets = frameMetaOffsets;
-        this.frameDataOffsets = frameDataOffsets;
-        this.frameLayerSizes = frameLayerSizes;
-    }
-    decodeSoundHeader() {
-        assert(this.sectionMap.has('KSN'));
-        let ptr = this.sectionMap.get('KSN').ptr + 8;
-        this.seek(ptr);
-        this.bgmSpeed = this.readUint32();
-        assert(this.bgmSpeed <= 10);
-        this.bgmrate = KWZ_FRAMERATES[this.bgmSpeed];
-        const trackSizes = new Uint32Array(this.buffer, ptr + 4, 20);
-        const soundMeta = new Map();
-        soundMeta.set(FlipnoteAudioTrack.BGM, { ptr: ptr += 28, length: trackSizes[0] });
-        soundMeta.set(FlipnoteAudioTrack.SE1, { ptr: ptr += trackSizes[0], length: trackSizes[1] });
-        soundMeta.set(FlipnoteAudioTrack.SE2, { ptr: ptr += trackSizes[1], length: trackSizes[2] });
-        soundMeta.set(FlipnoteAudioTrack.SE3, { ptr: ptr += trackSizes[2], length: trackSizes[3] });
-        soundMeta.set(FlipnoteAudioTrack.SE4, { ptr: ptr += trackSizes[3], length: trackSizes[4] });
-        this.soundMeta = soundMeta;
-    }
     /**
      * Decodes the thumbnail image embedded in the Flipnote. Will return a {@link FlipnoteThumbImage} containing JPEG data.
      *
@@ -1224,8 +1216,8 @@ class KwzParser extends BaseParser {
      * @group Meta
      */
     getThumbnailImage() {
-        assert(this.sectionMap.has('KTN'), 'KTN section missing - Note that folder icons and comments do not contain thumbnail data');
-        const ktn = this.sectionMap.get('KTN');
+        assert(__classPrivateFieldGet(this, _KwzParser_sectionMap, "f").has('KTN'), 'KTN section missing - Note that folder icons and comments do not contain thumbnail data');
+        const ktn = __classPrivateFieldGet(this, _KwzParser_sectionMap, "f").get('KTN');
         this.seek(ktn.ptr + 12);
         const bytes = this.readBytes(ktn.length - 12);
         return {
@@ -1250,7 +1242,7 @@ class KwzParser extends BaseParser {
     */
     getFramePaletteIndices(frameIndex) {
         assertRange(frameIndex, 0, this.frameCount - 1, 'Frame index');
-        this.seek(this.frameMetaOffsets[frameIndex]);
+        this.seek(__classPrivateFieldGet(this, _KwzParser_frameMetaOffsets, "f")[frameIndex]);
         const flags = this.readUint32();
         return [
             flags & 0xF,
@@ -1282,7 +1274,7 @@ class KwzParser extends BaseParser {
     }
     getFrameDiffingFlag(frameIndex) {
         assertRange(frameIndex, 0, this.frameCount - 1, 'Frame index');
-        this.seek(this.frameMetaOffsets[frameIndex]);
+        this.seek(__classPrivateFieldGet(this, _KwzParser_frameMetaOffsets, "f")[frameIndex]);
         return (this.readUint32() >> 4) & 0x07;
     }
     /**
@@ -1305,7 +1297,7 @@ class KwzParser extends BaseParser {
     */
     getFrameLayerDepths(frameIndex) {
         assertRange(frameIndex, 0, this.frameCount - 1, 'Frame index');
-        this.seek(this.frameMetaOffsets[frameIndex] + 0x14);
+        this.seek(__classPrivateFieldGet(this, _KwzParser_frameMetaOffsets, "f")[frameIndex] + 0x14);
         return [
             this.readUint8(),
             this.readUint8(),
@@ -1319,8 +1311,8 @@ class KwzParser extends BaseParser {
     */
     getFrameAuthor(frameIndex) {
         assertRange(frameIndex, 0, this.frameCount - 1, 'Frame index');
-        this.seek(this.frameMetaOffsets[frameIndex] + 0xA);
-        return this.readFsid();
+        this.seek(__classPrivateFieldGet(this, _KwzParser_frameMetaOffsets, "f")[frameIndex] + 0xA);
+        return __classPrivateFieldGet(this, _KwzParser_instances, "m", _KwzParser_readFsid).call(this);
     }
     /**
      * Get the camera flags for a given frame
@@ -1328,7 +1320,7 @@ class KwzParser extends BaseParser {
      * @returns Array of booleans, indicating whether each layer uses a photo or not
     */
     getFrameCameraFlags(frameIndex) {
-        this.seek(this.frameMetaOffsets[frameIndex] + 0x1A);
+        this.seek(__classPrivateFieldGet(this, _KwzParser_frameMetaOffsets, "f")[frameIndex] + 0x1A);
         const cameraFlags = this.readUint8();
         return [
             (cameraFlags & 0x1) !== 0,
@@ -1352,10 +1344,10 @@ class KwzParser extends BaseParser {
     decodeFrame(frameIndex, diffingFlag = 0x7, isPrevFrame = false) {
         assertRange(frameIndex, 0, this.frameCount - 1, 'Frame index');
         // return existing layer buffers if no new frame has been decoded since the last call
-        if (this.prevDecodedFrame === frameIndex)
-            return this.layerBuffers;
+        if (__classPrivateFieldGet(this, _KwzParser_prevDecodedFrame, "f") === frameIndex)
+            return __classPrivateFieldGet(this, _KwzParser_layerBuffers, "f");
         // the prevDecodedFrame check is an optimization for decoding frames in full sequence
-        if (this.prevDecodedFrame !== frameIndex - 1 && frameIndex !== 0) {
+        if (__classPrivateFieldGet(this, _KwzParser_prevDecodedFrame, "f") !== frameIndex - 1 && frameIndex !== 0) {
             // if this frame is being decoded as a prev frame, then we only want to decode the layers necessary
             // diffingFlag is negated with ~ so if no layers are diff-based, diffingFlag is 0
             if (isPrevFrame)
@@ -1364,16 +1356,16 @@ class KwzParser extends BaseParser {
             if (diffingFlag !== 0)
                 this.decodeFrame(frameIndex - 1, diffingFlag, true);
         }
-        let framePtr = this.frameDataOffsets[frameIndex];
-        const layerSizes = this.frameLayerSizes[frameIndex];
+        let framePtr = __classPrivateFieldGet(this, _KwzParser_frameDataOffsets, "f")[frameIndex];
+        const layerSizes = __classPrivateFieldGet(this, _KwzParser_frameLayerSizes, "f")[frameIndex];
         for (let layerIndex = 0; layerIndex < 3; layerIndex++) {
             // dsi gallery conversions don't use the third layer, so it can be skipped if this is set
-            if (this.settings.dsiLibraryNote && layerIndex === 3)
+            if (__classPrivateFieldGet(this, _KwzParser_settings, "f").dsiLibraryNote && layerIndex === 3)
                 break;
             this.seek(framePtr);
             let layerSize = layerSizes[layerIndex];
             framePtr += layerSize;
-            const pixelBuffer = this.layerBuffers[layerIndex];
+            const pixelBuffer = __classPrivateFieldGet(this, _KwzParser_layerBuffers, "f")[layerIndex];
             // if the layer is 38 bytes then it hasn't changed at all since the previous frame, so we can skip it
             if (layerSize === 38)
                 continue;
@@ -1381,8 +1373,8 @@ class KwzParser extends BaseParser {
             if (((diffingFlag >> layerIndex) & 0x1) === 0)
                 continue;
             // reset readbits state
-            this.bitIndex = 16;
-            this.bitValue = 0;
+            __classPrivateFieldSet(this, _KwzParser_bitIndex, 16, "f");
+            __classPrivateFieldSet(this, _KwzParser_bitValue, 0, "f");
             // tile skip counter
             let skipTileCounter = 0;
             for (let tileOffsetY = 0; tileOffsetY < 240; tileOffsetY += 128) {
@@ -1402,9 +1394,9 @@ class KwzParser extends BaseParser {
                                 continue;
                             }
                             let pixelBufferPtr = y * KwzParser.width + x;
-                            const tileType = this.readBits(3);
+                            const tileType = __classPrivateFieldGet(this, _KwzParser_instances, "m", _KwzParser_readBits).call(this, 3);
                             if (tileType === 0) {
-                                const linePtr = this.readBits(5) * 8;
+                                const linePtr = __classPrivateFieldGet(this, _KwzParser_instances, "m", _KwzParser_readBits).call(this, 5) * 8;
                                 const pixels = KWZ_LINE_TABLE_COMMON.subarray(linePtr, linePtr + 8);
                                 pixelBuffer.set(pixels, pixelBufferPtr);
                                 pixelBuffer.set(pixels, pixelBufferPtr += 320);
@@ -1416,7 +1408,7 @@ class KwzParser extends BaseParser {
                                 pixelBuffer.set(pixels, pixelBufferPtr += 320);
                             }
                             else if (tileType === 1) {
-                                const linePtr = this.readBits(13) * 8;
+                                const linePtr = __classPrivateFieldGet(this, _KwzParser_instances, "m", _KwzParser_readBits).call(this, 13) * 8;
                                 const pixels = KWZ_LINE_TABLE.subarray(linePtr, linePtr + 8);
                                 pixelBuffer.set(pixels, pixelBufferPtr);
                                 pixelBuffer.set(pixels, pixelBufferPtr += 320);
@@ -1428,7 +1420,7 @@ class KwzParser extends BaseParser {
                                 pixelBuffer.set(pixels, pixelBufferPtr += 320);
                             }
                             else if (tileType === 2) {
-                                const linePtr = this.readBits(5) * 8;
+                                const linePtr = __classPrivateFieldGet(this, _KwzParser_instances, "m", _KwzParser_readBits).call(this, 5) * 8;
                                 const a = KWZ_LINE_TABLE_COMMON.subarray(linePtr, linePtr + 8);
                                 const b = KWZ_LINE_TABLE_COMMON_SHIFT.subarray(linePtr, linePtr + 8);
                                 pixelBuffer.set(a, pixelBufferPtr);
@@ -1441,7 +1433,7 @@ class KwzParser extends BaseParser {
                                 pixelBuffer.set(b, pixelBufferPtr += 320);
                             }
                             else if (tileType === 3) {
-                                const linePtr = this.readBits(13) * 8;
+                                const linePtr = __classPrivateFieldGet(this, _KwzParser_instances, "m", _KwzParser_readBits).call(this, 13) * 8;
                                 const a = KWZ_LINE_TABLE.subarray(linePtr, linePtr + 8);
                                 const b = KWZ_LINE_TABLE_SHIFT.subarray(linePtr, linePtr + 8);
                                 pixelBuffer.set(a, pixelBufferPtr);
@@ -1455,15 +1447,15 @@ class KwzParser extends BaseParser {
                             }
                             // most common tile type
                             else if (tileType === 4) {
-                                const flags = this.readBits(8);
+                                const flags = __classPrivateFieldGet(this, _KwzParser_instances, "m", _KwzParser_readBits).call(this, 8);
                                 for (let mask = 1; mask < 0xFF; mask <<= 1) {
                                     if (flags & mask) {
-                                        const linePtr = this.readBits(5) * 8;
+                                        const linePtr = __classPrivateFieldGet(this, _KwzParser_instances, "m", _KwzParser_readBits).call(this, 5) * 8;
                                         const pixels = KWZ_LINE_TABLE_COMMON.subarray(linePtr, linePtr + 8);
                                         pixelBuffer.set(pixels, pixelBufferPtr);
                                     }
                                     else {
-                                        const linePtr = this.readBits(13) * 8;
+                                        const linePtr = __classPrivateFieldGet(this, _KwzParser_instances, "m", _KwzParser_readBits).call(this, 13) * 8;
                                         const pixels = KWZ_LINE_TABLE.subarray(linePtr, linePtr + 8);
                                         pixelBuffer.set(pixels, pixelBufferPtr);
                                     }
@@ -1471,24 +1463,24 @@ class KwzParser extends BaseParser {
                                 }
                             }
                             else if (tileType === 5) {
-                                skipTileCounter = this.readBits(5);
+                                skipTileCounter = __classPrivateFieldGet(this, _KwzParser_instances, "m", _KwzParser_readBits).call(this, 5);
                                 continue;
                             }
                             // type 6 doesnt exist
                             else if (tileType === 7) {
-                                let pattern = this.readBits(2);
-                                let useCommonLines = this.readBits(1);
+                                let pattern = __classPrivateFieldGet(this, _KwzParser_instances, "m", _KwzParser_readBits).call(this, 2);
+                                let useCommonLines = __classPrivateFieldGet(this, _KwzParser_instances, "m", _KwzParser_readBits).call(this, 1);
                                 let a, b;
                                 if (useCommonLines !== 0) {
-                                    const linePtrA = this.readBits(5) * 8;
-                                    const linePtrB = this.readBits(5) * 8;
+                                    const linePtrA = __classPrivateFieldGet(this, _KwzParser_instances, "m", _KwzParser_readBits).call(this, 5) * 8;
+                                    const linePtrB = __classPrivateFieldGet(this, _KwzParser_instances, "m", _KwzParser_readBits).call(this, 5) * 8;
                                     a = KWZ_LINE_TABLE_COMMON.subarray(linePtrA, linePtrA + 8);
                                     b = KWZ_LINE_TABLE_COMMON.subarray(linePtrB, linePtrB + 8);
                                     pattern += 1;
                                 }
                                 else {
-                                    const linePtrA = this.readBits(13) * 8;
-                                    const linePtrB = this.readBits(13) * 8;
+                                    const linePtrA = __classPrivateFieldGet(this, _KwzParser_instances, "m", _KwzParser_readBits).call(this, 13) * 8;
+                                    const linePtrB = __classPrivateFieldGet(this, _KwzParser_instances, "m", _KwzParser_readBits).call(this, 13) * 8;
                                     a = KWZ_LINE_TABLE.subarray(linePtrA, linePtrA + 8);
                                     b = KWZ_LINE_TABLE.subarray(linePtrB, linePtrB + 8);
                                 }
@@ -1540,12 +1532,12 @@ class KwzParser extends BaseParser {
                 }
             }
         }
-        this.prevDecodedFrame = frameIndex;
-        return this.layerBuffers;
+        __classPrivateFieldSet(this, _KwzParser_prevDecodedFrame, frameIndex, "f");
+        return __classPrivateFieldGet(this, _KwzParser_layerBuffers, "f");
     }
     decodeFrameSoundFlags(frameIndex) {
         assertRange(frameIndex, 0, this.frameCount - 1, 'Frame index');
-        this.seek(this.frameMetaOffsets[frameIndex] + 0x17);
+        this.seek(__classPrivateFieldGet(this, _KwzParser_frameMetaOffsets, "f")[frameIndex] + 0x17);
         const soundFlags = this.readUint8();
         return [
             (soundFlags & 0x1) !== 0,
@@ -1559,12 +1551,12 @@ class KwzParser extends BaseParser {
      * @group Audio
     */
     decodeSoundFlags() {
-        if (this.soundFlags !== undefined)
-            return this.soundFlags;
-        this.soundFlags = new Array(this.frameCount)
+        if (__classPrivateFieldGet(this, _KwzParser_soundFlags, "f") !== undefined)
+            return __classPrivateFieldGet(this, _KwzParser_soundFlags, "f");
+        __classPrivateFieldSet(this, _KwzParser_soundFlags, new Array(this.frameCount)
             .fill(false)
-            .map((_, i) => this.decodeFrameSoundFlags(i));
-        return this.soundFlags;
+            .map((_, i) => this.decodeFrameSoundFlags(i)), "f");
+        return __classPrivateFieldGet(this, _KwzParser_soundFlags, "f");
     }
     /**
      * Get the sound effect usage flags for every frame
@@ -1599,7 +1591,7 @@ class KwzParser extends BaseParser {
     */
     getAudioTrackRaw(trackId) {
         const trackMeta = this.soundMeta.get(trackId);
-        assert(trackMeta.ptr + trackMeta.length < this.byteLength);
+        assert(trackMeta.ptr + trackMeta.length < this.numBytes);
         return new Uint8Array(this.buffer, trackMeta.ptr, trackMeta.length);
     }
     decodeAdpcm(src, dst, predictor = 0, stepIndex = 0) {
@@ -1660,7 +1652,7 @@ class KwzParser extends BaseParser {
      * @group Audio
     */
     decodeAudioTrack(trackId) {
-        const settings = this.settings;
+        const settings = __classPrivateFieldGet(this, _KwzParser_settings, "f");
         const src = this.getAudioTrackRaw(trackId);
         const dstSize = this.rawSampleRate * 60; // enough for 60 seconds, the max bgm size
         const dst = new Int16Array(dstSize);
@@ -1787,7 +1779,7 @@ class KwzParser extends BaseParser {
      * @group Verification
      */
     getBody() {
-        const bodyEnd = this.bodyEndOffset;
+        const bodyEnd = __classPrivateFieldGet(this, _KwzParser_bodyEndOffset, "f");
         return this.bytes.subarray(0, bodyEnd);
     }
     /**
@@ -1795,7 +1787,7 @@ class KwzParser extends BaseParser {
      * @group Verification
      */
     getSignature() {
-        const bodyEnd = this.bodyEndOffset;
+        const bodyEnd = __classPrivateFieldGet(this, _KwzParser_bodyEndOffset, "f");
         return this.bytes.subarray(bodyEnd, bodyEnd + 256);
     }
     /**
@@ -1807,8 +1799,187 @@ class KwzParser extends BaseParser {
         return await rsaVerify(key, this.getSignature(), this.getBody());
     }
 }
-_a = Symbol.toStringTag;
-/** Default KWZ parser settings */
+_KwzParser_settings = new WeakMap(), _KwzParser_sectionMap = new WeakMap(), _KwzParser_bodyEndOffset = new WeakMap(), _KwzParser_layerBuffers = new WeakMap(), _KwzParser_soundFlags = new WeakMap(), _KwzParser_prevDecodedFrame = new WeakMap(), _KwzParser_frameMetaOffsets = new WeakMap(), _KwzParser_frameDataOffsets = new WeakMap(), _KwzParser_frameLayerSizes = new WeakMap(), _KwzParser_bitIndex = new WeakMap(), _KwzParser_bitValue = new WeakMap(), _KwzParser_instances = new WeakSet(), _a = Symbol.toStringTag, _KwzParser_buildSectionMap = function _KwzParser_buildSectionMap() {
+    const fileSize = this.numBytes - 256;
+    const sectionMap = new Map();
+    let sectionCount = 0;
+    let ptr = 0;
+    // counting sections should mitigate against one of mrnbayoh's notehax exploits
+    while (ptr < fileSize && sectionCount < 6) {
+        this.seek(ptr);
+        const magic = this.readChars(4).substring(0, 3);
+        const length = this.readUint32();
+        sectionMap.set(magic, { ptr, length });
+        ptr += length + 8;
+        sectionCount += 1;
+    }
+    __classPrivateFieldSet(this, _KwzParser_bodyEndOffset, ptr, "f");
+    __classPrivateFieldSet(this, _KwzParser_sectionMap, sectionMap, "f");
+    assert(sectionMap.has('KMC') && sectionMap.has('KMI'));
+}, _KwzParser_readBits = function _KwzParser_readBits(num) {
+    // assert(num < 16);
+    if (__classPrivateFieldGet(this, _KwzParser_bitIndex, "f") + num > 16) {
+        const nextBits = this.readUint16();
+        __classPrivateFieldSet(this, _KwzParser_bitValue, __classPrivateFieldGet(this, _KwzParser_bitValue, "f") | nextBits << (16 - __classPrivateFieldGet(this, _KwzParser_bitIndex, "f")), "f");
+        __classPrivateFieldSet(this, _KwzParser_bitIndex, __classPrivateFieldGet(this, _KwzParser_bitIndex, "f") - 16, "f");
+    }
+    const result = __classPrivateFieldGet(this, _KwzParser_bitValue, "f") & BITMASKS[num];
+    __classPrivateFieldSet(this, _KwzParser_bitValue, __classPrivateFieldGet(this, _KwzParser_bitValue, "f") >> num, "f");
+    __classPrivateFieldSet(this, _KwzParser_bitIndex, __classPrivateFieldGet(this, _KwzParser_bitIndex, "f") + num, "f");
+    return result;
+}, _KwzParser_readFsid = function _KwzParser_readFsid() {
+    if (__classPrivateFieldGet(this, _KwzParser_settings, "f").dsiLibraryNote) { // format as DSi PPM FSID
+        const hex = this.readHex(10, true);
+        return hex.slice(2, 18);
+    }
+    return kwzFsidFormat(this.readHex(10));
+}, _KwzParser_readFilename = function _KwzParser_readFilename() {
+    const ptr = this.pointer;
+    const chars = this.readChars(28);
+    if (chars.length === 28)
+        return chars;
+    // Otherwise, this is likely a DSi Library note, 
+    // where sometimes Nintendo's buggy PPM converter includes the original packed PPM filename
+    this.seek(ptr);
+    const mac = this.readHex(3);
+    const random = this.readChars(13);
+    const edits = this.readUint16().toString().padStart(3, '0');
+    this.seek(ptr + 28);
+    return `${mac}_${random}_${edits}`;
+}, _KwzParser_decodeMeta = function _KwzParser_decodeMeta() {
+    if (__classPrivateFieldGet(this, _KwzParser_settings, "f").quickMeta)
+        return __classPrivateFieldGet(this, _KwzParser_instances, "m", _KwzParser_decodeMetaQuick).call(this);
+    assert(__classPrivateFieldGet(this, _KwzParser_sectionMap, "f").has('KFH'));
+    this.seek(__classPrivateFieldGet(this, _KwzParser_sectionMap, "f").get('KFH').ptr + 12);
+    const creationTime = dateFromNintendoTimestamp(this.readUint32());
+    const modifiedTime = dateFromNintendoTimestamp(this.readUint32());
+    // const simonTime = 
+    this.readUint32();
+    const rootAuthorId = __classPrivateFieldGet(this, _KwzParser_instances, "m", _KwzParser_readFsid).call(this);
+    const parentAuthorId = __classPrivateFieldGet(this, _KwzParser_instances, "m", _KwzParser_readFsid).call(this);
+    const currentAuthorId = __classPrivateFieldGet(this, _KwzParser_instances, "m", _KwzParser_readFsid).call(this);
+    const rootAuthorName = this.readWideChars(11);
+    const parentAuthorName = this.readWideChars(11);
+    const currentAuthorName = this.readWideChars(11);
+    const rootFilename = __classPrivateFieldGet(this, _KwzParser_instances, "m", _KwzParser_readFilename).call(this);
+    const parentFilename = __classPrivateFieldGet(this, _KwzParser_instances, "m", _KwzParser_readFilename).call(this);
+    const currentFilename = __classPrivateFieldGet(this, _KwzParser_instances, "m", _KwzParser_readFilename).call(this);
+    const frameCount = this.readUint16();
+    const thumbIndex = this.readUint16();
+    const flags = this.readUint16();
+    const frameSpeed = this.readUint8();
+    const layerFlags = this.readUint8();
+    this.isSpinoff = (currentAuthorId !== parentAuthorId) || (currentAuthorId !== rootAuthorId);
+    this.frameCount = frameCount;
+    this.frameSpeed = frameSpeed;
+    this.framerate = KWZ_FRAMERATES[frameSpeed];
+    this.duration = timeGetNoteDuration(this.frameCount, this.framerate);
+    this.thumbFrameIndex = thumbIndex;
+    this.layerVisibility = {
+        1: (layerFlags & 0x1) === 0,
+        2: (layerFlags & 0x2) === 0,
+        3: (layerFlags & 0x3) === 0,
+    };
+    // Try to auto-detect whether the current author ID matches a converted PPM ID
+    // if (isKwzDsiLibraryFsid(currentAuthorId)) {
+    //   this.isDsiLibraryNote = true;
+    // }
+    this.meta = {
+        lock: (flags & 0x1) !== 0,
+        loop: (flags & 0x2) !== 0,
+        isSpinoff: this.isSpinoff,
+        frameCount: frameCount,
+        frameSpeed: frameSpeed,
+        duration: this.duration,
+        thumbIndex: thumbIndex,
+        timestamp: modifiedTime,
+        creationTimestamp: creationTime,
+        root: {
+            username: rootAuthorName,
+            fsid: rootAuthorId,
+            region: getKwzFsidRegion(rootAuthorId),
+            filename: rootFilename,
+            isDsiFilename: rootFilename.length !== 28
+        },
+        parent: {
+            username: parentAuthorName,
+            fsid: parentAuthorId,
+            region: getKwzFsidRegion(parentAuthorId),
+            filename: parentFilename,
+            isDsiFilename: parentFilename.length !== 28
+        },
+        current: {
+            username: currentAuthorName,
+            fsid: currentAuthorId,
+            region: getKwzFsidRegion(currentAuthorId),
+            filename: currentFilename,
+            isDsiFilename: currentFilename.length !== 28
+        },
+    };
+}, _KwzParser_decodeMetaQuick = function _KwzParser_decodeMetaQuick() {
+    assert(__classPrivateFieldGet(this, _KwzParser_sectionMap, "f").has('KFH'));
+    this.seek(__classPrivateFieldGet(this, _KwzParser_sectionMap, "f").get('KFH').ptr + 0x8 + 0xC4);
+    const frameCount = this.readUint16();
+    const thumbFrameIndex = this.readUint16();
+    this.readUint16();
+    const frameSpeed = this.readUint8();
+    const layerFlags = this.readUint8();
+    this.frameCount = frameCount;
+    this.thumbFrameIndex = thumbFrameIndex;
+    this.frameSpeed = frameSpeed;
+    this.framerate = KWZ_FRAMERATES[frameSpeed];
+    this.duration = timeGetNoteDuration(this.frameCount, this.framerate);
+    this.layerVisibility = {
+        1: (layerFlags & 0x1) === 0,
+        2: (layerFlags & 0x2) === 0,
+        3: (layerFlags & 0x3) === 0,
+    };
+}, _KwzParser_getFrameOffsets = function _KwzParser_getFrameOffsets() {
+    assert(__classPrivateFieldGet(this, _KwzParser_sectionMap, "f").has('KMI') && __classPrivateFieldGet(this, _KwzParser_sectionMap, "f").has('KMC'));
+    const numFrames = this.frameCount;
+    const kmiSection = __classPrivateFieldGet(this, _KwzParser_sectionMap, "f").get('KMI');
+    const kmcSection = __classPrivateFieldGet(this, _KwzParser_sectionMap, "f").get('KMC');
+    assert(kmiSection.length / 28 >= numFrames);
+    const frameMetaOffsets = new Uint32Array(numFrames);
+    const frameDataOffsets = new Uint32Array(numFrames);
+    const frameLayerSizes = [];
+    let frameMetaPtr = kmiSection.ptr + 8;
+    let frameDataPtr = kmcSection.ptr + 12;
+    for (let frameIndex = 0; frameIndex < numFrames; frameIndex++) {
+        this.seek(frameMetaPtr + 4);
+        const layerASize = this.readUint16();
+        const layerBSize = this.readUint16();
+        const layerCSize = this.readUint16();
+        frameMetaOffsets[frameIndex] = frameMetaPtr;
+        frameDataOffsets[frameIndex] = frameDataPtr;
+        frameMetaPtr += 28;
+        frameDataPtr += layerASize + layerBSize + layerCSize;
+        assert(frameMetaPtr < this.numBytes, `frame${frameIndex} meta pointer out of bounds`);
+        assert(frameDataPtr < this.numBytes, `frame${frameIndex} data pointer out of bounds`);
+        frameLayerSizes.push([layerASize, layerBSize, layerCSize]);
+    }
+    __classPrivateFieldSet(this, _KwzParser_frameMetaOffsets, frameMetaOffsets, "f");
+    __classPrivateFieldSet(this, _KwzParser_frameDataOffsets, frameDataOffsets, "f");
+    __classPrivateFieldSet(this, _KwzParser_frameLayerSizes, frameLayerSizes, "f");
+}, _KwzParser_decodeSoundHeader = function _KwzParser_decodeSoundHeader() {
+    assert(__classPrivateFieldGet(this, _KwzParser_sectionMap, "f").has('KSN'));
+    let ptr = __classPrivateFieldGet(this, _KwzParser_sectionMap, "f").get('KSN').ptr + 8;
+    this.seek(ptr);
+    this.bgmSpeed = this.readUint32();
+    assert(this.bgmSpeed <= 10);
+    this.bgmrate = KWZ_FRAMERATES[this.bgmSpeed];
+    const trackSizes = new Uint32Array(this.buffer, ptr + 4, 20);
+    const soundMeta = new Map();
+    soundMeta.set(FlipnoteAudioTrack.BGM, { ptr: ptr += 28, length: trackSizes[0] });
+    soundMeta.set(FlipnoteAudioTrack.SE1, { ptr: ptr += trackSizes[0], length: trackSizes[1] });
+    soundMeta.set(FlipnoteAudioTrack.SE2, { ptr: ptr += trackSizes[1], length: trackSizes[2] });
+    soundMeta.set(FlipnoteAudioTrack.SE3, { ptr: ptr += trackSizes[2], length: trackSizes[3] });
+    soundMeta.set(FlipnoteAudioTrack.SE4, { ptr: ptr += trackSizes[3], length: trackSizes[4] });
+    this.soundMeta = soundMeta;
+};
+/**
+ * Default KWZ parser settings
+ */
 KwzParser.defaultSettings = {
     quickMeta: false,
     dsiLibraryNote: false,
@@ -1819,23 +1990,41 @@ KwzParser.defaultSettings = {
     initialSePredictors: null,
     initialSeStepIndices: null,
 };
-/** File format type */
+/**
+ * File format type
+ */
 KwzParser.format = FlipnoteFormat.KWZ;
-/** Animation frame width */
+/**
+ * Animation frame width
+ */
 KwzParser.width = 320;
-/** Animation frame height */
+/**
+ * Animation frame height
+ */
 KwzParser.height = 240;
-/** Animation frame aspect ratio */
+/**
+ * Animation frame aspect ratio
+ */
 KwzParser.aspect = 3 / 4;
-/** Number of animation frame layers */
+/**
+ * Number of animation frame layers
+ */
 KwzParser.numLayers = 3;
-/** Number of colors per layer (aside from transparent) */
+/**
+ * Number of colors per layer (aside from transparent)
+ */
 KwzParser.numLayerColors = 2;
-/** Audio track base sample rate */
+/**
+ * Audio track base sample rate
+ */
 KwzParser.rawSampleRate = 16364;
-/** Audio output sample rate  */
+/**
+ * Audio output sample rate
+ */
 KwzParser.sampleRate = 32768;
-/** Which audio tracks are available in this format */
+/**
+ * Which audio tracks are available in this format
+ */
 KwzParser.audioTracks = [
     FlipnoteAudioTrack.BGM,
     FlipnoteAudioTrack.SE1,
@@ -1843,14 +2032,18 @@ KwzParser.audioTracks = [
     FlipnoteAudioTrack.SE3,
     FlipnoteAudioTrack.SE4,
 ];
-/** Which sound effect tracks are available in this format */
+/**
+ * Which sound effect tracks are available in this format
+ */
 KwzParser.soundEffectTracks = [
     FlipnoteSoundEffectTrack.SE1,
     FlipnoteSoundEffectTrack.SE2,
     FlipnoteSoundEffectTrack.SE3,
     FlipnoteSoundEffectTrack.SE4,
 ];
-/** Global animation frame color palette */
+/**
+ * Global animation frame color palette
+ */
 KwzParser.globalPalette = [
     KWZ_PALETTE.WHITE,
     KWZ_PALETTE.BLACK,
@@ -1860,7 +2053,9 @@ KwzParser.globalPalette = [
     KWZ_PALETTE.BLUE,
     KWZ_PALETTE.NONE,
 ];
-/** Public key used for Flipnote verification, in PEM format */
+/**
+ * Public key used for Flipnote verification, in PEM format
+ */
 KwzParser.publicKey = KWZ_PUBLIC_KEY;
 
 export { KwzParser };

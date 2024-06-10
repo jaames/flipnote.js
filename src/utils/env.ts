@@ -1,8 +1,8 @@
 import { assert } from './err';
 
 /**
- * Webpack tries to replace inline calles to require() with polyfills, 
- * but we don't want that, since we only use require to add extra features in NodeJs environments
+ * Webpack tries to replace inline calls to require() with polyfills, 
+ * but we don't want that, since we only use require to add extra features in NodeJs environments.
  * 
  * Modified from:
  * https://github.com/getsentry/sentry-javascript/blob/bd35d7364191ebed994fb132ff31031117c1823f/packages/utils/src/misc.ts#L9-L11
@@ -19,7 +19,7 @@ export const dynamicRequire = (nodeModule: NodeModule, p: string) => {
 };
 
 /**
- * Safely get global scope object
+ * Safely get global scope object.
  * @internal
  */
 export const getGlobalObject = (): Window | typeof globalThis | {} => {
@@ -33,7 +33,7 @@ export const getGlobalObject = (): Window | typeof globalThis | {} => {
 };
 
 /**
- * Utils to find out information about the current code execution environment
+ * Utils to find out information about the current code execution environment.
  */
 
 /**
@@ -44,7 +44,7 @@ export const isBrowser = typeof window !== 'undefined'
   && typeof window.document !== 'undefined';
 
 /**
- * Assert that the current environment should support browser APIs
+ * Assert that the current environment should support browser APIs.
  * @internal
  */
 export const assertBrowserEnv = () =>
@@ -59,7 +59,7 @@ export const isNode = typeof process !== 'undefined'
   && process.versions.node != null;
 
 /**
- * Assert that the current environment should support NodeJS APIs
+ * Assert that the current environment should support NodeJS APIs.
  * @internal
  */
 export const assertNodeEnv = () =>
@@ -68,7 +68,7 @@ export const assertNodeEnv = () =>
 // TODO: Deno support?
 
 /**
- * Is the code running in a Web Worker enviornment?
+ * Is the code running in a Web Worker environment?
  * @internal
  */
 export const isWebWorker = typeof self === 'object'

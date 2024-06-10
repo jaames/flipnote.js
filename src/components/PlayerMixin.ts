@@ -1,6 +1,8 @@
 import { Player } from '../player';
 
-/** @internal */
+/**
+ * @internal
+ */
 type Constructor<T = {}> = new (...args: any[]) => T;
 
 /** 
@@ -11,7 +13,7 @@ type Constructor<T = {}> = new (...args: any[]) => T;
  * and all of the Player API methods and properties applied as wrappers.
  * 
  * e.g. 
- * - PlayerMixinClass.play() will have the same behaviour as Player.play(), but will call this.player.play() internally.
+ * - PlayerMixinClass.play() will have the same behavior as Player.play(), but will call this.player.play() internally.
  * - PlayerMixinClass.paused will have getters and setters to match it to this.player.paused.
  * @internal
  */
@@ -24,14 +26,6 @@ export function PlayerMixin<TargetBase extends Constructor>(Target: TargetBase) 
 
     get renderer() {
       return this.player.renderer;
-    }
-
-    get audio() {
-      return this.player.audio;
-    }
-
-    get canvasEl() {
-      return this.player.canvasEl;
     }
 
     get note() {
@@ -71,14 +65,18 @@ export function PlayerMixin<TargetBase extends Constructor>(Target: TargetBase) 
     let desc = Object.getOwnPropertyDescriptor(Player.prototype, key);
 
     // don't override stuff that already exists, and ignore JS prototype junk
-    if (key in Target.prototype || key === 'constructor' || key === 'name' || key === 'prototype') {
+    if (key in Target.prototype || key === 'constructor' || key === 'name' || key === 'prototype')
       continue;
-    }
+
+    // ignore private props
+    if (typeof key === "string" && key.startsWith("#"))
+      continue;
+
     // override methods to call e.g. `this.player.methodName()` when `methodName()` is called
-    else if (desc.value && typeof desc.value === 'function') {
+    if (desc.value && typeof desc.value === 'function') {
       Object.defineProperty(PlayerMixinClass.prototype, key, {
         ...desc,
-        value: function(...args: any[]) {
+        value(...args: any[]) {
           return this.player[key](...args);
         }
       });
@@ -87,10 +85,10 @@ export function PlayerMixin<TargetBase extends Constructor>(Target: TargetBase) 
     else if (desc.get || desc.set) {
       Object.defineProperty(PlayerMixinClass.prototype, key, {
         ...desc,
-        set: function(value: any) {
+        set(value: any) {
           this.player[key] = value;
         },
-        get: function() {
+        get() {
           return this.player[key];
         }
       });

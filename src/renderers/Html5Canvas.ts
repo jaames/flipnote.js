@@ -17,9 +17,13 @@ import {
  * Setup options for {@link Html5Canvas}
  */
 export interface Html5CanvasOptions {
-  /** Use DPI scaling */
+  /**
+   * Use DPI scaling
+   */
   useDpi: boolean;
-  /** Use image smoothing */
+  /**
+   * Use image smoothing
+   */
   useSmoothing: boolean;
 };
 
@@ -43,15 +47,25 @@ export class Html5Canvas implements CanvasInterface {
     return supported;
   }
 
-  /** */
+  /**
+   *
+   */
   note: Flipnote;
-  /** Canvas HTML element being used as a rendering surface */
+  /**
+   * Canvas HTML element being used as a rendering surface
+   */
   canvas: HTMLCanvasElement;
-  /** Rendering context */
+  /**
+   * Rendering context
+   */
   ctx: CanvasRenderingContext2D;
-  /** View width (CSS pixels) */
+  /**
+   * View width (CSS pixels)
+   */
   width: number;
-  /** View height (CSS pixels) */
+  /**
+   * View height (CSS pixels)
+   */
   height: number;
   /** 
    * Backing canvas width (real pixels)
@@ -63,39 +77,51 @@ export class Html5Canvas implements CanvasInterface {
    * Note that this factors in device pixel ratio, so it may not reflect the size of the canvas in CSS pixels
   */
   dstHeight: number;
-  /**  */
+  /**
+   * 
+   */
   srcWidth: number;
-  /**  */
+  /**
+   * 
+   */
   srcHeight: number;
-  /** */
+  /**
+   *
+   */
   frameIndex: number;
-  /** */
+  /**
+   *
+   */
   supportedStereoscopeModes = [
     CanvasStereoscopicMode.None
   ];
-  /** */
+  /**
+   *
+   */
   stereoscopeMode = CanvasStereoscopicMode.None;
-  /** */
+  /**
+   *
+   */
   stereoscopeStrength = 0;
 
-  private options: Html5CanvasOptions;
-  private srcCanvas: HTMLCanvasElement;
-  private srcCtx: CanvasRenderingContext2D;
-  private frameImage: ImageData;
-  private paletteBuffer = new Uint32Array(16);
-  private frameBuffer: Uint32Array;
+  #options: Html5CanvasOptions;
+  #srcCanvas: HTMLCanvasElement;
+  #srcCtx: CanvasRenderingContext2D;
+  #frameImage: ImageData;
+  #paletteBuffer = new Uint32Array(16);
+  #frameBuffer: Uint32Array;
 
   constructor(parent: Element, width: number, height: number, options: Partial<Html5CanvasOptions> = {}) {
     assertBrowserEnv();
-    this.options = { ...Html5Canvas.defaultOptions, ...options };
+    this.#options = { ...Html5Canvas.defaultOptions, ...options };
     this.width = width;
     this.height = height;
     this.canvas = document.createElement('canvas');
     this.canvas.className = 'FlipnoteCanvas FlipnoteCanvas--html5';
     this.ctx = this.canvas.getContext('2d');
-    this.srcCanvas = document.createElement('canvas');
-    this.srcCtx = this.srcCanvas.getContext('2d');
-    assert(this.ctx !== null && this.srcCtx !== null, 'Could not create HTML5 canvas');
+    this.#srcCanvas = document.createElement('canvas');
+    this.#srcCtx = this.#srcCanvas.getContext('2d');
+    assert(this.ctx !== null && this.#srcCtx !== null, 'Could not create HTML5 canvas');
     if (parent) parent.appendChild(this.canvas);
     this.setCanvasSize(width, height);
   }
@@ -109,7 +135,7 @@ export class Html5Canvas implements CanvasInterface {
    */
   setCanvasSize(width: number, height: number) {
     const canvas = this.canvas;
-    const useDpi = this.options.useDpi;
+    const useDpi = this.#options.useDpi;
     const dpi = useDpi ? (window.devicePixelRatio || 1) : 1;
     const internalWidth = width * dpi;
     const internalHeight = height * dpi;
@@ -131,12 +157,12 @@ export class Html5Canvas implements CanvasInterface {
     this.note = note;
     this.srcWidth = width;
     this.srcHeight = height;
-    this.srcCanvas.width = width;
-    this.srcCanvas.height = height;
+    this.#srcCanvas.width = width;
+    this.#srcCanvas.height = height;
     // create image data to fit note size
-    this.frameImage = this.srcCtx.createImageData(width, height);
+    this.#frameImage = this.#srcCtx.createImageData(width, height);
     // uint32 view of the img buffer memory
-    this.frameBuffer = new Uint32Array(this.frameImage.data.buffer);
+    this.#frameBuffer = new Uint32Array(this.#frameImage.data.buffer);
     this.frameIndex = undefined;
     // set canvas alt text
     this.canvas.title = note.getTitle();
@@ -148,7 +174,7 @@ export class Html5Canvas implements CanvasInterface {
    */
   clear(color?: [number, number, number, number]) {
     // clear framebuffer
-    this.frameBuffer.fill(0);
+    this.#frameBuffer.fill(0);
     // clear canvas
     this.ctx.clearRect(0, 0, this.dstWidth, this.dstHeight);
     // fill canvas with paper color
@@ -163,15 +189,15 @@ export class Html5Canvas implements CanvasInterface {
     // clear whatever's already been drawn
     this.clear();
     // optionally enable image smoothing
-    if (!this.options.useSmoothing)
+    if (!this.#options.useSmoothing)
       this.ctx.imageSmoothingEnabled = false;
     // get frame pixels as RGBA buffer
-    this.note.getFramePixelsRgba(frameIndex, this.frameBuffer, this.paletteBuffer);
+    this.note.getFramePixelsRgba(frameIndex, this.#frameBuffer, this.#paletteBuffer);
     // put framebuffer pixels into the src canvas
-    this.srcCtx.putImageData(this.frameImage, 0, 0);
+    this.#srcCtx.putImageData(this.#frameImage, 0, 0);
     // composite src canvas to dst (so image scaling can be handled)
     this.ctx.drawImage(
-      this.srcCanvas, 
+      this.#srcCanvas, 
       0, 0, 
       this.srcWidth, 
       this.srcHeight,
@@ -204,16 +230,16 @@ export class Html5Canvas implements CanvasInterface {
   }
 
   destroy() {
-    this.frameImage = null;
-    this.paletteBuffer = null;
-    this.frameBuffer = null;
+    this.#frameImage = null;
+    this.#paletteBuffer = null;
+    this.#frameBuffer = null;
     this.canvas.parentNode.removeChild(this.canvas);
     this.canvas.width = 1;
     this.canvas.height = 1;
     this.canvas = null;
-    this.srcCanvas.width = 1;
-    this.srcCanvas.height = 1;
-    this.srcCanvas = null;
+    this.#srcCanvas.width = 1;
+    this.#srcCanvas.height = 1;
+    this.#srcCanvas = null;
   }
 
 }
