@@ -1,0 +1,63 @@
+---
+import Logo from "../assets/logo_clipped.svg?raw";
+import StarlightPage from "@astrojs/starlight/components/StarlightPage.astro";
+---
+
+<div class="IndexPage">
+  <StarlightPage frontmatter={{ title: "Flipnote.js", template: "splash" }}>
+    <div class="Hero">
+      <div class="Hero__body">
+        <div class="Hero__intro">
+          <div class="Hero__logo">
+            <Fragment set:html={Logo} />
+          </div>
+          <p class="Hero__blurb">
+            A JavaScript library for <b>parsing</b>, <b>converting</b>, and <b
+              >in-browser playback</b
+            >
+            of the proprietary animation formats used by <a
+              href="https://en.wikipedia.org/wiki/Flipnote_Studio"
+              >Flipnote Studio</a
+            >
+            and <a href="https://en.wikipedia.org/wiki/Flipnote_Studio_3D"
+              >Flipnote Studio 3D</a
+            >.
+          </p>
+          <div class="ButtonGroup">
+            <a class="Button" href="/get-started"> Get Started </a>
+            <a
+              class="Button Button--secondary"
+              href="https://github.com/jaames/flipnote.js"
+            >
+              Star on GitHub
+            </a>
+          </div>
+        </div>
+        <div class="Hero__demo">
+          <div class="Demo">
+            <div class="Demo__playerWrapper">
+              <flipnote-player class="Demo__player" width="auto" src="/notes/keke.ppm"
+              ></flipnote-player>
+            </div>
+            <p class="Demo__credit">
+              Flipnote by <a href="https://k-eke.tumblr.com/">Kéké</a>, watch
+              the original on <a
+                href="https://www.sudomemo.net/watch/6F24E0_0E6A283BD2873_004"
+                >Sudomemo</a
+              >, or follow their Twitter <a
+                href="https://twitter.com/Kekeflipnote">@kekeflipnote</a
+              >!
+            </p>
+          </div>
+        </div>
+      </div>
+      <div class="Hero__foot">
+        <p class="Hero__disclaimer">
+          Flipnote Studio and Flipnote Studio 3D are copyrights of Nintendo Co.,
+          Ltd. <br />This project isn't affiliated with, or endorsed by them in
+          any way.
+        </p>
+      </div>
+    </div>
+  </StarlightPage>
+</div>

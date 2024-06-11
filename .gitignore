@@ -10,9 +10,6 @@ types
 dist/esm/types
 dist/cjs/types
 
-# Docpage stuff
-www
-
 yarn.lock
 package-lock.json
 
