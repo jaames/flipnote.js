@@ -17,10 +17,7 @@ export const minify = () => terser({
     }
   },
   mangle: {
-    keep_classnames: true,
-    properties: {
-      regex: /^[_#]/
-    }
+    keep_classnames: true
   }
   
 });
