@@ -1,5 +1,5 @@
 /*!!
- * flipnote.js v6.0.0
+ * flipnote.js v6.0.1
  * https://flipnote.js.org
  * A JavaScript library for Flipnote Studio animation files
  * 2018 - 2024 James Daniel
@@ -12,10 +12,47 @@ var CanvasStereoscopicMode;
     // not actually supported, sorry!
     CanvasStereoscopicMode[CanvasStereoscopicMode["Anaglyph"] = 2] = "Anaglyph";
 })(CanvasStereoscopicMode || (CanvasStereoscopicMode = {}));
-/** @internal */
+/**
+ * @internal
+ */
 class CanvasInterface {
     constructor(parent, width, height, options) { }
 }
+
+/******************************************************************************
+Copyright (c) Microsoft Corporation.
+
+Permission to use, copy, modify, and/or distribute this software for any
+purpose with or without fee is hereby granted.
+
+THE SOFTWARE IS PROVIDED "AS IS" AND THE AUTHOR DISCLAIMS ALL WARRANTIES WITH
+REGARD TO THIS SOFTWARE INCLUDING ALL IMPLIED WARRANTIES OF MERCHANTABILITY
+AND FITNESS. IN NO EVENT SHALL THE AUTHOR BE LIABLE FOR ANY SPECIAL, DIRECT,
+INDIRECT, OR CONSEQUENTIAL DAMAGES OR ANY DAMAGES WHATSOEVER RESULTING FROM
+LOSS OF USE, DATA OR PROFITS, WHETHER IN AN ACTION OF CONTRACT, NEGLIGENCE OR
+OTHER TORTIOUS ACTION, ARISING OUT OF OR IN CONNECTION WITH THE USE OR
+PERFORMANCE OF THIS SOFTWARE.
+***************************************************************************** */
+/* global Reflect, Promise, SuppressedError, Symbol */
+
+
+function __classPrivateFieldGet(receiver, state, kind, f) {
+    if (kind === "a" && !f) throw new TypeError("Private accessor was defined without a getter");
+    if (typeof state === "function" ? receiver !== state || !f : !state.has(receiver)) throw new TypeError("Cannot read private member from an object whose class did not declare it");
+    return kind === "m" ? f : kind === "a" ? f.call(receiver) : f ? f.value : state.get(receiver);
+}
+
+function __classPrivateFieldSet(receiver, state, value, kind, f) {
+    if (kind === "m") throw new TypeError("Private method is not writable");
+    if (kind === "a" && !f) throw new TypeError("Private accessor was defined without a setter");
+    if (typeof state === "function" ? receiver !== state || !f : !state.has(receiver)) throw new TypeError("Cannot write private member to an object whose class did not declare it");
+    return (kind === "a" ? f.call(receiver, value) : f ? f.value = value : state.set(receiver, value)), value;
+}
+
+typeof SuppressedError === "function" ? SuppressedError : function (error, suppressed, message) {
+    var e = new Error(message);
+    return e.name = "SuppressedError", e.error = error, e.suppressed = suppressed, e;
+};
 
 /* @license twgl.js 5.5.4 Copyright (c) 2015, Gregg Tavares All Rights Reserved.
 Available via the MIT license.
@@ -1917,37 +1954,141 @@ function createProgramInfoFromProgram(gl, program) {
   return programInfo;
 }
 
+var vertShaderLayer = "#define GLSLIFY 1\nattribute vec4 position;attribute vec2 texcoord;varying vec2 v_uv;uniform bool u_flipY;uniform vec2 u_textureSize;uniform int u_3d_eye;uniform float u_3d_depth;uniform float u_3d_strength;void main(){vec4 pos=position;float depthDirection=u_3d_eye==0 ?-1.0 : 1.0;float depthShift=floor(u_3d_depth*u_3d_strength)/(u_textureSize.x/2.0)*depthDirection;pos.x+=depthShift;pos.y*=u_flipY ?-1.0 : 1.0;v_uv=texcoord;gl_Position=pos;}"; // eslint-disable-line
+
+var fragShaderLayer = "precision highp float;\n#define GLSLIFY 1\nvarying vec2 v_uv;uniform sampler2D u_tex;uniform int u_3d_mode;void main(){vec4 col=texture2D(u_tex,v_uv);if(col.a==0.0){discard;}gl_FragColor=col;}"; // eslint-disable-line
+
+var vertShaderUpscale = "#define GLSLIFY 1\nattribute vec4 position;attribute vec2 texcoord;varying vec2 v_texel;varying vec2 v_uv;varying float v_scale;uniform bool u_flipY;uniform vec2 u_textureSize;uniform vec2 u_screenSize;void main(){v_uv=texcoord;v_scale=floor(u_screenSize.y/u_textureSize.y+0.01);gl_Position=position;if(u_flipY){gl_Position.y*=-1.;}}"; // eslint-disable-line
+
+var fragShaderUpscale = "precision highp float;\n#define GLSLIFY 1\nvarying vec2 v_uv;uniform sampler2D u_tex;varying float v_scale;uniform vec2 u_textureSize;uniform vec2 u_screenSize;void main(){vec2 v_texel=v_uv*u_textureSize;vec2 texel_floored=floor(v_texel);vec2 s=fract(v_texel);float region_range=0.5-0.5/v_scale;vec2 center_dist=s-0.5;vec2 f=(center_dist-clamp(center_dist,-region_range,region_range))*v_scale+0.5;vec2 mod_texel=texel_floored+f;vec2 coord=mod_texel.xy/u_textureSize.xy;gl_FragColor=texture2D(u_tex,coord);}"; // eslint-disable-line
+
 /**
- * Assert condition is true
+ * Flipnote region
+ */
+var FlipnoteRegion;
+(function (FlipnoteRegion) {
+    /**
+     * Europe and Oceania
+     */
+    FlipnoteRegion["EUR"] = "EUR";
+    /**
+     * Americas
+     */
+    FlipnoteRegion["USA"] = "USA";
+    /**
+     * Japan
+     */
+    FlipnoteRegion["JPN"] = "JPN";
+    /**
+     * Unidentified (possibly never used)
+     */
+    FlipnoteRegion["UNKNOWN"] = "UNKNOWN";
+})(FlipnoteRegion || (FlipnoteRegion = {}));
+/**
+ * Identifies which animation format a Flipnote uses
+ */
+var FlipnoteFormat;
+(function (FlipnoteFormat) {
+    /**
+     * Animation format used by Flipnote Studio (Nintendo DSiWare)
+     */
+    FlipnoteFormat["PPM"] = "PPM";
+    /**
+     * Animation format used by Flipnote Studio 3D (Nintendo 3DS)
+     */
+    FlipnoteFormat["KWZ"] = "KWZ";
+})(FlipnoteFormat || (FlipnoteFormat = {}));
+/**
+ * Buffer format for a FlipnoteThumbImage
+ */
+var FlipnoteThumbImageFormat;
+(function (FlipnoteThumbImageFormat) {
+    FlipnoteThumbImageFormat[FlipnoteThumbImageFormat["Jpeg"] = 0] = "Jpeg";
+    FlipnoteThumbImageFormat[FlipnoteThumbImageFormat["Rgba"] = 1] = "Rgba";
+})(FlipnoteThumbImageFormat || (FlipnoteThumbImageFormat = {}));
+/**
+ * stereoscopic eye view (left/right) for 3D effects
+ */
+var FlipnoteStereoscopicEye;
+(function (FlipnoteStereoscopicEye) {
+    FlipnoteStereoscopicEye[FlipnoteStereoscopicEye["Left"] = 0] = "Left";
+    FlipnoteStereoscopicEye[FlipnoteStereoscopicEye["Right"] = 1] = "Right";
+})(FlipnoteStereoscopicEye || (FlipnoteStereoscopicEye = {}));
+/**
+ * Identifies a Flipnote audio track type
+ */
+var FlipnoteAudioTrack;
+(function (FlipnoteAudioTrack) {
+    /**
+     * Background music track
+     */
+    FlipnoteAudioTrack[FlipnoteAudioTrack["BGM"] = 0] = "BGM";
+    /**
+     * Sound effect 1 track
+     */
+    FlipnoteAudioTrack[FlipnoteAudioTrack["SE1"] = 1] = "SE1";
+    /**
+     * Sound effect 2 track
+     */
+    FlipnoteAudioTrack[FlipnoteAudioTrack["SE2"] = 2] = "SE2";
+    /**
+     * Sound effect 3 track
+     */
+    FlipnoteAudioTrack[FlipnoteAudioTrack["SE3"] = 3] = "SE3";
+    /**
+     * Sound effect 4 track (only used by KWZ files)
+     */
+    FlipnoteAudioTrack[FlipnoteAudioTrack["SE4"] = 4] = "SE4";
+})(FlipnoteAudioTrack || (FlipnoteAudioTrack = {}));
+/**
+ * {@link FlipnoteAudioTrack}, but just sound effect tracks
+ */
+var FlipnoteSoundEffectTrack;
+(function (FlipnoteSoundEffectTrack) {
+    FlipnoteSoundEffectTrack[FlipnoteSoundEffectTrack["SE1"] = 1] = "SE1";
+    FlipnoteSoundEffectTrack[FlipnoteSoundEffectTrack["SE2"] = 2] = "SE2";
+    FlipnoteSoundEffectTrack[FlipnoteSoundEffectTrack["SE3"] = 3] = "SE3";
+    FlipnoteSoundEffectTrack[FlipnoteSoundEffectTrack["SE4"] = 4] = "SE4";
+})(FlipnoteSoundEffectTrack || (FlipnoteSoundEffectTrack = {}));
+
+/**
+ * Assert condition is true.
  * @internal
  */
 function assert(condition, errMsg = 'Assert failed') {
     if (!condition)
-        throw new Error(errMsg);
+        err(errMsg);
 }
+/**
+ * Assert condition is true.
+ * @internal
+ */
+const err = (errMsg = 'Assert failed') => {
+    throw new Error('flipnote.js error: ' + errMsg);
+};
 
 /**
- * Webpack tries to replace inline calles to require() with polyfills,
- * but we don't want that, since we only use require to add extra features in NodeJs environments
+ * Webpack tries to replace inline calls to require() with polyfills,
+ * but we don't want that, since we only use require to add extra features in NodeJs environments.
  *
  * Modified from:
  * https://github.com/getsentry/sentry-javascript/blob/bd35d7364191ebed994fb132ff31031117c1823f/packages/utils/src/misc.ts#L9-L11
  * https://github.com/getsentry/sentry-javascript/blob/89bca28994a0eaab9bc784841872b12a1f4a875c/packages/hub/src/hub.ts#L340
  * @internal
  */
-function dynamicRequire(nodeModule, p) {
+const dynamicRequire = (nodeModule, p) => {
     try {
         return nodeModule.require(p);
     }
     catch {
         throw new Error(`Could not require(${p})`);
     }
-}
+};
 /**
- * Safely get global scope object
+ * Safely get global scope object.
  * @internal
  */
-function getGlobalObject() {
+const getGlobalObject = () => {
     return isNode
         ? global
         : typeof window !== 'undefined'
@@ -1955,9 +2096,9 @@ function getGlobalObject() {
             : typeof self !== 'undefined'
                 ? self
                 : {};
-}
+};
 /**
- * Utils to find out information about the current code execution environment
+ * Utils to find out information about the current code execution environment.
  */
 /**
  * Is the code running in a browser environment?
@@ -1966,12 +2107,10 @@ function getGlobalObject() {
 const isBrowser = typeof window !== 'undefined'
     && typeof window.document !== 'undefined';
 /**
- * Assert that the current environment should support browser APIs
+ * Assert that the current environment should support browser APIs.
  * @internal
  */
-function assertBrowserEnv() {
-    return assert(isBrowser, 'This feature is only available in browser environments');
-}
+const assertBrowserEnv = () => assert(isBrowser, 'This feature is only available in browser environments');
 /**
  * Is the code running in a Node environment?
  * @internal
@@ -1981,7 +2120,7 @@ const isNode = typeof process !== 'undefined'
     && process.versions.node != null;
 // TODO: Deno support?
 /**
- * Is the code running in a Web Worker enviornment?
+ * Is the code running in a Web Worker environment?
  * @internal
  */
 const isWebWorker = typeof self === 'object'
@@ -1989,70 +2128,8 @@ const isWebWorker = typeof self === 'object'
     && self.constructor.name === 'DedicatedWorkerGlobalScope';
 
 /**
- * same SubtleCrypto API is available in browser and node, but in node it isn't global
  * @internal
  */
-(() => {
-    if (isBrowser || isWebWorker) {
-        const global = getGlobalObject();
-        return (global.crypto || global.msCrypto).subtle;
-    }
-    else if (isNode)
-        return dynamicRequire(module, 'crypto').webcrypto.subtle;
-})();
-
-/**
- * Flipnote region
- */
-var FlipnoteRegion;
-(function (FlipnoteRegion) {
-    /** Europe and Oceania */
-    FlipnoteRegion["EUR"] = "EUR";
-    /** Americas */
-    FlipnoteRegion["USA"] = "USA";
-    /** Japan */
-    FlipnoteRegion["JPN"] = "JPN";
-    /** Unidentified (possibly never used) */
-    FlipnoteRegion["UNKNOWN"] = "UNKNOWN";
-})(FlipnoteRegion || (FlipnoteRegion = {}));
-/**
- * Match an FSID from Flipnote Studio
- * e.g. 1440D700CEF78DA8
- * @internal
- */
-const REGEX_PPM_FSID = /^[0159]{1}[0-9A-F]{6}0[0-9A-F]{8}$/;
-/**
- * @internal
- * There are several known exceptions to the FSID format, all from Nintendo or Hatena developer and event accounts (mario, zelda 25th, etc).
- * This list was compiled from data provided by the Flipnote Archive, so it can be considered comprehensive enough to match any Flipnote you may encounter.
- */
-const PPM_FSID_SPECIAL_CASE = [
-    '01FACA7A4367FC5F',
-    '03D6E959E2F9A42D',
-    '03F80445160587FA',
-    '04068426E1008915',
-    '092A3EC8199FD5D5',
-    '0B8D56BA1BD441B8',
-    '0E61C75C9B5AD90B',
-    '14E494E35A443235'
-];
-/**
- * @internal
- */
-PPM_FSID_SPECIAL_CASE.map(id => convertPpmFsidToKwzFsidSuffix(id));
-/**
- * Convert a PPM Flipnote Studio ID to the format used by KWZ Flipnote Studio IDs (as seen in Nintendo DSi Library Flipnotes).
- * Will return `null` if the conversion could not be made.
- *
- * NOTE: KWZ Flipnote Studio IDs contain an extra two characters at the beginning. It is not possible to resolve these from a PPM Flipnote Studio ID.
- */
-function convertPpmFsidToKwzFsidSuffix(fsid) {
-    if (REGEX_PPM_FSID.test(fsid))
-        return (fsid.slice(14, 16) + fsid.slice(12, 14) + '-' + fsid.slice(10, 12) + fsid.slice(8, 10) + '-' + fsid.slice(6, 8) + fsid.slice(4, 6) + '-' + fsid.slice(2, 4) + fsid.slice(0, 2)).toLowerCase();
-    return null;
-}
-
-/** @internal */
 ((function () {
     if (!isBrowser) {
         return function () { };
@@ -2067,59 +2144,35 @@ function convertPpmFsidToKwzFsidSuffix(fsid) {
     };
 }))();
 
-/** Identifies which animation format a Flipnote uses */
-var FlipnoteFormat;
-(function (FlipnoteFormat) {
-    /** Animation format used by Flipnote Studio (Nintendo DSiWare) */
-    FlipnoteFormat["PPM"] = "PPM";
-    /** Animation format used by Flipnote Studio 3D (Nintendo 3DS) */
-    FlipnoteFormat["KWZ"] = "KWZ";
-})(FlipnoteFormat || (FlipnoteFormat = {}));
-/** Buffer format for a FlipnoteThumbImage  */
-var FlipnoteThumbImageFormat;
-(function (FlipnoteThumbImageFormat) {
-    FlipnoteThumbImageFormat[FlipnoteThumbImageFormat["Jpeg"] = 0] = "Jpeg";
-    FlipnoteThumbImageFormat[FlipnoteThumbImageFormat["Rgba"] = 1] = "Rgba";
-})(FlipnoteThumbImageFormat || (FlipnoteThumbImageFormat = {}));
-/** stereoscopic eye view (left/right) for 3D effects */
-var FlipnoteStereoscopicEye;
-(function (FlipnoteStereoscopicEye) {
-    FlipnoteStereoscopicEye[FlipnoteStereoscopicEye["Left"] = 0] = "Left";
-    FlipnoteStereoscopicEye[FlipnoteStereoscopicEye["Right"] = 1] = "Right";
-})(FlipnoteStereoscopicEye || (FlipnoteStereoscopicEye = {}));
-/** Identifies a Flipnote audio track type */
-var FlipnoteAudioTrack;
-(function (FlipnoteAudioTrack) {
-    /** Background music track */
-    FlipnoteAudioTrack[FlipnoteAudioTrack["BGM"] = 0] = "BGM";
-    /** Sound effect 1 track */
-    FlipnoteAudioTrack[FlipnoteAudioTrack["SE1"] = 1] = "SE1";
-    /** Sound effect 2 track */
-    FlipnoteAudioTrack[FlipnoteAudioTrack["SE2"] = 2] = "SE2";
-    /** Sound effect 3 track */
-    FlipnoteAudioTrack[FlipnoteAudioTrack["SE3"] = 3] = "SE3";
-    /** Sound effect 4 track (only used by KWZ files) */
-    FlipnoteAudioTrack[FlipnoteAudioTrack["SE4"] = 4] = "SE4";
-})(FlipnoteAudioTrack || (FlipnoteAudioTrack = {}));
-/** {@link FlipnoteAudioTrack}, but just sound effect tracks */
-var FlipnoteSoundEffectTrack;
-(function (FlipnoteSoundEffectTrack) {
-    FlipnoteSoundEffectTrack[FlipnoteSoundEffectTrack["SE1"] = 1] = "SE1";
-    FlipnoteSoundEffectTrack[FlipnoteSoundEffectTrack["SE2"] = 2] = "SE2";
-    FlipnoteSoundEffectTrack[FlipnoteSoundEffectTrack["SE3"] = 3] = "SE3";
-    FlipnoteSoundEffectTrack[FlipnoteSoundEffectTrack["SE4"] = 4] = "SE4";
-})(FlipnoteSoundEffectTrack || (FlipnoteSoundEffectTrack = {}));
+/**
+ * Same SubtleCrypto API is available in browser and node, but in node it isn't global
+ * @internal
+ */
+(() => {
+    if (isBrowser || isWebWorker) {
+        const global = getGlobalObject();
+        return (global.crypto || global.msCrypto).subtle;
+    }
+    else if (isNode)
+        return dynamicRequire(module, 'crypto').webcrypto.subtle;
+})();
 
-/** File format type */
+/**
+ * File format type.
+ */
 FlipnoteFormat.PPM;
-/** Which audio tracks are available in this format */
+/**
+ * Which audio tracks are available in this format.
+ */
 [
     FlipnoteAudioTrack.BGM,
     FlipnoteAudioTrack.SE1,
     FlipnoteAudioTrack.SE2,
     FlipnoteAudioTrack.SE3
 ];
-/** Which sound effect tracks are available in this format */
+/**
+ * Which sound effect tracks are available in this format.
+ */
 [
     FlipnoteSoundEffectTrack.SE1,
     FlipnoteSoundEffectTrack.SE2,
@@ -2144,7 +2197,9 @@ const KWZ_LINE_TABLE = new Uint8Array(6561 * 8);
  * @internal
  */
 const KWZ_LINE_TABLE_SHIFT = new Uint8Array(6561 * 8);
-/** @internal */
+/**
+ * @internal
+ */
 var offset = 0;
 for (let a = 0; a < 3; a++)
     for (let b = 0; b < 3; b++)
@@ -2181,9 +2236,13 @@ const KWZ_LINE_TABLE_COMMON_SHIFT = new Uint8Array(32 * 8);
     KWZ_LINE_TABLE_COMMON.set(pixels, i * 8);
     KWZ_LINE_TABLE_COMMON_SHIFT.set(shiftPixels, i * 8);
 });
-/** File format type */
+/**
+ * File format type
+ */
 FlipnoteFormat.KWZ;
-/** Which audio tracks are available in this format */
+/**
+ * Which audio tracks are available in this format
+ */
 [
     FlipnoteAudioTrack.BGM,
     FlipnoteAudioTrack.SE1,
@@ -2191,7 +2250,9 @@ FlipnoteFormat.KWZ;
     FlipnoteAudioTrack.SE3,
     FlipnoteAudioTrack.SE4,
 ];
-/** Which sound effect tracks are available in this format */
+/**
+ * Which sound effect tracks are available in this format
+ */
 [
     FlipnoteSoundEffectTrack.SE1,
     FlipnoteSoundEffectTrack.SE2,
@@ -2199,18 +2260,103 @@ FlipnoteFormat.KWZ;
     FlipnoteSoundEffectTrack.SE4,
 ];
 
-var vertShaderLayer = "#define GLSLIFY 1\nattribute vec4 position;attribute vec2 texcoord;varying vec2 v_uv;uniform bool u_flipY;uniform vec2 u_textureSize;uniform int u_3d_eye;uniform float u_3d_depth;uniform float u_3d_strength;void main(){vec4 pos=position;float depthDirection=u_3d_eye==0 ?-1.0 : 1.0;float depthShift=floor(u_3d_depth*u_3d_strength)/(u_textureSize.x/2.0)*depthDirection;pos.x+=depthShift;pos.y*=u_flipY ?-1.0 : 1.0;v_uv=texcoord;gl_Position=pos;}"; // eslint-disable-line
-
-var fragShaderLayer = "precision highp float;\n#define GLSLIFY 1\nvarying vec2 v_uv;uniform sampler2D u_tex;uniform int u_3d_mode;void main(){vec4 col=texture2D(u_tex,v_uv);if(col.a==0.0){discard;}gl_FragColor=col;}"; // eslint-disable-line
-
-var vertShaderUpscale = "#define GLSLIFY 1\nattribute vec4 position;attribute vec2 texcoord;varying vec2 v_texel;varying vec2 v_uv;varying float v_scale;uniform bool u_flipY;uniform vec2 u_textureSize;uniform vec2 u_screenSize;void main(){v_uv=texcoord;v_scale=floor(u_screenSize.y/u_textureSize.y+0.01);gl_Position=position;if(u_flipY){gl_Position.y*=-1.;}}"; // eslint-disable-line
-
-var fragShaderUpscale = "precision highp float;\n#define GLSLIFY 1\nvarying vec2 v_uv;uniform sampler2D u_tex;varying float v_scale;uniform vec2 u_textureSize;uniform vec2 u_screenSize;void main(){vec2 v_texel=v_uv*u_textureSize;vec2 texel_floored=floor(v_texel);vec2 s=fract(v_texel);float region_range=0.5-0.5/v_scale;vec2 center_dist=s-0.5;vec2 f=(center_dist-clamp(center_dist,-region_range,region_range))*v_scale+0.5;vec2 mod_texel=texel_floored+f;vec2 coord=mod_texel.xy/u_textureSize.xy;gl_FragColor=texture2D(u_tex,coord);}"; // eslint-disable-line
+/**
+ * Loader for web url strings (Browser only)
+ * @group Loader
+ */
+const urlLoader = {
+    name: 'url',
+    matches(source) {
+        return typeof source === 'string';
+    },
+    async load(source) {
+        const response = await fetch(source);
+        assert(response.status >= 200 && response.status < 300, `Failed to load Flipnote from URL, response failed with status ${response.status}`);
+        return await response.arrayBuffer();
+    }
+};
 
 /**
- * Flipnote renderer for the {@link https://developer.mozilla.org/en-US/docs/Web/API/WebGL_API WebGL} API
+ * Loader for File objects (browser only)
+ * @group Loader
+ */
+const fileLoader = {
+    name: 'file',
+    matches(source) {
+        return isBrowser
+            && typeof File !== 'undefined'
+            && typeof FileReader !== 'undefined'
+            && source instanceof File;
+    },
+    async load(source) {
+        return source.arrayBuffer();
+    }
+};
+
+/**
+ * Loader for Blob objects (browser only)
+ * @group Loader
+ */
+const blobLoader = {
+    name: 'blob',
+    matches(source) {
+        return isBrowser
+            && typeof Blob !== 'undefined'
+            && typeof Response !== 'undefined'
+            && source instanceof Blob;
+    },
+    async load(source) {
+        return source.arrayBuffer();
+    }
+};
+
+/**
+ * Loader for Buffer objects (Node only)
+ * @group Loader
+ */
+const nodeBufferLoader = {
+    name: 'node-buffer',
+    matches(source) {
+        return isNode && (source instanceof Buffer);
+    },
+    async load(source) {
+        return source.buffer;
+    }
+};
+
+/**
+ * Loader for ArrayBuffer objects.
+ * @group Loader
+ */
+const arrayBufferLoader = {
+    name: 'array-buffer',
+    matches(source) {
+        return source instanceof ArrayBuffer;
+    },
+    async load(source) {
+        return source;
+    }
+};
+
+const LOADER_REGISTRY = new Map();
+/**
+ * Register a resource loader to use when loading Flipnotes.
+ * A loader should take a source and return an ArrayBuffer.
+ */
+const register = (loader) => {
+    LOADER_REGISTRY.set(loader.name, loader);
+};
+register(arrayBufferLoader);
+register(nodeBufferLoader);
+register(blobLoader);
+register(fileLoader);
+register(urlLoader);
+
+var _WebglCanvas_instances, _WebglCanvas_options, _WebglCanvas_layerProgram, _WebglCanvas_upscaleProgram, _WebglCanvas_quadBuffer, _WebglCanvas_paletteBuffer, _WebglCanvas_layerTexture, _WebglCanvas_layerTexturePixelBuffer, _WebglCanvas_layerTexturePixels, _WebglCanvas_frameTexture, _WebglCanvas_frameBuffer, _WebglCanvas_textureTypes, _WebglCanvas_textureSizes, _WebglCanvas_frameBufferTextures, _WebglCanvas_applyFirefoxFix, _WebglCanvas_refs, _WebglCanvas_isCtxLost, _WebglCanvas_init, _WebglCanvas_drawLayers, _WebglCanvas_upscale, _WebglCanvas_createProgram, _WebglCanvas_createShader, _WebglCanvas_createScreenQuad, _WebglCanvas_setBuffersAndAttribs, _WebglCanvas_createTexture, _WebglCanvas_resizeTexture, _WebglCanvas_createFramebuffer, _WebglCanvas_useFramebuffer, _WebglCanvas_resizeFramebuffer, _WebglCanvas_checkContextLoss, _WebglCanvas_handleContextLoss, _WebglCanvas_handleContextRestored;
+/**
+ * Flipnote renderer for the {@link https://developer.mozilla.org/en-US/docs/Web/API/WebGL_API WebGL} API.
  *
- * Only available in browser contexts
+ * Only available in browser contexts.
  */
 class WebglCanvas {
     static isSupported() {
@@ -2232,49 +2378,65 @@ class WebglCanvas {
      * The ratio between `width` and `height` should be 3:4 for best results
      */
     constructor(parent, width = 640, height = 480, options = {}) {
-        /** */
+        _WebglCanvas_instances.add(this);
+        /**
+         *
+         */
         this.supportedStereoscopeModes = [
             CanvasStereoscopicMode.None,
             CanvasStereoscopicMode.Dual,
             // CanvasStereoscopicMode.Anaglyph, // couldn't get this working, despite spending lots of time on it :/
         ];
-        /** */
+        /**
+         *
+         */
         this.stereoscopeMode = CanvasStereoscopicMode.None;
-        /** */
+        /**
+         *
+         */
         this.stereoscopeStrength = 0;
-        this.paletteBuffer = new Uint32Array(16);
-        this.textureTypes = new Map();
-        this.textureSizes = new Map();
-        this.frameBufferTextures = new Map();
-        this.applyFirefoxFix = false;
-        this.refs = {
+        _WebglCanvas_options.set(this, void 0);
+        _WebglCanvas_layerProgram.set(this, void 0); // for drawing renderbuffer w/ filtering
+        _WebglCanvas_upscaleProgram.set(this, void 0); // for drawing renderbuffer w/ filtering
+        _WebglCanvas_quadBuffer.set(this, void 0);
+        _WebglCanvas_paletteBuffer.set(this, new Uint32Array(16));
+        _WebglCanvas_layerTexture.set(this, void 0);
+        _WebglCanvas_layerTexturePixelBuffer.set(this, void 0);
+        _WebglCanvas_layerTexturePixels.set(this, void 0); // will be same memory as layerTexturePixelBuffer, just uint8 for webgl texture
+        _WebglCanvas_frameTexture.set(this, void 0);
+        _WebglCanvas_frameBuffer.set(this, void 0);
+        _WebglCanvas_textureTypes.set(this, new Map());
+        _WebglCanvas_textureSizes.set(this, new Map());
+        _WebglCanvas_frameBufferTextures.set(this, new Map());
+        _WebglCanvas_applyFirefoxFix.set(this, false);
+        _WebglCanvas_refs.set(this, {
             programs: [],
             shaders: [],
             textures: [],
             buffers: [],
             frameBuffers: []
-        };
-        this.isCtxLost = false;
-        this.handleContextLoss = (e) => {
+        });
+        _WebglCanvas_isCtxLost.set(this, false);
+        _WebglCanvas_handleContextLoss.set(this, (e) => {
             this.destroy();
             if (e)
                 e.preventDefault();
-            if (!this.isCtxLost)
-                this.options.onlost();
-            this.isCtxLost = true;
-        };
-        this.handleContextRestored = (e) => {
-            this.isCtxLost = false;
-            this.init();
-            this.options.onrestored();
-        };
+            if (!__classPrivateFieldGet(this, _WebglCanvas_isCtxLost, "f"))
+                __classPrivateFieldGet(this, _WebglCanvas_options, "f").onlost();
+            __classPrivateFieldSet(this, _WebglCanvas_isCtxLost, true, "f");
+        });
+        _WebglCanvas_handleContextRestored.set(this, (e) => {
+            __classPrivateFieldSet(this, _WebglCanvas_isCtxLost, false, "f");
+            __classPrivateFieldGet(this, _WebglCanvas_instances, "m", _WebglCanvas_init).call(this);
+            __classPrivateFieldGet(this, _WebglCanvas_options, "f").onrestored();
+        });
         assertBrowserEnv();
-        this.options = { ...WebglCanvas.defaultOptions, ...options };
+        __classPrivateFieldSet(this, _WebglCanvas_options, { ...WebglCanvas.defaultOptions, ...options }, "f");
         this.width = width;
         this.height = height;
         this.canvas = document.createElement('canvas');
-        this.canvas.addEventListener('webglcontextlost', this.handleContextLoss, false);
-        this.canvas.addEventListener('webglcontextrestored', this.handleContextRestored, false);
+        this.canvas.addEventListener('webglcontextlost', __classPrivateFieldGet(this, _WebglCanvas_handleContextLoss, "f"), false);
+        this.canvas.addEventListener('webglcontextrestored', __classPrivateFieldGet(this, _WebglCanvas_handleContextRestored, "f"), false);
         this.canvas.className = 'FlipnoteCanvas FlipnoteCanvas--webgl';
         this.gl = this.canvas.getContext('webgl', {
             antialias: false,
@@ -2282,191 +2444,7 @@ class WebglCanvas {
         });
         if (parent)
             parent.appendChild(this.canvas);
-        this.init();
-    }
-    init() {
-        this.setCanvasSize(this.width, this.height);
-        const gl = this.gl;
-        if (this.checkContextLoss())
-            return;
-        this.layerProgram = this.createProgram(vertShaderLayer, fragShaderLayer);
-        this.upscaleProgram = this.createProgram(vertShaderUpscale, fragShaderUpscale);
-        this.quadBuffer = this.createScreenQuad(-1, -1, 2, 2, 1, 1);
-        this.setBuffersAndAttribs(this.layerProgram, this.quadBuffer);
-        this.layerTexture = this.createTexture(gl.RGBA, gl.LINEAR, gl.CLAMP_TO_EDGE);
-        this.frameTexture = this.createTexture(gl.RGBA, gl.LINEAR, gl.CLAMP_TO_EDGE);
-        this.frameBuffer = this.createFramebuffer(this.frameTexture);
-        const debugInfo = gl.getExtension('WEBGL_debug_renderer_info');
-        const renderer = gl.getParameter(debugInfo.UNMASKED_RENDERER_WEBGL);
-        const userAgent = navigator.userAgent;
-        const isMacFirefox = userAgent.includes('Firefox') && userAgent.includes('Mac');
-        this.applyFirefoxFix = isMacFirefox && renderer.includes('Apple M');
-    }
-    createProgram(vertexShaderSource, fragmentShaderSource) {
-        if (this.checkContextLoss())
-            return;
-        const gl = this.gl;
-        const vert = this.createShader(gl.VERTEX_SHADER, vertexShaderSource);
-        const frag = this.createShader(gl.FRAGMENT_SHADER, fragmentShaderSource);
-        const program = gl.createProgram();
-        // set up shaders
-        gl.attachShader(program, vert);
-        gl.attachShader(program, frag);
-        // link program
-        gl.linkProgram(program);
-        if (!gl.getProgramParameter(program, gl.LINK_STATUS)) {
-            const log = gl.getProgramInfoLog(program);
-            gl.deleteProgram(program);
-            throw new Error(log);
-        }
-        const programInfo = createProgramInfoFromProgram(gl, program);
-        this.refs.programs.push(program);
-        return programInfo;
-    }
-    createShader(type, source) {
-        if (this.checkContextLoss())
-            return;
-        const gl = this.gl;
-        const shader = gl.createShader(type);
-        gl.shaderSource(shader, source);
-        gl.compileShader(shader);
-        // test if shader compilation was successful
-        if (!gl.getShaderParameter(shader, gl.COMPILE_STATUS)) {
-            const log = gl.getShaderInfoLog(shader);
-            gl.deleteShader(shader);
-            throw new Error(log);
-        }
-        this.refs.shaders.push(shader);
-        return shader;
-    }
-    // creating a subdivided quad seems to produce slightly nicer texture filtering
-    createScreenQuad(x0, y0, width, height, xSubdivs, ySubdivs) {
-        if (this.checkContextLoss())
-            return;
-        const numVerts = (xSubdivs + 1) * (ySubdivs + 1);
-        const numVertsAcross = xSubdivs + 1;
-        const positions = new Float32Array(numVerts * 2);
-        const texCoords = new Float32Array(numVerts * 2);
-        let positionPtr = 0;
-        let texCoordPtr = 0;
-        for (let y = 0; y <= ySubdivs; y++) {
-            for (let x = 0; x <= xSubdivs; x++) {
-                const u = x / xSubdivs;
-                const v = y / ySubdivs;
-                positions[positionPtr++] = x0 + width * u;
-                positions[positionPtr++] = y0 + height * v;
-                texCoords[texCoordPtr++] = u;
-                texCoords[texCoordPtr++] = v;
-            }
-        }
-        const indices = new Uint16Array(xSubdivs * ySubdivs * 2 * 3);
-        let indicesPtr = 0;
-        for (let y = 0; y < ySubdivs; y++) {
-            for (let x = 0; x < xSubdivs; x++) {
-                // triangle 1
-                indices[indicesPtr++] = (y + 0) * numVertsAcross + x;
-                indices[indicesPtr++] = (y + 1) * numVertsAcross + x;
-                indices[indicesPtr++] = (y + 0) * numVertsAcross + x + 1;
-                // triangle 2
-                indices[indicesPtr++] = (y + 0) * numVertsAcross + x + 1;
-                indices[indicesPtr++] = (y + 1) * numVertsAcross + x;
-                indices[indicesPtr++] = (y + 1) * numVertsAcross + x + 1;
-            }
-        }
-        const bufferInfo = createBufferInfoFromArrays(this.gl, {
-            position: {
-                numComponents: 2,
-                data: positions
-            },
-            texcoord: {
-                numComponents: 2,
-                data: texCoords
-            },
-            indices: indices
-        });
-        // collect references to buffer objects
-        for (let name in bufferInfo.attribs)
-            this.refs.buffers.push(bufferInfo.attribs[name].buffer);
-        return bufferInfo;
-    }
-    setBuffersAndAttribs(program, buffer) {
-        if (this.checkContextLoss())
-            return;
-        setBuffersAndAttributes(this.gl, program.attribSetters, buffer);
-    }
-    createTexture(type, minMag, wrap, width = 1, height = 1) {
-        if (this.checkContextLoss())
-            return;
-        const gl = this.gl;
-        const tex = gl.createTexture();
-        gl.bindTexture(gl.TEXTURE_2D, tex);
-        gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_S, wrap);
-        gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_T, wrap);
-        gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MIN_FILTER, minMag);
-        gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MAG_FILTER, minMag);
-        gl.texImage2D(gl.TEXTURE_2D, 0, type, width, height, 0, type, gl.UNSIGNED_BYTE, null);
-        this.refs.textures.push(tex);
-        this.textureTypes.set(tex, type);
-        this.textureSizes.set(tex, { width, height });
-        return tex;
-    }
-    resizeTexture(texture, width, height) {
-        if (this.checkContextLoss())
-            return;
-        const gl = this.gl;
-        const textureType = this.textureTypes.get(texture);
-        gl.bindTexture(gl.TEXTURE_2D, texture);
-        gl.texImage2D(gl.TEXTURE_2D, 0, textureType, width, height, 0, textureType, gl.UNSIGNED_BYTE, null);
-        this.textureSizes.set(texture, { width, height });
-    }
-    createFramebuffer(texture) {
-        if (this.checkContextLoss())
-            return;
-        const gl = this.gl;
-        const fb = gl.createFramebuffer();
-        gl.bindFramebuffer(gl.FRAMEBUFFER, fb);
-        gl.framebufferTexture2D(gl.FRAMEBUFFER, gl.COLOR_ATTACHMENT0, gl.TEXTURE_2D, texture, 0);
-        this.refs.frameBuffers.push(fb);
-        this.frameBufferTextures.set(fb, texture);
-        return fb;
-    }
-    useFramebuffer(fb, viewX, viewY, viewWidth, viewHeight) {
-        if (this.checkContextLoss())
-            return;
-        const gl = this.gl;
-        if (fb === null) {
-            gl.bindFramebuffer(gl.FRAMEBUFFER, null);
-            /**
-             * Firefox on Apple Silicon Macs seems to have some kind of viewport sizing bug that I can't track down.
-             * Details here: https://github.com/jaames/flipnote.js/issues/30#issuecomment-2134602056
-             * Not sure what's causing it, but this hack fixes it for now.
-             * Need to test whether only specific versions of Firefox are affected, if it's only an Apple Silicon thing, etc, etc...
-             */
-            if (this.applyFirefoxFix) {
-                const srcWidth = this.srcWidth;
-                const srcHeight = this.srcHeight;
-                const sx = gl.drawingBufferWidth / srcWidth;
-                const sy = gl.drawingBufferHeight / srcHeight;
-                const adj = srcWidth === 256 ? 1 : 0; // ??????? why
-                viewWidth = gl.drawingBufferWidth * (sx - adj);
-                viewHeight = gl.drawingBufferHeight * (sy - adj);
-                viewX = -(viewWidth - srcWidth * sx);
-                viewY = -(viewHeight - srcHeight * sy);
-            }
-            gl.viewport(viewX ?? 0, viewY ?? 0, viewWidth ?? gl.drawingBufferWidth, viewHeight ?? gl.drawingBufferHeight);
-        }
-        else {
-            const tex = this.frameBufferTextures.get(fb);
-            const { width, height } = this.textureSizes.get(tex);
-            gl.bindFramebuffer(gl.FRAMEBUFFER, fb);
-            gl.viewport(viewX ?? 0, viewY ?? 0, viewWidth ?? width, viewHeight ?? height);
-        }
-    }
-    resizeFramebuffer(fb, width, height) {
-        if (this.checkContextLoss())
-            return;
-        const texture = this.frameBufferTextures.get(fb);
-        this.resizeTexture(texture, width, height);
+        __classPrivateFieldGet(this, _WebglCanvas_instances, "m", _WebglCanvas_init).call(this);
     }
     /**
      * Resize the canvas surface
@@ -2476,7 +2454,7 @@ class WebglCanvas {
      * The ratio between `width` and `height` should be 3:4 for best results
      */
     setCanvasSize(width, height) {
-        const dpi = this.options.useDpi ? (window.devicePixelRatio || 1) : 1;
+        const dpi = __classPrivateFieldGet(this, _WebglCanvas_options, "f").useDpi ? (window.devicePixelRatio || 1) : 1;
         const internalWidth = width * dpi;
         const internalHeight = height * dpi;
         this.width = width;
@@ -2487,23 +2465,23 @@ class WebglCanvas {
         this.dstHeight = internalHeight;
         this.canvas.style.width = `${width}px`;
         this.canvas.style.height = `${height}px`;
-        this.checkContextLoss();
+        __classPrivateFieldGet(this, _WebglCanvas_instances, "m", _WebglCanvas_checkContextLoss).call(this);
     }
     /**
      * Sets the note to use for this player
      */
     setNote(note) {
-        if (this.checkContextLoss())
+        if (__classPrivateFieldGet(this, _WebglCanvas_instances, "m", _WebglCanvas_checkContextLoss).call(this))
             return;
         const width = note.imageWidth;
         const height = note.imageHeight;
         this.note = note;
         this.srcWidth = width;
         this.srcHeight = height;
-        this.resizeFramebuffer(this.frameBuffer, width, height);
-        this.resizeTexture(this.layerTexture, width, height);
-        this.layerTexturePixelBuffer = new Uint32Array(width * height);
-        this.layerTexturePixels = new Uint8Array(this.layerTexturePixelBuffer.buffer); // same memory buffer as rgbaData
+        __classPrivateFieldGet(this, _WebglCanvas_instances, "m", _WebglCanvas_resizeFramebuffer).call(this, __classPrivateFieldGet(this, _WebglCanvas_frameBuffer, "f"), width, height);
+        __classPrivateFieldGet(this, _WebglCanvas_instances, "m", _WebglCanvas_resizeTexture).call(this, __classPrivateFieldGet(this, _WebglCanvas_layerTexture, "f"), width, height);
+        __classPrivateFieldSet(this, _WebglCanvas_layerTexturePixelBuffer, new Uint32Array(width * height), "f");
+        __classPrivateFieldSet(this, _WebglCanvas_layerTexturePixels, new Uint8Array(__classPrivateFieldGet(this, _WebglCanvas_layerTexturePixelBuffer, "f").buffer), "f"); // same memory buffer as rgbaData
         this.frameIndex = undefined;
         // set canvas alt text
         this.canvas.title = note.getTitle();
@@ -2513,7 +2491,7 @@ class WebglCanvas {
      * @param color optional RGBA color to use as a background color
      */
     clear(color) {
-        if (this.checkContextLoss())
+        if (__classPrivateFieldGet(this, _WebglCanvas_instances, "m", _WebglCanvas_checkContextLoss).call(this))
             return;
         const gl = this.gl;
         const paperColor = color ?? this.note.getFramePalette(this.frameIndex)[0];
@@ -2526,38 +2504,25 @@ class WebglCanvas {
      * @param frameIndex
      */
     drawFrame(frameIndex) {
-        if (this.checkContextLoss())
+        if (__classPrivateFieldGet(this, _WebglCanvas_instances, "m", _WebglCanvas_checkContextLoss).call(this))
             return;
         const gl = this.gl;
         const mode = this.stereoscopeMode;
         const strength = this.stereoscopeStrength;
         this.frameIndex = frameIndex;
         if (mode === CanvasStereoscopicMode.None) {
-            this.drawLayers(frameIndex);
-            this.useFramebuffer(null);
-            this.upscale(gl.drawingBufferWidth, gl.drawingBufferHeight);
+            __classPrivateFieldGet(this, _WebglCanvas_instances, "m", _WebglCanvas_drawLayers).call(this, frameIndex);
+            __classPrivateFieldGet(this, _WebglCanvas_instances, "m", _WebglCanvas_useFramebuffer).call(this, null);
+            __classPrivateFieldGet(this, _WebglCanvas_instances, "m", _WebglCanvas_upscale).call(this, gl.drawingBufferWidth, gl.drawingBufferHeight);
         }
         else if (mode === CanvasStereoscopicMode.Dual) {
-            this.drawLayers(frameIndex, strength, FlipnoteStereoscopicEye.Left);
-            this.useFramebuffer(null, 0, 0, gl.drawingBufferWidth / 2, gl.drawingBufferHeight);
-            this.upscale(gl.drawingBufferWidth / 2, gl.drawingBufferHeight);
-            this.drawLayers(frameIndex, strength, FlipnoteStereoscopicEye.Right);
-            this.useFramebuffer(null, gl.drawingBufferWidth / 2, 0, gl.drawingBufferWidth / 2, gl.drawingBufferHeight);
-            this.upscale(gl.drawingBufferWidth / 2, gl.drawingBufferHeight);
+            __classPrivateFieldGet(this, _WebglCanvas_instances, "m", _WebglCanvas_drawLayers).call(this, frameIndex, strength, FlipnoteStereoscopicEye.Left);
+            __classPrivateFieldGet(this, _WebglCanvas_instances, "m", _WebglCanvas_useFramebuffer).call(this, null, 0, 0, gl.drawingBufferWidth / 2, gl.drawingBufferHeight);
+            __classPrivateFieldGet(this, _WebglCanvas_instances, "m", _WebglCanvas_upscale).call(this, gl.drawingBufferWidth / 2, gl.drawingBufferHeight);
+            __classPrivateFieldGet(this, _WebglCanvas_instances, "m", _WebglCanvas_drawLayers).call(this, frameIndex, strength, FlipnoteStereoscopicEye.Right);
+            __classPrivateFieldGet(this, _WebglCanvas_instances, "m", _WebglCanvas_useFramebuffer).call(this, null, gl.drawingBufferWidth / 2, 0, gl.drawingBufferWidth / 2, gl.drawingBufferHeight);
+            __classPrivateFieldGet(this, _WebglCanvas_instances, "m", _WebglCanvas_upscale).call(this, gl.drawingBufferWidth / 2, gl.drawingBufferHeight);
         }
-    }
-    upscale(width, height) {
-        if (this.checkContextLoss())
-            return;
-        const gl = this.gl;
-        gl.useProgram(this.upscaleProgram.program);
-        setUniforms(this.upscaleProgram, {
-            // u_flipY: true,
-            u_tex: this.frameTexture,
-            u_textureSize: [this.srcWidth, this.srcHeight],
-            u_screenSize: [width, height],
-        });
-        gl.drawElements(gl.TRIANGLES, this.quadBuffer.numElements, this.quadBuffer.elementType, 0);
     }
     requestStereoScopeMode(mode) {
         if (this.supportedStereoscopeModes.includes(mode))
@@ -2577,45 +2542,8 @@ class WebglCanvas {
         const gl = this.gl;
         return gl === null || gl.getError() !== gl.NO_ERROR;
     }
-    drawLayers(frameIndex, depthStrength = 0, depthEye = FlipnoteStereoscopicEye.Left, shouldClear = true) {
-        const gl = this.gl;
-        const note = this.note;
-        const srcWidth = this.srcWidth;
-        const srcHeight = this.srcHeight;
-        const numLayers = note.numLayers;
-        const layerOrder = note.getFrameLayerOrder(frameIndex);
-        const layerDepths = note.getFrameLayerDepths(frameIndex);
-        this.useFramebuffer(this.frameBuffer);
-        if (shouldClear)
-            this.clear();
-        gl.useProgram(this.layerProgram.program);
-        for (let i = 0; i < numLayers; i++) {
-            const layerIndex = layerOrder[i];
-            note.getLayerPixelsRgba(frameIndex, layerIndex, this.layerTexturePixelBuffer, this.paletteBuffer);
-            setUniforms(this.layerProgram, {
-                u_flipY: true,
-                u_tex: this.layerTexture,
-                u_textureSize: [srcWidth, srcHeight],
-                u_3d_mode: this.stereoscopeMode,
-                u_3d_eye: depthEye,
-                u_3d_depth: layerDepths[layerIndex],
-                u_3d_strength: depthStrength,
-            });
-            gl.texImage2D(gl.TEXTURE_2D, 0, gl.RGBA, srcWidth, srcHeight, 0, gl.RGBA, gl.UNSIGNED_BYTE, this.layerTexturePixels);
-            gl.drawElements(gl.TRIANGLES, this.quadBuffer.numElements, this.quadBuffer.elementType, 0);
-        }
-    }
     /**
-     * Only a certain number of WebGL contexts can be added to a single page before the browser will start culling old contexts.
-     * This method returns true if it has been culled, false if not
-     */
-    checkContextLoss() {
-        const isLost = this.isCtxLost || this.isErrorState();
-        if (isLost)
-            this.handleContextLoss();
-        return isLost;
-    }
-    /**
+     * Get the contents of the canvas as a data URL.
      *
      * @param type image mime type (`image/jpeg`, `image/png`, etc)
      * @param quality image quality where supported, between 0 and 1
@@ -2623,6 +2551,12 @@ class WebglCanvas {
     getDataUrl(type, quality) {
         return this.canvas.toDataURL(type, quality);
     }
+    /**
+     * Get the contents of the canvas as a blob.
+     *
+     * @param type image mime type (`image/jpeg`, `image/png`, etc)
+     * @param quality image quality where supported, between 0 and 1
+     */
     async getBlob(type, quality) {
         return new Promise((resolve, reject) => this.canvas.toBlob(resolve, type, quality));
     }
@@ -2630,7 +2564,7 @@ class WebglCanvas {
      * Frees any resources used by this canvas instance
      */
     destroy() {
-        const refs = this.refs;
+        const refs = __classPrivateFieldGet(this, _WebglCanvas_refs, "f");
         const gl = this.gl;
         const canvas = this.canvas;
         refs.shaders.forEach((shader) => {
@@ -2653,12 +2587,12 @@ class WebglCanvas {
             gl.deleteProgram(program);
         });
         refs.programs = [];
-        this.paletteBuffer = null;
-        this.layerTexturePixelBuffer = null;
-        this.layerTexturePixels = null;
-        this.textureTypes.clear();
-        this.textureSizes.clear();
-        this.frameBufferTextures.clear();
+        __classPrivateFieldSet(this, _WebglCanvas_paletteBuffer, null, "f");
+        __classPrivateFieldSet(this, _WebglCanvas_layerTexturePixelBuffer, null, "f");
+        __classPrivateFieldSet(this, _WebglCanvas_layerTexturePixels, null, "f");
+        __classPrivateFieldGet(this, _WebglCanvas_textureTypes, "f").clear();
+        __classPrivateFieldGet(this, _WebglCanvas_textureSizes, "f").clear();
+        __classPrivateFieldGet(this, _WebglCanvas_frameBufferTextures, "f").clear();
         if (canvas && canvas.parentElement) {
             // shrink the canvas to reduce memory usage until it is garbage collected
             canvas.width = 1;
@@ -2668,12 +2602,231 @@ class WebglCanvas {
         }
     }
 }
+_WebglCanvas_options = new WeakMap(), _WebglCanvas_layerProgram = new WeakMap(), _WebglCanvas_upscaleProgram = new WeakMap(), _WebglCanvas_quadBuffer = new WeakMap(), _WebglCanvas_paletteBuffer = new WeakMap(), _WebglCanvas_layerTexture = new WeakMap(), _WebglCanvas_layerTexturePixelBuffer = new WeakMap(), _WebglCanvas_layerTexturePixels = new WeakMap(), _WebglCanvas_frameTexture = new WeakMap(), _WebglCanvas_frameBuffer = new WeakMap(), _WebglCanvas_textureTypes = new WeakMap(), _WebglCanvas_textureSizes = new WeakMap(), _WebglCanvas_frameBufferTextures = new WeakMap(), _WebglCanvas_applyFirefoxFix = new WeakMap(), _WebglCanvas_refs = new WeakMap(), _WebglCanvas_isCtxLost = new WeakMap(), _WebglCanvas_handleContextLoss = new WeakMap(), _WebglCanvas_handleContextRestored = new WeakMap(), _WebglCanvas_instances = new WeakSet(), _WebglCanvas_init = function _WebglCanvas_init() {
+    this.setCanvasSize(this.width, this.height);
+    const gl = this.gl;
+    if (__classPrivateFieldGet(this, _WebglCanvas_instances, "m", _WebglCanvas_checkContextLoss).call(this))
+        return;
+    __classPrivateFieldSet(this, _WebglCanvas_layerProgram, __classPrivateFieldGet(this, _WebglCanvas_instances, "m", _WebglCanvas_createProgram).call(this, vertShaderLayer, fragShaderLayer), "f");
+    __classPrivateFieldSet(this, _WebglCanvas_upscaleProgram, __classPrivateFieldGet(this, _WebglCanvas_instances, "m", _WebglCanvas_createProgram).call(this, vertShaderUpscale, fragShaderUpscale), "f");
+    __classPrivateFieldSet(this, _WebglCanvas_quadBuffer, __classPrivateFieldGet(this, _WebglCanvas_instances, "m", _WebglCanvas_createScreenQuad).call(this, -1, -1, 2, 2, 1, 1), "f");
+    __classPrivateFieldGet(this, _WebglCanvas_instances, "m", _WebglCanvas_setBuffersAndAttribs).call(this, __classPrivateFieldGet(this, _WebglCanvas_layerProgram, "f"), __classPrivateFieldGet(this, _WebglCanvas_quadBuffer, "f"));
+    __classPrivateFieldSet(this, _WebglCanvas_layerTexture, __classPrivateFieldGet(this, _WebglCanvas_instances, "m", _WebglCanvas_createTexture).call(this, gl.RGBA, gl.LINEAR, gl.CLAMP_TO_EDGE), "f");
+    __classPrivateFieldSet(this, _WebglCanvas_frameTexture, __classPrivateFieldGet(this, _WebglCanvas_instances, "m", _WebglCanvas_createTexture).call(this, gl.RGBA, gl.LINEAR, gl.CLAMP_TO_EDGE), "f");
+    __classPrivateFieldSet(this, _WebglCanvas_frameBuffer, __classPrivateFieldGet(this, _WebglCanvas_instances, "m", _WebglCanvas_createFramebuffer).call(this, __classPrivateFieldGet(this, _WebglCanvas_frameTexture, "f")), "f");
+    const debugInfo = gl.getExtension('WEBGL_debug_renderer_info');
+    const renderer = gl.getParameter(debugInfo.UNMASKED_RENDERER_WEBGL);
+    const userAgent = navigator.userAgent;
+    const isMacFirefox = userAgent.includes('Firefox') && userAgent.includes('Mac');
+    __classPrivateFieldSet(this, _WebglCanvas_applyFirefoxFix, isMacFirefox && renderer.includes('Apple M'), "f");
+}, _WebglCanvas_drawLayers = function _WebglCanvas_drawLayers(frameIndex, depthStrength = 0, depthEye = FlipnoteStereoscopicEye.Left, shouldClear = true) {
+    const gl = this.gl;
+    const note = this.note;
+    const srcWidth = this.srcWidth;
+    const srcHeight = this.srcHeight;
+    const numLayers = note.numLayers;
+    const layerOrder = note.getFrameLayerOrder(frameIndex);
+    const layerDepths = note.getFrameLayerDepths(frameIndex);
+    __classPrivateFieldGet(this, _WebglCanvas_instances, "m", _WebglCanvas_useFramebuffer).call(this, __classPrivateFieldGet(this, _WebglCanvas_frameBuffer, "f"));
+    if (shouldClear)
+        this.clear();
+    gl.useProgram(__classPrivateFieldGet(this, _WebglCanvas_layerProgram, "f").program);
+    for (let i = 0; i < numLayers; i++) {
+        const layerIndex = layerOrder[i];
+        note.getLayerPixelsRgba(frameIndex, layerIndex, __classPrivateFieldGet(this, _WebglCanvas_layerTexturePixelBuffer, "f"), __classPrivateFieldGet(this, _WebglCanvas_paletteBuffer, "f"));
+        setUniforms(__classPrivateFieldGet(this, _WebglCanvas_layerProgram, "f"), {
+            u_flipY: true,
+            u_tex: __classPrivateFieldGet(this, _WebglCanvas_layerTexture, "f"),
+            u_textureSize: [srcWidth, srcHeight],
+            u_3d_mode: this.stereoscopeMode,
+            u_3d_eye: depthEye,
+            u_3d_depth: layerDepths[layerIndex],
+            u_3d_strength: depthStrength,
+        });
+        gl.texImage2D(gl.TEXTURE_2D, 0, gl.RGBA, srcWidth, srcHeight, 0, gl.RGBA, gl.UNSIGNED_BYTE, __classPrivateFieldGet(this, _WebglCanvas_layerTexturePixels, "f"));
+        gl.drawElements(gl.TRIANGLES, __classPrivateFieldGet(this, _WebglCanvas_quadBuffer, "f").numElements, __classPrivateFieldGet(this, _WebglCanvas_quadBuffer, "f").elementType, 0);
+    }
+}, _WebglCanvas_upscale = function _WebglCanvas_upscale(width, height) {
+    if (__classPrivateFieldGet(this, _WebglCanvas_instances, "m", _WebglCanvas_checkContextLoss).call(this))
+        return;
+    const gl = this.gl;
+    gl.useProgram(__classPrivateFieldGet(this, _WebglCanvas_upscaleProgram, "f").program);
+    setUniforms(__classPrivateFieldGet(this, _WebglCanvas_upscaleProgram, "f"), {
+        // u_flipY: true,
+        u_tex: __classPrivateFieldGet(this, _WebglCanvas_frameTexture, "f"),
+        u_textureSize: [this.srcWidth, this.srcHeight],
+        u_screenSize: [width, height],
+    });
+    gl.drawElements(gl.TRIANGLES, __classPrivateFieldGet(this, _WebglCanvas_quadBuffer, "f").numElements, __classPrivateFieldGet(this, _WebglCanvas_quadBuffer, "f").elementType, 0);
+}, _WebglCanvas_createProgram = function _WebglCanvas_createProgram(vertexShaderSource, fragmentShaderSource) {
+    if (__classPrivateFieldGet(this, _WebglCanvas_instances, "m", _WebglCanvas_checkContextLoss).call(this))
+        return;
+    const gl = this.gl;
+    const vert = __classPrivateFieldGet(this, _WebglCanvas_instances, "m", _WebglCanvas_createShader).call(this, gl.VERTEX_SHADER, vertexShaderSource);
+    const frag = __classPrivateFieldGet(this, _WebglCanvas_instances, "m", _WebglCanvas_createShader).call(this, gl.FRAGMENT_SHADER, fragmentShaderSource);
+    const program = gl.createProgram();
+    // set up shaders
+    gl.attachShader(program, vert);
+    gl.attachShader(program, frag);
+    // link program
+    gl.linkProgram(program);
+    if (!gl.getProgramParameter(program, gl.LINK_STATUS)) {
+        const log = gl.getProgramInfoLog(program);
+        gl.deleteProgram(program);
+        throw new Error(log);
+    }
+    const programInfo = createProgramInfoFromProgram(gl, program);
+    __classPrivateFieldGet(this, _WebglCanvas_refs, "f").programs.push(program);
+    return programInfo;
+}, _WebglCanvas_createShader = function _WebglCanvas_createShader(type, source) {
+    if (__classPrivateFieldGet(this, _WebglCanvas_instances, "m", _WebglCanvas_checkContextLoss).call(this))
+        return;
+    const gl = this.gl;
+    const shader = gl.createShader(type);
+    gl.shaderSource(shader, source);
+    gl.compileShader(shader);
+    // test if shader compilation was successful
+    if (!gl.getShaderParameter(shader, gl.COMPILE_STATUS)) {
+        const log = gl.getShaderInfoLog(shader);
+        gl.deleteShader(shader);
+        throw new Error(log);
+    }
+    __classPrivateFieldGet(this, _WebglCanvas_refs, "f").shaders.push(shader);
+    return shader;
+}, _WebglCanvas_createScreenQuad = function _WebglCanvas_createScreenQuad(x0, y0, width, height, xSubdivs, ySubdivs) {
+    if (__classPrivateFieldGet(this, _WebglCanvas_instances, "m", _WebglCanvas_checkContextLoss).call(this))
+        return;
+    const numVerts = (xSubdivs + 1) * (ySubdivs + 1);
+    const numVertsAcross = xSubdivs + 1;
+    const positions = new Float32Array(numVerts * 2);
+    const texCoords = new Float32Array(numVerts * 2);
+    let positionPtr = 0;
+    let texCoordPtr = 0;
+    for (let y = 0; y <= ySubdivs; y++) {
+        for (let x = 0; x <= xSubdivs; x++) {
+            const u = x / xSubdivs;
+            const v = y / ySubdivs;
+            positions[positionPtr++] = x0 + width * u;
+            positions[positionPtr++] = y0 + height * v;
+            texCoords[texCoordPtr++] = u;
+            texCoords[texCoordPtr++] = v;
+        }
+    }
+    const indices = new Uint16Array(xSubdivs * ySubdivs * 2 * 3);
+    let indicesPtr = 0;
+    for (let y = 0; y < ySubdivs; y++) {
+        for (let x = 0; x < xSubdivs; x++) {
+            // triangle 1
+            indices[indicesPtr++] = (y + 0) * numVertsAcross + x;
+            indices[indicesPtr++] = (y + 1) * numVertsAcross + x;
+            indices[indicesPtr++] = (y + 0) * numVertsAcross + x + 1;
+            // triangle 2
+            indices[indicesPtr++] = (y + 0) * numVertsAcross + x + 1;
+            indices[indicesPtr++] = (y + 1) * numVertsAcross + x;
+            indices[indicesPtr++] = (y + 1) * numVertsAcross + x + 1;
+        }
+    }
+    const bufferInfo = createBufferInfoFromArrays(this.gl, {
+        position: {
+            numComponents: 2,
+            data: positions
+        },
+        texcoord: {
+            numComponents: 2,
+            data: texCoords
+        },
+        indices: indices
+    });
+    // collect references to buffer objects
+    for (let name in bufferInfo.attribs)
+        __classPrivateFieldGet(this, _WebglCanvas_refs, "f").buffers.push(bufferInfo.attribs[name].buffer);
+    return bufferInfo;
+}, _WebglCanvas_setBuffersAndAttribs = function _WebglCanvas_setBuffersAndAttribs(program, buffer) {
+    if (__classPrivateFieldGet(this, _WebglCanvas_instances, "m", _WebglCanvas_checkContextLoss).call(this))
+        return;
+    setBuffersAndAttributes(this.gl, program.attribSetters, buffer);
+}, _WebglCanvas_createTexture = function _WebglCanvas_createTexture(type, minMag, wrap, width = 1, height = 1) {
+    if (__classPrivateFieldGet(this, _WebglCanvas_instances, "m", _WebglCanvas_checkContextLoss).call(this))
+        return;
+    const gl = this.gl;
+    const tex = gl.createTexture();
+    gl.bindTexture(gl.TEXTURE_2D, tex);
+    gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_S, wrap);
+    gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_T, wrap);
+    gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MIN_FILTER, minMag);
+    gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MAG_FILTER, minMag);
+    gl.texImage2D(gl.TEXTURE_2D, 0, type, width, height, 0, type, gl.UNSIGNED_BYTE, null);
+    __classPrivateFieldGet(this, _WebglCanvas_refs, "f").textures.push(tex);
+    __classPrivateFieldGet(this, _WebglCanvas_textureTypes, "f").set(tex, type);
+    __classPrivateFieldGet(this, _WebglCanvas_textureSizes, "f").set(tex, { width, height });
+    return tex;
+}, _WebglCanvas_resizeTexture = function _WebglCanvas_resizeTexture(texture, width, height) {
+    if (__classPrivateFieldGet(this, _WebglCanvas_instances, "m", _WebglCanvas_checkContextLoss).call(this))
+        return;
+    const gl = this.gl;
+    const textureType = __classPrivateFieldGet(this, _WebglCanvas_textureTypes, "f").get(texture);
+    gl.bindTexture(gl.TEXTURE_2D, texture);
+    gl.texImage2D(gl.TEXTURE_2D, 0, textureType, width, height, 0, textureType, gl.UNSIGNED_BYTE, null);
+    __classPrivateFieldGet(this, _WebglCanvas_textureSizes, "f").set(texture, { width, height });
+}, _WebglCanvas_createFramebuffer = function _WebglCanvas_createFramebuffer(texture) {
+    if (__classPrivateFieldGet(this, _WebglCanvas_instances, "m", _WebglCanvas_checkContextLoss).call(this))
+        return;
+    const gl = this.gl;
+    const fb = gl.createFramebuffer();
+    gl.bindFramebuffer(gl.FRAMEBUFFER, fb);
+    gl.framebufferTexture2D(gl.FRAMEBUFFER, gl.COLOR_ATTACHMENT0, gl.TEXTURE_2D, texture, 0);
+    __classPrivateFieldGet(this, _WebglCanvas_refs, "f").frameBuffers.push(fb);
+    __classPrivateFieldGet(this, _WebglCanvas_frameBufferTextures, "f").set(fb, texture);
+    return fb;
+}, _WebglCanvas_useFramebuffer = function _WebglCanvas_useFramebuffer(fb, viewX, viewY, viewWidth, viewHeight) {
+    if (__classPrivateFieldGet(this, _WebglCanvas_instances, "m", _WebglCanvas_checkContextLoss).call(this))
+        return;
+    const gl = this.gl;
+    if (fb === null) {
+        gl.bindFramebuffer(gl.FRAMEBUFFER, null);
+        /**
+         * Firefox on Apple Silicon Macs seems to have some kind of viewport sizing bug that I can't track down.
+         * Details here: https://github.com/jaames/flipnote.js/issues/30#issuecomment-2134602056
+         * Not sure what's causing it, but this hack fixes it for now.
+         * Need to test whether only specific versions of Firefox are affected, if it's only an Apple Silicon thing, etc, etc...
+         */
+        if (__classPrivateFieldGet(this, _WebglCanvas_applyFirefoxFix, "f")) {
+            const srcWidth = this.srcWidth;
+            const srcHeight = this.srcHeight;
+            const sx = gl.drawingBufferWidth / srcWidth;
+            const sy = gl.drawingBufferHeight / srcHeight;
+            const adj = srcWidth === 256 ? 1 : 0; // ??????? why
+            viewWidth = gl.drawingBufferWidth * (sx - adj);
+            viewHeight = gl.drawingBufferHeight * (sy - adj);
+            viewX = -(viewWidth - srcWidth * sx);
+            viewY = -(viewHeight - srcHeight * sy);
+        }
+        gl.viewport(viewX ?? 0, viewY ?? 0, viewWidth ?? gl.drawingBufferWidth, viewHeight ?? gl.drawingBufferHeight);
+    }
+    else {
+        const tex = __classPrivateFieldGet(this, _WebglCanvas_frameBufferTextures, "f").get(fb);
+        const { width, height } = __classPrivateFieldGet(this, _WebglCanvas_textureSizes, "f").get(tex);
+        gl.bindFramebuffer(gl.FRAMEBUFFER, fb);
+        gl.viewport(viewX ?? 0, viewY ?? 0, viewWidth ?? width, viewHeight ?? height);
+    }
+}, _WebglCanvas_resizeFramebuffer = function _WebglCanvas_resizeFramebuffer(fb, width, height) {
+    if (__classPrivateFieldGet(this, _WebglCanvas_instances, "m", _WebglCanvas_checkContextLoss).call(this))
+        return;
+    const texture = __classPrivateFieldGet(this, _WebglCanvas_frameBufferTextures, "f").get(fb);
+    __classPrivateFieldGet(this, _WebglCanvas_instances, "m", _WebglCanvas_resizeTexture).call(this, texture, width, height);
+}, _WebglCanvas_checkContextLoss = function _WebglCanvas_checkContextLoss() {
+    const isLost = __classPrivateFieldGet(this, _WebglCanvas_isCtxLost, "f") || this.isErrorState();
+    if (isLost)
+        __classPrivateFieldGet(this, _WebglCanvas_handleContextLoss, "f").call(this);
+    return isLost;
+};
 WebglCanvas.defaultOptions = {
     onlost: () => { },
     onrestored: () => { },
     useDpi: true
 };
 
+var _Html5Canvas_options, _Html5Canvas_srcCanvas, _Html5Canvas_srcCtx, _Html5Canvas_frameImage, _Html5Canvas_paletteBuffer, _Html5Canvas_frameBuffer;
 /**
  * Flipnote renderer for the [HTML5 2D canvas API](https://developer.mozilla.org/en-US/docs/Web/API/CanvasRenderingContext2D)
  */
@@ -2689,25 +2842,36 @@ class Html5Canvas {
         return supported;
     }
     constructor(parent, width, height, options = {}) {
-        /** */
+        /**
+         *
+         */
         this.supportedStereoscopeModes = [
             CanvasStereoscopicMode.None
         ];
-        /** */
+        /**
+         *
+         */
         this.stereoscopeMode = CanvasStereoscopicMode.None;
-        /** */
+        /**
+         *
+         */
         this.stereoscopeStrength = 0;
-        this.paletteBuffer = new Uint32Array(16);
+        _Html5Canvas_options.set(this, void 0);
+        _Html5Canvas_srcCanvas.set(this, void 0);
+        _Html5Canvas_srcCtx.set(this, void 0);
+        _Html5Canvas_frameImage.set(this, void 0);
+        _Html5Canvas_paletteBuffer.set(this, new Uint32Array(16));
+        _Html5Canvas_frameBuffer.set(this, void 0);
         assertBrowserEnv();
-        this.options = { ...Html5Canvas.defaultOptions, ...options };
+        __classPrivateFieldSet(this, _Html5Canvas_options, { ...Html5Canvas.defaultOptions, ...options }, "f");
         this.width = width;
         this.height = height;
         this.canvas = document.createElement('canvas');
         this.canvas.className = 'FlipnoteCanvas FlipnoteCanvas--html5';
         this.ctx = this.canvas.getContext('2d');
-        this.srcCanvas = document.createElement('canvas');
-        this.srcCtx = this.srcCanvas.getContext('2d');
-        assert(this.ctx !== null && this.srcCtx !== null, 'Could not create HTML5 canvas');
+        __classPrivateFieldSet(this, _Html5Canvas_srcCanvas, document.createElement('canvas'), "f");
+        __classPrivateFieldSet(this, _Html5Canvas_srcCtx, __classPrivateFieldGet(this, _Html5Canvas_srcCanvas, "f").getContext('2d'), "f");
+        assert(this.ctx !== null && __classPrivateFieldGet(this, _Html5Canvas_srcCtx, "f") !== null, 'Could not create HTML5 canvas');
         if (parent)
             parent.appendChild(this.canvas);
         this.setCanvasSize(width, height);
@@ -2721,7 +2885,7 @@ class Html5Canvas {
      */
     setCanvasSize(width, height) {
         const canvas = this.canvas;
-        const useDpi = this.options.useDpi;
+        const useDpi = __classPrivateFieldGet(this, _Html5Canvas_options, "f").useDpi;
         const dpi = useDpi ? (window.devicePixelRatio || 1) : 1;
         const internalWidth = width * dpi;
         const internalHeight = height * dpi;
@@ -2742,12 +2906,12 @@ class Html5Canvas {
         this.note = note;
         this.srcWidth = width;
         this.srcHeight = height;
-        this.srcCanvas.width = width;
-        this.srcCanvas.height = height;
+        __classPrivateFieldGet(this, _Html5Canvas_srcCanvas, "f").width = width;
+        __classPrivateFieldGet(this, _Html5Canvas_srcCanvas, "f").height = height;
         // create image data to fit note size
-        this.frameImage = this.srcCtx.createImageData(width, height);
+        __classPrivateFieldSet(this, _Html5Canvas_frameImage, __classPrivateFieldGet(this, _Html5Canvas_srcCtx, "f").createImageData(width, height), "f");
         // uint32 view of the img buffer memory
-        this.frameBuffer = new Uint32Array(this.frameImage.data.buffer);
+        __classPrivateFieldSet(this, _Html5Canvas_frameBuffer, new Uint32Array(__classPrivateFieldGet(this, _Html5Canvas_frameImage, "f").data.buffer), "f");
         this.frameIndex = undefined;
         // set canvas alt text
         this.canvas.title = note.getTitle();
@@ -2758,7 +2922,7 @@ class Html5Canvas {
      */
     clear(color) {
         // clear framebuffer
-        this.frameBuffer.fill(0);
+        __classPrivateFieldGet(this, _Html5Canvas_frameBuffer, "f").fill(0);
         // clear canvas
         this.ctx.clearRect(0, 0, this.dstWidth, this.dstHeight);
         // fill canvas with paper color
@@ -2772,14 +2936,14 @@ class Html5Canvas {
         // clear whatever's already been drawn
         this.clear();
         // optionally enable image smoothing
-        if (!this.options.useSmoothing)
+        if (!__classPrivateFieldGet(this, _Html5Canvas_options, "f").useSmoothing)
             this.ctx.imageSmoothingEnabled = false;
         // get frame pixels as RGBA buffer
-        this.note.getFramePixelsRgba(frameIndex, this.frameBuffer, this.paletteBuffer);
+        this.note.getFramePixelsRgba(frameIndex, __classPrivateFieldGet(this, _Html5Canvas_frameBuffer, "f"), __classPrivateFieldGet(this, _Html5Canvas_paletteBuffer, "f"));
         // put framebuffer pixels into the src canvas
-        this.srcCtx.putImageData(this.frameImage, 0, 0);
+        __classPrivateFieldGet(this, _Html5Canvas_srcCtx, "f").putImageData(__classPrivateFieldGet(this, _Html5Canvas_frameImage, "f"), 0, 0);
         // composite src canvas to dst (so image scaling can be handled)
-        this.ctx.drawImage(this.srcCanvas, 0, 0, this.srcWidth, this.srcHeight, 0, 0, this.dstWidth, this.dstHeight);
+        this.ctx.drawImage(__classPrivateFieldGet(this, _Html5Canvas_srcCanvas, "f"), 0, 0, this.srcWidth, this.srcHeight, 0, 0, this.dstWidth, this.dstHeight);
         this.frameIndex = frameIndex;
     }
     requestStereoScopeMode(mode) {
@@ -2800,83 +2964,70 @@ class Html5Canvas {
         return new Promise((resolve, reject) => this.canvas.toBlob(resolve, type, quality));
     }
     destroy() {
-        this.frameImage = null;
-        this.paletteBuffer = null;
-        this.frameBuffer = null;
+        __classPrivateFieldSet(this, _Html5Canvas_frameImage, null, "f");
+        __classPrivateFieldSet(this, _Html5Canvas_paletteBuffer, null, "f");
+        __classPrivateFieldSet(this, _Html5Canvas_frameBuffer, null, "f");
         this.canvas.parentNode.removeChild(this.canvas);
         this.canvas.width = 1;
         this.canvas.height = 1;
         this.canvas = null;
-        this.srcCanvas.width = 1;
-        this.srcCanvas.height = 1;
-        this.srcCanvas = null;
+        __classPrivateFieldGet(this, _Html5Canvas_srcCanvas, "f").width = 1;
+        __classPrivateFieldGet(this, _Html5Canvas_srcCanvas, "f").height = 1;
+        __classPrivateFieldSet(this, _Html5Canvas_srcCanvas, null, "f");
     }
 }
+_Html5Canvas_options = new WeakMap(), _Html5Canvas_srcCanvas = new WeakMap(), _Html5Canvas_srcCtx = new WeakMap(), _Html5Canvas_frameImage = new WeakMap(), _Html5Canvas_paletteBuffer = new WeakMap(), _Html5Canvas_frameBuffer = new WeakMap();
 Html5Canvas.defaultOptions = {
     useDpi: true,
     useSmoothing: true,
 };
 
+var _UniversalCanvas_instances, _UniversalCanvas_rendererStack, _UniversalCanvas_rendererStackIdx, _UniversalCanvas_parent, _UniversalCanvas_options, _UniversalCanvas_setSubRenderer;
 class UniversalCanvas {
     constructor(parent, width = 640, height = 480, options = {}) {
-        /** */
+        _UniversalCanvas_instances.add(this);
+        /**
+         *
+         */
         this.isReady = false;
-        /** */
+        /**
+         *
+         */
         this.isHtml5 = false;
-        /** */
+        /**
+         *
+         */
         this.supportedStereoscopeModes = [];
-        /** */
+        /**
+         *
+         */
         this.stereoscopeMode = CanvasStereoscopicMode.None;
-        /** */
+        /**
+         *
+         */
         this.stereoscopeStrength = 1;
-        this.rendererStack = [
+        _UniversalCanvas_rendererStack.set(this, [
             WebglCanvas,
             Html5Canvas
-        ];
-        this.rendererStackIdx = 0;
-        this.options = {};
+        ]);
+        _UniversalCanvas_rendererStackIdx.set(this, 0);
+        _UniversalCanvas_parent.set(this, void 0);
+        _UniversalCanvas_options.set(this, {});
         this.width = width;
         this.height = height;
-        this.parent = parent;
-        this.options = options;
-        this.setSubRenderer(this.rendererStack[0]);
-    }
-    setSubRenderer(Canvas) {
-        let immediateLoss = false;
-        const renderer = new Canvas(this.parent, this.width, this.height, {
-            ...this.options,
-            onlost: () => {
-                immediateLoss = true;
-                this.fallbackIfPossible();
-            }
-        });
-        // if onlost was called immediately, we succeed to the fallback
-        if (immediateLoss)
-            return;
-        if (this.note) {
-            renderer.setNote(this.note);
-            renderer.frameIndex = this.renderer?.frameIndex;
-            renderer.forceUpdate();
-        }
-        if (this.renderer)
-            this.renderer.destroy();
-        this.isHtml5 = renderer instanceof Html5Canvas;
-        this.isReady = true;
-        this.renderer = renderer;
-        this.rendererStackIdx = this.rendererStack.indexOf(Canvas);
-        this.supportedStereoscopeModes = renderer.supportedStereoscopeModes;
-        renderer.stereoscopeStrength = this.stereoscopeStrength;
-        this.requestStereoScopeMode(this.stereoscopeMode);
+        __classPrivateFieldSet(this, _UniversalCanvas_parent, parent, "f");
+        __classPrivateFieldSet(this, _UniversalCanvas_options, options, "f");
+        __classPrivateFieldGet(this, _UniversalCanvas_instances, "m", _UniversalCanvas_setSubRenderer).call(this, __classPrivateFieldGet(this, _UniversalCanvas_rendererStack, "f")[0]);
     }
     fallbackIfPossible() {
-        if (this.rendererStackIdx >= this.rendererStack.length)
+        if (__classPrivateFieldGet(this, _UniversalCanvas_rendererStackIdx, "f") >= __classPrivateFieldGet(this, _UniversalCanvas_rendererStack, "f").length)
             throw new Error('No renderer to fall back to');
-        this.rendererStackIdx += 1;
-        this.setSubRenderer(this.rendererStack[this.rendererStackIdx]);
+        __classPrivateFieldSet(this, _UniversalCanvas_rendererStackIdx, __classPrivateFieldGet(this, _UniversalCanvas_rendererStackIdx, "f") + 1, "f");
+        __classPrivateFieldGet(this, _UniversalCanvas_instances, "m", _UniversalCanvas_setSubRenderer).call(this, __classPrivateFieldGet(this, _UniversalCanvas_rendererStack, "f")[__classPrivateFieldGet(this, _UniversalCanvas_rendererStackIdx, "f")]);
     }
     // for backwards compat
     switchToHtml5() {
-        this.setSubRenderer(Html5Canvas);
+        __classPrivateFieldGet(this, _UniversalCanvas_instances, "m", _UniversalCanvas_setSubRenderer).call(this, Html5Canvas);
     }
     setCanvasSize(width, height) {
         const renderer = this.renderer;
@@ -2918,5 +3069,32 @@ class UniversalCanvas {
         this.note = null;
     }
 }
+_UniversalCanvas_rendererStack = new WeakMap(), _UniversalCanvas_rendererStackIdx = new WeakMap(), _UniversalCanvas_parent = new WeakMap(), _UniversalCanvas_options = new WeakMap(), _UniversalCanvas_instances = new WeakSet(), _UniversalCanvas_setSubRenderer = function _UniversalCanvas_setSubRenderer(Canvas) {
+    let immediateLoss = false;
+    const renderer = new Canvas(__classPrivateFieldGet(this, _UniversalCanvas_parent, "f"), this.width, this.height, {
+        ...__classPrivateFieldGet(this, _UniversalCanvas_options, "f"),
+        onlost: () => {
+            immediateLoss = true;
+            this.fallbackIfPossible();
+        }
+    });
+    // if onlost was called immediately, we succeed to the fallback
+    if (immediateLoss)
+        return;
+    if (this.note) {
+        renderer.setNote(this.note);
+        renderer.frameIndex = this.renderer?.frameIndex;
+        renderer.forceUpdate();
+    }
+    if (this.renderer)
+        this.renderer.destroy();
+    this.isHtml5 = renderer instanceof Html5Canvas;
+    this.isReady = true;
+    this.renderer = renderer;
+    __classPrivateFieldSet(this, _UniversalCanvas_rendererStackIdx, __classPrivateFieldGet(this, _UniversalCanvas_rendererStack, "f").indexOf(Canvas), "f");
+    this.supportedStereoscopeModes = renderer.supportedStereoscopeModes;
+    renderer.stereoscopeStrength = this.stereoscopeStrength;
+    this.requestStereoScopeMode(this.stereoscopeMode);
+};
 
 export { CanvasInterface, CanvasStereoscopicMode, Html5Canvas, UniversalCanvas, WebglCanvas };

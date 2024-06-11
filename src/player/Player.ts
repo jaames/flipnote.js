@@ -1,6 +1,5 @@
 import type { Flipnote, FlipnoteFormat, FlipnoteMeta, FlipnoteParserSettings } from '../parsers';
-import type { FlipnoteSource, FlipnoteSourceParser } from '../parseSource';
-import type { LoaderDefinitionList } from '../loaders';
+import { parse } from '../parseSource';
 import { PlayerEvent, PlayerEventMap, supportedEvents } from './PlayerEvent';
 import { createTimeRanges, padNumber, formatTime } from './playerUtils';
 import { UniversalCanvas } from '../renderers';
@@ -11,7 +10,7 @@ type PlayerLayerVisibility = Record<number, boolean>;
 
 /**
  * Flipnote Player API (exported as `flipnote.Player`) - provides a {@link https://developer.mozilla.org/en-US/docs/Web/API/HTMLMediaElement | MediaElement}-like interface for loading Flipnotes and playing them. 
- * This is intended for cases where you want to implement your own player UI, if you just want a pre-built player with some nice UI controls, check out the {@page Web Components} page instead!
+ * This is intended for cases where you want to implement your own player UI, if you just want a pre-built player with some nice UI controls, check out the [Web Components](/web-components/) page instead!
  * 
  * ### Create a new player
  * 
@@ -47,67 +46,118 @@ type PlayerLayerVisibility = Record<number, boolean>;
  */
 export class Player {
 
-  /** Frame renderer */
+  /**
+   * Flipnote renderer.
+   * @group Display Control
+   */
   renderer: UniversalCanvas;
-  /** Audio player */
-  audio: WebAudioPlayer;
-  /** Root element */
+  /**
+   * Root element
+   */
   el: Element;
-  /** Canvas HTML element */
-  canvasEl: HTMLCanvasElement;
-  /** Currently loaded Flipnote */
+  /**
+   * Currently loaded Flipnote
+   */
   note: Flipnote;
-  /** Flipnote parser settings */
+  /**
+   * Flipnote parser settings
+   */
   parserSettings: FlipnoteParserSettings;
-  /** Format of the currently loaded Flipnote */
+  /**
+   * Format of the currently loaded Flipnote
+   */
   noteFormat: FlipnoteFormat;
-  /** Metadata for the currently loaded Flipnote */
+  /**
+   * Metadata for the currently loaded Flipnote
+   */
   meta: FlipnoteMeta;
-  /** Animation duration, in seconds */
+  /**
+   * Animation duration, in seconds
+   */
   duration: number = 0;
-  /** Animation layer visibility */
+  /**
+   * Animation layer visibility
+   */
   layerVisibility: PlayerLayerVisibility;
-  /** Automatically begin playback after a Flipnote is loaded */
+  /**
+   * Automatically begin playback after a Flipnote is loaded
+   */
   autoplay: boolean = false;
-  /** Array of events supported by this player */
+  /**
+   * Array of events supported by this player
+   */
   supportedEvents = supportedEvents;
 
-  /** @internal */
-  _src: FlipnoteSource = null;
-  /** @internal */
+  /**
+   * Audio player
+   * @internal
+   */
+  audio: WebAudioPlayer;
+
+  /**
+   * @internal
+   */
+  _src: any = null;
+  /**
+   * @internal
+   */
   _loop: boolean = false;
-  /** @internal */
+  /**
+   * @internal
+   */
   _volume: number = 1;
-  /** @internal */
+  /**
+   * @internal
+   */
   _muted: boolean = false;
-  /** @internal */
+  /**
+   * @internal
+   */
   _frame: number = null;
-  /** @internal */
+  /**
+   * @internal
+   */
   _hasEnded: boolean = false;
-  /** @internal */
+  /**
+   * @internal
+   */
   isNoteLoaded: boolean = false;
-  /** @internal */
+  /**
+   * @internal
+   */
   events: PlayerEventMap = new Map();
-  /** @internal */
+  /**
+   * @internal
+   */
   playbackStartTime: number = 0;
-  /** @internal */
+  /**
+   * @internal
+   */
   playbackTime: number = 0;
-  /** @internal */
+  /**
+   * @internal
+   */
   playbackLoopId: number = null;
-  /** @internal */
+  /**
+   * @internal
+   */
   showThumbnail: boolean = true;
-  /** @internal */
+  /**
+   * @internal
+   */
   hasPlaybackStarted: boolean = false;
-  /** @internal */
+  /**
+   * @internal
+   */
   isPlaying: boolean = false;
-  /** @internal */
+  /**
+   * @internal
+   */
   wasPlaying: boolean = false;
-  /** @internal */
+  /**
+   * @internal
+   */
   isSeeking: boolean = false;
-  /** @internal */
-  lastParser: FlipnoteSourceParser = undefined;
-  /** @internal */
-  lastLoaders: LoaderDefinitionList = undefined;
 
   /**
    * Create a new Player instance
@@ -129,18 +179,24 @@ export class Player {
     });
     this.audio = new WebAudioPlayer();
     this.el = mountPoint;
-    // this.canvasEl = this.renderer.el;
   }
 
-  /** The currently loaded Flipnote source, if there is one */
+  /**
+   * The currently loaded Flipnote source, if there is one
+   * @group Lifecycle
+   * @deprecated
+   */
   get src() {
     return this._src;
   }
-  set src(source: FlipnoteSource) {
+  set src(source: any) {
     throw new Error('Setting a Player source has been deprecated, please use the load() method instead');
   }
 
-  /** Indicates whether playback is currently paused */
+  /**
+   * Indicates whether playback is currently paused
+   * @group Playback Control
+   */
   get paused() {
     return !this.isPlaying;
   }
@@ -151,7 +207,10 @@ export class Player {
       this.play();
   }
 
-  /** Current animation frame index */
+  /**
+   * Current animation frame index.
+   * @group Playback Control
+   */
   get currentFrame() {
     return this._frame;
   }
@@ -159,7 +218,10 @@ export class Player {
     this.setCurrentFrame(frameIndex);
   }
 
-  /** Current animation playback position, in seconds */
+  /**
+   * Current animation playback position, in seconds.
+   * @group Playback Control
+   */
   get currentTime() {
     return this.isNoteLoaded ? this.playbackTime : null;
   }
@@ -167,7 +229,10 @@ export class Player {
     this.setCurrentTime(value);
   }
 
-  /** Current animation playback progress, as a percentage out of 100 */
+  /**
+   * Current animation playback progress, as a percentage out of 100.
+   * @group Playback Control
+   */
   get progress() {
     return this.isNoteLoaded ? (this.playbackTime / this.duration) * 100 : null;
   }
@@ -175,7 +240,10 @@ export class Player {
     this.setProgress(value);
   }
 
-  /** Audio volume, range `0` to `1` */
+  /**
+   * Audio volume, range `0` to `1`.
+   * @group Audio Control
+   */
   get volume() {
     return this.getVolume();
   }
@@ -184,7 +252,10 @@ export class Player {
     this.setVolume(value);
   }
 
-  /** Audio mute state */
+  /**
+   * Audio mute state.
+   * @group Audio Control
+   */
   get muted() {
     return this.getMuted();
   }
@@ -193,7 +264,10 @@ export class Player {
     this.setMuted(value);
   }
 
-  /** Indicates whether playback should loop once the end is reached */
+  /**
+   * Indicates whether playback should loop once the end is reached
+   * @group Playback Control
+   */
   get loop() {
     return this.getLoop();
   }
@@ -202,24 +276,33 @@ export class Player {
     this.setLoop(value);
   }
 
-  /** Animation frame rate, measured in frames per second */
+  /**
+   * Animation frame rate, measured in frames per second.
+   * @group Playback Control
+   */
   get framerate() {
     return this.note.framerate;
   }
 
-  /** Animation frame count */
+  /**
+   * Animation frame count.
+   * @group Frame Control
+   */
   get frameCount() {
     return this.note.frameCount;
   }
 
-  /** Animation frame speed */
+  /**
+   * Animation frame speed.
+   * @group Frame Control
+   */
   get frameSpeed() {
     return this.note.frameSpeed;
   }
 
   /**
-   * Implementation of the `HTMLMediaElement` {@link https://developer.mozilla.org/en-US/docs/Web/API/HTMLMediaElement/buffered | buffered } property
-   * @category HTMLVideoElement compatibility
+   * Implementation of the `HTMLMediaElement` {@link https://developer.mozilla.org/en-US/docs/Web/API/HTMLMediaElement/buffered | buffered } property.
+   * @group HTMLVideoElement compatibility
    */
   get buffered() {
     return createTimeRanges([[0, this.duration]]);
@@ -227,7 +310,7 @@ export class Player {
 
   /**
    * Implementation of the `HTMLMediaElement` {@link https://developer.mozilla.org/en-US/docs/Web/API/HTMLMediaElement/seekable | seekable} property
-   * @category HTMLVideoElement compatibility
+   * @group HTMLVideoElement compatibility
    */
   get seekable() {
     return createTimeRanges([[0, this.duration]]);
@@ -235,7 +318,7 @@ export class Player {
 
   /**
    * Implementation of the `HTMLMediaElement` {@link https://developer.mozilla.org/en-US/docs/Web/API/HTMLMediaElement/currentSrc | currentSrc} property
-   * @category HTMLVideoElement compatibility
+   * @group HTMLVideoElement compatibility
    */
   get currentSrc() {
     return this._src;
@@ -243,7 +326,7 @@ export class Player {
 
   /**
    * Implementation of the `HTMLVideoElement` {@link https://developer.mozilla.org/en-US/docs/Web/API/HTMLVideoElement/videoWidth | videoWidth} property
-   * @category HTMLVideoElement compatibility
+   * @group HTMLVideoElement compatibility
    */
   get videoWidth() {
     return this.isNoteLoaded ? this.note.imageWidth : 0;
@@ -251,7 +334,7 @@ export class Player {
 
   /**
    * Implementation of the `HTMLVideoElement` {@link https://developer.mozilla.org/en-US/docs/Web/API/HTMLVideoElement/videoHeight | videoHeight} property
-   * @category HTMLVideoElement compatibility
+   * @group HTMLVideoElement compatibility
    */
   get videoHeight() {
     return this.isNoteLoaded ? this.note.imageHeight : 0;
@@ -259,9 +342,9 @@ export class Player {
 
   /** 
    * Open a Flipnote from a source
-   * @category Lifecycle
+   * @group Lifecycle
    */
-  async load(source: any, getParser: FlipnoteSourceParser, loaders?: LoaderDefinitionList) {
+  async load(source: any) {
     // close currently open note first
     if (this.isNoteLoaded) 
       this.closeNote();
@@ -273,28 +356,28 @@ export class Player {
     // otherwise do a normal load
     this.emit(PlayerEvent.LoadStart);
 
-    const [err, note] = await until(() => getParser(source, this.parserSettings, loaders));
+    const [err, note] = await until(() => parse(source, this.parserSettings));
 
     if (err) {
       this.emit(PlayerEvent.Error, err);
       throw new Error(`Error loading Flipnote: ${ err.message }`);
     }
 
-    this.lastParser = getParser;
-    this.lastLoaders = loaders;
     this.openNote(note);
   }
 
   /**
-   * Reload the current Flipnote
+   * Reload the current Flipnote.
+   * @group Lifecycle
    */
   async reload() {
-    if (this.note && this.lastParser) 
-      return await this.load(this.note.buffer, this.lastParser, this.lastLoaders);
+    if (this.note) 
+      return await this.load(this.note.buffer);
   }
 
   /**
-   * Reload the current Flipnote
+   * Reload the current Flipnote, applying new parser settings.
+   * @group Lifecycle
    */
   async updateSettings(settings: FlipnoteParserSettings) {
     this.parserSettings = settings;
@@ -303,7 +386,7 @@ export class Player {
 
   /** 
    * Close the currently loaded Flipnote
-   * @category Lifecycle
+   * @group Lifecycle
    */
   closeNote() {
     this.pause();
@@ -325,7 +408,7 @@ export class Player {
 
   /** 
    * Open a Flipnote into the player
-   * @category Lifecycle
+   * @group Lifecycle
    */
   openNote(note: Flipnote) {
     if (this.isNoteLoaded)
@@ -359,7 +442,7 @@ export class Player {
   /**
    * Playback animation loop
    * @internal
-   * @category Playback Control 
+   * @group Playback Control 
    */
   playbackLoop = (timestamp: DOMHighResTimeStamp) => {
     if (!this.isPlaying)
@@ -390,7 +473,7 @@ export class Player {
 
   /**
    * Set the current playback time
-   * @category Playback Control 
+   * @group Playback Control 
    */
   setCurrentTime(value: number) {
     this.assertNoteLoaded();
@@ -402,7 +485,7 @@ export class Player {
 
   /**
    * Get the current playback time
-   * @category Playback Control 
+   * @group Playback Control 
    */
   getCurrentTime() {
     return this.currentTime;
@@ -410,7 +493,7 @@ export class Player {
 
   /**
    * Get the current time as a counter string, like `"0:00 / 1:00"`
-   * @category Playback Control
+   * @group Playback Control
    */
   getTimeCounter() {
     const currentTime = formatTime(Math.max(this.currentTime, 0));
@@ -420,7 +503,7 @@ export class Player {
 
   /**
    * Get the current frame index as a counter string, like `"001 / 999"`
-   * @category Playback Control
+   * @group Playback Control
    */
   getFrameCounter() {
     const frame = padNumber(this.currentFrame + 1, 3);
@@ -430,7 +513,7 @@ export class Player {
 
   /**
    * Set the current playback progress as a percentage (`0` to `100`)
-   * @category Playback Control
+   * @group Playback Control
    */
   setProgress(value: number) {
     this.assertNoteLoaded();
@@ -440,7 +523,7 @@ export class Player {
 
   /**
    * Get the current playback progress as a percentage (0 to 100)
-   * @category Playback Control 
+   * @group Playback Control 
    */
   getProgress() {
     return this.progress;
@@ -448,7 +531,7 @@ export class Player {
 
   /** 
    * Begin animation playback starting at the current position
-   * @category Playback Control 
+   * @group Playback Control 
    */
   async play() {
     this.assertNoteLoaded();
@@ -463,14 +546,14 @@ export class Player {
     this.playbackStartTime = (now / 1000) - this.playbackTime;
     this.isPlaying = true;
     this.hasPlaybackStarted = true;
-    this.playAudio();
+    this.#playAudio();
     this.playbackLoop(now);
     this.emit(PlayerEvent.Play);
   }
 
   /** 
    * Pause animation playback at the current position
-   * @category Playback Control 
+   * @group Playback Control 
    */
   pause() {
     if (!this.isPlaying)
@@ -478,13 +561,13 @@ export class Player {
     this.isPlaying = false;
     if (this.playbackLoopId !== null) 
       cancelAnimationFrame(this.playbackLoopId);
-    this.stopAudio();
+    this.#stopAudio();
     this.emit(PlayerEvent.Pause);
   }
 
   /** 
    * Resumes animation playback if paused, otherwise pauses
-   * @category Playback Control 
+   * @group Playback Control 
    */
   togglePlay() {
     if (!this.isPlaying)
@@ -495,7 +578,7 @@ export class Player {
 
   /** 
    * Determines if playback is currently paused
-   * @category Playback Control 
+   * @group Playback Control 
    */
   getPaused() {
     return !this.isPlaying;
@@ -503,7 +586,7 @@ export class Player {
 
   /** 
    * Get the duration of the Flipnote in seconds
-   * @category Playback Control 
+   * @group Playback Control 
    */
   getDuration() {
     return this.duration;
@@ -511,7 +594,7 @@ export class Player {
 
   /** 
    * Determines if playback is looped
-   * @category Playback Control 
+   * @group Playback Control 
    */
   getLoop() {
     return this._loop;
@@ -519,7 +602,7 @@ export class Player {
 
   /** 
    * Set the playback loop
-   * @category Playback Control 
+   * @group Playback Control 
    */
   setLoop(loop: boolean) {
     this._loop = loop;
@@ -528,7 +611,7 @@ export class Player {
 
   /** 
    * Switch the playback loop between on and off
-   * @category Playback Control 
+   * @group Playback Control 
    */
   toggleLoop() {
     this.setLoop(!this._loop);
@@ -536,7 +619,7 @@ export class Player {
 
   /** 
    * Jump to a given animation frame
-   * @category Frame Control 
+   * @group Frame Control 
    */
   setCurrentFrame(newFrameValue: number) {
     this.assertNoteLoaded();
@@ -558,7 +641,7 @@ export class Player {
   /** 
    * Jump to the next animation frame
    * If the animation loops, and is currently on its last frame, it will wrap to the first frame
-   * @category Frame Control 
+   * @group Frame Control 
    */
   nextFrame() {
     if ((this.loop) && (this.currentFrame === this.frameCount -1))
@@ -571,7 +654,7 @@ export class Player {
   /** 
    * Jump to the next animation frame
    * If the animation loops, and is currently on its first frame, it will wrap to the last frame
-   * @category Frame Control 
+   * @group Frame Control 
    */
   prevFrame() {
     if ((this.loop) && (this.currentFrame === 0))
@@ -583,7 +666,7 @@ export class Player {
 
   /** 
    * Jump to the last animation frame
-   * @category Frame Control 
+   * @group Frame Control 
    */
   lastFrame() {
     this.currentFrame = this.frameCount - 1;
@@ -592,7 +675,7 @@ export class Player {
 
   /** 
    * Jump to the first animation frame
-   * @category Frame Control 
+   * @group Frame Control 
    */
   firstFrame() {
     this.currentFrame = 0;
@@ -601,7 +684,7 @@ export class Player {
 
   /** 
    * Jump to the thumbnail frame
-   * @category Frame Control 
+   * @group Frame Control 
    */
   thumbnailFrame() {
     this.currentFrame = this.note.thumbFrameIndex;
@@ -609,7 +692,7 @@ export class Player {
 
   /** 
    * Begins a seek operation
-   * @category Playback Control 
+   * @group Playback Control 
    */
   startSeek() {
     if (!this.isSeeking) {
@@ -623,7 +706,7 @@ export class Player {
   /** 
    * Seek the playback progress to a different position
    * @param position - animation playback position, range `0` to `1`
-   * @category Playback Control 
+   * @group Playback Control 
    */
   seek(position: number) {
     if (this.isSeeking)
@@ -632,7 +715,7 @@ export class Player {
 
   /** 
    * Ends a seek operation
-   * @category Playback Control 
+   * @group Playback Control 
    */
   endSeek() {
     if (this.isSeeking && this.wasPlaying === true)
@@ -644,7 +727,7 @@ export class Player {
   /**
    * Draws the specified animation frame to the canvas. Note that this doesn't update the playback time or anything, it simply decodes a given frame and displays it.
    * @param frameIndex 
-   * @category Display Control 
+   * @group Display Control 
    */
   drawFrame(frameIndex: number) {
     this.renderer.drawFrame(frameIndex);
@@ -652,7 +735,7 @@ export class Player {
 
   /**
    * Forces the current animation frame to be redrawn
-   * @category Display Control 
+   * @group Display Control 
    */
   forceUpdate() {
     this.renderer.forceUpdate();
@@ -665,7 +748,7 @@ export class Player {
    * 
    * The ratio between `width` and `height` should be 3:4 for best results
    * 
-   * @category Display Control 
+   * @group Display Control 
    */
   resize(width: number, height: number) {
     if (height !== width * .75)
@@ -679,7 +762,7 @@ export class Player {
    * @param layer - layer index, starting at 1
    * @param value - `true` for visible, `false` for invisible
    * 
-   * @category Display Control 
+   * @group Display Control 
    */
   setLayerVisibility(layer: number, value: boolean) {
     this.note.layerVisibility[layer] = value;
@@ -691,7 +774,7 @@ export class Player {
    * Returns the visibility state for a given layer
    * @param layer - layer index, starting at 1
    * 
-   * @category Display Control
+   * @group Display Control
    */
   getLayerVisibility(layer: number) {
     return this.layerVisibility[layer];
@@ -700,47 +783,47 @@ export class Player {
   /**
    * Toggles whether an animation layer should be visible throughout the entire animation
    * 
-   * @category Display Control 
+   * @group Display Control 
    */
   toggleLayerVisibility(layerIndex: number) {
     this.setLayerVisibility(layerIndex, !this.layerVisibility[layerIndex]);
   }
 
-  playAudio() {
+  #playAudio() {
     this.audio.playFrom(this.currentTime);
   }
 
-  stopAudio() {
+  #stopAudio() {
     this.audio.stop();
   }
 
   /** 
-   * Toggle audio Sudomemo equalizer filter
-   * @category Audio Control
+   * Toggle audio Sudomemo equalizer filter.
+   * @group Audio Control
    */
   toggleAudioEq() {
     this.setAudioEq(!this.audio.useEq);
   }
 
   /** 
-   * Turn audio Sudomemo equalizer filter on or off
-   * @category Audio Control
+   * Turn audio Sudomemo equalizer filter on or off.
+   * @group Audio Control
    */
   setAudioEq(state: boolean) {
     if (this.isPlaying) {
       this.wasPlaying = true;
-      this.stopAudio();
+      this.#stopAudio();
     }
     this.audio.useEq = state;
     if (this.wasPlaying) {
       this.wasPlaying = false;
-      this.playAudio();
+      this.#playAudio();
     }
   }
 
   /**
    * Turn the audio off
-   * @category Audio Control
+   * @group Audio Control
    */
   mute() {
     this.setMuted(true);
@@ -748,7 +831,7 @@ export class Player {
 
   /**
    * Turn the audio on
-   * @category Audio Control
+   * @group Audio Control
    */
   unmute() {
     this.setMuted(false);
@@ -756,7 +839,7 @@ export class Player {
 
   /**
    * Turn the audio on or off
-   * @category Audio Control
+   * @group Audio Control
    */
   setMuted(isMute: boolean) {
     if (isMute)
@@ -769,7 +852,7 @@ export class Player {
 
   /**
    * Get the audio mute state
-   * @category Audio Control
+   * @group Audio Control
    */
   getMuted() {
     return this.volume === 0 ? true : this._muted;
@@ -777,7 +860,7 @@ export class Player {
 
   /** 
    * Switch the audio between muted and unmuted
-   * @category Audio Control
+   * @group Audio Control
    */
   toggleMuted() {
     this.setMuted(!this._muted);
@@ -785,7 +868,7 @@ export class Player {
 
   /**
    * Set the audio volume
-   * @category Audio Control
+   * @group Audio Control
    */
   setVolume(volume: number) {
     assertRange(volume, 0, 1, 'volume');
@@ -796,7 +879,7 @@ export class Player {
 
   /**
    * Get the current audio volume
-   * @category Audio Control
+   * @group Audio Control
    */
   getVolume() {
     return this._muted ? 0 : this._volume;
@@ -804,7 +887,7 @@ export class Player {
 
   /**
    * Implementation of the `HTMLVideoElement` {@link https://developer.mozilla.org/en-US/docs/Web/API/HTMLVideoElement/seekToNextFrame | seekToNextFrame} method
-   * @category HTMLVideoElement compatibility
+   * @group HTMLVideoElement compatibility
    */
   seekToNextFrame() {
     this.nextFrame();
@@ -812,7 +895,7 @@ export class Player {
 
   /**
    * Implementation of the `HTMLMediaElement` {@link https://developer.mozilla.org/en-US/docs/Web/API/HTMLMediaElement/fastSeek | fastSeek} method
-   * @category HTMLVideoElement compatibility
+   * @group HTMLVideoElement compatibility
    */
   fastSeek(time: number) {
     this.currentTime = time;
@@ -820,7 +903,7 @@ export class Player {
 
   /**
    * Implementation of the `HTMLVideoElement` {@link https://developer.mozilla.org/en-US/docs/Web/API/HTMLVideoElement/getVideoPlaybackQuality | getVideoPlaybackQuality } method
-   * @category HTMLVideoElement compatibility
+   * @group HTMLVideoElement compatibility
    */
   canPlayType(mediaType: string) {
     switch (mediaType) {
@@ -843,7 +926,7 @@ export class Player {
 
   /**
    * Implementation of the `HTMLVideoElement` [https://developer.mozilla.org/en-US/docs/Web/API/HTMLVideoElement/getVideoPlaybackQuality](getVideoPlaybackQuality) method
-   * @category HTMLVideoElement compatibility
+   * @group HTMLVideoElement compatibility
    */
   getVideoPlaybackQuality() {
     const quality: VideoPlaybackQuality = {
@@ -858,7 +941,7 @@ export class Player {
 
   /**
    * Implementation of the `HTMLVideoElement` [https://developer.mozilla.org/en-US/docs/Web/API/HTMLVideoElement/requestPictureInPicture](requestPictureInPicture) method. Not currently working, only a stub.
-   * @category HTMLVideoElement compatibility
+   * @group HTMLVideoElement compatibility
    */
   requestPictureInPicture() {
     throw new Error('Not implemented');
@@ -866,7 +949,7 @@ export class Player {
 
   /**
    * Implementation of the `HTMLVideoElement` [https://developer.mozilla.org/en-US/docs/Web/API/HTMLVideoElement/captureStream](captureStream) method. Not currently working, only a stub.
-   * @category HTMLVideoElement compatibility
+   * @group HTMLVideoElement compatibility
    */
   captureStream() {
     throw new Error('Not implemented');
@@ -875,189 +958,163 @@ export class Player {
 
   /**
    * Fired when animation playback begins or is resumed
-   * @category playback
-   * @event play
+   * @event
    */
   onplay: () => void;
 
   /**
    * Fired when animation playback is paused
-   * @category playback
-   * @event pause 
+   * @event
    */
   onpause: () => void;
 
   /**
    * Fired when the Flipnote has loaded enough to begin animation play
-   * @category HTMLVideoElement compatibility
-   * @event canplay
+   * @group HTMLVideoElement compatibility
    */
   oncanplay: () => void;
 
   /**
-   *Fired when the Flipnote has loaded enough to play successfully
-   * @category HTMLVideoElement compatibility
-   * @event canplaythrough
+   * Fired when the Flipnote has loaded enough to play successfully
+   * @group HTMLVideoElement compatibility
    */
   oncanplaythrough: () => void;
 
   /**
    * Fired when a seek operation begins
-   * @category playback
-   * @event seeking
+   * @event
    */
   onseeking: () => void;
 
   /**
    * Fired when a seek operation completes
-   * @category playback
-   * @event seeked
+   * @event
    */
   onseeked: () => void;
 
   /**
    * Fired when the animation duration has changed
-   * @category HTMLVideoElement compatibility
-   * @event durationchange
+   * @group HTMLVideoElement compatibility
    */
   ondurationchange: () => void;
 
   /**
    * Fired when playback has looped after reaching the end
-   * @category playback
-   * @event loop
+   * @event
    */
   onloop: () => void;
 
   /**
    * Fired when playback has ended
-   * @category playback
-   * @event ended
+   * @event
    */
   onended: () => void;
 
   /**
    * Fired when the player audio volume or muted state has changed
-   * @category audio
-   * @event volumechange
+   * @event
    */
   onvolumechange: (volume: number) => void;
 
   /**
    * Fired when playback progress has changed
-   * @category playback
-   * @event progress
+   * @event
    */
   onprogress: (progress: number) => void;
 
   /**
    * Fired when the playback time has changed
-   * @category playback
-   * @event timeupdate
+   * @event
    */
   ontimeupdate: (time: number) => void;
 
   /**
    * Fired when the current frame index has changed
-   * @category frame
-   * @event frameupdate
+   * @event
    */
   onframeupdate: (frameIndex: number) => void;
 
   /**
    * Fired when {@link nextFrame} has been called
-   * @category frame
-   * @event framenext
+   * @event
    */
   onframenext: () => void;
 
   /**
    * Fired when {@link prevFrame} has been called
-   * @category frame
-   * @event frameprev
+   * @event
    */
   onframeprev: () => void;
 
   /**
    * Fired when {@link firstFrame} has been called
-   * @category frame
-   * @event framefirst
+   * @event
    */
   onframefirst: () => void;
 
   /**
    * Fired when {@link lastFrame} has been called
-   * @category frame
-   * @event framelast
+   * @event
    */
   onframelast: () => void;
 
   /**
    * Fired when a Flipnote is ready for playback
-   * @category lifecycle
-   * @event ready
+   * @event
    */
   onready: () => void;
 
   /**
    * Fired when a Flipnote has finished loading
-   * @category lifecycle
-   * @event load
+   * @event
    */
   onload: () => void;
 
   /**
    * Fired when a Flipnote has begun loading
-   * @category lifecycle
-   * @event loadstart
+   * @event
    */
   onloadstart: () => void;
 
   /**
    * Fired when the Flipnote data has been loaded; implementation of the `HTMLMediaElement` [https://developer.mozilla.org/en-US/docs/Web/API/HTMLMediaElement/loadeddata_event](loadeddata) event.
-   * @category HTMLVideoElement compatibility
-   * @event loadeddata
+   * @group HTMLVideoElement compatibility
    */
   onloadeddata: () => void;
 
   /**
    * Fired when the Flipnote metadata has been loaded; implementation of the `HTMLMediaElement` [https://developer.mozilla.org/en-US/docs/Web/API/HTMLMediaElement/loadedmetadata_event](loadedmetadata) event.
-   * @category HTMLVideoElement compatibility
-   * @event loadedmetadata
+   * @group HTMLVideoElement compatibility
    */
   onloadedmetadata: () => void;
 
   /**
    * Fired when the media has become empty; implementation of the `HTMLMediaElement` [https://developer.mozilla.org/en-US/docs/Web/API/HTMLMediaElement/emptied_event](emptied) event.
-   * @category HTMLVideoElement compatibility
-   * @event emptied
+   * @group HTMLVideoElement compatibility
    */
   onemptied: () => void;
 
   /**
    * Fired after the Flipnote has been closed with {@link close}
-   * @category lifecycle
-   * @event close
+   * @event
    */
   onclose: () => void;
 
   /**
    * Fired after a loading, parsing or playback error occurs
-   * @category lifecycle
-   * @event error
+   * @event
    */
   onerror: (err?: Error) => void;
 
   /**
    * Fired just before the player has been destroyed, after calling {@link destroy}
-   * @category lifecycle
-   * @event destroy
+   * @event
    */
   ondestroy: () => void;
 
   /** 
    * Add an event callback
-   * @category Event API
+   * @group Event API
    */
   on(eventType: PlayerEvent | PlayerEvent[], listener: Function) {
     const events = this.events;
@@ -1072,7 +1129,7 @@ export class Player {
 
   /** 
    * Remove an event callback
-   * @category Event API
+   * @group Event API
    */
   off(eventType: PlayerEvent | PlayerEvent[], callback: Function) {
     const events = this.events;
@@ -1087,7 +1144,7 @@ export class Player {
 
   /** 
    * Emit an event - mostly used internally
-   * @category Event API
+   * @group Event API
    */
   emit(eventType: PlayerEvent, ...args: any) {
     const events = this.events;
@@ -1109,7 +1166,7 @@ export class Player {
 
   /** 
    * Remove all registered event callbacks
-   * @category Event API
+   * @group Event API
    */
   clearEvents() {
     this.events.clear();
@@ -1117,7 +1174,7 @@ export class Player {
 
   /** 
    * Destroy a Player instance
-   * @category Lifecycle
+   * @group Lifecycle
    */
   async destroy() {
     this.clearEvents();
@@ -1127,16 +1184,9 @@ export class Player {
     await this.audio.destroy();
   }
 
-  /** 
-   * Returns true if the player supports a given event or method name
+  /**
+   * @internal
    */
-  supports(name: string) {
-    const isEvent = this.supportedEvents.includes(name as PlayerEvent);
-    const isMethod = typeof (this as any)[name] === 'function';
-    return isEvent || isMethod;
-  }
-
-  /** @internal */
   assertNoteLoaded() {
     assert(this.isNoteLoaded, 'No Flipnote is currently loaded in this player');
   }

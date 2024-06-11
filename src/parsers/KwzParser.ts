@@ -1,30 +1,42 @@
-import { 
+import {
+  FlipnoteMeta,
   FlipnoteFormat,
+  FlipnoteThumbImageFormat,
   FlipnotePaletteDefinition,
   FlipnoteAudioTrack,
   FlipnoteSoundEffectTrack,
   FlipnoteSoundEffectFlags,
-  FlipnoteMeta,
-  FlipnoteParserBase,
-  FlipnoteThumbImageFormat
-} from './FlipnoteParserBase';
+} from './types';
 
 import {
+  BaseParser,
+} from './BaseParser';
+
+import {
+  getKwzFsidRegion,
+  kwzFsidFormat
+} from './flipnoteStudioId/kwz';
+
+import {
+  // audio
   ADPCM_STEP_TABLE,
   ADPCM_INDEX_TABLE_2BIT,
   ADPCM_INDEX_TABLE_4BIT,
-  clamp,
-  assert,
-  assertRange,
   pcmResampleLinear,
   pcmGetClippingRatio,
   pcmGetRms,
+  // datetime
   dateFromNintendoTimestamp,
   timeGetNoteDuration,
-  getKwzFsidRegion,
-  isKwzDsiLibraryFsid,
+  // rsa
   rsaLoadPublicKey,
   rsaVerify,
+} from './common';
+
+import {
+  assert,
+  assertRange,
+  clamp,
 } from '../utils';
 
 /** 
@@ -80,7 +92,9 @@ const KWZ_LINE_TABLE = new Uint8Array(6561 * 8);
  */
 const KWZ_LINE_TABLE_SHIFT = new Uint8Array(6561 * 8);
 
-/** @internal */
+/**
+ * @internal
+ */
 var offset = 0;
 for (let a = 0; a < 3; a++)
 for (let b = 0; b < 3; b++)
@@ -140,7 +154,9 @@ export type KwzSectionMap = Map<KwzSectionMagic, {
  * KWZ file metadata, stores information about its playback, author details, etc
  */
 export interface KwzMeta extends FlipnoteMeta {
-  /** Date representing when the file was created */
+  /**
+   * Date representing when the file was created
+   */
   creationTimestamp: Date;
 };
 
@@ -148,17 +164,29 @@ export interface KwzMeta extends FlipnoteMeta {
  * KWZ frame metadata, stores information about each frame, like layer depths sound effect usage
  */
 export interface KwzFrameMeta {
-  /** Frame flags */
+  /**
+   * Frame flags
+   */
   flags: number[];
-  /** Frame layer sizes */
+  /**
+   * Frame layer sizes
+   */
   layerSize: number[];
-  /** Frame author's Flipnote Studio ID */
+  /**
+   * Frame author's Flipnote Studio ID
+   */
   frameAuthor: string;
-  /** Frame layer 3D depths */
+  /**
+   * Frame layer 3D depths
+   */
   layerDepth: number[];
-  /** Frame sound */
+  /**
+   * Frame sound
+   */
   soundFlags: number;
-  /** Whether this frame contains photos taken with the console's camera */
+  /**
+   * Whether this frame contains photos taken with the console's camera
+   */
   cameraFlag: number;
 };
 
@@ -206,7 +234,7 @@ export type KwzParserSettings = {
   /**
    * Manually provide an initial adpcm predictor for each sound effect track.
    * 
-   * This is only enabled if `dsiLibraryNote` is also set to `true`
+   * This is only enabled if `dsiLibraryNote` is also set to `true`.
    */
   initialSePredictors: number[] | null;
 };
@@ -215,11 +243,13 @@ export type KwzParserSettings = {
  * Parser class for Flipnote Studio 3D's KWZ animation format
  * 
  * KWZ format docs: https://github.com/Flipnote-Collective/flipnote-studio-3d-docs/wiki/KWZ-Format
- * @category File Parser
+ * @group File Parser
  */
-export class KwzParser extends FlipnoteParserBase {
+export class KwzParser extends BaseParser {
 
-  /** Default KWZ parser settings */
+  /**
+   * Default KWZ parser settings
+   */
   static defaultSettings: KwzParserSettings = {
     quickMeta: false,
     dsiLibraryNote: false,
@@ -230,23 +260,41 @@ export class KwzParser extends FlipnoteParserBase {
     initialSePredictors: null,
     initialSeStepIndices: null,
   };
-  /** File format type */
+  /**
+   * File format type
+   */
   static format = FlipnoteFormat.KWZ;
-  /** Animation frame width */
+  /**
+   * Animation frame width
+   */
   static width = 320;
-  /** Animation frame height */
+  /**
+   * Animation frame height
+   */
   static height = 240;
-  /** Animation frame aspect ratio */
+  /**
+   * Animation frame aspect ratio
+   */
   static aspect = 3 / 4;
-  /** Number of animation frame layers */
+  /**
+   * Number of animation frame layers
+   */
   static numLayers = 3;
-  /** Number of colors per layer (aside from transparent) */
+  /**
+   * Number of colors per layer (aside from transparent)
+   */
   static numLayerColors = 2;
-  /** Audio track base sample rate */
+  /**
+   * Audio track base sample rate
+   */
   static rawSampleRate = 16364;
-  /** Audio output sample rate  */
+  /**
+   * Audio output sample rate 
+   */
   static sampleRate = 32768;
-  /** Which audio tracks are available in this format */
+  /**
+   * Which audio tracks are available in this format
+   */
   static audioTracks = [
     FlipnoteAudioTrack.BGM,
     FlipnoteAudioTrack.SE1,
@@ -254,14 +302,18 @@ export class KwzParser extends FlipnoteParserBase {
     FlipnoteAudioTrack.SE3,
     FlipnoteAudioTrack.SE4,
   ];
-  /** Which sound effect tracks are available in this format */
+  /**
+   * Which sound effect tracks are available in this format
+   */
   static soundEffectTracks = [
     FlipnoteSoundEffectTrack.SE1,
     FlipnoteSoundEffectTrack.SE2,
     FlipnoteSoundEffectTrack.SE3,
     FlipnoteSoundEffectTrack.SE4,
   ];
-  /** Global animation frame color palette */
+  /**
+   * Global animation frame color palette
+   */
   static globalPalette = [
     KWZ_PALETTE.WHITE,
     KWZ_PALETTE.BLACK,
@@ -271,56 +323,101 @@ export class KwzParser extends FlipnoteParserBase {
     KWZ_PALETTE.BLUE,
     KWZ_PALETTE.NONE,
   ];
-  /** Public key used for Flipnote verification, in PEM format */
+  /**
+   * Public key used for Flipnote verification, in PEM format
+   */
   static publicKey = KWZ_PUBLIC_KEY;
+
+  static matchBuffer(buffer: ArrayBuffer) {
+    // check the buffer's magic to identify which format it uses
+    const magicBytes = new Uint8Array(buffer.slice(0, 4));
+    const magic = (magicBytes[0] << 24) | (magicBytes[1] << 16) | (magicBytes[2] << 8);
+    // check if magic is KFH (kwz magic) or  KIC (fs3d folder icon)
+    return magic === 0x4B464800 || magic === 0x4B494300;
+  }
   
-  /** File format type, reflects {@link KwzParser.format} */
+  /**
+   * File format type, reflects {@link KwzParser.format}
+   */
   format = FlipnoteFormat.KWZ;
-  /** Custom object tag */
+  /**
+   * Custom object tag
+   */
   [Symbol.toStringTag] = 'Flipnote Studio 3D KWZ animation file';
-  /** Animation frame width, reflects {@link KwzParser.width} */
+  /**
+   * Animation frame width, reflects {@link KwzParser.width}
+   */
   imageWidth = KwzParser.width;
-  /** Animation frame height, reflects {@link KwzParser.height} */
+  /**
+   * Animation frame height, reflects {@link KwzParser.height}
+   */
   imageHeight = KwzParser.height;
-  /** Animation frame aspect ratio, reflects {@link KwzParser.aspect} */
+  /**
+   * Animation frame aspect ratio, reflects {@link KwzParser.aspect}
+   */
   aspect = KwzParser.aspect;
-  /** X offset for the top-left corner of the animation frame */
+  /**
+   * X offset for the top-left corner of the animation frame
+   */
   imageOffsetX = 0;
-  /** Y offset for the top-left corner of the animation frame */
+  /**
+   * Y offset for the top-left corner of the animation frame
+   */
   imageOffsetY = 0;
-  /** Number of animation frame layers, reflects {@link KwzParser.numLayers} */
+  /**
+   * Number of animation frame layers, reflects {@link KwzParser.numLayers}
+   */
   numLayers = KwzParser.numLayers;
-  /** Number of colors per layer (aside from transparent), reflects {@link KwzParser.numLayerColors} */
+  /**
+   * Number of colors per layer (aside from transparent), reflects {@link KwzParser.numLayerColors}
+   */
   numLayerColors = KwzParser.numLayerColors;
-  /** key used for Flipnote verification, in PEM format */
+  /**
+   * key used for Flipnote verification, in PEM format
+   */
   publicKey = KwzParser.publicKey;
-  /** @internal */
+  /**
+   * @internal
+   */
   srcWidth = KwzParser.width;
-  /** Which audio tracks are available in this format, reflects {@link KwzParser.audioTracks} */
+  /**
+   * Which audio tracks are available in this format, reflects {@link KwzParser.audioTracks}
+   */
   audioTracks = KwzParser.audioTracks;
-  /** Which sound effect tracks are available in this format, reflects {@link KwzParser.soundEffectTracks} */
+  /**
+   * Which sound effect tracks are available in this format, reflects {@link KwzParser.soundEffectTracks}
+   */
   soundEffectTracks = KwzParser.soundEffectTracks;
-  /** Audio track base sample rate, reflects {@link KwzParser.rawSampleRate} */
+  /**
+   * Audio track base sample rate, reflects {@link KwzParser.rawSampleRate}
+   */
   rawSampleRate = KwzParser.rawSampleRate;
-  /** Audio output sample rate, reflects {@link KwzParser.sampleRate} */
+  /**
+   * Audio output sample rate, reflects {@link KwzParser.sampleRate}
+   */
   sampleRate = KwzParser.sampleRate;
-  /** Global animation frame color palette, reflects {@link KwzParser.globalPalette} */
+  /**
+   * Global animation frame color palette, reflects {@link KwzParser.globalPalette}
+   */
   globalPalette = KwzParser.globalPalette;
-  /** File metadata, see {@link KwzMeta} for structure */
+  /**
+   * File metadata, see {@link KwzMeta} for structure.
+   * @group Meta
+   */
   meta: KwzMeta;
 
-  private settings: KwzParserSettings;
-  private sectionMap: KwzSectionMap;
-  private bodyEndOffset: number;
-  private layerBuffers: [Uint8Array, Uint8Array, Uint8Array];
-  private soundFlags: boolean[][]; // sound effect flag cache
-  private prevDecodedFrame: number = null;
-  // private frameMeta: Map<number, KwzFrameMeta>;
-  private frameMetaOffsets: Uint32Array;
-  private frameDataOffsets: Uint32Array;
-  private frameLayerSizes: [number, number, number][];
-  private bitIndex = 0;
-  private bitValue = 0;
+  #settings: KwzParserSettings;
+  #sectionMap: KwzSectionMap;
+  #bodyEndOffset: number;
+  #layerBuffers: [Uint8Array, Uint8Array, Uint8Array];
+  #soundFlags: boolean[][]; // sound effect flag cache
+  #prevDecodedFrame: number = null;
+  // frameMeta: Map<number, KwzFrameMeta>;
+  #frameMetaOffsets: Uint32Array;
+  #frameDataOffsets: Uint32Array;
+  #frameLayerSizes: [number, number, number][];
+  #bitIndex = 0;
+  #bitValue = 0;
   
   /**
    * Create a new KWZ file parser instance
@@ -329,18 +426,18 @@ export class KwzParser extends FlipnoteParserBase {
    */
   constructor(arrayBuffer: ArrayBuffer, settings: Partial<KwzParserSettings> = {}) {
     super(arrayBuffer);
-    this.settings = {...KwzParser.defaultSettings, ...settings};
-    this.layerBuffers = [
+    this.#settings = {...KwzParser.defaultSettings, ...settings};
+    this.#layerBuffers = [
       new Uint8Array(KwzParser.width * KwzParser.height),
       new Uint8Array(KwzParser.width * KwzParser.height),
       new Uint8Array(KwzParser.width * KwzParser.height),
     ];
     // skip through the file and read all of the section headers so we can locate them
-    this.buildSectionMap();
+    this.#buildSectionMap();
     // if the KIC section is present, we're dealing with a folder icon
     // these are single-frame KWZs without a KFH section for metadata, or a KSN section for sound
     // while the data for a full frame (320*240) is present, only the top-left 24*24 pixels are used
-    if (this.sectionMap.has('KIC')) {
+    if (this.#sectionMap.has('KIC')) {
       this.isFolderIcon = true;
       // icons still use the full 320 * 240 frame size, so we just set up our image crop to deal with that
       this.imageWidth = 24;
@@ -349,29 +446,29 @@ export class KwzParser extends FlipnoteParserBase {
       this.frameSpeed = 0;
       this.framerate = KWZ_FRAMERATES[0];
       this.thumbFrameIndex = 0;
-      this.getFrameOffsets();
+      this.#getFrameOffsets();
     }
     // if the KSN section is not present, then this is a handwritten comment from the Flipnote Gallery World online service
     // these are single-frame KWZs, just with no sound
-    else if (!this.sectionMap.has('KSN')) {
+    else if (!this.#sectionMap.has('KSN')) {
       this.isComment = true; 
-      this.decodeMeta();
-      this.getFrameOffsets();
+      this.#decodeMeta();
+      this.#getFrameOffsets();
     }
     // else let's assume this is a regular note
     else {
-      this.decodeMeta();
-      this.getFrameOffsets();
-      this.decodeSoundHeader();
+      this.#decodeMeta();
+      this.#getFrameOffsets();
+      this.#decodeSoundHeader();
     }
 
     // apply special optimizations for converted DSi library notes
-    if (this.settings.dsiLibraryNote) {
+    if (this.#settings.dsiLibraryNote) {
       this.isDsiLibraryNote = true;
     }
     
     // automatically crop out the border around every frame
-    if (this.settings.borderCrop) {
+    if (this.#settings.borderCrop) {
       // dsi library notes can be cropped to their original resolution
       if (this.isDsiLibraryNote) {
         this.imageOffsetX = 32;
@@ -389,8 +486,8 @@ export class KwzParser extends FlipnoteParserBase {
     }
   }
   
-  private buildSectionMap() {
-    const fileSize = this.byteLength - 256;
+  #buildSectionMap() {
+    const fileSize = this.numBytes - 256;
     const sectionMap = new Map();
     let sectionCount = 0;
     let ptr = 0;
@@ -403,34 +500,33 @@ export class KwzParser extends FlipnoteParserBase {
       ptr += length + 8;
       sectionCount += 1;
     }
-    this.bodyEndOffset = ptr;
-    this.sectionMap = sectionMap;
+    this.#bodyEndOffset = ptr;
+    this.#sectionMap = sectionMap;
     assert(sectionMap.has('KMC') && sectionMap.has('KMI'));
   }
 
-  private readBits(num: number) {
+  #readBits(num: number) {
     // assert(num < 16);
-    if (this.bitIndex + num > 16) {
+    if (this.#bitIndex + num > 16) {
       const nextBits = this.readUint16();
-      this.bitValue |= nextBits << (16 - this.bitIndex);
-      this.bitIndex -= 16;
+      this.#bitValue |= nextBits << (16 - this.#bitIndex);
+      this.#bitIndex -= 16;
     }
-    const result = this.bitValue & BITMASKS[num];
-    this.bitValue >>= num;
-    this.bitIndex += num;
+    const result = this.#bitValue & BITMASKS[num];
+    this.#bitValue >>= num;
+    this.#bitIndex += num;
     return result;
   }
 
-  private readFsid() {
-    if (this.settings.dsiLibraryNote) { // format as DSi PPM FSID
+  #readFsid() {
+    if (this.#settings.dsiLibraryNote) { // format as DSi PPM FSID
       const hex = this.readHex(10, true);
       return hex.slice(2, 18);
     }
-    const hex = this.readHex(10);
-    return `${hex.slice(0, 4)}-${hex.slice(4, 8)}-${hex.slice(8, 12)}-${hex.slice(12, 18)}`.toLowerCase();
+    return kwzFsidFormat(this.readHex(10));
   }
 
-  private readFilename() {
+  #readFilename() {
     const ptr = this.pointer;
     const chars = this.readChars(28);
     if (chars.length === 28)
@@ -445,24 +541,24 @@ export class KwzParser extends FlipnoteParserBase {
     return `${ mac }_${ random }_${ edits }`;
   }
 
-  private decodeMeta() {
-    if (this.settings.quickMeta)
-      return this.decodeMetaQuick();
-    assert(this.sectionMap.has('KFH'));
-    this.seek(this.sectionMap.get('KFH').ptr + 12);
+  #decodeMeta() {
+    if (this.#settings.quickMeta)
+      return this.#decodeMetaQuick();
+    assert(this.#sectionMap.has('KFH'));
+    this.seek(this.#sectionMap.get('KFH').ptr + 12);
     const creationTime = dateFromNintendoTimestamp(this.readUint32());
     const modifiedTime = dateFromNintendoTimestamp(this.readUint32());
     // const simonTime = 
     const appVersion = this.readUint32();
-    const rootAuthorId = this.readFsid();
-    const parentAuthorId = this.readFsid();
-    const currentAuthorId = this.readFsid();
+    const rootAuthorId = this.#readFsid();
+    const parentAuthorId = this.#readFsid();
+    const currentAuthorId = this.#readFsid();
     const rootAuthorName = this.readWideChars(11);
     const parentAuthorName = this.readWideChars(11);
     const currentAuthorName = this.readWideChars(11);
-    const rootFilename = this.readFilename();
-    const parentFilename = this.readFilename();
-    const currentFilename = this.readFilename();
+    const rootFilename = this.#readFilename();
+    const parentFilename = this.#readFilename();
+    const currentFilename = this.#readFilename();
     const frameCount = this.readUint16();
     const thumbIndex = this.readUint16();
     const flags = this.readUint16();
@@ -517,9 +613,9 @@ export class KwzParser extends FlipnoteParserBase {
     };
   }
 
-  private decodeMetaQuick() {
-    assert(this.sectionMap.has('KFH'));
-    this.seek(this.sectionMap.get('KFH').ptr + 0x8 + 0xC4);
+  #decodeMetaQuick() {
+    assert(this.#sectionMap.has('KFH'));
+    this.seek(this.#sectionMap.get('KFH').ptr + 0x8 + 0xC4);
     const frameCount = this.readUint16();
     const thumbFrameIndex = this.readUint16();
     const flags = this.readUint16();
@@ -537,11 +633,11 @@ export class KwzParser extends FlipnoteParserBase {
     };
   }
 
-  private getFrameOffsets() {
-    assert(this.sectionMap.has('KMI') && this.sectionMap.has('KMC'));
+  #getFrameOffsets() {
+    assert(this.#sectionMap.has('KMI') && this.#sectionMap.has('KMC'));
     const numFrames = this.frameCount;
-    const kmiSection = this.sectionMap.get('KMI');
-    const kmcSection = this.sectionMap.get('KMC');
+    const kmiSection = this.#sectionMap.get('KMI');
+    const kmcSection = this.#sectionMap.get('KMC');
     assert(kmiSection.length / 28 >= numFrames);
     const frameMetaOffsets = new Uint32Array(numFrames);
     const frameDataOffsets = new Uint32Array(numFrames);
@@ -557,18 +653,18 @@ export class KwzParser extends FlipnoteParserBase {
       frameDataOffsets[frameIndex] = frameDataPtr;
       frameMetaPtr += 28;
       frameDataPtr += layerASize + layerBSize + layerCSize;
-      assert(frameMetaPtr < this.byteLength, `frame${ frameIndex } meta pointer out of bounds`);
-      assert(frameDataPtr < this.byteLength, `frame${ frameIndex } data pointer out of bounds`);
+      assert(frameMetaPtr < this.numBytes, `frame${ frameIndex } meta pointer out of bounds`);
+      assert(frameDataPtr < this.numBytes, `frame${ frameIndex } data pointer out of bounds`);
       frameLayerSizes.push([layerASize, layerBSize, layerCSize]);
     }
-    this.frameMetaOffsets = frameMetaOffsets;
-    this.frameDataOffsets = frameDataOffsets;
-    this.frameLayerSizes = frameLayerSizes;
+    this.#frameMetaOffsets = frameMetaOffsets;
+    this.#frameDataOffsets = frameDataOffsets;
+    this.#frameLayerSizes = frameLayerSizes;
   }
 
-  private decodeSoundHeader() {
-    assert(this.sectionMap.has('KSN'));
-    let ptr = this.sectionMap.get('KSN').ptr + 8;
+  #decodeSoundHeader() {
+    assert(this.#sectionMap.has('KSN'));
+    let ptr = this.#sectionMap.get('KSN').ptr + 8;
     this.seek(ptr);
     this.bgmSpeed = this.readUint32();
     assert(this.bgmSpeed <= 10);
@@ -587,11 +683,11 @@ export class KwzParser extends FlipnoteParserBase {
    * Decodes the thumbnail image embedded in the Flipnote. Will return a {@link FlipnoteThumbImage} containing JPEG data.
    * 
    * Note: For most purposes, you should probably just decode the thumbnail fraa to get a higher resolution image.
-   * @category Meta
+   * @group Meta
    */
   getThumbnailImage() {
-    assert(this.sectionMap.has('KTN'), 'KTN section missing - Note that folder icons and comments do not contain thumbnail data');
-    const ktn = this.sectionMap.get('KTN');
+    assert(this.#sectionMap.has('KTN'), 'KTN section missing - Note that folder icons and comments do not contain thumbnail data');
+    const ktn = this.#sectionMap.get('KTN');
     this.seek(ktn.ptr + 12);
     const bytes = this.readBytes(ktn.length - 12);
     return {
@@ -613,11 +709,11 @@ export class KwzParser extends FlipnoteParserBase {
    *  - index 4 is the layer B color 2 index
    *  - index 5 is the layer C color 1 index
    *  - index 6 is the layer C color 2 index
-   * @category Image
+   * @group Image
   */
   getFramePaletteIndices(frameIndex: number) {
     assertRange(frameIndex, 0, this.frameCount - 1, 'Frame index');
-    this.seek(this.frameMetaOffsets[frameIndex]);
+    this.seek(this.#frameMetaOffsets[frameIndex]);
     const flags = this.readUint32();
     return [
       flags & 0xF,
@@ -641,7 +737,7 @@ export class KwzParser extends FlipnoteParserBase {
    *  - index 4 is the layer B color 2
    *  - index 5 is the layer C color 1
    *  - index 6 is the layer C color 2
-   * @category Image
+   * @group Image
   */
   getFramePalette(frameIndex: number) {
     assertRange(frameIndex, 0, this.frameCount - 1, 'Frame index');
@@ -649,16 +745,16 @@ export class KwzParser extends FlipnoteParserBase {
     return indices.map(colorIndex => this.globalPalette[colorIndex]);
   }
 
-  private getFrameDiffingFlag(frameIndex: number) {
+  getFrameDiffingFlag(frameIndex: number) {
     assertRange(frameIndex, 0, this.frameCount - 1, 'Frame index');
-    this.seek(this.frameMetaOffsets[frameIndex]);
+    this.seek(this.#frameMetaOffsets[frameIndex]);
     return (this.readUint32() >> 4) & 0x07;
   }
 
   /**
    * Determines if a given frame is a video key frame or not. This returns an array of booleans for each layer, since keyframe encoding is done on a per-layer basis.
    * @param frameIndex
-   * @category Image
+   * @group Image
   */
   getIsKeyFrame(frameIndex: number) {
     const flag = this.getFrameDiffingFlag(frameIndex);
@@ -672,11 +768,11 @@ export class KwzParser extends FlipnoteParserBase {
   /**
    * Get the 3D depths for each layer in a given frame.
    * @param frameIndex
-   * @category Image
+   * @group Image
   */
   getFrameLayerDepths(frameIndex: number) {
     assertRange(frameIndex, 0, this.frameCount - 1, 'Frame index');
-    this.seek(this.frameMetaOffsets[frameIndex] + 0x14);
+    this.seek(this.#frameMetaOffsets[frameIndex] + 0x14);
     return [
       this.readUint8(),
       this.readUint8(),
@@ -687,21 +783,21 @@ export class KwzParser extends FlipnoteParserBase {
   /**
    * Get the FSID for a given frame's original author.
    * @param frameIndex
-   * @category Meta
+   * @group Meta
   */
   getFrameAuthor(frameIndex: number) {
     assertRange(frameIndex, 0, this.frameCount - 1, 'Frame index');
-    this.seek(this.frameMetaOffsets[frameIndex] + 0xA);
-    return this.readFsid();
+    this.seek(this.#frameMetaOffsets[frameIndex] + 0xA);
+    return this.#readFsid();
   }
 
   /** 
    * Get the camera flags for a given frame
-   * @category Image
+   * @group Image
    * @returns Array of booleans, indicating whether each layer uses a photo or not
   */
   getFrameCameraFlags(frameIndex: number) {
-    this.seek(this.frameMetaOffsets[frameIndex] + 0x1A);
+    this.seek(this.#frameMetaOffsets[frameIndex] + 0x1A);
     const cameraFlags = this.readUint8();
     return [
       (cameraFlags & 0x1) !== 0,
@@ -712,7 +808,7 @@ export class KwzParser extends FlipnoteParserBase {
 
   /** 
    * Get the layer draw order for a given frame
-   * @category Image
+   * @group Image
   */
   getFrameLayerOrder(frameIndex: number) {
     assertRange(frameIndex, 0, this.frameCount - 1, 'Frame index');
@@ -722,15 +818,15 @@ export class KwzParser extends FlipnoteParserBase {
 
   /** 
    * Decode a frame, returning the raw pixel buffers for each layer
-   * @category Image
+   * @group Image
   */
   decodeFrame(frameIndex: number, diffingFlag = 0x7, isPrevFrame = false) {
     assertRange(frameIndex, 0, this.frameCount - 1, 'Frame index');
     // return existing layer buffers if no new frame has been decoded since the last call
-    if (this.prevDecodedFrame === frameIndex)
-      return this.layerBuffers;
+    if (this.#prevDecodedFrame === frameIndex)
+      return this.#layerBuffers;
     // the prevDecodedFrame check is an optimization for decoding frames in full sequence
-    if (this.prevDecodedFrame !== frameIndex - 1 && frameIndex !== 0) {
+    if (this.#prevDecodedFrame !== frameIndex - 1 && frameIndex !== 0) {
       // if this frame is being decoded as a prev frame, then we only want to decode the layers necessary
       // diffingFlag is negated with ~ so if no layers are diff-based, diffingFlag is 0
       if (isPrevFrame)
@@ -740,18 +836,18 @@ export class KwzParser extends FlipnoteParserBase {
         this.decodeFrame(frameIndex - 1, diffingFlag, true);
     }
     
-    let framePtr = this.frameDataOffsets[frameIndex];
-    const layerSizes = this.frameLayerSizes[frameIndex];
+    let framePtr = this.#frameDataOffsets[frameIndex];
+    const layerSizes = this.#frameLayerSizes[frameIndex];
 
     for (let layerIndex = 0; layerIndex < 3; layerIndex++) {
       // dsi gallery conversions don't use the third layer, so it can be skipped if this is set
-      if (this.settings.dsiLibraryNote && layerIndex === 3)
+      if (this.#settings.dsiLibraryNote && layerIndex === 3)
         break;
 
       this.seek(framePtr);
       let layerSize = layerSizes[layerIndex];
       framePtr += layerSize;
-      const pixelBuffer = this.layerBuffers[layerIndex];
+      const pixelBuffer = this.#layerBuffers[layerIndex];
 
       // if the layer is 38 bytes then it hasn't changed at all since the previous frame, so we can skip it
       if (layerSize === 38)
@@ -762,8 +858,8 @@ export class KwzParser extends FlipnoteParserBase {
         continue;
 
       // reset readbits state
-      this.bitIndex = 16;
-      this.bitValue = 0;
+      this.#bitIndex = 16;
+      this.#bitValue = 0;
 
       // tile skip counter
       let skipTileCounter = 0;
@@ -788,10 +884,10 @@ export class KwzParser extends FlipnoteParserBase {
               }
 
               let pixelBufferPtr = y * KwzParser.width + x;
-              const tileType = this.readBits(3);
+              const tileType = this.#readBits(3);
 
               if (tileType === 0) {
-                const linePtr = this.readBits(5) * 8;
+                const linePtr = this.#readBits(5) * 8;
                 const pixels = KWZ_LINE_TABLE_COMMON.subarray(linePtr, linePtr + 8);
                 pixelBuffer.set(pixels, pixelBufferPtr);
                 pixelBuffer.set(pixels, pixelBufferPtr += 320);
@@ -804,7 +900,7 @@ export class KwzParser extends FlipnoteParserBase {
               } 
 
               else if (tileType === 1) {
-                const linePtr = this.readBits(13) * 8;
+                const linePtr = this.#readBits(13) * 8;
                 const pixels = KWZ_LINE_TABLE.subarray(linePtr, linePtr + 8);
                 pixelBuffer.set(pixels, pixelBufferPtr);
                 pixelBuffer.set(pixels, pixelBufferPtr += 320);
@@ -817,7 +913,7 @@ export class KwzParser extends FlipnoteParserBase {
               } 
               
               else if (tileType === 2) {
-                const linePtr = this.readBits(5) * 8;
+                const linePtr = this.#readBits(5) * 8;
                 const a = KWZ_LINE_TABLE_COMMON.subarray(linePtr, linePtr + 8);
                 const b = KWZ_LINE_TABLE_COMMON_SHIFT.subarray(linePtr, linePtr + 8);
                 pixelBuffer.set(a, pixelBufferPtr);
@@ -831,7 +927,7 @@ export class KwzParser extends FlipnoteParserBase {
               } 
               
               else if (tileType === 3) {
-                const linePtr = this.readBits(13) * 8;
+                const linePtr = this.#readBits(13) * 8;
                 const a = KWZ_LINE_TABLE.subarray(linePtr, linePtr + 8);
                 const b = KWZ_LINE_TABLE_SHIFT.subarray(linePtr, linePtr + 8);
                 pixelBuffer.set(a, pixelBufferPtr);
@@ -846,15 +942,15 @@ export class KwzParser extends FlipnoteParserBase {
 
               // most common tile type
               else if (tileType === 4) {
-                const flags = this.readBits(8);
+                const flags = this.#readBits(8);
                 for (let mask = 1; mask < 0xFF; mask <<= 1) {
                   if (flags & mask) {
-                    const linePtr = this.readBits(5) * 8;
+                    const linePtr = this.#readBits(5) * 8;
                     const pixels = KWZ_LINE_TABLE_COMMON.subarray(linePtr, linePtr + 8);
                     pixelBuffer.set(pixels, pixelBufferPtr);
                   }
                   else {
-                    const linePtr = this.readBits(13) * 8;
+                    const linePtr = this.#readBits(13) * 8;
                     const pixels = KWZ_LINE_TABLE.subarray(linePtr, linePtr + 8);
                     pixelBuffer.set(pixels, pixelBufferPtr);
                   }
@@ -863,27 +959,27 @@ export class KwzParser extends FlipnoteParserBase {
               }
 
               else if (tileType === 5) {
-                skipTileCounter = this.readBits(5);
+                skipTileCounter = this.#readBits(5);
                 continue;
               }
 
               // type 6 doesnt exist
 
               else if (tileType === 7) {
-                let pattern = this.readBits(2);
-                let useCommonLines = this.readBits(1);
+                let pattern = this.#readBits(2);
+                let useCommonLines = this.#readBits(1);
                 let a, b;
 
                 if (useCommonLines !== 0) {
-                  const linePtrA = this.readBits(5) * 8;
-                  const linePtrB = this.readBits(5) * 8;
+                  const linePtrA = this.#readBits(5) * 8;
+                  const linePtrB = this.#readBits(5) * 8;
                   a = KWZ_LINE_TABLE_COMMON.subarray(linePtrA, linePtrA + 8);
                   b = KWZ_LINE_TABLE_COMMON.subarray(linePtrB, linePtrB + 8);
                   pattern += 1;
                 } 
                 else {
-                  const linePtrA = this.readBits(13) * 8;
-                  const linePtrB = this.readBits(13) * 8;
+                  const linePtrA = this.#readBits(13) * 8;
+                  const linePtrB = this.#readBits(13) * 8;
                   a = KWZ_LINE_TABLE.subarray(linePtrA, linePtrA + 8);
                   b = KWZ_LINE_TABLE.subarray(linePtrB, linePtrB + 8);
                 }
@@ -936,13 +1032,13 @@ export class KwzParser extends FlipnoteParserBase {
         }
       }
     }
-    this.prevDecodedFrame = frameIndex;
-    return this.layerBuffers;
+    this.#prevDecodedFrame = frameIndex;
+    return this.#layerBuffers;
   }
 
-  private decodeFrameSoundFlags(frameIndex: number) {
+  decodeFrameSoundFlags(frameIndex: number) {
     assertRange(frameIndex, 0, this.frameCount - 1, 'Frame index');
-    this.seek(this.frameMetaOffsets[frameIndex] + 0x17);
+    this.seek(this.#frameMetaOffsets[frameIndex] + 0x17);
     const soundFlags = this.readUint8();
     return [
       (soundFlags & 0x1) !== 0,
@@ -954,20 +1050,20 @@ export class KwzParser extends FlipnoteParserBase {
 
   /** 
    * Get the sound effect flags for every frame in the Flipnote
-   * @category Audio
+   * @group Audio
   */
   decodeSoundFlags() {
-    if (this.soundFlags !== undefined)
-      return this.soundFlags;
-    this.soundFlags = new Array(this.frameCount)
+    if (this.#soundFlags !== undefined)
+      return this.#soundFlags;
+    this.#soundFlags = new Array(this.frameCount)
       .fill(false)
       .map((_, i) => this.decodeFrameSoundFlags(i))
-    return this.soundFlags;
+    return this.#soundFlags;
   }
 
   /**
    * Get the sound effect usage flags for every frame
-   * @category Audio
+   * @group Audio
    */
   getSoundEffectFlags(): FlipnoteSoundEffectFlags[] {
     return this.decodeSoundFlags().map((frameFlags) => ({
@@ -981,7 +1077,7 @@ export class KwzParser extends FlipnoteParserBase {
   /**
    * Get the sound effect usage for a given frame
    * @param frameIndex
-   * @category Audio
+   * @group Audio
    */
   getFrameSoundEffectFlags(frameIndex: number): FlipnoteSoundEffectFlags {
     const frameFlags = this.decodeFrameSoundFlags(frameIndex);
@@ -996,15 +1092,15 @@ export class KwzParser extends FlipnoteParserBase {
   /** 
    * Get the raw compressed audio data for a given track
    * @returns Byte array
-   * @category Audio
+   * @group Audio
   */
   getAudioTrackRaw(trackId: FlipnoteAudioTrack) {
     const trackMeta = this.soundMeta.get(trackId);
-    assert(trackMeta.ptr + trackMeta.length < this.byteLength);
+    assert(trackMeta.ptr + trackMeta.length < this.numBytes);
     return new Uint8Array(this.buffer, trackMeta.ptr, trackMeta.length);
   }
 
-  private decodeAdpcm(src: Uint8Array, dst: Int16Array, predictor = 0, stepIndex = 0) {
+  decodeAdpcm(src: Uint8Array, dst: Int16Array, predictor = 0, stepIndex = 0) {
     const srcSize = src.length;
     let dstPtr = 0;
     let sample = 0;
@@ -1060,10 +1156,10 @@ export class KwzParser extends FlipnoteParserBase {
   /** 
    * Get the decoded audio data for a given track, using the track's native samplerate
    * @returns Signed 16-bit PCM audio
-   * @category Audio
+   * @group Audio
   */
   decodeAudioTrack(trackId: FlipnoteAudioTrack) {
-    const settings = this.settings;
+    const settings = this.#settings;
     const src = this.getAudioTrackRaw(trackId);
     const dstSize = this.rawSampleRate * 60; // enough for 60 seconds, the max bgm size
     const dst = new Int16Array(dstSize);
@@ -1122,7 +1218,7 @@ export class KwzParser extends FlipnoteParserBase {
   /** 
    * Get the decoded audio data for a given track, using the specified samplerate
    * @returns Signed 16-bit PCM audio
-   * @category Audio
+   * @group Audio
   */
   getAudioTrackPcm(trackId: FlipnoteAudioTrack, dstFreq = this.sampleRate) {
     const srcPcm = this.decodeAudioTrack(trackId);
@@ -1137,7 +1233,7 @@ export class KwzParser extends FlipnoteParserBase {
     return srcPcm;
   }
 
-  private pcmAudioMix(src: Int16Array, dst: Int16Array, dstOffset: number = 0) {
+  pcmAudioMix(src: Int16Array, dst: Int16Array, dstOffset: number = 0) {
     const srcSize = src.length;
     const dstSize = dst.length;
     for (let n = 0; n < srcSize; n++) {
@@ -1152,7 +1248,7 @@ export class KwzParser extends FlipnoteParserBase {
   /** 
    * Get the full mixed audio for the Flipnote, using the specified samplerate
    * @returns Signed 16-bit PCM audio
-   * @category Audio
+   * @group Audio
   */
   getAudioMasterPcm(dstFreq = this.sampleRate) {
     const dstSize = Math.ceil(this.duration * dstFreq);
@@ -1194,25 +1290,25 @@ export class KwzParser extends FlipnoteParserBase {
 
   /**
    * Get the body of the Flipnote - the data that is digested for the signature
-   * @category Verification
+   * @group Verification
    */
   getBody() {
-    const bodyEnd = this.bodyEndOffset;
+    const bodyEnd = this.#bodyEndOffset;
     return this.bytes.subarray(0, bodyEnd);
   }
 
   /**
    * Get the Flipnote's signature data
-   * @category Verification
+   * @group Verification
    */
   getSignature() {
-    const bodyEnd = this.bodyEndOffset;
+    const bodyEnd = this.#bodyEndOffset;
     return this.bytes.subarray(bodyEnd, bodyEnd + 256);
   }
 
   /**
    * Verify whether this Flipnote's signature is valid
-   * @category Verification
+   * @group Verification
    */
   async verify() {
     const key = await rsaLoadPublicKey(KWZ_PUBLIC_KEY, 'SHA-256');

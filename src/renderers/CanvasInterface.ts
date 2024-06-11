@@ -1,6 +1,10 @@
-import type { FlipnoteParserBase, FlipnoteStereoscopicEye } from '../parsers';
+import type {
+  Flipnote
+} from '../parsers';
 
-/** @internal */
+/**
+ * @internal
+ */
 export type CanvasConstructor = {
   new(parent: Element, width: number, height: number, options?: {}): CanvasInterface
 }
@@ -12,10 +16,12 @@ export enum CanvasStereoscopicMode {
   Anaglyph,
 };
 
-/** @internal */
+/**
+ * @internal
+ */
 export abstract class CanvasInterface {
 
-  note: FlipnoteParserBase;
+  note: Flipnote;
   width: number;
   height: number;
 
@@ -33,7 +39,7 @@ export abstract class CanvasInterface {
 
   abstract setCanvasSize(width: number, height: number): void
 
-  abstract setNote(note: FlipnoteParserBase): void
+  abstract setNote(note: Flipnote): void
 
   abstract clear(color?: [number, number, number, number]): void
 

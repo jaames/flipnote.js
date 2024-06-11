@@ -1,44 +1,58 @@
-import { LoaderDefinition } from './loaderDefinition';
-import webUrlLoader from './webUrlLoader';
-import nodeUrlLoader from './nodeUrlLoader';
-import fileLoader from './fileLoader';
-import blobLoader from './blobLoader';
-import nodeBufferLoader from './nodeBufferLoader';
-import arrayBufferLoader from './arrayBufferLoader';
+import { LoaderDefinition } from './types';
 
-export * from './loaderDefinition';
-export * from './webUrlLoader';
-export * from './nodeUrlLoader';
-export * from './fileLoader';
-export * from './blobLoader';
-export * from './nodeBufferLoader';
-export * from './arrayBufferLoader';
+import { urlLoader } from './url';
+import { fileLoader } from './file';
+import { blobLoader } from './blob';
+import { nodeBufferLoader } from './nodeBuffer';
+import { arrayBufferLoader } from './arrayBuffer';
+
+import { err } from '../utils';
+
+export * from './types';
+
+const LOADER_REGISTRY = new Map<string, LoaderDefinition<any>>();
 
 /**
- * A list of {@link LoaderDefinition} items to use when attempting to load a Flipnote.
- * Loaders are tried in sequence until a matching one is found for the requested input.
- * @category Loader
+ * Resolve a source, using the current loaders list.
+ * Returns an ArrayBuffer containing the data loaded from the source.
  */
-export type LoaderDefinitionList = LoaderDefinition<any>[];
+export const load = (source: any): Promise<ArrayBuffer> => {
+  for (let [name, loader] of LOADER_REGISTRY) {
+    if (!loader.matches(source))
+      continue;
 
-/** @category Loader */
-const DEFAULT_LOADERS: LoaderDefinitionList = [
-  webUrlLoader,
-  nodeUrlLoader,
-  fileLoader,
-  blobLoader,
-  nodeBufferLoader,
-  arrayBufferLoader
-];
-
-/** @internal */
-export function loadSource(source: any, loaders: LoaderDefinitionList = DEFAULT_LOADERS): Promise<ArrayBuffer> {
-  return new Promise((resolve, reject) => {
-    for (let i = 0; i < loaders.length; i++) {
-      const loader = loaders[i];
-      if (loader.matches(source))
-        return loader.load(source, resolve, reject);
+    try {
+      return loader.load(source);
     }
-    reject('No loader available for source type');
-  });
-}
+    catch (e) {
+      err(`Failed to load Flipnote from source, loader "${ name }" failed with error ${ err }`,);
+    }
+  }
+  err('No loader available for source type');
+};
+
+/**
+ * List all currently registered loaders, as an object.
+ */
+export const list = () =>
+  Object.fromEntries(LOADER_REGISTRY.entries());
+
+/**
+ * Clear all currently registered loaders.
+ */
+export const clear = () => 
+  LOADER_REGISTRY.clear();
+
+/**
+ * Register a resource loader to use when loading Flipnotes.
+ * A loader should take a source and return an ArrayBuffer.
+ */
+export const register = (loader: LoaderDefinition<any>) => {
+  LOADER_REGISTRY.set(loader.name, loader);
+};
+
+register(arrayBufferLoader);
+register(nodeBufferLoader);
+register(blobLoader);
+register(fileLoader);
+register(urlLoader);

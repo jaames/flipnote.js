@@ -9,22 +9,16 @@
     "outDir": "dist",
     "module": "esnext",
     "target": "es2020",
-    "noImplicitAny": true,
     "lib": ["dom", "dom.iterable", "esnext"],
     "moduleResolution": "node",
+    "noImplicitAny": true,
     "resolveJsonModule": true,
     "noUnusedLocals": false,
+    "skipLibCheck": true,
     "experimentalDecorators": true,
     "allowSyntheticDefaultImports": true,
-    "forceConsistentCasingInFileNames": true,
     "paths": {
       "*" : ["src/types/*"]
-    },
-    "plugins": [
-      {
-        "name": "ts-lit-plugin",
-        "strict": true
-      }
-    ]
+    }
   }
 }

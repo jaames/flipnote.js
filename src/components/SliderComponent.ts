@@ -22,11 +22,13 @@ import {
 import { KEY_MAP } from './utils';
 import { clamp } from '../utils';
 
-/** @internal */
+/**
+ * @internal
+ */
 type SliderOrientation = 'horizontal' | 'vertical';
 
 /**
- * @category Web Component
+ * @group Web Component
  * @internal
  */
 @customElement('flipnote-player-slider')

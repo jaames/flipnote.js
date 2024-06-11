@@ -9,21 +9,27 @@ export type WavSampleBuffer = Int16Array | Float32Array;
  * 
  * Currently only supports PCM s16_le audio encoding.
  * 
- * @category File Encoder
+ * @group File Encoder
  */
 export class WavAudio extends EncoderBase {
 
   mimeType: 'audio/wav';
 
-  /** Audio samplerate */
+  /**
+   * Audio samplerate
+   */
   sampleRate: number;
-  /** Number of audio channels */
+  /**
+   * Number of audio channels
+   */
   channels: number;
-  /** Number of bits per sample */
+  /**
+   * Number of bits per sample
+   */
   bitsPerSample: number;
 
-  private header: DataStream;
-  private pcmData: Int16Array;
+  #header: DataStream;
+  #pcmData: Int16Array;
 
   /**
    * Create a new WAV audio object
@@ -66,8 +72,8 @@ export class WavAudio extends EncoderBase {
     header.writeChars('data');
     // data section length (set later)
     header.writeUint32(0);
-    this.header = header;
-    this.pcmData = null;
+    this.#header = header;
+    this.#pcmData = null;
   }
 
   /**
@@ -101,23 +107,23 @@ export class WavAudio extends EncoderBase {
    * @param pcmData signed int16 PCM audio samples
    */
   writeSamples(pcmData: Int16Array) {
-    let header = this.header;
+    let header = this.#header;
     // fill in filesize
     header.seek(4);
-    header.writeUint32(header.byteLength + pcmData.byteLength);
+    header.writeUint32(header.numBytes + pcmData.byteLength);
     // fill in data section length
     header.seek(40);
     header.writeUint32(pcmData.byteLength);
-    this.pcmData = pcmData;
+    this.#pcmData = pcmData;
   }
   
   /**
    * Returns the WAV audio data as an {@link https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/ArrayBuffer | ArrayBuffer}
    */
   getArrayBuffer() {
-    const headerBytes = this.header.bytes;
-    const pcmBytes = new Uint8Array(this.pcmData.buffer);
-    const resultBytes = new Uint8Array(this.header.byteLength + this.pcmData.byteLength);
+    const headerBytes = this.#header.bytes;
+    const pcmBytes = new Uint8Array(this.#pcmData.buffer);
+    const resultBytes = new Uint8Array(this.#header.numBytes + this.#pcmData.byteLength);
     resultBytes.set(headerBytes);
     resultBytes.set(pcmBytes, headerBytes.byteLength);
     return resultBytes.buffer;

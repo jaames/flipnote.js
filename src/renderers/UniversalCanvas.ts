@@ -1,19 +1,42 @@
-import { CanvasInterface, CanvasConstructor, CanvasStereoscopicMode } from './CanvasInterface';
-import { WebglCanvas, WebglCanvasOptions } from './WebGlCanvas';
-import { Html5Canvas, Html5CanvasOptions } from './Html5Canvas';
-import { FlipnoteParserBase } from '../parsers';
+import {
+  type CanvasInterface,
+  type CanvasConstructor,
+  CanvasStereoscopicMode
+} from './CanvasInterface';
+
+import {
+  WebglCanvas,
+  type WebglCanvasOptions
+} from './WebGlCanvas';
+
+import {
+  Html5Canvas,
+  type Html5CanvasOptions
+} from './Html5Canvas';
+
+import type {
+  Flipnote
+} from '../parsers';
 
 export type UniversalCanvasOptions = WebglCanvasOptions & Html5CanvasOptions;
 
 export class UniversalCanvas implements CanvasInterface {
 
-  /** */
+  /**
+   *
+   */
   renderer: CanvasInterface;
-  /** */
-  note: FlipnoteParserBase;
-  /** View width (CSS pixels) */
+  /**
+   *
+   */
+  note: Flipnote;
+  /**
+   * View width (CSS pixels)
+   */
   width: number;
-  /** View height (CSS pixels) */
+  /**
+   * View height (CSS pixels)
+   */
   height: number;
   /** 
    * Backing canvas width (real pixels)
@@ -25,44 +48,60 @@ export class UniversalCanvas implements CanvasInterface {
    * Note that this factors in device pixel ratio, so it may not reflect the size of the canvas in CSS pixels
   */
   dstHeight: number;
-  /**  */
+  /**
+   * 
+   */
   srcWidth: number;
-  /**  */
+  /**
+   * 
+   */
   srcHeight: number;
-  /** */
+  /**
+   *
+   */
   frameIndex: number;
-  /** */
+  /**
+   *
+   */
   isReady = false;
-  /** */
+  /**
+   *
+   */
   isHtml5 = false;
-  /** */
+  /**
+   *
+   */
   supportedStereoscopeModes: CanvasStereoscopicMode[] = [];
-  /** */
+  /**
+   *
+   */
   stereoscopeMode = CanvasStereoscopicMode.None;
-  /** */
+  /**
+   *
+   */
   stereoscopeStrength = 1;
 
-  private rendererStack: CanvasConstructor[] = [
+  #rendererStack: CanvasConstructor[] = [
     WebglCanvas,
     Html5Canvas
   ];
-  private rendererStackIdx = 0;
-  private parent: Element;
-  private options: Partial<UniversalCanvasOptions> = {};
+  #rendererStackIdx = 0;
+  #parent: Element;
+  #options: Partial<UniversalCanvasOptions> = {};
   
   constructor (parent: Element, width=640, height=480, options: Partial<UniversalCanvasOptions>={}) {
     this.width = width;
     this.height = height;
-    this.parent = parent;
-    this.options = options;
-    this.setSubRenderer(this.rendererStack[0]);
+    this.#parent = parent;
+    this.#options = options;
+    this.#setSubRenderer(this.#rendererStack[0]);
   }
 
-  private setSubRenderer(Canvas: CanvasConstructor) {
+  #setSubRenderer(Canvas: CanvasConstructor) {
     let immediateLoss = false;
 
-    const renderer = new Canvas(this.parent, this.width, this.height, {
-      ...this.options,
+    const renderer = new Canvas(this.#parent, this.width, this.height, {
+      ...this.#options,
       onlost: () => {
         immediateLoss = true;
         this.fallbackIfPossible();
@@ -85,23 +124,23 @@ export class UniversalCanvas implements CanvasInterface {
     this.isHtml5 = renderer instanceof Html5Canvas;
     this.isReady = true;
     this.renderer = renderer;
-    this.rendererStackIdx = this.rendererStack.indexOf(Canvas);
+    this.#rendererStackIdx = this.#rendererStack.indexOf(Canvas);
     this.supportedStereoscopeModes = renderer.supportedStereoscopeModes;
     renderer.stereoscopeStrength = this.stereoscopeStrength;
     this.requestStereoScopeMode(this.stereoscopeMode);
   }
 
   fallbackIfPossible() {
-    if (this.rendererStackIdx >= this.rendererStack.length)
+    if (this.#rendererStackIdx >= this.#rendererStack.length)
       throw new Error('No renderer to fall back to');
 
-    this.rendererStackIdx += 1;
-    this.setSubRenderer(this.rendererStack[this.rendererStackIdx]);
+    this.#rendererStackIdx += 1;
+    this.#setSubRenderer(this.#rendererStack[this.#rendererStackIdx]);
   }
 
   // for backwards compat
   switchToHtml5() {
-    this.setSubRenderer(Html5Canvas);
+    this.#setSubRenderer(Html5Canvas);
   }
 
   setCanvasSize(width: number, height: number) {
@@ -113,7 +152,7 @@ export class UniversalCanvas implements CanvasInterface {
     this.dstHeight = renderer.dstHeight;
   }
 
-  setNote(note: FlipnoteParserBase) {
+  setNote(note: Flipnote) {
     this.note = note;
     this.renderer.setNote(note);
     this.frameIndex = undefined;

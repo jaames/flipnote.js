@@ -19,12 +19,15 @@ import IconLoader from './icons/loader.svg';
 import IconVolumeOn from './icons/volumeOn.svg';
 import IconVolumeOff from './icons/volumeOff.svg';
 
-/** @internal */
-function patchSvg(svgString: string) {
-  return svgString.replace(/<svg ([^>]*)>/, (match, svgAttrs) => `<svg ${ svgAttrs } class="Icon" style="fill:currentColor">`);
-}
+/**
+ * @internal
+ */
+const patchSvg = (svgString: string) =>
+  svgString.replace(/<svg ([^>]*)>/, (match, svgAttrs) => `<svg ${ svgAttrs } class="Icon" style="fill:currentColor">`);
 
-/** @internal */
+/**
+ * @internal
+ */
 const iconMap: Record<string, string> = {
   play: patchSvg(IconPlay),
   pause: patchSvg(IconPause),
@@ -36,7 +39,7 @@ const iconMap: Record<string, string> = {
 /** 
  * Flipnote player icon component
  * 
- * @category Web Component
+ * @group Web Component
  * @internal
  */
 @customElement('flipnote-player-icon')
@@ -63,7 +66,9 @@ export class IconComponent extends LitElement {
   @property({ type: String })
   icon: string = 'loader';
 
-  /** @internal */
+  /**
+   * @internal
+   */
   render() {
     return html`${ unsafeSVG(iconMap[this.icon]) }`;
   }

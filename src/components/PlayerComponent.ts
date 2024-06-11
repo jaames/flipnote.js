@@ -20,11 +20,10 @@ import { PlayerMixin } from './PlayerMixin';
 import { KEY_MAP } from './utils';
 
 import { Player, PlayerEvent } from '../player';
-import { parseSource } from '../parseSource';
 import { nextPaint } from '../utils';
 
 /**
- * @category Web Component
+ * @group Web Component
  * @internal
  */
 @customElement('flipnote-player')
@@ -238,7 +237,7 @@ export class PlayerComponent extends PlayerMixin(LitElement) {
   set src(src: any) {
     const oldValue = this._playerSrc;
     if (this._isPlayerAvailable)
-      this.player.load(src, parseSource)
+      this.player.load(src);
     this._playerSrc = src;
     this.requestUpdate('src', oldValue);
   }
@@ -298,7 +297,9 @@ export class PlayerComponent extends PlayerMixin(LitElement) {
     this._resizeObserver = new ResizeObserver(this.handleResize);
   }
 
-  /** @internal */
+  /**
+   * @internal
+   */
   render() {
     return html`
       <style>
@@ -334,7 +335,9 @@ export class PlayerComponent extends PlayerMixin(LitElement) {
     `;
   }
 
-  /** @internal */
+  /**
+   * @internal
+   */
   renderControls() {
     if (this.controls === 'compact') {
       return html`
@@ -400,7 +403,9 @@ export class PlayerComponent extends PlayerMixin(LitElement) {
     }
   }
 
-  /** @internal */
+  /**
+   * @internal
+   */
   firstUpdated(changedProperties: PropertyValues) {
     this.updateSettingsFromProps();
     const player = new Player(this.playerCanvasWrapper, 256, 192, this.parserSettings);
@@ -438,7 +443,7 @@ export class PlayerComponent extends PlayerMixin(LitElement) {
       this.dispatchEvent(new Event(eventName));
     });
     if (this._playerSrc)
-      player.load(this._playerSrc, parseSource);
+      player.load(this._playerSrc);
     this._isPlayerAvailable = true;
   }
 
@@ -457,7 +462,9 @@ export class PlayerComponent extends PlayerMixin(LitElement) {
   //   }
   // }
 
-  /** @internal */
+  /**
+   * @internal
+   */
   disconnectedCallback() {
     // disable resize observer
     this._resizeObserver.disconnect();

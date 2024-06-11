@@ -15,12 +15,12 @@
 ## Features
 
 * Full file parser implementations for animations from both Flipnote Studio and Flipnote Studio 3D, with a consistent API for dealing with metadata, thumbnails, frames, audio, signatures, and more
-* High emphasis on accuracy, with reverse-engineered code being referenced as much as possible; frame rendering and audio mixing/interpolation are identical to console output
-* Realtime browser-based playback for frames and audio, with a player API based on the HTML5 Video and Audio APIs
+* High emphasis on accuracy, with reverse-engineered code being referenced as much as possible; frame rendering and audio mixing/interpolation are *identical* to console output
+* Realtime browser-based playback, with a player API based on the HTML5 Video and Audio APIs
+* Playback uses a WebGL renderer featuring crisp pixel scaling (using sharp-bilinear filtering), with a HTML5 canvas fallback
 * Optional web component for easily embedding a Flipnote player UI on any web page
-* WebGL renderer with crisp pixel scaling (using sharp-bilinear filtering), with a HTML5 canvas fallback
-* Supports Flipnote Studio 3D's layer depth feature with [stereoscopic](https://en.wikipedia.org/wiki/Stereoscopy) rendering.
-* Built-in GIF and WAV converters
+* Built-in Flipnote GIF and WAV exporters
+* Includes utilities for working with Flipnote Studio IDs, filenames, and playlist files
 * Works in web browser and NodeJS environments
 * Exports full Typescript types
 * Surprisingly small once minified & gzipped
@@ -33,7 +33,7 @@ It's been a fun pet project so I may return to do some tweaks, implement support
 
 ## Background
 
-Released in 2009, [Flipnote Studio](https://en.wikipedia.org/wiki/Flipnote_Studio) is an application for the Nintendo DSi console which allows users to create flipbook-style animations with the console's touch screen, cameras and microphone. In 2013 it recieved a sequel on the Nintendo 3DS called [Flipnote Studio 3D](https://en.wikipedia.org/wiki/Flipnote_Studio_3D), which expanded upon the original's feature set and added the ability to use 3D depth.
+Released in 2009, [Flipnote Studio](https://en.wikipedia.org/wiki/Flipnote_Studio) is an application for the Nintendo DSi console which allows users to create flipbook-style animations with the console's touch screen, cameras and microphone. In 2013 it received a sequel on the Nintendo 3DS called [Flipnote Studio 3D](https://en.wikipedia.org/wiki/Flipnote_Studio_3D), which expanded upon the original's feature set and added the ability to use 3D depth.
 
 Flipnote Studio has had quite a legacy. The British animation studio Aardman [created several original shorts for it](https://www.nintendolife.com/news/2009/12/aardman_create_zelda_flipnote), it's been used to create multiple [music videos](https://www.youtube.com/watch?v=K3m3_7RoGZk), and [a user even spent 4 years creating a full 30-minute anime](https://nintendoeverything.com/3ds-user-spends-four-years-making-an-anime-in-flipnote-studio-3d/) primarily animated in Flipnote Studio 3D.
 

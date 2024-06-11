@@ -3,7 +3,9 @@ import { SliderComponent } from './SliderComponent';
 import { IconComponent } from './IconComponent';
 import { ImageComponent } from './ImageComponent';
 
-/** @internal */
+/**
+ * @internal
+ */
 declare global {
   /**
    * Maps web component HTML tag names to their component classes 

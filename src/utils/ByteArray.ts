@@ -1,35 +1,75 @@
-/** @internal */
+/**
+ * @internal
+ */
 export class ByteArray {
-  // sizes
+  /**
+   * @internal
+   */
   pageSize = 2048 * 2;
-  allocSize = 0; // allocated size counting all pages
-  realSize = 0; // number of bytes actually used
-  // pages
+  /**
+   * Allocated size counting all pages.
+   * @internal
+   */
+  allocSize = 0;
+  /**
+   * Number of bytes actually used.
+   * @internal
+   */
+  realSize = 0;
+  /**
+   * @internal
+   */
   pages: Uint8Array[] = [];
+  /**
+   * @internal
+   */
   numPages = 0;
-  // pointers
-  pageIdx = 0; // page to write to
-  pagePtr = 0; // position in page to write to
-  realPtr = 0; // position in file
+  /**
+   * Page to write to.
+   * @internal
+   */
+  pageIdx = 0;
+  /**
+   * Position in page to write to.
+   * @internal
+   */
+  pagePtr = 0; // 
+  /**
+   * Position in file.
+   * @internal
+   */
+  realPtr = 0;
 
   constructor() {
     this.newPage();
   }
 
+  /**
+   * @internal
+   */
   set pointer(ptr: number) {
     this.setPointer(ptr);
   }
 
+  /**
+   * @internal
+   */
   get pointer() {
     return this.realPtr;
   }
 
+  /**
+   * @internal
+   */
   newPage() {
     this.pages[this.numPages] = new Uint8Array(this.pageSize);
     this.numPages = this.pages.length;
     this.allocSize = this.numPages * this.pageSize;
   }
 
+  /**
+   * @internal
+   */
   setPointer(ptr: number) {
     // allocate enough pages to include pointer
     while (ptr >= this.allocSize) {
@@ -44,31 +84,49 @@ export class ByteArray {
     this.realPtr = ptr;
   }
 
+  /**
+   * @internal
+   */
   writeByte(value: number) {
     this.pages[this.pageIdx][this.pagePtr] = value;
     this.setPointer(this.realPtr + 1);
   }
 
+  /**
+   * @internal
+   */
   writeBytes(bytes: Uint8Array | number[], srcPtr?: number, length?: number) {
     for (let l = length || bytes.length, i = srcPtr || 0; i < l; i++)
       this.writeByte(bytes[i]);
   }
 
+  /**
+   * @internal
+   */
   writeChars(str: string) {
     for (let i = 0; i < str.length; i++) {
       this.writeByte(str.charCodeAt(i));
     }
   }
 
+  /**
+   * @internal
+   */
   writeU8(value: number) {
     this.writeByte(value & 0xFF);
   }
 
+  /**
+   * @internal
+   */
   writeU16(value: number) {
     this.writeByte((value >>> 0) & 0xFF);
     this.writeByte((value >>> 8) & 0xFF);
   }
 
+  /**
+   * @internal
+   */
   writeU32(value: number) {
     this.writeByte((value >>> 0) & 0xFF);
     this.writeByte((value >>> 8) & 0xFF);
