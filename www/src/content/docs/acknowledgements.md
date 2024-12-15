@@ -2,7 +2,7 @@
 title: Acknowledgements
 ---
 
-Flipnote.js was written by **James**, who went slightly insane in the process and started writing in third person. You can find his ramblings on [Twitter](https://twitter.com/rakujira) and his code on [GitHub](https://github.com/jaames).
+Flipnote.js was written by **James**, who went slightly insane in the process and started writing in third person. You can find his ramblings on [Bluesky](https://bsky.app/profile/jaames.co.uk) and his code on [GitHub](https://github.com/jaames).
 
 ### Special Thanks
 
@@ -27,6 +27,8 @@ This wouldn't have been possible without the many rad people who have contribute
 
 - **[Nintendo](https://www.nintendo.com/)** - for creating Flipnote Studio.
 - **[Hatena](http://www.hatena.ne.jp/)** - for creating Flipnote Hatena, the now-defunct online service for sharing Flipnote Studio creations.
+
+* It's not mandatory, but if you use this library in your own projects, please consider adding this list of credits somewhere!
 
 ### References
 
