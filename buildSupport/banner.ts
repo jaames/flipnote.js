@@ -1,7 +1,5 @@
-import pkg from '../package.json' assert { type: 'json' };
-
 export const banner = `/*!!
- * flipnote.js v${ pkg.version }
+ * flipnote.js v${ process.env.npm_package_version }
  * https://flipnote.js.org
  * A JavaScript library for Flipnote Studio animation files
  * 2018 - ${ new Date().getFullYear() } James Daniel
