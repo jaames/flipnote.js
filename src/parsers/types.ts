@@ -11,6 +11,10 @@ export interface FlipnoteMeta {
    */
   loop: boolean;
   /**
+   * If `true`, the Flipnote is intended to use 3D depth when displayed. This is only used by KWZ files.
+   */
+  is3d: boolean;
+  /**
    * Spinoffs are remixes of another user's Flipnote
    */
   isSpinoff: boolean;

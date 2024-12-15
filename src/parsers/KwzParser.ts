@@ -95,7 +95,7 @@ const KWZ_LINE_TABLE_SHIFT = new Uint8Array(6561 * 8);
 /**
  * @internal
  */
-var offset = 0;
+var offset = 0; 
 for (let a = 0; a < 3; a++)
 for (let b = 0; b < 3; b++)
 for (let c = 0; c < 3; c++)
@@ -416,6 +416,7 @@ export class KwzParser extends BaseParser {
   #frameMetaOffsets: Uint32Array;
   #frameDataOffsets: Uint32Array;
   #frameLayerSizes: [number, number, number][];
+  #frameDataTotalSize: number;
   #bitIndex = 0;
   #bitValue = 0;
   
@@ -582,6 +583,7 @@ export class KwzParser extends BaseParser {
     this.meta = {
       lock: (flags & 0x1) !== 0,
       loop: (flags & 0x2) !== 0,
+      is3d: (flags & 0x10) !== 0,
       isSpinoff: this.isSpinoff,
       frameCount: frameCount,
       frameSpeed: frameSpeed,
@@ -644,6 +646,7 @@ export class KwzParser extends BaseParser {
     const frameLayerSizes: [number, number, number][] = [];
     let frameMetaPtr = kmiSection.ptr + 8;
     let frameDataPtr = kmcSection.ptr + 12;
+    let totalSize = 0;
     for (let frameIndex = 0; frameIndex < numFrames; frameIndex++) {
       this.seek(frameMetaPtr + 4);
       const layerASize = this.readUint16();
@@ -656,10 +659,12 @@ export class KwzParser extends BaseParser {
       assert(frameMetaPtr < this.numBytes, `frame${ frameIndex } meta pointer out of bounds`);
       assert(frameDataPtr < this.numBytes, `frame${ frameIndex } data pointer out of bounds`);
       frameLayerSizes.push([layerASize, layerBSize, layerCSize]);
+      totalSize += layerASize + layerBSize + layerCSize;
     }
     this.#frameMetaOffsets = frameMetaOffsets;
     this.#frameDataOffsets = frameDataOffsets;
     this.#frameLayerSizes = frameLayerSizes;
+    this.#frameDataTotalSize = totalSize;
   }
 
   #decodeSoundHeader() {
@@ -682,7 +687,7 @@ export class KwzParser extends BaseParser {
   /**
    * Decodes the thumbnail image embedded in the Flipnote. Will return a {@link FlipnoteThumbImage} containing JPEG data.
    * 
-   * Note: For most purposes, you should probably just decode the thumbnail fraa to get a higher resolution image.
+   * Note: For most purposes, you should probably just decode the thumbnail frame to get a higher resolution image.
    * @group Meta
    */
   getThumbnailImage() {
@@ -694,8 +699,35 @@ export class KwzParser extends BaseParser {
       format: FlipnoteThumbImageFormat.Jpeg,
       width: 80,
       height: 64,
-      data: bytes.buffer
+      data: bytes.buffer as ArrayBuffer
     }
+  }
+
+  /**
+   * Get the memory bar level for the Flipnote.
+   * This is a value between 0 and 1 indicating how "full" the Flipnote is, based on the size limit of Flipnote Studio 3D.
+   * 
+   * Values will never be below 0, but can be above 1 if the Flipnote is larger than the size limit - it is technically possible to exceed the size limit by one frame.
+   * 
+   * NOTE: This is slightly simplified from the calculations used in Flipnote Studio 3D, but the result should be close enough.
+   * 
+   * @group Meta
+  */
+  getMemoryBarLevel() {
+    // NOTE: Flipnote Studio 3D seems to have a couple of different calculations for the actual memory limit
+    // This is based on the function at 0z002b4224, which gives the level used for the memory bar itself
+    // A slightly different calculation is used when deciding if a new frame can be added, unsure why
+    assert(this.#sectionMap.has('KMI') && this.#sectionMap.has('KMC'));
+    const totalSize = this.#frameDataTotalSize;
+    // The function at 0x0031f258 gives the max size used in this calculation
+    // In reality the max size is 4219447 - ((something + 39) rounded down to the nearest multiple of 4)
+    // Unsure what the (something + 39) is, but this should hopefully be a close enough approximation
+    const maxSize = 4219447;
+    const level = (totalSize + 57600) / maxSize;
+    if (level < 0)
+      return 0;
+    // No upper limit; can technically be exceeded by the size of a single frame
+    return level;
   }
 
   /** 
@@ -1100,7 +1132,7 @@ export class KwzParser extends BaseParser {
     return new Uint8Array(this.buffer, trackMeta.ptr, trackMeta.length);
   }
 
-  decodeAdpcm(src: Uint8Array, dst: Int16Array, predictor = 0, stepIndex = 0) {
+  decodeAdpcm(src: Uint8Array, dst: Int16Array, predictor = 0, stepIndex = 40) {
     const srcSize = src.length;
     let dstPtr = 0;
     let sample = 0;
