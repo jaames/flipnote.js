@@ -73,7 +73,7 @@ kQIDAQAB
 -----END PUBLIC KEY-----`;
 
 /** 
- * Pre computed bitmasks for readBits; done as a slight optimisation
+ * Pre computed bitmasks for readBits; done as a slight optimization
  * @internal
  */
 const BITMASKS = new Uint16Array(16);
@@ -583,7 +583,7 @@ export class KwzParser extends BaseParser {
     this.meta = {
       lock: (flags & 0x1) !== 0,
       loop: (flags & 0x2) !== 0,
-      is3d: (flags & 0x10) !== 0,
+      advancedTools: (flags & 0x4) !== 0,
       isSpinoff: this.isSpinoff,
       frameCount: frameCount,
       frameSpeed: frameSpeed,
@@ -705,28 +705,27 @@ export class KwzParser extends BaseParser {
 
   /**
    * Get the memory bar level for the Flipnote.
-   * This is a value between 0 and 1 indicating how "full" the Flipnote is, based on the size limit of Flipnote Studio 3D.
+   * This is a value between 0 and 1 indicating how "full" the Flipnote is, based on the size calculation formula inside Flipnote Studio 3D.
    * 
    * Values will never be below 0, but can be above 1 if the Flipnote is larger than the size limit - it is technically possible to exceed the size limit by one frame.
-   * 
-   * NOTE: This is slightly simplified from the calculations used in Flipnote Studio 3D, but the result should be close enough.
    * 
    * @group Meta
   */
   getMemoryBarLevel() {
     // NOTE: Flipnote Studio 3D seems to have a couple of different calculations for the actual memory limit
-    // This is based on the function at 0z002b4224, which gives the level used for the memory bar itself
-    // A slightly different calculation is used when deciding if a new frame can be added, unsure why
+    // This is based on the function at 0x002b4224, which gives the level used for the memory bar itself
+    // A slightly different calculation is used when deciding if a new frame can be added, unsure why!
     assert(this.#sectionMap.has('KMI') && this.#sectionMap.has('KMC'));
+    const sampleRate = this.rawSampleRate;
+    const bytesPerSecond = sampleRate / 2;
+    const bgmMaxSize = bytesPerSecond * 60;
+    const seMaxSize = bytesPerSecond * 2;
+    const audioMaxSize = bgmMaxSize + seMaxSize * 4;
     const totalSize = this.#frameDataTotalSize;
     // The function at 0x0031f258 gives the max size used in this calculation
-    // In reality the max size is 4219447 - ((something + 39) rounded down to the nearest multiple of 4)
-    // Unsure what the (something + 39) is, but this should hopefully be a close enough approximation
-    const maxSize = 4219447;
+    // I'm actually unsure what the (something + 39) is, but maximum possible audio size seems to fit well enough for now :^)
+    const maxSize = 4219447 - ((audioMaxSize + 39) & 0xfffffffc);
     const level = (totalSize + 57600) / maxSize;
-    if (level < 0)
-      return 0;
-    // No upper limit; can technically be exceeded by the size of a single frame
     return level;
   }
 

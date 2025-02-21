@@ -11,9 +11,9 @@ export interface FlipnoteMeta {
    */
   loop: boolean;
   /**
-   * If `true`, the Flipnote is intended to use 3D depth when displayed. This is only used by KWZ files.
+   * If `true`, the Flipnote was created using the "Advanced" toolset. This is only used by KWZ files.
    */
-  is3d: boolean;
+  advancedTools: boolean | undefined;
   /**
    * Spinoffs are remixes of another user's Flipnote
    */

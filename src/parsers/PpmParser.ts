@@ -77,7 +77,6 @@ const PPM_THUMB_PALETTE = [
 
 /**
  * @internal
- * 
  */
 const PPM_FRAME_DATA_MAX_SIZE = 736800;
 
@@ -375,7 +374,7 @@ export class PpmParser extends BaseParser {
     this.meta = {
       lock: lock === 1,
       loop: (flags >> 1 & 0x1) === 1,
-      is3d: false,
+      advancedTools: undefined,
       isSpinoff: this.isSpinoff,
       frameCount: this.frameCount,
       frameSpeed: this.frameSpeed,
