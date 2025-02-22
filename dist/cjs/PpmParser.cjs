@@ -1119,14 +1119,14 @@ class PpmParser extends BaseParser {
         };
     }
     /**
-     * Get the memory bar level for the Flipnote.
+     * Get the memory meter level for the Flipnote.
      * This is a value between 0 and 1 indicating how "full" the Flipnote is, based on the size limit of Flipnote Studio.
      *
      * Values will never be below 0, but can be above 1 if the Flipnote is larger than the size limit - it is technically possible to exceed the size limit by one frame.
      *
      * @group Meta
     */
-    getMemoryBarLevel() {
+    getMemoryMeterLevel() {
         const level = __classPrivateFieldGet(this, _PpmParser_frameDataLength, "f") / PPM_FRAME_DATA_MAX_SIZE;
         if (level < 0)
             return 0;
