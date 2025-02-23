@@ -319,6 +319,16 @@ export abstract class BaseParser extends DataStream {
    */
   abstract getThumbnailImage(): FlipnoteThumbImage;
 
+  /**
+   * Get the memory meter level for the Flipnote.
+   * This is a value between 0 and 1 indicating how "full" the Flipnote is, based on the size limit built into the app itself.
+   * 
+   * Values will never be below 0, but can be above 1 if the Flipnote is larger than the size limit - it is technically possible to exceed the size limit by one frame.
+   * 
+   * @group Meta
+  */
+  abstract getMemoryMeterLevel(): number;
+
   /** 
    * Decode a frame, returning the raw pixel buffers for each layer.
    * @group Image

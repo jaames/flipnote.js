@@ -1,8 +1,8 @@
 /*!!
- * flipnote.js v6.0.1
+ * flipnote.js v6.1.0
  * https://flipnote.js.org
  * A JavaScript library for Flipnote Studio animation files
- * 2018 - 2024 James Daniel
+ * 2018 - 2025 James Daniel
  * Flipnote Studio is (c) Nintendo Co., Ltd. This project isn't affiliated with or endorsed by them in any way.
 */
 /******************************************************************************
@@ -938,6 +938,10 @@ const PPM_THUMB_PALETTE = [
     0xFF00FF00,
 ];
 /**
+ * @internal
+ */
+const PPM_FRAME_DATA_MAX_SIZE = 736800;
+/**
  * RSA public key used to verify that the PPM file signature is genuine.
  *
  * This **cannot** be used to resign Flipnotes, it can only verify that they are valid
@@ -1111,6 +1115,21 @@ class PpmParser extends BaseParser {
             height: 48,
             data: pixels.buffer
         };
+    }
+    /**
+     * Get the memory meter level for the Flipnote.
+     * This is a value between 0 and 1 indicating how "full" the Flipnote is, based on the size limit of Flipnote Studio.
+     *
+     * Values will never be below 0, but can be above 1 if the Flipnote is larger than the size limit - it is technically possible to exceed the size limit by one frame.
+     *
+     * @group Meta
+    */
+    getMemoryMeterLevel() {
+        const level = __classPrivateFieldGet(this, _PpmParser_frameDataLength, "f") / PPM_FRAME_DATA_MAX_SIZE;
+        if (level < 0)
+            return 0;
+        // No upper limit; can technically be exceeded by the size of a single frame
+        return level;
     }
     /**
      * Decode a frame, returning the raw pixel buffers for each layer
@@ -1578,6 +1597,7 @@ _PpmParser_layerBuffers = new WeakMap(), _PpmParser_soundFlags = new WeakMap(), 
     this.meta = {
         lock: lock === 1,
         loop: (flags >> 1 & 0x1) === 1,
+        advancedTools: undefined,
         isSpinoff: this.isSpinoff,
         frameCount: this.frameCount,
         frameSpeed: this.frameSpeed,

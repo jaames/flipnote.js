@@ -152,8 +152,8 @@ export class WebglCanvas implements CanvasInterface {
   #paletteBuffer = new Uint32Array(16);
 
   #layerTexture: WebGLTexture;
-  #layerTexturePixelBuffer: Uint32Array;
-  #layerTexturePixels: Uint8Array; // will be same memory as layerTexturePixelBuffer, just uint8 for webgl texture
+  #layerTexturePixelBuffer: Uint32Array<ArrayBuffer>;
+  #layerTexturePixels: Uint8Array<ArrayBuffer>; // will be same memory as layerTexturePixelBuffer, just uint8 for webgl texture
 
   #frameTexture: WebGLTexture;
   #frameBuffer: WebGLFramebuffer;

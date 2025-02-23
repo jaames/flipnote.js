@@ -17,6 +17,8 @@
     "skipLibCheck": true,
     "experimentalDecorators": true,
     "allowSyntheticDefaultImports": true,
+    "allowImportingTsExtensions": true,
+    "esModuleInterop": true,
     "paths": {
       "*" : ["src/types/*"]
     }

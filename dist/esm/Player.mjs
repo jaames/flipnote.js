@@ -1,8 +1,8 @@
 /*!!
- * flipnote.js v6.0.1
+ * flipnote.js v6.1.0
  * https://flipnote.js.org
  * A JavaScript library for Flipnote Studio animation files
- * 2018 - 2024 James Daniel
+ * 2018 - 2025 James Daniel
  * Flipnote Studio is (c) Nintendo Co., Ltd. This project isn't affiliated with or endorsed by them in any way.
 */
 /******************************************************************************
@@ -1004,6 +1004,10 @@ const PPM_THUMB_PALETTE = [
     0xFF00FF00,
 ];
 /**
+ * @internal
+ */
+const PPM_FRAME_DATA_MAX_SIZE = 736800;
+/**
  * RSA public key used to verify that the PPM file signature is genuine.
  *
  * This **cannot** be used to resign Flipnotes, it can only verify that they are valid
@@ -1177,6 +1181,21 @@ class PpmParser extends BaseParser {
             height: 48,
             data: pixels.buffer
         };
+    }
+    /**
+     * Get the memory meter level for the Flipnote.
+     * This is a value between 0 and 1 indicating how "full" the Flipnote is, based on the size limit of Flipnote Studio.
+     *
+     * Values will never be below 0, but can be above 1 if the Flipnote is larger than the size limit - it is technically possible to exceed the size limit by one frame.
+     *
+     * @group Meta
+    */
+    getMemoryMeterLevel() {
+        const level = __classPrivateFieldGet(this, _PpmParser_frameDataLength, "f") / PPM_FRAME_DATA_MAX_SIZE;
+        if (level < 0)
+            return 0;
+        // No upper limit; can technically be exceeded by the size of a single frame
+        return level;
     }
     /**
      * Decode a frame, returning the raw pixel buffers for each layer
@@ -1644,6 +1663,7 @@ _PpmParser_layerBuffers = new WeakMap(), _PpmParser_soundFlags = new WeakMap(), 
     this.meta = {
         lock: lock === 1,
         loop: (flags >> 1 & 0x1) === 1,
+        advancedTools: undefined,
         isSpinoff: this.isSpinoff,
         frameCount: this.frameCount,
         frameSpeed: this.frameSpeed,
@@ -1848,7 +1868,7 @@ const getKwzFsidRegion = (fsid) => {
  */
 const kwzFsidFormat = (hex) => `${hex.slice(0, 4)}-${hex.slice(4, 8)}-${hex.slice(8, 12)}-${hex.slice(12, 18)}`.toLowerCase();
 
-var _KwzParser_instances, _KwzParser_settings, _KwzParser_sectionMap, _KwzParser_bodyEndOffset, _KwzParser_layerBuffers, _KwzParser_soundFlags, _KwzParser_prevDecodedFrame, _KwzParser_frameMetaOffsets, _KwzParser_frameDataOffsets, _KwzParser_frameLayerSizes, _KwzParser_bitIndex, _KwzParser_bitValue, _KwzParser_buildSectionMap, _KwzParser_readBits, _KwzParser_readFsid, _KwzParser_readFilename, _KwzParser_decodeMeta, _KwzParser_decodeMetaQuick, _KwzParser_getFrameOffsets, _KwzParser_decodeSoundHeader, _a;
+var _KwzParser_instances, _KwzParser_settings, _KwzParser_sectionMap, _KwzParser_bodyEndOffset, _KwzParser_layerBuffers, _KwzParser_soundFlags, _KwzParser_prevDecodedFrame, _KwzParser_frameMetaOffsets, _KwzParser_frameDataOffsets, _KwzParser_frameLayerSizes, _KwzParser_frameDataTotalSize, _KwzParser_bitIndex, _KwzParser_bitValue, _KwzParser_buildSectionMap, _KwzParser_readBits, _KwzParser_readFsid, _KwzParser_readFilename, _KwzParser_decodeMeta, _KwzParser_decodeMetaQuick, _KwzParser_getFrameOffsets, _KwzParser_decodeSoundHeader, _a;
 /**
  * KWZ framerates in frames per second, indexed by the in-app frame speed
  */
@@ -1880,7 +1900,7 @@ nsmr4/bnQz8q2rp/HyVO+0yjR6mVr0NX5APJQ+6riJmGg3t3VOldhKP7aTHDUW+h
 kQIDAQAB
 -----END PUBLIC KEY-----`;
 /**
- * Pre computed bitmasks for readBits; done as a slight optimisation
+ * Pre computed bitmasks for readBits; done as a slight optimization
  * @internal
  */
 const BITMASKS = new Uint16Array(16);
@@ -2032,6 +2052,7 @@ class KwzParser extends BaseParser {
         _KwzParser_frameMetaOffsets.set(this, void 0);
         _KwzParser_frameDataOffsets.set(this, void 0);
         _KwzParser_frameLayerSizes.set(this, void 0);
+        _KwzParser_frameDataTotalSize.set(this, void 0);
         _KwzParser_bitIndex.set(this, 0);
         _KwzParser_bitValue.set(this, 0);
         __classPrivateFieldSet(this, _KwzParser_settings, { ...KwzParser.defaultSettings, ...settings }, "f");
@@ -2094,7 +2115,7 @@ class KwzParser extends BaseParser {
     /**
      * Decodes the thumbnail image embedded in the Flipnote. Will return a {@link FlipnoteThumbImage} containing JPEG data.
      *
-     * Note: For most purposes, you should probably just decode the thumbnail fraa to get a higher resolution image.
+     * Note: For most purposes, you should probably just decode the thumbnail frame to get a higher resolution image.
      * @group Meta
      */
     getThumbnailImage() {
@@ -2108,6 +2129,31 @@ class KwzParser extends BaseParser {
             height: 64,
             data: bytes.buffer
         };
+    }
+    /**
+     * Get the memory meter level for the Flipnote.
+     * This is a value between 0 and 1 indicating how "full" the Flipnote is, based on the size calculation formula inside Flipnote Studio 3D.
+     *
+     * Values will never be below 0, but can be above 1 if the Flipnote is larger than the size limit - it is technically possible to exceed the size limit by one frame.
+     *
+     * @group Meta
+    */
+    getMemoryMeterLevel() {
+        // NOTE: Flipnote Studio 3D seems to have a couple of different calculations for the actual memory limit
+        // This is based on the function at 0x002b4224, which gives the level used for the memory bar itself
+        // A slightly different calculation is used when deciding if a new frame can be added, unsure why!
+        assert(__classPrivateFieldGet(this, _KwzParser_sectionMap, "f").has('KMI') && __classPrivateFieldGet(this, _KwzParser_sectionMap, "f").has('KMC'));
+        const sampleRate = this.rawSampleRate;
+        const bytesPerSecond = sampleRate / 2;
+        const bgmMaxSize = bytesPerSecond * 60;
+        const seMaxSize = bytesPerSecond * 2;
+        const audioMaxSize = bgmMaxSize + seMaxSize * 4;
+        const totalSize = __classPrivateFieldGet(this, _KwzParser_frameDataTotalSize, "f");
+        // The function at 0x0031f258 gives the max size used in this calculation
+        // I'm actually unsure what the (something + 39) is, but maximum possible audio size seems to fit well enough for now :^)
+        const maxSize = 4219447 - ((audioMaxSize + 39) & 0xfffffffc);
+        const level = (totalSize + 57600) / maxSize;
+        return level;
     }
     /**
      * Get the color palette indices for a given frame. RGBA colors for these values can be indexed from {@link KwzParser.globalPalette}
@@ -2476,7 +2522,7 @@ class KwzParser extends BaseParser {
         assert(trackMeta.ptr + trackMeta.length < this.numBytes);
         return new Uint8Array(this.buffer, trackMeta.ptr, trackMeta.length);
     }
-    decodeAdpcm(src, dst, predictor = 0, stepIndex = 0) {
+    decodeAdpcm(src, dst, predictor = 0, stepIndex = 40) {
         const srcSize = src.length;
         let dstPtr = 0;
         let sample = 0;
@@ -2681,7 +2727,7 @@ class KwzParser extends BaseParser {
         return await rsaVerify(key, this.getSignature(), this.getBody());
     }
 }
-_KwzParser_settings = new WeakMap(), _KwzParser_sectionMap = new WeakMap(), _KwzParser_bodyEndOffset = new WeakMap(), _KwzParser_layerBuffers = new WeakMap(), _KwzParser_soundFlags = new WeakMap(), _KwzParser_prevDecodedFrame = new WeakMap(), _KwzParser_frameMetaOffsets = new WeakMap(), _KwzParser_frameDataOffsets = new WeakMap(), _KwzParser_frameLayerSizes = new WeakMap(), _KwzParser_bitIndex = new WeakMap(), _KwzParser_bitValue = new WeakMap(), _KwzParser_instances = new WeakSet(), _a = Symbol.toStringTag, _KwzParser_buildSectionMap = function _KwzParser_buildSectionMap() {
+_KwzParser_settings = new WeakMap(), _KwzParser_sectionMap = new WeakMap(), _KwzParser_bodyEndOffset = new WeakMap(), _KwzParser_layerBuffers = new WeakMap(), _KwzParser_soundFlags = new WeakMap(), _KwzParser_prevDecodedFrame = new WeakMap(), _KwzParser_frameMetaOffsets = new WeakMap(), _KwzParser_frameDataOffsets = new WeakMap(), _KwzParser_frameLayerSizes = new WeakMap(), _KwzParser_frameDataTotalSize = new WeakMap(), _KwzParser_bitIndex = new WeakMap(), _KwzParser_bitValue = new WeakMap(), _KwzParser_instances = new WeakSet(), _a = Symbol.toStringTag, _KwzParser_buildSectionMap = function _KwzParser_buildSectionMap() {
     const fileSize = this.numBytes - 256;
     const sectionMap = new Map();
     let sectionCount = 0;
@@ -2769,6 +2815,7 @@ _KwzParser_settings = new WeakMap(), _KwzParser_sectionMap = new WeakMap(), _Kwz
     this.meta = {
         lock: (flags & 0x1) !== 0,
         loop: (flags & 0x2) !== 0,
+        advancedTools: (flags & 0x4) !== 0,
         isSpinoff: this.isSpinoff,
         frameCount: frameCount,
         frameSpeed: frameSpeed,
@@ -2827,6 +2874,7 @@ _KwzParser_settings = new WeakMap(), _KwzParser_sectionMap = new WeakMap(), _Kwz
     const frameLayerSizes = [];
     let frameMetaPtr = kmiSection.ptr + 8;
     let frameDataPtr = kmcSection.ptr + 12;
+    let totalSize = 0;
     for (let frameIndex = 0; frameIndex < numFrames; frameIndex++) {
         this.seek(frameMetaPtr + 4);
         const layerASize = this.readUint16();
@@ -2839,10 +2887,12 @@ _KwzParser_settings = new WeakMap(), _KwzParser_sectionMap = new WeakMap(), _Kwz
         assert(frameMetaPtr < this.numBytes, `frame${frameIndex} meta pointer out of bounds`);
         assert(frameDataPtr < this.numBytes, `frame${frameIndex} data pointer out of bounds`);
         frameLayerSizes.push([layerASize, layerBSize, layerCSize]);
+        totalSize += layerASize + layerBSize + layerCSize;
     }
     __classPrivateFieldSet(this, _KwzParser_frameMetaOffsets, frameMetaOffsets, "f");
     __classPrivateFieldSet(this, _KwzParser_frameDataOffsets, frameDataOffsets, "f");
     __classPrivateFieldSet(this, _KwzParser_frameLayerSizes, frameLayerSizes, "f");
+    __classPrivateFieldSet(this, _KwzParser_frameDataTotalSize, totalSize, "f");
 }, _KwzParser_decodeSoundHeader = function _KwzParser_decodeSoundHeader() {
     assert(__classPrivateFieldGet(this, _KwzParser_sectionMap, "f").has('KSN'));
     let ptr = __classPrivateFieldGet(this, _KwzParser_sectionMap, "f").get('KSN').ptr + 8;

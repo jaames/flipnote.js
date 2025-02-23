@@ -11,6 +11,10 @@ export interface FlipnoteMeta {
    */
   loop: boolean;
   /**
+   * If `true`, the Flipnote was created using the "Advanced" toolset. This is only used by KWZ files.
+   */
+  advancedTools: boolean | undefined;
+  /**
    * Spinoffs are remixes of another user's Flipnote
    */
   isSpinoff: boolean;
