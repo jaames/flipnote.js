@@ -1,5 +1,5 @@
 /*!!
- * flipnote.js v6.0.1
+ * flipnote.js v6.1.0
  * https://flipnote.js.org
  * A JavaScript library for Flipnote Studio animation files
  * 2018 - 2025 James Daniel
@@ -8165,6 +8165,6 @@ _WavAudio_header = new WeakMap(), _WavAudio_pcmData = new WeakMap();
  * flipnote.js library version (exported as `flipnote.version`).
  * You can find the latest version on the project's [NPM](https://www.npmjs.com/package/flipnote.js) page.
  */
-const version = "6.0.1"; // replaced by @rollup/plugin-replace;
+const version = "6.1.0"; // replaced by @rollup/plugin-replace;
 
 export { CanvasInterface, CanvasStereoscopicMode, FlipnoteAudioTrack, FlipnoteFormat, FlipnoteRegion, FlipnoteSoundEffectTrack, FlipnoteStereoscopicEye, FlipnoteThumbImageFormat, GifImage, Html5Canvas, KwzParser, Player, PlayerEvent, PlayerMixin, PpmParser, UniversalCanvas, WavAudio, WebAudioPlayer, WebglCanvas, index$2 as filename, index$3 as id, index$1 as loaders, parse, parseSource, index as playlist, supportedEvents, version };

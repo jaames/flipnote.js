@@ -1,5 +1,5 @@
 /*!!
- * flipnote.js v6.0.1
+ * flipnote.js v6.1.0
  * https://flipnote.js.org
  * A JavaScript library for Flipnote Studio animation files
  * 2018 - 2025 James Daniel
@@ -8188,7 +8188,7 @@ _WavAudio_header = new WeakMap(), _WavAudio_pcmData = new WeakMap();
  * flipnote.js library version (exported as `flipnote.version`).
  * You can find the latest version on the project's [NPM](https://www.npmjs.com/package/flipnote.js) page.
  */
-const version = "6.0.1"; // replaced by @rollup/plugin-replace;
+const version = "6.1.0"; // replaced by @rollup/plugin-replace;
 
 /**
  * @license
