@@ -5,7 +5,7 @@ prev: false
 title: "LoaderDefinition"
 ---
 
-Defined in: [src/loaders/types.ts:5](https://github.com/jaames/flipnote.js/blob/fa9305c29e8ec1c9100d20a6b44d2fa614eb1888/src/loaders/types.ts#L5)
+Defined in: [src/loaders/types.ts:5](https://github.com/jaames/flipnote.js/blob/a8a7e56268fb7f3a0039ade6ddc69a607deedd27/src/loaders/types.ts#L5)
 
 Loader interface.
 The goal of a loader is to be able to tell when it can handle a particular source type, and then resolve an ArrayBuffer for that source.

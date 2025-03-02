@@ -5,7 +5,7 @@ prev: false
 title: "PlayerEvent"
 ---
 
-Defined in: [src/player/PlayerEvent.ts:4](https://github.com/jaames/flipnote.js/blob/fa9305c29e8ec1c9100d20a6b44d2fa614eb1888/src/player/PlayerEvent.ts#L4)
+Defined in: [src/player/PlayerEvent.ts:4](https://github.com/jaames/flipnote.js/blob/a8a7e56268fb7f3a0039ade6ddc69a607deedd27/src/player/PlayerEvent.ts#L4)
 
 Player event types
 

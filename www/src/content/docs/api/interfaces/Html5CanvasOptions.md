@@ -5,7 +5,7 @@ prev: false
 title: "Html5CanvasOptions"
 ---
 
-Defined in: [src/renderers/Html5Canvas.ts:19](https://github.com/jaames/flipnote.js/blob/fa9305c29e8ec1c9100d20a6b44d2fa614eb1888/src/renderers/Html5Canvas.ts#L19)
+Defined in: [src/renderers/Html5Canvas.ts:19](https://github.com/jaames/flipnote.js/blob/a8a7e56268fb7f3a0039ade6ddc69a607deedd27/src/renderers/Html5Canvas.ts#L19)
 
 Setup options for [Html5Canvas](../../../../../../api/classes/html5canvas)
 

@@ -51,7 +51,10 @@ export const isKwzDsiLibraryFsid = (fsid: string) => {
 
 /**
  * Get the region for any valid Flipnote Studio 3D user ID.
- * NOTE: This may be incorrect for IDs that are not from the DSi Library.
+ * 
+ * :::tip
+ * This may be incorrect for IDs that are not from the DSi Library.
+ * :::
  */
 export const getKwzFsidRegion = (fsid: string): FlipnoteRegion => {
   if (isKwzDsiLibraryFsid(fsid)) {

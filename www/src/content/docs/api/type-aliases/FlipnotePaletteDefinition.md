@@ -7,6 +7,6 @@ title: "FlipnotePaletteDefinition"
 
 > **FlipnotePaletteDefinition**: [`Record`](https://www.typescriptlang.org/docs/handbook/utility-types.html#recordkeys-type)\<`string`, [`FlipnotePaletteColor`](/api/type-aliases/flipnotepalettecolor/)\>
 
-Defined in: [src/parsers/types.ts:172](https://github.com/jaames/flipnote.js/blob/fa9305c29e8ec1c9100d20a6b44d2fa614eb1888/src/parsers/types.ts#L172)
+Defined in: [src/parsers/types.ts:172](https://github.com/jaames/flipnote.js/blob/a8a7e56268fb7f3a0039ade6ddc69a607deedd27/src/parsers/types.ts#L172)
 
 Defines the colors used for a given Flipnote format

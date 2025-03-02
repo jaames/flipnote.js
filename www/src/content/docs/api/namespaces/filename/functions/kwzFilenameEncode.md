@@ -7,7 +7,7 @@ title: "kwzFilenameEncode"
 
 > **kwzFilenameEncode**(`filename`): `string`
 
-Defined in: [src/parsers/filename/kwz.ts:96](https://github.com/jaames/flipnote.js/blob/fa9305c29e8ec1c9100d20a6b44d2fa614eb1888/src/parsers/filename/kwz.ts#L96)
+Defined in: [src/parsers/filename/kwz.ts:96](https://github.com/jaames/flipnote.js/blob/a8a7e56268fb7f3a0039ade6ddc69a607deedd27/src/parsers/filename/kwz.ts#L96)
 
 Encode a KWZ filename from its parts; i.e. do the inverse of [kwzFilenameDecode](../../../../../../../../api/namespaces/filename/functions/kwzfilenamedecode).
 

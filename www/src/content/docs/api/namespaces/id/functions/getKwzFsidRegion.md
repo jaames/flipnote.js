@@ -7,10 +7,13 @@ title: "getKwzFsidRegion"
 
 > **getKwzFsidRegion**(`fsid`): [`FlipnoteRegion`](/api/enumerations/flipnoteregion/)
 
-Defined in: [src/parsers/flipnoteStudioId/kwz.ts:56](https://github.com/jaames/flipnote.js/blob/fa9305c29e8ec1c9100d20a6b44d2fa614eb1888/src/parsers/flipnoteStudioId/kwz.ts#L56)
+Defined in: [src/parsers/flipnoteStudioId/kwz.ts:59](https://github.com/jaames/flipnote.js/blob/a8a7e56268fb7f3a0039ade6ddc69a607deedd27/src/parsers/flipnoteStudioId/kwz.ts#L59)
 
 Get the region for any valid Flipnote Studio 3D user ID.
-NOTE: This may be incorrect for IDs that are not from the DSi Library.
+
+:::tip
+This may be incorrect for IDs that are not from the DSi Library.
+:::
 
 ## Parameters
 

@@ -5,7 +5,7 @@ prev: false
 title: "FlipnoteAudioTrackInfo"
 ---
 
-Defined in: [src/parsers/types.ts:216](https://github.com/jaames/flipnote.js/blob/fa9305c29e8ec1c9100d20a6b44d2fa614eb1888/src/parsers/types.ts#L216)
+Defined in: [src/parsers/types.ts:216](https://github.com/jaames/flipnote.js/blob/a8a7e56268fb7f3a0039ade6ddc69a607deedd27/src/parsers/types.ts#L216)
 
 Contains data about a given audio track; it's file offset and length
 

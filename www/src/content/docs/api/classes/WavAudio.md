@@ -5,7 +5,7 @@ prev: false
 title: "WavAudio"
 ---
 
-Defined in: [src/encoders/WavAudio.ts:14](https://github.com/jaames/flipnote.js/blob/fa9305c29e8ec1c9100d20a6b44d2fa614eb1888/src/encoders/WavAudio.ts#L14)
+Defined in: [src/encoders/WavAudio.ts:14](https://github.com/jaames/flipnote.js/blob/a8a7e56268fb7f3a0039ade6ddc69a607deedd27/src/encoders/WavAudio.ts#L14)
 
 Wav audio object. Used to create a [WAV](https://en.wikipedia.org/wiki/WAV) file from a PCM audio stream or a [Flipnote](../../../../../../api/type-aliases/flipnote) object. 
 
@@ -21,7 +21,7 @@ Currently only supports PCM s16_le audio encoding.
 
 > **new WavAudio**(`sampleRate`, `channels`, `bitsPerSample`): [`WavAudio`](/api/classes/wavaudio/)
 
-Defined in: [src/encoders/WavAudio.ts:40](https://github.com/jaames/flipnote.js/blob/fa9305c29e8ec1c9100d20a6b44d2fa614eb1888/src/encoders/WavAudio.ts#L40)
+Defined in: [src/encoders/WavAudio.ts:40](https://github.com/jaames/flipnote.js/blob/a8a7e56268fb7f3a0039ade6ddc69a607deedd27/src/encoders/WavAudio.ts#L40)
 
 Create a new WAV audio object
 
@@ -47,7 +47,7 @@ Create a new WAV audio object
 
 > **dataUrl**: `string` = `null`
 
-Defined in: [src/encoders/EncoderBase.ts:6](https://github.com/jaames/flipnote.js/blob/fa9305c29e8ec1c9100d20a6b44d2fa614eb1888/src/encoders/EncoderBase.ts#L6)
+Defined in: [src/encoders/EncoderBase.ts:6](https://github.com/jaames/flipnote.js/blob/a8a7e56268fb7f3a0039ade6ddc69a607deedd27/src/encoders/EncoderBase.ts#L6)
 
 #### Inherited from
 
@@ -59,7 +59,7 @@ Defined in: [src/encoders/EncoderBase.ts:6](https://github.com/jaames/flipnote.j
 
 > **mimeType**: `"audio/wav"`
 
-Defined in: [src/encoders/WavAudio.ts:16](https://github.com/jaames/flipnote.js/blob/fa9305c29e8ec1c9100d20a6b44d2fa614eb1888/src/encoders/WavAudio.ts#L16)
+Defined in: [src/encoders/WavAudio.ts:16](https://github.com/jaames/flipnote.js/blob/a8a7e56268fb7f3a0039ade6ddc69a607deedd27/src/encoders/WavAudio.ts#L16)
 
 #### Overrides
 
@@ -71,7 +71,7 @@ Defined in: [src/encoders/WavAudio.ts:16](https://github.com/jaames/flipnote.js/
 
 > **sampleRate**: `number`
 
-Defined in: [src/encoders/WavAudio.ts:21](https://github.com/jaames/flipnote.js/blob/fa9305c29e8ec1c9100d20a6b44d2fa614eb1888/src/encoders/WavAudio.ts#L21)
+Defined in: [src/encoders/WavAudio.ts:21](https://github.com/jaames/flipnote.js/blob/a8a7e56268fb7f3a0039ade6ddc69a607deedd27/src/encoders/WavAudio.ts#L21)
 
 Audio samplerate
 
@@ -81,7 +81,7 @@ Audio samplerate
 
 > **channels**: `number`
 
-Defined in: [src/encoders/WavAudio.ts:25](https://github.com/jaames/flipnote.js/blob/fa9305c29e8ec1c9100d20a6b44d2fa614eb1888/src/encoders/WavAudio.ts#L25)
+Defined in: [src/encoders/WavAudio.ts:25](https://github.com/jaames/flipnote.js/blob/a8a7e56268fb7f3a0039ade6ddc69a607deedd27/src/encoders/WavAudio.ts#L25)
 
 Number of audio channels
 
@@ -91,7 +91,7 @@ Number of audio channels
 
 > **bitsPerSample**: `number`
 
-Defined in: [src/encoders/WavAudio.ts:29](https://github.com/jaames/flipnote.js/blob/fa9305c29e8ec1c9100d20a6b44d2fa614eb1888/src/encoders/WavAudio.ts#L29)
+Defined in: [src/encoders/WavAudio.ts:29](https://github.com/jaames/flipnote.js/blob/a8a7e56268fb7f3a0039ade6ddc69a607deedd27/src/encoders/WavAudio.ts#L29)
 
 Number of bits per sample
 
@@ -101,7 +101,7 @@ Number of bits per sample
 
 > **getBuffer**(): `Buffer`
 
-Defined in: [src/encoders/EncoderBase.ts:18](https://github.com/jaames/flipnote.js/blob/fa9305c29e8ec1c9100d20a6b44d2fa614eb1888/src/encoders/EncoderBase.ts#L18)
+Defined in: [src/encoders/EncoderBase.ts:18](https://github.com/jaames/flipnote.js/blob/a8a7e56268fb7f3a0039ade6ddc69a607deedd27/src/encoders/EncoderBase.ts#L18)
 
 Returns the file data as a NodeJS [Buffer](https://nodejs.org/api/buffer.html).
 
@@ -121,7 +121,7 @@ Returns the file data as a NodeJS [Buffer](https://nodejs.org/api/buffer.html).
 
 > **getBlob**(): [`Blob`](https://developer.mozilla.org/docs/Web/API/Blob)
 
-Defined in: [src/encoders/EncoderBase.ts:26](https://github.com/jaames/flipnote.js/blob/fa9305c29e8ec1c9100d20a6b44d2fa614eb1888/src/encoders/EncoderBase.ts#L26)
+Defined in: [src/encoders/EncoderBase.ts:26](https://github.com/jaames/flipnote.js/blob/a8a7e56268fb7f3a0039ade6ddc69a607deedd27/src/encoders/EncoderBase.ts#L26)
 
 Returns the file data as a [Blob](https://developer.mozilla.org/en-US/docs/Web/API/Blob).
 
@@ -139,7 +139,7 @@ Returns the file data as a [Blob](https://developer.mozilla.org/en-US/docs/Web/A
 
 > **getUrl**(): `string`
 
-Defined in: [src/encoders/EncoderBase.ts:38](https://github.com/jaames/flipnote.js/blob/fa9305c29e8ec1c9100d20a6b44d2fa614eb1888/src/encoders/EncoderBase.ts#L38)
+Defined in: [src/encoders/EncoderBase.ts:38](https://github.com/jaames/flipnote.js/blob/a8a7e56268fb7f3a0039ade6ddc69a607deedd27/src/encoders/EncoderBase.ts#L38)
 
 Returns the file data as an [Object URL](https://developer.mozilla.org/en-US/docs/Web/API/URL/createObjectURL).
 
@@ -159,7 +159,7 @@ Returns the file data as an [Object URL](https://developer.mozilla.org/en-US/doc
 
 > **revokeUrl**(): `void`
 
-Defined in: [src/encoders/EncoderBase.ts:50](https://github.com/jaames/flipnote.js/blob/fa9305c29e8ec1c9100d20a6b44d2fa614eb1888/src/encoders/EncoderBase.ts#L50)
+Defined in: [src/encoders/EncoderBase.ts:50](https://github.com/jaames/flipnote.js/blob/a8a7e56268fb7f3a0039ade6ddc69a607deedd27/src/encoders/EncoderBase.ts#L50)
 
 Revokes this file's [Object URL](https://developer.mozilla.org/en-US/docs/Web/API/URL/createObjectURL) if one has been created, use this when the url created with [getUrl](../../../../../../api/classes/gifimage/#geturl) is no longer needed, to preserve memory.
 
@@ -179,7 +179,7 @@ Revokes this file's [Object URL](https://developer.mozilla.org/en-US/docs/Web/AP
 
 > `static` **fromFlipnote**(`note`): [`WavAudio`](/api/classes/wavaudio/)
 
-Defined in: [src/encoders/WavAudio.ts:84](https://github.com/jaames/flipnote.js/blob/fa9305c29e8ec1c9100d20a6b44d2fa614eb1888/src/encoders/WavAudio.ts#L84)
+Defined in: [src/encoders/WavAudio.ts:84](https://github.com/jaames/flipnote.js/blob/a8a7e56268fb7f3a0039ade6ddc69a607deedd27/src/encoders/WavAudio.ts#L84)
 
 Create a WAV audio file from a Flipnote's master audio track
 
@@ -199,7 +199,7 @@ Create a WAV audio file from a Flipnote's master audio track
 
 > `static` **fromFlipnoteTrack**(`flipnote`, `trackId`): [`WavAudio`](/api/classes/wavaudio/)
 
-Defined in: [src/encoders/WavAudio.ts:97](https://github.com/jaames/flipnote.js/blob/fa9305c29e8ec1c9100d20a6b44d2fa614eb1888/src/encoders/WavAudio.ts#L97)
+Defined in: [src/encoders/WavAudio.ts:97](https://github.com/jaames/flipnote.js/blob/a8a7e56268fb7f3a0039ade6ddc69a607deedd27/src/encoders/WavAudio.ts#L97)
 
 Create a WAV audio file from a given Flipnote audio track
 
@@ -220,7 +220,7 @@ Create a WAV audio file from a given Flipnote audio track
 
 > **writeSamples**(`pcmData`): `void`
 
-Defined in: [src/encoders/WavAudio.ts:109](https://github.com/jaames/flipnote.js/blob/fa9305c29e8ec1c9100d20a6b44d2fa614eb1888/src/encoders/WavAudio.ts#L109)
+Defined in: [src/encoders/WavAudio.ts:109](https://github.com/jaames/flipnote.js/blob/a8a7e56268fb7f3a0039ade6ddc69a607deedd27/src/encoders/WavAudio.ts#L109)
 
 Add PCM audio frames to the WAV
 
@@ -240,7 +240,7 @@ Add PCM audio frames to the WAV
 
 > **getArrayBuffer**(): `ArrayBufferLike`
 
-Defined in: [src/encoders/WavAudio.ts:123](https://github.com/jaames/flipnote.js/blob/fa9305c29e8ec1c9100d20a6b44d2fa614eb1888/src/encoders/WavAudio.ts#L123)
+Defined in: [src/encoders/WavAudio.ts:123](https://github.com/jaames/flipnote.js/blob/a8a7e56268fb7f3a0039ade6ddc69a607deedd27/src/encoders/WavAudio.ts#L123)
 
 Returns the WAV audio data as an [ArrayBuffer](https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/ArrayBuffer)
 
