@@ -5,7 +5,7 @@ prev: false
 title: "PpmPlaylist"
 ---
 
-Defined in: [src/parsers/playlist/PpmPlaylist.ts:12](https://github.com/jaames/flipnote.js/blob/24e772733243f115c3848537efabe6ee9020ad63/src/parsers/playlist/PpmPlaylist.ts#L12)
+Defined in: [src/parsers/playlist/PpmPlaylist.ts:12](https://github.com/jaames/flipnote.js/blob/70a96e94737c1e7105e9b3794d97b5baff2fd78b/src/parsers/playlist/PpmPlaylist.ts#L12)
 
 Parses .pls and .lst playlist files from Flipnote Studio (DSiWare).
 
@@ -24,7 +24,7 @@ File format documentation is at https://github.com/Flipnote-Collective/flipnote-
 
 > **new PpmPlaylist**(`buffer`): [`PpmPlaylist`](/api/namespaces/playlist/classes/ppmplaylist/)
 
-Defined in: [src/parsers/playlist/PpmPlaylist.ts:16](https://github.com/jaames/flipnote.js/blob/24e772733243f115c3848537efabe6ee9020ad63/src/parsers/playlist/PpmPlaylist.ts#L16)
+Defined in: [src/parsers/playlist/PpmPlaylist.ts:16](https://github.com/jaames/flipnote.js/blob/70a96e94737c1e7105e9b3794d97b5baff2fd78b/src/parsers/playlist/PpmPlaylist.ts#L16)
 
 #### Parameters
 
@@ -48,7 +48,7 @@ Defined in: [src/parsers/playlist/PpmPlaylist.ts:16](https://github.com/jaames/f
 
 > **get** **bytes**(): [`Uint8Array`](https://developer.mozilla.org/docs/Web/JavaScript/Reference/Global_Objects/Uint8Array)
 
-Defined in: [src/utils/DataStream.ts:41](https://github.com/jaames/flipnote.js/blob/24e772733243f115c3848537efabe6ee9020ad63/src/utils/DataStream.ts#L41)
+Defined in: [src/utils/DataStream.ts:41](https://github.com/jaames/flipnote.js/blob/70a96e94737c1e7105e9b3794d97b5baff2fd78b/src/utils/DataStream.ts#L41)
 
 Returns the data as an Uint8Array of bytes.
 
@@ -68,7 +68,7 @@ Returns the data as an Uint8Array of bytes.
 
 > **get** **numBytes**(): `number`
 
-Defined in: [src/utils/DataStream.ts:48](https://github.com/jaames/flipnote.js/blob/24e772733243f115c3848537efabe6ee9020ad63/src/utils/DataStream.ts#L48)
+Defined in: [src/utils/DataStream.ts:48](https://github.com/jaames/flipnote.js/blob/70a96e94737c1e7105e9b3794d97b5baff2fd78b/src/utils/DataStream.ts#L48)
 
 Returns the total number of bytes in the data.
 
@@ -86,7 +86,7 @@ Returns the total number of bytes in the data.
 
 > **entries**: [`Path`](/api/namespaces/playlist/interfaces/path/)[] = `[]`
 
-Defined in: [src/parsers/playlist/Base.ts:52](https://github.com/jaames/flipnote.js/blob/24e772733243f115c3848537efabe6ee9020ad63/src/parsers/playlist/Base.ts#L52)
+Defined in: [src/parsers/playlist/Base.ts:52](https://github.com/jaames/flipnote.js/blob/70a96e94737c1e7105e9b3794d97b5baff2fd78b/src/parsers/playlist/Base.ts#L52)
 
 List of filepaths in the playlist.
 
@@ -100,7 +100,7 @@ List of filepaths in the playlist.
 
 > **format**: [`FlipnoteFormat`](/api/enumerations/flipnoteformat/) = `FlipnoteFormat.PPM`
 
-Defined in: [src/parsers/playlist/PpmPlaylist.ts:14](https://github.com/jaames/flipnote.js/blob/24e772733243f115c3848537efabe6ee9020ad63/src/parsers/playlist/PpmPlaylist.ts#L14)
+Defined in: [src/parsers/playlist/PpmPlaylist.ts:14](https://github.com/jaames/flipnote.js/blob/70a96e94737c1e7105e9b3794d97b5baff2fd78b/src/parsers/playlist/PpmPlaylist.ts#L14)
 
 #### Overrides
 
@@ -112,7 +112,7 @@ Defined in: [src/parsers/playlist/PpmPlaylist.ts:14](https://github.com/jaames/f
 
 > **addEntry**(`full`): `void`
 
-Defined in: [src/parsers/playlist/Base.ts:58](https://github.com/jaames/flipnote.js/blob/24e772733243f115c3848537efabe6ee9020ad63/src/parsers/playlist/Base.ts#L58)
+Defined in: [src/parsers/playlist/Base.ts:58](https://github.com/jaames/flipnote.js/blob/70a96e94737c1e7105e9b3794d97b5baff2fd78b/src/parsers/playlist/Base.ts#L58)
 
 #### Parameters
 
@@ -134,7 +134,7 @@ Defined in: [src/parsers/playlist/Base.ts:58](https://github.com/jaames/flipnote
 
 > **end**(): `boolean`
 
-Defined in: [src/utils/DataStream.ts:253](https://github.com/jaames/flipnote.js/blob/24e772733243f115c3848537efabe6ee9020ad63/src/utils/DataStream.ts#L253)
+Defined in: [src/utils/DataStream.ts:253](https://github.com/jaames/flipnote.js/blob/70a96e94737c1e7105e9b3794d97b5baff2fd78b/src/utils/DataStream.ts#L253)
 
 #### Returns
 

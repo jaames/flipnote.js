@@ -7,7 +7,7 @@ title: "parseSource"
 
 > **parseSource**(`source`, `parserConfig`?): [`Promise`](https://developer.mozilla.org/docs/Web/JavaScript/Reference/Global_Objects/Promise)\<`BaseParser`\>
 
-Defined in: [src/parseSource.ts:39](https://github.com/jaames/flipnote.js/blob/24e772733243f115c3848537efabe6ee9020ad63/src/parseSource.ts#L39)
+Defined in: [src/parseSource.ts:39](https://github.com/jaames/flipnote.js/blob/70a96e94737c1e7105e9b3794d97b5baff2fd78b/src/parseSource.ts#L39)
 
 :::caution[Deprecated]
 Use [parse](/api/functions/parse/) instead.

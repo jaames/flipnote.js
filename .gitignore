@@ -1,9 +1,6 @@
 # Test HTML page and Flipnote samples
-*.ppm
-*.kwz
 dist/demo
 demo/samples
-test/samples
 # temp stuff
 types
 .astro

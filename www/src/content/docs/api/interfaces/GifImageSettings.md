@@ -5,7 +5,7 @@ prev: false
 title: "GifImageSettings"
 ---
 
-Defined in: [src/encoders/GifImage.ts:31](https://github.com/jaames/flipnote.js/blob/24e772733243f115c3848537efabe6ee9020ad63/src/encoders/GifImage.ts#L31)
+Defined in: [src/encoders/GifImage.ts:31](https://github.com/jaames/flipnote.js/blob/70a96e94737c1e7105e9b3794d97b5baff2fd78b/src/encoders/GifImage.ts#L31)
 
 Optional GIF encoder settings.
 
