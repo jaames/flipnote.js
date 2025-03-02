@@ -18,7 +18,7 @@ export const dateToNintendoTimestamp = (date: Date) =>
   Math.floor((date.getTime() / 1000) - NINTENDO_UNIX_EPOCH);
 
 /**
- * Get the duration (in seconds) of a number of framres running at a specified framerate.
+ * Get the duration (in seconds) of a number of frames running at a specified framerate.
  * @internal
  */
 export const timeGetNoteDuration = (frameCount: number, framerate: number) =>

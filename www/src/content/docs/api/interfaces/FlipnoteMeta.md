@@ -5,6 +5,8 @@ prev: false
 title: "FlipnoteMeta"
 ---
 
+Defined in: [src/parsers/types.ts:4](https://github.com/jaames/flipnote.js/blob/24e772733243f115c3848537efabe6ee9020ad63/src/parsers/types.ts#L4)
+
 Flipnote details
 
 ## Extended by
@@ -14,132 +16,17 @@ Flipnote details
 
 ## Properties
 
-### lock
-
-> **lock**: `boolean`
-
-File lock state. Locked Flipnotes cannot be edited by anyone other than the current author
-
-#### Source
-
-[src/parsers/types.ts:8](https://github.com/jaames/flipnote.js/blob/afe27e228e29d19d2dff33dfb324ba35dc913507/src/parsers/types.ts#L8)
-
-***
-
-### loop
-
-> **loop**: `boolean`
-
-Playback loop state. If `true`, playback will loop once the end is reached
-
-#### Source
-
-[src/parsers/types.ts:12](https://github.com/jaames/flipnote.js/blob/afe27e228e29d19d2dff33dfb324ba35dc913507/src/parsers/types.ts#L12)
-
-***
-
-### isSpinoff
-
-> **isSpinoff**: `boolean`
-
-Spinoffs are remixes of another user's Flipnote
-
-#### Source
-
-[src/parsers/types.ts:16](https://github.com/jaames/flipnote.js/blob/afe27e228e29d19d2dff33dfb324ba35dc913507/src/parsers/types.ts#L16)
-
-***
-
-### frameCount
-
-> **frameCount**: `number`
-
-Total number of animation frames
-
-#### Source
-
-[src/parsers/types.ts:20](https://github.com/jaames/flipnote.js/blob/afe27e228e29d19d2dff33dfb324ba35dc913507/src/parsers/types.ts#L20)
-
-***
-
-### frameSpeed
-
-> **frameSpeed**: `number`
-
-In-app frame playback speed
-
-#### Source
-
-[src/parsers/types.ts:24](https://github.com/jaames/flipnote.js/blob/afe27e228e29d19d2dff33dfb324ba35dc913507/src/parsers/types.ts#L24)
-
-***
-
-### thumbIndex
-
-> **thumbIndex**: `number`
-
-Index of the animation frame used as the Flipnote's thumbnail image
-
-#### Source
-
-[src/parsers/types.ts:28](https://github.com/jaames/flipnote.js/blob/afe27e228e29d19d2dff33dfb324ba35dc913507/src/parsers/types.ts#L28)
-
-***
-
-### timestamp
-
-> **timestamp**: [`Date ↗️`]( https://developer.mozilla.org/docs/Web/JavaScript/Reference/Global_Objects/Date )
-
-Date representing when the file was last edited
-
-#### Source
-
-[src/parsers/types.ts:32](https://github.com/jaames/flipnote.js/blob/afe27e228e29d19d2dff33dfb324ba35dc913507/src/parsers/types.ts#L32)
-
-***
-
-### duration
-
-> **duration**: `number`
-
-Flipnote duration measured in seconds, assuming normal playback speed
-
-#### Source
-
-[src/parsers/types.ts:36](https://github.com/jaames/flipnote.js/blob/afe27e228e29d19d2dff33dfb324ba35dc913507/src/parsers/types.ts#L36)
-
-***
-
-### root
-
-> **root**: [`FlipnoteVersion`](/api/interfaces/flipnoteversion/)
-
-Metadata about the author of the original Flipnote file
-
-#### Source
-
-[src/parsers/types.ts:40](https://github.com/jaames/flipnote.js/blob/afe27e228e29d19d2dff33dfb324ba35dc913507/src/parsers/types.ts#L40)
-
-***
-
-### parent
-
-> **parent**: [`FlipnoteVersion`](/api/interfaces/flipnoteversion/)
-
-Metadata about the previous author of the Flipnote file
-
-#### Source
-
-[src/parsers/types.ts:44](https://github.com/jaames/flipnote.js/blob/afe27e228e29d19d2dff33dfb324ba35dc913507/src/parsers/types.ts#L44)
-
-***
-
-### current
-
-> **current**: [`FlipnoteVersion`](/api/interfaces/flipnoteversion/)
-
-Metadata about the current author of the Flipnote file
-
-#### Source
-
-[src/parsers/types.ts:48](https://github.com/jaames/flipnote.js/blob/afe27e228e29d19d2dff33dfb324ba35dc913507/src/parsers/types.ts#L48)
+| Property | Type | Description |
+| :------ | :------ | :------ |
+| <a id="lock"></a> `lock` | `boolean` | File lock state. Locked Flipnotes cannot be edited by anyone other than the current author |
+| <a id="loop"></a> `loop` | `boolean` | Playback loop state. If `true`, playback will loop once the end is reached |
+| <a id="advancedtools"></a> `advancedTools` | `boolean` | If `true`, the Flipnote was created using the "Advanced" toolset. This is only used by KWZ files. |
+| <a id="isspinoff"></a> `isSpinoff` | `boolean` | Spinoffs are remixes of another user's Flipnote |
+| <a id="framecount"></a> `frameCount` | `number` | Total number of animation frames |
+| <a id="framespeed"></a> `frameSpeed` | `number` | In-app frame playback speed |
+| <a id="thumbindex"></a> `thumbIndex` | `number` | Index of the animation frame used as the Flipnote's thumbnail image |
+| <a id="timestamp"></a> `timestamp` | [`Date`](https://developer.mozilla.org/docs/Web/JavaScript/Reference/Global_Objects/Date) | Date representing when the file was last edited |
+| <a id="duration"></a> `duration` | `number` | Flipnote duration measured in seconds, assuming normal playback speed |
+| <a id="root"></a> `root` | [`FlipnoteVersion`](/api/interfaces/flipnoteversion/) | Metadata about the author of the original Flipnote file |
+| <a id="parent"></a> `parent` | [`FlipnoteVersion`](/api/interfaces/flipnoteversion/) | Metadata about the previous author of the Flipnote file |
+| <a id="current"></a> `current` | [`FlipnoteVersion`](/api/interfaces/flipnoteversion/) | Metadata about the current author of the Flipnote file |

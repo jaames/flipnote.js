@@ -5,34 +5,14 @@ prev: false
 title: "FlipnoteKwzFilenameParts"
 ---
 
+Defined in: [src/parsers/filename/kwz.ts:66](https://github.com/jaames/flipnote.js/blob/24e772733243f115c3848537efabe6ee9020ad63/src/parsers/filename/kwz.ts#L66)
+
 KWZ filenames can be decoded and broken down into different fields. This object represents a parsed KWZ filename.
 
 ## Properties
 
-### fsid
-
-> **fsid**: `string`
-
-#### Source
-
-[src/parsers/filename/kwz.ts:67](https://github.com/jaames/flipnote.js/blob/afe27e228e29d19d2dff33dfb324ba35dc913507/src/parsers/filename/kwz.ts#L67)
-
-***
-
-### created
-
-> **created**: [`Date ↗️`]( https://developer.mozilla.org/docs/Web/JavaScript/Reference/Global_Objects/Date )
-
-#### Source
-
-[src/parsers/filename/kwz.ts:68](https://github.com/jaames/flipnote.js/blob/afe27e228e29d19d2dff33dfb324ba35dc913507/src/parsers/filename/kwz.ts#L68)
-
-***
-
-### edited
-
-> **edited**: [`Date ↗️`]( https://developer.mozilla.org/docs/Web/JavaScript/Reference/Global_Objects/Date )
-
-#### Source
-
-[src/parsers/filename/kwz.ts:69](https://github.com/jaames/flipnote.js/blob/afe27e228e29d19d2dff33dfb324ba35dc913507/src/parsers/filename/kwz.ts#L69)
+| Property | Type |
+| :------ | :------ |
+| <a id="fsid"></a> `fsid` | `string` |
+| <a id="created"></a> `created` | [`Date`](https://developer.mozilla.org/docs/Web/JavaScript/Reference/Global_Objects/Date) |
+| <a id="edited"></a> `edited` | [`Date`](https://developer.mozilla.org/docs/Web/JavaScript/Reference/Global_Objects/Date) |

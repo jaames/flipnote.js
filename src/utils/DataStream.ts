@@ -19,7 +19,7 @@ export class DataStream {
   /**
   * @internal
   */
-  buffer: ArrayBuffer;
+  buffer: ArrayBufferLike;
   /**
   * @internal
   */
@@ -29,7 +29,7 @@ export class DataStream {
   */
   data: DataView;
 
-  constructor(buffer: ArrayBuffer) {
+  constructor(buffer: ArrayBufferLike) {
     this.buffer = buffer;
     this.data = new DataView(buffer);
     this.pointer = 0;

@@ -8,6 +8,6 @@ import type { KwzParserSettings } from './KwzParser';
 export type FlipnoteParserSettings = Partial<PpmParserSettings & KwzParserSettings>;
 
 /**
- * Flipnote type. An object with this type is guranteed to implement the {@link FlipnoteParser} API.
+ * Flipnote type. An object with this type is guaranteed to implement the {@link BaseParser} API.
  */
 export type Flipnote = BaseParser;

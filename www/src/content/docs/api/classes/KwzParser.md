@@ -5,6 +5,8 @@ prev: false
 title: "KwzParser"
 ---
 
+Defined in: [src/parsers/KwzParser.ts:248](https://github.com/jaames/flipnote.js/blob/24e772733243f115c3848537efabe6ee9020ad63/src/parsers/KwzParser.ts#L248)
+
 Parser class for Flipnote Studio 3D's KWZ animation format
 
 KWZ format docs: https://github.com/Flipnote-Collective/flipnote-studio-3d-docs/wiki/KWZ-Format
@@ -19,17 +21,16 @@ KWZ format docs: https://github.com/Flipnote-Collective/flipnote-studio-3d-docs/
 
 > **new KwzParser**(`arrayBuffer`, `settings`): [`KwzParser`](/api/classes/kwzparser/)
 
+Defined in: [src/parsers/KwzParser.ts:428](https://github.com/jaames/flipnote.js/blob/24e772733243f115c3848537efabe6ee9020ad63/src/parsers/KwzParser.ts#L428)
+
 Create a new KWZ file parser instance
 
 #### Parameters
 
-• **arrayBuffer**: [`ArrayBuffer ↗️`]( https://developer.mozilla.org/docs/Web/JavaScript/Reference/Global_Objects/ArrayBuffer )
-
-an ArrayBuffer containing file data
-
-• **settings**: [`Partial ↗️`]( https://www.typescriptlang.org/docs/handbook/utility-types.html#partialtype )\<[`KwzParserSettings`](/api/type-aliases/kwzparsersettings/)\>= `{}`
-
-parser settings
+| Parameter | Type | Description |
+| :------ | :------ | :------ |
+| `arrayBuffer` | [`ArrayBuffer`](https://developer.mozilla.org/docs/Web/JavaScript/Reference/Global_Objects/ArrayBuffer) | an ArrayBuffer containing file data |
+| `settings` | [`Partial`](https://www.typescriptlang.org/docs/handbook/utility-types.html#partialtype)\<[`KwzParserSettings`](/api/type-aliases/kwzparsersettings/)\> | parser settings |
 
 #### Returns
 
@@ -39,41 +40,45 @@ parser settings
 
 `BaseParser.constructor`
 
-#### Source
-
-[src/parsers/KwzParser.ts:427](https://github.com/jaames/flipnote.js/blob/afe27e228e29d19d2dff33dfb324ba35dc913507/src/parsers/KwzParser.ts#L427)
-
 ## Accessors
 
 ### bytes
 
-> `get` **bytes**(): [`Uint8Array ↗️`]( https://developer.mozilla.org/docs/Web/JavaScript/Reference/Global_Objects/Uint8Array )
+#### Get Signature
+
+> **get** **bytes**(): [`Uint8Array`](https://developer.mozilla.org/docs/Web/JavaScript/Reference/Global_Objects/Uint8Array)
+
+Defined in: [src/utils/DataStream.ts:41](https://github.com/jaames/flipnote.js/blob/24e772733243f115c3848537efabe6ee9020ad63/src/utils/DataStream.ts#L41)
 
 Returns the data as an Uint8Array of bytes.
 
-#### Returns
+##### Returns
 
-[`Uint8Array ↗️`]( https://developer.mozilla.org/docs/Web/JavaScript/Reference/Global_Objects/Uint8Array )
+[`Uint8Array`](https://developer.mozilla.org/docs/Web/JavaScript/Reference/Global_Objects/Uint8Array)
 
-#### Source
+#### Inherited from
 
-[src/utils/DataStream.ts:41](https://github.com/jaames/flipnote.js/blob/afe27e228e29d19d2dff33dfb324ba35dc913507/src/utils/DataStream.ts#L41)
+`BaseParser.bytes`
 
 ***
 
 ### numBytes
 
-> `get` **numBytes**(): `number`
+#### Get Signature
+
+> **get** **numBytes**(): `number`
+
+Defined in: [src/utils/DataStream.ts:48](https://github.com/jaames/flipnote.js/blob/24e772733243f115c3848537efabe6ee9020ad63/src/utils/DataStream.ts#L48)
 
 Returns the total number of bytes in the data.
 
-#### Returns
+##### Returns
 
 `number`
 
-#### Source
+#### Inherited from
 
-[src/utils/DataStream.ts:48](https://github.com/jaames/flipnote.js/blob/afe27e228e29d19d2dff33dfb324ba35dc913507/src/utils/DataStream.ts#L48)
+`BaseParser.numBytes`
 
 ## Properties
 
@@ -81,11 +86,9 @@ Returns the total number of bytes in the data.
 
 > `static` **defaultSettings**: [`KwzParserSettings`](/api/type-aliases/kwzparsersettings/)
 
+Defined in: [src/parsers/KwzParser.ts:253](https://github.com/jaames/flipnote.js/blob/24e772733243f115c3848537efabe6ee9020ad63/src/parsers/KwzParser.ts#L253)
+
 Default KWZ parser settings
-
-#### Source
-
-[src/parsers/KwzParser.ts:253](https://github.com/jaames/flipnote.js/blob/afe27e228e29d19d2dff33dfb324ba35dc913507/src/parsers/KwzParser.ts#L253)
 
 ***
 
@@ -93,15 +96,13 @@ Default KWZ parser settings
 
 > `static` **format**: [`FlipnoteFormat`](/api/enumerations/flipnoteformat/) = `FlipnoteFormat.KWZ`
 
+Defined in: [src/parsers/KwzParser.ts:266](https://github.com/jaames/flipnote.js/blob/24e772733243f115c3848537efabe6ee9020ad63/src/parsers/KwzParser.ts#L266)
+
 File format type
 
 #### Overrides
 
 `BaseParser.format`
-
-#### Source
-
-[src/parsers/KwzParser.ts:266](https://github.com/jaames/flipnote.js/blob/afe27e228e29d19d2dff33dfb324ba35dc913507/src/parsers/KwzParser.ts#L266)
 
 ***
 
@@ -109,15 +110,13 @@ File format type
 
 > `static` **width**: `number` = `320`
 
+Defined in: [src/parsers/KwzParser.ts:270](https://github.com/jaames/flipnote.js/blob/24e772733243f115c3848537efabe6ee9020ad63/src/parsers/KwzParser.ts#L270)
+
 Animation frame width
 
 #### Overrides
 
 `BaseParser.width`
-
-#### Source
-
-[src/parsers/KwzParser.ts:270](https://github.com/jaames/flipnote.js/blob/afe27e228e29d19d2dff33dfb324ba35dc913507/src/parsers/KwzParser.ts#L270)
 
 ***
 
@@ -125,15 +124,13 @@ Animation frame width
 
 > `static` **height**: `number` = `240`
 
+Defined in: [src/parsers/KwzParser.ts:274](https://github.com/jaames/flipnote.js/blob/24e772733243f115c3848537efabe6ee9020ad63/src/parsers/KwzParser.ts#L274)
+
 Animation frame height
 
 #### Overrides
 
 `BaseParser.height`
-
-#### Source
-
-[src/parsers/KwzParser.ts:274](https://github.com/jaames/flipnote.js/blob/afe27e228e29d19d2dff33dfb324ba35dc913507/src/parsers/KwzParser.ts#L274)
 
 ***
 
@@ -141,15 +138,13 @@ Animation frame height
 
 > `static` **aspect**: `number`
 
+Defined in: [src/parsers/KwzParser.ts:278](https://github.com/jaames/flipnote.js/blob/24e772733243f115c3848537efabe6ee9020ad63/src/parsers/KwzParser.ts#L278)
+
 Animation frame aspect ratio
 
 #### Overrides
 
 `BaseParser.aspect`
-
-#### Source
-
-[src/parsers/KwzParser.ts:278](https://github.com/jaames/flipnote.js/blob/afe27e228e29d19d2dff33dfb324ba35dc913507/src/parsers/KwzParser.ts#L278)
 
 ***
 
@@ -157,15 +152,13 @@ Animation frame aspect ratio
 
 > `static` **numLayers**: `number` = `3`
 
+Defined in: [src/parsers/KwzParser.ts:282](https://github.com/jaames/flipnote.js/blob/24e772733243f115c3848537efabe6ee9020ad63/src/parsers/KwzParser.ts#L282)
+
 Number of animation frame layers
 
 #### Overrides
 
 `BaseParser.numLayers`
-
-#### Source
-
-[src/parsers/KwzParser.ts:282](https://github.com/jaames/flipnote.js/blob/afe27e228e29d19d2dff33dfb324ba35dc913507/src/parsers/KwzParser.ts#L282)
 
 ***
 
@@ -173,15 +166,13 @@ Number of animation frame layers
 
 > `static` **numLayerColors**: `number` = `2`
 
+Defined in: [src/parsers/KwzParser.ts:286](https://github.com/jaames/flipnote.js/blob/24e772733243f115c3848537efabe6ee9020ad63/src/parsers/KwzParser.ts#L286)
+
 Number of colors per layer (aside from transparent)
 
 #### Overrides
 
 `BaseParser.numLayerColors`
-
-#### Source
-
-[src/parsers/KwzParser.ts:286](https://github.com/jaames/flipnote.js/blob/afe27e228e29d19d2dff33dfb324ba35dc913507/src/parsers/KwzParser.ts#L286)
 
 ***
 
@@ -189,15 +180,13 @@ Number of colors per layer (aside from transparent)
 
 > `static` **rawSampleRate**: `number` = `16364`
 
+Defined in: [src/parsers/KwzParser.ts:290](https://github.com/jaames/flipnote.js/blob/24e772733243f115c3848537efabe6ee9020ad63/src/parsers/KwzParser.ts#L290)
+
 Audio track base sample rate
 
 #### Overrides
 
 `BaseParser.rawSampleRate`
-
-#### Source
-
-[src/parsers/KwzParser.ts:290](https://github.com/jaames/flipnote.js/blob/afe27e228e29d19d2dff33dfb324ba35dc913507/src/parsers/KwzParser.ts#L290)
 
 ***
 
@@ -205,15 +194,13 @@ Audio track base sample rate
 
 > `static` **sampleRate**: `number` = `32768`
 
+Defined in: [src/parsers/KwzParser.ts:294](https://github.com/jaames/flipnote.js/blob/24e772733243f115c3848537efabe6ee9020ad63/src/parsers/KwzParser.ts#L294)
+
 Audio output sample rate
 
 #### Overrides
 
 `BaseParser.sampleRate`
-
-#### Source
-
-[src/parsers/KwzParser.ts:294](https://github.com/jaames/flipnote.js/blob/afe27e228e29d19d2dff33dfb324ba35dc913507/src/parsers/KwzParser.ts#L294)
 
 ***
 
@@ -221,15 +208,13 @@ Audio output sample rate
 
 > `static` **audioTracks**: [`FlipnoteAudioTrack`](/api/enumerations/flipnoteaudiotrack/)[]
 
+Defined in: [src/parsers/KwzParser.ts:298](https://github.com/jaames/flipnote.js/blob/24e772733243f115c3848537efabe6ee9020ad63/src/parsers/KwzParser.ts#L298)
+
 Which audio tracks are available in this format
 
 #### Overrides
 
 `BaseParser.audioTracks`
-
-#### Source
-
-[src/parsers/KwzParser.ts:298](https://github.com/jaames/flipnote.js/blob/afe27e228e29d19d2dff33dfb324ba35dc913507/src/parsers/KwzParser.ts#L298)
 
 ***
 
@@ -237,15 +222,13 @@ Which audio tracks are available in this format
 
 > `static` **soundEffectTracks**: [`FlipnoteSoundEffectTrack`](/api/enumerations/flipnotesoundeffecttrack/)[]
 
+Defined in: [src/parsers/KwzParser.ts:308](https://github.com/jaames/flipnote.js/blob/24e772733243f115c3848537efabe6ee9020ad63/src/parsers/KwzParser.ts#L308)
+
 Which sound effect tracks are available in this format
 
 #### Overrides
 
 `BaseParser.soundEffectTracks`
-
-#### Source
-
-[src/parsers/KwzParser.ts:308](https://github.com/jaames/flipnote.js/blob/afe27e228e29d19d2dff33dfb324ba35dc913507/src/parsers/KwzParser.ts#L308)
 
 ***
 
@@ -253,15 +236,13 @@ Which sound effect tracks are available in this format
 
 > `static` **globalPalette**: [`FlipnotePaletteColor`](/api/type-aliases/flipnotepalettecolor/)[]
 
+Defined in: [src/parsers/KwzParser.ts:317](https://github.com/jaames/flipnote.js/blob/24e772733243f115c3848537efabe6ee9020ad63/src/parsers/KwzParser.ts#L317)
+
 Global animation frame color palette
 
 #### Overrides
 
 `BaseParser.globalPalette`
-
-#### Source
-
-[src/parsers/KwzParser.ts:317](https://github.com/jaames/flipnote.js/blob/afe27e228e29d19d2dff33dfb324ba35dc913507/src/parsers/KwzParser.ts#L317)
 
 ***
 
@@ -269,15 +250,13 @@ Global animation frame color palette
 
 > `static` **publicKey**: `string` = `KWZ_PUBLIC_KEY`
 
+Defined in: [src/parsers/KwzParser.ts:329](https://github.com/jaames/flipnote.js/blob/24e772733243f115c3848537efabe6ee9020ad63/src/parsers/KwzParser.ts#L329)
+
 Public key used for Flipnote verification, in PEM format
 
 #### Overrides
 
 `BaseParser.publicKey`
-
-#### Source
-
-[src/parsers/KwzParser.ts:329](https://github.com/jaames/flipnote.js/blob/afe27e228e29d19d2dff33dfb324ba35dc913507/src/parsers/KwzParser.ts#L329)
 
 ***
 
@@ -285,21 +264,21 @@ Public key used for Flipnote verification, in PEM format
 
 > **format**: [`FlipnoteFormat`](/api/enumerations/flipnoteformat/) = `FlipnoteFormat.KWZ`
 
-File format type, reflects [KwzParser.format](../../../../../../../api/classes/kwzparser/#format)
+Defined in: [src/parsers/KwzParser.ts:342](https://github.com/jaames/flipnote.js/blob/24e772733243f115c3848537efabe6ee9020ad63/src/parsers/KwzParser.ts#L342)
+
+File format type, reflects [KwzParser.format](../../../../../../api/classes/kwzparser/#format)
 
 #### Overrides
 
 `BaseParser.format`
 
-#### Source
-
-[src/parsers/KwzParser.ts:342](https://github.com/jaames/flipnote.js/blob/afe27e228e29d19d2dff33dfb324ba35dc913507/src/parsers/KwzParser.ts#L342)
-
 ***
 
-### [toStringTag]
+### \[toStringTag\]
 
-> **[toStringTag]**: `string` = `'Flipnote Studio 3D KWZ animation file'`
+> **\[toStringTag\]**: `string` = `'Flipnote Studio 3D KWZ animation file'`
+
+Defined in: [src/parsers/KwzParser.ts:346](https://github.com/jaames/flipnote.js/blob/24e772733243f115c3848537efabe6ee9020ad63/src/parsers/KwzParser.ts#L346)
 
 Custom object tag
 
@@ -307,25 +286,19 @@ Custom object tag
 
 `BaseParser.[toStringTag]`
 
-#### Source
-
-[src/parsers/KwzParser.ts:346](https://github.com/jaames/flipnote.js/blob/afe27e228e29d19d2dff33dfb324ba35dc913507/src/parsers/KwzParser.ts#L346)
-
 ***
 
 ### imageWidth
 
 > **imageWidth**: `number` = `KwzParser.width`
 
-Animation frame width, reflects [KwzParser.width](../../../../../../../api/classes/kwzparser/#width)
+Defined in: [src/parsers/KwzParser.ts:350](https://github.com/jaames/flipnote.js/blob/24e772733243f115c3848537efabe6ee9020ad63/src/parsers/KwzParser.ts#L350)
+
+Animation frame width, reflects [KwzParser.width](../../../../../../api/classes/kwzparser/#width)
 
 #### Overrides
 
 `BaseParser.imageWidth`
-
-#### Source
-
-[src/parsers/KwzParser.ts:350](https://github.com/jaames/flipnote.js/blob/afe27e228e29d19d2dff33dfb324ba35dc913507/src/parsers/KwzParser.ts#L350)
 
 ***
 
@@ -333,15 +306,13 @@ Animation frame width, reflects [KwzParser.width](../../../../../../../api/class
 
 > **imageHeight**: `number` = `KwzParser.height`
 
-Animation frame height, reflects [KwzParser.height](../../../../../../../api/classes/kwzparser/#height)
+Defined in: [src/parsers/KwzParser.ts:354](https://github.com/jaames/flipnote.js/blob/24e772733243f115c3848537efabe6ee9020ad63/src/parsers/KwzParser.ts#L354)
+
+Animation frame height, reflects [KwzParser.height](../../../../../../api/classes/kwzparser/#height)
 
 #### Overrides
 
 `BaseParser.imageHeight`
-
-#### Source
-
-[src/parsers/KwzParser.ts:354](https://github.com/jaames/flipnote.js/blob/afe27e228e29d19d2dff33dfb324ba35dc913507/src/parsers/KwzParser.ts#L354)
 
 ***
 
@@ -349,15 +320,13 @@ Animation frame height, reflects [KwzParser.height](../../../../../../../api/cla
 
 > **aspect**: `number` = `KwzParser.aspect`
 
-Animation frame aspect ratio, reflects [KwzParser.aspect](../../../../../../../api/classes/kwzparser/#aspect)
+Defined in: [src/parsers/KwzParser.ts:358](https://github.com/jaames/flipnote.js/blob/24e772733243f115c3848537efabe6ee9020ad63/src/parsers/KwzParser.ts#L358)
+
+Animation frame aspect ratio, reflects [KwzParser.aspect](../../../../../../api/classes/kwzparser/#aspect)
 
 #### Overrides
 
 `BaseParser.aspect`
-
-#### Source
-
-[src/parsers/KwzParser.ts:358](https://github.com/jaames/flipnote.js/blob/afe27e228e29d19d2dff33dfb324ba35dc913507/src/parsers/KwzParser.ts#L358)
 
 ***
 
@@ -365,15 +334,13 @@ Animation frame aspect ratio, reflects [KwzParser.aspect](../../../../../../../a
 
 > **imageOffsetX**: `number` = `0`
 
+Defined in: [src/parsers/KwzParser.ts:362](https://github.com/jaames/flipnote.js/blob/24e772733243f115c3848537efabe6ee9020ad63/src/parsers/KwzParser.ts#L362)
+
 X offset for the top-left corner of the animation frame
 
 #### Overrides
 
 `BaseParser.imageOffsetX`
-
-#### Source
-
-[src/parsers/KwzParser.ts:362](https://github.com/jaames/flipnote.js/blob/afe27e228e29d19d2dff33dfb324ba35dc913507/src/parsers/KwzParser.ts#L362)
 
 ***
 
@@ -381,15 +348,13 @@ X offset for the top-left corner of the animation frame
 
 > **imageOffsetY**: `number` = `0`
 
+Defined in: [src/parsers/KwzParser.ts:366](https://github.com/jaames/flipnote.js/blob/24e772733243f115c3848537efabe6ee9020ad63/src/parsers/KwzParser.ts#L366)
+
 Y offset for the top-left corner of the animation frame
 
 #### Overrides
 
 `BaseParser.imageOffsetY`
-
-#### Source
-
-[src/parsers/KwzParser.ts:366](https://github.com/jaames/flipnote.js/blob/afe27e228e29d19d2dff33dfb324ba35dc913507/src/parsers/KwzParser.ts#L366)
 
 ***
 
@@ -397,15 +362,13 @@ Y offset for the top-left corner of the animation frame
 
 > **numLayers**: `number` = `KwzParser.numLayers`
 
-Number of animation frame layers, reflects [KwzParser.numLayers](../../../../../../../api/classes/kwzparser/#numlayers)
+Defined in: [src/parsers/KwzParser.ts:370](https://github.com/jaames/flipnote.js/blob/24e772733243f115c3848537efabe6ee9020ad63/src/parsers/KwzParser.ts#L370)
+
+Number of animation frame layers, reflects [KwzParser.numLayers](../../../../../../api/classes/kwzparser/#numlayers)
 
 #### Overrides
 
 `BaseParser.numLayers`
-
-#### Source
-
-[src/parsers/KwzParser.ts:370](https://github.com/jaames/flipnote.js/blob/afe27e228e29d19d2dff33dfb324ba35dc913507/src/parsers/KwzParser.ts#L370)
 
 ***
 
@@ -413,15 +376,13 @@ Number of animation frame layers, reflects [KwzParser.numLayers](../../../../../
 
 > **numLayerColors**: `number` = `KwzParser.numLayerColors`
 
-Number of colors per layer (aside from transparent), reflects [KwzParser.numLayerColors](../../../../../../../api/classes/kwzparser/#numlayercolors)
+Defined in: [src/parsers/KwzParser.ts:374](https://github.com/jaames/flipnote.js/blob/24e772733243f115c3848537efabe6ee9020ad63/src/parsers/KwzParser.ts#L374)
+
+Number of colors per layer (aside from transparent), reflects [KwzParser.numLayerColors](../../../../../../api/classes/kwzparser/#numlayercolors)
 
 #### Overrides
 
 `BaseParser.numLayerColors`
-
-#### Source
-
-[src/parsers/KwzParser.ts:374](https://github.com/jaames/flipnote.js/blob/afe27e228e29d19d2dff33dfb324ba35dc913507/src/parsers/KwzParser.ts#L374)
 
 ***
 
@@ -429,15 +390,13 @@ Number of colors per layer (aside from transparent), reflects [KwzParser.numLaye
 
 > **publicKey**: `string` = `KwzParser.publicKey`
 
+Defined in: [src/parsers/KwzParser.ts:378](https://github.com/jaames/flipnote.js/blob/24e772733243f115c3848537efabe6ee9020ad63/src/parsers/KwzParser.ts#L378)
+
 key used for Flipnote verification, in PEM format
 
 #### Overrides
 
 `BaseParser.publicKey`
-
-#### Source
-
-[src/parsers/KwzParser.ts:378](https://github.com/jaames/flipnote.js/blob/afe27e228e29d19d2dff33dfb324ba35dc913507/src/parsers/KwzParser.ts#L378)
 
 ***
 
@@ -445,15 +404,13 @@ key used for Flipnote verification, in PEM format
 
 > **audioTracks**: [`FlipnoteAudioTrack`](/api/enumerations/flipnoteaudiotrack/)[] = `KwzParser.audioTracks`
 
-Which audio tracks are available in this format, reflects [KwzParser.audioTracks](../../../../../../../api/classes/kwzparser/#audiotracks)
+Defined in: [src/parsers/KwzParser.ts:386](https://github.com/jaames/flipnote.js/blob/24e772733243f115c3848537efabe6ee9020ad63/src/parsers/KwzParser.ts#L386)
+
+Which audio tracks are available in this format, reflects [KwzParser.audioTracks](../../../../../../api/classes/kwzparser/#audiotracks)
 
 #### Overrides
 
 `BaseParser.audioTracks`
-
-#### Source
-
-[src/parsers/KwzParser.ts:386](https://github.com/jaames/flipnote.js/blob/afe27e228e29d19d2dff33dfb324ba35dc913507/src/parsers/KwzParser.ts#L386)
 
 ***
 
@@ -461,15 +418,13 @@ Which audio tracks are available in this format, reflects [KwzParser.audioTracks
 
 > **soundEffectTracks**: [`FlipnoteSoundEffectTrack`](/api/enumerations/flipnotesoundeffecttrack/)[] = `KwzParser.soundEffectTracks`
 
-Which sound effect tracks are available in this format, reflects [KwzParser.soundEffectTracks](../../../../../../../api/classes/kwzparser/#soundeffecttracks)
+Defined in: [src/parsers/KwzParser.ts:390](https://github.com/jaames/flipnote.js/blob/24e772733243f115c3848537efabe6ee9020ad63/src/parsers/KwzParser.ts#L390)
+
+Which sound effect tracks are available in this format, reflects [KwzParser.soundEffectTracks](../../../../../../api/classes/kwzparser/#soundeffecttracks)
 
 #### Overrides
 
 `BaseParser.soundEffectTracks`
-
-#### Source
-
-[src/parsers/KwzParser.ts:390](https://github.com/jaames/flipnote.js/blob/afe27e228e29d19d2dff33dfb324ba35dc913507/src/parsers/KwzParser.ts#L390)
 
 ***
 
@@ -477,15 +432,13 @@ Which sound effect tracks are available in this format, reflects [KwzParser.soun
 
 > **rawSampleRate**: `number` = `KwzParser.rawSampleRate`
 
-Audio track base sample rate, reflects [KwzParser.rawSampleRate](../../../../../../../api/classes/kwzparser/#rawsamplerate)
+Defined in: [src/parsers/KwzParser.ts:394](https://github.com/jaames/flipnote.js/blob/24e772733243f115c3848537efabe6ee9020ad63/src/parsers/KwzParser.ts#L394)
+
+Audio track base sample rate, reflects [KwzParser.rawSampleRate](../../../../../../api/classes/kwzparser/#rawsamplerate)
 
 #### Overrides
 
 `BaseParser.rawSampleRate`
-
-#### Source
-
-[src/parsers/KwzParser.ts:394](https://github.com/jaames/flipnote.js/blob/afe27e228e29d19d2dff33dfb324ba35dc913507/src/parsers/KwzParser.ts#L394)
 
 ***
 
@@ -493,15 +446,13 @@ Audio track base sample rate, reflects [KwzParser.rawSampleRate](../../../../../
 
 > **sampleRate**: `number` = `KwzParser.sampleRate`
 
-Audio output sample rate, reflects [KwzParser.sampleRate](../../../../../../../api/classes/kwzparser/#samplerate)
+Defined in: [src/parsers/KwzParser.ts:398](https://github.com/jaames/flipnote.js/blob/24e772733243f115c3848537efabe6ee9020ad63/src/parsers/KwzParser.ts#L398)
+
+Audio output sample rate, reflects [KwzParser.sampleRate](../../../../../../api/classes/kwzparser/#samplerate)
 
 #### Overrides
 
 `BaseParser.sampleRate`
-
-#### Source
-
-[src/parsers/KwzParser.ts:398](https://github.com/jaames/flipnote.js/blob/afe27e228e29d19d2dff33dfb324ba35dc913507/src/parsers/KwzParser.ts#L398)
 
 ***
 
@@ -509,15 +460,13 @@ Audio output sample rate, reflects [KwzParser.sampleRate](../../../../../../../a
 
 > **globalPalette**: [`FlipnotePaletteColor`](/api/type-aliases/flipnotepalettecolor/)[] = `KwzParser.globalPalette`
 
-Global animation frame color palette, reflects [KwzParser.globalPalette](../../../../../../../api/classes/kwzparser/#globalpalette)
+Defined in: [src/parsers/KwzParser.ts:402](https://github.com/jaames/flipnote.js/blob/24e772733243f115c3848537efabe6ee9020ad63/src/parsers/KwzParser.ts#L402)
+
+Global animation frame color palette, reflects [KwzParser.globalPalette](../../../../../../api/classes/kwzparser/#globalpalette)
 
 #### Overrides
 
 `BaseParser.globalPalette`
-
-#### Source
-
-[src/parsers/KwzParser.ts:402](https://github.com/jaames/flipnote.js/blob/afe27e228e29d19d2dff33dfb324ba35dc913507/src/parsers/KwzParser.ts#L402)
 
 ## Methods
 
@@ -525,17 +474,17 @@ Global animation frame color palette, reflects [KwzParser.globalPalette](../../.
 
 > `static` **matchBuffer**(`buffer`): `boolean`
 
+Defined in: [src/parsers/KwzParser.ts:331](https://github.com/jaames/flipnote.js/blob/24e772733243f115c3848537efabe6ee9020ad63/src/parsers/KwzParser.ts#L331)
+
 #### Parameters
 
-• **buffer**: [`ArrayBuffer ↗️`]( https://developer.mozilla.org/docs/Web/JavaScript/Reference/Global_Objects/ArrayBuffer )
+| Parameter | Type |
+| :------ | :------ |
+| `buffer` | [`ArrayBuffer`](https://developer.mozilla.org/docs/Web/JavaScript/Reference/Global_Objects/ArrayBuffer) |
 
 #### Returns
 
 `boolean`
-
-#### Source
-
-[src/parsers/KwzParser.ts:331](https://github.com/jaames/flipnote.js/blob/afe27e228e29d19d2dff33dfb324ba35dc913507/src/parsers/KwzParser.ts#L331)
 
 ***
 
@@ -543,17 +492,17 @@ Global animation frame color palette, reflects [KwzParser.globalPalette](../../.
 
 > **getFrameDiffingFlag**(`frameIndex`): `number`
 
+Defined in: [src/parsers/KwzParser.ts:779](https://github.com/jaames/flipnote.js/blob/24e772733243f115c3848537efabe6ee9020ad63/src/parsers/KwzParser.ts#L779)
+
 #### Parameters
 
-• **frameIndex**: `number`
+| Parameter | Type |
+| :------ | :------ |
+| `frameIndex` | `number` |
 
 #### Returns
 
 `number`
-
-#### Source
-
-[src/parsers/KwzParser.ts:748](https://github.com/jaames/flipnote.js/blob/afe27e228e29d19d2dff33dfb324ba35dc913507/src/parsers/KwzParser.ts#L748)
 
 ***
 
@@ -561,17 +510,17 @@ Global animation frame color palette, reflects [KwzParser.globalPalette](../../.
 
 > **decodeFrameSoundFlags**(`frameIndex`): `boolean`[]
 
+Defined in: [src/parsers/KwzParser.ts:1070](https://github.com/jaames/flipnote.js/blob/24e772733243f115c3848537efabe6ee9020ad63/src/parsers/KwzParser.ts#L1070)
+
 #### Parameters
 
-• **frameIndex**: `number`
+| Parameter | Type |
+| :------ | :------ |
+| `frameIndex` | `number` |
 
 #### Returns
 
 `boolean`[]
-
-#### Source
-
-[src/parsers/KwzParser.ts:1039](https://github.com/jaames/flipnote.js/blob/afe27e228e29d19d2dff33dfb324ba35dc913507/src/parsers/KwzParser.ts#L1039)
 
 ***
 
@@ -579,23 +528,20 @@ Global animation frame color palette, reflects [KwzParser.globalPalette](../../.
 
 > **decodeAdpcm**(`src`, `dst`, `predictor`, `stepIndex`): `number`
 
+Defined in: [src/parsers/KwzParser.ts:1134](https://github.com/jaames/flipnote.js/blob/24e772733243f115c3848537efabe6ee9020ad63/src/parsers/KwzParser.ts#L1134)
+
 #### Parameters
 
-• **src**: [`Uint8Array ↗️`]( https://developer.mozilla.org/docs/Web/JavaScript/Reference/Global_Objects/Uint8Array )
-
-• **dst**: [`Int16Array ↗️`]( https://developer.mozilla.org/docs/Web/JavaScript/Reference/Global_Objects/Int16Array )
-
-• **predictor**: `number`= `0`
-
-• **stepIndex**: `number`= `0`
+| Parameter | Type | Default value |
+| :------ | :------ | :------ |
+| `src` | [`Uint8Array`](https://developer.mozilla.org/docs/Web/JavaScript/Reference/Global_Objects/Uint8Array) | `undefined` |
+| `dst` | [`Int16Array`](https://developer.mozilla.org/docs/Web/JavaScript/Reference/Global_Objects/Int16Array) | `undefined` |
+| `predictor` | `number` | `0` |
+| `stepIndex` | `number` | `40` |
 
 #### Returns
 
 `number`
-
-#### Source
-
-[src/parsers/KwzParser.ts:1103](https://github.com/jaames/flipnote.js/blob/afe27e228e29d19d2dff33dfb324ba35dc913507/src/parsers/KwzParser.ts#L1103)
 
 ***
 
@@ -603,27 +549,27 @@ Global animation frame color palette, reflects [KwzParser.globalPalette](../../.
 
 > **pcmAudioMix**(`src`, `dst`, `dstOffset`): `void`
 
+Defined in: [src/parsers/KwzParser.ts:1267](https://github.com/jaames/flipnote.js/blob/24e772733243f115c3848537efabe6ee9020ad63/src/parsers/KwzParser.ts#L1267)
+
 #### Parameters
 
-• **src**: [`Int16Array ↗️`]( https://developer.mozilla.org/docs/Web/JavaScript/Reference/Global_Objects/Int16Array )
-
-• **dst**: [`Int16Array ↗️`]( https://developer.mozilla.org/docs/Web/JavaScript/Reference/Global_Objects/Int16Array )
-
-• **dstOffset**: `number`= `0`
+| Parameter | Type | Default value |
+| :------ | :------ | :------ |
+| `src` | [`Int16Array`](https://developer.mozilla.org/docs/Web/JavaScript/Reference/Global_Objects/Int16Array) | `undefined` |
+| `dst` | [`Int16Array`](https://developer.mozilla.org/docs/Web/JavaScript/Reference/Global_Objects/Int16Array) | `undefined` |
+| `dstOffset` | `number` | `0` |
 
 #### Returns
 
 `void`
-
-#### Source
-
-[src/parsers/KwzParser.ts:1236](https://github.com/jaames/flipnote.js/blob/afe27e228e29d19d2dff33dfb324ba35dc913507/src/parsers/KwzParser.ts#L1236)
 
 ***
 
 ### end()
 
 > **end**(): `boolean`
+
+Defined in: [src/utils/DataStream.ts:253](https://github.com/jaames/flipnote.js/blob/24e772733243f115c3848537efabe6ee9020ad63/src/utils/DataStream.ts#L253)
 
 #### Returns
 
@@ -633,53 +579,39 @@ Global animation frame color palette, reflects [KwzParser.globalPalette](../../.
 
 `BaseParser.end`
 
-#### Source
-
-[src/utils/DataStream.ts:253](https://github.com/jaames/flipnote.js/blob/afe27e228e29d19d2dff33dfb324ba35dc913507/src/utils/DataStream.ts#L253)
-
 ## Meta
 
 ### titleFormats
 
 > **titleFormats**: `object`
 
-Default formats used for [getTitle](../../../../../../../api/classes/kwzparser/#gettitle).
+Defined in: [src/parsers/BaseParser.ts:111](https://github.com/jaames/flipnote.js/blob/24e772733243f115c3848537efabe6ee9020ad63/src/parsers/BaseParser.ts#L111)
 
-#### COMMENT
+Default formats used for [getTitle](../../../../../../api/classes/kwzparser/#gettitle).
 
-> **COMMENT**: `string` = `'Comment by $USERNAME'`
-
-#### FLIPNOTE
-
-> **FLIPNOTE**: `string` = `'Flipnote by $USERNAME'`
-
-#### ICON
-
-> **ICON**: `string` = `'Folder icon'`
+| Name | Type | Default value |
+| :------ | :------ | :------ |
+| `COMMENT` | `string` | 'Comment by $USERNAME' |
+| `FLIPNOTE` | `string` | 'Flipnote by $USERNAME' |
+| `ICON` | `string` | 'Folder icon' |
 
 #### Inherited from
 
 `BaseParser.titleFormats`
 
-#### Source
-
-[src/parsers/BaseParser.ts:111](https://github.com/jaames/flipnote.js/blob/afe27e228e29d19d2dff33dfb324ba35dc913507/src/parsers/BaseParser.ts#L111)
-
 ***
 
 ### soundMeta
 
-> **soundMeta**: [`Map ↗️`]( https://developer.mozilla.org/docs/Web/JavaScript/Reference/Global_Objects/Map )\<[`FlipnoteAudioTrack`](/api/enumerations/flipnoteaudiotrack/), [`FlipnoteAudioTrackInfo`](/api/interfaces/flipnoteaudiotrackinfo/)\>
+> **soundMeta**: [`Map`](https://developer.mozilla.org/docs/Web/JavaScript/Reference/Global_Objects/Map)\<[`FlipnoteAudioTrack`](/api/enumerations/flipnoteaudiotrack/), [`FlipnoteAudioTrackInfo`](/api/interfaces/flipnoteaudiotrackinfo/)\>
 
-File audio track info, see [FlipnoteAudioTrackInfo](../../../../../../../api/interfaces/flipnoteaudiotrackinfo).
+Defined in: [src/parsers/BaseParser.ts:194](https://github.com/jaames/flipnote.js/blob/24e772733243f115c3848537efabe6ee9020ad63/src/parsers/BaseParser.ts#L194)
+
+File audio track info, see [FlipnoteAudioTrackInfo](../../../../../../api/interfaces/flipnoteaudiotrackinfo).
 
 #### Inherited from
 
 `BaseParser.soundMeta`
-
-#### Source
-
-[src/parsers/BaseParser.ts:194](https://github.com/jaames/flipnote.js/blob/afe27e228e29d19d2dff33dfb324ba35dc913507/src/parsers/BaseParser.ts#L194)
 
 ***
 
@@ -687,15 +619,13 @@ File audio track info, see [FlipnoteAudioTrackInfo](../../../../../../../api/int
 
 > **isSpinoff**: `boolean`
 
+Defined in: [src/parsers/BaseParser.ts:210](https://github.com/jaames/flipnote.js/blob/24e772733243f115c3848537efabe6ee9020ad63/src/parsers/BaseParser.ts#L210)
+
 Spinoffs are remixes of another user's Flipnote.
 
 #### Inherited from
 
 `BaseParser.isSpinoff`
-
-#### Source
-
-[src/parsers/BaseParser.ts:210](https://github.com/jaames/flipnote.js/blob/afe27e228e29d19d2dff33dfb324ba35dc913507/src/parsers/BaseParser.ts#L210)
 
 ***
 
@@ -703,15 +633,13 @@ Spinoffs are remixes of another user's Flipnote.
 
 > **isFolderIcon**: `boolean` = `false`
 
+Defined in: [src/parsers/BaseParser.ts:215](https://github.com/jaames/flipnote.js/blob/24e772733243f115c3848537efabe6ee9020ad63/src/parsers/BaseParser.ts#L215)
+
 (KWZ only) Indicates whether or not this file is a Flipnote Studio 3D folder icon.
 
 #### Inherited from
 
 `BaseParser.isFolderIcon`
-
-#### Source
-
-[src/parsers/BaseParser.ts:215](https://github.com/jaames/flipnote.js/blob/afe27e228e29d19d2dff33dfb324ba35dc913507/src/parsers/BaseParser.ts#L215)
 
 ***
 
@@ -719,15 +647,13 @@ Spinoffs are remixes of another user's Flipnote.
 
 > **isComment**: `boolean` = `false`
 
+Defined in: [src/parsers/BaseParser.ts:220](https://github.com/jaames/flipnote.js/blob/24e772733243f115c3848537efabe6ee9020ad63/src/parsers/BaseParser.ts#L220)
+
 (KWZ only) Indicates whether or not this file is a handwritten comment from Flipnote Gallery World.
 
 #### Inherited from
 
 `BaseParser.isComment`
-
-#### Source
-
-[src/parsers/BaseParser.ts:220](https://github.com/jaames/flipnote.js/blob/afe27e228e29d19d2dff33dfb324ba35dc913507/src/parsers/BaseParser.ts#L220)
 
 ***
 
@@ -735,15 +661,13 @@ Spinoffs are remixes of another user's Flipnote.
 
 > **isDsiLibraryNote**: `boolean` = `false`
 
+Defined in: [src/parsers/BaseParser.ts:225](https://github.com/jaames/flipnote.js/blob/24e772733243f115c3848537efabe6ee9020ad63/src/parsers/BaseParser.ts#L225)
+
 (KWZ only) Indicates whether or not this Flipnote is a PPM to KWZ conversion from Flipnote Studio 3D's DSi Library service.
 
 #### Inherited from
 
 `BaseParser.isDsiLibraryNote`
-
-#### Source
-
-[src/parsers/BaseParser.ts:225](https://github.com/jaames/flipnote.js/blob/afe27e228e29d19d2dff33dfb324ba35dc913507/src/parsers/BaseParser.ts#L225)
 
 ***
 
@@ -751,21 +675,21 @@ Spinoffs are remixes of another user's Flipnote.
 
 > **meta**: [`KwzMeta`](/api/interfaces/kwzmeta/)
 
-File metadata, see [KwzMeta](../../../../../../../api/interfaces/kwzmeta) for structure.
+Defined in: [src/parsers/KwzParser.ts:407](https://github.com/jaames/flipnote.js/blob/24e772733243f115c3848537efabe6ee9020ad63/src/parsers/KwzParser.ts#L407)
+
+File metadata, see [KwzMeta](../../../../../../api/interfaces/kwzmeta) for structure.
 
 #### Overrides
 
 `BaseParser.meta`
-
-#### Source
-
-[src/parsers/KwzParser.ts:407](https://github.com/jaames/flipnote.js/blob/afe27e228e29d19d2dff33dfb324ba35dc913507/src/parsers/KwzParser.ts#L407)
 
 ***
 
 ### getTitle()
 
 > **getTitle**(`formats`): `string`
+
+Defined in: [src/parsers/BaseParser.ts:279](https://github.com/jaames/flipnote.js/blob/24e772733243f115c3848537efabe6ee9020ad63/src/parsers/BaseParser.ts#L279)
 
 Get file default title - e.g. "Flipnote by Y", "Comment by X", etc. 
 A format object can be passed for localization, where `$USERNAME` gets replaced by author name:
@@ -779,13 +703,12 @@ A format object can be passed for localization, where `$USERNAME` gets replaced 
 
 #### Parameters
 
-• **formats**= `undefined`
-
-• **formats.COMMENT**: `string`= `'Comment by $USERNAME'`
-
-• **formats.FLIPNOTE**: `string`= `'Flipnote by $USERNAME'`
-
-• **formats.ICON**: `string`= `'Folder icon'`
+| Parameter | Type |
+| :------ | :------ |
+| `formats` | \{ `COMMENT`: `string`; `FLIPNOTE`: `string`; `ICON`: `string`; \} |
+| `formats.COMMENT` | `string` |
+| `formats.FLIPNOTE` | `string` |
+| `formats.ICON` | `string` |
 
 #### Returns
 
@@ -795,19 +718,17 @@ A format object can be passed for localization, where `$USERNAME` gets replaced 
 
 `BaseParser.getTitle`
 
-#### Source
-
-[src/parsers/BaseParser.ts:279](https://github.com/jaames/flipnote.js/blob/afe27e228e29d19d2dff33dfb324ba35dc913507/src/parsers/BaseParser.ts#L279)
-
 ***
 
 ### getThumbnailImage()
 
 > **getThumbnailImage**(): `object`
 
-Decodes the thumbnail image embedded in the Flipnote. Will return a [FlipnoteThumbImage](../../../../../../../api/type-aliases/flipnotethumbimage) containing JPEG data.
+Defined in: [src/parsers/KwzParser.ts:693](https://github.com/jaames/flipnote.js/blob/24e772733243f115c3848537efabe6ee9020ad63/src/parsers/KwzParser.ts#L693)
 
-Note: For most purposes, you should probably just decode the thumbnail fraa to get a higher resolution image.
+Decodes the thumbnail image embedded in the Flipnote. Will return a [FlipnoteThumbImage](../../../../../../api/type-aliases/flipnotethumbimage) containing JPEG data.
+
+Note: For most purposes, you should probably just decode the thumbnail frame to get a higher resolution image.
 
 #### Returns
 
@@ -827,15 +748,32 @@ Note: For most purposes, you should probably just decode the thumbnail fraa to g
 
 ##### data
 
-> **data**: `ArrayBufferLike` = `bytes.buffer`
+> **data**: [`ArrayBuffer`](https://developer.mozilla.org/docs/Web/JavaScript/Reference/Global_Objects/ArrayBuffer)
 
 #### Overrides
 
 `BaseParser.getThumbnailImage`
 
-#### Source
+***
 
-[src/parsers/KwzParser.ts:688](https://github.com/jaames/flipnote.js/blob/afe27e228e29d19d2dff33dfb324ba35dc913507/src/parsers/KwzParser.ts#L688)
+### getMemoryMeterLevel()
+
+> **getMemoryMeterLevel**(): `number`
+
+Defined in: [src/parsers/KwzParser.ts:714](https://github.com/jaames/flipnote.js/blob/24e772733243f115c3848537efabe6ee9020ad63/src/parsers/KwzParser.ts#L714)
+
+Get the memory meter level for the Flipnote.
+This is a value between 0 and 1 indicating how "full" the Flipnote is, based on the size calculation formula inside Flipnote Studio 3D.
+
+Values will never be below 0, but can be above 1 if the Flipnote is larger than the size limit - it is technically possible to exceed the size limit by one frame.
+
+#### Returns
+
+`number`
+
+#### Overrides
+
+`BaseParser.getMemoryMeterLevel`
 
 ***
 
@@ -843,11 +781,15 @@ Note: For most purposes, you should probably just decode the thumbnail fraa to g
 
 > **getFrameAuthor**(`frameIndex`): `string`
 
+Defined in: [src/parsers/KwzParser.ts:819](https://github.com/jaames/flipnote.js/blob/24e772733243f115c3848537efabe6ee9020ad63/src/parsers/KwzParser.ts#L819)
+
 Get the FSID for a given frame's original author.
 
 #### Parameters
 
-• **frameIndex**: `number`
+| Parameter | Type | Description |
+| :------ | :------ | :------ |
+| `frameIndex` | `number` |  |
 
 #### Returns
 
@@ -857,15 +799,13 @@ Get the FSID for a given frame's original author.
 
 `BaseParser.getFrameAuthor`
 
-#### Source
-
-[src/parsers/KwzParser.ts:788](https://github.com/jaames/flipnote.js/blob/afe27e228e29d19d2dff33dfb324ba35dc913507/src/parsers/KwzParser.ts#L788)
-
 ## Image
 
 ### palette
 
 > **palette**: [`FlipnotePaletteDefinition`](/api/type-aliases/flipnotepalettedefinition/)
+
+Defined in: [src/parsers/BaseParser.ts:184](https://github.com/jaames/flipnote.js/blob/24e772733243f115c3848537efabe6ee9020ad63/src/parsers/BaseParser.ts#L184)
 
 Flipnote palette.
 
@@ -873,15 +813,13 @@ Flipnote palette.
 
 `BaseParser.palette`
 
-#### Source
-
-[src/parsers/BaseParser.ts:184](https://github.com/jaames/flipnote.js/blob/afe27e228e29d19d2dff33dfb324ba35dc913507/src/parsers/BaseParser.ts#L184)
-
 ***
 
 ### layerVisibility
 
 > **layerVisibility**: [`FlipnoteLayerVisibility`](/api/type-aliases/flipnotelayervisibility/)
+
+Defined in: [src/parsers/BaseParser.ts:199](https://github.com/jaames/flipnote.js/blob/24e772733243f115c3848537efabe6ee9020ad63/src/parsers/BaseParser.ts#L199)
 
 Animation frame global layer visibility.
 
@@ -889,15 +827,13 @@ Animation frame global layer visibility.
 
 `BaseParser.layerVisibility`
 
-#### Source
-
-[src/parsers/BaseParser.ts:199](https://github.com/jaames/flipnote.js/blob/afe27e228e29d19d2dff33dfb324ba35dc913507/src/parsers/BaseParser.ts#L199)
-
 ***
 
 ### frameCount
 
 > **frameCount**: `number`
+
+Defined in: [src/parsers/BaseParser.ts:230](https://github.com/jaames/flipnote.js/blob/24e772733243f115c3848537efabe6ee9020ad63/src/parsers/BaseParser.ts#L230)
 
 Animation frame count.
 
@@ -905,15 +841,13 @@ Animation frame count.
 
 `BaseParser.frameCount`
 
-#### Source
-
-[src/parsers/BaseParser.ts:230](https://github.com/jaames/flipnote.js/blob/afe27e228e29d19d2dff33dfb324ba35dc913507/src/parsers/BaseParser.ts#L230)
-
 ***
 
 ### frameSpeed
 
 > **frameSpeed**: `number`
+
+Defined in: [src/parsers/BaseParser.ts:235](https://github.com/jaames/flipnote.js/blob/24e772733243f115c3848537efabe6ee9020ad63/src/parsers/BaseParser.ts#L235)
 
 In-app animation playback speed.
 
@@ -921,15 +855,13 @@ In-app animation playback speed.
 
 `BaseParser.frameSpeed`
 
-#### Source
-
-[src/parsers/BaseParser.ts:235](https://github.com/jaames/flipnote.js/blob/afe27e228e29d19d2dff33dfb324ba35dc913507/src/parsers/BaseParser.ts#L235)
-
 ***
 
 ### duration
 
 > **duration**: `number`
+
+Defined in: [src/parsers/BaseParser.ts:240](https://github.com/jaames/flipnote.js/blob/24e772733243f115c3848537efabe6ee9020ad63/src/parsers/BaseParser.ts#L240)
 
 Animation duration, in seconds.
 
@@ -937,15 +869,13 @@ Animation duration, in seconds.
 
 `BaseParser.duration`
 
-#### Source
-
-[src/parsers/BaseParser.ts:240](https://github.com/jaames/flipnote.js/blob/afe27e228e29d19d2dff33dfb324ba35dc913507/src/parsers/BaseParser.ts#L240)
-
 ***
 
 ### bgmSpeed
 
 > **bgmSpeed**: `number`
+
+Defined in: [src/parsers/BaseParser.ts:245](https://github.com/jaames/flipnote.js/blob/24e772733243f115c3848537efabe6ee9020ad63/src/parsers/BaseParser.ts#L245)
 
 In-app animation playback speed when the BGM track was recorded.
 
@@ -953,15 +883,13 @@ In-app animation playback speed when the BGM track was recorded.
 
 `BaseParser.bgmSpeed`
 
-#### Source
-
-[src/parsers/BaseParser.ts:245](https://github.com/jaames/flipnote.js/blob/afe27e228e29d19d2dff33dfb324ba35dc913507/src/parsers/BaseParser.ts#L245)
-
 ***
 
 ### framerate
 
 > **framerate**: `number`
+
+Defined in: [src/parsers/BaseParser.ts:250](https://github.com/jaames/flipnote.js/blob/24e772733243f115c3848537efabe6ee9020ad63/src/parsers/BaseParser.ts#L250)
 
 Animation framerate, measured as frames per second.
 
@@ -969,15 +897,13 @@ Animation framerate, measured as frames per second.
 
 `BaseParser.framerate`
 
-#### Source
-
-[src/parsers/BaseParser.ts:250](https://github.com/jaames/flipnote.js/blob/afe27e228e29d19d2dff33dfb324ba35dc913507/src/parsers/BaseParser.ts#L250)
-
 ***
 
 ### thumbFrameIndex
 
 > **thumbFrameIndex**: `number`
+
+Defined in: [src/parsers/BaseParser.ts:260](https://github.com/jaames/flipnote.js/blob/24e772733243f115c3848537efabe6ee9020ad63/src/parsers/BaseParser.ts#L260)
 
 Index of the animation frame used as the Flipnote's thumbnail image.
 
@@ -985,167 +911,146 @@ Index of the animation frame used as the Flipnote's thumbnail image.
 
 `BaseParser.thumbFrameIndex`
 
-#### Source
-
-[src/parsers/BaseParser.ts:260](https://github.com/jaames/flipnote.js/blob/afe27e228e29d19d2dff33dfb324ba35dc913507/src/parsers/BaseParser.ts#L260)
-
 ***
 
 ### getLayerPixels()
 
-> **getLayerPixels**(`frameIndex`, `layerIndex`, `imageBuffer`, `depthStrength`, `depthEye`): [`Uint8Array ↗️`]( https://developer.mozilla.org/docs/Web/JavaScript/Reference/Global_Objects/Uint8Array )
+> **getLayerPixels**(`frameIndex`, `layerIndex`, `imageBuffer`, `depthStrength`, `depthEye`): [`Uint8Array`](https://developer.mozilla.org/docs/Web/JavaScript/Reference/Global_Objects/Uint8Array)
+
+Defined in: [src/parsers/BaseParser.ts:344](https://github.com/jaames/flipnote.js/blob/24e772733243f115c3848537efabe6ee9020ad63/src/parsers/BaseParser.ts#L344)
 
 Get the pixels for a given frame layer, as palette indices
-NOTE: layerIndex are not guaranteed to be sorted by 3D depth in KWZs, use [getFrameLayerOrder](../../../../../../../api/classes/kwzparser/#getframelayerorder) to get the correct sort order first
+NOTE: layerIndex are not guaranteed to be sorted by 3D depth in KWZs, use [getFrameLayerOrder](../../../../../../api/classes/kwzparser/#getframelayerorder) to get the correct sort order first
 NOTE: if the visibility flag for this layer is turned off, the result will be empty
 
 #### Parameters
 
-• **frameIndex**: `number`
-
-• **layerIndex**: `number`
-
-• **imageBuffer**: [`Uint8Array ↗️`]( https://developer.mozilla.org/docs/Web/JavaScript/Reference/Global_Objects/Uint8Array )= `undefined`
-
-• **depthStrength**: `number`= `0`
-
-• **depthEye**: [`FlipnoteStereoscopicEye`](/api/enumerations/flipnotestereoscopiceye/)= `FlipnoteStereoscopicEye.Left`
+| Parameter | Type | Default value |
+| :------ | :------ | :------ |
+| `frameIndex` | `number` | `undefined` |
+| `layerIndex` | `number` | `undefined` |
+| `imageBuffer` | [`Uint8Array`](https://developer.mozilla.org/docs/Web/JavaScript/Reference/Global_Objects/Uint8Array) | `...` |
+| `depthStrength` | `number` | `0` |
+| `depthEye` | [`FlipnoteStereoscopicEye`](/api/enumerations/flipnotestereoscopiceye/) | `FlipnoteStereoscopicEye.Left` |
 
 #### Returns
 
-[`Uint8Array ↗️`]( https://developer.mozilla.org/docs/Web/JavaScript/Reference/Global_Objects/Uint8Array )
+[`Uint8Array`](https://developer.mozilla.org/docs/Web/JavaScript/Reference/Global_Objects/Uint8Array)
 
 #### Inherited from
 
 `BaseParser.getLayerPixels`
 
-#### Source
-
-[src/parsers/BaseParser.ts:334](https://github.com/jaames/flipnote.js/blob/afe27e228e29d19d2dff33dfb324ba35dc913507/src/parsers/BaseParser.ts#L334)
-
 ***
 
 ### getLayerPixelsRgba()
 
-> **getLayerPixelsRgba**(`frameIndex`, `layerIndex`, `imageBuffer`, `paletteBuffer`, `depthStrength`, `depthEye`): [`Uint32Array ↗️`]( https://developer.mozilla.org/docs/Web/JavaScript/Reference/Global_Objects/Uint32Array )
+> **getLayerPixelsRgba**(`frameIndex`, `layerIndex`, `imageBuffer`, `paletteBuffer`, `depthStrength`, `depthEye`): [`Uint32Array`](https://developer.mozilla.org/docs/Web/JavaScript/Reference/Global_Objects/Uint32Array)
+
+Defined in: [src/parsers/BaseParser.ts:392](https://github.com/jaames/flipnote.js/blob/24e772733243f115c3848537efabe6ee9020ad63/src/parsers/BaseParser.ts#L392)
 
 Get the pixels for a given frame layer, as RGBA pixels
-NOTE: layerIndex are not guaranteed to be sorted by 3D depth in KWZs, use [getFrameLayerOrder](../../../../../../../api/classes/kwzparser/#getframelayerorder) to get the correct sort order first
+NOTE: layerIndex are not guaranteed to be sorted by 3D depth in KWZs, use [getFrameLayerOrder](../../../../../../api/classes/kwzparser/#getframelayerorder) to get the correct sort order first
 NOTE: if the visibility flag for this layer is turned off, the result will be empty
 
 #### Parameters
 
-• **frameIndex**: `number`
-
-• **layerIndex**: `number`
-
-• **imageBuffer**: [`Uint32Array ↗️`]( https://developer.mozilla.org/docs/Web/JavaScript/Reference/Global_Objects/Uint32Array )= `undefined`
-
-• **paletteBuffer**: [`Uint32Array ↗️`]( https://developer.mozilla.org/docs/Web/JavaScript/Reference/Global_Objects/Uint32Array )= `undefined`
-
-• **depthStrength**: `number`= `0`
-
-• **depthEye**: [`FlipnoteStereoscopicEye`](/api/enumerations/flipnotestereoscopiceye/)= `FlipnoteStereoscopicEye.Left`
+| Parameter | Type | Default value |
+| :------ | :------ | :------ |
+| `frameIndex` | `number` | `undefined` |
+| `layerIndex` | `number` | `undefined` |
+| `imageBuffer` | [`Uint32Array`](https://developer.mozilla.org/docs/Web/JavaScript/Reference/Global_Objects/Uint32Array) | `...` |
+| `paletteBuffer` | [`Uint32Array`](https://developer.mozilla.org/docs/Web/JavaScript/Reference/Global_Objects/Uint32Array) | `...` |
+| `depthStrength` | `number` | `0` |
+| `depthEye` | [`FlipnoteStereoscopicEye`](/api/enumerations/flipnotestereoscopiceye/) | `FlipnoteStereoscopicEye.Left` |
 
 #### Returns
 
-[`Uint32Array ↗️`]( https://developer.mozilla.org/docs/Web/JavaScript/Reference/Global_Objects/Uint32Array )
+[`Uint32Array`](https://developer.mozilla.org/docs/Web/JavaScript/Reference/Global_Objects/Uint32Array)
 
 #### Inherited from
 
 `BaseParser.getLayerPixelsRgba`
 
-#### Source
-
-[src/parsers/BaseParser.ts:382](https://github.com/jaames/flipnote.js/blob/afe27e228e29d19d2dff33dfb324ba35dc913507/src/parsers/BaseParser.ts#L382)
-
 ***
 
 ### getFramePixels()
 
-> **getFramePixels**(`frameIndex`, `imageBuffer`, `depthStrength`, `depthEye`): [`Uint8Array ↗️`]( https://developer.mozilla.org/docs/Web/JavaScript/Reference/Global_Objects/Uint8Array )
+> **getFramePixels**(`frameIndex`, `imageBuffer`, `depthStrength`, `depthEye`): [`Uint8Array`](https://developer.mozilla.org/docs/Web/JavaScript/Reference/Global_Objects/Uint8Array)
+
+Defined in: [src/parsers/BaseParser.ts:474](https://github.com/jaames/flipnote.js/blob/24e772733243f115c3848537efabe6ee9020ad63/src/parsers/BaseParser.ts#L474)
 
 Get the image for a given frame, as palette indices
 
 #### Parameters
 
-• **frameIndex**: `number`
-
-• **imageBuffer**: [`Uint8Array ↗️`]( https://developer.mozilla.org/docs/Web/JavaScript/Reference/Global_Objects/Uint8Array )= `undefined`
-
-• **depthStrength**: `number`= `0`
-
-• **depthEye**: [`FlipnoteStereoscopicEye`](/api/enumerations/flipnotestereoscopiceye/)= `FlipnoteStereoscopicEye.Left`
+| Parameter | Type | Default value |
+| :------ | :------ | :------ |
+| `frameIndex` | `number` | `undefined` |
+| `imageBuffer` | [`Uint8Array`](https://developer.mozilla.org/docs/Web/JavaScript/Reference/Global_Objects/Uint8Array) | `...` |
+| `depthStrength` | `number` | `0` |
+| `depthEye` | [`FlipnoteStereoscopicEye`](/api/enumerations/flipnotestereoscopiceye/) | `FlipnoteStereoscopicEye.Left` |
 
 #### Returns
 
-[`Uint8Array ↗️`]( https://developer.mozilla.org/docs/Web/JavaScript/Reference/Global_Objects/Uint8Array )
+[`Uint8Array`](https://developer.mozilla.org/docs/Web/JavaScript/Reference/Global_Objects/Uint8Array)
 
 #### Inherited from
 
 `BaseParser.getFramePixels`
 
-#### Source
-
-[src/parsers/BaseParser.ts:464](https://github.com/jaames/flipnote.js/blob/afe27e228e29d19d2dff33dfb324ba35dc913507/src/parsers/BaseParser.ts#L464)
-
 ***
 
 ### getFramePixelsRgba()
 
-> **getFramePixelsRgba**(`frameIndex`, `imageBuffer`, `paletteBuffer`, `depthStrength`, `depthEye`): [`Uint32Array ↗️`]( https://developer.mozilla.org/docs/Web/JavaScript/Reference/Global_Objects/Uint32Array )
+> **getFramePixelsRgba**(`frameIndex`, `imageBuffer`, `paletteBuffer`, `depthStrength`, `depthEye`): [`Uint32Array`](https://developer.mozilla.org/docs/Web/JavaScript/Reference/Global_Objects/Uint32Array)
+
+Defined in: [src/parsers/BaseParser.ts:524](https://github.com/jaames/flipnote.js/blob/24e772733243f115c3848537efabe6ee9020ad63/src/parsers/BaseParser.ts#L524)
 
 Get the image for a given frame as an uint32 array of RGBA pixels
 
 #### Parameters
 
-• **frameIndex**: `number`
-
-• **imageBuffer**: [`Uint32Array ↗️`]( https://developer.mozilla.org/docs/Web/JavaScript/Reference/Global_Objects/Uint32Array )= `undefined`
-
-• **paletteBuffer**: [`Uint32Array ↗️`]( https://developer.mozilla.org/docs/Web/JavaScript/Reference/Global_Objects/Uint32Array )= `undefined`
-
-• **depthStrength**: `number`= `0`
-
-• **depthEye**: [`FlipnoteStereoscopicEye`](/api/enumerations/flipnotestereoscopiceye/)= `FlipnoteStereoscopicEye.Left`
+| Parameter | Type | Default value |
+| :------ | :------ | :------ |
+| `frameIndex` | `number` | `undefined` |
+| `imageBuffer` | [`Uint32Array`](https://developer.mozilla.org/docs/Web/JavaScript/Reference/Global_Objects/Uint32Array) | `...` |
+| `paletteBuffer` | [`Uint32Array`](https://developer.mozilla.org/docs/Web/JavaScript/Reference/Global_Objects/Uint32Array) | `...` |
+| `depthStrength` | `number` | `0` |
+| `depthEye` | [`FlipnoteStereoscopicEye`](/api/enumerations/flipnotestereoscopiceye/) | `FlipnoteStereoscopicEye.Left` |
 
 #### Returns
 
-[`Uint32Array ↗️`]( https://developer.mozilla.org/docs/Web/JavaScript/Reference/Global_Objects/Uint32Array )
+[`Uint32Array`](https://developer.mozilla.org/docs/Web/JavaScript/Reference/Global_Objects/Uint32Array)
 
 #### Inherited from
 
 `BaseParser.getFramePixelsRgba`
 
-#### Source
-
-[src/parsers/BaseParser.ts:514](https://github.com/jaames/flipnote.js/blob/afe27e228e29d19d2dff33dfb324ba35dc913507/src/parsers/BaseParser.ts#L514)
-
 ***
 
 ### getFramePaletteUint32()
 
-> **getFramePaletteUint32**(`frameIndex`, `paletteBuffer`): [`Uint32Array ↗️`]( https://developer.mozilla.org/docs/Web/JavaScript/Reference/Global_Objects/Uint32Array )
+> **getFramePaletteUint32**(`frameIndex`, `paletteBuffer`): [`Uint32Array`](https://developer.mozilla.org/docs/Web/JavaScript/Reference/Global_Objects/Uint32Array)
+
+Defined in: [src/parsers/BaseParser.ts:589](https://github.com/jaames/flipnote.js/blob/24e772733243f115c3848537efabe6ee9020ad63/src/parsers/BaseParser.ts#L589)
 
 Get the color palette for a given frame, as an uint32 array
 
 #### Parameters
 
-• **frameIndex**: `number`
-
-• **paletteBuffer**: [`Uint32Array ↗️`]( https://developer.mozilla.org/docs/Web/JavaScript/Reference/Global_Objects/Uint32Array )= `undefined`
+| Parameter | Type |
+| :------ | :------ |
+| `frameIndex` | `number` |
+| `paletteBuffer` | [`Uint32Array`](https://developer.mozilla.org/docs/Web/JavaScript/Reference/Global_Objects/Uint32Array) |
 
 #### Returns
 
-[`Uint32Array ↗️`]( https://developer.mozilla.org/docs/Web/JavaScript/Reference/Global_Objects/Uint32Array )
+[`Uint32Array`](https://developer.mozilla.org/docs/Web/JavaScript/Reference/Global_Objects/Uint32Array)
 
 #### Inherited from
 
 `BaseParser.getFramePaletteUint32`
-
-#### Source
-
-[src/parsers/BaseParser.ts:579](https://github.com/jaames/flipnote.js/blob/afe27e228e29d19d2dff33dfb324ba35dc913507/src/parsers/BaseParser.ts#L579)
 
 ***
 
@@ -1153,7 +1058,9 @@ Get the color palette for a given frame, as an uint32 array
 
 > **getFramePaletteIndices**(`frameIndex`): `number`[]
 
-Get the color palette indices for a given frame. RGBA colors for these values can be indexed from [KwzParser.globalPalette](../../../../../../../api/classes/kwzparser/#globalpalette)
+Defined in: [src/parsers/KwzParser.ts:745](https://github.com/jaames/flipnote.js/blob/24e772733243f115c3848537efabe6ee9020ad63/src/parsers/KwzParser.ts#L745)
+
+Get the color palette indices for a given frame. RGBA colors for these values can be indexed from [KwzParser.globalPalette](../../../../../../api/classes/kwzparser/#globalpalette)
 
 Returns an array where:
  - index 0 is the paper color index
@@ -1166,7 +1073,9 @@ Returns an array where:
 
 #### Parameters
 
-• **frameIndex**: `number`
+| Parameter | Type |
+| :------ | :------ |
+| `frameIndex` | `number` |
 
 #### Returns
 
@@ -1176,15 +1085,13 @@ Returns an array where:
 
 `BaseParser.getFramePaletteIndices`
 
-#### Source
-
-[src/parsers/KwzParser.ts:714](https://github.com/jaames/flipnote.js/blob/afe27e228e29d19d2dff33dfb324ba35dc913507/src/parsers/KwzParser.ts#L714)
-
 ***
 
 ### getFramePalette()
 
 > **getFramePalette**(`frameIndex`): [`FlipnotePaletteColor`](/api/type-aliases/flipnotepalettecolor/)[]
+
+Defined in: [src/parsers/KwzParser.ts:773](https://github.com/jaames/flipnote.js/blob/24e772733243f115c3848537efabe6ee9020ad63/src/parsers/KwzParser.ts#L773)
 
 Get the RGBA colors for a given frame
 
@@ -1199,7 +1106,9 @@ Returns an array where:
 
 #### Parameters
 
-• **frameIndex**: `number`
+| Parameter | Type |
+| :------ | :------ |
+| `frameIndex` | `number` |
 
 #### Returns
 
@@ -1209,21 +1118,21 @@ Returns an array where:
 
 `BaseParser.getFramePalette`
 
-#### Source
-
-[src/parsers/KwzParser.ts:742](https://github.com/jaames/flipnote.js/blob/afe27e228e29d19d2dff33dfb324ba35dc913507/src/parsers/KwzParser.ts#L742)
-
 ***
 
 ### getIsKeyFrame()
 
 > **getIsKeyFrame**(`frameIndex`): `boolean`[]
 
+Defined in: [src/parsers/KwzParser.ts:790](https://github.com/jaames/flipnote.js/blob/24e772733243f115c3848537efabe6ee9020ad63/src/parsers/KwzParser.ts#L790)
+
 Determines if a given frame is a video key frame or not. This returns an array of booleans for each layer, since keyframe encoding is done on a per-layer basis.
 
 #### Parameters
 
-• **frameIndex**: `number`
+| Parameter | Type | Description |
+| :------ | :------ | :------ |
+| `frameIndex` | `number` |  |
 
 #### Returns
 
@@ -1233,21 +1142,21 @@ Determines if a given frame is a video key frame or not. This returns an array o
 
 `BaseParser.getIsKeyFrame`
 
-#### Source
-
-[src/parsers/KwzParser.ts:759](https://github.com/jaames/flipnote.js/blob/afe27e228e29d19d2dff33dfb324ba35dc913507/src/parsers/KwzParser.ts#L759)
-
 ***
 
 ### getFrameLayerDepths()
 
 > **getFrameLayerDepths**(`frameIndex`): `number`[]
 
+Defined in: [src/parsers/KwzParser.ts:804](https://github.com/jaames/flipnote.js/blob/24e772733243f115c3848537efabe6ee9020ad63/src/parsers/KwzParser.ts#L804)
+
 Get the 3D depths for each layer in a given frame.
 
 #### Parameters
 
-• **frameIndex**: `number`
+| Parameter | Type | Description |
+| :------ | :------ | :------ |
+| `frameIndex` | `number` |  |
 
 #### Returns
 
@@ -1257,21 +1166,21 @@ Get the 3D depths for each layer in a given frame.
 
 `BaseParser.getFrameLayerDepths`
 
-#### Source
-
-[src/parsers/KwzParser.ts:773](https://github.com/jaames/flipnote.js/blob/afe27e228e29d19d2dff33dfb324ba35dc913507/src/parsers/KwzParser.ts#L773)
-
 ***
 
 ### getFrameCameraFlags()
 
 > **getFrameCameraFlags**(`frameIndex`): `boolean`[]
 
+Defined in: [src/parsers/KwzParser.ts:830](https://github.com/jaames/flipnote.js/blob/24e772733243f115c3848537efabe6ee9020ad63/src/parsers/KwzParser.ts#L830)
+
 Get the camera flags for a given frame
 
 #### Parameters
 
-• **frameIndex**: `number`
+| Parameter | Type |
+| :------ | :------ |
+| `frameIndex` | `number` |
 
 #### Returns
 
@@ -1283,21 +1192,21 @@ Array of booleans, indicating whether each layer uses a photo or not
 
 `BaseParser.getFrameCameraFlags`
 
-#### Source
-
-[src/parsers/KwzParser.ts:799](https://github.com/jaames/flipnote.js/blob/afe27e228e29d19d2dff33dfb324ba35dc913507/src/parsers/KwzParser.ts#L799)
-
 ***
 
 ### getFrameLayerOrder()
 
 > **getFrameLayerOrder**(`frameIndex`): `number`[]
 
+Defined in: [src/parsers/KwzParser.ts:844](https://github.com/jaames/flipnote.js/blob/24e772733243f115c3848537efabe6ee9020ad63/src/parsers/KwzParser.ts#L844)
+
 Get the layer draw order for a given frame
 
 #### Parameters
 
-• **frameIndex**: `number`
+| Parameter | Type |
+| :------ | :------ |
+| `frameIndex` | `number` |
 
 #### Returns
 
@@ -1307,37 +1216,31 @@ Get the layer draw order for a given frame
 
 `BaseParser.getFrameLayerOrder`
 
-#### Source
-
-[src/parsers/KwzParser.ts:813](https://github.com/jaames/flipnote.js/blob/afe27e228e29d19d2dff33dfb324ba35dc913507/src/parsers/KwzParser.ts#L813)
-
 ***
 
 ### decodeFrame()
 
-> **decodeFrame**(`frameIndex`, `diffingFlag`, `isPrevFrame`): [[`Uint8Array ↗️`]( https://developer.mozilla.org/docs/Web/JavaScript/Reference/Global_Objects/Uint8Array ), [`Uint8Array ↗️`]( https://developer.mozilla.org/docs/Web/JavaScript/Reference/Global_Objects/Uint8Array ), [`Uint8Array ↗️`]( https://developer.mozilla.org/docs/Web/JavaScript/Reference/Global_Objects/Uint8Array )]
+> **decodeFrame**(`frameIndex`, `diffingFlag`, `isPrevFrame`): \[[`Uint8Array`](https://developer.mozilla.org/docs/Web/JavaScript/Reference/Global_Objects/Uint8Array), [`Uint8Array`](https://developer.mozilla.org/docs/Web/JavaScript/Reference/Global_Objects/Uint8Array), [`Uint8Array`](https://developer.mozilla.org/docs/Web/JavaScript/Reference/Global_Objects/Uint8Array)\]
+
+Defined in: [src/parsers/KwzParser.ts:854](https://github.com/jaames/flipnote.js/blob/24e772733243f115c3848537efabe6ee9020ad63/src/parsers/KwzParser.ts#L854)
 
 Decode a frame, returning the raw pixel buffers for each layer
 
 #### Parameters
 
-• **frameIndex**: `number`
-
-• **diffingFlag**: `number`= `0x7`
-
-• **isPrevFrame**: `boolean`= `false`
+| Parameter | Type | Default value |
+| :------ | :------ | :------ |
+| `frameIndex` | `number` | `undefined` |
+| `diffingFlag` | `number` | `0x7` |
+| `isPrevFrame` | `boolean` | `false` |
 
 #### Returns
 
-[[`Uint8Array ↗️`]( https://developer.mozilla.org/docs/Web/JavaScript/Reference/Global_Objects/Uint8Array ), [`Uint8Array ↗️`]( https://developer.mozilla.org/docs/Web/JavaScript/Reference/Global_Objects/Uint8Array ), [`Uint8Array ↗️`]( https://developer.mozilla.org/docs/Web/JavaScript/Reference/Global_Objects/Uint8Array )]
+\[[`Uint8Array`](https://developer.mozilla.org/docs/Web/JavaScript/Reference/Global_Objects/Uint8Array), [`Uint8Array`](https://developer.mozilla.org/docs/Web/JavaScript/Reference/Global_Objects/Uint8Array), [`Uint8Array`](https://developer.mozilla.org/docs/Web/JavaScript/Reference/Global_Objects/Uint8Array)\]
 
 #### Overrides
 
 `BaseParser.decodeFrame`
-
-#### Source
-
-[src/parsers/KwzParser.ts:823](https://github.com/jaames/flipnote.js/blob/afe27e228e29d19d2dff33dfb324ba35dc913507/src/parsers/KwzParser.ts#L823)
 
 ## Audio
 
@@ -1345,15 +1248,13 @@ Decode a frame, returning the raw pixel buffers for each layer
 
 > **bgmrate**: `number`
 
+Defined in: [src/parsers/BaseParser.ts:255](https://github.com/jaames/flipnote.js/blob/24e772733243f115c3848537efabe6ee9020ad63/src/parsers/BaseParser.ts#L255)
+
 Animation framerate when the BGM track was recorded, measured as frames per second.
 
 #### Inherited from
 
 `BaseParser.bgmrate`
-
-#### Source
-
-[src/parsers/BaseParser.ts:255](https://github.com/jaames/flipnote.js/blob/afe27e228e29d19d2dff33dfb324ba35dc913507/src/parsers/BaseParser.ts#L255)
 
 ***
 
@@ -1361,15 +1262,13 @@ Animation framerate when the BGM track was recorded, measured as frames per seco
 
 > **audioClipRatio**: `number`
 
-Get the amount of clipping in the master audio track, useful for determining if a Flipnote's audio is corrupted. Closer to 1.0 = more clipping. Only available after [getAudioMasterPcm](../../../../../../../api/classes/kwzparser/#getaudiomasterpcm) has been called.
+Defined in: [src/parsers/BaseParser.ts:265](https://github.com/jaames/flipnote.js/blob/24e772733243f115c3848537efabe6ee9020ad63/src/parsers/BaseParser.ts#L265)
+
+Get the amount of clipping in the master audio track, useful for determining if a Flipnote's audio is corrupted. Closer to 1.0 = more clipping. Only available after [getAudioMasterPcm](../../../../../../api/classes/kwzparser/#getaudiomasterpcm) has been called.
 
 #### Inherited from
 
 `BaseParser.audioClipRatio`
-
-#### Source
-
-[src/parsers/BaseParser.ts:265](https://github.com/jaames/flipnote.js/blob/afe27e228e29d19d2dff33dfb324ba35dc913507/src/parsers/BaseParser.ts#L265)
 
 ***
 
@@ -1377,11 +1276,15 @@ Get the amount of clipping in the master audio track, useful for determining if 
 
 > **getSoundEffectFlagsForTrack**(`trackId`): `boolean`[]
 
+Defined in: [src/parsers/BaseParser.ts:623](https://github.com/jaames/flipnote.js/blob/24e772733243f115c3848537efabe6ee9020ad63/src/parsers/BaseParser.ts#L623)
+
 Get the usage flags for a given track across every frame
 
 #### Parameters
 
-• **trackId**: [`FlipnoteSoundEffectTrack`](/api/enumerations/flipnotesoundeffecttrack/)
+| Parameter | Type |
+| :------ | :------ |
+| `trackId` | [`FlipnoteSoundEffectTrack`](/api/enumerations/flipnotesoundeffecttrack/) |
 
 #### Returns
 
@@ -1393,23 +1296,22 @@ an array of booleans for every frame, indicating whether the track is used on th
 
 `BaseParser.getSoundEffectFlagsForTrack`
 
-#### Source
-
-[src/parsers/BaseParser.ts:613](https://github.com/jaames/flipnote.js/blob/afe27e228e29d19d2dff33dfb324ba35dc913507/src/parsers/BaseParser.ts#L613)
-
 ***
 
 ### isSoundEffectUsedOnFrame()
 
 > **isSoundEffectUsedOnFrame**(`trackId`, `frameIndex`): `boolean`
 
+Defined in: [src/parsers/BaseParser.ts:631](https://github.com/jaames/flipnote.js/blob/24e772733243f115c3848537efabe6ee9020ad63/src/parsers/BaseParser.ts#L631)
+
 Is a given track used on a given frame
 
 #### Parameters
 
-• **trackId**: [`FlipnoteSoundEffectTrack`](/api/enumerations/flipnotesoundeffecttrack/)
-
-• **frameIndex**: `number`
+| Parameter | Type |
+| :------ | :------ |
+| `trackId` | [`FlipnoteSoundEffectTrack`](/api/enumerations/flipnotesoundeffecttrack/) |
+| `frameIndex` | `number` |
 
 #### Returns
 
@@ -1419,21 +1321,21 @@ Is a given track used on a given frame
 
 `BaseParser.isSoundEffectUsedOnFrame`
 
-#### Source
-
-[src/parsers/BaseParser.ts:621](https://github.com/jaames/flipnote.js/blob/afe27e228e29d19d2dff33dfb324ba35dc913507/src/parsers/BaseParser.ts#L621)
-
 ***
 
 ### hasAudioTrack()
 
 > **hasAudioTrack**(`trackId`): `boolean`
 
+Defined in: [src/parsers/BaseParser.ts:643](https://github.com/jaames/flipnote.js/blob/24e772733243f115c3848537efabe6ee9020ad63/src/parsers/BaseParser.ts#L643)
+
 Does an audio track exist in the Flipnote?
 
 #### Parameters
 
-• **trackId**: [`FlipnoteAudioTrack`](/api/enumerations/flipnoteaudiotrack/)
+| Parameter | Type |
+| :------ | :------ |
+| `trackId` | [`FlipnoteAudioTrack`](/api/enumerations/flipnoteaudiotrack/) |
 
 #### Returns
 
@@ -1445,15 +1347,13 @@ boolean
 
 `BaseParser.hasAudioTrack`
 
-#### Source
-
-[src/parsers/BaseParser.ts:633](https://github.com/jaames/flipnote.js/blob/afe27e228e29d19d2dff33dfb324ba35dc913507/src/parsers/BaseParser.ts#L633)
-
 ***
 
 ### decodeSoundFlags()
 
 > **decodeSoundFlags**(): `boolean`[][]
+
+Defined in: [src/parsers/KwzParser.ts:1086](https://github.com/jaames/flipnote.js/blob/24e772733243f115c3848537efabe6ee9020ad63/src/parsers/KwzParser.ts#L1086)
 
 Get the sound effect flags for every frame in the Flipnote
 
@@ -1465,15 +1365,13 @@ Get the sound effect flags for every frame in the Flipnote
 
 `BaseParser.decodeSoundFlags`
 
-#### Source
-
-[src/parsers/KwzParser.ts:1055](https://github.com/jaames/flipnote.js/blob/afe27e228e29d19d2dff33dfb324ba35dc913507/src/parsers/KwzParser.ts#L1055)
-
 ***
 
 ### getSoundEffectFlags()
 
 > **getSoundEffectFlags**(): [`FlipnoteSoundEffectFlags`](/api/type-aliases/flipnotesoundeffectflags/)[]
+
+Defined in: [src/parsers/KwzParser.ts:1099](https://github.com/jaames/flipnote.js/blob/24e772733243f115c3848537efabe6ee9020ad63/src/parsers/KwzParser.ts#L1099)
 
 Get the sound effect usage flags for every frame
 
@@ -1485,21 +1383,21 @@ Get the sound effect usage flags for every frame
 
 `BaseParser.getSoundEffectFlags`
 
-#### Source
-
-[src/parsers/KwzParser.ts:1068](https://github.com/jaames/flipnote.js/blob/afe27e228e29d19d2dff33dfb324ba35dc913507/src/parsers/KwzParser.ts#L1068)
-
 ***
 
 ### getFrameSoundEffectFlags()
 
 > **getFrameSoundEffectFlags**(`frameIndex`): [`FlipnoteSoundEffectFlags`](/api/type-aliases/flipnotesoundeffectflags/)
 
+Defined in: [src/parsers/KwzParser.ts:1113](https://github.com/jaames/flipnote.js/blob/24e772733243f115c3848537efabe6ee9020ad63/src/parsers/KwzParser.ts#L1113)
+
 Get the sound effect usage for a given frame
 
 #### Parameters
 
-• **frameIndex**: `number`
+| Parameter | Type | Description |
+| :------ | :------ | :------ |
+| `frameIndex` | `number` |  |
 
 #### Returns
 
@@ -1509,25 +1407,25 @@ Get the sound effect usage for a given frame
 
 `BaseParser.getFrameSoundEffectFlags`
 
-#### Source
-
-[src/parsers/KwzParser.ts:1082](https://github.com/jaames/flipnote.js/blob/afe27e228e29d19d2dff33dfb324ba35dc913507/src/parsers/KwzParser.ts#L1082)
-
 ***
 
 ### getAudioTrackRaw()
 
-> **getAudioTrackRaw**(`trackId`): [`Uint8Array ↗️`]( https://developer.mozilla.org/docs/Web/JavaScript/Reference/Global_Objects/Uint8Array )
+> **getAudioTrackRaw**(`trackId`): [`Uint8Array`](https://developer.mozilla.org/docs/Web/JavaScript/Reference/Global_Objects/Uint8Array)
+
+Defined in: [src/parsers/KwzParser.ts:1128](https://github.com/jaames/flipnote.js/blob/24e772733243f115c3848537efabe6ee9020ad63/src/parsers/KwzParser.ts#L1128)
 
 Get the raw compressed audio data for a given track
 
 #### Parameters
 
-• **trackId**: [`FlipnoteAudioTrack`](/api/enumerations/flipnoteaudiotrack/)
+| Parameter | Type |
+| :------ | :------ |
+| `trackId` | [`FlipnoteAudioTrack`](/api/enumerations/flipnoteaudiotrack/) |
 
 #### Returns
 
-[`Uint8Array ↗️`]( https://developer.mozilla.org/docs/Web/JavaScript/Reference/Global_Objects/Uint8Array )
+[`Uint8Array`](https://developer.mozilla.org/docs/Web/JavaScript/Reference/Global_Objects/Uint8Array)
 
 Byte array
 
@@ -1535,25 +1433,25 @@ Byte array
 
 `BaseParser.getAudioTrackRaw`
 
-#### Source
-
-[src/parsers/KwzParser.ts:1097](https://github.com/jaames/flipnote.js/blob/afe27e228e29d19d2dff33dfb324ba35dc913507/src/parsers/KwzParser.ts#L1097)
-
 ***
 
 ### decodeAudioTrack()
 
-> **decodeAudioTrack**(`trackId`): [`Int16Array ↗️`]( https://developer.mozilla.org/docs/Web/JavaScript/Reference/Global_Objects/Int16Array )
+> **decodeAudioTrack**(`trackId`): [`Int16Array`](https://developer.mozilla.org/docs/Web/JavaScript/Reference/Global_Objects/Int16Array)
+
+Defined in: [src/parsers/KwzParser.ts:1192](https://github.com/jaames/flipnote.js/blob/24e772733243f115c3848537efabe6ee9020ad63/src/parsers/KwzParser.ts#L1192)
 
 Get the decoded audio data for a given track, using the track's native samplerate
 
 #### Parameters
 
-• **trackId**: [`FlipnoteAudioTrack`](/api/enumerations/flipnoteaudiotrack/)
+| Parameter | Type |
+| :------ | :------ |
+| `trackId` | [`FlipnoteAudioTrack`](/api/enumerations/flipnoteaudiotrack/) |
 
 #### Returns
 
-[`Int16Array ↗️`]( https://developer.mozilla.org/docs/Web/JavaScript/Reference/Global_Objects/Int16Array )
+[`Int16Array`](https://developer.mozilla.org/docs/Web/JavaScript/Reference/Global_Objects/Int16Array)
 
 Signed 16-bit PCM audio
 
@@ -1561,27 +1459,26 @@ Signed 16-bit PCM audio
 
 `BaseParser.decodeAudioTrack`
 
-#### Source
-
-[src/parsers/KwzParser.ts:1161](https://github.com/jaames/flipnote.js/blob/afe27e228e29d19d2dff33dfb324ba35dc913507/src/parsers/KwzParser.ts#L1161)
-
 ***
 
 ### getAudioTrackPcm()
 
-> **getAudioTrackPcm**(`trackId`, `dstFreq`): [`Int16Array ↗️`]( https://developer.mozilla.org/docs/Web/JavaScript/Reference/Global_Objects/Int16Array )
+> **getAudioTrackPcm**(`trackId`, `dstFreq`): [`Int16Array`](https://developer.mozilla.org/docs/Web/JavaScript/Reference/Global_Objects/Int16Array)
+
+Defined in: [src/parsers/KwzParser.ts:1254](https://github.com/jaames/flipnote.js/blob/24e772733243f115c3848537efabe6ee9020ad63/src/parsers/KwzParser.ts#L1254)
 
 Get the decoded audio data for a given track, using the specified samplerate
 
 #### Parameters
 
-• **trackId**: [`FlipnoteAudioTrack`](/api/enumerations/flipnoteaudiotrack/)
-
-• **dstFreq**: `number`= `undefined`
+| Parameter | Type |
+| :------ | :------ |
+| `trackId` | [`FlipnoteAudioTrack`](/api/enumerations/flipnoteaudiotrack/) |
+| `dstFreq` | `number` |
 
 #### Returns
 
-[`Int16Array ↗️`]( https://developer.mozilla.org/docs/Web/JavaScript/Reference/Global_Objects/Int16Array )
+[`Int16Array`](https://developer.mozilla.org/docs/Web/JavaScript/Reference/Global_Objects/Int16Array)
 
 Signed 16-bit PCM audio
 
@@ -1589,25 +1486,25 @@ Signed 16-bit PCM audio
 
 `BaseParser.getAudioTrackPcm`
 
-#### Source
-
-[src/parsers/KwzParser.ts:1223](https://github.com/jaames/flipnote.js/blob/afe27e228e29d19d2dff33dfb324ba35dc913507/src/parsers/KwzParser.ts#L1223)
-
 ***
 
 ### getAudioMasterPcm()
 
-> **getAudioMasterPcm**(`dstFreq`): [`Int16Array ↗️`]( https://developer.mozilla.org/docs/Web/JavaScript/Reference/Global_Objects/Int16Array )
+> **getAudioMasterPcm**(`dstFreq`): [`Int16Array`](https://developer.mozilla.org/docs/Web/JavaScript/Reference/Global_Objects/Int16Array)
+
+Defined in: [src/parsers/KwzParser.ts:1284](https://github.com/jaames/flipnote.js/blob/24e772733243f115c3848537efabe6ee9020ad63/src/parsers/KwzParser.ts#L1284)
 
 Get the full mixed audio for the Flipnote, using the specified samplerate
 
 #### Parameters
 
-• **dstFreq**: `number`= `undefined`
+| Parameter | Type |
+| :------ | :------ |
+| `dstFreq` | `number` |
 
 #### Returns
 
-[`Int16Array ↗️`]( https://developer.mozilla.org/docs/Web/JavaScript/Reference/Global_Objects/Int16Array )
+[`Int16Array`](https://developer.mozilla.org/docs/Web/JavaScript/Reference/Global_Objects/Int16Array)
 
 Signed 16-bit PCM audio
 
@@ -1615,75 +1512,67 @@ Signed 16-bit PCM audio
 
 `BaseParser.getAudioMasterPcm`
 
-#### Source
-
-[src/parsers/KwzParser.ts:1253](https://github.com/jaames/flipnote.js/blob/afe27e228e29d19d2dff33dfb324ba35dc913507/src/parsers/KwzParser.ts#L1253)
-
 ## Verification
 
 ### getBody()
 
-> **getBody**(): [`Uint8Array ↗️`]( https://developer.mozilla.org/docs/Web/JavaScript/Reference/Global_Objects/Uint8Array )
+> **getBody**(): [`Uint8Array`](https://developer.mozilla.org/docs/Web/JavaScript/Reference/Global_Objects/Uint8Array)
+
+Defined in: [src/parsers/KwzParser.ts:1326](https://github.com/jaames/flipnote.js/blob/24e772733243f115c3848537efabe6ee9020ad63/src/parsers/KwzParser.ts#L1326)
 
 Get the body of the Flipnote - the data that is digested for the signature
 
 #### Returns
 
-[`Uint8Array ↗️`]( https://developer.mozilla.org/docs/Web/JavaScript/Reference/Global_Objects/Uint8Array )
+[`Uint8Array`](https://developer.mozilla.org/docs/Web/JavaScript/Reference/Global_Objects/Uint8Array)
 
 #### Overrides
 
 `BaseParser.getBody`
 
-#### Source
-
-[src/parsers/KwzParser.ts:1295](https://github.com/jaames/flipnote.js/blob/afe27e228e29d19d2dff33dfb324ba35dc913507/src/parsers/KwzParser.ts#L1295)
-
 ***
 
 ### getSignature()
 
-> **getSignature**(): [`Uint8Array ↗️`]( https://developer.mozilla.org/docs/Web/JavaScript/Reference/Global_Objects/Uint8Array )
+> **getSignature**(): [`Uint8Array`](https://developer.mozilla.org/docs/Web/JavaScript/Reference/Global_Objects/Uint8Array)
+
+Defined in: [src/parsers/KwzParser.ts:1335](https://github.com/jaames/flipnote.js/blob/24e772733243f115c3848537efabe6ee9020ad63/src/parsers/KwzParser.ts#L1335)
 
 Get the Flipnote's signature data
 
 #### Returns
 
-[`Uint8Array ↗️`]( https://developer.mozilla.org/docs/Web/JavaScript/Reference/Global_Objects/Uint8Array )
+[`Uint8Array`](https://developer.mozilla.org/docs/Web/JavaScript/Reference/Global_Objects/Uint8Array)
 
 #### Overrides
 
 `BaseParser.getSignature`
 
-#### Source
-
-[src/parsers/KwzParser.ts:1304](https://github.com/jaames/flipnote.js/blob/afe27e228e29d19d2dff33dfb324ba35dc913507/src/parsers/KwzParser.ts#L1304)
-
 ***
 
 ### verify()
 
-> **verify**(): [`Promise ↗️`]( https://developer.mozilla.org/docs/Web/JavaScript/Reference/Global_Objects/Promise )\<`boolean`\>
+> **verify**(): [`Promise`](https://developer.mozilla.org/docs/Web/JavaScript/Reference/Global_Objects/Promise)\<`boolean`\>
+
+Defined in: [src/parsers/KwzParser.ts:1344](https://github.com/jaames/flipnote.js/blob/24e772733243f115c3848537efabe6ee9020ad63/src/parsers/KwzParser.ts#L1344)
 
 Verify whether this Flipnote's signature is valid
 
 #### Returns
 
-[`Promise ↗️`]( https://developer.mozilla.org/docs/Web/JavaScript/Reference/Global_Objects/Promise )\<`boolean`\>
+[`Promise`](https://developer.mozilla.org/docs/Web/JavaScript/Reference/Global_Objects/Promise)\<`boolean`\>
 
 #### Overrides
 
 `BaseParser.verify`
-
-#### Source
-
-[src/parsers/KwzParser.ts:1313](https://github.com/jaames/flipnote.js/blob/afe27e228e29d19d2dff33dfb324ba35dc913507/src/parsers/KwzParser.ts#L1313)
 
 ## Utility
 
 ### toString()
 
 > **toString**(): `string`
+
+Defined in: [src/parsers/BaseParser.ts:295](https://github.com/jaames/flipnote.js/blob/24e772733243f115c3848537efabe6ee9020ad63/src/parsers/BaseParser.ts#L295)
 
 Returns the Flipnote title when casting a parser instance to a string.
 
@@ -1700,15 +1589,13 @@ const str = 'Title: ' + note;
 
 `BaseParser.toString`
 
-#### Source
-
-[src/parsers/BaseParser.ts:295](https://github.com/jaames/flipnote.js/blob/afe27e228e29d19d2dff33dfb324ba35dc913507/src/parsers/BaseParser.ts#L295)
-
 ***
 
-### `[iterator]`()
+### \[iterator\]()
 
-> **[iterator]**(): [`Generator ↗️`]( https://developer.mozilla.org/docs/Web/JavaScript/Reference/Global_Objects/Generator )\<`number`, `void`, `unknown`\>
+> **\[iterator\]**(): [`Generator`](https://developer.mozilla.org/docs/Web/JavaScript/Reference/Global_Objects/Generator)\<`number`, `void`, `unknown`\>
+
+Defined in: [src/parsers/BaseParser.ts:309](https://github.com/jaames/flipnote.js/blob/24e772733243f115c3848537efabe6ee9020ad63/src/parsers/BaseParser.ts#L309)
 
 Allows for frame index iteration when using the parser instance as a for..of iterator.
 
@@ -1720,12 +1607,8 @@ for (const frameIndex of note) {
 
 #### Returns
 
-[`Generator ↗️`]( https://developer.mozilla.org/docs/Web/JavaScript/Reference/Global_Objects/Generator )\<`number`, `void`, `unknown`\>
+[`Generator`](https://developer.mozilla.org/docs/Web/JavaScript/Reference/Global_Objects/Generator)\<`number`, `void`, `unknown`\>
 
 #### Inherited from
 
 `BaseParser.[iterator]`
-
-#### Source
-
-[src/parsers/BaseParser.ts:309](https://github.com/jaames/flipnote.js/blob/afe27e228e29d19d2dff33dfb324ba35dc913507/src/parsers/BaseParser.ts#L309)

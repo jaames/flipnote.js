@@ -7,8 +7,6 @@ title: "Flipnote"
 
 > **Flipnote**: `BaseParser`
 
-Flipnote type. An object with this type is guranteed to implement the FlipnoteParser API.
+Defined in: [src/parsers/Flipnote.ts:13](https://github.com/jaames/flipnote.js/blob/24e772733243f115c3848537efabe6ee9020ad63/src/parsers/Flipnote.ts#L13)
 
-## Source
-
-[src/parsers/Flipnote.ts:13](https://github.com/jaames/flipnote.js/blob/afe27e228e29d19d2dff33dfb324ba35dc913507/src/parsers/Flipnote.ts#L13)
+Flipnote type. An object with this type is guaranteed to implement the BaseParser API.

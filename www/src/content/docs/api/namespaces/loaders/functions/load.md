@@ -5,19 +5,19 @@ prev: false
 title: "load"
 ---
 
-> **load**(`source`): [`Promise ↗️`]( https://developer.mozilla.org/docs/Web/JavaScript/Reference/Global_Objects/Promise )\<[`ArrayBuffer ↗️`]( https://developer.mozilla.org/docs/Web/JavaScript/Reference/Global_Objects/ArrayBuffer )\>
+> **load**(`source`): [`Promise`](https://developer.mozilla.org/docs/Web/JavaScript/Reference/Global_Objects/Promise)\<`ArrayBufferLike`\>
+
+Defined in: [src/loaders/index.ts:19](https://github.com/jaames/flipnote.js/blob/24e772733243f115c3848537efabe6ee9020ad63/src/loaders/index.ts#L19)
 
 Resolve a source, using the current loaders list.
 Returns an ArrayBuffer containing the data loaded from the source.
 
 ## Parameters
 
-• **source**: `any`
+| Parameter | Type |
+| :------ | :------ |
+| `source` | `any` |
 
 ## Returns
 
-[`Promise ↗️`]( https://developer.mozilla.org/docs/Web/JavaScript/Reference/Global_Objects/Promise )\<[`ArrayBuffer ↗️`]( https://developer.mozilla.org/docs/Web/JavaScript/Reference/Global_Objects/ArrayBuffer )\>
-
-## Source
-
-[src/loaders/index.ts:19](https://github.com/jaames/flipnote.js/blob/afe27e228e29d19d2dff33dfb324ba35dc913507/src/loaders/index.ts#L19)
+[`Promise`](https://developer.mozilla.org/docs/Web/JavaScript/Reference/Global_Objects/Promise)\<`ArrayBufferLike`\>

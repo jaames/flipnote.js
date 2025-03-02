@@ -6,7 +6,7 @@ The web component build of Flipnote.js provides a set of custom HTML tags that c
 
 # Installation
 
-Installing the web component build is very similar to the usual installation steps listed on the {@page Getting Started} page, except we import a different file that has the additional web component code included.
+Installing the web component build is very similar to the usual installation steps listed on the [Get Started](/get-started) page, except we import a different file that has the additional web component code included.
 
 ## From a CDN (web)
 
@@ -23,10 +23,10 @@ Installing the web component build is very similar to the usual installation ste
 ## From NPM (web via a bundler)
 
 ```js
-// with the require() function:
-const flipnote = require('flipnote.js/flipnote.webcomponent.js');
-// or with the es6 import syntax:
+// with the es6 import syntax:
 import flipnote from 'flipnote.js/flipnote.webcomponent.js';
+// or with the older require() function:
+const flipnote = require('flipnote.js/flipnote.webcomponent.js');
 ```
 
 # flipnote-player
@@ -36,7 +36,7 @@ The `<flipnote-player>` element behaves almost exactly like the standard HTML5 [
 Here's what it looks like:
 
 <div>
-<flipnote-player src="../../assets/notes/memoA.kwz"></flipnote-player>
+<flipnote-player src="/notes/memoA.kwz"></flipnote-player>
 </div>
 
 ## Basic usage
@@ -68,7 +68,7 @@ Default:
 ```
 
 <div>
-<flipnote-player src="../../assets/notes/juntso.ppm"></flipnote-player>
+<flipnote-player src="/notes/juntso.ppm"></flipnote-player>
 </div>
 
 `compact`:
@@ -78,7 +78,7 @@ Default:
 ```
 
 <div>
-<flipnote-player controls="compact" src="../../assets/notes/mrjohn.ppm"></flipnote-player>
+<flipnote-player controls="compact" src="/notes/mrjohn.ppm"></flipnote-player>
 </div>
 
 ### `cropBorder`
@@ -99,11 +99,11 @@ Like [`bgmPredictor`](#bgmpredictor), the value of `bgmStepIndex` will provide t
 
 ### `sePredictors`
 
-Like [`bgmPredictor`](#bgmpredictor), the value of `sePredictors` will provide the initial ADPCM predictor values when decoding each sound effect track, as a comma-seperated list in the order of SE1, SE2, SE3 then SE4 (e.g `sePredictors="100,100,100,-100"`). This value can not be updated after a Flipnote is loaded.
+Like [`bgmPredictor`](#bgmpredictor), the value of `sePredictors` will provide the initial ADPCM predictor values when decoding each sound effect track, as a comma-separated list in the order of SE1, SE2, SE3 then SE4 (e.g `sePredictors="100,100,100,-100"`). This value can not be updated after a Flipnote is loaded.
 
 ### `seStepIndices`
 
-Like [`bgmStepIndex`](#bgmstepindex), the value of `seStepIndices` will provide the initial ADPCM step index values when decoding each sound effect track, as a comma-seperated list in the order of SE1, SE2, SE3 then SE4 (e.g `seStepIndices="40,40,40,39"`). This value can not be updated after a Flipnote is loaded.
+Like [`bgmStepIndex`](#bgmstepindex), the value of `seStepIndices` will provide the initial ADPCM step index values when decoding each sound effect track, as a comma-separated list in the order of SE1, SE2, SE3 then SE4 (e.g `seStepIndices="40,40,40,39"`). This value can not be updated after a Flipnote is loaded.
 
 ## Styling
 
@@ -129,7 +129,7 @@ This isn't super fleshed-out, so if you need more styling options for your use-c
 
 ## JavaScript API
 
-The webcomponent implements nearly all of the {@link Player} API functionality, which can be useful for controling the player via JavaScript. To access this, first we need to give the player element a unique identifier that can be targeted from JavaScript, like an `id` attribute:
+The webcomponent implements nearly all of the [Player](/api/classes/player/) API functionality, which can be useful for controlling the player via JavaScript. To access this, first we need to give the player element a unique identifier that can be targeted from JavaScript, like an `id` attribute:
 
 ```html
 <flipnote-player id="player" src="./path/to/some/flipnote.kwz"></flipnote-player>
@@ -183,7 +183,7 @@ var player = document.getElementById('player');
 player.setVolume(1);
 // Unmute audio
 player.setMuted(false);
-// Enable audio qualizer (uses the same EQ settings as Sudomemo)
+// Enable audio equalizer (uses the same EQ settings as Sudomemo)
 player.setAudioEq(true);
 ```
 
@@ -206,7 +206,7 @@ player.addEventListener('play', function() {
 });
 ```
 
-A full list of available events can be found on the {@link Player} API page.
+A full list of available events can be found on the [Player](/api/classes/player/) API page.
 
 ## HTML5 fallback
 
@@ -217,21 +217,21 @@ The player uses [WebGL](https://developer.mozilla.org/en-US/docs/Web/API/WebGL_A
 The `<flipnote-image>` element behaves similarly to the standard HTML [`<img>`](https://developer.mozilla.org/en-US/docs/Web/HTML/Element/img) element, except it can display a frame from any valid Flipnote Studio .ppm or .kwz animation file directly in the browser. It's a lot less taxing on resources than the player element, so you can use it to embed lots of Flipnote frames in the same page if you want.
 
 <div>
-<flipnote-image src="../../assets/notes/memoA.kwz"></flipnote-image>
+<flipnote-image src="/notes/memoA.kwz"></flipnote-image>
 </div>
 
 It also works for Flipnote Gallery World comment files (.kwc)
 
 <div>
-<flipnote-image src="../../assets/notes/comment.kwc"></flipnote-image>
+<flipnote-image src="/notes/comment.kwc"></flipnote-image>
 </div>
 
 And even Flipnote Studio 3D's folder icons (!.ico)
 
 <div>
-<flipnote-image src="../../assets/notes/1.ico"></flipnote-image>
-<flipnote-image src="../../assets/notes/2.ico"></flipnote-image>
-<flipnote-image src="../../assets/notes/3.ico"></flipnote-image>
+<flipnote-image src="/notes/1.ico"></flipnote-image>
+<flipnote-image src="/notes/2.ico"></flipnote-image>
+<flipnote-image src="/notes/3.ico"></flipnote-image>
 </div>
 
 ## Basic usage

@@ -3,17 +3,21 @@ import starlight from '@astrojs/starlight';
 import starlightTypeDoc, { typeDocSidebarGroup } from 'starlight-typedoc';
 
 export default defineConfig({
+  site: 'https://flipnote.js.org',
+  publicDir: './www/public',
+  srcDir: './www/src',
+  outDir: './www/dist',
   integrations: [
     starlight({
       title: 'Flipnote.js',
       logo: {
-        light: './src/assets/logo_light.svg',
-        dark: './src/assets/logo_dark.svg',
+        light: './www/src/assets/logo_light.svg',
+        dark: './www/src/assets/logo_dark.svg',
         replacesTitle: true,
       },
       customCss: [
         // Relative path to your custom CSS file
-        './src/styles/theme.css',
+        './www/src/styles/theme.css',
       ],
       head: [
         {
@@ -39,32 +43,79 @@ export default defineConfig({
         {
           label: 'Links',
           items: [
-            { label: 'GitHub', link: 'https://github.com/jaames/flipnote.js' },
-            { label: 'Flipnote Studio Docs', link: 'https://github.com/Flipnote-Collective/flipnote-studio-docs/wiki' },
-            { label: 'Flipnote Studio 3D Docs', link: 'https://github.com/Flipnote-Collective/flipnote-studio-3d-docs/wiki' },
+            {
+              label: 'GitHub', 
+              link: 'https://github.com/jaames/flipnote.js'
+            },
+            {
+              label: 'Flipnote Player',
+              link: 'https://flipnote.rakujira.jp',
+              attrs: {
+                target: '_blank'
+              },
+            },
+            {
+              label: 'Flipnote Studio Docs',
+              link: 'https://github.com/Flipnote-Collective/flipnote-studio-docs/wiki',
+              attrs: {
+                target: '_blank'
+              },
+            },
+            {
+              label: 'Flipnote Studio 3D Docs',
+              link: 'https://github.com/Flipnote-Collective/flipnote-studio-3d-docs/wiki',
+              attrs: {
+                target: '_blank'
+              },
+            },
           ],
         },
         {
           label: 'Follow me',
           items: [
-            { label: 'Twitter', link: 'https://twitter.com/rkgkjr' },
-            { label: 'Bluesky', link: 'https://bsky.app/profile/jaames.co.uk' },
-            { label: 'Mastodon', link: 'https://mastodon.gamedev.place/@jaames' },
+            {
+              label: 'Website',
+              link: 'https://jamesdaniel.dev',
+              attrs: {
+                target: '_blank'
+              }
+            },
+            {
+              label: 'GitHub',
+              link: 'https://github.com/jaames',
+              attrs: {
+                target: '_blank'
+              }
+            },
+            {
+              label: 'Bluesky',
+              link: 'https://bsky.app/profile/jaames.co.uk',
+              attrs: {
+                target: '_blank'
+              }
+            },
+            // {
+            //   label: 'Mastodon',
+            //   link: 'https://mastodon.gamedev.place/@jaames',
+            //   attrs: {
+            //     target: '_blank'
+            //   }
+            // },
           ],
         },
       ],
       plugins: [
         starlightTypeDoc({
-          tsconfig: '../tsconfig.json',
+          tsconfig: './tsconfig.json',
           entryPoints: [
-            '../src/flipnote.webcomponent.ts',
+            './src/flipnote.webcomponent.ts',
           ],
+          output: 'api',
           // watch: true,
           sidebar: {
             collapsed: true,
             label: 'API (auto-generated)',
           },
-          output: 'api',
           typeDoc: {
             watch: true,
             plugin: ['typedoc-plugin-mdn-links'],
@@ -106,6 +157,21 @@ export default defineConfig({
               '*'
             ],
             defaultCategory: 'Other',
+            // https://typedoc-plugin-markdown.org/docs/options/display-options#tablecolumnsettings
+            parametersFormat: 'table',
+            enumMembersFormat: 'table',
+            interfacePropertiesFormat: 'table',
+            propertyMembersFormat: 'table',
+            typeDeclarationVisibility: 'compact',
+            tableColumnSettings: {
+              hideDefaults: false,
+              hideInherited: false,
+              hideModifiers: false,
+              hideOverrides: false,
+              hideSources: true,
+              hideValues: false,
+              leftAlignHeaders: true
+            }
           }
         }),
       ],

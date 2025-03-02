@@ -37,7 +37,7 @@ title: "flipnote.js"
 ## Functions
 
 - [parse](/api/functions/parse/)
-- [parseSource](/api/functions/parsesource/)
+- [~~parseSource~~](/api/functions/parsesource/)
 
 ## Interfaces
 

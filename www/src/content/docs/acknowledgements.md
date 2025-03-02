@@ -28,7 +28,7 @@ This wouldn't have been possible without the many rad people who have contribute
 - **[Nintendo](https://www.nintendo.com/)** - for creating Flipnote Studio.
 - **[Hatena](http://www.hatena.ne.jp/)** - for creating Flipnote Hatena, the now-defunct online service for sharing Flipnote Studio creations.
 
-* It's not mandatory, but if you use this library in your own projects, please consider adding this list of credits somewhere!
+It's not mandatory, but if you use this library in your own projects, please consider adding this list of credits somewhere!
 
 ### References
 

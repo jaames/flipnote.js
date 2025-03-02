@@ -840,56 +840,6 @@ function isWebGL2(gl) {
   return !!gl.texStorage2D;
 }
 
-// NOTE: Chrome supports 2D canvas in a Worker (behind flag as of v64 but
-//       not only does Firefox NOT support it but Firefox freezes immediately
-//       if you try to create one instead of just returning null and continuing.
-//  : (global.OffscreenCanvas && (new global.OffscreenCanvas(1, 1)).getContext("2d"));  // OffscreenCanvas may not support 2d
-
-// NOTE: We can maybe remove some of the need for the 2d canvas. In WebGL2
-// we can use the various unpack settings. Otherwise we could try using
-// the ability of an ImageBitmap to be cut. Unfortunately cutting an ImageBitmap
-// is async and the current TWGL code expects a non-Async result though that
-// might not be a problem. ImageBitmap though is not available in Edge or Safari
-// as of 2018-01-02
-
-/* PixelFormat */
-const ALPHA                          = 0x1906;
-const RGB                            = 0x1907;
-const RGBA$1                           = 0x1908;
-const LUMINANCE                      = 0x1909;
-const LUMINANCE_ALPHA                = 0x190A;
-const DEPTH_COMPONENT$1                = 0x1902;
-const DEPTH_STENCIL$1                  = 0x84F9;
-
-const RG                           = 0x8227;
-const RG_INTEGER                   = 0x8228;
-const RED                          = 0x1903;
-const RED_INTEGER                  = 0x8D94;
-const RGB_INTEGER                  = 0x8D98;
-const RGBA_INTEGER                 = 0x8D99;
-
-const formatInfo = {};
-{
-  // NOTE: this is named `numColorComponents` vs `numComponents` so we can let Uglify mangle
-  // the name.
-  const f = formatInfo;
-  f[ALPHA]           = { numColorComponents: 1, };
-  f[LUMINANCE]       = { numColorComponents: 1, };
-  f[LUMINANCE_ALPHA] = { numColorComponents: 2, };
-  f[RGB]             = { numColorComponents: 3, };
-  f[RGBA$1]            = { numColorComponents: 4, };
-  f[RED]             = { numColorComponents: 1, };
-  f[RED_INTEGER]     = { numColorComponents: 1, };
-  f[RG]              = { numColorComponents: 2, };
-  f[RG_INTEGER]      = { numColorComponents: 2, };
-  f[RGB]             = { numColorComponents: 3, };
-  f[RGB_INTEGER]     = { numColorComponents: 3, };
-  f[RGBA$1]            = { numColorComponents: 4, };
-  f[RGBA_INTEGER]    = { numColorComponents: 4, };
-  f[DEPTH_COMPONENT$1] = { numColorComponents: 1, };
-  f[DEPTH_STENCIL$1]   = { numColorComponents: 2, };
-}
-
 const TEXTURE0                       = 0x84c0;
 
 const ARRAY_BUFFER                   = 0x8892;

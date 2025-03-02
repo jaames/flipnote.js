@@ -5,274 +5,38 @@ prev: false
 title: "PlayerEvent"
 ---
 
+Defined in: [src/player/PlayerEvent.ts:4](https://github.com/jaames/flipnote.js/blob/24e772733243f115c3848537efabe6ee9020ad63/src/player/PlayerEvent.ts#L4)
+
 Player event types
 
 ## Enumeration Members
 
-### \_\_Any
-
-> **\_\_Any**: `"any"`
-
-#### Source
-
-[src/player/PlayerEvent.ts:5](https://github.com/jaames/flipnote.js/blob/afe27e228e29d19d2dff33dfb324ba35dc913507/src/player/PlayerEvent.ts#L5)
-
-***
-
-### Play
-
-> **Play**: `"play"`
-
-#### Source
-
-[src/player/PlayerEvent.ts:6](https://github.com/jaames/flipnote.js/blob/afe27e228e29d19d2dff33dfb324ba35dc913507/src/player/PlayerEvent.ts#L6)
-
-***
-
-### Pause
-
-> **Pause**: `"pause"`
-
-#### Source
-
-[src/player/PlayerEvent.ts:7](https://github.com/jaames/flipnote.js/blob/afe27e228e29d19d2dff33dfb324ba35dc913507/src/player/PlayerEvent.ts#L7)
-
-***
-
-### CanPlay
-
-> **CanPlay**: `"canplay"`
-
-#### Source
-
-[src/player/PlayerEvent.ts:8](https://github.com/jaames/flipnote.js/blob/afe27e228e29d19d2dff33dfb324ba35dc913507/src/player/PlayerEvent.ts#L8)
-
-***
-
-### CanPlayThrough
-
-> **CanPlayThrough**: `"canplaythrough"`
-
-#### Source
-
-[src/player/PlayerEvent.ts:9](https://github.com/jaames/flipnote.js/blob/afe27e228e29d19d2dff33dfb324ba35dc913507/src/player/PlayerEvent.ts#L9)
-
-***
-
-### SeekStart
-
-> **SeekStart**: `"seeking"`
-
-#### Source
-
-[src/player/PlayerEvent.ts:10](https://github.com/jaames/flipnote.js/blob/afe27e228e29d19d2dff33dfb324ba35dc913507/src/player/PlayerEvent.ts#L10)
-
-***
-
-### SeekEnd
-
-> **SeekEnd**: `"seeked"`
-
-#### Source
-
-[src/player/PlayerEvent.ts:11](https://github.com/jaames/flipnote.js/blob/afe27e228e29d19d2dff33dfb324ba35dc913507/src/player/PlayerEvent.ts#L11)
-
-***
-
-### Duration
-
-> **Duration**: `"durationchange"`
-
-#### Source
-
-[src/player/PlayerEvent.ts:12](https://github.com/jaames/flipnote.js/blob/afe27e228e29d19d2dff33dfb324ba35dc913507/src/player/PlayerEvent.ts#L12)
-
-***
-
-### Loop
-
-> **Loop**: `"loop"`
-
-#### Source
-
-[src/player/PlayerEvent.ts:13](https://github.com/jaames/flipnote.js/blob/afe27e228e29d19d2dff33dfb324ba35dc913507/src/player/PlayerEvent.ts#L13)
-
-***
-
-### Ended
-
-> **Ended**: `"ended"`
-
-#### Source
-
-[src/player/PlayerEvent.ts:14](https://github.com/jaames/flipnote.js/blob/afe27e228e29d19d2dff33dfb324ba35dc913507/src/player/PlayerEvent.ts#L14)
-
-***
-
-### VolumeChange
-
-> **VolumeChange**: `"volumechange"`
-
-#### Source
-
-[src/player/PlayerEvent.ts:15](https://github.com/jaames/flipnote.js/blob/afe27e228e29d19d2dff33dfb324ba35dc913507/src/player/PlayerEvent.ts#L15)
-
-***
-
-### Progress
-
-> **Progress**: `"progress"`
-
-#### Source
-
-[src/player/PlayerEvent.ts:16](https://github.com/jaames/flipnote.js/blob/afe27e228e29d19d2dff33dfb324ba35dc913507/src/player/PlayerEvent.ts#L16)
-
-***
-
-### TimeUpdate
-
-> **TimeUpdate**: `"timeupdate"`
-
-#### Source
-
-[src/player/PlayerEvent.ts:17](https://github.com/jaames/flipnote.js/blob/afe27e228e29d19d2dff33dfb324ba35dc913507/src/player/PlayerEvent.ts#L17)
-
-***
-
-### FrameUpdate
-
-> **FrameUpdate**: `"frameupdate"`
-
-#### Source
-
-[src/player/PlayerEvent.ts:18](https://github.com/jaames/flipnote.js/blob/afe27e228e29d19d2dff33dfb324ba35dc913507/src/player/PlayerEvent.ts#L18)
-
-***
-
-### FrameNext
-
-> **FrameNext**: `"framenext"`
-
-#### Source
-
-[src/player/PlayerEvent.ts:19](https://github.com/jaames/flipnote.js/blob/afe27e228e29d19d2dff33dfb324ba35dc913507/src/player/PlayerEvent.ts#L19)
-
-***
-
-### FramePrev
-
-> **FramePrev**: `"frameprev"`
-
-#### Source
-
-[src/player/PlayerEvent.ts:20](https://github.com/jaames/flipnote.js/blob/afe27e228e29d19d2dff33dfb324ba35dc913507/src/player/PlayerEvent.ts#L20)
-
-***
-
-### FrameFirst
-
-> **FrameFirst**: `"framefirst"`
-
-#### Source
-
-[src/player/PlayerEvent.ts:21](https://github.com/jaames/flipnote.js/blob/afe27e228e29d19d2dff33dfb324ba35dc913507/src/player/PlayerEvent.ts#L21)
-
-***
-
-### FrameLast
-
-> **FrameLast**: `"framelast"`
-
-#### Source
-
-[src/player/PlayerEvent.ts:22](https://github.com/jaames/flipnote.js/blob/afe27e228e29d19d2dff33dfb324ba35dc913507/src/player/PlayerEvent.ts#L22)
-
-***
-
-### Ready
-
-> **Ready**: `"ready"`
-
-#### Source
-
-[src/player/PlayerEvent.ts:23](https://github.com/jaames/flipnote.js/blob/afe27e228e29d19d2dff33dfb324ba35dc913507/src/player/PlayerEvent.ts#L23)
-
-***
-
-### Load
-
-> **Load**: `"load"`
-
-#### Source
-
-[src/player/PlayerEvent.ts:24](https://github.com/jaames/flipnote.js/blob/afe27e228e29d19d2dff33dfb324ba35dc913507/src/player/PlayerEvent.ts#L24)
-
-***
-
-### LoadStart
-
-> **LoadStart**: `"loadstart"`
-
-#### Source
-
-[src/player/PlayerEvent.ts:25](https://github.com/jaames/flipnote.js/blob/afe27e228e29d19d2dff33dfb324ba35dc913507/src/player/PlayerEvent.ts#L25)
-
-***
-
-### LoadedData
-
-> **LoadedData**: `"loadeddata"`
-
-#### Source
-
-[src/player/PlayerEvent.ts:26](https://github.com/jaames/flipnote.js/blob/afe27e228e29d19d2dff33dfb324ba35dc913507/src/player/PlayerEvent.ts#L26)
-
-***
-
-### LoadedMeta
-
-> **LoadedMeta**: `"loadedmetadata"`
-
-#### Source
-
-[src/player/PlayerEvent.ts:27](https://github.com/jaames/flipnote.js/blob/afe27e228e29d19d2dff33dfb324ba35dc913507/src/player/PlayerEvent.ts#L27)
-
-***
-
-### Emptied
-
-> **Emptied**: `"emptied"`
-
-#### Source
-
-[src/player/PlayerEvent.ts:28](https://github.com/jaames/flipnote.js/blob/afe27e228e29d19d2dff33dfb324ba35dc913507/src/player/PlayerEvent.ts#L28)
-
-***
-
-### Close
-
-> **Close**: `"close"`
-
-#### Source
-
-[src/player/PlayerEvent.ts:29](https://github.com/jaames/flipnote.js/blob/afe27e228e29d19d2dff33dfb324ba35dc913507/src/player/PlayerEvent.ts#L29)
-
-***
-
-### Error
-
-> **Error**: `"error"`
-
-#### Source
-
-[src/player/PlayerEvent.ts:30](https://github.com/jaames/flipnote.js/blob/afe27e228e29d19d2dff33dfb324ba35dc913507/src/player/PlayerEvent.ts#L30)
-
-***
-
-### Destroy
-
-> **Destroy**: `"destroy"`
-
-#### Source
-
-[src/player/PlayerEvent.ts:31](https://github.com/jaames/flipnote.js/blob/afe27e228e29d19d2dff33dfb324ba35dc913507/src/player/PlayerEvent.ts#L31)
+| Enumeration Member | Value |
+| :------ | :------ |
+| <a id="__any"></a> `__Any` | `"any"` |
+| <a id="play"></a> `Play` | `"play"` |
+| <a id="pause"></a> `Pause` | `"pause"` |
+| <a id="canplay"></a> `CanPlay` | `"canplay"` |
+| <a id="canplaythrough"></a> `CanPlayThrough` | `"canplaythrough"` |
+| <a id="seekstart"></a> `SeekStart` | `"seeking"` |
+| <a id="seekend"></a> `SeekEnd` | `"seeked"` |
+| <a id="duration"></a> `Duration` | `"durationchange"` |
+| <a id="loop"></a> `Loop` | `"loop"` |
+| <a id="ended"></a> `Ended` | `"ended"` |
+| <a id="volumechange"></a> `VolumeChange` | `"volumechange"` |
+| <a id="progress"></a> `Progress` | `"progress"` |
+| <a id="timeupdate"></a> `TimeUpdate` | `"timeupdate"` |
+| <a id="frameupdate"></a> `FrameUpdate` | `"frameupdate"` |
+| <a id="framenext"></a> `FrameNext` | `"framenext"` |
+| <a id="frameprev"></a> `FramePrev` | `"frameprev"` |
+| <a id="framefirst"></a> `FrameFirst` | `"framefirst"` |
+| <a id="framelast"></a> `FrameLast` | `"framelast"` |
+| <a id="ready"></a> `Ready` | `"ready"` |
+| <a id="load"></a> `Load` | `"load"` |
+| <a id="loadstart"></a> `LoadStart` | `"loadstart"` |
+| <a id="loadeddata"></a> `LoadedData` | `"loadeddata"` |
+| <a id="loadedmeta"></a> `LoadedMeta` | `"loadedmetadata"` |
+| <a id="emptied"></a> `Emptied` | `"emptied"` |
+| <a id="close"></a> `Close` | `"close"` |
+| <a id="error"></a> `Error` | `"error"` |
+| <a id="destroy"></a> `Destroy` | `"destroy"` |

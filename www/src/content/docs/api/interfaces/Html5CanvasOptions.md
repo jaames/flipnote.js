@@ -5,28 +5,13 @@ prev: false
 title: "Html5CanvasOptions"
 ---
 
-Setup options for [Html5Canvas](../../../../../../../api/classes/html5canvas)
+Defined in: [src/renderers/Html5Canvas.ts:19](https://github.com/jaames/flipnote.js/blob/24e772733243f115c3848537efabe6ee9020ad63/src/renderers/Html5Canvas.ts#L19)
+
+Setup options for [Html5Canvas](../../../../../../api/classes/html5canvas)
 
 ## Properties
 
-### useDpi
-
-> **useDpi**: `boolean`
-
-Use DPI scaling
-
-#### Source
-
-[src/renderers/Html5Canvas.ts:23](https://github.com/jaames/flipnote.js/blob/afe27e228e29d19d2dff33dfb324ba35dc913507/src/renderers/Html5Canvas.ts#L23)
-
-***
-
-### useSmoothing
-
-> **useSmoothing**: `boolean`
-
-Use image smoothing
-
-#### Source
-
-[src/renderers/Html5Canvas.ts:27](https://github.com/jaames/flipnote.js/blob/afe27e228e29d19d2dff33dfb324ba35dc913507/src/renderers/Html5Canvas.ts#L27)
+| Property | Type | Description |
+| :------ | :------ | :------ |
+| <a id="usedpi"></a> `useDpi` | `boolean` | Use DPI scaling |
+| <a id="usesmoothing"></a> `useSmoothing` | `boolean` | Use image smoothing |

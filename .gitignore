@@ -4,8 +4,9 @@
 dist/demo
 demo/samples
 test/samples
-# ts temp stuff
+# temp stuff
 types
+.astro
 # extraneous types
 dist/esm/types
 dist/cjs/types

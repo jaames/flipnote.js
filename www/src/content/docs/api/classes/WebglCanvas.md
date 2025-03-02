@@ -5,6 +5,8 @@ prev: false
 title: "WebglCanvas"
 ---
 
+Defined in: [src/renderers/WebGlCanvas.ts:67](https://github.com/jaames/flipnote.js/blob/24e772733243f115c3848537efabe6ee9020ad63/src/renderers/WebGlCanvas.ts#L67)
+
 Flipnote renderer for the [WebGL](https://developer.mozilla.org/en-US/docs/Web/API/WebGL_API) API.
 
 Only available in browser contexts.
@@ -19,31 +21,22 @@ Only available in browser contexts.
 
 > **new WebglCanvas**(`parent`, `width`, `height`, `options`): [`WebglCanvas`](/api/classes/webglcanvas/)
 
+Defined in: [src/renderers/WebGlCanvas.ts:184](https://github.com/jaames/flipnote.js/blob/24e772733243f115c3848537efabe6ee9020ad63/src/renderers/WebGlCanvas.ts#L184)
+
 Creates a new WebGlCanvas instance
 
 #### Parameters
 
-• **parent**: [`Element ↗️`]( https://developer.mozilla.org/docs/Web/API/Element )
-
-• **width**: `number`= `640`
-
-Canvas width in CSS pixels
-
-• **height**: `number`= `480`
-
-Canvas height in CSS pixels
-
-The ratio between `width` and `height` should be 3:4 for best results
-
-• **options**: [`Partial ↗️`]( https://www.typescriptlang.org/docs/handbook/utility-types.html#partialtype )\<[`WebglCanvasOptions`](/api/interfaces/webglcanvasoptions/)\>= `{}`
+| Parameter | Type | Default value | Description |
+| :------ | :------ | :------ | :------ |
+| `parent` | [`Element`](https://developer.mozilla.org/docs/Web/API/Element) | `undefined` | - |
+| `width` | `number` | `640` | Canvas width in CSS pixels |
+| `height` | `number` | `480` | Canvas height in CSS pixels The ratio between `width` and `height` should be 3:4 for best results |
+| `options` | [`Partial`](https://www.typescriptlang.org/docs/handbook/utility-types.html#partialtype)\<[`WebglCanvasOptions`](/api/interfaces/webglcanvasoptions/)\> | `{}` | - |
 
 #### Returns
 
 [`WebglCanvas`](/api/classes/webglcanvas/)
-
-#### Source
-
-[src/renderers/WebGlCanvas.ts:184](https://github.com/jaames/flipnote.js/blob/afe27e228e29d19d2dff33dfb324ba35dc913507/src/renderers/WebGlCanvas.ts#L184)
 
 ## Properties
 
@@ -51,9 +44,7 @@ The ratio between `width` and `height` should be 3:4 for best results
 
 > `static` **defaultOptions**: [`WebglCanvasOptions`](/api/interfaces/webglcanvasoptions/)
 
-#### Source
-
-[src/renderers/WebGlCanvas.ts:69](https://github.com/jaames/flipnote.js/blob/afe27e228e29d19d2dff33dfb324ba35dc913507/src/renderers/WebGlCanvas.ts#L69)
+Defined in: [src/renderers/WebGlCanvas.ts:69](https://github.com/jaames/flipnote.js/blob/24e772733243f115c3848537efabe6ee9020ad63/src/renderers/WebGlCanvas.ts#L69)
 
 ***
 
@@ -61,39 +52,33 @@ The ratio between `width` and `height` should be 3:4 for best results
 
 > **note**: `BaseParser`
 
+Defined in: [src/renderers/WebGlCanvas.ts:92](https://github.com/jaames/flipnote.js/blob/24e772733243f115c3848537efabe6ee9020ad63/src/renderers/WebGlCanvas.ts#L92)
+
 Flipnote parser object for the Flipnote being played.
 
 #### Implementation of
 
 `CanvasInterface.note`
 
-#### Source
-
-[src/renderers/WebGlCanvas.ts:92](https://github.com/jaames/flipnote.js/blob/afe27e228e29d19d2dff33dfb324ba35dc913507/src/renderers/WebGlCanvas.ts#L92)
-
 ***
 
 ### canvas
 
-> **canvas**: [`HTMLCanvasElement ↗️`]( https://developer.mozilla.org/docs/Web/API/HTMLCanvasElement )
+> **canvas**: [`HTMLCanvasElement`](https://developer.mozilla.org/docs/Web/API/HTMLCanvasElement)
+
+Defined in: [src/renderers/WebGlCanvas.ts:96](https://github.com/jaames/flipnote.js/blob/24e772733243f115c3848537efabe6ee9020ad63/src/renderers/WebGlCanvas.ts#L96)
 
 Canvas HTML element being used as a rendering surface.
-
-#### Source
-
-[src/renderers/WebGlCanvas.ts:96](https://github.com/jaames/flipnote.js/blob/afe27e228e29d19d2dff33dfb324ba35dc913507/src/renderers/WebGlCanvas.ts#L96)
 
 ***
 
 ### gl
 
-> **gl**: [`WebGLRenderingContext ↗️`]( https://developer.mozilla.org/docs/Web/API/WebGLRenderingContext )
+> **gl**: [`WebGLRenderingContext`](https://developer.mozilla.org/docs/Web/API/WebGLRenderingContext)
+
+Defined in: [src/renderers/WebGlCanvas.ts:100](https://github.com/jaames/flipnote.js/blob/24e772733243f115c3848537efabe6ee9020ad63/src/renderers/WebGlCanvas.ts#L100)
 
 Rendering context - see [https://developer.mozilla.org/en-US/docs/Web/API/WebGLRenderingContext](https://developer.mozilla.org/en-US/docs/Web/API/WebGLRenderingContext)
-
-#### Source
-
-[src/renderers/WebGlCanvas.ts:100](https://github.com/jaames/flipnote.js/blob/afe27e228e29d19d2dff33dfb324ba35dc913507/src/renderers/WebGlCanvas.ts#L100)
 
 ***
 
@@ -101,15 +86,13 @@ Rendering context - see [https://developer.mozilla.org/en-US/docs/Web/API/WebGLR
 
 > **width**: `number`
 
+Defined in: [src/renderers/WebGlCanvas.ts:104](https://github.com/jaames/flipnote.js/blob/24e772733243f115c3848537efabe6ee9020ad63/src/renderers/WebGlCanvas.ts#L104)
+
 View width (CSS pixels)
 
 #### Implementation of
 
 `CanvasInterface.width`
-
-#### Source
-
-[src/renderers/WebGlCanvas.ts:104](https://github.com/jaames/flipnote.js/blob/afe27e228e29d19d2dff33dfb324ba35dc913507/src/renderers/WebGlCanvas.ts#L104)
 
 ***
 
@@ -117,15 +100,13 @@ View width (CSS pixels)
 
 > **height**: `number`
 
+Defined in: [src/renderers/WebGlCanvas.ts:108](https://github.com/jaames/flipnote.js/blob/24e772733243f115c3848537efabe6ee9020ad63/src/renderers/WebGlCanvas.ts#L108)
+
 View height (CSS pixels)
 
 #### Implementation of
 
 `CanvasInterface.height`
-
-#### Source
-
-[src/renderers/WebGlCanvas.ts:108](https://github.com/jaames/flipnote.js/blob/afe27e228e29d19d2dff33dfb324ba35dc913507/src/renderers/WebGlCanvas.ts#L108)
 
 ***
 
@@ -133,15 +114,13 @@ View height (CSS pixels)
 
 > **srcWidth**: `number`
 
+Defined in: [src/renderers/WebGlCanvas.ts:112](https://github.com/jaames/flipnote.js/blob/24e772733243f115c3848537efabe6ee9020ad63/src/renderers/WebGlCanvas.ts#L112)
+
 Flipnote width (pixels).
 
 #### Implementation of
 
 `CanvasInterface.srcWidth`
-
-#### Source
-
-[src/renderers/WebGlCanvas.ts:112](https://github.com/jaames/flipnote.js/blob/afe27e228e29d19d2dff33dfb324ba35dc913507/src/renderers/WebGlCanvas.ts#L112)
 
 ***
 
@@ -149,21 +128,21 @@ Flipnote width (pixels).
 
 > **srcHeight**: `number`
 
+Defined in: [src/renderers/WebGlCanvas.ts:116](https://github.com/jaames/flipnote.js/blob/24e772733243f115c3848537efabe6ee9020ad63/src/renderers/WebGlCanvas.ts#L116)
+
 Flipnote height (pixels).
 
 #### Implementation of
 
 `CanvasInterface.srcHeight`
 
-#### Source
-
-[src/renderers/WebGlCanvas.ts:116](https://github.com/jaames/flipnote.js/blob/afe27e228e29d19d2dff33dfb324ba35dc913507/src/renderers/WebGlCanvas.ts#L116)
-
 ***
 
 ### dstWidth
 
 > **dstWidth**: `number`
+
+Defined in: [src/renderers/WebGlCanvas.ts:121](https://github.com/jaames/flipnote.js/blob/24e772733243f115c3848537efabe6ee9020ad63/src/renderers/WebGlCanvas.ts#L121)
 
 Backing canvas width (real pixels)
 Note that this factors in device pixel ratio, so it may not reflect the size of the canvas in CSS pixels
@@ -172,15 +151,13 @@ Note that this factors in device pixel ratio, so it may not reflect the size of 
 
 `CanvasInterface.dstWidth`
 
-#### Source
-
-[src/renderers/WebGlCanvas.ts:121](https://github.com/jaames/flipnote.js/blob/afe27e228e29d19d2dff33dfb324ba35dc913507/src/renderers/WebGlCanvas.ts#L121)
-
 ***
 
 ### dstHeight
 
 > **dstHeight**: `number`
+
+Defined in: [src/renderers/WebGlCanvas.ts:126](https://github.com/jaames/flipnote.js/blob/24e772733243f115c3848537efabe6ee9020ad63/src/renderers/WebGlCanvas.ts#L126)
 
 Backing canvas height (real pixels)
 Note that this factors in device pixel ratio, so it may not reflect the size of the canvas in CSS pixels
@@ -189,23 +166,17 @@ Note that this factors in device pixel ratio, so it may not reflect the size of 
 
 `CanvasInterface.dstHeight`
 
-#### Source
-
-[src/renderers/WebGlCanvas.ts:126](https://github.com/jaames/flipnote.js/blob/afe27e228e29d19d2dff33dfb324ba35dc913507/src/renderers/WebGlCanvas.ts#L126)
-
 ***
 
 ### frameIndex
 
 > **frameIndex**: `number`
 
+Defined in: [src/renderers/WebGlCanvas.ts:130](https://github.com/jaames/flipnote.js/blob/24e772733243f115c3848537efabe6ee9020ad63/src/renderers/WebGlCanvas.ts#L130)
+
 #### Implementation of
 
 `CanvasInterface.frameIndex`
-
-#### Source
-
-[src/renderers/WebGlCanvas.ts:130](https://github.com/jaames/flipnote.js/blob/afe27e228e29d19d2dff33dfb324ba35dc913507/src/renderers/WebGlCanvas.ts#L130)
 
 ***
 
@@ -213,13 +184,11 @@ Note that this factors in device pixel ratio, so it may not reflect the size of 
 
 > **supportedStereoscopeModes**: [`CanvasStereoscopicMode`](/api/enumerations/canvasstereoscopicmode/)[]
 
+Defined in: [src/renderers/WebGlCanvas.ts:134](https://github.com/jaames/flipnote.js/blob/24e772733243f115c3848537efabe6ee9020ad63/src/renderers/WebGlCanvas.ts#L134)
+
 #### Implementation of
 
 `CanvasInterface.supportedStereoscopeModes`
-
-#### Source
-
-[src/renderers/WebGlCanvas.ts:134](https://github.com/jaames/flipnote.js/blob/afe27e228e29d19d2dff33dfb324ba35dc913507/src/renderers/WebGlCanvas.ts#L134)
 
 ***
 
@@ -227,13 +196,11 @@ Note that this factors in device pixel ratio, so it may not reflect the size of 
 
 > **stereoscopeMode**: [`CanvasStereoscopicMode`](/api/enumerations/canvasstereoscopicmode/) = `CanvasStereoscopicMode.None`
 
+Defined in: [src/renderers/WebGlCanvas.ts:142](https://github.com/jaames/flipnote.js/blob/24e772733243f115c3848537efabe6ee9020ad63/src/renderers/WebGlCanvas.ts#L142)
+
 #### Implementation of
 
 `CanvasInterface.stereoscopeMode`
-
-#### Source
-
-[src/renderers/WebGlCanvas.ts:142](https://github.com/jaames/flipnote.js/blob/afe27e228e29d19d2dff33dfb324ba35dc913507/src/renderers/WebGlCanvas.ts#L142)
 
 ***
 
@@ -241,13 +208,11 @@ Note that this factors in device pixel ratio, so it may not reflect the size of 
 
 > **stereoscopeStrength**: `number` = `0`
 
+Defined in: [src/renderers/WebGlCanvas.ts:146](https://github.com/jaames/flipnote.js/blob/24e772733243f115c3848537efabe6ee9020ad63/src/renderers/WebGlCanvas.ts#L146)
+
 #### Implementation of
 
 `CanvasInterface.stereoscopeStrength`
-
-#### Source
-
-[src/renderers/WebGlCanvas.ts:146](https://github.com/jaames/flipnote.js/blob/afe27e228e29d19d2dff33dfb324ba35dc913507/src/renderers/WebGlCanvas.ts#L146)
 
 ## Methods
 
@@ -255,13 +220,11 @@ Note that this factors in device pixel ratio, so it may not reflect the size of 
 
 > `static` **isSupported**(): `boolean`
 
+Defined in: [src/renderers/WebGlCanvas.ts:75](https://github.com/jaames/flipnote.js/blob/24e772733243f115c3848537efabe6ee9020ad63/src/renderers/WebGlCanvas.ts#L75)
+
 #### Returns
 
 `boolean`
-
-#### Source
-
-[src/renderers/WebGlCanvas.ts:75](https://github.com/jaames/flipnote.js/blob/afe27e228e29d19d2dff33dfb324ba35dc913507/src/renderers/WebGlCanvas.ts#L75)
 
 ***
 
@@ -269,19 +232,16 @@ Note that this factors in device pixel ratio, so it may not reflect the size of 
 
 > **setCanvasSize**(`width`, `height`): `void`
 
+Defined in: [src/renderers/WebGlCanvas.ts:208](https://github.com/jaames/flipnote.js/blob/24e772733243f115c3848537efabe6ee9020ad63/src/renderers/WebGlCanvas.ts#L208)
+
 Resize the canvas surface
 
 #### Parameters
 
-• **width**: `number`
-
-New canvas width, in CSS pixels
-
-• **height**: `number`
-
-New canvas height, in CSS pixels
-
-The ratio between `width` and `height` should be 3:4 for best results
+| Parameter | Type | Description |
+| :------ | :------ | :------ |
+| `width` | `number` | New canvas width, in CSS pixels |
+| `height` | `number` | New canvas height, in CSS pixels The ratio between `width` and `height` should be 3:4 for best results |
 
 #### Returns
 
@@ -291,21 +251,21 @@ The ratio between `width` and `height` should be 3:4 for best results
 
 `CanvasInterface.setCanvasSize`
 
-#### Source
-
-[src/renderers/WebGlCanvas.ts:208](https://github.com/jaames/flipnote.js/blob/afe27e228e29d19d2dff33dfb324ba35dc913507/src/renderers/WebGlCanvas.ts#L208)
-
 ***
 
 ### setNote()
 
 > **setNote**(`note`): `void`
 
+Defined in: [src/renderers/WebGlCanvas.ts:226](https://github.com/jaames/flipnote.js/blob/24e772733243f115c3848537efabe6ee9020ad63/src/renderers/WebGlCanvas.ts#L226)
+
 Sets the note to use for this player
 
 #### Parameters
 
-• **note**: `BaseParser`
+| Parameter | Type |
+| :------ | :------ |
+| `note` | `BaseParser` |
 
 #### Returns
 
@@ -315,23 +275,21 @@ Sets the note to use for this player
 
 `CanvasInterface.setNote`
 
-#### Source
-
-[src/renderers/WebGlCanvas.ts:226](https://github.com/jaames/flipnote.js/blob/afe27e228e29d19d2dff33dfb324ba35dc913507/src/renderers/WebGlCanvas.ts#L226)
-
 ***
 
 ### clear()
 
 > **clear**(`color`?): `void`
 
+Defined in: [src/renderers/WebGlCanvas.ts:246](https://github.com/jaames/flipnote.js/blob/24e772733243f115c3848537efabe6ee9020ad63/src/renderers/WebGlCanvas.ts#L246)
+
 Clear the canvas
 
 #### Parameters
 
-• **color?**: [`number`, `number`, `number`, `number`]
-
-optional RGBA color to use as a background color
+| Parameter | Type | Description |
+| :------ | :------ | :------ |
+| `color`? | \[`number`, `number`, `number`, `number`\] | optional RGBA color to use as a background color |
 
 #### Returns
 
@@ -341,21 +299,21 @@ optional RGBA color to use as a background color
 
 `CanvasInterface.clear`
 
-#### Source
-
-[src/renderers/WebGlCanvas.ts:246](https://github.com/jaames/flipnote.js/blob/afe27e228e29d19d2dff33dfb324ba35dc913507/src/renderers/WebGlCanvas.ts#L246)
-
 ***
 
 ### drawFrame()
 
 > **drawFrame**(`frameIndex`): `void`
 
+Defined in: [src/renderers/WebGlCanvas.ts:259](https://github.com/jaames/flipnote.js/blob/24e772733243f115c3848537efabe6ee9020ad63/src/renderers/WebGlCanvas.ts#L259)
+
 Draw a frame from the currently loaded Flipnote
 
 #### Parameters
 
-• **frameIndex**: `number`
+| Parameter | Type | Description |
+| :------ | :------ | :------ |
+| `frameIndex` | `number` |  |
 
 #### Returns
 
@@ -365,19 +323,19 @@ Draw a frame from the currently loaded Flipnote
 
 `CanvasInterface.drawFrame`
 
-#### Source
-
-[src/renderers/WebGlCanvas.ts:259](https://github.com/jaames/flipnote.js/blob/afe27e228e29d19d2dff33dfb324ba35dc913507/src/renderers/WebGlCanvas.ts#L259)
-
 ***
 
 ### requestStereoScopeMode()
 
 > **requestStereoScopeMode**(`mode`): `void`
 
+Defined in: [src/renderers/WebGlCanvas.ts:283](https://github.com/jaames/flipnote.js/blob/24e772733243f115c3848537efabe6ee9020ad63/src/renderers/WebGlCanvas.ts#L283)
+
 #### Parameters
 
-• **mode**: [`CanvasStereoscopicMode`](/api/enumerations/canvasstereoscopicmode/)
+| Parameter | Type |
+| :------ | :------ |
+| `mode` | [`CanvasStereoscopicMode`](/api/enumerations/canvasstereoscopicmode/) |
 
 #### Returns
 
@@ -387,15 +345,13 @@ Draw a frame from the currently loaded Flipnote
 
 `CanvasInterface.requestStereoScopeMode`
 
-#### Source
-
-[src/renderers/WebGlCanvas.ts:283](https://github.com/jaames/flipnote.js/blob/afe27e228e29d19d2dff33dfb324ba35dc913507/src/renderers/WebGlCanvas.ts#L283)
-
 ***
 
 ### forceUpdate()
 
 > **forceUpdate**(): `void`
+
+Defined in: [src/renderers/WebGlCanvas.ts:291](https://github.com/jaames/flipnote.js/blob/24e772733243f115c3848537efabe6ee9020ad63/src/renderers/WebGlCanvas.ts#L291)
 
 #### Returns
 
@@ -405,15 +361,13 @@ Draw a frame from the currently loaded Flipnote
 
 `CanvasInterface.forceUpdate`
 
-#### Source
-
-[src/renderers/WebGlCanvas.ts:291](https://github.com/jaames/flipnote.js/blob/afe27e228e29d19d2dff33dfb324ba35dc913507/src/renderers/WebGlCanvas.ts#L291)
-
 ***
 
 ### isErrorState()
 
 > **isErrorState**(): `boolean`
+
+Defined in: [src/renderers/WebGlCanvas.ts:299](https://github.com/jaames/flipnote.js/blob/24e772733243f115c3848537efabe6ee9020ad63/src/renderers/WebGlCanvas.ts#L299)
 
 Returns true if the webGL context has returned an error
 
@@ -421,27 +375,22 @@ Returns true if the webGL context has returned an error
 
 `boolean`
 
-#### Source
-
-[src/renderers/WebGlCanvas.ts:299](https://github.com/jaames/flipnote.js/blob/afe27e228e29d19d2dff33dfb324ba35dc913507/src/renderers/WebGlCanvas.ts#L299)
-
 ***
 
 ### getDataUrl()
 
 > **getDataUrl**(`type`?, `quality`?): `string`
 
+Defined in: [src/renderers/WebGlCanvas.ts:310](https://github.com/jaames/flipnote.js/blob/24e772733243f115c3848537efabe6ee9020ad63/src/renderers/WebGlCanvas.ts#L310)
+
 Get the contents of the canvas as a data URL.
 
 #### Parameters
 
-• **type?**: `string`
-
-image mime type (`image/jpeg`, `image/png`, etc)
-
-• **quality?**: `any`
-
-image quality where supported, between 0 and 1
+| Parameter | Type | Description |
+| :------ | :------ | :------ |
+| `type`? | `string` | image mime type (`image/jpeg`, `image/png`, etc) |
+| `quality`? | `any` | image quality where supported, between 0 and 1 |
 
 #### Returns
 
@@ -451,45 +400,38 @@ image quality where supported, between 0 and 1
 
 `CanvasInterface.getDataUrl`
 
-#### Source
-
-[src/renderers/WebGlCanvas.ts:310](https://github.com/jaames/flipnote.js/blob/afe27e228e29d19d2dff33dfb324ba35dc913507/src/renderers/WebGlCanvas.ts#L310)
-
 ***
 
 ### getBlob()
 
-> **getBlob**(`type`?, `quality`?): [`Promise ↗️`]( https://developer.mozilla.org/docs/Web/JavaScript/Reference/Global_Objects/Promise )\<[`Blob ↗️`]( https://developer.mozilla.org/docs/Web/API/Blob )\>
+> **getBlob**(`type`?, `quality`?): [`Promise`](https://developer.mozilla.org/docs/Web/JavaScript/Reference/Global_Objects/Promise)\<[`Blob`](https://developer.mozilla.org/docs/Web/API/Blob)\>
+
+Defined in: [src/renderers/WebGlCanvas.ts:320](https://github.com/jaames/flipnote.js/blob/24e772733243f115c3848537efabe6ee9020ad63/src/renderers/WebGlCanvas.ts#L320)
 
 Get the contents of the canvas as a blob.
 
 #### Parameters
 
-• **type?**: `string`
-
-image mime type (`image/jpeg`, `image/png`, etc)
-
-• **quality?**: `any`
-
-image quality where supported, between 0 and 1
+| Parameter | Type | Description |
+| :------ | :------ | :------ |
+| `type`? | `string` | image mime type (`image/jpeg`, `image/png`, etc) |
+| `quality`? | `any` | image quality where supported, between 0 and 1 |
 
 #### Returns
 
-[`Promise ↗️`]( https://developer.mozilla.org/docs/Web/JavaScript/Reference/Global_Objects/Promise )\<[`Blob ↗️`]( https://developer.mozilla.org/docs/Web/API/Blob )\>
+[`Promise`](https://developer.mozilla.org/docs/Web/JavaScript/Reference/Global_Objects/Promise)\<[`Blob`](https://developer.mozilla.org/docs/Web/API/Blob)\>
 
 #### Implementation of
 
 `CanvasInterface.getBlob`
-
-#### Source
-
-[src/renderers/WebGlCanvas.ts:320](https://github.com/jaames/flipnote.js/blob/afe27e228e29d19d2dff33dfb324ba35dc913507/src/renderers/WebGlCanvas.ts#L320)
 
 ***
 
 ### destroy()
 
 > **destroy**(): `void`
+
+Defined in: [src/renderers/WebGlCanvas.ts:327](https://github.com/jaames/flipnote.js/blob/24e772733243f115c3848537efabe6ee9020ad63/src/renderers/WebGlCanvas.ts#L327)
 
 Frees any resources used by this canvas instance
 
@@ -500,7 +442,3 @@ Frees any resources used by this canvas instance
 #### Implementation of
 
 `CanvasInterface.destroy`
-
-#### Source
-
-[src/renderers/WebGlCanvas.ts:327](https://github.com/jaames/flipnote.js/blob/afe27e228e29d19d2dff33dfb324ba35dc913507/src/renderers/WebGlCanvas.ts#L327)

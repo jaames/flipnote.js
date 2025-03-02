@@ -51,7 +51,7 @@ export abstract class BasePlaylistParser extends DataStream {
    */
   entries: Path[] = [];
 
-  constructor(buffer: ArrayBuffer) {
+  constructor(buffer: ArrayBufferLike) {
     super(buffer);
   }
   

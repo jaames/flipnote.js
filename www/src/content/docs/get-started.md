@@ -4,21 +4,21 @@ title: Get Started
 
 ## Installation
 
-There are multiple options for installing flipnote.js, depending on your use-case and familiarity with JavaScript. Once you've installed the library, check out the {@page Recipes} page for some quick usage tips.
+There are multiple options for installing flipnote.js, depending on your use-case and familiarity with JavaScript. Once you've installed the library, check out the [Recipes](/recipes) page for some quick usage tips.
 
 ### From a CDN (web)
 
-This is the simplest way to embed the library in your web project, since you don't have to host the script yourself and you will automatically recieve updates until the next major version. Just drop the following snippet into the `<head></head>` of your page's HTML:
+This is the simplest way to embed the library in your web project, since you don't have to host the script yourself and you will automatically receive updates until the next major version. Just drop the following snippet into the `<head></head>` of your page's HTML:
 
 ```html
-<script src="https://cdn.jsdelivr.net/npm/flipnote.js@5"></script>
+<script src="https://cdn.jsdelivr.net/npm/flipnote.js@6"></script>
 ```
 
 When including the library this way, all of the [global exports](#global-exports) will be available on `window.flipnote`.
 
 ### Self-host (web)
 
-You can also download the latest version of the library and self-host it on your own server if you prefer. You will have to manage updates yourself this way, but it's more secure.
+You can also download the latest version of the library and self-host it on your own server if you prefer. You will have to manage updates yourself this way.
 
 [**Development version**](https://raw.githubusercontent.com/jaames/flipnote.js/master/dist/flipnote.js)<br/>
 Uncompressed, with source comments included. Intended for debugging.
@@ -30,20 +30,20 @@ When including the library this way, all of the [global exports](#global-exports
 
 ### From NPM (web, node)
 
-Flipnote.js is also available as a package on [NPM](https://www.npmjs.com/package/flipnote.js). For this, you'll need a NodeJS environment set up and access to a command line. 
+Flipnote.js is also available as a package on [NPM](https://www.npmjs.com/package/flipnote.js). For this, you'll need to have a NodeJS environment and access to a command line. 
 
-To use this method on the web, you should run your code through a bundler like [Parcel](https://parceljs.org/getting_started.html), [Rollup](https://rollupjs.org/guide/en/), or [Webpack](https://webpack.js.org/).
+To use this method on the web, you should run your code through a bundler like [Vite](https://vite.dev), [Parcel](https://parceljs.org/getting_started.html), [Rollup](https://rollupjs.org/guide/en/), or [Webpack](https://webpack.js.org/).
 
-You can import the library the old `require()` way:
-
-```js
-const flipnote = require('flipnote.js');
-```
-
-Or via ES6 imports if they are supported in your environment:
+Then you can import the library via an ES6 import:
 
 ```js
 import flipnote from 'flipnote.js';
+```
+
+Or via the old `require()` way:
+
+```js
+const flipnote = require('flipnote.js');
 ```
 
 When using the library this way, all of the [global exports](#global-exports) will be available as the [default import](https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Statements/import#Importing_defaults).
@@ -54,10 +54,11 @@ Flipnote.js exports comprehensive type definitions for [Typescript](https://www.
 
 Using Typescript isn't necessary, but it is highly recommended if you are using flipnote.js for any critical infrastructure such as Flipnote conversion services, since it will help you catch type errors at compile time rather than when your code is running.
 
-In some cases, you may want to use types separately from the core library. For example, if you wanted to only import the {@link Flipnote} and {@link FlipnoteFormat} types, you could do:
+In some cases, you may want to use types separately from the core library. For example, if you wanted to only import the 
+[Flipnote](/api/type-aliases/flipnote/) and [FlipnoteFormat](/api/enumerations/flipnoteformat/) types, you could do:
 
 ```ts
-import { Flipnote, FlipnoteFormat } from 'flipnote.js';
+import type { Flipnote, FlipnoteFormat } from 'flipnote.js';
 
 // Then you can use these as Typescript types like:
 const note: Flipnote;

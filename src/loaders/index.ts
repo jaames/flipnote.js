@@ -16,7 +16,7 @@ const LOADER_REGISTRY = new Map<string, LoaderDefinition<any>>();
  * Resolve a source, using the current loaders list.
  * Returns an ArrayBuffer containing the data loaded from the source.
  */
-export const load = (source: any): Promise<ArrayBuffer> => {
+export const load = (source: any): Promise<ArrayBufferLike> => {
   for (let [name, loader] of LOADER_REGISTRY) {
     if (!loader.matches(source))
       continue;

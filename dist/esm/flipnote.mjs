@@ -960,7 +960,7 @@ class BaseParser extends DataStream {
 const REGEX_PPM_FSID = /^[0159]{1}[0-9A-F]{6}0[0-9A-F]{8}$/;
 /**
  * @internal
- * There are several known exceptions to the standard FSID format, all from Nintendo or Hatena developer and event accounts (mario, zelda 25th, etc).
+ * There are several known exceptions to the standard FSID format, all from Nintendo or Hatena developer/event accounts (mario, zelda 25th, etc).
  * This list was compiled from data provided by the Flipnote Archive, so it can be considered comprehensive enough to match any Flipnote you may encounter.
  */
 const PPM_FSID_SPECIAL_CASE = [
@@ -1105,7 +1105,7 @@ const dateFromNintendoTimestamp = (timestamp) => new Date((timestamp + NINTENDO_
  */
 const dateToNintendoTimestamp = (date) => Math.floor((date.getTime() / 1000) - NINTENDO_UNIX_EPOCH);
 /**
- * Get the duration (in seconds) of a number of framres running at a specified framerate.
+ * Get the duration (in seconds) of a number of frames running at a specified framerate.
  * @internal
  */
 const timeGetNoteDuration = (frameCount, framerate) => 
@@ -1446,7 +1446,7 @@ class PpmParser extends BaseParser {
                         // read lineHeader as a big-endian int
                         var lineHeader = this.readUint32(false);
                         // loop through each bit in the line header
-                        // shift lineheader to the left by 1 bit every interation, 
+                        // shift line header to the left by 1 bit every iteration, 
                         // so on the next loop cycle the next bit will be checked
                         // and if the line header equals 0, no more bits are set, 
                         // the rest of the line is empty and can be skipped
@@ -1471,7 +1471,7 @@ class PpmParser extends BaseParser {
                         // read lineHeader as a big-endian int
                         var lineHeader = this.readUint32(false);
                         // loop through each bit in the line header
-                        // shift lineheader to the left by 1 bit every iteration, 
+                        // shift line header to the left by 1 bit every iteration, 
                         // so on the next loop cycle the next bit will be checked
                         // and if the line header equals 0, no more bits are set, 
                         // the rest of the line is empty and can be skipped
@@ -2064,11 +2064,15 @@ const getKwzFsidRegion = (fsid) => {
 /**
  * Format a hex string with dashes, to match the format used to display Flipnote Studio IDs in the app.
  */
-const kwzFsidFormat = (hex) => `${hex.slice(0, 4)}-${hex.slice(4, 8)}-${hex.slice(8, 12)}-${hex.slice(12, 18)}`.toLowerCase();
+const kwzFsidFormat = (hex) => {
+    return `${hex.slice(0, 4)}-${hex.slice(4, 8)}-${hex.slice(8, 12)}-${hex.slice(12, 18)}`.toLowerCase();
+};
 /**
  * Unformat a Flipnote Studio ID string back into regular hex.
  */
-const kwzFsidUnformat = (fsid) => fsid.replace(/-/g, '').toUpperCase();
+const kwzFsidUnformat = (fsid) => {
+    return fsid.replace(/-/g, '').toUpperCase();
+};
 
 var _KwzParser_instances, _KwzParser_settings, _KwzParser_sectionMap, _KwzParser_bodyEndOffset, _KwzParser_layerBuffers, _KwzParser_soundFlags, _KwzParser_prevDecodedFrame, _KwzParser_frameMetaOffsets, _KwzParser_frameDataOffsets, _KwzParser_frameLayerSizes, _KwzParser_frameDataTotalSize, _KwzParser_bitIndex, _KwzParser_bitValue, _KwzParser_buildSectionMap, _KwzParser_readBits, _KwzParser_readFsid, _KwzParser_readFilename, _KwzParser_decodeMeta, _KwzParser_decodeMetaQuick, _KwzParser_getFrameOffsets, _KwzParser_decodeSoundHeader, _a;
 /**
@@ -4523,56 +4527,6 @@ function isWebGL2(gl) {
   // This might also be the correct check but I'm assuming it's slow-ish
   // return gl instanceof WebGL2RenderingContext;
   return !!gl.texStorage2D;
-}
-
-// NOTE: Chrome supports 2D canvas in a Worker (behind flag as of v64 but
-//       not only does Firefox NOT support it but Firefox freezes immediately
-//       if you try to create one instead of just returning null and continuing.
-//  : (global.OffscreenCanvas && (new global.OffscreenCanvas(1, 1)).getContext("2d"));  // OffscreenCanvas may not support 2d
-
-// NOTE: We can maybe remove some of the need for the 2d canvas. In WebGL2
-// we can use the various unpack settings. Otherwise we could try using
-// the ability of an ImageBitmap to be cut. Unfortunately cutting an ImageBitmap
-// is async and the current TWGL code expects a non-Async result though that
-// might not be a problem. ImageBitmap though is not available in Edge or Safari
-// as of 2018-01-02
-
-/* PixelFormat */
-const ALPHA                          = 0x1906;
-const RGB                            = 0x1907;
-const RGBA$1                           = 0x1908;
-const LUMINANCE                      = 0x1909;
-const LUMINANCE_ALPHA                = 0x190A;
-const DEPTH_COMPONENT$1                = 0x1902;
-const DEPTH_STENCIL$1                  = 0x84F9;
-
-const RG                           = 0x8227;
-const RG_INTEGER                   = 0x8228;
-const RED                          = 0x1903;
-const RED_INTEGER                  = 0x8D94;
-const RGB_INTEGER                  = 0x8D98;
-const RGBA_INTEGER                 = 0x8D99;
-
-const formatInfo = {};
-{
-  // NOTE: this is named `numColorComponents` vs `numComponents` so we can let Uglify mangle
-  // the name.
-  const f = formatInfo;
-  f[ALPHA]           = { numColorComponents: 1, };
-  f[LUMINANCE]       = { numColorComponents: 1, };
-  f[LUMINANCE_ALPHA] = { numColorComponents: 2, };
-  f[RGB]             = { numColorComponents: 3, };
-  f[RGBA$1]            = { numColorComponents: 4, };
-  f[RED]             = { numColorComponents: 1, };
-  f[RED_INTEGER]     = { numColorComponents: 1, };
-  f[RG]              = { numColorComponents: 2, };
-  f[RG_INTEGER]      = { numColorComponents: 2, };
-  f[RGB]             = { numColorComponents: 3, };
-  f[RGB_INTEGER]     = { numColorComponents: 3, };
-  f[RGBA$1]            = { numColorComponents: 4, };
-  f[RGBA_INTEGER]    = { numColorComponents: 4, };
-  f[DEPTH_COMPONENT$1] = { numColorComponents: 1, };
-  f[DEPTH_STENCIL$1]   = { numColorComponents: 2, };
 }
 
 const TEXTURE0                       = 0x84c0;
@@ -7389,8 +7343,6 @@ class Player {
                 return 'probably';
             case 'application/octet-stream':
                 return 'maybe';
-            // and koizumi is planning his revenge
-            case 'video/vnd.nintendo.ugomemo.fykt':
             default:
                 return '';
         }

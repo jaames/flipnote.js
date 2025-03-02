@@ -5,54 +5,14 @@ prev: false
 title: "WebglCanvasOptions"
 ---
 
+Defined in: [src/renderers/WebGlCanvas.ts:46](https://github.com/jaames/flipnote.js/blob/24e772733243f115c3848537efabe6ee9020ad63/src/renderers/WebGlCanvas.ts#L46)
+
 Settings for WebGlCanvas.
 
 ## Properties
 
-### onlost()
-
-> **onlost**: () => `void`
-
-Function to be called if the context is lost.
-
-#### Returns
-
-`void`
-
-#### Source
-
-[src/renderers/WebGlCanvas.ts:50](https://github.com/jaames/flipnote.js/blob/afe27e228e29d19d2dff33dfb324ba35dc913507/src/renderers/WebGlCanvas.ts#L50)
-
-***
-
-### onrestored()
-
-> **onrestored**: () => `void`
-
-Function to be called if the context is restored.
-
-#### Returns
-
-`void`
-
-#### Source
-
-[src/renderers/WebGlCanvas.ts:54](https://github.com/jaames/flipnote.js/blob/afe27e228e29d19d2dff33dfb324ba35dc913507/src/renderers/WebGlCanvas.ts#L54)
-
-***
-
-### useDpi
-
-> **useDpi**: `boolean`
-
-Use DPI scaling.
-
-#### Default
-
-```ts
-true
-```
-
-#### Source
-
-[src/renderers/WebGlCanvas.ts:59](https://github.com/jaames/flipnote.js/blob/afe27e228e29d19d2dff33dfb324ba35dc913507/src/renderers/WebGlCanvas.ts#L59)
+| Property | Type | Description |
+| :------ | :------ | :------ |
+| <a id="onlost"></a> `onlost` | () => `void` | Function to be called if the context is lost. |
+| <a id="onrestored"></a> `onrestored` | () => `void` | Function to be called if the context is restored. |
+| <a id="usedpi"></a> `useDpi` | `boolean` | Use DPI scaling. **Default** `true` |

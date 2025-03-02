@@ -14,5 +14,5 @@ export interface LoaderDefinition<T> {
   /**
    * Try loading the source (can be async) and return an ArrayBuffer
    */
-  load: (source: T) => Promise<ArrayBuffer>;
+  load: (source: T) => Promise<ArrayBufferLike>;
 };

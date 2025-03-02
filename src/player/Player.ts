@@ -917,8 +917,6 @@ export class Player {
         return 'probably';
       case 'application/octet-stream':
         return 'maybe';
-      // and koizumi is planning his revenge
-      case 'video/vnd.nintendo.ugomemo.fykt':
       default:
         return '';
     }

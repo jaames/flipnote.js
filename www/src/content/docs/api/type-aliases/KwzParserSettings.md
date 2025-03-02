@@ -7,6 +7,8 @@ title: "KwzParserSettings"
 
 > **KwzParserSettings**: `object`
 
+Defined in: [src/parsers/KwzParser.ts:196](https://github.com/jaames/flipnote.js/blob/24e772733243f115c3848537efabe6ee9020ad63/src/parsers/KwzParser.ts#L196)
+
 KWZ parser options for enabling optimizations and other extra features
 
 ## Type declaration
@@ -69,7 +71,3 @@ This is only enabled if `dsiLibraryNote` is also set to `true`
 Manually provide an initial adpcm predictor for each sound effect track.
 
 This is only enabled if `dsiLibraryNote` is also set to `true`.
-
-## Source
-
-[src/parsers/KwzParser.ts:196](https://github.com/jaames/flipnote.js/blob/afe27e228e29d19d2dff33dfb324ba35dc913507/src/parsers/KwzParser.ts#L196)

@@ -853,7 +853,7 @@ const NINTENDO_UNIX_EPOCH = 946684800;
  */
 const dateFromNintendoTimestamp = (timestamp) => new Date((timestamp + NINTENDO_UNIX_EPOCH) * 1000);
 /**
- * Get the duration (in seconds) of a number of framres running at a specified framerate.
+ * Get the duration (in seconds) of a number of frames running at a specified framerate.
  * @internal
  */
 const timeGetNoteDuration = (frameCount, framerate) => 
@@ -1194,7 +1194,7 @@ class PpmParser extends BaseParser {
                         // read lineHeader as a big-endian int
                         var lineHeader = this.readUint32(false);
                         // loop through each bit in the line header
-                        // shift lineheader to the left by 1 bit every interation, 
+                        // shift line header to the left by 1 bit every iteration, 
                         // so on the next loop cycle the next bit will be checked
                         // and if the line header equals 0, no more bits are set, 
                         // the rest of the line is empty and can be skipped
@@ -1219,7 +1219,7 @@ class PpmParser extends BaseParser {
                         // read lineHeader as a big-endian int
                         var lineHeader = this.readUint32(false);
                         // loop through each bit in the line header
-                        // shift lineheader to the left by 1 bit every iteration, 
+                        // shift line header to the left by 1 bit every iteration, 
                         // so on the next loop cycle the next bit will be checked
                         // and if the line header equals 0, no more bits are set, 
                         // the rest of the line is empty and can be skipped

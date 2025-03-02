@@ -5,32 +5,12 @@ prev: false
 title: "CanvasStereoscopicMode"
 ---
 
+Defined in: [src/renderers/CanvasInterface.ts:12](https://github.com/jaames/flipnote.js/blob/24e772733243f115c3848537efabe6ee9020ad63/src/renderers/CanvasInterface.ts#L12)
+
 ## Enumeration Members
 
-### None
-
-> **None**: `0`
-
-#### Source
-
-[src/renderers/CanvasInterface.ts:13](https://github.com/jaames/flipnote.js/blob/afe27e228e29d19d2dff33dfb324ba35dc913507/src/renderers/CanvasInterface.ts#L13)
-
-***
-
-### Dual
-
-> **Dual**: `1`
-
-#### Source
-
-[src/renderers/CanvasInterface.ts:14](https://github.com/jaames/flipnote.js/blob/afe27e228e29d19d2dff33dfb324ba35dc913507/src/renderers/CanvasInterface.ts#L14)
-
-***
-
-### Anaglyph
-
-> **Anaglyph**: `2`
-
-#### Source
-
-[src/renderers/CanvasInterface.ts:16](https://github.com/jaames/flipnote.js/blob/afe27e228e29d19d2dff33dfb324ba35dc913507/src/renderers/CanvasInterface.ts#L16)
+| Enumeration Member | Value |
+| :------ | :------ |
+| <a id="none"></a> `None` | `0` |
+| <a id="dual"></a> `Dual` | `1` |
+| <a id="anaglyph"></a> `Anaglyph` | `2` |

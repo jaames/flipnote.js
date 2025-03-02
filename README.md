@@ -43,7 +43,7 @@ Even though it has been several years since the last Flipnote Studio installment
 
 While user-created Flipnote animations can be easily saved to the SD card from within the apps, Nintendo created proprietary file formats for this purpose; Flipnote Studio uses [.ppm](https://github.com/Flipnote-Collective/flipnote-studio-docs/wiki/PPM-format) (not to be confused with the Netpbm format of the same extension) and Flipnote Studio 3D uses [.kwz](https://github.com/Flipnote-Collective/flipnote-studio-3d-docs/wiki/KWZ-Format) respectively. While they may seem superficially similar, the two formats are quite different internally.
 
-At the time of writing, the only official software that can load and play these animations are the original Flipnote Studio apps themselves, which are now rather hard to obtain due to the [Nintendo DSi Shop closing down in 2016](https://www.nintendo.co.uk/News/2016/March/Important-information-about-the-discontinuation-of-the-Nintendo-DSi-Shop-1095977.html), and the [Nintendo 3DS eShop closing down in 2023](https://www.nintendo.com/en-gb/Support/Purchasing/Download-games/Nintendo-eShop/Notice-of-End-of-Purchases-in-Nintendo-eShop-for-Wii-U-and-Nintendo-3DS-Update-April-2024-2174073.html). For various reasons we also think it's unlikely that Nintendo is going to produce a new entry in the series.
+At the time of writing, the only official software that can load and play these animations are the original Flipnote Studio apps themselves, which are now rather hard to obtain due to the [Nintendo DSi Shop closing down in 2017](https://www.nintendo.co.uk/News/2016/March/Important-information-about-the-discontinuation-of-the-Nintendo-DSi-Shop-1095977.html), and the [Nintendo 3DS eShop closing down in 2023](https://www.nintendo.com/en-gb/Support/Purchasing/Download-games/Nintendo-eShop/Notice-of-End-of-Purchases-in-Nintendo-eShop-for-Wii-U-and-Nintendo-3DS-Update-April-2024-2174073.html). For various reasons we also think it's unlikely that Nintendo is going to produce a new entry in the series.
 
 This library hopes to aid in the long-term preservation and enjoyment of these animations by enabling them to be played in any modern web browser with JavaScript enabled. In addition, it provides a consistent API and various utilities for dealing with both animation formats so that other developers can create their own tools and applications around them!
 
@@ -52,7 +52,6 @@ This library hopes to aid in the long-term preservation and enjoyment of these a
 * [Flipnote Archive](https://archive.sudomemo.net/) - an archive of Flipnote animations posted to Flipnote Hatena before its closure in 2013
 * [Flipnote Player](http://flipnote.rakujira.jp/) - web-based browser, player and converter for Flipnote animations
 * [Kaeru Gallery](https://gallery.kaeru.world/) - fan-made replacement online service for Flipnote Studio 3D
-* [IPGFlip](https://ipgflip.xyz/) - (in hiatus) fan-made replacement online service for Flipnote Studio
 
 ----
 

@@ -5,52 +5,15 @@ prev: false
 title: "FlipnoteRegion"
 ---
 
+Defined in: [src/parsers/types.ts:84](https://github.com/jaames/flipnote.js/blob/24e772733243f115c3848537efabe6ee9020ad63/src/parsers/types.ts#L84)
+
 Flipnote region
 
 ## Enumeration Members
 
-### EUR
-
-> **EUR**: `"EUR"`
-
-Europe and Oceania
-
-#### Source
-
-[src/parsers/types.ts:84](https://github.com/jaames/flipnote.js/blob/afe27e228e29d19d2dff33dfb324ba35dc913507/src/parsers/types.ts#L84)
-
-***
-
-### USA
-
-> **USA**: `"USA"`
-
-Americas
-
-#### Source
-
-[src/parsers/types.ts:88](https://github.com/jaames/flipnote.js/blob/afe27e228e29d19d2dff33dfb324ba35dc913507/src/parsers/types.ts#L88)
-
-***
-
-### JPN
-
-> **JPN**: `"JPN"`
-
-Japan
-
-#### Source
-
-[src/parsers/types.ts:92](https://github.com/jaames/flipnote.js/blob/afe27e228e29d19d2dff33dfb324ba35dc913507/src/parsers/types.ts#L92)
-
-***
-
-### UNKNOWN
-
-> **UNKNOWN**: `"UNKNOWN"`
-
-Unidentified (possibly never used)
-
-#### Source
-
-[src/parsers/types.ts:96](https://github.com/jaames/flipnote.js/blob/afe27e228e29d19d2dff33dfb324ba35dc913507/src/parsers/types.ts#L96)
+| Enumeration Member | Value | Description |
+| :------ | :------ | :------ |
+| <a id="eur"></a> `EUR` | `"EUR"` | Europe and Oceania |
+| <a id="usa"></a> `USA` | `"USA"` | Americas |
+| <a id="jpn"></a> `JPN` | `"JPN"` | Japan |
+| <a id="unknown"></a> `UNKNOWN` | `"UNKNOWN"` | Unidentified (possibly never used) |

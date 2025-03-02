@@ -823,7 +823,9 @@ const getKwzFsidRegion = (fsid) => {
 /**
  * Format a hex string with dashes, to match the format used to display Flipnote Studio IDs in the app.
  */
-const kwzFsidFormat = (hex) => `${hex.slice(0, 4)}-${hex.slice(4, 8)}-${hex.slice(8, 12)}-${hex.slice(12, 18)}`.toLowerCase();
+const kwzFsidFormat = (hex) => {
+    return `${hex.slice(0, 4)}-${hex.slice(4, 8)}-${hex.slice(8, 12)}-${hex.slice(12, 18)}`.toLowerCase();
+};
 
 /**
  * @internal
@@ -917,7 +919,7 @@ const NINTENDO_UNIX_EPOCH = 946684800;
  */
 const dateFromNintendoTimestamp = (timestamp) => new Date((timestamp + NINTENDO_UNIX_EPOCH) * 1000);
 /**
- * Get the duration (in seconds) of a number of framres running at a specified framerate.
+ * Get the duration (in seconds) of a number of frames running at a specified framerate.
  * @internal
  */
 const timeGetNoteDuration = (frameCount, framerate) => 

@@ -5,6 +5,8 @@ prev: false
 title: "Html5Canvas"
 ---
 
+Defined in: [src/renderers/Html5Canvas.ts:33](https://github.com/jaames/flipnote.js/blob/24e772733243f115c3848537efabe6ee9020ad63/src/renderers/Html5Canvas.ts#L33)
+
 Flipnote renderer for the [HTML5 2D canvas API](https://developer.mozilla.org/en-US/docs/Web/API/CanvasRenderingContext2D)
 
 ## Implements
@@ -17,23 +19,20 @@ Flipnote renderer for the [HTML5 2D canvas API](https://developer.mozilla.org/en
 
 > **new Html5Canvas**(`parent`, `width`, `height`, `options`): [`Html5Canvas`](/api/classes/html5canvas/)
 
+Defined in: [src/renderers/Html5Canvas.ts:114](https://github.com/jaames/flipnote.js/blob/24e772733243f115c3848537efabe6ee9020ad63/src/renderers/Html5Canvas.ts#L114)
+
 #### Parameters
 
-• **parent**: [`Element ↗️`]( https://developer.mozilla.org/docs/Web/API/Element )
-
-• **width**: `number`
-
-• **height**: `number`
-
-• **options**: [`Partial ↗️`]( https://www.typescriptlang.org/docs/handbook/utility-types.html#partialtype )\<[`Html5CanvasOptions`](/api/interfaces/html5canvasoptions/)\>= `{}`
+| Parameter | Type |
+| :------ | :------ |
+| `parent` | [`Element`](https://developer.mozilla.org/docs/Web/API/Element) |
+| `width` | `number` |
+| `height` | `number` |
+| `options` | [`Partial`](https://www.typescriptlang.org/docs/handbook/utility-types.html#partialtype)\<[`Html5CanvasOptions`](/api/interfaces/html5canvasoptions/)\> |
 
 #### Returns
 
 [`Html5Canvas`](/api/classes/html5canvas/)
-
-#### Source
-
-[src/renderers/Html5Canvas.ts:114](https://github.com/jaames/flipnote.js/blob/afe27e228e29d19d2dff33dfb324ba35dc913507/src/renderers/Html5Canvas.ts#L114)
 
 ## Properties
 
@@ -41,9 +40,7 @@ Flipnote renderer for the [HTML5 2D canvas API](https://developer.mozilla.org/en
 
 > `static` **defaultOptions**: [`Html5CanvasOptions`](/api/interfaces/html5canvasoptions/)
 
-#### Source
-
-[src/renderers/Html5Canvas.ts:35](https://github.com/jaames/flipnote.js/blob/afe27e228e29d19d2dff33dfb324ba35dc913507/src/renderers/Html5Canvas.ts#L35)
+Defined in: [src/renderers/Html5Canvas.ts:35](https://github.com/jaames/flipnote.js/blob/24e772733243f115c3848537efabe6ee9020ad63/src/renderers/Html5Canvas.ts#L35)
 
 ***
 
@@ -51,37 +48,31 @@ Flipnote renderer for the [HTML5 2D canvas API](https://developer.mozilla.org/en
 
 > **note**: `BaseParser`
 
+Defined in: [src/renderers/Html5Canvas.ts:53](https://github.com/jaames/flipnote.js/blob/24e772733243f115c3848537efabe6ee9020ad63/src/renderers/Html5Canvas.ts#L53)
+
 #### Implementation of
 
 `CanvasInterface.note`
-
-#### Source
-
-[src/renderers/Html5Canvas.ts:53](https://github.com/jaames/flipnote.js/blob/afe27e228e29d19d2dff33dfb324ba35dc913507/src/renderers/Html5Canvas.ts#L53)
 
 ***
 
 ### canvas
 
-> **canvas**: [`HTMLCanvasElement ↗️`]( https://developer.mozilla.org/docs/Web/API/HTMLCanvasElement )
+> **canvas**: [`HTMLCanvasElement`](https://developer.mozilla.org/docs/Web/API/HTMLCanvasElement)
+
+Defined in: [src/renderers/Html5Canvas.ts:57](https://github.com/jaames/flipnote.js/blob/24e772733243f115c3848537efabe6ee9020ad63/src/renderers/Html5Canvas.ts#L57)
 
 Canvas HTML element being used as a rendering surface
-
-#### Source
-
-[src/renderers/Html5Canvas.ts:57](https://github.com/jaames/flipnote.js/blob/afe27e228e29d19d2dff33dfb324ba35dc913507/src/renderers/Html5Canvas.ts#L57)
 
 ***
 
 ### ctx
 
-> **ctx**: [`CanvasRenderingContext2D ↗️`]( https://developer.mozilla.org/docs/Web/API/CanvasRenderingContext2D )
+> **ctx**: [`CanvasRenderingContext2D`](https://developer.mozilla.org/docs/Web/API/CanvasRenderingContext2D)
+
+Defined in: [src/renderers/Html5Canvas.ts:61](https://github.com/jaames/flipnote.js/blob/24e772733243f115c3848537efabe6ee9020ad63/src/renderers/Html5Canvas.ts#L61)
 
 Rendering context
-
-#### Source
-
-[src/renderers/Html5Canvas.ts:61](https://github.com/jaames/flipnote.js/blob/afe27e228e29d19d2dff33dfb324ba35dc913507/src/renderers/Html5Canvas.ts#L61)
 
 ***
 
@@ -89,15 +80,13 @@ Rendering context
 
 > **width**: `number`
 
+Defined in: [src/renderers/Html5Canvas.ts:65](https://github.com/jaames/flipnote.js/blob/24e772733243f115c3848537efabe6ee9020ad63/src/renderers/Html5Canvas.ts#L65)
+
 View width (CSS pixels)
 
 #### Implementation of
 
 `CanvasInterface.width`
-
-#### Source
-
-[src/renderers/Html5Canvas.ts:65](https://github.com/jaames/flipnote.js/blob/afe27e228e29d19d2dff33dfb324ba35dc913507/src/renderers/Html5Canvas.ts#L65)
 
 ***
 
@@ -105,21 +94,21 @@ View width (CSS pixels)
 
 > **height**: `number`
 
+Defined in: [src/renderers/Html5Canvas.ts:69](https://github.com/jaames/flipnote.js/blob/24e772733243f115c3848537efabe6ee9020ad63/src/renderers/Html5Canvas.ts#L69)
+
 View height (CSS pixels)
 
 #### Implementation of
 
 `CanvasInterface.height`
 
-#### Source
-
-[src/renderers/Html5Canvas.ts:69](https://github.com/jaames/flipnote.js/blob/afe27e228e29d19d2dff33dfb324ba35dc913507/src/renderers/Html5Canvas.ts#L69)
-
 ***
 
 ### dstWidth
 
 > **dstWidth**: `number`
+
+Defined in: [src/renderers/Html5Canvas.ts:74](https://github.com/jaames/flipnote.js/blob/24e772733243f115c3848537efabe6ee9020ad63/src/renderers/Html5Canvas.ts#L74)
 
 Backing canvas width (real pixels)
 Note that this factors in device pixel ratio, so it may not reflect the size of the canvas in CSS pixels
@@ -128,15 +117,13 @@ Note that this factors in device pixel ratio, so it may not reflect the size of 
 
 `CanvasInterface.dstWidth`
 
-#### Source
-
-[src/renderers/Html5Canvas.ts:74](https://github.com/jaames/flipnote.js/blob/afe27e228e29d19d2dff33dfb324ba35dc913507/src/renderers/Html5Canvas.ts#L74)
-
 ***
 
 ### dstHeight
 
 > **dstHeight**: `number`
+
+Defined in: [src/renderers/Html5Canvas.ts:79](https://github.com/jaames/flipnote.js/blob/24e772733243f115c3848537efabe6ee9020ad63/src/renderers/Html5Canvas.ts#L79)
 
 Backing canvas height (real pixels)
 Note that this factors in device pixel ratio, so it may not reflect the size of the canvas in CSS pixels
@@ -145,23 +132,17 @@ Note that this factors in device pixel ratio, so it may not reflect the size of 
 
 `CanvasInterface.dstHeight`
 
-#### Source
-
-[src/renderers/Html5Canvas.ts:79](https://github.com/jaames/flipnote.js/blob/afe27e228e29d19d2dff33dfb324ba35dc913507/src/renderers/Html5Canvas.ts#L79)
-
 ***
 
 ### srcWidth
 
 > **srcWidth**: `number`
 
+Defined in: [src/renderers/Html5Canvas.ts:83](https://github.com/jaames/flipnote.js/blob/24e772733243f115c3848537efabe6ee9020ad63/src/renderers/Html5Canvas.ts#L83)
+
 #### Implementation of
 
 `CanvasInterface.srcWidth`
-
-#### Source
-
-[src/renderers/Html5Canvas.ts:83](https://github.com/jaames/flipnote.js/blob/afe27e228e29d19d2dff33dfb324ba35dc913507/src/renderers/Html5Canvas.ts#L83)
 
 ***
 
@@ -169,13 +150,11 @@ Note that this factors in device pixel ratio, so it may not reflect the size of 
 
 > **srcHeight**: `number`
 
+Defined in: [src/renderers/Html5Canvas.ts:87](https://github.com/jaames/flipnote.js/blob/24e772733243f115c3848537efabe6ee9020ad63/src/renderers/Html5Canvas.ts#L87)
+
 #### Implementation of
 
 `CanvasInterface.srcHeight`
-
-#### Source
-
-[src/renderers/Html5Canvas.ts:87](https://github.com/jaames/flipnote.js/blob/afe27e228e29d19d2dff33dfb324ba35dc913507/src/renderers/Html5Canvas.ts#L87)
 
 ***
 
@@ -183,13 +162,11 @@ Note that this factors in device pixel ratio, so it may not reflect the size of 
 
 > **frameIndex**: `number`
 
+Defined in: [src/renderers/Html5Canvas.ts:91](https://github.com/jaames/flipnote.js/blob/24e772733243f115c3848537efabe6ee9020ad63/src/renderers/Html5Canvas.ts#L91)
+
 #### Implementation of
 
 `CanvasInterface.frameIndex`
-
-#### Source
-
-[src/renderers/Html5Canvas.ts:91](https://github.com/jaames/flipnote.js/blob/afe27e228e29d19d2dff33dfb324ba35dc913507/src/renderers/Html5Canvas.ts#L91)
 
 ***
 
@@ -197,13 +174,11 @@ Note that this factors in device pixel ratio, so it may not reflect the size of 
 
 > **supportedStereoscopeModes**: [`CanvasStereoscopicMode`](/api/enumerations/canvasstereoscopicmode/)[]
 
+Defined in: [src/renderers/Html5Canvas.ts:95](https://github.com/jaames/flipnote.js/blob/24e772733243f115c3848537efabe6ee9020ad63/src/renderers/Html5Canvas.ts#L95)
+
 #### Implementation of
 
 `CanvasInterface.supportedStereoscopeModes`
-
-#### Source
-
-[src/renderers/Html5Canvas.ts:95](https://github.com/jaames/flipnote.js/blob/afe27e228e29d19d2dff33dfb324ba35dc913507/src/renderers/Html5Canvas.ts#L95)
 
 ***
 
@@ -211,13 +186,11 @@ Note that this factors in device pixel ratio, so it may not reflect the size of 
 
 > **stereoscopeMode**: [`CanvasStereoscopicMode`](/api/enumerations/canvasstereoscopicmode/) = `CanvasStereoscopicMode.None`
 
+Defined in: [src/renderers/Html5Canvas.ts:101](https://github.com/jaames/flipnote.js/blob/24e772733243f115c3848537efabe6ee9020ad63/src/renderers/Html5Canvas.ts#L101)
+
 #### Implementation of
 
 `CanvasInterface.stereoscopeMode`
-
-#### Source
-
-[src/renderers/Html5Canvas.ts:101](https://github.com/jaames/flipnote.js/blob/afe27e228e29d19d2dff33dfb324ba35dc913507/src/renderers/Html5Canvas.ts#L101)
 
 ***
 
@@ -225,13 +198,11 @@ Note that this factors in device pixel ratio, so it may not reflect the size of 
 
 > **stereoscopeStrength**: `number` = `0`
 
+Defined in: [src/renderers/Html5Canvas.ts:105](https://github.com/jaames/flipnote.js/blob/24e772733243f115c3848537efabe6ee9020ad63/src/renderers/Html5Canvas.ts#L105)
+
 #### Implementation of
 
 `CanvasInterface.stereoscopeStrength`
-
-#### Source
-
-[src/renderers/Html5Canvas.ts:105](https://github.com/jaames/flipnote.js/blob/afe27e228e29d19d2dff33dfb324ba35dc913507/src/renderers/Html5Canvas.ts#L105)
 
 ## Methods
 
@@ -239,13 +210,11 @@ Note that this factors in device pixel ratio, so it may not reflect the size of 
 
 > `static` **isSupported**(): `boolean`
 
+Defined in: [src/renderers/Html5Canvas.ts:40](https://github.com/jaames/flipnote.js/blob/24e772733243f115c3848537efabe6ee9020ad63/src/renderers/Html5Canvas.ts#L40)
+
 #### Returns
 
 `boolean`
-
-#### Source
-
-[src/renderers/Html5Canvas.ts:40](https://github.com/jaames/flipnote.js/blob/afe27e228e29d19d2dff33dfb324ba35dc913507/src/renderers/Html5Canvas.ts#L40)
 
 ***
 
@@ -253,19 +222,16 @@ Note that this factors in device pixel ratio, so it may not reflect the size of 
 
 > **setCanvasSize**(`width`, `height`): `void`
 
+Defined in: [src/renderers/Html5Canvas.ts:136](https://github.com/jaames/flipnote.js/blob/24e772733243f115c3848537efabe6ee9020ad63/src/renderers/Html5Canvas.ts#L136)
+
 Resize the canvas surface
 
 #### Parameters
 
-• **width**: `number`
-
-New canvas width, in CSS pixels
-
-• **height**: `number`
-
-New canvas height, in CSS pixels
-
-The ratio between `width` and `height` should be 3:4 for best results
+| Parameter | Type | Description |
+| :------ | :------ | :------ |
+| `width` | `number` | New canvas width, in CSS pixels |
+| `height` | `number` | New canvas height, in CSS pixels The ratio between `width` and `height` should be 3:4 for best results |
 
 #### Returns
 
@@ -275,19 +241,19 @@ The ratio between `width` and `height` should be 3:4 for best results
 
 `CanvasInterface.setCanvasSize`
 
-#### Source
-
-[src/renderers/Html5Canvas.ts:136](https://github.com/jaames/flipnote.js/blob/afe27e228e29d19d2dff33dfb324ba35dc913507/src/renderers/Html5Canvas.ts#L136)
-
 ***
 
 ### setNote()
 
 > **setNote**(`note`): `void`
 
+Defined in: [src/renderers/Html5Canvas.ts:154](https://github.com/jaames/flipnote.js/blob/24e772733243f115c3848537efabe6ee9020ad63/src/renderers/Html5Canvas.ts#L154)
+
 #### Parameters
 
-• **note**: `BaseParser`
+| Parameter | Type |
+| :------ | :------ |
+| `note` | `BaseParser` |
 
 #### Returns
 
@@ -297,23 +263,21 @@ The ratio between `width` and `height` should be 3:4 for best results
 
 `CanvasInterface.setNote`
 
-#### Source
-
-[src/renderers/Html5Canvas.ts:154](https://github.com/jaames/flipnote.js/blob/afe27e228e29d19d2dff33dfb324ba35dc913507/src/renderers/Html5Canvas.ts#L154)
-
 ***
 
 ### clear()
 
 > **clear**(`color`?): `void`
 
+Defined in: [src/renderers/Html5Canvas.ts:175](https://github.com/jaames/flipnote.js/blob/24e772733243f115c3848537efabe6ee9020ad63/src/renderers/Html5Canvas.ts#L175)
+
 Clear the canvas
 
 #### Parameters
 
-• **color?**: [`number`, `number`, `number`, `number`]
-
-optional RGBA color to use as a background color
+| Parameter | Type | Description |
+| :------ | :------ | :------ |
+| `color`? | \[`number`, `number`, `number`, `number`\] | optional RGBA color to use as a background color |
 
 #### Returns
 
@@ -323,19 +287,19 @@ optional RGBA color to use as a background color
 
 `CanvasInterface.clear`
 
-#### Source
-
-[src/renderers/Html5Canvas.ts:175](https://github.com/jaames/flipnote.js/blob/afe27e228e29d19d2dff33dfb324ba35dc913507/src/renderers/Html5Canvas.ts#L175)
-
 ***
 
 ### drawFrame()
 
 > **drawFrame**(`frameIndex`): `void`
 
+Defined in: [src/renderers/Html5Canvas.ts:188](https://github.com/jaames/flipnote.js/blob/24e772733243f115c3848537efabe6ee9020ad63/src/renderers/Html5Canvas.ts#L188)
+
 #### Parameters
 
-• **frameIndex**: `number`
+| Parameter | Type |
+| :------ | :------ |
+| `frameIndex` | `number` |
 
 #### Returns
 
@@ -345,19 +309,19 @@ optional RGBA color to use as a background color
 
 `CanvasInterface.drawFrame`
 
-#### Source
-
-[src/renderers/Html5Canvas.ts:188](https://github.com/jaames/flipnote.js/blob/afe27e228e29d19d2dff33dfb324ba35dc913507/src/renderers/Html5Canvas.ts#L188)
-
 ***
 
 ### requestStereoScopeMode()
 
 > **requestStereoScopeMode**(`mode`): `void`
 
+Defined in: [src/renderers/Html5Canvas.ts:211](https://github.com/jaames/flipnote.js/blob/24e772733243f115c3848537efabe6ee9020ad63/src/renderers/Html5Canvas.ts#L211)
+
 #### Parameters
 
-• **mode**: [`CanvasStereoscopicMode`](/api/enumerations/canvasstereoscopicmode/)
+| Parameter | Type |
+| :------ | :------ |
+| `mode` | [`CanvasStereoscopicMode`](/api/enumerations/canvasstereoscopicmode/) |
 
 #### Returns
 
@@ -367,15 +331,13 @@ optional RGBA color to use as a background color
 
 `CanvasInterface.requestStereoScopeMode`
 
-#### Source
-
-[src/renderers/Html5Canvas.ts:211](https://github.com/jaames/flipnote.js/blob/afe27e228e29d19d2dff33dfb324ba35dc913507/src/renderers/Html5Canvas.ts#L211)
-
 ***
 
 ### forceUpdate()
 
 > **forceUpdate**(): `void`
+
+Defined in: [src/renderers/Html5Canvas.ts:219](https://github.com/jaames/flipnote.js/blob/24e772733243f115c3848537efabe6ee9020ad63/src/renderers/Html5Canvas.ts#L219)
 
 #### Returns
 
@@ -385,21 +347,20 @@ optional RGBA color to use as a background color
 
 `CanvasInterface.forceUpdate`
 
-#### Source
-
-[src/renderers/Html5Canvas.ts:219](https://github.com/jaames/flipnote.js/blob/afe27e228e29d19d2dff33dfb324ba35dc913507/src/renderers/Html5Canvas.ts#L219)
-
 ***
 
 ### getDataUrl()
 
 > **getDataUrl**(`type`?, `quality`?): `string`
 
+Defined in: [src/renderers/Html5Canvas.ts:224](https://github.com/jaames/flipnote.js/blob/24e772733243f115c3848537efabe6ee9020ad63/src/renderers/Html5Canvas.ts#L224)
+
 #### Parameters
 
-• **type?**: `string`
-
-• **quality?**: `any`
+| Parameter | Type |
+| :------ | :------ |
+| `type`? | `string` |
+| `quality`? | `any` |
 
 #### Returns
 
@@ -409,39 +370,36 @@ optional RGBA color to use as a background color
 
 `CanvasInterface.getDataUrl`
 
-#### Source
-
-[src/renderers/Html5Canvas.ts:224](https://github.com/jaames/flipnote.js/blob/afe27e228e29d19d2dff33dfb324ba35dc913507/src/renderers/Html5Canvas.ts#L224)
-
 ***
 
 ### getBlob()
 
-> **getBlob**(`type`?, `quality`?): [`Promise ↗️`]( https://developer.mozilla.org/docs/Web/JavaScript/Reference/Global_Objects/Promise )\<[`Blob ↗️`]( https://developer.mozilla.org/docs/Web/API/Blob )\>
+> **getBlob**(`type`?, `quality`?): [`Promise`](https://developer.mozilla.org/docs/Web/JavaScript/Reference/Global_Objects/Promise)\<[`Blob`](https://developer.mozilla.org/docs/Web/API/Blob)\>
+
+Defined in: [src/renderers/Html5Canvas.ts:228](https://github.com/jaames/flipnote.js/blob/24e772733243f115c3848537efabe6ee9020ad63/src/renderers/Html5Canvas.ts#L228)
 
 #### Parameters
 
-• **type?**: `string`
-
-• **quality?**: `any`
+| Parameter | Type |
+| :------ | :------ |
+| `type`? | `string` |
+| `quality`? | `any` |
 
 #### Returns
 
-[`Promise ↗️`]( https://developer.mozilla.org/docs/Web/JavaScript/Reference/Global_Objects/Promise )\<[`Blob ↗️`]( https://developer.mozilla.org/docs/Web/API/Blob )\>
+[`Promise`](https://developer.mozilla.org/docs/Web/JavaScript/Reference/Global_Objects/Promise)\<[`Blob`](https://developer.mozilla.org/docs/Web/API/Blob)\>
 
 #### Implementation of
 
 `CanvasInterface.getBlob`
-
-#### Source
-
-[src/renderers/Html5Canvas.ts:228](https://github.com/jaames/flipnote.js/blob/afe27e228e29d19d2dff33dfb324ba35dc913507/src/renderers/Html5Canvas.ts#L228)
 
 ***
 
 ### destroy()
 
 > **destroy**(): `void`
+
+Defined in: [src/renderers/Html5Canvas.ts:232](https://github.com/jaames/flipnote.js/blob/24e772733243f115c3848537efabe6ee9020ad63/src/renderers/Html5Canvas.ts#L232)
 
 #### Returns
 
@@ -450,7 +408,3 @@ optional RGBA color to use as a background color
 #### Implementation of
 
 `CanvasInterface.destroy`
-
-#### Source
-
-[src/renderers/Html5Canvas.ts:232](https://github.com/jaames/flipnote.js/blob/afe27e228e29d19d2dff33dfb324ba35dc913507/src/renderers/Html5Canvas.ts#L232)

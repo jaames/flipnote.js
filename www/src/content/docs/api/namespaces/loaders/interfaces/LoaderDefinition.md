@@ -5,61 +5,21 @@ prev: false
 title: "LoaderDefinition"
 ---
 
+Defined in: [src/loaders/types.ts:5](https://github.com/jaames/flipnote.js/blob/24e772733243f115c3848537efabe6ee9020ad63/src/loaders/types.ts#L5)
+
 Loader interface.
 The goal of a loader is to be able to tell when it can handle a particular source type, and then resolve an ArrayBuffer for that source.
 
-## Type parameters
+## Type Parameters
 
-• **T**
+| Type Parameter |
+| :------ |
+| `T` |
 
 ## Properties
 
-### name
-
-> **name**: `string`
-
-Unique loader name
-
-#### Source
-
-[src/loaders/types.ts:9](https://github.com/jaames/flipnote.js/blob/afe27e228e29d19d2dff33dfb324ba35dc913507/src/loaders/types.ts#L9)
-
-***
-
-### matches()
-
-> **matches**: (`source`) => `boolean`
-
-Is this loader able to process the input source type?
-
-#### Parameters
-
-• **source**: `any`
-
-#### Returns
-
-`boolean`
-
-#### Source
-
-[src/loaders/types.ts:13](https://github.com/jaames/flipnote.js/blob/afe27e228e29d19d2dff33dfb324ba35dc913507/src/loaders/types.ts#L13)
-
-***
-
-### load()
-
-> **load**: (`source`) => [`Promise ↗️`]( https://developer.mozilla.org/docs/Web/JavaScript/Reference/Global_Objects/Promise )\<[`ArrayBuffer ↗️`]( https://developer.mozilla.org/docs/Web/JavaScript/Reference/Global_Objects/ArrayBuffer )\>
-
-Try loading the source (can be async) and return an ArrayBuffer
-
-#### Parameters
-
-• **source**: `T`
-
-#### Returns
-
-[`Promise ↗️`]( https://developer.mozilla.org/docs/Web/JavaScript/Reference/Global_Objects/Promise )\<[`ArrayBuffer ↗️`]( https://developer.mozilla.org/docs/Web/JavaScript/Reference/Global_Objects/ArrayBuffer )\>
-
-#### Source
-
-[src/loaders/types.ts:17](https://github.com/jaames/flipnote.js/blob/afe27e228e29d19d2dff33dfb324ba35dc913507/src/loaders/types.ts#L17)
+| Property | Type | Description |
+| :------ | :------ | :------ |
+| <a id="name"></a> `name` | `string` | Unique loader name |
+| <a id="matches"></a> `matches` | (`source`: `any`) => `boolean` | Is this loader able to process the input source type? |
+| <a id="load"></a> `load` | (`source`: `T`) => [`Promise`](https://developer.mozilla.org/docs/Web/JavaScript/Reference/Global_Objects/Promise)\<`ArrayBufferLike`\> | Try loading the source (can be async) and return an ArrayBuffer |

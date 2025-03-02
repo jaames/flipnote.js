@@ -5,24 +5,13 @@ prev: false
 title: "FlipnoteThumbImageFormat"
 ---
 
+Defined in: [src/parsers/types.ts:120](https://github.com/jaames/flipnote.js/blob/24e772733243f115c3848537efabe6ee9020ad63/src/parsers/types.ts#L120)
+
 Buffer format for a FlipnoteThumbImage
 
 ## Enumeration Members
 
-### Jpeg
-
-> **Jpeg**: `0`
-
-#### Source
-
-[src/parsers/types.ts:117](https://github.com/jaames/flipnote.js/blob/afe27e228e29d19d2dff33dfb324ba35dc913507/src/parsers/types.ts#L117)
-
-***
-
-### Rgba
-
-> **Rgba**: `1`
-
-#### Source
-
-[src/parsers/types.ts:118](https://github.com/jaames/flipnote.js/blob/afe27e228e29d19d2dff33dfb324ba35dc913507/src/parsers/types.ts#L118)
+| Enumeration Member | Value |
+| :------ | :------ |
+| <a id="jpeg"></a> `Jpeg` | `0` |
+| <a id="rgba"></a> `Rgba` | `1` |
