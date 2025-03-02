@@ -48,7 +48,7 @@ export class ImageComponent extends LitElement {
   gif: GifImage;
   note: Flipnote;
   #_src: string = '';
-  #_frame: string = '0';
+  #_frame: string = 'thumb';
 
   @property()
   set src(src: any) {

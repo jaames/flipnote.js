@@ -16,29 +16,29 @@ The Web Component version of Flipnote.js provides a custom `<flipnote-player>` H
 
 ## Opening a Flipnote
 
-Opening a Flipnote will give you a [Flipnote](/api/type-aliases/Flipnote) object that implements the [FlipnoteParser](/api/interfaces/FlipnoteParser) API.
+The `flipnote.parse` function can be used to open a Flipnote file from a variety of different sources. This function will return a [Flipnote](/api/type-aliases/flipnote/) object that implements the [FlipnoteParser](/api/interfaces/FlipnoteParser/) API.
 
 ### Open a Flipnote from a URL (web, node)
 
-Passing a string to `flipnote.parseSource` will attempt to load the Flipnote from the given URL:
+Passing a string to `flipnote.parse` will attempt to load the Flipnote from the given URL:
 
 ```js
 import flipnote from 'flipnote.js';
 
-const note = await flipnote.parseSource('http://example.com/example.ppm');
+const note = await flipnote.parse('http://example.com/example.ppm');
 // do something with the open note here...
 ```
 
 ### Open a Flipnote from the filesystem (node)
 
-In NodeJS, passing a `Buffer` to `flipnote.parseSource` will attempt to load the Flipnote from the given file:
+In NodeJS, passing a `Buffer` to `flipnote.parse` will attempt to load the Flipnote from the given file:
 
 ```js
 import flipnote from 'flipnote.js';
 import { promises as fs } from 'fs';
 
 const file = await fs.readFile('./example.ppm');
-const note = await flipnote.parseSource(file);
+const note = await flipnote.parse(file);
 // do something with the open note here...
 ```
 
@@ -61,7 +61,7 @@ inputElement.addEventListener('change', handleFiles, false);
 
 async function handleFiles() {
   const file = this.files[0];
-  const note = await flipnote.parseSource(file);
+  const note = await flipnote.parse(file);
   // do something with the open note here...
 }
 ```
@@ -70,7 +70,7 @@ See also: [Using files from web applications](https://developer.mozilla.org/en-U
 
 ## GIF conversion
 
-flipnote.js comes with a built-in GIF exporter, which is the easiest way to convert a single Flipnote frame - or the whole animation sequence - into a standard image format. This section assumes you have already opened your Flipnote as a [Flipnote](/api/type-aliases/Flipnote) object called `note`.
+flipnote.js comes with a built-in GIF exporter, which is the easiest way to convert a single Flipnote frame - or the whole animation sequence - into a standard image format. This section assumes you have already opened your Flipnote as a [Flipnote](/api/type-aliases/flipnote/) object called `note`.
 
 ### Encode GIF (web, node)
 
@@ -81,7 +81,7 @@ To create a [GitImage](/api/classes/gifimage/) from a single animation frame:
 ```js
 import flipnote from 'flipnote.js';
 
-const note = await flipnote.parseSource('http://example.com/example.ppm');
+const note = await flipnote.parse('http://example.com/example.ppm');
 const gif = flipnote.GifImage.fromFlipnoteFrame(note, 0);
 ```
 
@@ -90,7 +90,7 @@ To create a [GitImage](/api/classes/gifimage/) from the full animation sequence:
 ```js
 import flipnote from 'flipnote.js';
 
-const note = await flipnote.parseSource('http://example.com/example.ppm');
+const note = await flipnote.parse('http://example.com/example.ppm');
 const gif = flipnote.GifImage.fromFlipnote(note);
 ```
 
@@ -101,7 +101,7 @@ In browser environments, it's recommended to use the `saveAs` function from the 
 ```js
 import flipnote from 'flipnote.js';
 
-const note = await flipnote.parseSource('http://example.com/example.ppm');
+const note = await flipnote.parse('http://example.com/example.ppm');
 const gif = flipnote.GifImage.fromFlipnote(note);
 
 saveAs(gif.getBlob(), note.meta.current.filename + '.gif');
@@ -116,7 +116,7 @@ import flipnote from 'flipnote.js';
 import { promises as fs } from 'fs';
 
 const file = await fs.readFile('./example.ppm');
-const note = await flipnote.parseSource(file);
+const note = await flipnote.parse(file);
 
 const buffer = gif.getBuffer();
 await fs.writeFile(note.meta.current.filename + '.gif', buffer);
@@ -124,7 +124,7 @@ await fs.writeFile(note.meta.current.filename + '.gif', buffer);
 
 ## WAV conversion
 
-flipnote.js also comes with a built-in WAV encoder, for converting Flipnote audio tracks into a standard audio format. This section assumes you have already opened your Flipnote as a [Flipnote](/api/type-aliases/Flipnote) object called `note`.
+flipnote.js also comes with a built-in WAV encoder, for converting Flipnote audio tracks into a standard audio format. This section assumes you have already opened your Flipnote as a [Flipnote](/api/type-aliases/flipnote/) object called `note`.
 
 ### Encode WAV (web, node)
 
@@ -135,7 +135,7 @@ To create a [WavAudio](/api/classes/wavaudio/) from a single audio track:
 ```js
 import flipnote from 'flipnote.js';
 
-const note = await flipnote.parseSource('http://example.com/example.ppm');
+const note = await flipnote.parse('http://example.com/example.ppm');
 
 // 0 = BGM
 // 1 = SE1
@@ -150,7 +150,7 @@ To create a [WavAudio](/api/classes/wavaudio/) from the mixed audio master:
 ```js
 import flipnote from 'flipnote.js';
 
-const note = await flipnote.parseSource('http://example.com/example.ppm');
+const note = await flipnote.parse('http://example.com/example.ppm');
 const wav = flipnote.WavAudio.fromFlipnote(note);
 ```
 
@@ -161,7 +161,7 @@ In browser environments, it's recommended to use the `saveAs` function from the 
 ```js
 import flipnote from 'flipnote.js';
 
-const note = await flipnote.parseSource('http://example.com/example.ppm');
+const note = await flipnote.parse('http://example.com/example.ppm');
 const wav = flipnote.WavAudio.fromFlipnote(note);
 
 saveAs(wav.getBlob(), note.meta.current.filename + '.wav');
@@ -176,7 +176,7 @@ import flipnote from 'flipnote.js';
 import { promises as fs } from 'fs';
 
 const file = await fs.readFile('./example.ppm');
-const note = await flipnote.parseSource(file);
+const note = await flipnote.parse(file);
 
 const buffer = wav.getBuffer();
 await fs.writeFile(note.meta.current.filename + '.wav', buffer);
@@ -185,13 +185,13 @@ await fs.writeFile(note.meta.current.filename + '.wav', buffer);
 ### Flipnote verification (web, node)
 
 flipnote.js can perform public-key verification of a Flipnote's digital signature - this is the same process that the Flipnote Studio apps do when a Flipnote is loaded to make sure that it isn't corrupted.
-This section assumes you have already opened your Flipnote as a [Flipnote](/api/type-aliases/Flipnote) object called `note`.
+This section assumes you have already opened your Flipnote as a [Flipnote](/api/type-aliases/flipnote/) object called `note`.
 
 Verifying a Flipnote is as simple as calling `note.verify()`, however you should be aware that this is asynchronous.
 
 ```js
 import flipnote from 'flipnote.js';
 
-const note = await flipnote.parseSource('http://example.com/example.ppm');
+const note = await flipnote.parse('http://example.com/example.ppm');
 const isValid = await note.verify();
 ```

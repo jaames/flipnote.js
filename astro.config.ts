@@ -36,6 +36,7 @@ export default defineConfig({
             { label: 'Get Started', link: '/get-started' },
             { label: 'Web Components', link: '/web-components' },
             { label: 'Recipes', link: '/recipes' },
+            { label: 'Advanced', link: '/advanced' },
             { label: 'Acknowledgements', link: '/acknowledgements' },
           ],
         },
@@ -64,6 +65,13 @@ export default defineConfig({
             {
               label: 'Flipnote Studio 3D Docs',
               link: 'https://github.com/Flipnote-Collective/flipnote-studio-3d-docs/wiki',
+              attrs: {
+                target: '_blank'
+              },
+            },
+            {
+              label: 'Donate', 
+              link: 'https://github.com/sponsors/jaames',
               attrs: {
                 target: '_blank'
               },
@@ -157,7 +165,6 @@ export default defineConfig({
               '*'
             ],
             defaultCategory: 'Other',
-            // https://typedoc-plugin-markdown.org/docs/options/display-options#tablecolumnsettings
             parametersFormat: 'table',
             enumMembersFormat: 'table',
             interfacePropertiesFormat: 'table',

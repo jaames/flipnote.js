@@ -2,9 +2,8 @@
 import Logo from "../assets/logo_clipped.svg?raw";
 import StarlightPage from "@astrojs/starlight/components/StarlightPage.astro";
 ---
-
-<div class="IndexPage">
-  <StarlightPage frontmatter={{ title: "Flipnote.js", template: "splash" }}>
+<StarlightPage frontmatter={{ title: "Home", template: "splash" }}>
+  <div class="IndexPage">
     <div class="Hero">
       <div class="Hero__body">
         <div class="Hero__intro">
@@ -12,16 +11,19 @@ import StarlightPage from "@astrojs/starlight/components/StarlightPage.astro";
             <Fragment set:html={Logo} />
           </div>
           <p class="Hero__blurb">
-            A JavaScript library for <b>parsing</b>, <b>converting</b>, and <b
-              >in-browser playback</b
-            >
-            of the proprietary animation formats used by <a
+            A JavaScript library for <b>parsing</b>, <b>converting</b>, and <b>in-browser playback</b>
+            of the proprietary animation formats used by 
+            <a
               href="https://en.wikipedia.org/wiki/Flipnote_Studio"
-              >Flipnote Studio</a
             >
-            and <a href="https://en.wikipedia.org/wiki/Flipnote_Studio_3D"
-              >Flipnote Studio 3D</a
-            >.
+              Flipnote&nbsp;Studio
+            </a>
+            and 
+            <a 
+              href="https://en.wikipedia.org/wiki/Flipnote_Studio_3D"
+            >
+              Flipnote&nbsp;Studio&nbsp;3D
+            </a>.
           </p>
           <div class="ButtonGroup">
             <a class="Button" href="/get-started"> Get Started </a>
@@ -47,11 +49,27 @@ import StarlightPage from "@astrojs/starlight/components/StarlightPage.astro";
       </div>
       <div class="Hero__foot">
         <p class="Hero__disclaimer">
-          Flipnote Studio and Flipnote Studio 3D are copyrights of Nintendo Co.,
-          Ltd. <br />This project isn't affiliated with, or endorsed by them in
-          any way.
+          Flipnote&nbsp;Studio and Flipnote&nbsp;Studio&nbsp;3D are copyrights of Nintendo&nbsp;Co.,&nbsp;Ltd.
+          <br />This project is not affiliated with or endorsed by them.
         </p>
       </div>
-    </div>
-  </StarlightPage>
-</div>
+  </div>
+</StarlightPage>
+
+<style>
+  :global(.main-frame) {
+    padding-top: 0 !important;
+  }
+
+  :global(main) {
+    padding-bottom: 0 !important;
+  }
+
+  :global(.content-panel:first-child) {
+    display: none;
+  }
+
+  :global(footer) {
+    display: none !important;
+  }
+</style>

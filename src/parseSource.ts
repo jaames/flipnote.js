@@ -36,4 +36,7 @@ export const parse = async (
 /**
  * @deprecated Use {@link parse} instead.
  */
-export const parseSource = parse;
+export const parseSource = (...args: Parameters<typeof parse>) => {
+  console.warn('parseSource() is deprecated, please use parse() instead');
+  return parse(...args);
+};

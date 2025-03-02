@@ -1,5 +1,5 @@
 /*!!
- * flipnote.js v6.1.0
+ * flipnote.js v6.1.1
  * https://flipnote.js.org
  * A JavaScript library for Flipnote Studio animation files
  * 2018 - 2025 James Daniel
@@ -1210,9 +1210,7 @@ MIGfMA0GCSqGSIb3DQEBAQUAA4GNADCBiQKBgQDCPLwTL6oSflv+gjywi/sM0TUB
 1VvixmTk1BCtavZxBwIDAQAB
 -----END PUBLIC KEY-----`;
     /**
-     * Parser class for (DSiWare) Flipnote Studio's PPM animation format.
-     *
-     * Format docs: https://github.com/Flipnote-Collective/flipnote-studio-docs/wiki/PPM-format
+     * Parser class for (DSiWare) Flipnote Studio's PPM animation format. Format docs: https://github.com/Flipnote-Collective/flipnote-studio-docs/wiki/PPM-format
      * @group File Parser
      */
     class PpmParser extends BaseParser {
@@ -2166,9 +2164,7 @@ kQIDAQAB
         KWZ_LINE_TABLE_COMMON_SHIFT.set(shiftPixels, i * 8);
     });
     /**
-     * Parser class for Flipnote Studio 3D's KWZ animation format
-     *
-     * KWZ format docs: https://github.com/Flipnote-Collective/flipnote-studio-3d-docs/wiki/KWZ-Format
+     * Parser class for Flipnote Studio 3D's KWZ animation format. KWZ format docs: https://github.com/Flipnote-Collective/flipnote-studio-3d-docs/wiki/KWZ-Format
      * @group File Parser
      */
     class KwzParser extends BaseParser {
@@ -3647,7 +3643,10 @@ kQIDAQAB
     /**
      * @deprecated Use {@link parse} instead.
      */
-    const parseSource = parse;
+    const parseSource = (...args) => {
+        console.warn('parseSource() is deprecated, please use parse() instead');
+        return parse(...args);
+    };
 
     /**
      * Player event types
@@ -7825,9 +7824,7 @@ kQIDAQAB
 
     var _GifImage_instances, _GifImage_data, _GifImage_compressor, _GifImage_writeFirstFrame, _GifImage_writeAdditionalFrame, _GifImage_writeHeader, _GifImage_writeGraphicControlExt, _GifImage_writeLogicalScreenDescriptor, _GifImage_writeNetscapeExt, _GifImage_writeColorTable, _GifImage_writeImageDescriptor, _GifImage_colorTableSize, _GifImage_writePixels;
     /**
-     * GIF image encoder.
-     *
-     * Supports static single-frame GIF export as well as animated GIF.
+     * GIF image encoder, supports static single-frame GIF export as well as animated GIF.
      *
      * @group File Encoder
      */
@@ -7835,9 +7832,9 @@ kQIDAQAB
         /**
          * Create a new GIF image object.
          *
-         * @param width image width
-         * @param height image height
-         * @param settings whether the gif should loop, the delay between frames, etc. See {@link GifEncoderSettings}
+         * @param width Image width
+         * @param height Image height
+         * @param settings Whether the gif should loop, the delay between frames, etc. See {@link GifEncoderSettings}
          */
         constructor(width, height, settings = {}) {
             super();
@@ -7860,7 +7857,7 @@ kQIDAQAB
          *
          * This will encode the entire animation, so depending on the number of frames it could take a while to return.
          * @param flipnote {@link Flipnote} object ({@link PpmParser} or {@link KwzParser} instance)
-         * @param settings whether the gif should loop, the delay between frames, etc. See {@link GifEncoderSettings}
+         * @param settings Whether the gif should loop, the delay between frames, etc. See {@link GifEncoderSettings}
          */
         static fromFlipnote(flipnote, settings = {}) {
             const gif = new GifImage(flipnote.imageWidth, flipnote.imageHeight, {
@@ -7875,7 +7872,7 @@ kQIDAQAB
             return gif;
         }
         /**
-         * Create an GIF image from a single Flipnote frame
+         * Create an GIF image from a single Flipnote frame.
          * @param flipnote
          * @param frameIndex animation frame index to encode
          * @param settings whether the gif should loop, the delay between frames, etc. See {@link GifEncoderSettings}
@@ -7892,7 +7889,7 @@ kQIDAQAB
             return gif;
         }
         /**
-         * Add a frame to the GIF image
+         * Add a frame to the GIF image.
          * @param pixels Raw pixels to encode, must be an uncompressed 8bit array of palette indices with a size matching image width * image height
          */
         writeFrame(pixels) {
@@ -7909,13 +7906,13 @@ kQIDAQAB
             __classPrivateFieldGet(this, _GifImage_data, "f").writeByte(0x3B);
         }
         /**
-         * Returns the GIF image data as an {@link https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/ArrayBuffer | ArrayBuffer}
+         * Returns the GIF image data as an {@link https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/ArrayBuffer | ArrayBuffer}.
          */
         getArrayBuffer() {
             return __classPrivateFieldGet(this, _GifImage_data, "f").getBuffer();
         }
         /**
-          * Returns the GIF image data as an {@link https://developer.mozilla.org/en-US/docs/Web/API/HTMLImageElement/Image | Image} object
+          * Returns the GIF image data as an {@link https://developer.mozilla.org/en-US/docs/Web/API/HTMLImageElement/Image | Image} object.
           *
           * Note: This method does not work outside of browser environments
           */
@@ -8120,7 +8117,7 @@ kQIDAQAB
      * flipnote.js library version (exported as `flipnote.version`).
      * You can find the latest version on the project's [NPM](https://www.npmjs.com/package/flipnote.js) page.
      */
-    const version = "6.1.0"; // replaced by @rollup/plugin-replace;
+    const version = "6.1.1"; // replaced by @rollup/plugin-replace;
 
     exports.CanvasInterface = CanvasInterface;
     exports.GifImage = GifImage;

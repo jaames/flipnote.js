@@ -109,9 +109,7 @@ export interface PpmMeta extends FlipnoteMeta {
 export type PpmParserSettings = {};
 
 /**
- * Parser class for (DSiWare) Flipnote Studio's PPM animation format.
- * 
- * Format docs: https://github.com/Flipnote-Collective/flipnote-studio-docs/wiki/PPM-format
+ * Parser class for (DSiWare) Flipnote Studio's PPM animation format. Format docs: https://github.com/Flipnote-Collective/flipnote-studio-docs/wiki/PPM-format
  * @group File Parser
  */
 export class PpmParser extends BaseParser {
@@ -183,7 +181,7 @@ export class PpmParser extends BaseParser {
    */
   static publicKey = PPM_PUBLIC_KEY;
 
-  static matchBuffer(buffer: ArrayBuffer) {
+  static matchBuffer(buffer: ArrayBufferLike) {
     // check the buffer's magic to identify which format it uses
     const magicBytes = new Uint8Array(buffer.slice(0, 4));
     const magic = (magicBytes[0] << 24) | (magicBytes[1] << 16) | (magicBytes[2] << 8) | magicBytes[3];
@@ -297,7 +295,7 @@ export class PpmParser extends BaseParser {
    * @param arrayBuffer an ArrayBuffer containing file data
    * @param settings parser settings (none currently implemented)
    */
-  constructor(arrayBuffer: ArrayBuffer, settings: Partial<PpmParserSettings> = {}) {
+  constructor(arrayBuffer: ArrayBufferLike, settings: Partial<PpmParserSettings> = {}) {
     super(arrayBuffer);
     this.#decodeHeader();
     this.#decodeAnimationHeader();

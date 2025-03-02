@@ -1,5 +1,5 @@
 /*!!
- * flipnote.js v6.1.0
+ * flipnote.js v6.1.1
  * https://flipnote.js.org
  * A JavaScript library for Flipnote Studio animation files
  * 2018 - 2025 James Daniel
@@ -1021,9 +1021,7 @@ MIGfMA0GCSqGSIb3DQEBAQUAA4GNADCBiQKBgQDCPLwTL6oSflv+gjywi/sM0TUB
 1VvixmTk1BCtavZxBwIDAQAB
 -----END PUBLIC KEY-----`;
 /**
- * Parser class for (DSiWare) Flipnote Studio's PPM animation format.
- *
- * Format docs: https://github.com/Flipnote-Collective/flipnote-studio-docs/wiki/PPM-format
+ * Parser class for (DSiWare) Flipnote Studio's PPM animation format. Format docs: https://github.com/Flipnote-Collective/flipnote-studio-docs/wiki/PPM-format
  * @group File Parser
  */
 class PpmParser extends BaseParser {
@@ -1961,9 +1959,7 @@ const KWZ_LINE_TABLE_COMMON_SHIFT = new Uint8Array(32 * 8);
     KWZ_LINE_TABLE_COMMON_SHIFT.set(shiftPixels, i * 8);
 });
 /**
- * Parser class for Flipnote Studio 3D's KWZ animation format
- *
- * KWZ format docs: https://github.com/Flipnote-Collective/flipnote-studio-3d-docs/wiki/KWZ-Format
+ * Parser class for Flipnote Studio 3D's KWZ animation format. KWZ format docs: https://github.com/Flipnote-Collective/flipnote-studio-3d-docs/wiki/KWZ-Format
  * @group File Parser
  */
 class KwzParser extends BaseParser {

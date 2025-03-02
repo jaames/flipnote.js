@@ -10,7 +10,7 @@ export class KwzPlaylist extends BasePlaylistParser {
 
   format = FlipnoteFormat.KWZ;
 
-  constructor(buffer: ArrayBuffer) {
+  constructor(buffer: ArrayBufferLike) {
     super(buffer);
 
     // Decrypt

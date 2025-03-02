@@ -13,7 +13,7 @@ export class PpmPlaylist extends BasePlaylistParser {
 
   format = FlipnoteFormat.PPM;
 
-  constructor(buffer: ArrayBuffer) {
+  constructor(buffer: ArrayBufferLike) {
     super(buffer);
     
     // Decrypt

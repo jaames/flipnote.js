@@ -337,8 +337,15 @@ export abstract class BaseParser extends DataStream {
 
   /** 
    * Get the pixels for a given frame layer, as palette indices
-   * NOTE: layerIndex are not guaranteed to be sorted by 3D depth in KWZs, use {@link getFrameLayerOrder} to get the correct sort order first
-   * NOTE: if the visibility flag for this layer is turned off, the result will be empty
+   * 
+   * :::tip
+   * Layer indices are not guaranteed to be sorted by 3D depth in KWZs, use [getFrameLayerOrder](/api/classes/ppmparser/#getframelayerorder) to get the correct sort order first.
+   * :::
+   * 
+   * :::tip
+   * If the visibility flag for this layer is turned off, the result will be empty
+   * :::
+   * 
    * @group Image
   */
   getLayerPixels(
@@ -385,8 +392,15 @@ export abstract class BaseParser extends DataStream {
 
   /** 
    * Get the pixels for a given frame layer, as RGBA pixels
-   * NOTE: layerIndex are not guaranteed to be sorted by 3D depth in KWZs, use {@link getFrameLayerOrder} to get the correct sort order first
-   * NOTE: if the visibility flag for this layer is turned off, the result will be empty
+   * 
+   * :::tip
+   * Layer indices are not guaranteed to be sorted by 3D depth in KWZs, use [getFrameLayerOrder](/api/classes/ppmparser/#getframelayerorder) to get the correct sort order first.
+   * :::
+   * 
+   * :::tip
+   * If the visibility flag for this layer is turned off, the result will be empty
+   * :::
+   * 
    * @group Image
   */
   getLayerPixelsRgba(

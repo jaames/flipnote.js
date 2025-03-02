@@ -240,9 +240,7 @@ export type KwzParserSettings = {
 };
 
 /** 
- * Parser class for Flipnote Studio 3D's KWZ animation format
- * 
- * KWZ format docs: https://github.com/Flipnote-Collective/flipnote-studio-3d-docs/wiki/KWZ-Format
+ * Parser class for Flipnote Studio 3D's KWZ animation format. KWZ format docs: https://github.com/Flipnote-Collective/flipnote-studio-3d-docs/wiki/KWZ-Format
  * @group File Parser
  */
 export class KwzParser extends BaseParser {
@@ -328,7 +326,7 @@ export class KwzParser extends BaseParser {
    */
   static publicKey = KWZ_PUBLIC_KEY;
 
-  static matchBuffer(buffer: ArrayBuffer) {
+  static matchBuffer(buffer: ArrayBufferLike) {
     // check the buffer's magic to identify which format it uses
     const magicBytes = new Uint8Array(buffer.slice(0, 4));
     const magic = (magicBytes[0] << 24) | (magicBytes[1] << 16) | (magicBytes[2] << 8);
@@ -425,7 +423,7 @@ export class KwzParser extends BaseParser {
    * @param arrayBuffer an ArrayBuffer containing file data
    * @param settings parser settings
    */
-  constructor(arrayBuffer: ArrayBuffer, settings: Partial<KwzParserSettings> = {}) {
+  constructor(arrayBuffer: ArrayBufferLike, settings: Partial<KwzParserSettings> = {}) {
     super(arrayBuffer);
     this.#settings = {...KwzParser.defaultSettings, ...settings};
     this.#layerBuffers = [

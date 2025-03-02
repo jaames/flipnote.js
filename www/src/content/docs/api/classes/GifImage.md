@@ -5,11 +5,9 @@ prev: false
 title: "GifImage"
 ---
 
-Defined in: [src/encoders/GifImage.ts:54](https://github.com/jaames/flipnote.js/blob/70a96e94737c1e7105e9b3794d97b5baff2fd78b/src/encoders/GifImage.ts#L54)
+Defined in: [src/encoders/GifImage.ts:52](https://github.com/jaames/flipnote.js/blob/a8a7e56268fb7f3a0039ade6ddc69a607deedd27/src/encoders/GifImage.ts#L52)
 
-GIF image encoder.
-
-Supports static single-frame GIF export as well as animated GIF.
+GIF image encoder, supports static single-frame GIF export as well as animated GIF.
 
 ## Extends
 
@@ -21,7 +19,7 @@ Supports static single-frame GIF export as well as animated GIF.
 
 > **new GifImage**(`width`, `height`, `settings`): [`GifImage`](/api/classes/gifimage/)
 
-Defined in: [src/encoders/GifImage.ts:97](https://github.com/jaames/flipnote.js/blob/70a96e94737c1e7105e9b3794d97b5baff2fd78b/src/encoders/GifImage.ts#L97)
+Defined in: [src/encoders/GifImage.ts:95](https://github.com/jaames/flipnote.js/blob/a8a7e56268fb7f3a0039ade6ddc69a607deedd27/src/encoders/GifImage.ts#L95)
 
 Create a new GIF image object.
 
@@ -29,9 +27,9 @@ Create a new GIF image object.
 
 | Parameter | Type | Description |
 | :------ | :------ | :------ |
-| `width` | `number` | image width |
-| `height` | `number` | image height |
-| `settings` | [`Partial`](https://www.typescriptlang.org/docs/handbook/utility-types.html#partialtype)\<[`GifImageSettings`](/api/interfaces/gifimagesettings/)\> | whether the gif should loop, the delay between frames, etc. See GifEncoderSettings |
+| `width` | `number` | Image width |
+| `height` | `number` | Image height |
+| `settings` | [`Partial`](https://www.typescriptlang.org/docs/handbook/utility-types.html#partialtype)\<[`GifImageSettings`](/api/interfaces/gifimagesettings/)\> | Whether the gif should loop, the delay between frames, etc. See GifEncoderSettings |
 
 #### Returns
 
@@ -47,7 +45,7 @@ Create a new GIF image object.
 
 > **dataUrl**: `string` = `null`
 
-Defined in: [src/encoders/EncoderBase.ts:6](https://github.com/jaames/flipnote.js/blob/70a96e94737c1e7105e9b3794d97b5baff2fd78b/src/encoders/EncoderBase.ts#L6)
+Defined in: [src/encoders/EncoderBase.ts:6](https://github.com/jaames/flipnote.js/blob/a8a7e56268fb7f3a0039ade6ddc69a607deedd27/src/encoders/EncoderBase.ts#L6)
 
 #### Inherited from
 
@@ -59,7 +57,7 @@ Defined in: [src/encoders/EncoderBase.ts:6](https://github.com/jaames/flipnote.j
 
 > `static` **defaultSettings**: [`GifImageSettings`](/api/interfaces/gifimagesettings/)
 
-Defined in: [src/encoders/GifImage.ts:59](https://github.com/jaames/flipnote.js/blob/70a96e94737c1e7105e9b3794d97b5baff2fd78b/src/encoders/GifImage.ts#L59)
+Defined in: [src/encoders/GifImage.ts:57](https://github.com/jaames/flipnote.js/blob/a8a7e56268fb7f3a0039ade6ddc69a607deedd27/src/encoders/GifImage.ts#L57)
 
 Default GIF encoder settings
 
@@ -69,7 +67,7 @@ Default GIF encoder settings
 
 > `readonly` **mimeType**: `"gif/image"` = `'gif/image'`
 
-Defined in: [src/encoders/GifImage.ts:65](https://github.com/jaames/flipnote.js/blob/70a96e94737c1e7105e9b3794d97b5baff2fd78b/src/encoders/GifImage.ts#L65)
+Defined in: [src/encoders/GifImage.ts:63](https://github.com/jaames/flipnote.js/blob/a8a7e56268fb7f3a0039ade6ddc69a607deedd27/src/encoders/GifImage.ts#L63)
 
 #### Overrides
 
@@ -81,7 +79,7 @@ Defined in: [src/encoders/GifImage.ts:65](https://github.com/jaames/flipnote.js/
 
 > **width**: `number`
 
-Defined in: [src/encoders/GifImage.ts:69](https://github.com/jaames/flipnote.js/blob/70a96e94737c1e7105e9b3794d97b5baff2fd78b/src/encoders/GifImage.ts#L69)
+Defined in: [src/encoders/GifImage.ts:67](https://github.com/jaames/flipnote.js/blob/a8a7e56268fb7f3a0039ade6ddc69a607deedd27/src/encoders/GifImage.ts#L67)
 
 Image width (in pixels).
 
@@ -91,7 +89,7 @@ Image width (in pixels).
 
 > **height**: `number`
 
-Defined in: [src/encoders/GifImage.ts:73](https://github.com/jaames/flipnote.js/blob/70a96e94737c1e7105e9b3794d97b5baff2fd78b/src/encoders/GifImage.ts#L73)
+Defined in: [src/encoders/GifImage.ts:71](https://github.com/jaames/flipnote.js/blob/a8a7e56268fb7f3a0039ade6ddc69a607deedd27/src/encoders/GifImage.ts#L71)
 
 Image height (in pixels).
 
@@ -101,7 +99,7 @@ Image height (in pixels).
 
 > **palette**: [`GifPaletteColor`](/api/type-aliases/gifpalettecolor/)[]
 
-Defined in: [src/encoders/GifImage.ts:77](https://github.com/jaames/flipnote.js/blob/70a96e94737c1e7105e9b3794d97b5baff2fd78b/src/encoders/GifImage.ts#L77)
+Defined in: [src/encoders/GifImage.ts:75](https://github.com/jaames/flipnote.js/blob/a8a7e56268fb7f3a0039ade6ddc69a607deedd27/src/encoders/GifImage.ts#L75)
 
 GIF global RGBA color palette. Max 256 colors, alpha channel is ignored.
 
@@ -111,7 +109,7 @@ GIF global RGBA color palette. Max 256 colors, alpha channel is ignored.
 
 > **settings**: [`GifImageSettings`](/api/interfaces/gifimagesettings/)
 
-Defined in: [src/encoders/GifImage.ts:81](https://github.com/jaames/flipnote.js/blob/70a96e94737c1e7105e9b3794d97b5baff2fd78b/src/encoders/GifImage.ts#L81)
+Defined in: [src/encoders/GifImage.ts:79](https://github.com/jaames/flipnote.js/blob/a8a7e56268fb7f3a0039ade6ddc69a607deedd27/src/encoders/GifImage.ts#L79)
 
 GIF image settings, such as whether it should loop, the delay between frames, etc.
 
@@ -121,7 +119,7 @@ GIF image settings, such as whether it should loop, the delay between frames, et
 
 > **frameCount**: `number` = `0`
 
-Defined in: [src/encoders/GifImage.ts:85](https://github.com/jaames/flipnote.js/blob/70a96e94737c1e7105e9b3794d97b5baff2fd78b/src/encoders/GifImage.ts#L85)
+Defined in: [src/encoders/GifImage.ts:83](https://github.com/jaames/flipnote.js/blob/a8a7e56268fb7f3a0039ade6ddc69a607deedd27/src/encoders/GifImage.ts#L83)
 
 Number of current GIF frames.
 
@@ -131,7 +129,7 @@ Number of current GIF frames.
 
 > **getBuffer**(): `Buffer`
 
-Defined in: [src/encoders/EncoderBase.ts:18](https://github.com/jaames/flipnote.js/blob/70a96e94737c1e7105e9b3794d97b5baff2fd78b/src/encoders/EncoderBase.ts#L18)
+Defined in: [src/encoders/EncoderBase.ts:18](https://github.com/jaames/flipnote.js/blob/a8a7e56268fb7f3a0039ade6ddc69a607deedd27/src/encoders/EncoderBase.ts#L18)
 
 Returns the file data as a NodeJS [Buffer](https://nodejs.org/api/buffer.html).
 
@@ -151,7 +149,7 @@ Returns the file data as a NodeJS [Buffer](https://nodejs.org/api/buffer.html).
 
 > **getBlob**(): [`Blob`](https://developer.mozilla.org/docs/Web/API/Blob)
 
-Defined in: [src/encoders/EncoderBase.ts:26](https://github.com/jaames/flipnote.js/blob/70a96e94737c1e7105e9b3794d97b5baff2fd78b/src/encoders/EncoderBase.ts#L26)
+Defined in: [src/encoders/EncoderBase.ts:26](https://github.com/jaames/flipnote.js/blob/a8a7e56268fb7f3a0039ade6ddc69a607deedd27/src/encoders/EncoderBase.ts#L26)
 
 Returns the file data as a [Blob](https://developer.mozilla.org/en-US/docs/Web/API/Blob).
 
@@ -169,7 +167,7 @@ Returns the file data as a [Blob](https://developer.mozilla.org/en-US/docs/Web/A
 
 > **getUrl**(): `string`
 
-Defined in: [src/encoders/EncoderBase.ts:38](https://github.com/jaames/flipnote.js/blob/70a96e94737c1e7105e9b3794d97b5baff2fd78b/src/encoders/EncoderBase.ts#L38)
+Defined in: [src/encoders/EncoderBase.ts:38](https://github.com/jaames/flipnote.js/blob/a8a7e56268fb7f3a0039ade6ddc69a607deedd27/src/encoders/EncoderBase.ts#L38)
 
 Returns the file data as an [Object URL](https://developer.mozilla.org/en-US/docs/Web/API/URL/createObjectURL).
 
@@ -189,7 +187,7 @@ Returns the file data as an [Object URL](https://developer.mozilla.org/en-US/doc
 
 > **revokeUrl**(): `void`
 
-Defined in: [src/encoders/EncoderBase.ts:50](https://github.com/jaames/flipnote.js/blob/70a96e94737c1e7105e9b3794d97b5baff2fd78b/src/encoders/EncoderBase.ts#L50)
+Defined in: [src/encoders/EncoderBase.ts:50](https://github.com/jaames/flipnote.js/blob/a8a7e56268fb7f3a0039ade6ddc69a607deedd27/src/encoders/EncoderBase.ts#L50)
 
 Revokes this file's [Object URL](https://developer.mozilla.org/en-US/docs/Web/API/URL/createObjectURL) if one has been created, use this when the url created with [getUrl](../../../../../../api/classes/gifimage/#geturl) is no longer needed, to preserve memory.
 
@@ -209,7 +207,7 @@ Revokes this file's [Object URL](https://developer.mozilla.org/en-US/docs/Web/AP
 
 > `static` **fromFlipnote**(`flipnote`, `settings`): [`GifImage`](/api/classes/gifimage/)
 
-Defined in: [src/encoders/GifImage.ts:113](https://github.com/jaames/flipnote.js/blob/70a96e94737c1e7105e9b3794d97b5baff2fd78b/src/encoders/GifImage.ts#L113)
+Defined in: [src/encoders/GifImage.ts:111](https://github.com/jaames/flipnote.js/blob/a8a7e56268fb7f3a0039ade6ddc69a607deedd27/src/encoders/GifImage.ts#L111)
 
 Create an animated GIF image from a Flipnote.
 
@@ -220,7 +218,7 @@ This will encode the entire animation, so depending on the number of frames it c
 | Parameter | Type | Description |
 | :------ | :------ | :------ |
 | `flipnote` | `BaseParser` | [Flipnote](../../../../../../api/type-aliases/flipnote) object ([PpmParser](../../../../../../api/classes/ppmparser) or [KwzParser](../../../../../../api/classes/kwzparser) instance) |
-| `settings` | [`Partial`](https://www.typescriptlang.org/docs/handbook/utility-types.html#partialtype)\<[`GifImageSettings`](/api/interfaces/gifimagesettings/)\> | whether the gif should loop, the delay between frames, etc. See GifEncoderSettings |
+| `settings` | [`Partial`](https://www.typescriptlang.org/docs/handbook/utility-types.html#partialtype)\<[`GifImageSettings`](/api/interfaces/gifimagesettings/)\> | Whether the gif should loop, the delay between frames, etc. See GifEncoderSettings |
 
 #### Returns
 
@@ -232,9 +230,9 @@ This will encode the entire animation, so depending on the number of frames it c
 
 > `static` **fromFlipnoteFrame**(`flipnote`, `frameIndex`, `settings`): [`GifImage`](/api/classes/gifimage/)
 
-Defined in: [src/encoders/GifImage.ts:135](https://github.com/jaames/flipnote.js/blob/70a96e94737c1e7105e9b3794d97b5baff2fd78b/src/encoders/GifImage.ts#L135)
+Defined in: [src/encoders/GifImage.ts:133](https://github.com/jaames/flipnote.js/blob/a8a7e56268fb7f3a0039ade6ddc69a607deedd27/src/encoders/GifImage.ts#L133)
 
-Create an GIF image from a single Flipnote frame
+Create an GIF image from a single Flipnote frame.
 
 #### Parameters
 
@@ -254,9 +252,9 @@ Create an GIF image from a single Flipnote frame
 
 > **writeFrame**(`pixels`): `void`
 
-Defined in: [src/encoders/GifImage.ts:151](https://github.com/jaames/flipnote.js/blob/70a96e94737c1e7105e9b3794d97b5baff2fd78b/src/encoders/GifImage.ts#L151)
+Defined in: [src/encoders/GifImage.ts:149](https://github.com/jaames/flipnote.js/blob/a8a7e56268fb7f3a0039ade6ddc69a607deedd27/src/encoders/GifImage.ts#L149)
 
-Add a frame to the GIF image
+Add a frame to the GIF image.
 
 #### Parameters
 
@@ -274,7 +272,7 @@ Add a frame to the GIF image
 
 > **finish**(): `void`
 
-Defined in: [src/encoders/GifImage.ts:162](https://github.com/jaames/flipnote.js/blob/70a96e94737c1e7105e9b3794d97b5baff2fd78b/src/encoders/GifImage.ts#L162)
+Defined in: [src/encoders/GifImage.ts:160](https://github.com/jaames/flipnote.js/blob/a8a7e56268fb7f3a0039ade6ddc69a607deedd27/src/encoders/GifImage.ts#L160)
 
 Call once all frames have been written to finish the GIF image.
 
@@ -288,9 +286,9 @@ Call once all frames have been written to finish the GIF image.
 
 > **getArrayBuffer**(): `ArrayBufferLike`
 
-Defined in: [src/encoders/GifImage.ts:169](https://github.com/jaames/flipnote.js/blob/70a96e94737c1e7105e9b3794d97b5baff2fd78b/src/encoders/GifImage.ts#L169)
+Defined in: [src/encoders/GifImage.ts:167](https://github.com/jaames/flipnote.js/blob/a8a7e56268fb7f3a0039ade6ddc69a607deedd27/src/encoders/GifImage.ts#L167)
 
-Returns the GIF image data as an [ArrayBuffer](https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/ArrayBuffer)
+Returns the GIF image data as an [ArrayBuffer](https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/ArrayBuffer).
 
 #### Returns
 
@@ -306,9 +304,9 @@ Returns the GIF image data as an [ArrayBuffer](https://developer.mozilla.org/en-
 
 > **getImage**(): [`HTMLImageElement`](https://developer.mozilla.org/docs/Web/API/HTMLImageElement)
 
-Defined in: [src/encoders/GifImage.ts:178](https://github.com/jaames/flipnote.js/blob/70a96e94737c1e7105e9b3794d97b5baff2fd78b/src/encoders/GifImage.ts#L178)
+Defined in: [src/encoders/GifImage.ts:176](https://github.com/jaames/flipnote.js/blob/a8a7e56268fb7f3a0039ade6ddc69a607deedd27/src/encoders/GifImage.ts#L176)
 
-Returns the GIF image data as an [Image](https://developer.mozilla.org/en-US/docs/Web/API/HTMLImageElement/Image) object
+Returns the GIF image data as an [Image](https://developer.mozilla.org/en-US/docs/Web/API/HTMLImageElement/Image) object.
 
 Note: This method does not work outside of browser environments
 

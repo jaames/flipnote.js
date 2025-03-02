@@ -43,7 +43,9 @@ export class PlayerComponent extends PlayerMixin(LitElement) {
       }
 
       .CanvasArea {
+        cursor: pointer;
         position: relative;
+        background: var(--flipnote-player-canvas-background, #FFF);
       }
 
       .CanvasArea:focus {
@@ -98,6 +100,7 @@ export class PlayerComponent extends PlayerMixin(LitElement) {
       .MuteIcon {
         width: 28px;
         height: 28px;
+        cursor: pointer;
       }
 
       .Controls__row,
@@ -145,7 +148,7 @@ export class PlayerComponent extends PlayerMixin(LitElement) {
       }
 
       .Controls--compact .Controls__playButton {
-        margin-right: 8px;
+        margin-right: 12px;
       }
 
       .Controls--compact .Controls__progressBar {
@@ -153,7 +156,7 @@ export class PlayerComponent extends PlayerMixin(LitElement) {
       }
 
       .Controls--default .Controls__playButton {
-        margin-right: 8px;
+        margin-right: 12px;
       }
 
       .Controls--default .Controls__progressBar {
