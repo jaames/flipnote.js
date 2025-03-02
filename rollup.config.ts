@@ -60,14 +60,14 @@ const doBuild = (input: string, outputBase: string, opts: {
     // ES module build
     !isServer && {
       banner,
-      file: `dist/esm/${outputBase}.mjs`,
+      file: `dist/esm/${ outputBase }.mjs`,
       format: 'es',
       exports: 'named',
     },
     // Legacy CommonJS module build
     !isServer && {
       banner,
-      file: `dist/cjs/${outputBase}.cjs`,
+      file: `dist/cjs/${ outputBase }.cjs`,
       format: 'cjs',
       exports: 'named',
     },
@@ -96,11 +96,11 @@ const doBuild = (input: string, outputBase: string, opts: {
     // Demo site browser build
     opts.name && !isServer && {
       name: opts.name,
-      file: `www/public/${outputBase}.min.js`,
+      file: `www/public/${ outputBase }.min.js`,
       format: 'iife',
       exports: 'named',
       sourcemap: true,
-      sourcemapFile: `www/public/${outputBase}.min.js.map`,
+      sourcemapFile: `www/public/${ outputBase }.min.js.map`,
       plugins: [minify()]
     }
   ].filter(Boolean),
@@ -117,6 +117,9 @@ export default [
   !isServer && doBuild('./src/parsers/PpmParser.ts', 'PpmParser'),
   !isServer && doBuild('./src/parsers/KwzParser.ts', 'KwzParser'),
   !isServer && doBuild('./src/Player/index.ts', 'Player'),
+  !isServer && doBuild('./src/parsers/playlist/index.ts', 'playlist'),
+  !isServer && doBuild('./src/parsers/filename/index.ts', 'filename'),
+  !isServer && doBuild('./src/parsers/flipnoteStudioId/index.ts', 'flipnoteStudioId'),
   !isServer && doBuild('./src/renderers/index.ts', 'renderers'),
   !isServer && doBuild('./src/utils/index.ts', 'utils'),
 ].filter(Boolean);

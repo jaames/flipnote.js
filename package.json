@@ -1,6 +1,6 @@
 {
   "name": "flipnote.js",
-  "version": "6.1.0",
+  "version": "6.1.1",
   "description": "A JavaScript library for parsing, converting, and in-browser playback of the proprietary animation formats used by Nintendo's Flipnote Studio and Flipnote Studio 3D apps.",
   "module": "dist/esm/flipnote.mjs",
   "main": "dist/cjs/flipnote.cjs",
@@ -30,6 +30,21 @@
       "default": "./dist/cjs/Player.cjs",
       "import": "./dist/esm/Player.mjs",
       "types": "./dist/types/player/index.d.ts"
+    },
+    "./playlist": {
+      "default": "./dist/cjs/playlist.cjs",
+      "import": "./dist/esm/playlist.mjs",
+      "types": "./dist/types/playlist/index.d.ts"
+    },
+    "./filename": {
+      "default": "./dist/cjs/filename.cjs",
+      "import": "./dist/esm/filename.mjs",
+      "types": "./dist/types/filename/index.d.ts"
+    },
+    "./id": {
+      "default": "./dist/cjs/flipnoteStudioId.cjs",
+      "import": "./dist/esm/flipnoteStudioId.mjs",
+      "types": "./dist/types/flipnoteStudioId/index.d.ts"
     },
     "./renderers": {
       "default": "./dist/cjs/renderers.cjs",
