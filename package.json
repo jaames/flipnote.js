@@ -44,10 +44,9 @@
   },
   "scripts": {
     "prepublishOnly": "npm run build",
-    "postpublish": "./deploy.sh",
     "build": "rollup -c rollup.config.ts --configPlugin @rollup/plugin-typescript",
     "start": "rollup -c rollup.config.ts --configPlugin @rollup/plugin-typescript --watch --environment SERVER",
-    "docs": "npm run docs:copy && cd www && astro build && cd -",
+    "docs": "npm run docs:copy && astro build",
     "docs:start": "astro dev",
     "docs:copy": "npm run docs:copyppm && npm run docs:copykwz && npm run docs:copykwc && npm run docs:copyico",
     "docs:copyppm": "mkdir -p ./www/public/notes && cp ./test/samples/*.ppm ./www/public/notes | true",
