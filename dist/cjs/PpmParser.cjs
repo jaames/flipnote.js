@@ -558,8 +558,15 @@ class BaseParser extends DataStream {
     }
     /**
      * Get the pixels for a given frame layer, as palette indices
-     * NOTE: layerIndex are not guaranteed to be sorted by 3D depth in KWZs, use {@link getFrameLayerOrder} to get the correct sort order first
-     * NOTE: if the visibility flag for this layer is turned off, the result will be empty
+     *
+     * :::tip
+     * Layer indices are not guaranteed to be sorted by 3D depth in KWZs, use [getFrameLayerOrder](/api/classes/ppmparser/#getframelayerorder) to get the correct sort order first.
+     * :::
+     *
+     * :::tip
+     * If the visibility flag for this layer is turned off, the result will be empty
+     * :::
+     *
      * @group Image
     */
     getLayerPixels(frameIndex, layerIndex, imageBuffer = new Uint8Array(this.imageWidth * this.imageHeight), depthStrength = 0, depthEye = FlipnoteStereoscopicEye.Left) {
@@ -599,8 +606,15 @@ class BaseParser extends DataStream {
     }
     /**
      * Get the pixels for a given frame layer, as RGBA pixels
-     * NOTE: layerIndex are not guaranteed to be sorted by 3D depth in KWZs, use {@link getFrameLayerOrder} to get the correct sort order first
-     * NOTE: if the visibility flag for this layer is turned off, the result will be empty
+     *
+     * :::tip
+     * Layer indices are not guaranteed to be sorted by 3D depth in KWZs, use [getFrameLayerOrder](/api/classes/ppmparser/#getframelayerorder) to get the correct sort order first.
+     * :::
+     *
+     * :::tip
+     * If the visibility flag for this layer is turned off, the result will be empty
+     * :::
+     *
      * @group Image
     */
     getLayerPixelsRgba(frameIndex, layerIndex, imageBuffer = new Uint32Array(this.imageWidth * this.imageHeight), paletteBuffer = new Uint32Array(16), depthStrength = 0, depthEye = FlipnoteStereoscopicEye.Left) {

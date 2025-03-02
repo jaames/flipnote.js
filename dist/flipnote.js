@@ -748,8 +748,15 @@ var flipnote = (function (exports) {
         }
         /**
          * Get the pixels for a given frame layer, as palette indices
-         * NOTE: layerIndex are not guaranteed to be sorted by 3D depth in KWZs, use {@link getFrameLayerOrder} to get the correct sort order first
-         * NOTE: if the visibility flag for this layer is turned off, the result will be empty
+         *
+         * :::tip
+         * Layer indices are not guaranteed to be sorted by 3D depth in KWZs, use [getFrameLayerOrder](/api/classes/ppmparser/#getframelayerorder) to get the correct sort order first.
+         * :::
+         *
+         * :::tip
+         * If the visibility flag for this layer is turned off, the result will be empty
+         * :::
+         *
          * @group Image
         */
         getLayerPixels(frameIndex, layerIndex, imageBuffer = new Uint8Array(this.imageWidth * this.imageHeight), depthStrength = 0, depthEye = exports.FlipnoteStereoscopicEye.Left) {
@@ -789,8 +796,15 @@ var flipnote = (function (exports) {
         }
         /**
          * Get the pixels for a given frame layer, as RGBA pixels
-         * NOTE: layerIndex are not guaranteed to be sorted by 3D depth in KWZs, use {@link getFrameLayerOrder} to get the correct sort order first
-         * NOTE: if the visibility flag for this layer is turned off, the result will be empty
+         *
+         * :::tip
+         * Layer indices are not guaranteed to be sorted by 3D depth in KWZs, use [getFrameLayerOrder](/api/classes/ppmparser/#getframelayerorder) to get the correct sort order first.
+         * :::
+         *
+         * :::tip
+         * If the visibility flag for this layer is turned off, the result will be empty
+         * :::
+         *
          * @group Image
         */
         getLayerPixelsRgba(frameIndex, layerIndex, imageBuffer = new Uint32Array(this.imageWidth * this.imageHeight), paletteBuffer = new Uint32Array(16), depthStrength = 0, depthEye = exports.FlipnoteStereoscopicEye.Left) {
@@ -2044,7 +2058,10 @@ MIGfMA0GCSqGSIb3DQEBAQUAA4GNADCBiQKBgQDCPLwTL6oSflv+gjywi/sM0TUB
     };
     /**
      * Get the region for any valid Flipnote Studio 3D user ID.
-     * NOTE: This may be incorrect for IDs that are not from the DSi Library.
+     *
+     * :::tip
+     * This may be incorrect for IDs that are not from the DSi Library.
+     * :::
      */
     const getKwzFsidRegion = (fsid) => {
         if (isKwzDsiLibraryFsid(fsid)) {
@@ -3213,8 +3230,11 @@ kQIDAQAB
      * Convert a PPM Flipnote Studio ID to the format used by KWZ Flipnote Studio IDs (as seen in Nintendo DSi Library Flipnotes).
      * Will return `null` if the conversion could not be made.
      *
-     * NOTE: KWZ Flipnote Studio IDs contain an extra two characters at the beginning. It is not possible to resolve these from a PPM Flipnote Studio ID.
-     */
+     * :::tip
+     * KWZ Flipnote Studio IDs contain an extra two characters at the beginning.
+     * It is not possible to resolve these from a PPM Flipnote Studio ID.
+     * :::
+    */
     const ppmFsidToKwzFsidSuffix = (fsid) => {
         if (isPpmFsid(fsid)) {
             const a = fsid.slice(14, 16);
