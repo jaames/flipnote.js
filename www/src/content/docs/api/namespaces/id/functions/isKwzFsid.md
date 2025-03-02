@@ -7,7 +7,7 @@ title: "isKwzFsid"
 
 > **isKwzFsid**(`fsid`): `boolean`
 
-Defined in: [src/parsers/flipnoteStudioId/kwz.ts:36](https://github.com/jaames/flipnote.js/blob/70a96e94737c1e7105e9b3794d97b5baff2fd78b/src/parsers/flipnoteStudioId/kwz.ts#L36)
+Defined in: [src/parsers/flipnoteStudioId/kwz.ts:36](https://github.com/jaames/flipnote.js/blob/fa9305c29e8ec1c9100d20a6b44d2fa614eb1888/src/parsers/flipnoteStudioId/kwz.ts#L36)
 
 Indicates whether the input is a valid Flipnote Studio 3D user ID
 

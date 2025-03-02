@@ -18,15 +18,15 @@
   --sl-color-accent: #da821e;
   --sl-color-accent-low: lch(from var(--sl-color-accent) calc(l - 15) calc(c + 5) h);
   --sl-color-accent-high: lch(from var(--sl-color-accent) calc(l + 20) calc(c - 25) h);
-  --sl-color-white: #181818;
-  --sl-color-gray-1: #272727;
-  --sl-color-gray-2: #383838;
-  --sl-color-gray-3: #585858;
-  --sl-color-gray-4: #8b8b8b;
-  --sl-color-gray-5: #c2c2c2;
-  --sl-color-gray-6: #eeeeee;
-  --sl-color-gray-7: #f6f6f6;
-  --sl-color-black: #ffffff;
+  --sl-color-white: #181717;
+  --sl-color-gray-1: #232121;
+  --sl-color-gray-2: #383737;
+  --sl-color-gray-3: #5c5a58;
+  --sl-color-gray-4: #8d8c88;
+  --sl-color-gray-5: #c2beba;
+  --sl-color-gray-6: #efede3;
+  --sl-color-gray-7: #f6f2ea;
+  --sl-color-black: #f6f2ea;
 }
 
 [data-theme='light'] .sidebar-pane {
@@ -164,6 +164,10 @@ a {
   padding: 5px;
 }
 
+.sidebar a {
+  text-decoration: none;
+}
+
 .sl-markdown-content li p:last-child {
   margin-bottom: 0;
 }
@@ -180,6 +184,7 @@ a {
 .sl-markdown-content [id^=default],
 .sl-markdown-content [id^=inherited-from],
 .sl-markdown-content [id^=implementation-of],
+.sl-markdown-content [id^=get-signature],
 .sl-markdown-content [id^=source] {
   font-size: 1.2em;
 

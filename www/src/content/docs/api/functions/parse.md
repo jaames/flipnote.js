@@ -7,7 +7,7 @@ title: "parse"
 
 > **parse**(`source`, `parserConfig`?): [`Promise`](https://developer.mozilla.org/docs/Web/JavaScript/Reference/Global_Objects/Promise)\<`BaseParser`\>
 
-Defined in: [src/parseSource.ts:21](https://github.com/jaames/flipnote.js/blob/70a96e94737c1e7105e9b3794d97b5baff2fd78b/src/parseSource.ts#L21)
+Defined in: [src/parseSource.ts:21](https://github.com/jaames/flipnote.js/blob/fa9305c29e8ec1c9100d20a6b44d2fa614eb1888/src/parseSource.ts#L21)
 
 Load a Flipnote from a given source, returning a promise with a parser object. 
 It will auto-detect the Flipnote format and return either a [PpmParser](../../../../../../api/classes/ppmparser) or [KwzParser](../../../../../../api/classes/kwzparser) accordingly.

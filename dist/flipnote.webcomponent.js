@@ -1,5 +1,5 @@
 /*!!
- * flipnote.js v6.1.0
+ * flipnote.js v6.1.1
  * https://flipnote.js.org
  * A JavaScript library for Flipnote Studio animation files
  * 2018 - 2025 James Daniel
@@ -1231,9 +1231,7 @@ MIGfMA0GCSqGSIb3DQEBAQUAA4GNADCBiQKBgQDCPLwTL6oSflv+gjywi/sM0TUB
 1VvixmTk1BCtavZxBwIDAQAB
 -----END PUBLIC KEY-----`;
     /**
-     * Parser class for (DSiWare) Flipnote Studio's PPM animation format.
-     *
-     * Format docs: https://github.com/Flipnote-Collective/flipnote-studio-docs/wiki/PPM-format
+     * Parser class for (DSiWare) Flipnote Studio's PPM animation format. Format docs: https://github.com/Flipnote-Collective/flipnote-studio-docs/wiki/PPM-format
      * @group File Parser
      */
     class PpmParser extends BaseParser {
@@ -2187,9 +2185,7 @@ kQIDAQAB
         KWZ_LINE_TABLE_COMMON_SHIFT.set(shiftPixels, i * 8);
     });
     /**
-     * Parser class for Flipnote Studio 3D's KWZ animation format
-     *
-     * KWZ format docs: https://github.com/Flipnote-Collective/flipnote-studio-3d-docs/wiki/KWZ-Format
+     * Parser class for Flipnote Studio 3D's KWZ animation format. KWZ format docs: https://github.com/Flipnote-Collective/flipnote-studio-3d-docs/wiki/KWZ-Format
      * @group File Parser
      */
     class KwzParser extends BaseParser {
@@ -3668,7 +3664,10 @@ kQIDAQAB
     /**
      * @deprecated Use {@link parse} instead.
      */
-    const parseSource = parse;
+    const parseSource = (...args) => {
+        console.warn('parseSource() is deprecated, please use parse() instead');
+        return parse(...args);
+    };
 
     /**
      * Player event types
@@ -7846,9 +7845,7 @@ kQIDAQAB
 
     var _GifImage_instances, _GifImage_data, _GifImage_compressor, _GifImage_writeFirstFrame, _GifImage_writeAdditionalFrame, _GifImage_writeHeader, _GifImage_writeGraphicControlExt, _GifImage_writeLogicalScreenDescriptor, _GifImage_writeNetscapeExt, _GifImage_writeColorTable, _GifImage_writeImageDescriptor, _GifImage_colorTableSize, _GifImage_writePixels;
     /**
-     * GIF image encoder.
-     *
-     * Supports static single-frame GIF export as well as animated GIF.
+     * GIF image encoder, supports static single-frame GIF export as well as animated GIF.
      *
      * @group File Encoder
      */
@@ -7856,9 +7853,9 @@ kQIDAQAB
         /**
          * Create a new GIF image object.
          *
-         * @param width image width
-         * @param height image height
-         * @param settings whether the gif should loop, the delay between frames, etc. See {@link GifEncoderSettings}
+         * @param width Image width
+         * @param height Image height
+         * @param settings Whether the gif should loop, the delay between frames, etc. See {@link GifEncoderSettings}
          */
         constructor(width, height, settings = {}) {
             super();
@@ -7881,7 +7878,7 @@ kQIDAQAB
          *
          * This will encode the entire animation, so depending on the number of frames it could take a while to return.
          * @param flipnote {@link Flipnote} object ({@link PpmParser} or {@link KwzParser} instance)
-         * @param settings whether the gif should loop, the delay between frames, etc. See {@link GifEncoderSettings}
+         * @param settings Whether the gif should loop, the delay between frames, etc. See {@link GifEncoderSettings}
          */
         static fromFlipnote(flipnote, settings = {}) {
             const gif = new GifImage(flipnote.imageWidth, flipnote.imageHeight, {
@@ -7896,7 +7893,7 @@ kQIDAQAB
             return gif;
         }
         /**
-         * Create an GIF image from a single Flipnote frame
+         * Create an GIF image from a single Flipnote frame.
          * @param flipnote
          * @param frameIndex animation frame index to encode
          * @param settings whether the gif should loop, the delay between frames, etc. See {@link GifEncoderSettings}
@@ -7913,7 +7910,7 @@ kQIDAQAB
             return gif;
         }
         /**
-         * Add a frame to the GIF image
+         * Add a frame to the GIF image.
          * @param pixels Raw pixels to encode, must be an uncompressed 8bit array of palette indices with a size matching image width * image height
          */
         writeFrame(pixels) {
@@ -7930,13 +7927,13 @@ kQIDAQAB
             __classPrivateFieldGet(this, _GifImage_data, "f").writeByte(0x3B);
         }
         /**
-         * Returns the GIF image data as an {@link https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/ArrayBuffer | ArrayBuffer}
+         * Returns the GIF image data as an {@link https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/ArrayBuffer | ArrayBuffer}.
          */
         getArrayBuffer() {
             return __classPrivateFieldGet(this, _GifImage_data, "f").getBuffer();
         }
         /**
-          * Returns the GIF image data as an {@link https://developer.mozilla.org/en-US/docs/Web/API/HTMLImageElement/Image | Image} object
+          * Returns the GIF image data as an {@link https://developer.mozilla.org/en-US/docs/Web/API/HTMLImageElement/Image | Image} object.
           *
           * Note: This method does not work outside of browser environments
           */
@@ -8141,7 +8138,7 @@ kQIDAQAB
      * flipnote.js library version (exported as `flipnote.version`).
      * You can find the latest version on the project's [NPM](https://www.npmjs.com/package/flipnote.js) page.
      */
-    const version = "6.1.0"; // replaced by @rollup/plugin-replace;
+    const version = "6.1.1"; // replaced by @rollup/plugin-replace;
 
     /**
      * @license
@@ -8221,7 +8218,7 @@ kQIDAQAB
      */
     exports.PlayerComponent = class PlayerComponent extends PlayerMixin(s) {
         static get styles() {
-            return i$4 `:host{display:inline-block}.Player{display:inline-block;position:relative;font-family:var(--flipnote-player-font-family,sans-serif)}.CanvasArea{position:relative}.CanvasArea:focus{outline:var(--flipnote-player-focus-outline,3px solid #ffd3a6);outline-offset:2px}.PlayerCanvas{position:relative;display:block}.PlayerCanvas canvas{display:block}.Overlay{position:absolute;top:0;left:0;background:#ebf0f3;color:#4b4c53;width:100%;height:100%;display:flex;justify-content:center;align-items:center}.Overlay--error{background:#ff8b8b;color:#ca2a32}@keyframes spin{from{transform:rotateZ(0)}to{transform:rotateZ(360deg)}}.LoaderIcon{animation:spin infinite 1.2s linear}.Controls{background:var(--flipnote-player-controls-background,none)}.MuteIcon{width:28px;height:28px}.Controls__groupLeft,.Controls__groupRight,.Controls__row{display:flex;align-items:center}.Controls__groupLeft{margin-right:auto}.Controls__groupRight{margin-left:auto}.Controls__playButton{height:32px;width:32px;padding:2px}.MuteIcon{width:28px;height:28px}.LoaderIcon{width:40px;height:40px}.Controls.Controls--compact{margin:6px 0}.Controls__frameCounter{min-width:90px;font-variant-numeric:tabular-nums}.Controls__progressBar{flex:1}.Controls--compact .Controls__playButton{margin-right:8px}.Controls--compact .Controls__progressBar{flex:1}.Controls--default .Controls__playButton{margin-right:8px}.Controls--default .Controls__progressBar{margin-top:2px;margin-bottom:2px;display:block}.Controls--default .Controls__volumeBar{width:70px;margin-left:8px}.Button{border:0;padding:0;outline:0;-webkit-appearance:none;display:block;font-family:inherit;font-size:inherit;text-align:center;cursor:pointer;background:var(--flipnote-player-button-background,#ffd3a6);color:var(--flipnote-player-button-color,#f36a2d);border-radius:4px}.Button:focus{outline:3px solid var(--flipnote-player-button-background,#ffd3a6);outline-offset:2px}.Button flipnote-player-icon{display:block}`;
+            return i$4 `:host{display:inline-block}.Player{display:inline-block;position:relative;font-family:var(--flipnote-player-font-family,sans-serif)}.CanvasArea{cursor:pointer;position:relative;background:var(--flipnote-player-canvas-background,#fff)}.CanvasArea:focus{outline:var(--flipnote-player-focus-outline,3px solid #ffd3a6);outline-offset:2px}.PlayerCanvas{position:relative;display:block}.PlayerCanvas canvas{display:block}.Overlay{position:absolute;top:0;left:0;background:#ebf0f3;color:#4b4c53;width:100%;height:100%;display:flex;justify-content:center;align-items:center}.Overlay--error{background:#ff8b8b;color:#ca2a32}@keyframes spin{from{transform:rotateZ(0)}to{transform:rotateZ(360deg)}}.LoaderIcon{animation:spin infinite 1.2s linear}.Controls{background:var(--flipnote-player-controls-background,none)}.MuteIcon{width:28px;height:28px;cursor:pointer}.Controls__groupLeft,.Controls__groupRight,.Controls__row{display:flex;align-items:center}.Controls__groupLeft{margin-right:auto}.Controls__groupRight{margin-left:auto}.Controls__playButton{height:32px;width:32px;padding:2px}.MuteIcon{width:28px;height:28px}.LoaderIcon{width:40px;height:40px}.Controls.Controls--compact{margin:6px 0}.Controls__frameCounter{min-width:90px;font-variant-numeric:tabular-nums}.Controls__progressBar{flex:1}.Controls--compact .Controls__playButton{margin-right:12px}.Controls--compact .Controls__progressBar{flex:1}.Controls--default .Controls__playButton{margin-right:12px}.Controls--default .Controls__progressBar{margin-top:2px;margin-bottom:2px;display:block}.Controls--default .Controls__volumeBar{width:70px;margin-left:8px}.Button{border:0;padding:0;outline:0;-webkit-appearance:none;display:block;font-family:inherit;font-size:inherit;text-align:center;cursor:pointer;background:var(--flipnote-player-button-background,#ffd3a6);color:var(--flipnote-player-button-color,#f36a2d);border-radius:4px}.Button:focus{outline:3px solid var(--flipnote-player-button-background,#ffd3a6);outline-offset:2px}.Button flipnote-player-icon{display:block}`;
         }
         get width() {
             return this._width;
@@ -8755,7 +8752,7 @@ kQIDAQAB
             super(...arguments);
             _ImageComponent_instances.add(this);
             _ImageComponent__src.set(this, '');
-            _ImageComponent__frame.set(this, '0');
+            _ImageComponent__frame.set(this, 'thumb');
             this.cropped = false;
             this._gifUrl = '';
             this._imgTitle = '';

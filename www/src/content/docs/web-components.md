@@ -11,22 +11,22 @@ Installing the web component build is very similar to the usual installation ste
 ## From a CDN (web)
 
 ```html
-<script src="https://cdn.jsdelivr.net/npm/flipnote.js@5/dist/flipnote.webcomponent.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/flipnote.js@6/dist/flipnote.webcomponent.min.js"></script>
 ```
 
 ## Self-host (web)
 
 [**Development version**](https://raw.githubusercontent.com/jaames/flipnote.js/master/dist/flipnote.webcomponent.js)<br/>
 
-[**Production version**](https://raw.githubusercontent.com/jaames/flipnote.js/master/dist/flipnote.webcomponent.min.js)<br/>
+[**Production version**](https://raw.githubusercontent.com/jaames/flipnote.js/master/dist/flipnote.webcomponent.min.js)<br>
 
 ## From NPM (web via a bundler)
 
 ```js
 // with the es6 import syntax:
-import flipnote from 'flipnote.js/flipnote.webcomponent.js';
+import flipnote from 'flipnote.js/webcomponent';
 // or with the older require() function:
-const flipnote = require('flipnote.js/flipnote.webcomponent.js');
+const flipnote = require('flipnote.js/webcomponent');
 ```
 
 # flipnote-player
@@ -124,6 +124,7 @@ flipnote-player {
 | `--flipnote-player-controls-background` | `none` | Background color for the controls area |
 | `--flipnote-player-button-background` | `#FFD3A6` | Background color for any player buttons |
 | `--flipnote-player-button-color` | `#F36A2D` | Text and icon color for any player buttons |
+| `--flipnote-player-canvas-background` | `#FFF` | Canvas area background - this will only be visible if the Flipnote is a KWZ and uses a transparent background color. |
 
 This isn't super fleshed-out, so if you need more styling options for your use-case feel free to [open an issue](https://github.com/jaames/flipnote.js/issues) to request something!
 

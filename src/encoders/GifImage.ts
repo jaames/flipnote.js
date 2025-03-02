@@ -45,9 +45,7 @@ export interface GifImageSettings {
 };
 
 /** 
- * GIF image encoder.
- * 
- * Supports static single-frame GIF export as well as animated GIF.
+ * GIF image encoder, supports static single-frame GIF export as well as animated GIF.
  * 
  * @group File Encoder
  */
@@ -90,9 +88,9 @@ export class GifImage extends EncoderBase {
   /**
    * Create a new GIF image object.
    * 
-   * @param width image width
-   * @param height image height
-   * @param settings whether the gif should loop, the delay between frames, etc. See {@link GifEncoderSettings}
+   * @param width Image width
+   * @param height Image height
+   * @param settings Whether the gif should loop, the delay between frames, etc. See {@link GifEncoderSettings}
    */
   constructor(width: number, height: number, settings: Partial<GifImageSettings> = {}) {
     super();
@@ -108,7 +106,7 @@ export class GifImage extends EncoderBase {
    * 
    * This will encode the entire animation, so depending on the number of frames it could take a while to return.
    * @param flipnote {@link Flipnote} object ({@link PpmParser} or {@link KwzParser} instance)
-   * @param settings whether the gif should loop, the delay between frames, etc. See {@link GifEncoderSettings}
+   * @param settings Whether the gif should loop, the delay between frames, etc. See {@link GifEncoderSettings}
    */
   static fromFlipnote(flipnote: Flipnote, settings: Partial<GifImageSettings> = {}) {
     const gif = new GifImage(flipnote.imageWidth, flipnote.imageHeight, {
@@ -127,7 +125,7 @@ export class GifImage extends EncoderBase {
   }
 
   /**
-   * Create an GIF image from a single Flipnote frame
+   * Create an GIF image from a single Flipnote frame.
    * @param flipnote
    * @param frameIndex animation frame index to encode
    * @param settings whether the gif should loop, the delay between frames, etc. See {@link GifEncoderSettings}
@@ -145,7 +143,7 @@ export class GifImage extends EncoderBase {
   }
 
   /**
-   * Add a frame to the GIF image
+   * Add a frame to the GIF image.
    * @param pixels Raw pixels to encode, must be an uncompressed 8bit array of palette indices with a size matching image width * image height
    */
   writeFrame(pixels: Uint8Array) {
@@ -164,14 +162,14 @@ export class GifImage extends EncoderBase {
   }
 
   /**
-   * Returns the GIF image data as an {@link https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/ArrayBuffer | ArrayBuffer}
+   * Returns the GIF image data as an {@link https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/ArrayBuffer | ArrayBuffer}.
    */
   getArrayBuffer() {
     return this.#data.getBuffer();
   }
 
   /**
-    * Returns the GIF image data as an {@link https://developer.mozilla.org/en-US/docs/Web/API/HTMLImageElement/Image | Image} object
+    * Returns the GIF image data as an {@link https://developer.mozilla.org/en-US/docs/Web/API/HTMLImageElement/Image | Image} object.
     * 
     * Note: This method does not work outside of browser environments
     */

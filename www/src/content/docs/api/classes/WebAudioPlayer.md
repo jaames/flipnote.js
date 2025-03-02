@@ -5,7 +5,7 @@ prev: false
 title: "WebAudioPlayer"
 ---
 
-Defined in: [src/webaudio/WebAudioPlayer.ts:22](https://github.com/jaames/flipnote.js/blob/70a96e94737c1e7105e9b3794d97b5baff2fd78b/src/webaudio/WebAudioPlayer.ts#L22)
+Defined in: [src/webaudio/WebAudioPlayer.ts:22](https://github.com/jaames/flipnote.js/blob/fa9305c29e8ec1c9100d20a6b44d2fa614eb1888/src/webaudio/WebAudioPlayer.ts#L22)
 
 Audio player built around the [Web Audio API](https://developer.mozilla.org/en-US/docs/Web/API/Web_Audio_API).
 
@@ -17,7 +17,7 @@ Capable of playing PCM streams, with volume adjustment and an optional equalizer
 
 > **new WebAudioPlayer**(): [`WebAudioPlayer`](/api/classes/webaudioplayer/)
 
-Defined in: [src/webaudio/WebAudioPlayer.ts:68](https://github.com/jaames/flipnote.js/blob/70a96e94737c1e7105e9b3794d97b5baff2fd78b/src/webaudio/WebAudioPlayer.ts#L68)
+Defined in: [src/webaudio/WebAudioPlayer.ts:68](https://github.com/jaames/flipnote.js/blob/fa9305c29e8ec1c9100d20a6b44d2fa614eb1888/src/webaudio/WebAudioPlayer.ts#L68)
 
 #### Returns
 
@@ -31,7 +31,7 @@ Defined in: [src/webaudio/WebAudioPlayer.ts:68](https://github.com/jaames/flipno
 
 > **get** **volume**(): `number`
 
-Defined in: [src/webaudio/WebAudioPlayer.ts:79](https://github.com/jaames/flipnote.js/blob/70a96e94737c1e7105e9b3794d97b5baff2fd78b/src/webaudio/WebAudioPlayer.ts#L79)
+Defined in: [src/webaudio/WebAudioPlayer.ts:79](https://github.com/jaames/flipnote.js/blob/fa9305c29e8ec1c9100d20a6b44d2fa614eb1888/src/webaudio/WebAudioPlayer.ts#L79)
 
 ##### Returns
 
@@ -41,7 +41,7 @@ Defined in: [src/webaudio/WebAudioPlayer.ts:79](https://github.com/jaames/flipno
 
 > **set** **volume**(`value`): `void`
 
-Defined in: [src/webaudio/WebAudioPlayer.ts:75](https://github.com/jaames/flipnote.js/blob/70a96e94737c1e7105e9b3794d97b5baff2fd78b/src/webaudio/WebAudioPlayer.ts#L75)
+Defined in: [src/webaudio/WebAudioPlayer.ts:75](https://github.com/jaames/flipnote.js/blob/fa9305c29e8ec1c9100d20a6b44d2fa614eb1888/src/webaudio/WebAudioPlayer.ts#L75)
 
 The audio output volume. Range is 0 to 1.
 
@@ -63,7 +63,7 @@ The audio output volume. Range is 0 to 1.
 
 > **get** **loop**(): `boolean`
 
-Defined in: [src/webaudio/WebAudioPlayer.ts:92](https://github.com/jaames/flipnote.js/blob/70a96e94737c1e7105e9b3794d97b5baff2fd78b/src/webaudio/WebAudioPlayer.ts#L92)
+Defined in: [src/webaudio/WebAudioPlayer.ts:92](https://github.com/jaames/flipnote.js/blob/fa9305c29e8ec1c9100d20a6b44d2fa614eb1888/src/webaudio/WebAudioPlayer.ts#L92)
 
 ##### Returns
 
@@ -73,7 +73,7 @@ Defined in: [src/webaudio/WebAudioPlayer.ts:92](https://github.com/jaames/flipno
 
 > **set** **loop**(`value`): `void`
 
-Defined in: [src/webaudio/WebAudioPlayer.ts:86](https://github.com/jaames/flipnote.js/blob/70a96e94737c1e7105e9b3794d97b5baff2fd78b/src/webaudio/WebAudioPlayer.ts#L86)
+Defined in: [src/webaudio/WebAudioPlayer.ts:86](https://github.com/jaames/flipnote.js/blob/fa9305c29e8ec1c9100d20a6b44d2fa614eb1888/src/webaudio/WebAudioPlayer.ts#L86)
 
 Whether the audio should loop after it has ended
 
@@ -93,7 +93,7 @@ Whether the audio should loop after it has ended
 
 > **ctx**: [`AudioContext`](https://developer.mozilla.org/docs/Web/API/AudioContext)
 
-Defined in: [src/webaudio/WebAudioPlayer.ts:27](https://github.com/jaames/flipnote.js/blob/70a96e94737c1e7105e9b3794d97b5baff2fd78b/src/webaudio/WebAudioPlayer.ts#L27)
+Defined in: [src/webaudio/WebAudioPlayer.ts:27](https://github.com/jaames/flipnote.js/blob/fa9305c29e8ec1c9100d20a6b44d2fa614eb1888/src/webaudio/WebAudioPlayer.ts#L27)
 
 Audio context, see [AudioContext](https://developer.mozilla.org/en-US/docs/Web/API/AudioContext).
 
@@ -103,7 +103,7 @@ Audio context, see [AudioContext](https://developer.mozilla.org/en-US/docs/Web/A
 
 > **sampleRate**: `number`
 
-Defined in: [src/webaudio/WebAudioPlayer.ts:31](https://github.com/jaames/flipnote.js/blob/70a96e94737c1e7105e9b3794d97b5baff2fd78b/src/webaudio/WebAudioPlayer.ts#L31)
+Defined in: [src/webaudio/WebAudioPlayer.ts:31](https://github.com/jaames/flipnote.js/blob/fa9305c29e8ec1c9100d20a6b44d2fa614eb1888/src/webaudio/WebAudioPlayer.ts#L31)
 
 Audio sample rate.
 
@@ -113,7 +113,7 @@ Audio sample rate.
 
 > **useEq**: `boolean` = `false`
 
-Defined in: [src/webaudio/WebAudioPlayer.ts:35](https://github.com/jaames/flipnote.js/blob/70a96e94737c1e7105e9b3794d97b5baff2fd78b/src/webaudio/WebAudioPlayer.ts#L35)
+Defined in: [src/webaudio/WebAudioPlayer.ts:35](https://github.com/jaames/flipnote.js/blob/fa9305c29e8ec1c9100d20a6b44d2fa614eb1888/src/webaudio/WebAudioPlayer.ts#L35)
 
 Whether the audio is being run through an equalizer or not.
 
@@ -123,7 +123,7 @@ Whether the audio is being run through an equalizer or not.
 
 > **useAnalyser**: `boolean` = `false`
 
-Defined in: [src/webaudio/WebAudioPlayer.ts:39](https://github.com/jaames/flipnote.js/blob/70a96e94737c1e7105e9b3794d97b5baff2fd78b/src/webaudio/WebAudioPlayer.ts#L39)
+Defined in: [src/webaudio/WebAudioPlayer.ts:39](https://github.com/jaames/flipnote.js/blob/fa9305c29e8ec1c9100d20a6b44d2fa614eb1888/src/webaudio/WebAudioPlayer.ts#L39)
 
 Whether to connect the output to an audio analyser (see [analyser](../../../../../../api/classes/webaudioplayer/#analyser)).
 
@@ -133,7 +133,7 @@ Whether to connect the output to an audio analyser (see [analyser](../../../../.
 
 > **eqSettings**: \[`number`, `number`\][]
 
-Defined in: [src/webaudio/WebAudioPlayer.ts:43](https://github.com/jaames/flipnote.js/blob/70a96e94737c1e7105e9b3794d97b5baff2fd78b/src/webaudio/WebAudioPlayer.ts#L43)
+Defined in: [src/webaudio/WebAudioPlayer.ts:43](https://github.com/jaames/flipnote.js/blob/fa9305c29e8ec1c9100d20a6b44d2fa614eb1888/src/webaudio/WebAudioPlayer.ts#L43)
 
 Default equalizer settings. Credit to [Sudomemo](https://www.sudomemo.net/) for these.
 
@@ -143,7 +143,7 @@ Default equalizer settings. Credit to [Sudomemo](https://www.sudomemo.net/) for 
 
 > **analyser**: [`AnalyserNode`](https://developer.mozilla.org/docs/Web/API/AnalyserNode)
 
-Defined in: [src/webaudio/WebAudioPlayer.ts:57](https://github.com/jaames/flipnote.js/blob/70a96e94737c1e7105e9b3794d97b5baff2fd78b/src/webaudio/WebAudioPlayer.ts#L57)
+Defined in: [src/webaudio/WebAudioPlayer.ts:57](https://github.com/jaames/flipnote.js/blob/fa9305c29e8ec1c9100d20a6b44d2fa614eb1888/src/webaudio/WebAudioPlayer.ts#L57)
 
 If enabled, provides audio analysis for visualization etc - https://developer.mozilla.org/en-US/docs/Web/API/Web_Audio_API/Visualizations_with_Web_Audio_API
 
@@ -153,7 +153,7 @@ If enabled, provides audio analysis for visualization etc - https://developer.mo
 
 > **setBuffer**(`inputBuffer`, `sampleRate`): `void`
 
-Defined in: [src/webaudio/WebAudioPlayer.ts:107](https://github.com/jaames/flipnote.js/blob/70a96e94737c1e7105e9b3794d97b5baff2fd78b/src/webaudio/WebAudioPlayer.ts#L107)
+Defined in: [src/webaudio/WebAudioPlayer.ts:107](https://github.com/jaames/flipnote.js/blob/fa9305c29e8ec1c9100d20a6b44d2fa614eb1888/src/webaudio/WebAudioPlayer.ts#L107)
 
 Set the audio buffer to play
 
@@ -174,7 +174,7 @@ Set the audio buffer to play
 
 > **setAnalyserEnabled**(`on`): `void`
 
-Defined in: [src/webaudio/WebAudioPlayer.ts:179](https://github.com/jaames/flipnote.js/blob/70a96e94737c1e7105e9b3794d97b5baff2fd78b/src/webaudio/WebAudioPlayer.ts#L179)
+Defined in: [src/webaudio/WebAudioPlayer.ts:179](https://github.com/jaames/flipnote.js/blob/fa9305c29e8ec1c9100d20a6b44d2fa614eb1888/src/webaudio/WebAudioPlayer.ts#L179)
 
 #### Parameters
 
@@ -192,7 +192,7 @@ Defined in: [src/webaudio/WebAudioPlayer.ts:179](https://github.com/jaames/flipn
 
 > **setVolume**(`value`): `void`
 
-Defined in: [src/webaudio/WebAudioPlayer.ts:188](https://github.com/jaames/flipnote.js/blob/70a96e94737c1e7105e9b3794d97b5baff2fd78b/src/webaudio/WebAudioPlayer.ts#L188)
+Defined in: [src/webaudio/WebAudioPlayer.ts:188](https://github.com/jaames/flipnote.js/blob/fa9305c29e8ec1c9100d20a6b44d2fa614eb1888/src/webaudio/WebAudioPlayer.ts#L188)
 
 Sets the audio volume level
 
@@ -212,7 +212,7 @@ Sets the audio volume level
 
 > **playFrom**(`currentTime`): `void`
 
-Defined in: [src/webaudio/WebAudioPlayer.ts:203](https://github.com/jaames/flipnote.js/blob/70a96e94737c1e7105e9b3794d97b5baff2fd78b/src/webaudio/WebAudioPlayer.ts#L203)
+Defined in: [src/webaudio/WebAudioPlayer.ts:203](https://github.com/jaames/flipnote.js/blob/fa9305c29e8ec1c9100d20a6b44d2fa614eb1888/src/webaudio/WebAudioPlayer.ts#L203)
 
 Begin playback from a specific point
 
@@ -234,7 +234,7 @@ Note that the WebAudioPlayer doesn't keep track of audio playback itself. We rel
 
 > **stop**(): `void`
 
-Defined in: [src/webaudio/WebAudioPlayer.ts:214](https://github.com/jaames/flipnote.js/blob/70a96e94737c1e7105e9b3794d97b5baff2fd78b/src/webaudio/WebAudioPlayer.ts#L214)
+Defined in: [src/webaudio/WebAudioPlayer.ts:214](https://github.com/jaames/flipnote.js/blob/fa9305c29e8ec1c9100d20a6b44d2fa614eb1888/src/webaudio/WebAudioPlayer.ts#L214)
 
 Stops the audio playback
 
@@ -248,7 +248,7 @@ Stops the audio playback
 
 > **getCurrentTime**(): `number`
 
-Defined in: [src/webaudio/WebAudioPlayer.ts:222](https://github.com/jaames/flipnote.js/blob/70a96e94737c1e7105e9b3794d97b5baff2fd78b/src/webaudio/WebAudioPlayer.ts#L222)
+Defined in: [src/webaudio/WebAudioPlayer.ts:222](https://github.com/jaames/flipnote.js/blob/fa9305c29e8ec1c9100d20a6b44d2fa614eb1888/src/webaudio/WebAudioPlayer.ts#L222)
 
 Get the current playback time, in seconds
 
@@ -262,7 +262,7 @@ Get the current playback time, in seconds
 
 > **destroy**(): [`Promise`](https://developer.mozilla.org/docs/Web/JavaScript/Reference/Global_Objects/Promise)\<`void`\>
 
-Defined in: [src/webaudio/WebAudioPlayer.ts:229](https://github.com/jaames/flipnote.js/blob/70a96e94737c1e7105e9b3794d97b5baff2fd78b/src/webaudio/WebAudioPlayer.ts#L229)
+Defined in: [src/webaudio/WebAudioPlayer.ts:229](https://github.com/jaames/flipnote.js/blob/fa9305c29e8ec1c9100d20a6b44d2fa614eb1888/src/webaudio/WebAudioPlayer.ts#L229)
 
 Frees any resources used by this canvas instance
 

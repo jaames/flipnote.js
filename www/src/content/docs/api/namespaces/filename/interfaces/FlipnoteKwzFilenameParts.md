@@ -5,7 +5,7 @@ prev: false
 title: "FlipnoteKwzFilenameParts"
 ---
 
-Defined in: [src/parsers/filename/kwz.ts:66](https://github.com/jaames/flipnote.js/blob/70a96e94737c1e7105e9b3794d97b5baff2fd78b/src/parsers/filename/kwz.ts#L66)
+Defined in: [src/parsers/filename/kwz.ts:66](https://github.com/jaames/flipnote.js/blob/fa9305c29e8ec1c9100d20a6b44d2fa614eb1888/src/parsers/filename/kwz.ts#L66)
 
 KWZ filenames can be decoded and broken down into different fields. This object represents a parsed KWZ filename.
 
