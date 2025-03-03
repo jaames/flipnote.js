@@ -6,9 +6,9 @@ This page provides some basic recipes for achieving common tasks with the flipno
 
 - [Embedding a Flipnote player](#embedding-a-flipnote-player)
 - [Opening a Flipnote](#opening-a-flipnote)
-- [GIF conversion](#gif-conversion)
-- [WAV conversion](#wav-conversion)
-- [Flipnote verification](#flipnote-verification)
+- [GIF conversion](#flipnote-gif-conversion)
+- [WAV conversion](#flipnote-wav-conversion)
+- [Flipnote verification](#flipnote-verification-web-node)
 
 ## Embedding a Flipnote player
 
@@ -68,9 +68,9 @@ async function handleFiles() {
 
 See also: [Using files from web applications](https://developer.mozilla.org/en-US/docs/Web/API/File/Using_files_from_web_applications) on MDN.
 
-## GIF conversion
+## Flipnote GIF conversion
 
-flipnote.js comes with a built-in GIF exporter, which is the easiest way to convert a single Flipnote frame - or the whole animation sequence - into a standard image format. This section assumes you have already opened your Flipnote as a [Flipnote](/api/type-aliases/flipnote/) object called `note`.
+flipnote.js comes with a built-in GIF exporter, which is the easiest way to convert a single Flipnote frame - or the whole animation sequence - into a standard image format.
 
 ### Encode GIF (web, node)
 
@@ -122,9 +122,9 @@ const buffer = gif.getBuffer();
 await fs.writeFile(note.meta.current.filename + '.gif', buffer);
 ```
 
-## WAV conversion
+## Flipnote WAV conversion
 
-flipnote.js also comes with a built-in WAV encoder, for converting Flipnote audio tracks into a standard audio format. This section assumes you have already opened your Flipnote as a [Flipnote](/api/type-aliases/flipnote/) object called `note`.
+flipnote.js also comes with a built-in WAV encoder, for converting Flipnote audio tracks into a standard audio format.
 
 ### Encode WAV (web, node)
 
@@ -177,7 +177,7 @@ import { promises as fs } from 'fs';
 
 const file = await fs.readFile('./example.ppm');
 const note = await flipnote.parse(file);
-
+const wav = flipnote.WavAudio.fromFlipnote(note);
 const buffer = wav.getBuffer();
 await fs.writeFile(note.meta.current.filename + '.wav', buffer);
 ```
@@ -185,7 +185,6 @@ await fs.writeFile(note.meta.current.filename + '.wav', buffer);
 ### Flipnote verification (web, node)
 
 flipnote.js can perform public-key verification of a Flipnote's digital signature - this is the same process that the Flipnote Studio apps do when a Flipnote is loaded to make sure that it isn't corrupted.
-This section assumes you have already opened your Flipnote as a [Flipnote](/api/type-aliases/flipnote/) object called `note`.
 
 Verifying a Flipnote is as simple as calling `note.verify()`, however you should be aware that this is asynchronous.
 

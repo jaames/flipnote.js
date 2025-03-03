@@ -7,7 +7,7 @@ title: "ppmFsidToKwzFsidSuffix"
 
 > **ppmFsidToKwzFsidSuffix**(`fsid`): `string`
 
-Defined in: [src/parsers/flipnoteStudioId/common.ts:41](https://github.com/jaames/flipnote.js/blob/a8a7e56268fb7f3a0039ade6ddc69a607deedd27/src/parsers/flipnoteStudioId/common.ts#L41)
+Defined in: [src/parsers/flipnoteStudioId/common.ts:41](https://github.com/jaames/flipnote.js/blob/8ec10f089e866d1297261b52ab6750bd899577ce/src/parsers/flipnoteStudioId/common.ts#L41)
 
 Convert a PPM Flipnote Studio ID to the format used by KWZ Flipnote Studio IDs (as seen in Nintendo DSi Library Flipnotes).
 Will return `null` if the conversion could not be made.

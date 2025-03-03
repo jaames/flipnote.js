@@ -7,7 +7,7 @@ title: "KwzParserSettings"
 
 > **KwzParserSettings**: `object`
 
-Defined in: [src/parsers/KwzParser.ts:196](https://github.com/jaames/flipnote.js/blob/a8a7e56268fb7f3a0039ade6ddc69a607deedd27/src/parsers/KwzParser.ts#L196)
+Defined in: [src/parsers/KwzParser.ts:196](https://github.com/jaames/flipnote.js/blob/8ec10f089e866d1297261b52ab6750bd899577ce/src/parsers/KwzParser.ts#L196)
 
 KWZ parser options for enabling optimizations and other extra features
 

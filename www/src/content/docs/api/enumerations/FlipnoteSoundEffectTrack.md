@@ -5,7 +5,7 @@ prev: false
 title: "FlipnoteSoundEffectTrack"
 ---
 
-Defined in: [src/parsers/types.ts:221](https://github.com/jaames/flipnote.js/blob/a8a7e56268fb7f3a0039ade6ddc69a607deedd27/src/parsers/types.ts#L221)
+Defined in: [src/parsers/types.ts:221](https://github.com/jaames/flipnote.js/blob/8ec10f089e866d1297261b52ab6750bd899577ce/src/parsers/types.ts#L221)
 
 [FlipnoteAudioTrack](../../../../../../api/enumerations/flipnoteaudiotrack), but just sound effect tracks
 

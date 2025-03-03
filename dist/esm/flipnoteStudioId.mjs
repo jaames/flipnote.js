@@ -180,7 +180,10 @@ const isKwzDsiLibraryFsid = (fsid) => {
 };
 /**
  * Get the region for any valid Flipnote Studio 3D user ID.
- * NOTE: This may be incorrect for IDs that are not from the DSi Library.
+ *
+ * :::tip
+ * This may be incorrect for IDs that are not from the DSi Library.
+ * :::
  */
 const getKwzFsidRegion = (fsid) => {
     if (isKwzDsiLibraryFsid(fsid)) {
@@ -229,8 +232,11 @@ const getFsidRegion = (fsid) => {
  * Convert a PPM Flipnote Studio ID to the format used by KWZ Flipnote Studio IDs (as seen in Nintendo DSi Library Flipnotes).
  * Will return `null` if the conversion could not be made.
  *
- * NOTE: KWZ Flipnote Studio IDs contain an extra two characters at the beginning. It is not possible to resolve these from a PPM Flipnote Studio ID.
- */
+ * :::tip
+ * KWZ Flipnote Studio IDs contain an extra two characters at the beginning.
+ * It is not possible to resolve these from a PPM Flipnote Studio ID.
+ * :::
+*/
 const ppmFsidToKwzFsidSuffix = (fsid) => {
     if (isPpmFsid(fsid)) {
         const a = fsid.slice(14, 16);

@@ -5,7 +5,7 @@ prev: false
 title: "KwzFrameMeta"
 ---
 
-Defined in: [src/parsers/KwzParser.ts:166](https://github.com/jaames/flipnote.js/blob/a8a7e56268fb7f3a0039ade6ddc69a607deedd27/src/parsers/KwzParser.ts#L166)
+Defined in: [src/parsers/KwzParser.ts:166](https://github.com/jaames/flipnote.js/blob/8ec10f089e866d1297261b52ab6750bd899577ce/src/parsers/KwzParser.ts#L166)
 
 KWZ frame metadata, stores information about each frame, like layer depths sound effect usage
 
