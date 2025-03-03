@@ -5,7 +5,7 @@ prev: false
 title: "PpmMeta"
 ---
 
-Defined in: [src/parsers/PpmParser.ts:98](https://github.com/jaames/flipnote.js/blob/a8a7e56268fb7f3a0039ade6ddc69a607deedd27/src/parsers/PpmParser.ts#L98)
+Defined in: [src/parsers/PpmParser.ts:98](https://github.com/jaames/flipnote.js/blob/8ec10f089e866d1297261b52ab6750bd899577ce/src/parsers/PpmParser.ts#L98)
 
 PPM file metadata, stores information about its playback, author details, etc
 

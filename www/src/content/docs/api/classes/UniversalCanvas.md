@@ -5,7 +5,7 @@ prev: false
 title: "UniversalCanvas"
 ---
 
-Defined in: [src/renderers/UniversalCanvas.ts:23](https://github.com/jaames/flipnote.js/blob/a8a7e56268fb7f3a0039ade6ddc69a607deedd27/src/renderers/UniversalCanvas.ts#L23)
+Defined in: [src/renderers/UniversalCanvas.ts:23](https://github.com/jaames/flipnote.js/blob/8ec10f089e866d1297261b52ab6750bd899577ce/src/renderers/UniversalCanvas.ts#L23)
 
 ## Implements
 
@@ -17,7 +17,7 @@ Defined in: [src/renderers/UniversalCanvas.ts:23](https://github.com/jaames/flip
 
 > **new UniversalCanvas**(`parent`, `width`, `height`, `options`): [`UniversalCanvas`](/api/classes/universalcanvas/)
 
-Defined in: [src/renderers/UniversalCanvas.ts:92](https://github.com/jaames/flipnote.js/blob/a8a7e56268fb7f3a0039ade6ddc69a607deedd27/src/renderers/UniversalCanvas.ts#L92)
+Defined in: [src/renderers/UniversalCanvas.ts:92](https://github.com/jaames/flipnote.js/blob/8ec10f089e866d1297261b52ab6750bd899577ce/src/renderers/UniversalCanvas.ts#L92)
 
 #### Parameters
 
@@ -38,7 +38,7 @@ Defined in: [src/renderers/UniversalCanvas.ts:92](https://github.com/jaames/flip
 
 > **renderer**: `CanvasInterface`
 
-Defined in: [src/renderers/UniversalCanvas.ts:28](https://github.com/jaames/flipnote.js/blob/a8a7e56268fb7f3a0039ade6ddc69a607deedd27/src/renderers/UniversalCanvas.ts#L28)
+Defined in: [src/renderers/UniversalCanvas.ts:28](https://github.com/jaames/flipnote.js/blob/8ec10f089e866d1297261b52ab6750bd899577ce/src/renderers/UniversalCanvas.ts#L28)
 
 ***
 
@@ -46,7 +46,7 @@ Defined in: [src/renderers/UniversalCanvas.ts:28](https://github.com/jaames/flip
 
 > **note**: `BaseParser`
 
-Defined in: [src/renderers/UniversalCanvas.ts:32](https://github.com/jaames/flipnote.js/blob/a8a7e56268fb7f3a0039ade6ddc69a607deedd27/src/renderers/UniversalCanvas.ts#L32)
+Defined in: [src/renderers/UniversalCanvas.ts:32](https://github.com/jaames/flipnote.js/blob/8ec10f089e866d1297261b52ab6750bd899577ce/src/renderers/UniversalCanvas.ts#L32)
 
 #### Implementation of
 
@@ -58,7 +58,7 @@ Defined in: [src/renderers/UniversalCanvas.ts:32](https://github.com/jaames/flip
 
 > **width**: `number`
 
-Defined in: [src/renderers/UniversalCanvas.ts:36](https://github.com/jaames/flipnote.js/blob/a8a7e56268fb7f3a0039ade6ddc69a607deedd27/src/renderers/UniversalCanvas.ts#L36)
+Defined in: [src/renderers/UniversalCanvas.ts:36](https://github.com/jaames/flipnote.js/blob/8ec10f089e866d1297261b52ab6750bd899577ce/src/renderers/UniversalCanvas.ts#L36)
 
 View width (CSS pixels)
 
@@ -72,7 +72,7 @@ View width (CSS pixels)
 
 > **height**: `number`
 
-Defined in: [src/renderers/UniversalCanvas.ts:40](https://github.com/jaames/flipnote.js/blob/a8a7e56268fb7f3a0039ade6ddc69a607deedd27/src/renderers/UniversalCanvas.ts#L40)
+Defined in: [src/renderers/UniversalCanvas.ts:40](https://github.com/jaames/flipnote.js/blob/8ec10f089e866d1297261b52ab6750bd899577ce/src/renderers/UniversalCanvas.ts#L40)
 
 View height (CSS pixels)
 
@@ -86,7 +86,7 @@ View height (CSS pixels)
 
 > **dstWidth**: `number`
 
-Defined in: [src/renderers/UniversalCanvas.ts:45](https://github.com/jaames/flipnote.js/blob/a8a7e56268fb7f3a0039ade6ddc69a607deedd27/src/renderers/UniversalCanvas.ts#L45)
+Defined in: [src/renderers/UniversalCanvas.ts:45](https://github.com/jaames/flipnote.js/blob/8ec10f089e866d1297261b52ab6750bd899577ce/src/renderers/UniversalCanvas.ts#L45)
 
 Backing canvas width (real pixels)
 Note that this factors in device pixel ratio, so it may not reflect the size of the canvas in CSS pixels
@@ -101,7 +101,7 @@ Note that this factors in device pixel ratio, so it may not reflect the size of 
 
 > **dstHeight**: `number`
 
-Defined in: [src/renderers/UniversalCanvas.ts:50](https://github.com/jaames/flipnote.js/blob/a8a7e56268fb7f3a0039ade6ddc69a607deedd27/src/renderers/UniversalCanvas.ts#L50)
+Defined in: [src/renderers/UniversalCanvas.ts:50](https://github.com/jaames/flipnote.js/blob/8ec10f089e866d1297261b52ab6750bd899577ce/src/renderers/UniversalCanvas.ts#L50)
 
 Backing canvas height (real pixels)
 Note that this factors in device pixel ratio, so it may not reflect the size of the canvas in CSS pixels
@@ -116,7 +116,7 @@ Note that this factors in device pixel ratio, so it may not reflect the size of 
 
 > **srcWidth**: `number`
 
-Defined in: [src/renderers/UniversalCanvas.ts:54](https://github.com/jaames/flipnote.js/blob/a8a7e56268fb7f3a0039ade6ddc69a607deedd27/src/renderers/UniversalCanvas.ts#L54)
+Defined in: [src/renderers/UniversalCanvas.ts:54](https://github.com/jaames/flipnote.js/blob/8ec10f089e866d1297261b52ab6750bd899577ce/src/renderers/UniversalCanvas.ts#L54)
 
 #### Implementation of
 
@@ -128,7 +128,7 @@ Defined in: [src/renderers/UniversalCanvas.ts:54](https://github.com/jaames/flip
 
 > **srcHeight**: `number`
 
-Defined in: [src/renderers/UniversalCanvas.ts:58](https://github.com/jaames/flipnote.js/blob/a8a7e56268fb7f3a0039ade6ddc69a607deedd27/src/renderers/UniversalCanvas.ts#L58)
+Defined in: [src/renderers/UniversalCanvas.ts:58](https://github.com/jaames/flipnote.js/blob/8ec10f089e866d1297261b52ab6750bd899577ce/src/renderers/UniversalCanvas.ts#L58)
 
 #### Implementation of
 
@@ -140,7 +140,7 @@ Defined in: [src/renderers/UniversalCanvas.ts:58](https://github.com/jaames/flip
 
 > **frameIndex**: `number`
 
-Defined in: [src/renderers/UniversalCanvas.ts:62](https://github.com/jaames/flipnote.js/blob/a8a7e56268fb7f3a0039ade6ddc69a607deedd27/src/renderers/UniversalCanvas.ts#L62)
+Defined in: [src/renderers/UniversalCanvas.ts:62](https://github.com/jaames/flipnote.js/blob/8ec10f089e866d1297261b52ab6750bd899577ce/src/renderers/UniversalCanvas.ts#L62)
 
 #### Implementation of
 
@@ -152,7 +152,7 @@ Defined in: [src/renderers/UniversalCanvas.ts:62](https://github.com/jaames/flip
 
 > **isReady**: `boolean` = `false`
 
-Defined in: [src/renderers/UniversalCanvas.ts:66](https://github.com/jaames/flipnote.js/blob/a8a7e56268fb7f3a0039ade6ddc69a607deedd27/src/renderers/UniversalCanvas.ts#L66)
+Defined in: [src/renderers/UniversalCanvas.ts:66](https://github.com/jaames/flipnote.js/blob/8ec10f089e866d1297261b52ab6750bd899577ce/src/renderers/UniversalCanvas.ts#L66)
 
 ***
 
@@ -160,7 +160,7 @@ Defined in: [src/renderers/UniversalCanvas.ts:66](https://github.com/jaames/flip
 
 > **isHtml5**: `boolean` = `false`
 
-Defined in: [src/renderers/UniversalCanvas.ts:70](https://github.com/jaames/flipnote.js/blob/a8a7e56268fb7f3a0039ade6ddc69a607deedd27/src/renderers/UniversalCanvas.ts#L70)
+Defined in: [src/renderers/UniversalCanvas.ts:70](https://github.com/jaames/flipnote.js/blob/8ec10f089e866d1297261b52ab6750bd899577ce/src/renderers/UniversalCanvas.ts#L70)
 
 ***
 
@@ -168,7 +168,7 @@ Defined in: [src/renderers/UniversalCanvas.ts:70](https://github.com/jaames/flip
 
 > **supportedStereoscopeModes**: [`CanvasStereoscopicMode`](/api/enumerations/canvasstereoscopicmode/)[] = `[]`
 
-Defined in: [src/renderers/UniversalCanvas.ts:74](https://github.com/jaames/flipnote.js/blob/a8a7e56268fb7f3a0039ade6ddc69a607deedd27/src/renderers/UniversalCanvas.ts#L74)
+Defined in: [src/renderers/UniversalCanvas.ts:74](https://github.com/jaames/flipnote.js/blob/8ec10f089e866d1297261b52ab6750bd899577ce/src/renderers/UniversalCanvas.ts#L74)
 
 #### Implementation of
 
@@ -180,7 +180,7 @@ Defined in: [src/renderers/UniversalCanvas.ts:74](https://github.com/jaames/flip
 
 > **stereoscopeMode**: [`CanvasStereoscopicMode`](/api/enumerations/canvasstereoscopicmode/) = `CanvasStereoscopicMode.None`
 
-Defined in: [src/renderers/UniversalCanvas.ts:78](https://github.com/jaames/flipnote.js/blob/a8a7e56268fb7f3a0039ade6ddc69a607deedd27/src/renderers/UniversalCanvas.ts#L78)
+Defined in: [src/renderers/UniversalCanvas.ts:78](https://github.com/jaames/flipnote.js/blob/8ec10f089e866d1297261b52ab6750bd899577ce/src/renderers/UniversalCanvas.ts#L78)
 
 #### Implementation of
 
@@ -192,7 +192,7 @@ Defined in: [src/renderers/UniversalCanvas.ts:78](https://github.com/jaames/flip
 
 > **stereoscopeStrength**: `number` = `1`
 
-Defined in: [src/renderers/UniversalCanvas.ts:82](https://github.com/jaames/flipnote.js/blob/a8a7e56268fb7f3a0039ade6ddc69a607deedd27/src/renderers/UniversalCanvas.ts#L82)
+Defined in: [src/renderers/UniversalCanvas.ts:82](https://github.com/jaames/flipnote.js/blob/8ec10f089e866d1297261b52ab6750bd899577ce/src/renderers/UniversalCanvas.ts#L82)
 
 #### Implementation of
 
@@ -204,7 +204,7 @@ Defined in: [src/renderers/UniversalCanvas.ts:82](https://github.com/jaames/flip
 
 > **fallbackIfPossible**(): `void`
 
-Defined in: [src/renderers/UniversalCanvas.ts:133](https://github.com/jaames/flipnote.js/blob/a8a7e56268fb7f3a0039ade6ddc69a607deedd27/src/renderers/UniversalCanvas.ts#L133)
+Defined in: [src/renderers/UniversalCanvas.ts:133](https://github.com/jaames/flipnote.js/blob/8ec10f089e866d1297261b52ab6750bd899577ce/src/renderers/UniversalCanvas.ts#L133)
 
 #### Returns
 
@@ -216,7 +216,7 @@ Defined in: [src/renderers/UniversalCanvas.ts:133](https://github.com/jaames/fli
 
 > **switchToHtml5**(): `void`
 
-Defined in: [src/renderers/UniversalCanvas.ts:142](https://github.com/jaames/flipnote.js/blob/a8a7e56268fb7f3a0039ade6ddc69a607deedd27/src/renderers/UniversalCanvas.ts#L142)
+Defined in: [src/renderers/UniversalCanvas.ts:142](https://github.com/jaames/flipnote.js/blob/8ec10f089e866d1297261b52ab6750bd899577ce/src/renderers/UniversalCanvas.ts#L142)
 
 #### Returns
 
@@ -228,7 +228,7 @@ Defined in: [src/renderers/UniversalCanvas.ts:142](https://github.com/jaames/fli
 
 > **setCanvasSize**(`width`, `height`): `void`
 
-Defined in: [src/renderers/UniversalCanvas.ts:146](https://github.com/jaames/flipnote.js/blob/a8a7e56268fb7f3a0039ade6ddc69a607deedd27/src/renderers/UniversalCanvas.ts#L146)
+Defined in: [src/renderers/UniversalCanvas.ts:146](https://github.com/jaames/flipnote.js/blob/8ec10f089e866d1297261b52ab6750bd899577ce/src/renderers/UniversalCanvas.ts#L146)
 
 #### Parameters
 
@@ -251,7 +251,7 @@ Defined in: [src/renderers/UniversalCanvas.ts:146](https://github.com/jaames/fli
 
 > **setNote**(`note`): `void`
 
-Defined in: [src/renderers/UniversalCanvas.ts:155](https://github.com/jaames/flipnote.js/blob/a8a7e56268fb7f3a0039ade6ddc69a607deedd27/src/renderers/UniversalCanvas.ts#L155)
+Defined in: [src/renderers/UniversalCanvas.ts:155](https://github.com/jaames/flipnote.js/blob/8ec10f089e866d1297261b52ab6750bd899577ce/src/renderers/UniversalCanvas.ts#L155)
 
 #### Parameters
 
@@ -273,7 +273,7 @@ Defined in: [src/renderers/UniversalCanvas.ts:155](https://github.com/jaames/fli
 
 > **clear**(`color`?): `void`
 
-Defined in: [src/renderers/UniversalCanvas.ts:163](https://github.com/jaames/flipnote.js/blob/a8a7e56268fb7f3a0039ade6ddc69a607deedd27/src/renderers/UniversalCanvas.ts#L163)
+Defined in: [src/renderers/UniversalCanvas.ts:163](https://github.com/jaames/flipnote.js/blob/8ec10f089e866d1297261b52ab6750bd899577ce/src/renderers/UniversalCanvas.ts#L163)
 
 #### Parameters
 
@@ -295,7 +295,7 @@ Defined in: [src/renderers/UniversalCanvas.ts:163](https://github.com/jaames/fli
 
 > **drawFrame**(`frameIndex`): `void`
 
-Defined in: [src/renderers/UniversalCanvas.ts:167](https://github.com/jaames/flipnote.js/blob/a8a7e56268fb7f3a0039ade6ddc69a607deedd27/src/renderers/UniversalCanvas.ts#L167)
+Defined in: [src/renderers/UniversalCanvas.ts:167](https://github.com/jaames/flipnote.js/blob/8ec10f089e866d1297261b52ab6750bd899577ce/src/renderers/UniversalCanvas.ts#L167)
 
 #### Parameters
 
@@ -317,7 +317,7 @@ Defined in: [src/renderers/UniversalCanvas.ts:167](https://github.com/jaames/fli
 
 > **forceUpdate**(): `void`
 
-Defined in: [src/renderers/UniversalCanvas.ts:172](https://github.com/jaames/flipnote.js/blob/a8a7e56268fb7f3a0039ade6ddc69a607deedd27/src/renderers/UniversalCanvas.ts#L172)
+Defined in: [src/renderers/UniversalCanvas.ts:172](https://github.com/jaames/flipnote.js/blob/8ec10f089e866d1297261b52ab6750bd899577ce/src/renderers/UniversalCanvas.ts#L172)
 
 #### Returns
 
@@ -333,7 +333,7 @@ Defined in: [src/renderers/UniversalCanvas.ts:172](https://github.com/jaames/fli
 
 > **requestStereoScopeMode**(`mode`): `void`
 
-Defined in: [src/renderers/UniversalCanvas.ts:176](https://github.com/jaames/flipnote.js/blob/a8a7e56268fb7f3a0039ade6ddc69a607deedd27/src/renderers/UniversalCanvas.ts#L176)
+Defined in: [src/renderers/UniversalCanvas.ts:176](https://github.com/jaames/flipnote.js/blob/8ec10f089e866d1297261b52ab6750bd899577ce/src/renderers/UniversalCanvas.ts#L176)
 
 #### Parameters
 
@@ -355,7 +355,7 @@ Defined in: [src/renderers/UniversalCanvas.ts:176](https://github.com/jaames/fli
 
 > **getDataUrl**(`type`?, `quality`?): `string`
 
-Defined in: [src/renderers/UniversalCanvas.ts:181](https://github.com/jaames/flipnote.js/blob/a8a7e56268fb7f3a0039ade6ddc69a607deedd27/src/renderers/UniversalCanvas.ts#L181)
+Defined in: [src/renderers/UniversalCanvas.ts:181](https://github.com/jaames/flipnote.js/blob/8ec10f089e866d1297261b52ab6750bd899577ce/src/renderers/UniversalCanvas.ts#L181)
 
 #### Parameters
 
@@ -378,7 +378,7 @@ Defined in: [src/renderers/UniversalCanvas.ts:181](https://github.com/jaames/fli
 
 > **getBlob**(`type`?, `quality`?): [`Promise`](https://developer.mozilla.org/docs/Web/JavaScript/Reference/Global_Objects/Promise)\<[`Blob`](https://developer.mozilla.org/docs/Web/API/Blob)\>
 
-Defined in: [src/renderers/UniversalCanvas.ts:185](https://github.com/jaames/flipnote.js/blob/a8a7e56268fb7f3a0039ade6ddc69a607deedd27/src/renderers/UniversalCanvas.ts#L185)
+Defined in: [src/renderers/UniversalCanvas.ts:185](https://github.com/jaames/flipnote.js/blob/8ec10f089e866d1297261b52ab6750bd899577ce/src/renderers/UniversalCanvas.ts#L185)
 
 #### Parameters
 
@@ -401,7 +401,7 @@ Defined in: [src/renderers/UniversalCanvas.ts:185](https://github.com/jaames/fli
 
 > **destroy**(): `void`
 
-Defined in: [src/renderers/UniversalCanvas.ts:189](https://github.com/jaames/flipnote.js/blob/a8a7e56268fb7f3a0039ade6ddc69a607deedd27/src/renderers/UniversalCanvas.ts#L189)
+Defined in: [src/renderers/UniversalCanvas.ts:189](https://github.com/jaames/flipnote.js/blob/8ec10f089e866d1297261b52ab6750bd899577ce/src/renderers/UniversalCanvas.ts#L189)
 
 #### Returns
 

@@ -5,7 +5,7 @@ prev: false
 title: "FlipnoteFormat"
 ---
 
-Defined in: [src/parsers/types.ts:106](https://github.com/jaames/flipnote.js/blob/a8a7e56268fb7f3a0039ade6ddc69a607deedd27/src/parsers/types.ts#L106)
+Defined in: [src/parsers/types.ts:106](https://github.com/jaames/flipnote.js/blob/8ec10f089e866d1297261b52ab6750bd899577ce/src/parsers/types.ts#L106)
 
 Identifies which animation format a Flipnote uses
 

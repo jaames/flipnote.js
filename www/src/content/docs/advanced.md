@@ -4,7 +4,7 @@ title: Advanced
 
 # Partial Builds
 
-You can optionally import only the parts of the library you need, which will reduce the size of your bundle and improve load times.
+If you have installed the library via NPM, you can optionally import only the parts of the library you need, which will reduce the size of your bundle and improve load times.
 
 | Path | Exports |
 | --- | --- |

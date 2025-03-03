@@ -5,7 +5,7 @@ prev: false
 title: "Player"
 ---
 
-Defined in: [src/player/Player.ts:47](https://github.com/jaames/flipnote.js/blob/a8a7e56268fb7f3a0039ade6ddc69a607deedd27/src/player/Player.ts#L47)
+Defined in: [src/player/Player.ts:47](https://github.com/jaames/flipnote.js/blob/8ec10f089e866d1297261b52ab6750bd899577ce/src/player/Player.ts#L47)
 
 Flipnote Player API (exported as `flipnote.Player`) - provides a [MediaElement](https://developer.mozilla.org/en-US/docs/Web/API/HTMLMediaElement)-like interface for loading Flipnotes and playing them. 
 This is intended for cases where you want to implement your own player UI, if you just want a pre-built player with some nice UI controls, check out the [Web Components](/web-components/) page instead!
@@ -48,7 +48,7 @@ Use the [on](../../../../../../api/classes/player/#on) method to register event 
 
 > **new Player**(`parent`, `width`, `height`, `parserSettings`): [`Player`](/api/classes/player/)
 
-Defined in: [src/player/Player.ts:171](https://github.com/jaames/flipnote.js/blob/a8a7e56268fb7f3a0039ade6ddc69a607deedd27/src/player/Player.ts#L171)
+Defined in: [src/player/Player.ts:171](https://github.com/jaames/flipnote.js/blob/8ec10f089e866d1297261b52ab6750bd899577ce/src/player/Player.ts#L171)
 
 Create a new Player instance
 
@@ -71,7 +71,7 @@ Create a new Player instance
 
 > **el**: [`Element`](https://developer.mozilla.org/docs/Web/API/Element)
 
-Defined in: [src/player/Player.ts:57](https://github.com/jaames/flipnote.js/blob/a8a7e56268fb7f3a0039ade6ddc69a607deedd27/src/player/Player.ts#L57)
+Defined in: [src/player/Player.ts:57](https://github.com/jaames/flipnote.js/blob/8ec10f089e866d1297261b52ab6750bd899577ce/src/player/Player.ts#L57)
 
 Root element
 
@@ -81,7 +81,7 @@ Root element
 
 > **note**: `BaseParser`
 
-Defined in: [src/player/Player.ts:61](https://github.com/jaames/flipnote.js/blob/a8a7e56268fb7f3a0039ade6ddc69a607deedd27/src/player/Player.ts#L61)
+Defined in: [src/player/Player.ts:61](https://github.com/jaames/flipnote.js/blob/8ec10f089e866d1297261b52ab6750bd899577ce/src/player/Player.ts#L61)
 
 Currently loaded Flipnote
 
@@ -91,7 +91,7 @@ Currently loaded Flipnote
 
 > **parserSettings**: [`Partial`](https://www.typescriptlang.org/docs/handbook/utility-types.html#partialtype)
 
-Defined in: [src/player/Player.ts:65](https://github.com/jaames/flipnote.js/blob/a8a7e56268fb7f3a0039ade6ddc69a607deedd27/src/player/Player.ts#L65)
+Defined in: [src/player/Player.ts:65](https://github.com/jaames/flipnote.js/blob/8ec10f089e866d1297261b52ab6750bd899577ce/src/player/Player.ts#L65)
 
 Flipnote parser settings
 
@@ -101,7 +101,7 @@ Flipnote parser settings
 
 > **noteFormat**: [`FlipnoteFormat`](/api/enumerations/flipnoteformat/)
 
-Defined in: [src/player/Player.ts:69](https://github.com/jaames/flipnote.js/blob/a8a7e56268fb7f3a0039ade6ddc69a607deedd27/src/player/Player.ts#L69)
+Defined in: [src/player/Player.ts:69](https://github.com/jaames/flipnote.js/blob/8ec10f089e866d1297261b52ab6750bd899577ce/src/player/Player.ts#L69)
 
 Format of the currently loaded Flipnote
 
@@ -111,7 +111,7 @@ Format of the currently loaded Flipnote
 
 > **meta**: [`FlipnoteMeta`](/api/interfaces/flipnotemeta/)
 
-Defined in: [src/player/Player.ts:73](https://github.com/jaames/flipnote.js/blob/a8a7e56268fb7f3a0039ade6ddc69a607deedd27/src/player/Player.ts#L73)
+Defined in: [src/player/Player.ts:73](https://github.com/jaames/flipnote.js/blob/8ec10f089e866d1297261b52ab6750bd899577ce/src/player/Player.ts#L73)
 
 Metadata for the currently loaded Flipnote
 
@@ -121,7 +121,7 @@ Metadata for the currently loaded Flipnote
 
 > **duration**: `number` = `0`
 
-Defined in: [src/player/Player.ts:77](https://github.com/jaames/flipnote.js/blob/a8a7e56268fb7f3a0039ade6ddc69a607deedd27/src/player/Player.ts#L77)
+Defined in: [src/player/Player.ts:77](https://github.com/jaames/flipnote.js/blob/8ec10f089e866d1297261b52ab6750bd899577ce/src/player/Player.ts#L77)
 
 Animation duration, in seconds
 
@@ -131,7 +131,7 @@ Animation duration, in seconds
 
 > **layerVisibility**: `PlayerLayerVisibility`
 
-Defined in: [src/player/Player.ts:81](https://github.com/jaames/flipnote.js/blob/a8a7e56268fb7f3a0039ade6ddc69a607deedd27/src/player/Player.ts#L81)
+Defined in: [src/player/Player.ts:81](https://github.com/jaames/flipnote.js/blob/8ec10f089e866d1297261b52ab6750bd899577ce/src/player/Player.ts#L81)
 
 Animation layer visibility
 
@@ -141,7 +141,7 @@ Animation layer visibility
 
 > **autoplay**: `boolean` = `false`
 
-Defined in: [src/player/Player.ts:85](https://github.com/jaames/flipnote.js/blob/a8a7e56268fb7f3a0039ade6ddc69a607deedd27/src/player/Player.ts#L85)
+Defined in: [src/player/Player.ts:85](https://github.com/jaames/flipnote.js/blob/8ec10f089e866d1297261b52ab6750bd899577ce/src/player/Player.ts#L85)
 
 Automatically begin playback after a Flipnote is loaded
 
@@ -151,7 +151,7 @@ Automatically begin playback after a Flipnote is loaded
 
 > **supportedEvents**: [`PlayerEvent`](/api/enumerations/playerevent/)[]
 
-Defined in: [src/player/Player.ts:89](https://github.com/jaames/flipnote.js/blob/a8a7e56268fb7f3a0039ade6ddc69a607deedd27/src/player/Player.ts#L89)
+Defined in: [src/player/Player.ts:89](https://github.com/jaames/flipnote.js/blob/8ec10f089e866d1297261b52ab6750bd899577ce/src/player/Player.ts#L89)
 
 Array of events supported by this player
 
@@ -163,7 +163,7 @@ Array of events supported by this player
 
 > **get** **src**(): `any`
 
-Defined in: [src/player/Player.ts:189](https://github.com/jaames/flipnote.js/blob/a8a7e56268fb7f3a0039ade6ddc69a607deedd27/src/player/Player.ts#L189)
+Defined in: [src/player/Player.ts:189](https://github.com/jaames/flipnote.js/blob/8ec10f089e866d1297261b52ab6750bd899577ce/src/player/Player.ts#L189)
 
 The currently loaded Flipnote source, if there is one
 
@@ -179,7 +179,7 @@ This API is no longer supported and may be removed in a future release.
 
 > **set** **src**(`source`): `void`
 
-Defined in: [src/player/Player.ts:192](https://github.com/jaames/flipnote.js/blob/a8a7e56268fb7f3a0039ade6ddc69a607deedd27/src/player/Player.ts#L192)
+Defined in: [src/player/Player.ts:192](https://github.com/jaames/flipnote.js/blob/8ec10f089e866d1297261b52ab6750bd899577ce/src/player/Player.ts#L192)
 
 ##### Parameters
 
@@ -197,7 +197,7 @@ Defined in: [src/player/Player.ts:192](https://github.com/jaames/flipnote.js/blo
 
 > **load**(`source`): [`Promise`](https://developer.mozilla.org/docs/Web/JavaScript/Reference/Global_Objects/Promise)\<`void`\>
 
-Defined in: [src/player/Player.ts:347](https://github.com/jaames/flipnote.js/blob/a8a7e56268fb7f3a0039ade6ddc69a607deedd27/src/player/Player.ts#L347)
+Defined in: [src/player/Player.ts:347](https://github.com/jaames/flipnote.js/blob/8ec10f089e866d1297261b52ab6750bd899577ce/src/player/Player.ts#L347)
 
 Open a Flipnote from a source
 
@@ -217,7 +217,7 @@ Open a Flipnote from a source
 
 > **reload**(): [`Promise`](https://developer.mozilla.org/docs/Web/JavaScript/Reference/Global_Objects/Promise)\<`void`\>
 
-Defined in: [src/player/Player.ts:373](https://github.com/jaames/flipnote.js/blob/a8a7e56268fb7f3a0039ade6ddc69a607deedd27/src/player/Player.ts#L373)
+Defined in: [src/player/Player.ts:373](https://github.com/jaames/flipnote.js/blob/8ec10f089e866d1297261b52ab6750bd899577ce/src/player/Player.ts#L373)
 
 Reload the current Flipnote.
 
@@ -231,7 +231,7 @@ Reload the current Flipnote.
 
 > **updateSettings**(`settings`): [`Promise`](https://developer.mozilla.org/docs/Web/JavaScript/Reference/Global_Objects/Promise)\<`void`\>
 
-Defined in: [src/player/Player.ts:382](https://github.com/jaames/flipnote.js/blob/a8a7e56268fb7f3a0039ade6ddc69a607deedd27/src/player/Player.ts#L382)
+Defined in: [src/player/Player.ts:382](https://github.com/jaames/flipnote.js/blob/8ec10f089e866d1297261b52ab6750bd899577ce/src/player/Player.ts#L382)
 
 Reload the current Flipnote, applying new parser settings.
 
@@ -251,7 +251,7 @@ Reload the current Flipnote, applying new parser settings.
 
 > **closeNote**(): `void`
 
-Defined in: [src/player/Player.ts:391](https://github.com/jaames/flipnote.js/blob/a8a7e56268fb7f3a0039ade6ddc69a607deedd27/src/player/Player.ts#L391)
+Defined in: [src/player/Player.ts:391](https://github.com/jaames/flipnote.js/blob/8ec10f089e866d1297261b52ab6750bd899577ce/src/player/Player.ts#L391)
 
 Close the currently loaded Flipnote
 
@@ -265,7 +265,7 @@ Close the currently loaded Flipnote
 
 > **openNote**(`note`): `void`
 
-Defined in: [src/player/Player.ts:413](https://github.com/jaames/flipnote.js/blob/a8a7e56268fb7f3a0039ade6ddc69a607deedd27/src/player/Player.ts#L413)
+Defined in: [src/player/Player.ts:413](https://github.com/jaames/flipnote.js/blob/8ec10f089e866d1297261b52ab6750bd899577ce/src/player/Player.ts#L413)
 
 Open a Flipnote into the player
 
@@ -285,7 +285,7 @@ Open a Flipnote into the player
 
 > **destroy**(): [`Promise`](https://developer.mozilla.org/docs/Web/JavaScript/Reference/Global_Objects/Promise)\<`void`\>
 
-Defined in: [src/player/Player.ts:1177](https://github.com/jaames/flipnote.js/blob/a8a7e56268fb7f3a0039ade6ddc69a607deedd27/src/player/Player.ts#L1177)
+Defined in: [src/player/Player.ts:1177](https://github.com/jaames/flipnote.js/blob/8ec10f089e866d1297261b52ab6750bd899577ce/src/player/Player.ts#L1177)
 
 Destroy a Player instance
 
@@ -301,7 +301,7 @@ Destroy a Player instance
 
 > **get** **paused**(): `boolean`
 
-Defined in: [src/player/Player.ts:200](https://github.com/jaames/flipnote.js/blob/a8a7e56268fb7f3a0039ade6ddc69a607deedd27/src/player/Player.ts#L200)
+Defined in: [src/player/Player.ts:200](https://github.com/jaames/flipnote.js/blob/8ec10f089e866d1297261b52ab6750bd899577ce/src/player/Player.ts#L200)
 
 Indicates whether playback is currently paused
 
@@ -313,7 +313,7 @@ Indicates whether playback is currently paused
 
 > **set** **paused**(`isPaused`): `void`
 
-Defined in: [src/player/Player.ts:203](https://github.com/jaames/flipnote.js/blob/a8a7e56268fb7f3a0039ade6ddc69a607deedd27/src/player/Player.ts#L203)
+Defined in: [src/player/Player.ts:203](https://github.com/jaames/flipnote.js/blob/8ec10f089e866d1297261b52ab6750bd899577ce/src/player/Player.ts#L203)
 
 ##### Parameters
 
@@ -333,7 +333,7 @@ Defined in: [src/player/Player.ts:203](https://github.com/jaames/flipnote.js/blo
 
 > **get** **currentFrame**(): `number`
 
-Defined in: [src/player/Player.ts:214](https://github.com/jaames/flipnote.js/blob/a8a7e56268fb7f3a0039ade6ddc69a607deedd27/src/player/Player.ts#L214)
+Defined in: [src/player/Player.ts:214](https://github.com/jaames/flipnote.js/blob/8ec10f089e866d1297261b52ab6750bd899577ce/src/player/Player.ts#L214)
 
 Current animation frame index.
 
@@ -345,7 +345,7 @@ Current animation frame index.
 
 > **set** **currentFrame**(`frameIndex`): `void`
 
-Defined in: [src/player/Player.ts:217](https://github.com/jaames/flipnote.js/blob/a8a7e56268fb7f3a0039ade6ddc69a607deedd27/src/player/Player.ts#L217)
+Defined in: [src/player/Player.ts:217](https://github.com/jaames/flipnote.js/blob/8ec10f089e866d1297261b52ab6750bd899577ce/src/player/Player.ts#L217)
 
 ##### Parameters
 
@@ -365,7 +365,7 @@ Defined in: [src/player/Player.ts:217](https://github.com/jaames/flipnote.js/blo
 
 > **get** **currentTime**(): `number`
 
-Defined in: [src/player/Player.ts:225](https://github.com/jaames/flipnote.js/blob/a8a7e56268fb7f3a0039ade6ddc69a607deedd27/src/player/Player.ts#L225)
+Defined in: [src/player/Player.ts:225](https://github.com/jaames/flipnote.js/blob/8ec10f089e866d1297261b52ab6750bd899577ce/src/player/Player.ts#L225)
 
 Current animation playback position, in seconds.
 
@@ -377,7 +377,7 @@ Current animation playback position, in seconds.
 
 > **set** **currentTime**(`value`): `void`
 
-Defined in: [src/player/Player.ts:228](https://github.com/jaames/flipnote.js/blob/a8a7e56268fb7f3a0039ade6ddc69a607deedd27/src/player/Player.ts#L228)
+Defined in: [src/player/Player.ts:228](https://github.com/jaames/flipnote.js/blob/8ec10f089e866d1297261b52ab6750bd899577ce/src/player/Player.ts#L228)
 
 ##### Parameters
 
@@ -397,7 +397,7 @@ Defined in: [src/player/Player.ts:228](https://github.com/jaames/flipnote.js/blo
 
 > **get** **progress**(): `number`
 
-Defined in: [src/player/Player.ts:236](https://github.com/jaames/flipnote.js/blob/a8a7e56268fb7f3a0039ade6ddc69a607deedd27/src/player/Player.ts#L236)
+Defined in: [src/player/Player.ts:236](https://github.com/jaames/flipnote.js/blob/8ec10f089e866d1297261b52ab6750bd899577ce/src/player/Player.ts#L236)
 
 Current animation playback progress, as a percentage out of 100.
 
@@ -409,7 +409,7 @@ Current animation playback progress, as a percentage out of 100.
 
 > **set** **progress**(`value`): `void`
 
-Defined in: [src/player/Player.ts:239](https://github.com/jaames/flipnote.js/blob/a8a7e56268fb7f3a0039ade6ddc69a607deedd27/src/player/Player.ts#L239)
+Defined in: [src/player/Player.ts:239](https://github.com/jaames/flipnote.js/blob/8ec10f089e866d1297261b52ab6750bd899577ce/src/player/Player.ts#L239)
 
 ##### Parameters
 
@@ -429,7 +429,7 @@ Defined in: [src/player/Player.ts:239](https://github.com/jaames/flipnote.js/blo
 
 > **get** **loop**(): `boolean`
 
-Defined in: [src/player/Player.ts:271](https://github.com/jaames/flipnote.js/blob/a8a7e56268fb7f3a0039ade6ddc69a607deedd27/src/player/Player.ts#L271)
+Defined in: [src/player/Player.ts:271](https://github.com/jaames/flipnote.js/blob/8ec10f089e866d1297261b52ab6750bd899577ce/src/player/Player.ts#L271)
 
 Indicates whether playback should loop once the end is reached
 
@@ -441,7 +441,7 @@ Indicates whether playback should loop once the end is reached
 
 > **set** **loop**(`value`): `void`
 
-Defined in: [src/player/Player.ts:275](https://github.com/jaames/flipnote.js/blob/a8a7e56268fb7f3a0039ade6ddc69a607deedd27/src/player/Player.ts#L275)
+Defined in: [src/player/Player.ts:275](https://github.com/jaames/flipnote.js/blob/8ec10f089e866d1297261b52ab6750bd899577ce/src/player/Player.ts#L275)
 
 ##### Parameters
 
@@ -461,7 +461,7 @@ Defined in: [src/player/Player.ts:275](https://github.com/jaames/flipnote.js/blo
 
 > **get** **framerate**(): `number`
 
-Defined in: [src/player/Player.ts:283](https://github.com/jaames/flipnote.js/blob/a8a7e56268fb7f3a0039ade6ddc69a607deedd27/src/player/Player.ts#L283)
+Defined in: [src/player/Player.ts:283](https://github.com/jaames/flipnote.js/blob/8ec10f089e866d1297261b52ab6750bd899577ce/src/player/Player.ts#L283)
 
 Animation frame rate, measured in frames per second.
 
@@ -475,7 +475,7 @@ Animation frame rate, measured in frames per second.
 
 > **setCurrentTime**(`value`): `void`
 
-Defined in: [src/player/Player.ts:478](https://github.com/jaames/flipnote.js/blob/a8a7e56268fb7f3a0039ade6ddc69a607deedd27/src/player/Player.ts#L478)
+Defined in: [src/player/Player.ts:478](https://github.com/jaames/flipnote.js/blob/8ec10f089e866d1297261b52ab6750bd899577ce/src/player/Player.ts#L478)
 
 Set the current playback time
 
@@ -495,7 +495,7 @@ Set the current playback time
 
 > **getCurrentTime**(): `number`
 
-Defined in: [src/player/Player.ts:490](https://github.com/jaames/flipnote.js/blob/a8a7e56268fb7f3a0039ade6ddc69a607deedd27/src/player/Player.ts#L490)
+Defined in: [src/player/Player.ts:490](https://github.com/jaames/flipnote.js/blob/8ec10f089e866d1297261b52ab6750bd899577ce/src/player/Player.ts#L490)
 
 Get the current playback time
 
@@ -509,7 +509,7 @@ Get the current playback time
 
 > **getTimeCounter**(): `string`
 
-Defined in: [src/player/Player.ts:498](https://github.com/jaames/flipnote.js/blob/a8a7e56268fb7f3a0039ade6ddc69a607deedd27/src/player/Player.ts#L498)
+Defined in: [src/player/Player.ts:498](https://github.com/jaames/flipnote.js/blob/8ec10f089e866d1297261b52ab6750bd899577ce/src/player/Player.ts#L498)
 
 Get the current time as a counter string, like `"0:00 / 1:00"`
 
@@ -523,7 +523,7 @@ Get the current time as a counter string, like `"0:00 / 1:00"`
 
 > **getFrameCounter**(): `string`
 
-Defined in: [src/player/Player.ts:508](https://github.com/jaames/flipnote.js/blob/a8a7e56268fb7f3a0039ade6ddc69a607deedd27/src/player/Player.ts#L508)
+Defined in: [src/player/Player.ts:508](https://github.com/jaames/flipnote.js/blob/8ec10f089e866d1297261b52ab6750bd899577ce/src/player/Player.ts#L508)
 
 Get the current frame index as a counter string, like `"001 / 999"`
 
@@ -537,7 +537,7 @@ Get the current frame index as a counter string, like `"001 / 999"`
 
 > **setProgress**(`value`): `void`
 
-Defined in: [src/player/Player.ts:518](https://github.com/jaames/flipnote.js/blob/a8a7e56268fb7f3a0039ade6ddc69a607deedd27/src/player/Player.ts#L518)
+Defined in: [src/player/Player.ts:518](https://github.com/jaames/flipnote.js/blob/8ec10f089e866d1297261b52ab6750bd899577ce/src/player/Player.ts#L518)
 
 Set the current playback progress as a percentage (`0` to `100`)
 
@@ -557,7 +557,7 @@ Set the current playback progress as a percentage (`0` to `100`)
 
 > **getProgress**(): `number`
 
-Defined in: [src/player/Player.ts:528](https://github.com/jaames/flipnote.js/blob/a8a7e56268fb7f3a0039ade6ddc69a607deedd27/src/player/Player.ts#L528)
+Defined in: [src/player/Player.ts:528](https://github.com/jaames/flipnote.js/blob/8ec10f089e866d1297261b52ab6750bd899577ce/src/player/Player.ts#L528)
 
 Get the current playback progress as a percentage (0 to 100)
 
@@ -571,7 +571,7 @@ Get the current playback progress as a percentage (0 to 100)
 
 > **play**(): [`Promise`](https://developer.mozilla.org/docs/Web/JavaScript/Reference/Global_Objects/Promise)\<`void`\>
 
-Defined in: [src/player/Player.ts:536](https://github.com/jaames/flipnote.js/blob/a8a7e56268fb7f3a0039ade6ddc69a607deedd27/src/player/Player.ts#L536)
+Defined in: [src/player/Player.ts:536](https://github.com/jaames/flipnote.js/blob/8ec10f089e866d1297261b52ab6750bd899577ce/src/player/Player.ts#L536)
 
 Begin animation playback starting at the current position
 
@@ -585,7 +585,7 @@ Begin animation playback starting at the current position
 
 > **pause**(): `void`
 
-Defined in: [src/player/Player.ts:558](https://github.com/jaames/flipnote.js/blob/a8a7e56268fb7f3a0039ade6ddc69a607deedd27/src/player/Player.ts#L558)
+Defined in: [src/player/Player.ts:558](https://github.com/jaames/flipnote.js/blob/8ec10f089e866d1297261b52ab6750bd899577ce/src/player/Player.ts#L558)
 
 Pause animation playback at the current position
 
@@ -599,7 +599,7 @@ Pause animation playback at the current position
 
 > **togglePlay**(): `void`
 
-Defined in: [src/player/Player.ts:572](https://github.com/jaames/flipnote.js/blob/a8a7e56268fb7f3a0039ade6ddc69a607deedd27/src/player/Player.ts#L572)
+Defined in: [src/player/Player.ts:572](https://github.com/jaames/flipnote.js/blob/8ec10f089e866d1297261b52ab6750bd899577ce/src/player/Player.ts#L572)
 
 Resumes animation playback if paused, otherwise pauses
 
@@ -613,7 +613,7 @@ Resumes animation playback if paused, otherwise pauses
 
 > **getPaused**(): `boolean`
 
-Defined in: [src/player/Player.ts:583](https://github.com/jaames/flipnote.js/blob/a8a7e56268fb7f3a0039ade6ddc69a607deedd27/src/player/Player.ts#L583)
+Defined in: [src/player/Player.ts:583](https://github.com/jaames/flipnote.js/blob/8ec10f089e866d1297261b52ab6750bd899577ce/src/player/Player.ts#L583)
 
 Determines if playback is currently paused
 
@@ -627,7 +627,7 @@ Determines if playback is currently paused
 
 > **getDuration**(): `number`
 
-Defined in: [src/player/Player.ts:591](https://github.com/jaames/flipnote.js/blob/a8a7e56268fb7f3a0039ade6ddc69a607deedd27/src/player/Player.ts#L591)
+Defined in: [src/player/Player.ts:591](https://github.com/jaames/flipnote.js/blob/8ec10f089e866d1297261b52ab6750bd899577ce/src/player/Player.ts#L591)
 
 Get the duration of the Flipnote in seconds
 
@@ -641,7 +641,7 @@ Get the duration of the Flipnote in seconds
 
 > **getLoop**(): `boolean`
 
-Defined in: [src/player/Player.ts:599](https://github.com/jaames/flipnote.js/blob/a8a7e56268fb7f3a0039ade6ddc69a607deedd27/src/player/Player.ts#L599)
+Defined in: [src/player/Player.ts:599](https://github.com/jaames/flipnote.js/blob/8ec10f089e866d1297261b52ab6750bd899577ce/src/player/Player.ts#L599)
 
 Determines if playback is looped
 
@@ -655,7 +655,7 @@ Determines if playback is looped
 
 > **setLoop**(`loop`): `void`
 
-Defined in: [src/player/Player.ts:607](https://github.com/jaames/flipnote.js/blob/a8a7e56268fb7f3a0039ade6ddc69a607deedd27/src/player/Player.ts#L607)
+Defined in: [src/player/Player.ts:607](https://github.com/jaames/flipnote.js/blob/8ec10f089e866d1297261b52ab6750bd899577ce/src/player/Player.ts#L607)
 
 Set the playback loop
 
@@ -675,7 +675,7 @@ Set the playback loop
 
 > **toggleLoop**(): `void`
 
-Defined in: [src/player/Player.ts:616](https://github.com/jaames/flipnote.js/blob/a8a7e56268fb7f3a0039ade6ddc69a607deedd27/src/player/Player.ts#L616)
+Defined in: [src/player/Player.ts:616](https://github.com/jaames/flipnote.js/blob/8ec10f089e866d1297261b52ab6750bd899577ce/src/player/Player.ts#L616)
 
 Switch the playback loop between on and off
 
@@ -689,7 +689,7 @@ Switch the playback loop between on and off
 
 > **startSeek**(): `void`
 
-Defined in: [src/player/Player.ts:697](https://github.com/jaames/flipnote.js/blob/a8a7e56268fb7f3a0039ade6ddc69a607deedd27/src/player/Player.ts#L697)
+Defined in: [src/player/Player.ts:697](https://github.com/jaames/flipnote.js/blob/8ec10f089e866d1297261b52ab6750bd899577ce/src/player/Player.ts#L697)
 
 Begins a seek operation
 
@@ -703,7 +703,7 @@ Begins a seek operation
 
 > **seek**(`position`): `void`
 
-Defined in: [src/player/Player.ts:711](https://github.com/jaames/flipnote.js/blob/a8a7e56268fb7f3a0039ade6ddc69a607deedd27/src/player/Player.ts#L711)
+Defined in: [src/player/Player.ts:711](https://github.com/jaames/flipnote.js/blob/8ec10f089e866d1297261b52ab6750bd899577ce/src/player/Player.ts#L711)
 
 Seek the playback progress to a different position
 
@@ -723,7 +723,7 @@ Seek the playback progress to a different position
 
 > **endSeek**(): `void`
 
-Defined in: [src/player/Player.ts:720](https://github.com/jaames/flipnote.js/blob/a8a7e56268fb7f3a0039ade6ddc69a607deedd27/src/player/Player.ts#L720)
+Defined in: [src/player/Player.ts:720](https://github.com/jaames/flipnote.js/blob/8ec10f089e866d1297261b52ab6750bd899577ce/src/player/Player.ts#L720)
 
 Ends a seek operation
 
@@ -739,7 +739,7 @@ Ends a seek operation
 
 > **get** **frameCount**(): `number`
 
-Defined in: [src/player/Player.ts:291](https://github.com/jaames/flipnote.js/blob/a8a7e56268fb7f3a0039ade6ddc69a607deedd27/src/player/Player.ts#L291)
+Defined in: [src/player/Player.ts:291](https://github.com/jaames/flipnote.js/blob/8ec10f089e866d1297261b52ab6750bd899577ce/src/player/Player.ts#L291)
 
 Animation frame count.
 
@@ -755,7 +755,7 @@ Animation frame count.
 
 > **get** **frameSpeed**(): `number`
 
-Defined in: [src/player/Player.ts:299](https://github.com/jaames/flipnote.js/blob/a8a7e56268fb7f3a0039ade6ddc69a607deedd27/src/player/Player.ts#L299)
+Defined in: [src/player/Player.ts:299](https://github.com/jaames/flipnote.js/blob/8ec10f089e866d1297261b52ab6750bd899577ce/src/player/Player.ts#L299)
 
 Animation frame speed.
 
@@ -769,7 +769,7 @@ Animation frame speed.
 
 > **setCurrentFrame**(`newFrameValue`): `void`
 
-Defined in: [src/player/Player.ts:624](https://github.com/jaames/flipnote.js/blob/a8a7e56268fb7f3a0039ade6ddc69a607deedd27/src/player/Player.ts#L624)
+Defined in: [src/player/Player.ts:624](https://github.com/jaames/flipnote.js/blob/8ec10f089e866d1297261b52ab6750bd899577ce/src/player/Player.ts#L624)
 
 Jump to a given animation frame
 
@@ -789,7 +789,7 @@ Jump to a given animation frame
 
 > **nextFrame**(): `void`
 
-Defined in: [src/player/Player.ts:646](https://github.com/jaames/flipnote.js/blob/a8a7e56268fb7f3a0039ade6ddc69a607deedd27/src/player/Player.ts#L646)
+Defined in: [src/player/Player.ts:646](https://github.com/jaames/flipnote.js/blob/8ec10f089e866d1297261b52ab6750bd899577ce/src/player/Player.ts#L646)
 
 Jump to the next animation frame
 If the animation loops, and is currently on its last frame, it will wrap to the first frame
@@ -804,7 +804,7 @@ If the animation loops, and is currently on its last frame, it will wrap to the 
 
 > **prevFrame**(): `void`
 
-Defined in: [src/player/Player.ts:659](https://github.com/jaames/flipnote.js/blob/a8a7e56268fb7f3a0039ade6ddc69a607deedd27/src/player/Player.ts#L659)
+Defined in: [src/player/Player.ts:659](https://github.com/jaames/flipnote.js/blob/8ec10f089e866d1297261b52ab6750bd899577ce/src/player/Player.ts#L659)
 
 Jump to the next animation frame
 If the animation loops, and is currently on its first frame, it will wrap to the last frame
@@ -819,7 +819,7 @@ If the animation loops, and is currently on its first frame, it will wrap to the
 
 > **lastFrame**(): `void`
 
-Defined in: [src/player/Player.ts:671](https://github.com/jaames/flipnote.js/blob/a8a7e56268fb7f3a0039ade6ddc69a607deedd27/src/player/Player.ts#L671)
+Defined in: [src/player/Player.ts:671](https://github.com/jaames/flipnote.js/blob/8ec10f089e866d1297261b52ab6750bd899577ce/src/player/Player.ts#L671)
 
 Jump to the last animation frame
 
@@ -833,7 +833,7 @@ Jump to the last animation frame
 
 > **firstFrame**(): `void`
 
-Defined in: [src/player/Player.ts:680](https://github.com/jaames/flipnote.js/blob/a8a7e56268fb7f3a0039ade6ddc69a607deedd27/src/player/Player.ts#L680)
+Defined in: [src/player/Player.ts:680](https://github.com/jaames/flipnote.js/blob/8ec10f089e866d1297261b52ab6750bd899577ce/src/player/Player.ts#L680)
 
 Jump to the first animation frame
 
@@ -847,7 +847,7 @@ Jump to the first animation frame
 
 > **thumbnailFrame**(): `void`
 
-Defined in: [src/player/Player.ts:689](https://github.com/jaames/flipnote.js/blob/a8a7e56268fb7f3a0039ade6ddc69a607deedd27/src/player/Player.ts#L689)
+Defined in: [src/player/Player.ts:689](https://github.com/jaames/flipnote.js/blob/8ec10f089e866d1297261b52ab6750bd899577ce/src/player/Player.ts#L689)
 
 Jump to the thumbnail frame
 
@@ -861,7 +861,7 @@ Jump to the thumbnail frame
 
 > **renderer**: [`UniversalCanvas`](/api/classes/universalcanvas/)
 
-Defined in: [src/player/Player.ts:53](https://github.com/jaames/flipnote.js/blob/a8a7e56268fb7f3a0039ade6ddc69a607deedd27/src/player/Player.ts#L53)
+Defined in: [src/player/Player.ts:53](https://github.com/jaames/flipnote.js/blob/8ec10f089e866d1297261b52ab6750bd899577ce/src/player/Player.ts#L53)
 
 Flipnote renderer.
 
@@ -871,7 +871,7 @@ Flipnote renderer.
 
 > **drawFrame**(`frameIndex`): `void`
 
-Defined in: [src/player/Player.ts:732](https://github.com/jaames/flipnote.js/blob/a8a7e56268fb7f3a0039ade6ddc69a607deedd27/src/player/Player.ts#L732)
+Defined in: [src/player/Player.ts:732](https://github.com/jaames/flipnote.js/blob/8ec10f089e866d1297261b52ab6750bd899577ce/src/player/Player.ts#L732)
 
 Draws the specified animation frame to the canvas. Note that this doesn't update the playback time or anything, it simply decodes a given frame and displays it.
 
@@ -891,7 +891,7 @@ Draws the specified animation frame to the canvas. Note that this doesn't update
 
 > **forceUpdate**(): `void`
 
-Defined in: [src/player/Player.ts:740](https://github.com/jaames/flipnote.js/blob/a8a7e56268fb7f3a0039ade6ddc69a607deedd27/src/player/Player.ts#L740)
+Defined in: [src/player/Player.ts:740](https://github.com/jaames/flipnote.js/blob/8ec10f089e866d1297261b52ab6750bd899577ce/src/player/Player.ts#L740)
 
 Forces the current animation frame to be redrawn
 
@@ -905,7 +905,7 @@ Forces the current animation frame to be redrawn
 
 > **resize**(`width`, `height`): `void`
 
-Defined in: [src/player/Player.ts:753](https://github.com/jaames/flipnote.js/blob/a8a7e56268fb7f3a0039ade6ddc69a607deedd27/src/player/Player.ts#L753)
+Defined in: [src/player/Player.ts:753](https://github.com/jaames/flipnote.js/blob/8ec10f089e866d1297261b52ab6750bd899577ce/src/player/Player.ts#L753)
 
 Resize the playback canvas to a new size
 
@@ -926,7 +926,7 @@ Resize the playback canvas to a new size
 
 > **setLayerVisibility**(`layer`, `value`): `void`
 
-Defined in: [src/player/Player.ts:767](https://github.com/jaames/flipnote.js/blob/a8a7e56268fb7f3a0039ade6ddc69a607deedd27/src/player/Player.ts#L767)
+Defined in: [src/player/Player.ts:767](https://github.com/jaames/flipnote.js/blob/8ec10f089e866d1297261b52ab6750bd899577ce/src/player/Player.ts#L767)
 
 Sets whether an animation layer should be visible throughout the entire animation
 
@@ -947,7 +947,7 @@ Sets whether an animation layer should be visible throughout the entire animatio
 
 > **getLayerVisibility**(`layer`): `boolean`
 
-Defined in: [src/player/Player.ts:779](https://github.com/jaames/flipnote.js/blob/a8a7e56268fb7f3a0039ade6ddc69a607deedd27/src/player/Player.ts#L779)
+Defined in: [src/player/Player.ts:779](https://github.com/jaames/flipnote.js/blob/8ec10f089e866d1297261b52ab6750bd899577ce/src/player/Player.ts#L779)
 
 Returns the visibility state for a given layer
 
@@ -967,7 +967,7 @@ Returns the visibility state for a given layer
 
 > **toggleLayerVisibility**(`layerIndex`): `void`
 
-Defined in: [src/player/Player.ts:788](https://github.com/jaames/flipnote.js/blob/a8a7e56268fb7f3a0039ade6ddc69a607deedd27/src/player/Player.ts#L788)
+Defined in: [src/player/Player.ts:788](https://github.com/jaames/flipnote.js/blob/8ec10f089e866d1297261b52ab6750bd899577ce/src/player/Player.ts#L788)
 
 Toggles whether an animation layer should be visible throughout the entire animation
 
@@ -989,7 +989,7 @@ Toggles whether an animation layer should be visible throughout the entire anima
 
 > **get** **volume**(): `number`
 
-Defined in: [src/player/Player.ts:247](https://github.com/jaames/flipnote.js/blob/a8a7e56268fb7f3a0039ade6ddc69a607deedd27/src/player/Player.ts#L247)
+Defined in: [src/player/Player.ts:247](https://github.com/jaames/flipnote.js/blob/8ec10f089e866d1297261b52ab6750bd899577ce/src/player/Player.ts#L247)
 
 Audio volume, range `0` to `1`.
 
@@ -1001,7 +1001,7 @@ Audio volume, range `0` to `1`.
 
 > **set** **volume**(`value`): `void`
 
-Defined in: [src/player/Player.ts:251](https://github.com/jaames/flipnote.js/blob/a8a7e56268fb7f3a0039ade6ddc69a607deedd27/src/player/Player.ts#L251)
+Defined in: [src/player/Player.ts:251](https://github.com/jaames/flipnote.js/blob/8ec10f089e866d1297261b52ab6750bd899577ce/src/player/Player.ts#L251)
 
 ##### Parameters
 
@@ -1021,7 +1021,7 @@ Defined in: [src/player/Player.ts:251](https://github.com/jaames/flipnote.js/blo
 
 > **get** **muted**(): `boolean`
 
-Defined in: [src/player/Player.ts:259](https://github.com/jaames/flipnote.js/blob/a8a7e56268fb7f3a0039ade6ddc69a607deedd27/src/player/Player.ts#L259)
+Defined in: [src/player/Player.ts:259](https://github.com/jaames/flipnote.js/blob/8ec10f089e866d1297261b52ab6750bd899577ce/src/player/Player.ts#L259)
 
 Audio mute state.
 
@@ -1033,7 +1033,7 @@ Audio mute state.
 
 > **set** **muted**(`value`): `void`
 
-Defined in: [src/player/Player.ts:263](https://github.com/jaames/flipnote.js/blob/a8a7e56268fb7f3a0039ade6ddc69a607deedd27/src/player/Player.ts#L263)
+Defined in: [src/player/Player.ts:263](https://github.com/jaames/flipnote.js/blob/8ec10f089e866d1297261b52ab6750bd899577ce/src/player/Player.ts#L263)
 
 ##### Parameters
 
@@ -1051,7 +1051,7 @@ Defined in: [src/player/Player.ts:263](https://github.com/jaames/flipnote.js/blo
 
 > **toggleAudioEq**(): `void`
 
-Defined in: [src/player/Player.ts:804](https://github.com/jaames/flipnote.js/blob/a8a7e56268fb7f3a0039ade6ddc69a607deedd27/src/player/Player.ts#L804)
+Defined in: [src/player/Player.ts:804](https://github.com/jaames/flipnote.js/blob/8ec10f089e866d1297261b52ab6750bd899577ce/src/player/Player.ts#L804)
 
 Toggle audio Sudomemo equalizer filter.
 
@@ -1065,7 +1065,7 @@ Toggle audio Sudomemo equalizer filter.
 
 > **setAudioEq**(`state`): `void`
 
-Defined in: [src/player/Player.ts:812](https://github.com/jaames/flipnote.js/blob/a8a7e56268fb7f3a0039ade6ddc69a607deedd27/src/player/Player.ts#L812)
+Defined in: [src/player/Player.ts:812](https://github.com/jaames/flipnote.js/blob/8ec10f089e866d1297261b52ab6750bd899577ce/src/player/Player.ts#L812)
 
 Turn audio Sudomemo equalizer filter on or off.
 
@@ -1085,7 +1085,7 @@ Turn audio Sudomemo equalizer filter on or off.
 
 > **mute**(): `void`
 
-Defined in: [src/player/Player.ts:828](https://github.com/jaames/flipnote.js/blob/a8a7e56268fb7f3a0039ade6ddc69a607deedd27/src/player/Player.ts#L828)
+Defined in: [src/player/Player.ts:828](https://github.com/jaames/flipnote.js/blob/8ec10f089e866d1297261b52ab6750bd899577ce/src/player/Player.ts#L828)
 
 Turn the audio off
 
@@ -1099,7 +1099,7 @@ Turn the audio off
 
 > **unmute**(): `void`
 
-Defined in: [src/player/Player.ts:836](https://github.com/jaames/flipnote.js/blob/a8a7e56268fb7f3a0039ade6ddc69a607deedd27/src/player/Player.ts#L836)
+Defined in: [src/player/Player.ts:836](https://github.com/jaames/flipnote.js/blob/8ec10f089e866d1297261b52ab6750bd899577ce/src/player/Player.ts#L836)
 
 Turn the audio on
 
@@ -1113,7 +1113,7 @@ Turn the audio on
 
 > **setMuted**(`isMute`): `void`
 
-Defined in: [src/player/Player.ts:844](https://github.com/jaames/flipnote.js/blob/a8a7e56268fb7f3a0039ade6ddc69a607deedd27/src/player/Player.ts#L844)
+Defined in: [src/player/Player.ts:844](https://github.com/jaames/flipnote.js/blob/8ec10f089e866d1297261b52ab6750bd899577ce/src/player/Player.ts#L844)
 
 Turn the audio on or off
 
@@ -1133,7 +1133,7 @@ Turn the audio on or off
 
 > **getMuted**(): `boolean`
 
-Defined in: [src/player/Player.ts:857](https://github.com/jaames/flipnote.js/blob/a8a7e56268fb7f3a0039ade6ddc69a607deedd27/src/player/Player.ts#L857)
+Defined in: [src/player/Player.ts:857](https://github.com/jaames/flipnote.js/blob/8ec10f089e866d1297261b52ab6750bd899577ce/src/player/Player.ts#L857)
 
 Get the audio mute state
 
@@ -1147,7 +1147,7 @@ Get the audio mute state
 
 > **toggleMuted**(): `void`
 
-Defined in: [src/player/Player.ts:865](https://github.com/jaames/flipnote.js/blob/a8a7e56268fb7f3a0039ade6ddc69a607deedd27/src/player/Player.ts#L865)
+Defined in: [src/player/Player.ts:865](https://github.com/jaames/flipnote.js/blob/8ec10f089e866d1297261b52ab6750bd899577ce/src/player/Player.ts#L865)
 
 Switch the audio between muted and unmuted
 
@@ -1161,7 +1161,7 @@ Switch the audio between muted and unmuted
 
 > **setVolume**(`volume`): `void`
 
-Defined in: [src/player/Player.ts:873](https://github.com/jaames/flipnote.js/blob/a8a7e56268fb7f3a0039ade6ddc69a607deedd27/src/player/Player.ts#L873)
+Defined in: [src/player/Player.ts:873](https://github.com/jaames/flipnote.js/blob/8ec10f089e866d1297261b52ab6750bd899577ce/src/player/Player.ts#L873)
 
 Set the audio volume
 
@@ -1181,7 +1181,7 @@ Set the audio volume
 
 > **getVolume**(): `number`
 
-Defined in: [src/player/Player.ts:884](https://github.com/jaames/flipnote.js/blob/a8a7e56268fb7f3a0039ade6ddc69a607deedd27/src/player/Player.ts#L884)
+Defined in: [src/player/Player.ts:884](https://github.com/jaames/flipnote.js/blob/8ec10f089e866d1297261b52ab6750bd899577ce/src/player/Player.ts#L884)
 
 Get the current audio volume
 
@@ -1195,7 +1195,7 @@ Get the current audio volume
 
 > **on**(`eventType`, `listener`): `void`
 
-Defined in: [src/player/Player.ts:1117](https://github.com/jaames/flipnote.js/blob/a8a7e56268fb7f3a0039ade6ddc69a607deedd27/src/player/Player.ts#L1117)
+Defined in: [src/player/Player.ts:1117](https://github.com/jaames/flipnote.js/blob/8ec10f089e866d1297261b52ab6750bd899577ce/src/player/Player.ts#L1117)
 
 Add an event callback
 
@@ -1216,7 +1216,7 @@ Add an event callback
 
 > **off**(`eventType`, `callback`): `void`
 
-Defined in: [src/player/Player.ts:1132](https://github.com/jaames/flipnote.js/blob/a8a7e56268fb7f3a0039ade6ddc69a607deedd27/src/player/Player.ts#L1132)
+Defined in: [src/player/Player.ts:1132](https://github.com/jaames/flipnote.js/blob/8ec10f089e866d1297261b52ab6750bd899577ce/src/player/Player.ts#L1132)
 
 Remove an event callback
 
@@ -1237,7 +1237,7 @@ Remove an event callback
 
 > **emit**(`eventType`, ...`args`): `void`
 
-Defined in: [src/player/Player.ts:1147](https://github.com/jaames/flipnote.js/blob/a8a7e56268fb7f3a0039ade6ddc69a607deedd27/src/player/Player.ts#L1147)
+Defined in: [src/player/Player.ts:1147](https://github.com/jaames/flipnote.js/blob/8ec10f089e866d1297261b52ab6750bd899577ce/src/player/Player.ts#L1147)
 
 Emit an event - mostly used internally
 
@@ -1258,7 +1258,7 @@ Emit an event - mostly used internally
 
 > **clearEvents**(): `void`
 
-Defined in: [src/player/Player.ts:1169](https://github.com/jaames/flipnote.js/blob/a8a7e56268fb7f3a0039ade6ddc69a607deedd27/src/player/Player.ts#L1169)
+Defined in: [src/player/Player.ts:1169](https://github.com/jaames/flipnote.js/blob/8ec10f089e866d1297261b52ab6750bd899577ce/src/player/Player.ts#L1169)
 
 Remove all registered event callbacks
 
@@ -1272,7 +1272,7 @@ Remove all registered event callbacks
 
 > **onplay**: () => `void`
 
-Defined in: [src/player/Player.ts:961](https://github.com/jaames/flipnote.js/blob/a8a7e56268fb7f3a0039ade6ddc69a607deedd27/src/player/Player.ts#L961)
+Defined in: [src/player/Player.ts:961](https://github.com/jaames/flipnote.js/blob/8ec10f089e866d1297261b52ab6750bd899577ce/src/player/Player.ts#L961)
 
 Fired when animation playback begins or is resumed
 
@@ -1286,7 +1286,7 @@ Fired when animation playback begins or is resumed
 
 > **onpause**: () => `void`
 
-Defined in: [src/player/Player.ts:967](https://github.com/jaames/flipnote.js/blob/a8a7e56268fb7f3a0039ade6ddc69a607deedd27/src/player/Player.ts#L967)
+Defined in: [src/player/Player.ts:967](https://github.com/jaames/flipnote.js/blob/8ec10f089e866d1297261b52ab6750bd899577ce/src/player/Player.ts#L967)
 
 Fired when animation playback is paused
 
@@ -1300,7 +1300,7 @@ Fired when animation playback is paused
 
 > **onseeking**: () => `void`
 
-Defined in: [src/player/Player.ts:985](https://github.com/jaames/flipnote.js/blob/a8a7e56268fb7f3a0039ade6ddc69a607deedd27/src/player/Player.ts#L985)
+Defined in: [src/player/Player.ts:985](https://github.com/jaames/flipnote.js/blob/8ec10f089e866d1297261b52ab6750bd899577ce/src/player/Player.ts#L985)
 
 Fired when a seek operation begins
 
@@ -1314,7 +1314,7 @@ Fired when a seek operation begins
 
 > **onseeked**: () => `void`
 
-Defined in: [src/player/Player.ts:991](https://github.com/jaames/flipnote.js/blob/a8a7e56268fb7f3a0039ade6ddc69a607deedd27/src/player/Player.ts#L991)
+Defined in: [src/player/Player.ts:991](https://github.com/jaames/flipnote.js/blob/8ec10f089e866d1297261b52ab6750bd899577ce/src/player/Player.ts#L991)
 
 Fired when a seek operation completes
 
@@ -1328,7 +1328,7 @@ Fired when a seek operation completes
 
 > **onloop**: () => `void`
 
-Defined in: [src/player/Player.ts:1003](https://github.com/jaames/flipnote.js/blob/a8a7e56268fb7f3a0039ade6ddc69a607deedd27/src/player/Player.ts#L1003)
+Defined in: [src/player/Player.ts:1003](https://github.com/jaames/flipnote.js/blob/8ec10f089e866d1297261b52ab6750bd899577ce/src/player/Player.ts#L1003)
 
 Fired when playback has looped after reaching the end
 
@@ -1342,7 +1342,7 @@ Fired when playback has looped after reaching the end
 
 > **onended**: () => `void`
 
-Defined in: [src/player/Player.ts:1009](https://github.com/jaames/flipnote.js/blob/a8a7e56268fb7f3a0039ade6ddc69a607deedd27/src/player/Player.ts#L1009)
+Defined in: [src/player/Player.ts:1009](https://github.com/jaames/flipnote.js/blob/8ec10f089e866d1297261b52ab6750bd899577ce/src/player/Player.ts#L1009)
 
 Fired when playback has ended
 
@@ -1356,7 +1356,7 @@ Fired when playback has ended
 
 > **onvolumechange**: (`volume`) => `void`
 
-Defined in: [src/player/Player.ts:1015](https://github.com/jaames/flipnote.js/blob/a8a7e56268fb7f3a0039ade6ddc69a607deedd27/src/player/Player.ts#L1015)
+Defined in: [src/player/Player.ts:1015](https://github.com/jaames/flipnote.js/blob/8ec10f089e866d1297261b52ab6750bd899577ce/src/player/Player.ts#L1015)
 
 Fired when the player audio volume or muted state has changed
 
@@ -1376,7 +1376,7 @@ Fired when the player audio volume or muted state has changed
 
 > **onprogress**: (`progress`) => `void`
 
-Defined in: [src/player/Player.ts:1021](https://github.com/jaames/flipnote.js/blob/a8a7e56268fb7f3a0039ade6ddc69a607deedd27/src/player/Player.ts#L1021)
+Defined in: [src/player/Player.ts:1021](https://github.com/jaames/flipnote.js/blob/8ec10f089e866d1297261b52ab6750bd899577ce/src/player/Player.ts#L1021)
 
 Fired when playback progress has changed
 
@@ -1396,7 +1396,7 @@ Fired when playback progress has changed
 
 > **ontimeupdate**: (`time`) => `void`
 
-Defined in: [src/player/Player.ts:1027](https://github.com/jaames/flipnote.js/blob/a8a7e56268fb7f3a0039ade6ddc69a607deedd27/src/player/Player.ts#L1027)
+Defined in: [src/player/Player.ts:1027](https://github.com/jaames/flipnote.js/blob/8ec10f089e866d1297261b52ab6750bd899577ce/src/player/Player.ts#L1027)
 
 Fired when the playback time has changed
 
@@ -1416,7 +1416,7 @@ Fired when the playback time has changed
 
 > **onframeupdate**: (`frameIndex`) => `void`
 
-Defined in: [src/player/Player.ts:1033](https://github.com/jaames/flipnote.js/blob/a8a7e56268fb7f3a0039ade6ddc69a607deedd27/src/player/Player.ts#L1033)
+Defined in: [src/player/Player.ts:1033](https://github.com/jaames/flipnote.js/blob/8ec10f089e866d1297261b52ab6750bd899577ce/src/player/Player.ts#L1033)
 
 Fired when the current frame index has changed
 
@@ -1436,7 +1436,7 @@ Fired when the current frame index has changed
 
 > **onframenext**: () => `void`
 
-Defined in: [src/player/Player.ts:1039](https://github.com/jaames/flipnote.js/blob/a8a7e56268fb7f3a0039ade6ddc69a607deedd27/src/player/Player.ts#L1039)
+Defined in: [src/player/Player.ts:1039](https://github.com/jaames/flipnote.js/blob/8ec10f089e866d1297261b52ab6750bd899577ce/src/player/Player.ts#L1039)
 
 Fired when [nextFrame](../../../../../../api/classes/player/#nextframe) has been called
 
@@ -1450,7 +1450,7 @@ Fired when [nextFrame](../../../../../../api/classes/player/#nextframe) has been
 
 > **onframeprev**: () => `void`
 
-Defined in: [src/player/Player.ts:1045](https://github.com/jaames/flipnote.js/blob/a8a7e56268fb7f3a0039ade6ddc69a607deedd27/src/player/Player.ts#L1045)
+Defined in: [src/player/Player.ts:1045](https://github.com/jaames/flipnote.js/blob/8ec10f089e866d1297261b52ab6750bd899577ce/src/player/Player.ts#L1045)
 
 Fired when [prevFrame](../../../../../../api/classes/player/#prevframe) has been called
 
@@ -1464,7 +1464,7 @@ Fired when [prevFrame](../../../../../../api/classes/player/#prevframe) has been
 
 > **onframefirst**: () => `void`
 
-Defined in: [src/player/Player.ts:1051](https://github.com/jaames/flipnote.js/blob/a8a7e56268fb7f3a0039ade6ddc69a607deedd27/src/player/Player.ts#L1051)
+Defined in: [src/player/Player.ts:1051](https://github.com/jaames/flipnote.js/blob/8ec10f089e866d1297261b52ab6750bd899577ce/src/player/Player.ts#L1051)
 
 Fired when [firstFrame](../../../../../../api/classes/player/#firstframe) has been called
 
@@ -1478,7 +1478,7 @@ Fired when [firstFrame](../../../../../../api/classes/player/#firstframe) has be
 
 > **onframelast**: () => `void`
 
-Defined in: [src/player/Player.ts:1057](https://github.com/jaames/flipnote.js/blob/a8a7e56268fb7f3a0039ade6ddc69a607deedd27/src/player/Player.ts#L1057)
+Defined in: [src/player/Player.ts:1057](https://github.com/jaames/flipnote.js/blob/8ec10f089e866d1297261b52ab6750bd899577ce/src/player/Player.ts#L1057)
 
 Fired when [lastFrame](../../../../../../api/classes/player/#lastframe) has been called
 
@@ -1492,7 +1492,7 @@ Fired when [lastFrame](../../../../../../api/classes/player/#lastframe) has been
 
 > **onready**: () => `void`
 
-Defined in: [src/player/Player.ts:1063](https://github.com/jaames/flipnote.js/blob/a8a7e56268fb7f3a0039ade6ddc69a607deedd27/src/player/Player.ts#L1063)
+Defined in: [src/player/Player.ts:1063](https://github.com/jaames/flipnote.js/blob/8ec10f089e866d1297261b52ab6750bd899577ce/src/player/Player.ts#L1063)
 
 Fired when a Flipnote is ready for playback
 
@@ -1506,7 +1506,7 @@ Fired when a Flipnote is ready for playback
 
 > **onload**: () => `void`
 
-Defined in: [src/player/Player.ts:1069](https://github.com/jaames/flipnote.js/blob/a8a7e56268fb7f3a0039ade6ddc69a607deedd27/src/player/Player.ts#L1069)
+Defined in: [src/player/Player.ts:1069](https://github.com/jaames/flipnote.js/blob/8ec10f089e866d1297261b52ab6750bd899577ce/src/player/Player.ts#L1069)
 
 Fired when a Flipnote has finished loading
 
@@ -1520,7 +1520,7 @@ Fired when a Flipnote has finished loading
 
 > **onloadstart**: () => `void`
 
-Defined in: [src/player/Player.ts:1075](https://github.com/jaames/flipnote.js/blob/a8a7e56268fb7f3a0039ade6ddc69a607deedd27/src/player/Player.ts#L1075)
+Defined in: [src/player/Player.ts:1075](https://github.com/jaames/flipnote.js/blob/8ec10f089e866d1297261b52ab6750bd899577ce/src/player/Player.ts#L1075)
 
 Fired when a Flipnote has begun loading
 
@@ -1534,7 +1534,7 @@ Fired when a Flipnote has begun loading
 
 > **onclose**: () => `void`
 
-Defined in: [src/player/Player.ts:1099](https://github.com/jaames/flipnote.js/blob/a8a7e56268fb7f3a0039ade6ddc69a607deedd27/src/player/Player.ts#L1099)
+Defined in: [src/player/Player.ts:1099](https://github.com/jaames/flipnote.js/blob/8ec10f089e866d1297261b52ab6750bd899577ce/src/player/Player.ts#L1099)
 
 Fired after the Flipnote has been closed with close
 
@@ -1548,7 +1548,7 @@ Fired after the Flipnote has been closed with close
 
 > **onerror**: (`err`?) => `void`
 
-Defined in: [src/player/Player.ts:1105](https://github.com/jaames/flipnote.js/blob/a8a7e56268fb7f3a0039ade6ddc69a607deedd27/src/player/Player.ts#L1105)
+Defined in: [src/player/Player.ts:1105](https://github.com/jaames/flipnote.js/blob/8ec10f089e866d1297261b52ab6750bd899577ce/src/player/Player.ts#L1105)
 
 Fired after a loading, parsing or playback error occurs
 
@@ -1568,7 +1568,7 @@ Fired after a loading, parsing or playback error occurs
 
 > **ondestroy**: () => `void`
 
-Defined in: [src/player/Player.ts:1111](https://github.com/jaames/flipnote.js/blob/a8a7e56268fb7f3a0039ade6ddc69a607deedd27/src/player/Player.ts#L1111)
+Defined in: [src/player/Player.ts:1111](https://github.com/jaames/flipnote.js/blob/8ec10f089e866d1297261b52ab6750bd899577ce/src/player/Player.ts#L1111)
 
 Fired just before the player has been destroyed, after calling [destroy](../../../../../../api/classes/player/#destroy)
 
@@ -1582,7 +1582,7 @@ Fired just before the player has been destroyed, after calling [destroy](../../.
 
 > **oncanplay**: () => `void`
 
-Defined in: [src/player/Player.ts:973](https://github.com/jaames/flipnote.js/blob/a8a7e56268fb7f3a0039ade6ddc69a607deedd27/src/player/Player.ts#L973)
+Defined in: [src/player/Player.ts:973](https://github.com/jaames/flipnote.js/blob/8ec10f089e866d1297261b52ab6750bd899577ce/src/player/Player.ts#L973)
 
 Fired when the Flipnote has loaded enough to begin animation play
 
@@ -1596,7 +1596,7 @@ Fired when the Flipnote has loaded enough to begin animation play
 
 > **oncanplaythrough**: () => `void`
 
-Defined in: [src/player/Player.ts:979](https://github.com/jaames/flipnote.js/blob/a8a7e56268fb7f3a0039ade6ddc69a607deedd27/src/player/Player.ts#L979)
+Defined in: [src/player/Player.ts:979](https://github.com/jaames/flipnote.js/blob/8ec10f089e866d1297261b52ab6750bd899577ce/src/player/Player.ts#L979)
 
 Fired when the Flipnote has loaded enough to play successfully
 
@@ -1610,7 +1610,7 @@ Fired when the Flipnote has loaded enough to play successfully
 
 > **ondurationchange**: () => `void`
 
-Defined in: [src/player/Player.ts:997](https://github.com/jaames/flipnote.js/blob/a8a7e56268fb7f3a0039ade6ddc69a607deedd27/src/player/Player.ts#L997)
+Defined in: [src/player/Player.ts:997](https://github.com/jaames/flipnote.js/blob/8ec10f089e866d1297261b52ab6750bd899577ce/src/player/Player.ts#L997)
 
 Fired when the animation duration has changed
 
@@ -1624,7 +1624,7 @@ Fired when the animation duration has changed
 
 > **onloadeddata**: () => `void`
 
-Defined in: [src/player/Player.ts:1081](https://github.com/jaames/flipnote.js/blob/a8a7e56268fb7f3a0039ade6ddc69a607deedd27/src/player/Player.ts#L1081)
+Defined in: [src/player/Player.ts:1081](https://github.com/jaames/flipnote.js/blob/8ec10f089e866d1297261b52ab6750bd899577ce/src/player/Player.ts#L1081)
 
 Fired when the Flipnote data has been loaded; implementation of the `HTMLMediaElement` [https://developer.mozilla.org/en-US/docs/Web/API/HTMLMediaElement/loadeddata_event](loadeddata) event.
 
@@ -1638,7 +1638,7 @@ Fired when the Flipnote data has been loaded; implementation of the `HTMLMediaEl
 
 > **onloadedmetadata**: () => `void`
 
-Defined in: [src/player/Player.ts:1087](https://github.com/jaames/flipnote.js/blob/a8a7e56268fb7f3a0039ade6ddc69a607deedd27/src/player/Player.ts#L1087)
+Defined in: [src/player/Player.ts:1087](https://github.com/jaames/flipnote.js/blob/8ec10f089e866d1297261b52ab6750bd899577ce/src/player/Player.ts#L1087)
 
 Fired when the Flipnote metadata has been loaded; implementation of the `HTMLMediaElement` [https://developer.mozilla.org/en-US/docs/Web/API/HTMLMediaElement/loadedmetadata_event](loadedmetadata) event.
 
@@ -1652,7 +1652,7 @@ Fired when the Flipnote metadata has been loaded; implementation of the `HTMLMed
 
 > **onemptied**: () => `void`
 
-Defined in: [src/player/Player.ts:1093](https://github.com/jaames/flipnote.js/blob/a8a7e56268fb7f3a0039ade6ddc69a607deedd27/src/player/Player.ts#L1093)
+Defined in: [src/player/Player.ts:1093](https://github.com/jaames/flipnote.js/blob/8ec10f089e866d1297261b52ab6750bd899577ce/src/player/Player.ts#L1093)
 
 Fired when the media has become empty; implementation of the `HTMLMediaElement` [https://developer.mozilla.org/en-US/docs/Web/API/HTMLMediaElement/emptied_event](emptied) event.
 
@@ -1668,7 +1668,7 @@ Fired when the media has become empty; implementation of the `HTMLMediaElement` 
 
 > **get** **buffered**(): [`TimeRanges`](https://developer.mozilla.org/docs/Web/API/TimeRanges)
 
-Defined in: [src/player/Player.ts:307](https://github.com/jaames/flipnote.js/blob/a8a7e56268fb7f3a0039ade6ddc69a607deedd27/src/player/Player.ts#L307)
+Defined in: [src/player/Player.ts:307](https://github.com/jaames/flipnote.js/blob/8ec10f089e866d1297261b52ab6750bd899577ce/src/player/Player.ts#L307)
 
 Implementation of the `HTMLMediaElement` [buffered](https://developer.mozilla.org/en-US/docs/Web/API/HTMLMediaElement/buffered) property.
 
@@ -1684,7 +1684,7 @@ Implementation of the `HTMLMediaElement` [buffered](https://developer.mozilla.or
 
 > **get** **seekable**(): [`TimeRanges`](https://developer.mozilla.org/docs/Web/API/TimeRanges)
 
-Defined in: [src/player/Player.ts:315](https://github.com/jaames/flipnote.js/blob/a8a7e56268fb7f3a0039ade6ddc69a607deedd27/src/player/Player.ts#L315)
+Defined in: [src/player/Player.ts:315](https://github.com/jaames/flipnote.js/blob/8ec10f089e866d1297261b52ab6750bd899577ce/src/player/Player.ts#L315)
 
 Implementation of the `HTMLMediaElement` [seekable](https://developer.mozilla.org/en-US/docs/Web/API/HTMLMediaElement/seekable) property
 
@@ -1700,7 +1700,7 @@ Implementation of the `HTMLMediaElement` [seekable](https://developer.mozilla.or
 
 > **get** **currentSrc**(): `any`
 
-Defined in: [src/player/Player.ts:323](https://github.com/jaames/flipnote.js/blob/a8a7e56268fb7f3a0039ade6ddc69a607deedd27/src/player/Player.ts#L323)
+Defined in: [src/player/Player.ts:323](https://github.com/jaames/flipnote.js/blob/8ec10f089e866d1297261b52ab6750bd899577ce/src/player/Player.ts#L323)
 
 Implementation of the `HTMLMediaElement` [currentSrc](https://developer.mozilla.org/en-US/docs/Web/API/HTMLMediaElement/currentSrc) property
 
@@ -1716,7 +1716,7 @@ Implementation of the `HTMLMediaElement` [currentSrc](https://developer.mozilla.
 
 > **get** **videoWidth**(): `number`
 
-Defined in: [src/player/Player.ts:331](https://github.com/jaames/flipnote.js/blob/a8a7e56268fb7f3a0039ade6ddc69a607deedd27/src/player/Player.ts#L331)
+Defined in: [src/player/Player.ts:331](https://github.com/jaames/flipnote.js/blob/8ec10f089e866d1297261b52ab6750bd899577ce/src/player/Player.ts#L331)
 
 Implementation of the `HTMLVideoElement` [videoWidth](https://developer.mozilla.org/en-US/docs/Web/API/HTMLVideoElement/videoWidth) property
 
@@ -1732,7 +1732,7 @@ Implementation of the `HTMLVideoElement` [videoWidth](https://developer.mozilla.
 
 > **get** **videoHeight**(): `number`
 
-Defined in: [src/player/Player.ts:339](https://github.com/jaames/flipnote.js/blob/a8a7e56268fb7f3a0039ade6ddc69a607deedd27/src/player/Player.ts#L339)
+Defined in: [src/player/Player.ts:339](https://github.com/jaames/flipnote.js/blob/8ec10f089e866d1297261b52ab6750bd899577ce/src/player/Player.ts#L339)
 
 Implementation of the `HTMLVideoElement` [videoHeight](https://developer.mozilla.org/en-US/docs/Web/API/HTMLVideoElement/videoHeight) property
 
@@ -1746,7 +1746,7 @@ Implementation of the `HTMLVideoElement` [videoHeight](https://developer.mozilla
 
 > **seekToNextFrame**(): `void`
 
-Defined in: [src/player/Player.ts:892](https://github.com/jaames/flipnote.js/blob/a8a7e56268fb7f3a0039ade6ddc69a607deedd27/src/player/Player.ts#L892)
+Defined in: [src/player/Player.ts:892](https://github.com/jaames/flipnote.js/blob/8ec10f089e866d1297261b52ab6750bd899577ce/src/player/Player.ts#L892)
 
 Implementation of the `HTMLVideoElement` [seekToNextFrame](https://developer.mozilla.org/en-US/docs/Web/API/HTMLVideoElement/seekToNextFrame) method
 
@@ -1760,7 +1760,7 @@ Implementation of the `HTMLVideoElement` [seekToNextFrame](https://developer.moz
 
 > **fastSeek**(`time`): `void`
 
-Defined in: [src/player/Player.ts:900](https://github.com/jaames/flipnote.js/blob/a8a7e56268fb7f3a0039ade6ddc69a607deedd27/src/player/Player.ts#L900)
+Defined in: [src/player/Player.ts:900](https://github.com/jaames/flipnote.js/blob/8ec10f089e866d1297261b52ab6750bd899577ce/src/player/Player.ts#L900)
 
 Implementation of the `HTMLMediaElement` [fastSeek](https://developer.mozilla.org/en-US/docs/Web/API/HTMLMediaElement/fastSeek) method
 
@@ -1780,7 +1780,7 @@ Implementation of the `HTMLMediaElement` [fastSeek](https://developer.mozilla.or
 
 > **canPlayType**(`mediaType`): `""` \| `"probably"` \| `"maybe"`
 
-Defined in: [src/player/Player.ts:908](https://github.com/jaames/flipnote.js/blob/a8a7e56268fb7f3a0039ade6ddc69a607deedd27/src/player/Player.ts#L908)
+Defined in: [src/player/Player.ts:908](https://github.com/jaames/flipnote.js/blob/8ec10f089e866d1297261b52ab6750bd899577ce/src/player/Player.ts#L908)
 
 Implementation of the `HTMLVideoElement` [getVideoPlaybackQuality](https://developer.mozilla.org/en-US/docs/Web/API/HTMLVideoElement/getVideoPlaybackQuality) method
 
@@ -1800,7 +1800,7 @@ Implementation of the `HTMLVideoElement` [getVideoPlaybackQuality](https://devel
 
 > **getVideoPlaybackQuality**(): [`VideoPlaybackQuality`](https://developer.mozilla.org/docs/Web/API/VideoPlaybackQuality)
 
-Defined in: [src/player/Player.ts:929](https://github.com/jaames/flipnote.js/blob/a8a7e56268fb7f3a0039ade6ddc69a607deedd27/src/player/Player.ts#L929)
+Defined in: [src/player/Player.ts:929](https://github.com/jaames/flipnote.js/blob/8ec10f089e866d1297261b52ab6750bd899577ce/src/player/Player.ts#L929)
 
 Implementation of the `HTMLVideoElement` [https://developer.mozilla.org/en-US/docs/Web/API/HTMLVideoElement/getVideoPlaybackQuality](getVideoPlaybackQuality) method
 
@@ -1814,7 +1814,7 @@ Implementation of the `HTMLVideoElement` [https://developer.mozilla.org/en-US/do
 
 > **requestPictureInPicture**(): `void`
 
-Defined in: [src/player/Player.ts:944](https://github.com/jaames/flipnote.js/blob/a8a7e56268fb7f3a0039ade6ddc69a607deedd27/src/player/Player.ts#L944)
+Defined in: [src/player/Player.ts:944](https://github.com/jaames/flipnote.js/blob/8ec10f089e866d1297261b52ab6750bd899577ce/src/player/Player.ts#L944)
 
 Implementation of the `HTMLVideoElement` [https://developer.mozilla.org/en-US/docs/Web/API/HTMLVideoElement/requestPictureInPicture](requestPictureInPicture) method. Not currently working, only a stub.
 
@@ -1828,7 +1828,7 @@ Implementation of the `HTMLVideoElement` [https://developer.mozilla.org/en-US/do
 
 > **captureStream**(): `void`
 
-Defined in: [src/player/Player.ts:952](https://github.com/jaames/flipnote.js/blob/a8a7e56268fb7f3a0039ade6ddc69a607deedd27/src/player/Player.ts#L952)
+Defined in: [src/player/Player.ts:952](https://github.com/jaames/flipnote.js/blob/8ec10f089e866d1297261b52ab6750bd899577ce/src/player/Player.ts#L952)
 
 Implementation of the `HTMLVideoElement` [https://developer.mozilla.org/en-US/docs/Web/API/HTMLVideoElement/captureStream](captureStream) method. Not currently working, only a stub.
 

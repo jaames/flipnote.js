@@ -5,7 +5,7 @@ prev: false
 title: "WebglCanvasOptions"
 ---
 
-Defined in: [src/renderers/WebGlCanvas.ts:46](https://github.com/jaames/flipnote.js/blob/a8a7e56268fb7f3a0039ade6ddc69a607deedd27/src/renderers/WebGlCanvas.ts#L46)
+Defined in: [src/renderers/WebGlCanvas.ts:46](https://github.com/jaames/flipnote.js/blob/8ec10f089e866d1297261b52ab6750bd899577ce/src/renderers/WebGlCanvas.ts#L46)
 
 Settings for WebGlCanvas.
 
