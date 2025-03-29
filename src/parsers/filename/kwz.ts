@@ -13,6 +13,15 @@ import {
   hexToBytes
 } from '../../utils';
 
+/**
+ * KWZ filenames can be decoded and broken down into different fields. This object represents an unpacked KWZ filename.
+ */
+export interface FlipnoteKwzUnpackedFilename {
+  fsid: string;
+  created: Date;
+  edited: Date;
+};
+
 const REGEX_KWZ_FILENAME = /^[0-5a-z]{28}$/;
 
 const BASE32_ALPHABET = 'cwmfjordvegbalksnthpyxquiz012345';
@@ -61,15 +70,6 @@ const base32Encode = (src: Uint8Array) => {
 };
 
 /**
- * KWZ filenames can be decoded and broken down into different fields. This object represents a parsed KWZ filename.
- */
-export interface FlipnoteKwzFilenameParts {
-  fsid: string;
-  created: Date;
-  edited: Date;
-};
-
-/**
  * Determines if a string matches the KWZ filename format.
  */
 export const isKwzFilename = (filename: string) =>
@@ -78,7 +78,7 @@ export const isKwzFilename = (filename: string) =>
 /**
  * Decode a KWZ filename into its constituent parts.
  */
-export const kwzFilenameDecode = (filename: string): FlipnoteKwzFilenameParts => {
+export const kwzFilenameDecode = (filename: string): FlipnoteKwzUnpackedFilename => {
   const bytes = base32Decode(filename);
   const data = new DataView(bytes.buffer);
 
@@ -93,7 +93,7 @@ export const kwzFilenameDecode = (filename: string): FlipnoteKwzFilenameParts =>
 /**
  * Encode a KWZ filename from its parts; i.e. do the inverse of {@link kwzFilenameDecode}.
  */
-export const kwzFilenameEncode = (filename: FlipnoteKwzFilenameParts) => {
+export const kwzFilenameEncode = (filename: FlipnoteKwzUnpackedFilename) => {
   const bytes = new Uint8Array(17);
   const data = new DataView(bytes.buffer);
 

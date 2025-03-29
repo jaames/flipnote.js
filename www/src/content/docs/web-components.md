@@ -118,15 +118,33 @@ flipnote-player {
 
 ### Available CSS variables
 
-| CSS variable | Default value | Use |
+| CSS variable | Default value | Purpose |
 |:-|:-|:-|
 | `--flipnote-player-font-family` | `sans-serif` | Font to use for any player UI text |
+| `--flipnote-player-canvas-background` | `#FFF` | Canvas area background - this will only be visible if the Flipnote is a KWZ and uses a transparent background color |
 | `--flipnote-player-controls-background` | `none` | Background color for the controls area |
-| `--flipnote-player-button-background` | `#FFD3A6` | Background color for any player buttons |
-| `--flipnote-player-button-color` | `#F36A2D` | Text and icon color for any player buttons |
-| `--flipnote-player-canvas-background` | `#FFF` | Canvas area background - this will only be visible if the Flipnote is a KWZ and uses a transparent background color. |
+| `--flipnote-player-button-background` | `#FFD3A6` | Button background color |
+| `--flipnote-player-button-color` | `#F36A2D` | Button text color |
+| `--flipnote-player-icon-color` | `#F36A2D` | Color used by icons in the player UI |
+| `--flipnote-player-slider-track` | `#FFD3A6` | Slider track color |
+| `--flipnote-player-slider-level` | `#F36A2D` | Slider level color |
+| `--flipnote-player-slider-handle` | `#F36A2D` | Slider handle outer color |
+| `--flipnote-player-slider-handle-fill` | `white` | Slider handle inner color |
+| `--flipnote-player-focus-outline` | `3px solid #FFD3A6` | Outline used when the player UI is focused |
 
-This isn't super fleshed-out, so if you need more styling options for your use-case feel free to [open an issue](https://github.com/jaames/flipnote.js/issues) to request something!
+### Styling via Parts
+
+If you need more styling options, every player element has a `part` attribute that you can use to target specific parts of the player UI from CSS, like so:
+
+```css
+flipnote-player::part(Controls) {
+  background: red;
+}
+```
+
+It's recommended to use browser developer tools to inspect the parts of the player UI, and to see what parts are available to target.
+
+For more information on the `part` attribute, check out the [CSS Shadow Parts](https://developer.mozilla.org/en-US/docs/Web/CSS/::part) documentation.
 
 ## JavaScript API
 

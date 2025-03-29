@@ -83,7 +83,7 @@ export class ImageComponent extends LitElement {
    * @internal
    */
   render() {
-    return html`<img class="Image" src=${ this._gifUrl } alt=${ this._imgTitle } title=${ this._imgTitle } />`;
+    return html`<img class="Image" part="Image" src=${ this._gifUrl } title=${ this._imgTitle } />`;
   }
 
   loadNote(note: Flipnote) {

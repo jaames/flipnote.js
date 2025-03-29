@@ -19,8 +19,14 @@ import {
   styleMap
 } from 'lit/directives/style-map.js';
 
-import { KEY_MAP } from './utils';
+import {
+  formatPercent,
+  partMap,
+} from './utils';
+
 import { clamp } from '../utils';
+
+import { KEY_MAP_SLIDER } from './keymaps';
 
 /**
  * @internal
@@ -45,8 +51,7 @@ export class SliderComponent extends LitElement {
       .Slider:focus {
         position: relative;
         z-index: 1;
-        outline: var(--flipnote-player-focus-outline, 3px solid #FFD3A6);
-        outline-offset: 2px;
+        outline: none;
       }
 
       .Slider--vertical {
@@ -58,6 +63,11 @@ export class SliderComponent extends LitElement {
         position: relative;
         border-radius: 3px;
         background: var(--flipnote-player-slider-track, #FFD3A6);
+      }
+
+      .Slider:focus .Slider__track {
+        outline: var(--flipnote-player-focus-outline, 3px solid #FFD3A6);
+        outline-offset: 3px;
       }
 
       .Slider--horizontal .Slider__track {
@@ -112,6 +122,7 @@ export class SliderComponent extends LitElement {
       }
 
       .Slider:hover .Slider__handle,
+      .Slider:focus .Slider__handle,
       .Slider--isActive .Slider__handle {
         display: block;
       }
@@ -161,21 +172,23 @@ export class SliderComponent extends LitElement {
     return html`
       <div
         class=${ classMap(rootClasses) }
+        part=${ partMap(rootClasses) }
         tabIndex="0"
         role="slider"
         aria-label=${ this.label }
         aria-valuemin="0"
         aria-valuemax="1"
-        aria-valuenow=${ this.value }
+        aria-valuenow=${ this.value.toPrecision(3) }
+        aria-valuetext=${ formatPercent(this.value, 1) }
         @touchstart=${ this.onSliderTouchStart }
         @mousedown=${ this.onSliderMouseStart }
         @keydown=${ this.onKeyInput }
       >
-        <div class="Slider__track">
-          <div class="Slider__levelWrapper">  
-            <div class="Slider__level" style=${ styleMap({ [mainAxis]: percent }) }></div>
+        <div class="Slider__track" part="Slider__track">
+          <div class="Slider__levelWrapper" part="Slider__levelWrapper">
+            <div class="Slider__level" part="Slider__level" style=${ styleMap({ [mainAxis]: percent }) }></div>
           </div>
-          <div class="Slider__handle" style=${ styleMap({ [side]: percent }) }></div>
+          <div class="Slider__handle" part="Slider__handle" style=${ styleMap({ [side]: percent }) }></div>
         </div>
       </div>
     `;
@@ -251,20 +264,20 @@ export class SliderComponent extends LitElement {
   }
 
   private onKeyInput = (e: KeyboardEvent) => {
-    const key = KEY_MAP[e.key];
+    const action = KEY_MAP_SLIDER[e.key];
 
-    if (!key)
+    if (!action)
       return;
 
     this.dispatch('inputstart');
-    switch (key) {
-      case 'ArrowLeft':
+    switch (action) {
+      case 'decrease':
         if (e.shiftKey)
           this.updateValue(0);
         else
           this.updateValue(this.value - this.step);
         break;
-      case 'ArrowRight':
+      case 'increase':
         if (e.shiftKey)
           this.updateValue(1);
         else

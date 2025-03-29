@@ -1,5 +1,5 @@
 /*!!
- * flipnote.js v6.1.1
+ * flipnote.js v6.2.0
  * https://flipnote.js.org
  * A JavaScript library for Flipnote Studio animation files
  * 2018 - 2025 James Daniel
@@ -7,6 +7,7 @@
 */
 const REGEX_PPM_LOCAL_FILENAME = /^[0-9A-Z]{1}[0-9A-F]{5}_[0-9A-F]{13}_[0-9]{3}$/;
 const REGEX_PPM_FILENAME = /^[0-9A-F]{6}_[0-9A-F]{13}_[0-9]{3}$/;
+const CHECKSUM_ALPHABET = '0123456789ABCDEFGHIJKLMNOPQRSTUVWXYZ';
 /**
  * Determines if a string matches the PPM filename format.
  */
@@ -15,7 +16,34 @@ const isPpmFilename = (filename) => REGEX_PPM_LOCAL_FILENAME.test(filename);
  * Does the same thing as {@link isPpmFilename}, expect it only matches "basic" filenames, without the checksum character that is added when saving a Flipnote to the filesystem.
  */
 const isPpmBasicFilename = (filename) => REGEX_PPM_FILENAME.test(filename);
-// TODO: checksum reverse-engineering and implementation
+/**
+ *
+ */
+const ppmFilenameCalculateCheckDigit = (filename) => {
+    let sum = parseInt(filename.slice(0, 2), 16);
+    for (let i = 1; i < 16; i++) {
+        const char = filename.charCodeAt(i);
+        sum = (sum + char) & 0xff;
+    }
+    return CHECKSUM_ALPHABET[sum % 36];
+};
+/**
+ *
+ */
+const ppmFilenameDecode = (filename) => {
+    const macSuffix = filename.slice(0, 6);
+    const random1 = filename.slice(7, 12);
+    const random2 = filename.slice(12, 19);
+    const edits = parseInt(filename.slice(-3));
+    return { macSuffix, random1, random2, edits };
+};
+/**
+ *
+ */
+const ppmFilenameEncode = (filename) => {
+    const edits = filename.edits.toString().padEnd(3, '0');
+    return `${filename.macSuffix}_${filename.random1}_${filename.random2}_${edits}`;
+};
 
 /**
  * @internal
@@ -26,7 +54,7 @@ const hexFromBytes = (bytes, reverse = false) => {
         hex.push(bytes[i].toString(16).padStart(2, '0'));
     if (reverse)
         hex.reverse();
-    return hex.join('');
+    return hex.join('').toUpperCase();
 };
 /**
  * @internal
@@ -306,4 +334,4 @@ const kwzFilenameEncode = (filename) => {
     return base32Encode(bytes);
 };
 
-export { isKwzFilename, isPpmBasicFilename, isPpmFilename, kwzFilenameDecode, kwzFilenameEncode };
+export { isKwzFilename, isPpmBasicFilename, isPpmFilename, kwzFilenameDecode, kwzFilenameEncode, ppmFilenameCalculateCheckDigit, ppmFilenameDecode, ppmFilenameEncode };

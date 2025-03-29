@@ -10,7 +10,7 @@ export const hexFromBytes = (bytes: Uint8Array, reverse = false) => {
   if (reverse)
     hex.reverse();
   
-  return hex.join('');
+  return hex.join('').toUpperCase();
 };
 
 /**

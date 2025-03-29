@@ -23,7 +23,7 @@ import IconVolumeOff from './icons/volumeOff.svg';
  * @internal
  */
 const patchSvg = (svgString: string) =>
-  svgString.replace(/<svg ([^>]*)>/, (match, svgAttrs) => `<svg ${ svgAttrs } class="Icon" style="fill:currentColor">`);
+  svgString.replace(/<svg ([^>]*)>/, (match, svgAttrs) => `<svg ${ svgAttrs } class="Icon" part="Icon" style="fill:currentColor">`);
 
 /**
  * @internal

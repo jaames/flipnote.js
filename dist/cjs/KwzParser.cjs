@@ -1,5 +1,5 @@
 /*!!
- * flipnote.js v6.1.1
+ * flipnote.js v6.2.0
  * https://flipnote.js.org
  * A JavaScript library for Flipnote Studio animation files
  * 2018 - 2025 James Daniel
@@ -140,7 +140,7 @@ const hexFromBytes = (bytes, reverse = false) => {
         hex.push(bytes[i].toString(16).padStart(2, '0'));
     if (reverse)
         hex.reverse();
-    return hex.join('');
+    return hex.join('').toUpperCase();
 };
 
 /**
@@ -1084,7 +1084,7 @@ class KwzParser extends BaseParser {
         // check the buffer's magic to identify which format it uses
         const magicBytes = new Uint8Array(buffer.slice(0, 4));
         const magic = (magicBytes[0] << 24) | (magicBytes[1] << 16) | (magicBytes[2] << 8);
-        // check if magic is KFH (kwz magic) or  KIC (fs3d folder icon)
+        // check if magic is KFH (kwz magic) or KIC (fs3d folder icon)
         return magic === 0x4B464800 || magic === 0x4B494300;
     }
     /**

@@ -1,5 +1,5 @@
 /*!!
- * flipnote.js v6.1.1
+ * flipnote.js v6.2.0
  * https://flipnote.js.org
  * A JavaScript library for Flipnote Studio animation files
  * 2018 - 2025 James Daniel
@@ -140,7 +140,7 @@ const hexFromBytes = (bytes, reverse = false) => {
         hex.push(bytes[i].toString(16).padStart(2, '0'));
     if (reverse)
         hex.reverse();
-    return hex.join('');
+    return hex.join('').toUpperCase();
 };
 
 /**

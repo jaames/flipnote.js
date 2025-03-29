@@ -17,7 +17,7 @@ import {
 import { SliderComponent } from './SliderComponent';
 import { IconComponent } from './IconComponent';
 import { PlayerMixin } from './PlayerMixin';
-import { KEY_MAP } from './utils';
+import { KEY_MAP_PLAYER } from './keymaps';
 
 import { Player, PlayerEvent } from '../player';
 import { nextPaint } from '../utils';
@@ -141,6 +141,7 @@ export class PlayerComponent extends PlayerMixin(LitElement) {
       .Controls__frameCounter {
         min-width: 90px;
         font-variant-numeric: tabular-nums;
+        cursor: pointer;
       }
 
       .Controls__progressBar {
@@ -294,6 +295,8 @@ export class PlayerComponent extends PlayerMixin(LitElement) {
   private _isPlayerAvailable = false;
   private _playerSrc: any;
   private _resizeObserver: ResizeObserver;
+  private _keysDown: Record<string, boolean> = {};
+  private _counterMode: 'frame' | 'time' = 'frame';
   
   constructor() {
     super();
@@ -310,24 +313,33 @@ export class PlayerComponent extends PlayerMixin(LitElement) {
           width: ${ this._cssWidth }
         }
       </style>
-      <div class="Player">
+      <div 
+        class="Player"
+        part="Player"
+      >
         <div
           class="CanvasArea"
+          part="CanvasArea"
           tabIndex="0"
           role="widget"
           aria-description="Flipnote animation player. Press the space key to play or pause the animation. Use the left and right arrow keys to navigate frames"
           @click=${ this.handlePlayToggle}
-          @keydown=${this.handleKeyInput }
+          @keydown=${this.handleKeyInputDown }
+          @keyup=${this.handleKeyInputUp }
         >
-          <div class="PlayerCanvas" id="canvasWrapper"></div>
+          <div
+            class="PlayerCanvas"
+            part="PlayerCanvas"
+            id="canvasWrapper"
+          ></div>
           ${ this._isLoading ?
-            html`<div class="Overlay">
+            html`<div class="Overlay" part="Overlay">
               <flipnote-player-icon icon="loader" class="LoaderIcon"></flipnote-player-icon>
             </div>` :
             ''
           }
           ${ this._isError ?
-            html`<div class="Overlay Overlay--error">
+            html`<div class="Overlay Overlay--error" part="Overlay Overlay--error">
               Error
             </div>` :
             ''
@@ -344,12 +356,20 @@ export class PlayerComponent extends PlayerMixin(LitElement) {
   renderControls() {
     if (this.controls === 'compact') {
       return html`
-        <div class="Controls Controls--compact Controls__row">
-          <button @click=${ this.handlePlayToggle } class="Button Controls__playButton">
+        <div 
+          class="Controls Controls--compact Controls__row" 
+          part="Controls Controls--compact Controls__row"
+        >
+          <button 
+            @click=${ this.handlePlayToggle } 
+            class="Button Controls__playButton"
+            part="Controls__playButton"
+          >
             <flipnote-player-icon icon=${ this._isPlaying ? 'pause' : 'play' }></flipnote-player-icon>
           </button>
           <flipnote-player-slider 
             class="Controls__progressBar"
+            part="Controls__progressBar"
             value=${ this._progress }
             @change=${ this.handleProgressSliderChange }
             @inputstart=${ this.handleProgressSliderInputStart }
@@ -361,9 +381,13 @@ export class PlayerComponent extends PlayerMixin(LitElement) {
     }
     else {
       return html`
-        <div class="Controls Controls--default">
+        <div 
+          class="Controls Controls--default" 
+          part="Controls Controls--default"
+        >
           <flipnote-player-slider 
             class="Controls__progressBar"
+            part="Controls__progressBar"
             value=${ this._progress }
             label="Playback progress"
             step=${ 1 / (this._frameCount - 1) }
@@ -372,28 +396,36 @@ export class PlayerComponent extends PlayerMixin(LitElement) {
             @inputend=${ this.handleProgressSliderInputEnd }
           >
           </flipnote-player-slider>
-          <div class="Controls__row">
-            <div class="Controls__groupLeft">
+          <div class="Controls__row" part="Controls__row">
+            <div class="Controls__groupLeft" part="Controls__groupLeft">
               <button
                 class="Button Controls__playButton"
+                part="Controls__playButton"
                 tabIndex="0"
                 @click=${ this.handlePlayToggle }
               >
                 <flipnote-player-icon icon=${ this._isPlaying ? 'pause' : 'play' }></flipnote-player-icon>
               </button>
-              <span class="Controls__frameCounter">
+              <span 
+                class="Controls__frameCounter" 
+                part="Controls__frameCounter"
+                @click=${ this.handleCounterClick }
+                aria-label=${ this._counterMode === 'frame' ? 'Current frame' : 'Current time' }
+              >
                 ${ this._counter }
               </span>
             </div>
-            <div class="Controls__groupRight">
+            <div class="Controls__groupRight" part="Controls__groupRight">
               <flipnote-player-icon 
                 class="MuteIcon"
+                part="MuteIcon"
                 @click=${ this.handleMuteToggle }
                 icon=${ this._isMuted ? 'volumeOff' : 'volumeOn' }
               >
               </flipnote-player-icon>
               <flipnote-player-slider
                 class="Controls__volumeBar"
+                part="Controls__volumeBar"
                 value=${ this._volumeLevel }
                 label="Volume"
                 @change=${ this.handleVolumeBarChange }
@@ -428,7 +460,7 @@ export class PlayerComponent extends PlayerMixin(LitElement) {
       this._isLoading = false;
       this._isError = false;
       this._progress = player.getProgress() / 100;
-      this._counter = player.getFrameCounter();
+      this._counter = this._counterMode === 'frame' ? player.getFrameCounter() : player.getTimeCounter();
       this._frameCount = player.frameCount;
     });
     player.on(PlayerEvent.Play, () => {
@@ -513,30 +545,38 @@ export class PlayerComponent extends PlayerMixin(LitElement) {
     this.updateCanvasSize();
   }
 
-  private handleKeyInput = (e: KeyboardEvent) => {
-    const key = KEY_MAP[e.key];
+  private handleKeyInputDown = (e: KeyboardEvent) => {
+    const isDownAlready = this._keysDown[e.key];
+    const action = KEY_MAP_PLAYER[e.key];
 
-    if (!key)
+    if (!action)
       return;
 
-    switch (key) {
-      case 'Enter':
-        this.togglePlay();
+    switch (action) {
+      case 'playpause':
+        if (!isDownAlready) // Prevent key holds from triggering rapid play/pause
+          this.togglePlay();
         break;
-      case 'ArrowLeft':
+      case 'prev':
         if (e.shiftKey)
           this.firstFrame();
         else
           this.prevFrame();
         break;
-      case 'ArrowRight':
+      case 'next':
         if (e.shiftKey)
           this.lastFrame();
         else
           this.nextFrame();
         break;
     }
+
+    this._keysDown[e.key] = true;
     e.preventDefault();
+  }
+
+  private handleKeyInputUp = (e: KeyboardEvent) => {
+    this._keysDown[e.key] = false;
   }
 
   private handlePlayToggle = (e: InputEvent) => {
@@ -567,6 +607,11 @@ export class PlayerComponent extends PlayerMixin(LitElement) {
   private handleVolumeBarChange = (e: CustomEvent) => {
     this.focus();
     this.setVolume(e.detail.value);
+  }
+
+  private handleCounterClick = () => {
+    this._counterMode = this._counterMode === 'frame' ? 'time' : 'frame';
+    this._counter = this._counterMode === 'frame' ? this.getFrameCounter() : this.getTimeCounter();
   }
 
 }

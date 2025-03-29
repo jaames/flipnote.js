@@ -1,5 +1,5 @@
 /*!!
- * flipnote.js v6.1.1
+ * flipnote.js v6.2.0
  * https://flipnote.js.org
  * A JavaScript library for Flipnote Studio animation files
  * 2018 - 2025 James Daniel
@@ -290,7 +290,7 @@ var flipnote = (function (exports) {
             hex.push(bytes[i].toString(16).padStart(2, '0'));
         if (reverse)
             hex.reverse();
-        return hex.join('');
+        return hex.join('').toUpperCase();
     };
     /**
      * @internal
@@ -2210,7 +2210,7 @@ kQIDAQAB
             // check the buffer's magic to identify which format it uses
             const magicBytes = new Uint8Array(buffer.slice(0, 4));
             const magic = (magicBytes[0] << 24) | (magicBytes[1] << 16) | (magicBytes[2] << 8);
-            // check if magic is KFH (kwz magic) or  KIC (fs3d folder icon)
+            // check if magic is KFH (kwz magic) or KIC (fs3d folder icon)
             return magic === 0x4B464800 || magic === 0x4B494300;
         }
         /**
@@ -3334,6 +3334,7 @@ kQIDAQAB
 
     const REGEX_PPM_LOCAL_FILENAME = /^[0-9A-Z]{1}[0-9A-F]{5}_[0-9A-F]{13}_[0-9]{3}$/;
     const REGEX_PPM_FILENAME = /^[0-9A-F]{6}_[0-9A-F]{13}_[0-9]{3}$/;
+    const CHECKSUM_ALPHABET = '0123456789ABCDEFGHIJKLMNOPQRSTUVWXYZ';
     /**
      * Determines if a string matches the PPM filename format.
      */
@@ -3342,7 +3343,34 @@ kQIDAQAB
      * Does the same thing as {@link isPpmFilename}, expect it only matches "basic" filenames, without the checksum character that is added when saving a Flipnote to the filesystem.
      */
     const isPpmBasicFilename = (filename) => REGEX_PPM_FILENAME.test(filename);
-    // TODO: checksum reverse-engineering and implementation
+    /**
+     *
+     */
+    const ppmFilenameCalculateCheckDigit = (filename) => {
+        let sum = parseInt(filename.slice(0, 2), 16);
+        for (let i = 1; i < 16; i++) {
+            const char = filename.charCodeAt(i);
+            sum = (sum + char) & 0xff;
+        }
+        return CHECKSUM_ALPHABET[sum % 36];
+    };
+    /**
+     *
+     */
+    const ppmFilenameDecode = (filename) => {
+        const macSuffix = filename.slice(0, 6);
+        const random1 = filename.slice(7, 12);
+        const random2 = filename.slice(12, 19);
+        const edits = parseInt(filename.slice(-3));
+        return { macSuffix, random1, random2, edits };
+    };
+    /**
+     *
+     */
+    const ppmFilenameEncode = (filename) => {
+        const edits = filename.edits.toString().padEnd(3, '0');
+        return `${filename.macSuffix}_${filename.random1}_${filename.random2}_${edits}`;
+    };
 
     const REGEX_KWZ_FILENAME = /^[0-5a-z]{28}$/;
     const BASE32_ALPHABET = 'cwmfjordvegbalksnthpyxquiz012345';
@@ -3420,7 +3448,10 @@ kQIDAQAB
         isPpmBasicFilename: isPpmBasicFilename,
         isPpmFilename: isPpmFilename,
         kwzFilenameDecode: kwzFilenameDecode,
-        kwzFilenameEncode: kwzFilenameEncode
+        kwzFilenameEncode: kwzFilenameEncode,
+        ppmFilenameCalculateCheckDigit: ppmFilenameCalculateCheckDigit,
+        ppmFilenameDecode: ppmFilenameDecode,
+        ppmFilenameEncode: ppmFilenameEncode
     });
 
     const XOR_KEY = [
@@ -8158,7 +8189,7 @@ kQIDAQAB
      * flipnote.js library version (exported as `flipnote.version`).
      * You can find the latest version on the project's [NPM](https://www.npmjs.com/package/flipnote.js) page.
      */
-    const version = "6.1.1"; // replaced by @rollup/plugin-replace;
+    const version = "6.2.0"; // replaced by @rollup/plugin-replace;
 
     /**
      * @license
@@ -8218,17 +8249,27 @@ kQIDAQAB
      * SPDX-License-Identifier: BSD-3-Clause
      */function e$3(e,r){return (n,s,i)=>{const o=t=>t.renderRoot?.querySelector(e)??null;return e$4(n,s,{get(){return o(this)}})}}
 
-    const KEY_MAP = {
-        ' ': 'Enter',
-        'Enter': 'Enter',
-        'a': 'ArrowLeft',
-        's': 'ArrowLeft',
-        'ArrowLeft': 'ArrowLeft',
-        'ArrowDown': 'ArrowLeft',
-        'd': 'ArrowRight',
-        'w': 'ArrowRight',
-        'ArrowRight': 'ArrowRight',
-        'ArrowUp': 'ArrowRight',
+    const KEY_MAP_SLIDER = {
+        'a': 'decrease',
+        's': 'decrease',
+        'd': 'increase',
+        'w': 'increase',
+        'ArrowLeft': 'decrease',
+        'ArrowDown': 'decrease',
+        'ArrowRight': 'increase',
+        'ArrowUp': 'increase',
+    };
+    const KEY_MAP_PLAYER = {
+        ' ': 'playpause',
+        'Enter': 'playpause',
+        'a': 'prev',
+        's': 'prev',
+        'd': 'next',
+        'w': 'next',
+        'ArrowLeft': 'prev',
+        'ArrowDown': 'prev',
+        'ArrowRight': 'next',
+        'ArrowUp': 'next',
     };
 
     /// <reference types="resize-observer-browser" /> 
@@ -8238,7 +8279,7 @@ kQIDAQAB
      */
     exports.PlayerComponent = class PlayerComponent extends PlayerMixin(s) {
         static get styles() {
-            return i$4 `:host{display:inline-block}.Player{display:inline-block;position:relative;font-family:var(--flipnote-player-font-family,sans-serif)}.CanvasArea{cursor:pointer;position:relative;background:var(--flipnote-player-canvas-background,#fff)}.CanvasArea:focus{outline:var(--flipnote-player-focus-outline,3px solid #ffd3a6);outline-offset:2px}.PlayerCanvas{position:relative;display:block}.PlayerCanvas canvas{display:block}.Overlay{position:absolute;top:0;left:0;background:#ebf0f3;color:#4b4c53;width:100%;height:100%;display:flex;justify-content:center;align-items:center}.Overlay--error{background:#ff8b8b;color:#ca2a32}@keyframes spin{from{transform:rotateZ(0)}to{transform:rotateZ(360deg)}}.LoaderIcon{animation:spin infinite 1.2s linear}.Controls{background:var(--flipnote-player-controls-background,none)}.MuteIcon{width:28px;height:28px;cursor:pointer}.Controls__groupLeft,.Controls__groupRight,.Controls__row{display:flex;align-items:center}.Controls__groupLeft{margin-right:auto}.Controls__groupRight{margin-left:auto}.Controls__playButton{height:32px;width:32px;padding:2px}.MuteIcon{width:28px;height:28px}.LoaderIcon{width:40px;height:40px}.Controls.Controls--compact{margin:6px 0}.Controls__frameCounter{min-width:90px;font-variant-numeric:tabular-nums}.Controls__progressBar{flex:1}.Controls--compact .Controls__playButton{margin-right:12px}.Controls--compact .Controls__progressBar{flex:1}.Controls--default .Controls__playButton{margin-right:12px}.Controls--default .Controls__progressBar{margin-top:2px;margin-bottom:2px;display:block}.Controls--default .Controls__volumeBar{width:70px;margin-left:8px}.Button{border:0;padding:0;outline:0;-webkit-appearance:none;display:block;font-family:inherit;font-size:inherit;text-align:center;cursor:pointer;background:var(--flipnote-player-button-background,#ffd3a6);color:var(--flipnote-player-button-color,#f36a2d);border-radius:4px}.Button:focus{outline:3px solid var(--flipnote-player-button-background,#ffd3a6);outline-offset:2px}.Button flipnote-player-icon{display:block}`;
+            return i$4 `:host{display:inline-block}.Player{display:inline-block;position:relative;font-family:var(--flipnote-player-font-family,sans-serif)}.CanvasArea{cursor:pointer;position:relative;background:var(--flipnote-player-canvas-background,#fff)}.CanvasArea:focus{outline:var(--flipnote-player-focus-outline,3px solid #ffd3a6);outline-offset:2px}.PlayerCanvas{position:relative;display:block}.PlayerCanvas canvas{display:block}.Overlay{position:absolute;top:0;left:0;background:#ebf0f3;color:#4b4c53;width:100%;height:100%;display:flex;justify-content:center;align-items:center}.Overlay--error{background:#ff8b8b;color:#ca2a32}@keyframes spin{from{transform:rotateZ(0)}to{transform:rotateZ(360deg)}}.LoaderIcon{animation:spin infinite 1.2s linear}.Controls{background:var(--flipnote-player-controls-background,none)}.MuteIcon{width:28px;height:28px;cursor:pointer}.Controls__groupLeft,.Controls__groupRight,.Controls__row{display:flex;align-items:center}.Controls__groupLeft{margin-right:auto}.Controls__groupRight{margin-left:auto}.Controls__playButton{height:32px;width:32px;padding:2px}.MuteIcon{width:28px;height:28px}.LoaderIcon{width:40px;height:40px}.Controls.Controls--compact{margin:6px 0}.Controls__frameCounter{min-width:90px;font-variant-numeric:tabular-nums;cursor:pointer}.Controls__progressBar{flex:1}.Controls--compact .Controls__playButton{margin-right:12px}.Controls--compact .Controls__progressBar{flex:1}.Controls--default .Controls__playButton{margin-right:12px}.Controls--default .Controls__progressBar{margin-top:2px;margin-bottom:2px;display:block}.Controls--default .Controls__volumeBar{width:70px;margin-left:8px}.Button{border:0;padding:0;outline:0;-webkit-appearance:none;display:block;font-family:inherit;font-size:inherit;text-align:center;cursor:pointer;background:var(--flipnote-player-button-background,#ffd3a6);color:var(--flipnote-player-button-color,#f36a2d);border-radius:4px}.Button:focus{outline:3px solid var(--flipnote-player-button-background,#ffd3a6);outline-offset:2px}.Button flipnote-player-icon{display:block}`;
         }
         get width() {
             return this._width;
@@ -8285,31 +8326,39 @@ kQIDAQAB
             this._isMuted = false;
             this._volumeLevel = 0;
             this._isPlayerAvailable = false;
+            this._keysDown = {};
+            this._counterMode = 'frame';
             this.handleResize = (entries) => {
                 this.updateCanvasSize();
             };
-            this.handleKeyInput = (e) => {
-                const key = KEY_MAP[e.key];
-                if (!key)
+            this.handleKeyInputDown = (e) => {
+                const isDownAlready = this._keysDown[e.key];
+                const action = KEY_MAP_PLAYER[e.key];
+                if (!action)
                     return;
-                switch (key) {
-                    case 'Enter':
-                        this.togglePlay();
+                switch (action) {
+                    case 'playpause':
+                        if (!isDownAlready) // Prevent key holds from triggering rapid play/pause
+                            this.togglePlay();
                         break;
-                    case 'ArrowLeft':
+                    case 'prev':
                         if (e.shiftKey)
                             this.firstFrame();
                         else
                             this.prevFrame();
                         break;
-                    case 'ArrowRight':
+                    case 'next':
                         if (e.shiftKey)
                             this.lastFrame();
                         else
                             this.nextFrame();
                         break;
                 }
+                this._keysDown[e.key] = true;
                 e.preventDefault();
+            };
+            this.handleKeyInputUp = (e) => {
+                this._keysDown[e.key] = false;
             };
             this.handlePlayToggle = (e) => {
                 this.focus();
@@ -8335,16 +8384,20 @@ kQIDAQAB
                 this.focus();
                 this.setVolume(e.detail.value);
             };
+            this.handleCounterClick = () => {
+                this._counterMode = this._counterMode === 'frame' ? 'time' : 'frame';
+                this._counter = this._counterMode === 'frame' ? this.getFrameCounter() : this.getTimeCounter();
+            };
             this._resizeObserver = new ResizeObserver(this.handleResize);
         }
         /**
          * @internal
          */
         render() {
-            return x `<style>:host{width:${this._cssWidth}}</style><div class="Player"><div class="CanvasArea" tabIndex="0" role="widget" aria-description="Flipnote animation player. Press the space key to play or pause the animation. Use the left and right arrow keys to navigate frames" @click="${this.handlePlayToggle}" @keydown="${this.handleKeyInput}"><div class="PlayerCanvas" id="canvasWrapper"></div>${this._isLoading ?
-            x `<div class="Overlay"><flipnote-player-icon icon="loader" class="LoaderIcon"></flipnote-player-icon></div>` :
+            return x `<style>:host{width:${this._cssWidth}}</style><div class="Player" part="Player"><div class="CanvasArea" part="CanvasArea" tabIndex="0" role="widget" aria-description="Flipnote animation player. Press the space key to play or pause the animation. Use the left and right arrow keys to navigate frames" @click="${this.handlePlayToggle}" @keydown="${this.handleKeyInputDown}" @keyup="${this.handleKeyInputUp}"><div class="PlayerCanvas" part="PlayerCanvas" id="canvasWrapper"></div>${this._isLoading ?
+            x `<div class="Overlay" part="Overlay"><flipnote-player-icon icon="loader" class="LoaderIcon"></flipnote-player-icon></div>` :
             ''} ${this._isError ?
-            x `<div class="Overlay Overlay--error">Error</div>` :
+            x `<div class="Overlay Overlay--error" part="Overlay Overlay--error">Error</div>` :
             ''}</div>${this.renderControls()}</div>`;
         }
         /**
@@ -8352,10 +8405,10 @@ kQIDAQAB
          */
         renderControls() {
             if (this.controls === 'compact') {
-                return x `<div class="Controls Controls--compact Controls__row"><button @click="${this.handlePlayToggle}" class="Button Controls__playButton"><flipnote-player-icon icon="${this._isPlaying ? 'pause' : 'play'}"></flipnote-player-icon></button><flipnote-player-slider class="Controls__progressBar" value="${this._progress}" @change="${this.handleProgressSliderChange}" @inputstart="${this.handleProgressSliderInputStart}" @inputend="${this.handleProgressSliderInputEnd}"></div>`;
+                return x `<div class="Controls Controls--compact Controls__row" part="Controls Controls--compact Controls__row"><button @click="${this.handlePlayToggle}" class="Button Controls__playButton" part="Controls__playButton"><flipnote-player-icon icon="${this._isPlaying ? 'pause' : 'play'}"></flipnote-player-icon></button><flipnote-player-slider class="Controls__progressBar" part="Controls__progressBar" value="${this._progress}" @change="${this.handleProgressSliderChange}" @inputstart="${this.handleProgressSliderInputStart}" @inputend="${this.handleProgressSliderInputEnd}"></div>`;
             }
             else {
-                return x `<div class="Controls Controls--default"><flipnote-player-slider class="Controls__progressBar" value="${this._progress}" label="Playback progress" step="${1 / (this._frameCount - 1)}" @change="${this.handleProgressSliderChange}" @inputstart="${this.handleProgressSliderInputStart}" @inputend="${this.handleProgressSliderInputEnd}"></flipnote-player-slider><div class="Controls__row"><div class="Controls__groupLeft"><button class="Button Controls__playButton" tabIndex="0" @click="${this.handlePlayToggle}"><flipnote-player-icon icon="${this._isPlaying ? 'pause' : 'play'}"></flipnote-player-icon></button> <span class="Controls__frameCounter">${this._counter}</span></div><div class="Controls__groupRight"><flipnote-player-icon class="MuteIcon" @click="${this.handleMuteToggle}" icon="${this._isMuted ? 'volumeOff' : 'volumeOn'}"></flipnote-player-icon><flipnote-player-slider class="Controls__volumeBar" value="${this._volumeLevel}" label="Volume" @change="${this.handleVolumeBarChange}"></flipnote-player-slider></div></div></div>`;
+                return x `<div class="Controls Controls--default" part="Controls Controls--default"><flipnote-player-slider class="Controls__progressBar" part="Controls__progressBar" value="${this._progress}" label="Playback progress" step="${1 / (this._frameCount - 1)}" @change="${this.handleProgressSliderChange}" @inputstart="${this.handleProgressSliderInputStart}" @inputend="${this.handleProgressSliderInputEnd}"></flipnote-player-slider><div class="Controls__row" part="Controls__row"><div class="Controls__groupLeft" part="Controls__groupLeft"><button class="Button Controls__playButton" part="Controls__playButton" tabIndex="0" @click="${this.handlePlayToggle}"><flipnote-player-icon icon="${this._isPlaying ? 'pause' : 'play'}"></flipnote-player-icon></button> <span class="Controls__frameCounter" part="Controls__frameCounter" @click="${this.handleCounterClick}" aria-label="${this._counterMode === 'frame' ? 'Current frame' : 'Current time'}">${this._counter}</span></div><div class="Controls__groupRight" part="Controls__groupRight"><flipnote-player-icon class="MuteIcon" part="MuteIcon" @click="${this.handleMuteToggle}" icon="${this._isMuted ? 'volumeOff' : 'volumeOn'}"></flipnote-player-icon><flipnote-player-slider class="Controls__volumeBar" part="Controls__volumeBar" value="${this._volumeLevel}" label="Volume" @change="${this.handleVolumeBarChange}"></flipnote-player-slider></div></div></div>`;
             }
         }
         /**
@@ -8380,7 +8433,7 @@ kQIDAQAB
                 this._isLoading = false;
                 this._isError = false;
                 this._progress = player.getProgress() / 100;
-                this._counter = player.getFrameCounter();
+                this._counter = this._counterMode === 'frame' ? player.getFrameCounter() : player.getTimeCounter();
                 this._frameCount = player.frameCount;
             });
             player.on(exports.PlayerEvent.Play, () => {
@@ -8542,6 +8595,18 @@ kQIDAQAB
      * SPDX-License-Identifier: BSD-3-Clause
      */const n="important",i=" !"+n,o$1=e$2(class extends i$1{constructor(t){if(super(t),t.type!==t$1.ATTRIBUTE||"style"!==t.name||t.strings?.length>2)throw Error("The `styleMap` directive must be used in the `style` attribute and must be the only part in the attribute.")}render(t){return Object.keys(t).reduce(((e,r)=>{const s=t[r];return null==s?e:e+`${r=r.includes("-")?r:r.replace(/(?:^(webkit|moz|ms|o)|)(?=[A-Z])/g,"-$&").toLowerCase()}:${s};`}),"")}update(e,[r]){const{style:s}=e.element;if(void 0===this.ft)return this.ft=new Set(Object.keys(r)),this.render(r);for(const t of this.ft)null==r[t]&&(this.ft.delete(t),t.includes("-")?s.removeProperty(t):s[t]=null);for(const t in r){const e=r[t];if(null!=e){this.ft.add(t);const r="string"==typeof e&&e.endsWith(i);t.includes("-")||r?s.setProperty(t,r?e.slice(0,-11):e,r?n:""):s[t]=e;}}return w}});
 
+    const round = (value, precision = 2) => Math.round(value * 10 ** precision) / 10 ** precision;
+    const formatPercent = (value, max, precision = 1) => round((value / max) * 100, precision) + '%';
+
+    class PartMapDirective extends i$1 {
+        render(partInfo) {
+            return Object.keys(partInfo)
+                .filter((key) => partInfo[key])
+                .join(' ');
+        }
+    }
+    const partMap = e$2(PartMapDirective);
+
     /**
      * @group Web Component
      * @internal
@@ -8617,18 +8682,18 @@ kQIDAQAB
                 this.updateValue(value);
             };
             this.onKeyInput = (e) => {
-                const key = KEY_MAP[e.key];
-                if (!key)
+                const action = KEY_MAP_SLIDER[e.key];
+                if (!action)
                     return;
                 this.dispatch('inputstart');
-                switch (key) {
-                    case 'ArrowLeft':
+                switch (action) {
+                    case 'decrease':
                         if (e.shiftKey)
                             this.updateValue(0);
                         else
                             this.updateValue(this.value - this.step);
                         break;
-                    case 'ArrowRight':
+                    case 'increase':
                         if (e.shiftKey)
                             this.updateValue(1);
                         else
@@ -8647,7 +8712,7 @@ kQIDAQAB
             };
         }
         static get styles() {
-            return i$4 `.Slider{touch-action:none;padding:4px 0;cursor:pointer}.Slider:focus{position:relative;z-index:1;outline:var(--flipnote-player-focus-outline,3px solid #ffd3a6);outline-offset:2px}.Slider--vertical{height:100px;width:14px}.Slider__track{position:relative;border-radius:3px;background:var(--flipnote-player-slider-track,#ffd3a6)}.Slider--horizontal .Slider__track{height:4px;margin:6px 0}.Slider--vertical .Slider__track{width:4px;height:100%;margin:0 6px}.Slider__levelWrapper{position:absolute;left:0;right:0;height:6px;margin:-1px}.Slider__level{position:absolute;width:100%;left:0;height:8px;border-radius:8px;background:var(--flipnote-player-slider-level,#f36a2d)}.Slider--horizontal .Slider__level{width:100%;height:6px}.Slider--vertical .Slider__level{width:6px;height:100%;bottom:0}.Slider__handle{display:none;position:absolute;height:10px;width:10px;border-radius:5px;box-sizing:border-box;border:3px solid var(--flipnote-player-slider-handle,#f36a2d);background:var(--flipnote-player-slider-handle-fill,#fff)}.Slider--isActive .Slider__handle,.Slider:hover .Slider__handle{display:block}.Slider--horizontal .Slider__handle{top:0;margin-top:-3px;margin-left:-6px}.Slider--vertical .Slider__handle{left:0;margin-bottom:-6px;margin-left:-3px}`;
+            return i$4 `.Slider{touch-action:none;padding:4px 0;cursor:pointer}.Slider:focus{position:relative;z-index:1;outline:0}.Slider--vertical{height:100px;width:14px}.Slider__track{position:relative;border-radius:3px;background:var(--flipnote-player-slider-track,#ffd3a6)}.Slider:focus .Slider__track{outline:var(--flipnote-player-focus-outline,3px solid #ffd3a6);outline-offset:3px}.Slider--horizontal .Slider__track{height:4px;margin:6px 0}.Slider--vertical .Slider__track{width:4px;height:100%;margin:0 6px}.Slider__levelWrapper{position:absolute;left:0;right:0;height:6px;margin:-1px}.Slider__level{position:absolute;width:100%;left:0;height:8px;border-radius:8px;background:var(--flipnote-player-slider-level,#f36a2d)}.Slider--horizontal .Slider__level{width:100%;height:6px}.Slider--vertical .Slider__level{width:6px;height:100%;bottom:0}.Slider__handle{display:none;position:absolute;height:10px;width:10px;border-radius:5px;box-sizing:border-box;border:3px solid var(--flipnote-player-slider-handle,#f36a2d);background:var(--flipnote-player-slider-handle-fill,#fff)}.Slider--isActive .Slider__handle,.Slider:focus .Slider__handle,.Slider:hover .Slider__handle{display:block}.Slider--horizontal .Slider__handle{top:0;margin-top:-3px;margin-left:-6px}.Slider--vertical .Slider__handle{left:0;margin-bottom:-6px;margin-left:-3px}`;
         }
         render() {
             const percent = `${this.value * 100}%`;
@@ -8659,7 +8724,7 @@ kQIDAQAB
                 'Slider--vertical': this.orientation === 'vertical',
                 'Slider--isActive': this.isActive,
             };
-            return x `<div class="${e$1(rootClasses)}" tabIndex="0" role="slider" aria-label="${this.label}" aria-valuemin="0" aria-valuemax="1" aria-valuenow="${this.value}" @touchstart="${this.onSliderTouchStart}" @mousedown="${this.onSliderMouseStart}" @keydown="${this.onKeyInput}"><div class="Slider__track"><div class="Slider__levelWrapper"><div class="Slider__level" style="${o$1({ [mainAxis]: percent })}"></div></div><div class="Slider__handle" style="${o$1({ [side]: percent })}"></div></div></div>`;
+            return x `<div class="${e$1(rootClasses)}" part="${partMap(rootClasses)}" tabIndex="0" role="slider" aria-label="${this.label}" aria-valuemin="0" aria-valuemax="1" aria-valuenow="${this.value.toPrecision(3)}" aria-valuetext="${formatPercent(this.value, 1)}" @touchstart="${this.onSliderTouchStart}" @mousedown="${this.onSliderMouseStart}" @keydown="${this.onKeyInput}"><div class="Slider__track" part="Slider__track"><div class="Slider__levelWrapper" part="Slider__levelWrapper"><div class="Slider__level" part="Slider__level" style="${o$1({ [mainAxis]: percent })}"></div></div><div class="Slider__handle" part="Slider__handle" style="${o$1({ [side]: percent })}"></div></div></div>`;
         }
         dispatch(eventName, detail) {
             const event = new CustomEvent(eventName, { detail });
@@ -8713,7 +8778,7 @@ kQIDAQAB
     /**
      * @internal
      */
-    const patchSvg = (svgString) => svgString.replace(/<svg ([^>]*)>/, (match, svgAttrs) => `<svg ${svgAttrs} class="Icon" style="fill:currentColor">`);
+    const patchSvg = (svgString) => svgString.replace(/<svg ([^>]*)>/, (match, svgAttrs) => `<svg ${svgAttrs} class="Icon" part="Icon" style="fill:currentColor">`);
     /**
      * @internal
      */
@@ -8798,7 +8863,7 @@ kQIDAQAB
          * @internal
          */
         render() {
-            return x `<img class="Image" src="${this._gifUrl}" alt="${this._imgTitle}" title="${this._imgTitle}">`;
+            return x `<img class="Image" part="Image" src="${this._gifUrl}" title="${this._imgTitle}">`;
         }
         loadNote(note) {
             this.note = note;
