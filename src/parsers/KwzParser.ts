@@ -1118,6 +1118,28 @@ export class KwzParser extends BaseParser {
     };
   }
 
+  /**
+   * Get the duration of a given track in seconds
+   * @returns number
+   * @group Audio
+   */
+  getAudioTrackDuration(trackId: FlipnoteAudioTrack) {
+    const trackMeta = this.soundMeta.get(trackId);
+
+    if (trackMeta.length === 0)
+      return 0;
+
+    const decoded = this.decodeAudioTrack(trackId);
+
+    if (trackId === FlipnoteAudioTrack.BGM) {
+      const bgmAdjust = (1 / this.bgmrate) / (1 / this.framerate);
+      const freq = this.rawSampleRate * bgmAdjust;
+      return decoded.length / freq;
+    }
+
+    return decoded.length / this.sampleRate;
+  }
+
   /** 
    * Get the raw compressed audio data for a given track
    * @returns Byte array

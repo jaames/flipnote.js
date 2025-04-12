@@ -1,5 +1,5 @@
 /*!!
- * flipnote.js v6.2.0
+ * flipnote.js v6.3.0
  * https://flipnote.js.org
  * A JavaScript library for Flipnote Studio animation files
  * 2018 - 2025 James Daniel
@@ -1705,6 +1705,22 @@ class PpmParser extends BaseParser {
         };
     }
     /**
+    * Get the duration of a given track in seconds
+    * @returns number
+    * @group Audio
+    */
+    getAudioTrackDuration(trackId) {
+        const trackMeta = this.soundMeta.get(trackId);
+        if (trackMeta.length === 0)
+            return 0;
+        if (trackId === exports.FlipnoteAudioTrack.BGM) {
+            const bgmAdjust = (1 / this.bgmrate) / (1 / this.framerate);
+            const freq = this.rawSampleRate * bgmAdjust;
+            return ((trackMeta.length - 4) * 2) / freq;
+        }
+        return ((trackMeta.length - 4) * 2) / this.sampleRate;
+    }
+    /**
      * Get the raw compressed audio data for a given track
      * @returns byte array
      * @group Audio
@@ -1724,14 +1740,18 @@ class PpmParser extends BaseParser {
         // note this doesn't resample
         // decode a 4 bit IMA adpcm audio track
         // https://github.com/Flipnote-Collective/flipnote-studio-docs/wiki/PPM-format#sound-data
-        const src = this.getAudioTrackRaw(trackId);
-        const srcSize = src.length;
-        const dst = new Int16Array(srcSize * 2);
+        const trackMeta = this.soundMeta.get(trackId);
+        assert(trackMeta.ptr + trackMeta.length < this.numBytes);
+        this.seek(trackMeta.ptr);
         let srcPtr = 0;
         let dstPtr = 0;
         let sample = 0;
-        let stepIndex = 0;
-        let predictor = 0;
+        let predictor = this.readInt16();
+        let stepIndex = this.readUint8();
+        this.readUint8();
+        const srcSize = trackMeta.length - 4;
+        const src = this.readBytes(srcSize);
+        const dst = new Int16Array(srcSize * 2);
         let lowNibble = true;
         while (srcPtr < srcSize) {
             // switch between high and low nibble each loop iteration
@@ -1998,11 +2018,11 @@ PpmParser.numLayerColors = 1;
 /**
  * Audio track base sample rate.
  */
-PpmParser.rawSampleRate = 8192;
+PpmParser.rawSampleRate = 8180;
 /**
  * Nintendo DSi audio output rate.
  */
-PpmParser.sampleRate = 32768;
+PpmParser.sampleRate = 32768; // Maybe actually more like 32720;
 /**
  * Which audio tracks are available in this format.
  */
@@ -2753,6 +2773,23 @@ class KwzParser extends BaseParser {
             [exports.FlipnoteSoundEffectTrack.SE3]: frameFlags[2],
             [exports.FlipnoteSoundEffectTrack.SE4]: frameFlags[3],
         };
+    }
+    /**
+     * Get the duration of a given track in seconds
+     * @returns number
+     * @group Audio
+     */
+    getAudioTrackDuration(trackId) {
+        const trackMeta = this.soundMeta.get(trackId);
+        if (trackMeta.length === 0)
+            return 0;
+        const decoded = this.decodeAudioTrack(trackId);
+        if (trackId === exports.FlipnoteAudioTrack.BGM) {
+            const bgmAdjust = (1 / this.bgmrate) / (1 / this.framerate);
+            const freq = this.rawSampleRate * bgmAdjust;
+            return decoded.length / freq;
+        }
+        return decoded.length / this.sampleRate;
     }
     /**
      * Get the raw compressed audio data for a given track
@@ -8136,8 +8173,8 @@ class WavAudio extends EncoderBase {
      * @param flipnote
      * @param trackId
      */
-    static fromFlipnote(note) {
-        const sampleRate = note.sampleRate;
+    static fromFlipnote(note, sampleRate = null) {
+        sampleRate ?? (sampleRate = note.sampleRate);
         const wav = new WavAudio(sampleRate, 1, 16);
         const pcm = note.getAudioMasterPcm(sampleRate);
         wav.writeSamples(pcm);
@@ -8148,8 +8185,8 @@ class WavAudio extends EncoderBase {
      * @param flipnote
      * @param trackId
      */
-    static fromFlipnoteTrack(flipnote, trackId) {
-        const sampleRate = flipnote.sampleRate;
+    static fromFlipnoteTrack(flipnote, trackId, sampleRate = null) {
+        sampleRate ?? (sampleRate = flipnote.sampleRate);
         const wav = new WavAudio(sampleRate, 1, 16);
         const pcm = flipnote.getAudioTrackPcm(trackId, sampleRate);
         wav.writeSamples(pcm);
@@ -8188,7 +8225,7 @@ _WavAudio_header = new WeakMap(), _WavAudio_pcmData = new WeakMap();
  * flipnote.js library version (exported as `flipnote.version`).
  * You can find the latest version on the project's [NPM](https://www.npmjs.com/package/flipnote.js) page.
  */
-const version = "6.2.0"; // replaced by @rollup/plugin-replace;
+const version = "6.3.0"; // replaced by @rollup/plugin-replace;
 
 /**
  * @license

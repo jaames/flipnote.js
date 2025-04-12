@@ -81,8 +81,8 @@ export class WavAudio extends EncoderBase {
    * @param flipnote
    * @param trackId
    */
-  static fromFlipnote(note: Flipnote) {
-    const sampleRate = note.sampleRate;
+  static fromFlipnote(note: Flipnote, sampleRate: number | null = null) {
+    sampleRate ??= note.sampleRate;
     const wav = new WavAudio(sampleRate, 1, 16);
     const pcm = note.getAudioMasterPcm(sampleRate);
     wav.writeSamples(pcm);
@@ -94,8 +94,8 @@ export class WavAudio extends EncoderBase {
    * @param flipnote
    * @param trackId
    */
-  static fromFlipnoteTrack(flipnote: Flipnote, trackId: FlipnoteAudioTrack) {
-    const sampleRate = flipnote.sampleRate;
+  static fromFlipnoteTrack(flipnote: Flipnote, trackId: FlipnoteAudioTrack, sampleRate: number | null = null) {
+    sampleRate ??= flipnote.sampleRate;
     const wav = new WavAudio(sampleRate, 1, 16);
     const pcm = flipnote.getAudioTrackPcm(trackId, sampleRate);
     wav.writeSamples(pcm);

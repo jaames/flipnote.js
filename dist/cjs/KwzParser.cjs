@@ -1,5 +1,5 @@
 /*!!
- * flipnote.js v6.2.0
+ * flipnote.js v6.3.0
  * https://flipnote.js.org
  * A JavaScript library for Flipnote Studio animation files
  * 2018 - 2025 James Daniel
@@ -1628,6 +1628,23 @@ class KwzParser extends BaseParser {
             [FlipnoteSoundEffectTrack.SE3]: frameFlags[2],
             [FlipnoteSoundEffectTrack.SE4]: frameFlags[3],
         };
+    }
+    /**
+     * Get the duration of a given track in seconds
+     * @returns number
+     * @group Audio
+     */
+    getAudioTrackDuration(trackId) {
+        const trackMeta = this.soundMeta.get(trackId);
+        if (trackMeta.length === 0)
+            return 0;
+        const decoded = this.decodeAudioTrack(trackId);
+        if (trackId === FlipnoteAudioTrack.BGM) {
+            const bgmAdjust = (1 / this.bgmrate) / (1 / this.framerate);
+            const freq = this.rawSampleRate * bgmAdjust;
+            return decoded.length / freq;
+        }
+        return decoded.length / this.sampleRate;
     }
     /**
      * Get the raw compressed audio data for a given track

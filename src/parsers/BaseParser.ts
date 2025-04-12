@@ -658,6 +658,13 @@ export abstract class BaseParser extends DataStream {
     return this.soundMeta.has(trackId) && this.soundMeta.get(trackId).length > 0;
   }
 
+  /**
+   * Get the duration of a given track in seconds
+   * @returns number
+   * @group Audio
+   */
+  abstract getAudioTrackDuration(trackId: FlipnoteAudioTrack): number;
+
   /** 
    * Get the raw compressed audio data for a given track
    * @returns byte array

@@ -145,11 +145,11 @@ export class PpmParser extends BaseParser {
   /**
    * Audio track base sample rate.
    */
-  static rawSampleRate = 8192;
+  static rawSampleRate = 8180;
   /**
    * Nintendo DSi audio output rate.
    */
-  static sampleRate = 32768;
+  static sampleRate = 32768; // Maybe actually more like 32720;
   /**
    * Which audio tracks are available in this format.
    */
@@ -795,6 +795,26 @@ export class PpmParser extends BaseParser {
     };
   }
 
+   /**
+   * Get the duration of a given track in seconds
+   * @returns number
+   * @group Audio
+   */
+   getAudioTrackDuration(trackId: FlipnoteAudioTrack) {
+     const trackMeta = this.soundMeta.get(trackId);
+
+     if (trackMeta.length === 0)
+       return 0;
+
+     if (trackId === FlipnoteAudioTrack.BGM) {
+       const bgmAdjust = (1 / this.bgmrate) / (1 / this.framerate);
+       const freq = this.rawSampleRate * bgmAdjust;
+       return ((trackMeta.length - 4) * 2) / freq;
+     }
+
+     return ((trackMeta.length - 4) * 2) / this.sampleRate;
+   }
+
   /** 
    * Get the raw compressed audio data for a given track
    * @returns byte array
@@ -816,14 +836,21 @@ export class PpmParser extends BaseParser {
     // note this doesn't resample
     // decode a 4 bit IMA adpcm audio track
     // https://github.com/Flipnote-Collective/flipnote-studio-docs/wiki/PPM-format#sound-data
-    const src = this.getAudioTrackRaw(trackId);
-    const srcSize = src.length;
-    const dst = new Int16Array(srcSize * 2);
+    const trackMeta = this.soundMeta.get(trackId);
+    assert(trackMeta.ptr + trackMeta.length < this.numBytes);
+    this.seek(trackMeta.ptr);
+
     let srcPtr = 0;
     let dstPtr = 0;
     let sample = 0;
-    let stepIndex = 0;
-    let predictor = 0;
+    let predictor = this.readInt16();
+    let stepIndex = this.readUint8();
+    const unknown = this.readUint8();
+    
+    const srcSize = trackMeta.length - 4;
+    const src = this.readBytes(srcSize);
+    const dst = new Int16Array(srcSize * 2);
+
     let lowNibble = true;
     while (srcPtr < srcSize) {
       // switch between high and low nibble each loop iteration
