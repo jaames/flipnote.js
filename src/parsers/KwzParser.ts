@@ -1363,6 +1363,8 @@ export class KwzParser extends BaseParser {
    */
   async verify() {
     const key = await rsaLoadPublicKey(KWZ_PUBLIC_KEY, 'SHA-256');
-    return await rsaVerify(key, this.getSignature(), this.getBody());
+    const signatureBytes = this.getSignature() as Uint8Array<ArrayBuffer>;
+    const bodyBytes = this.getBody() as Uint8Array<ArrayBuffer>;
+    return await rsaVerify(key, signatureBytes.buffer, bodyBytes.buffer);
   }
 }

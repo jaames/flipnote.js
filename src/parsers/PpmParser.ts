@@ -971,6 +971,8 @@ export class PpmParser extends BaseParser {
    */
   async verify() {
     const key = await rsaLoadPublicKey(PPM_PUBLIC_KEY, 'SHA-1');
-    return await rsaVerify(key, this.getSignature(), this.getBody());
+    const signatureBytes = this.getSignature() as Uint8Array<ArrayBuffer>;
+    const bodyBytes = this.getBody() as Uint8Array<ArrayBuffer>;
+    return await rsaVerify(key, signatureBytes.buffer, bodyBytes.buffer);
   }
 }

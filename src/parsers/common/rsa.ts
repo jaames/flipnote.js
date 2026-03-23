@@ -62,5 +62,5 @@ export const rsaLoadPublicKey = async (pemKey: string, hashType: HashType) => {
 /**
  * @internal
  */
-export const rsaVerify = async (key: CryptoKey, signature: Uint8Array, data: Uint8Array) =>
+export const rsaVerify = async (key: CryptoKey, signature: ArrayBuffer, data: ArrayBuffer) =>
   await SUBTLE_CRYPTO.verify(ALGORITHM, key, signature, data);

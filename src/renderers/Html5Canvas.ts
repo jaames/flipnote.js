@@ -192,7 +192,7 @@ export class Html5Canvas implements CanvasInterface {
     if (!this.#options.useSmoothing)
       this.ctx.imageSmoothingEnabled = false;
     // get frame pixels as RGBA buffer
-    this.note.getFramePixelsRgba(frameIndex, this.#frameBuffer, this.#paletteBuffer);
+    this.note.getFramePixelsRgba(frameIndex, this.#frameBuffer as Uint32Array<ArrayBuffer>, this.#paletteBuffer);
     // put framebuffer pixels into the src canvas
     this.#srcCtx.putImageData(this.#frameImage, 0, 0);
     // composite src canvas to dst (so image scaling can be handled)
