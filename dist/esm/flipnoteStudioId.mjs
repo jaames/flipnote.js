@@ -1,8 +1,8 @@
 /*!!
- * flipnote.js v6.3.0
+ * flipnote.js v6.3.1
  * https://flipnote.js.org
  * A JavaScript library for Flipnote Studio animation files
- * 2018 - 2025 James Daniel
+ * 2018 - 2026 James Daniel
  * Flipnote Studio is (c) Nintendo Co., Ltd. This project isn't affiliated with or endorsed by them in any way.
 */
 /**

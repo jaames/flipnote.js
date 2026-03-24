@@ -1,8 +1,8 @@
 /*!!
- * flipnote.js v6.3.0
+ * flipnote.js v6.3.1
  * https://flipnote.js.org
  * A JavaScript library for Flipnote Studio animation files
- * 2018 - 2025 James Daniel
+ * 2018 - 2026 James Daniel
  * Flipnote Studio is (c) Nintendo Co., Ltd. This project isn't affiliated with or endorsed by them in any way.
 */
 'use strict';
@@ -35,7 +35,7 @@ LOSS OF USE, DATA OR PROFITS, WHETHER IN AN ACTION OF CONTRACT, NEGLIGENCE OR
 OTHER TORTIOUS ACTION, ARISING OUT OF OR IN CONNECTION WITH THE USE OR
 PERFORMANCE OF THIS SOFTWARE.
 ***************************************************************************** */
-/* global Reflect, Promise, SuppressedError, Symbol */
+/* global Reflect, Promise, SuppressedError, Symbol, Iterator */
 
 
 function __classPrivateFieldGet(receiver, state, kind, f) {
@@ -2411,6 +2411,7 @@ class WebglCanvas {
         const internalHeight = height * dpi;
         this.width = width;
         this.height = height;
+        this.pixelRatio = dpi;
         this.canvas.width = internalWidth;
         this.canvas.height = internalHeight;
         this.dstWidth = internalWidth;
@@ -2566,8 +2567,7 @@ _WebglCanvas_options = new WeakMap(), _WebglCanvas_layerProgram = new WeakMap(),
     __classPrivateFieldSet(this, _WebglCanvas_layerTexture, __classPrivateFieldGet(this, _WebglCanvas_instances, "m", _WebglCanvas_createTexture).call(this, gl.RGBA, gl.LINEAR, gl.CLAMP_TO_EDGE), "f");
     __classPrivateFieldSet(this, _WebglCanvas_frameTexture, __classPrivateFieldGet(this, _WebglCanvas_instances, "m", _WebglCanvas_createTexture).call(this, gl.RGBA, gl.LINEAR, gl.CLAMP_TO_EDGE), "f");
     __classPrivateFieldSet(this, _WebglCanvas_frameBuffer, __classPrivateFieldGet(this, _WebglCanvas_instances, "m", _WebglCanvas_createFramebuffer).call(this, __classPrivateFieldGet(this, _WebglCanvas_frameTexture, "f")), "f");
-    const debugInfo = gl.getExtension('WEBGL_debug_renderer_info');
-    const renderer = gl.getParameter(debugInfo.UNMASKED_RENDERER_WEBGL);
+    const renderer = gl.getParameter(gl.RENDERER);
     const userAgent = navigator.userAgent;
     const isMacFirefox = userAgent.includes('Firefox') && userAgent.includes('Mac');
     __classPrivateFieldSet(this, _WebglCanvas_applyFirefoxFix, isMacFirefox && renderer.includes('Apple M'), "f");
@@ -2739,19 +2739,19 @@ _WebglCanvas_options = new WeakMap(), _WebglCanvas_layerProgram = new WeakMap(),
         /**
          * Firefox on Apple Silicon Macs seems to have some kind of viewport sizing bug that I can't track down.
          * Details here: https://github.com/jaames/flipnote.js/issues/30#issuecomment-2134602056
-         * Not sure what's causing it, but this hack fixes it for now.
+         * Seems to be related to the viewport being calculated incorrectly when the canvas is scaled to match the device pixel ratio?
          * Need to test whether only specific versions of Firefox are affected, if it's only an Apple Silicon thing, etc, etc...
          */
         if (__classPrivateFieldGet(this, _WebglCanvas_applyFirefoxFix, "f")) {
-            const srcWidth = this.srcWidth;
-            const srcHeight = this.srcHeight;
-            const sx = gl.drawingBufferWidth / srcWidth;
-            const sy = gl.drawingBufferHeight / srcHeight;
-            const adj = srcWidth === 256 ? 1 : 0; // ??????? why
-            viewWidth = gl.drawingBufferWidth * (sx - adj);
-            viewHeight = gl.drawingBufferHeight * (sy - adj);
-            viewX = -(viewWidth - srcWidth * sx);
-            viewY = -(viewHeight - srcHeight * sy);
+            const drawWidth = gl.drawingBufferWidth;
+            const drawHeight = gl.drawingBufferHeight;
+            const cssWidth = this.width;
+            const ratio = this.pixelRatio;
+            const invAspect = this.srcWidth / this.srcHeight;
+            viewWidth = (drawWidth * drawWidth * ratio) / cssWidth;
+            viewHeight = (drawHeight * drawHeight * invAspect * ratio) / cssWidth;
+            viewX = drawWidth - viewWidth;
+            viewY = drawHeight - viewHeight;
         }
         gl.viewport(viewX ?? 0, viewY ?? 0, viewWidth ?? gl.drawingBufferWidth, viewHeight ?? gl.drawingBufferHeight);
     }
@@ -2843,6 +2843,7 @@ class Html5Canvas {
         const internalHeight = height * dpi;
         this.width = width;
         this.height = height;
+        this.pixelRatio = dpi;
         this.dstWidth = internalWidth;
         this.dstHeight = internalHeight;
         canvas.style.width = `${width}px`;

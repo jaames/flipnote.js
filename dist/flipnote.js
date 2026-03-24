@@ -1,8 +1,8 @@
 /*!!
- * flipnote.js v6.3.0
+ * flipnote.js v6.3.1
  * https://flipnote.js.org
  * A JavaScript library for Flipnote Studio animation files
- * 2018 - 2025 James Daniel
+ * 2018 - 2026 James Daniel
  * Flipnote Studio is (c) Nintendo Co., Ltd. This project isn't affiliated with or endorsed by them in any way.
 */
 var flipnote = (function (exports) {
@@ -111,7 +111,7 @@ var flipnote = (function (exports) {
     OTHER TORTIOUS ACTION, ARISING OUT OF OR IN CONNECTION WITH THE USE OR
     PERFORMANCE OF THIS SOFTWARE.
     ***************************************************************************** */
-    /* global Reflect, Promise, SuppressedError, Symbol */
+    /* global Reflect, Promise, SuppressedError, Symbol, Iterator */
 
 
     function __classPrivateFieldGet(receiver, state, kind, f) {
@@ -1835,7 +1835,9 @@ MIGfMA0GCSqGSIb3DQEBAQUAA4GNADCBiQKBgQDCPLwTL6oSflv+gjywi/sM0TUB
          */
         async verify() {
             const key = await rsaLoadPublicKey(PPM_PUBLIC_KEY, 'SHA-1');
-            return await rsaVerify(key, this.getSignature(), this.getBody());
+            const signatureBytes = this.getSignature();
+            const bodyBytes = this.getBody();
+            return await rsaVerify(key, signatureBytes.buffer, bodyBytes.buffer);
         }
     }
     _PpmParser_layerBuffers = new WeakMap(), _PpmParser_soundFlags = new WeakMap(), _PpmParser_prevLayerBuffers = new WeakMap(), _PpmParser_lineEncodingBuffers = new WeakMap(), _PpmParser_prevDecodedFrame = new WeakMap(), _PpmParser_frameDataLength = new WeakMap(), _PpmParser_soundDataLength = new WeakMap(), _PpmParser_soundDataOffset = new WeakMap(), _PpmParser_frameOffsets = new WeakMap(), _PpmParser_instances = new WeakSet(), _a$1 = Symbol.toStringTag, _PpmParser_decodeHeader = function _PpmParser_decodeHeader() {
@@ -2983,7 +2985,9 @@ kQIDAQAB
          */
         async verify() {
             const key = await rsaLoadPublicKey(KWZ_PUBLIC_KEY, 'SHA-256');
-            return await rsaVerify(key, this.getSignature(), this.getBody());
+            const signatureBytes = this.getSignature();
+            const bodyBytes = this.getBody();
+            return await rsaVerify(key, signatureBytes.buffer, bodyBytes.buffer);
         }
     }
     _KwzParser_settings = new WeakMap(), _KwzParser_sectionMap = new WeakMap(), _KwzParser_bodyEndOffset = new WeakMap(), _KwzParser_layerBuffers = new WeakMap(), _KwzParser_soundFlags = new WeakMap(), _KwzParser_prevDecodedFrame = new WeakMap(), _KwzParser_frameMetaOffsets = new WeakMap(), _KwzParser_frameDataOffsets = new WeakMap(), _KwzParser_frameLayerSizes = new WeakMap(), _KwzParser_frameDataTotalSize = new WeakMap(), _KwzParser_bitIndex = new WeakMap(), _KwzParser_bitValue = new WeakMap(), _KwzParser_instances = new WeakSet(), _a = Symbol.toStringTag, _KwzParser_buildSectionMap = function _KwzParser_buildSectionMap() {
@@ -5800,6 +5804,7 @@ kQIDAQAB
             const internalHeight = height * dpi;
             this.width = width;
             this.height = height;
+            this.pixelRatio = dpi;
             this.canvas.width = internalWidth;
             this.canvas.height = internalHeight;
             this.dstWidth = internalWidth;
@@ -5955,8 +5960,7 @@ kQIDAQAB
         __classPrivateFieldSet(this, _WebglCanvas_layerTexture, __classPrivateFieldGet(this, _WebglCanvas_instances, "m", _WebglCanvas_createTexture).call(this, gl.RGBA, gl.LINEAR, gl.CLAMP_TO_EDGE), "f");
         __classPrivateFieldSet(this, _WebglCanvas_frameTexture, __classPrivateFieldGet(this, _WebglCanvas_instances, "m", _WebglCanvas_createTexture).call(this, gl.RGBA, gl.LINEAR, gl.CLAMP_TO_EDGE), "f");
         __classPrivateFieldSet(this, _WebglCanvas_frameBuffer, __classPrivateFieldGet(this, _WebglCanvas_instances, "m", _WebglCanvas_createFramebuffer).call(this, __classPrivateFieldGet(this, _WebglCanvas_frameTexture, "f")), "f");
-        const debugInfo = gl.getExtension('WEBGL_debug_renderer_info');
-        const renderer = gl.getParameter(debugInfo.UNMASKED_RENDERER_WEBGL);
+        const renderer = gl.getParameter(gl.RENDERER);
         const userAgent = navigator.userAgent;
         const isMacFirefox = userAgent.includes('Firefox') && userAgent.includes('Mac');
         __classPrivateFieldSet(this, _WebglCanvas_applyFirefoxFix, isMacFirefox && renderer.includes('Apple M'), "f");
@@ -6128,19 +6132,19 @@ kQIDAQAB
             /**
              * Firefox on Apple Silicon Macs seems to have some kind of viewport sizing bug that I can't track down.
              * Details here: https://github.com/jaames/flipnote.js/issues/30#issuecomment-2134602056
-             * Not sure what's causing it, but this hack fixes it for now.
+             * Seems to be related to the viewport being calculated incorrectly when the canvas is scaled to match the device pixel ratio?
              * Need to test whether only specific versions of Firefox are affected, if it's only an Apple Silicon thing, etc, etc...
              */
             if (__classPrivateFieldGet(this, _WebglCanvas_applyFirefoxFix, "f")) {
-                const srcWidth = this.srcWidth;
-                const srcHeight = this.srcHeight;
-                const sx = gl.drawingBufferWidth / srcWidth;
-                const sy = gl.drawingBufferHeight / srcHeight;
-                const adj = srcWidth === 256 ? 1 : 0; // ??????? why
-                viewWidth = gl.drawingBufferWidth * (sx - adj);
-                viewHeight = gl.drawingBufferHeight * (sy - adj);
-                viewX = -(viewWidth - srcWidth * sx);
-                viewY = -(viewHeight - srcHeight * sy);
+                const drawWidth = gl.drawingBufferWidth;
+                const drawHeight = gl.drawingBufferHeight;
+                const cssWidth = this.width;
+                const ratio = this.pixelRatio;
+                const invAspect = this.srcWidth / this.srcHeight;
+                viewWidth = (drawWidth * drawWidth * ratio) / cssWidth;
+                viewHeight = (drawHeight * drawHeight * invAspect * ratio) / cssWidth;
+                viewX = drawWidth - viewWidth;
+                viewY = drawHeight - viewHeight;
             }
             gl.viewport(viewX ?? 0, viewY ?? 0, viewWidth ?? gl.drawingBufferWidth, viewHeight ?? gl.drawingBufferHeight);
         }
@@ -6232,6 +6236,7 @@ kQIDAQAB
             const internalHeight = height * dpi;
             this.width = width;
             this.height = height;
+            this.pixelRatio = dpi;
             this.dstWidth = internalWidth;
             this.dstHeight = internalHeight;
             canvas.style.width = `${width}px`;
@@ -8205,7 +8210,7 @@ kQIDAQAB
      * flipnote.js library version (exported as `flipnote.version`).
      * You can find the latest version on the project's [NPM](https://www.npmjs.com/package/flipnote.js) page.
      */
-    const version = "6.3.0"; // replaced by @rollup/plugin-replace;
+    const version = "6.3.1"; // replaced by @rollup/plugin-replace;
 
     exports.CanvasInterface = CanvasInterface;
     exports.GifImage = GifImage;

@@ -1,8 +1,8 @@
 /*!!
- * flipnote.js v6.3.0
+ * flipnote.js v6.3.1
  * https://flipnote.js.org
  * A JavaScript library for Flipnote Studio animation files
- * 2018 - 2025 James Daniel
+ * 2018 - 2026 James Daniel
  * Flipnote Studio is (c) Nintendo Co., Ltd. This project isn't affiliated with or endorsed by them in any way.
 */
 /******************************************************************************
@@ -19,7 +19,7 @@ LOSS OF USE, DATA OR PROFITS, WHETHER IN AN ACTION OF CONTRACT, NEGLIGENCE OR
 OTHER TORTIOUS ACTION, ARISING OUT OF OR IN CONNECTION WITH THE USE OR
 PERFORMANCE OF THIS SOFTWARE.
 ***************************************************************************** */
-/* global Reflect, Promise, SuppressedError, Symbol */
+/* global Reflect, Promise, SuppressedError, Symbol, Iterator */
 
 
 function __classPrivateFieldGet(receiver, state, kind, f) {
@@ -1578,7 +1578,9 @@ class PpmParser extends BaseParser {
      */
     async verify() {
         const key = await rsaLoadPublicKey(PPM_PUBLIC_KEY, 'SHA-1');
-        return await rsaVerify(key, this.getSignature(), this.getBody());
+        const signatureBytes = this.getSignature();
+        const bodyBytes = this.getBody();
+        return await rsaVerify(key, signatureBytes.buffer, bodyBytes.buffer);
     }
 }
 _PpmParser_layerBuffers = new WeakMap(), _PpmParser_soundFlags = new WeakMap(), _PpmParser_prevLayerBuffers = new WeakMap(), _PpmParser_lineEncodingBuffers = new WeakMap(), _PpmParser_prevDecodedFrame = new WeakMap(), _PpmParser_frameDataLength = new WeakMap(), _PpmParser_soundDataLength = new WeakMap(), _PpmParser_soundDataOffset = new WeakMap(), _PpmParser_frameOffsets = new WeakMap(), _PpmParser_instances = new WeakSet(), _a = Symbol.toStringTag, _PpmParser_decodeHeader = function _PpmParser_decodeHeader() {
