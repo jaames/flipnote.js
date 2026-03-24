@@ -381,8 +381,7 @@ export class WebglCanvas implements CanvasInterface {
     this.#frameTexture = this.#createTexture(gl.RGBA, gl.LINEAR, gl.CLAMP_TO_EDGE);
     this.#frameBuffer = this.#createFramebuffer(this.#frameTexture);
 
-    const debugInfo = gl.getExtension('WEBGL_debug_renderer_info');
-    const renderer = gl.getParameter(debugInfo.UNMASKED_RENDERER_WEBGL);
+    const renderer = gl.getParameter(gl.RENDERER);
     const userAgent = navigator.userAgent;
     const isMacFirefox = userAgent.includes('Firefox') && userAgent.includes('Mac');
     this.#applyFirefoxFix = isMacFirefox && renderer.includes('Apple M');
@@ -580,7 +579,7 @@ export class WebglCanvas implements CanvasInterface {
       /**
        * Firefox on Apple Silicon Macs seems to have some kind of viewport sizing bug that I can't track down.
        * Details here: https://github.com/jaames/flipnote.js/issues/30#issuecomment-2134602056
-       * Not sure what's causing it, but this hack fixes it for now.
+       * Seems to be related to the viewport being calculated incorrectly when the canvas is scaled to match the device pixel ratio?
        * Need to test whether only specific versions of Firefox are affected, if it's only an Apple Silicon thing, etc, etc...
        */
       if (this.#applyFirefoxFix) {
