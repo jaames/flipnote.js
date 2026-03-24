@@ -67,6 +67,10 @@ export class Html5Canvas implements CanvasInterface {
    * View height (CSS pixels)
    */
   height: number;
+  /**
+   * Device pixel ratio
+   */
+  pixelRatio: number;
   /** 
    * Backing canvas width (real pixels)
    * Note that this factors in device pixel ratio, so it may not reflect the size of the canvas in CSS pixels
@@ -141,6 +145,7 @@ export class Html5Canvas implements CanvasInterface {
     const internalHeight = height * dpi;
     this.width = width;
     this.height = height;
+    this.pixelRatio = dpi;
     this.dstWidth = internalWidth;
     this.dstHeight = internalHeight;
     canvas.style.width = `${ width }px`;

@@ -107,6 +107,10 @@ export class WebglCanvas implements CanvasInterface {
    */
   height: number;
   /**
+   * Device pixel ratio
+   */
+  pixelRatio: number;
+  /**
    * Flipnote width (pixels).
    */
   srcWidth: number;
@@ -211,6 +215,7 @@ export class WebglCanvas implements CanvasInterface {
     const internalHeight = height * dpi;
     this.width = width;
     this.height = height;
+    this.pixelRatio = dpi;
     this.canvas.width = internalWidth;
     this.canvas.height = internalHeight;
     this.dstWidth = internalWidth;
@@ -583,11 +588,12 @@ export class WebglCanvas implements CanvasInterface {
         const srcHeight = this.srcHeight;
         const sx = gl.drawingBufferWidth / srcWidth;
         const sy = gl.drawingBufferHeight / srcHeight;
-        const adj = srcWidth === 256 ? 1 : 0; // ??????? why
-        viewWidth = gl.drawingBufferWidth * (sx - adj);
-        viewHeight = gl.drawingBufferHeight * (sy - adj);
-        viewX = -(viewWidth - srcWidth * sx);
-        viewY = -(viewHeight - srcHeight * sy);
+        const f = this.srcWidth * this.pixelRatio;
+        const n = this.width / f;
+        viewWidth = gl.drawingBufferWidth * (sx / n);
+        viewHeight = gl.drawingBufferHeight * (sy / n);
+        viewX = -(viewWidth - (srcWidth * sx));
+        viewY = -(viewHeight - (srcHeight * sy));
       }
       gl.viewport(viewX ?? 0, viewY ?? 0, viewWidth ?? gl.drawingBufferWidth, viewHeight ?? gl.drawingBufferHeight);
     }
