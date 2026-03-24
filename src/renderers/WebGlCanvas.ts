@@ -584,16 +584,15 @@ export class WebglCanvas implements CanvasInterface {
        * Need to test whether only specific versions of Firefox are affected, if it's only an Apple Silicon thing, etc, etc...
        */
       if (this.#applyFirefoxFix) {
-        const srcWidth = this.srcWidth;
-        const srcHeight = this.srcHeight;
-        const sx = gl.drawingBufferWidth / srcWidth;
-        const sy = gl.drawingBufferHeight / srcHeight;
-        const f = this.srcWidth * this.pixelRatio;
-        const n = this.width / f;
-        viewWidth = gl.drawingBufferWidth * (sx / n);
-        viewHeight = gl.drawingBufferHeight * (sy / n);
-        viewX = -(viewWidth - (srcWidth * sx));
-        viewY = -(viewHeight - (srcHeight * sy));
+        const drawWidth = gl.drawingBufferWidth;
+        const drawHeight = gl.drawingBufferHeight;
+        const cssWidth = this.width;
+        const ratio = this.pixelRatio;
+        const invAspect = this.srcWidth / this.srcHeight;
+        viewWidth = (drawWidth * drawWidth * ratio) / cssWidth;
+        viewHeight = (drawHeight * drawHeight * invAspect * ratio) / cssWidth;
+        viewX = drawWidth - viewWidth;
+        viewY = drawHeight - viewHeight;
       }
       gl.viewport(viewX ?? 0, viewY ?? 0, viewWidth ?? gl.drawingBufferWidth, viewHeight ?? gl.drawingBufferHeight);
     }
